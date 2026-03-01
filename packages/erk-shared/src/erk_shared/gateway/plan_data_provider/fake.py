@@ -340,8 +340,8 @@ def make_plan_row(
     objective_progress_display: str = "-",
     objective_slug_display: str = "-",
     objective_state_display: str = "-",
-    objective_head_state: str = "-",
-    objective_head_plans: tuple[tuple[str, str], ...] = (),
+    objective_deps_display: str = "-",
+    objective_deps_plans: tuple[tuple[str, str], ...] = (),
     objective_next_node_display: str = "-",
     updated_at: datetime | None = None,
     updated_display: str = "-",
@@ -383,7 +383,7 @@ def make_plan_row(
         objective_progress_display: Progress display (e.g., "3/7" or "-")
         objective_slug_display: Slug or stripped title fallback (max 25 chars)
         objective_state_display: Sparkline string (e.g., "✓✓✓▶▶○○○○")
-        objective_head_state: Head state of next node (e.g., "ready", "in-progress")
+        objective_deps_display: Dependency status of next node (e.g., "ready", "in progress")
         updated_at: Last update datetime (defaults to same as created_at)
         updated_display: Formatted relative time for last update
         created_at: Creation datetime (defaults to 2025-01-01T00:00:00Z)
@@ -497,8 +497,8 @@ def make_plan_row(
         objective_progress_display=objective_progress_display,
         objective_slug_display=objective_slug_display,
         objective_state_display=objective_state_display,
-        objective_head_state=objective_head_state,
-        objective_head_plans=objective_head_plans,
+        objective_deps_display=objective_deps_display,
+        objective_deps_plans=objective_deps_plans,
         objective_next_node_display=objective_next_node_display,
         updated_at=effective_updated_at,
         updated_display=updated_display,
