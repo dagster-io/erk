@@ -25,6 +25,10 @@ def rebase(ctx: ErkContext, *, dangerous: bool) -> None:
     Rebases the current branch and resolves any merge conflicts using Claude.
     Does not require or interact with Graphite stacks.
 
+    Also works when a rebase is already in progress with unresolved conflicts.
+    If you started a rebase manually and hit conflicts you can't resolve, run
+    this command to have Claude pick up where you left off.
+
     For remote rebase via GitHub Actions workflow, use:
 
     \b
@@ -35,6 +39,11 @@ def rebase(ctx: ErkContext, *, dangerous: bool) -> None:
     \b
       # Rebase locally with Claude
       erk pr rebase --dangerous
+
+    \b
+      # Resume a rebase that stopped on conflicts
+      git rebase main          # hits conflicts
+      erk pr rebase --dangerous  # Claude resolves them
 
     To disable the --dangerous flag requirement:
 

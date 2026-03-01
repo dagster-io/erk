@@ -4,6 +4,7 @@ read_when:
   - "resolving merge conflicts after rebase"
   - "debugging test failures after rebase"
   - "handling auto-generated file conflicts"
+  - "resuming a rebase with conflicts"
 tripwires:
   - action: "running tests immediately after rebase without checking for old symbols"
     warning: "Hidden regressions can exist in non-conflicted files. Grep for old symbols that should have been renamed before running tests."
@@ -48,6 +49,12 @@ Some files are auto-generated (e.g., `tripwires.md`, `index.md`). For these:
    erk docs sync
    ```
 3. The regenerated file will be correct based on current frontmatter state
+
+## Mid-Rebase Recovery with `erk pr rebase`
+
+`erk pr rebase` (and the `/erk:rebase` slash command) can resolve conflicts in a rebase that is already in progress. If you started a `git rebase` manually and hit conflicts you can't resolve, run `erk pr rebase --dangerous` to have Claude pick up where you left off. It will detect the in-progress rebase, resolve the conflicted files, and continue the rebase to completion.
+
+This makes `erk pr rebase` useful as both a start-from-scratch rebase tool and a mid-rebase recovery tool.
 
 ## Related Documentation
 
