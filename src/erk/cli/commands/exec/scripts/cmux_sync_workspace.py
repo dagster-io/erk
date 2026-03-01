@@ -168,4 +168,4 @@ def cmux_sync_workspace(pr: int, branch: str | None) -> None:
                 )
             )
         )
-        raise SystemExit(1)
+        raise SystemExit(1) from None
