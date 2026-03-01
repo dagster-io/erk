@@ -170,30 +170,42 @@ class BackgroundWorkersMixin:
         Args:
             branch: The branch name to match against workspace titles
         """
-        try:
-            list_result = subprocess.run(
-                ["cmux", "--json", "list-workspaces"],
-                capture_output=True,
-                text=True,
-                stdin=subprocess.DEVNULL,
-                check=True,
-            )
-            data = json.loads(list_result.stdout)
-            workspaces = data.get("workspaces", [])
-            matching = [ws for ws in workspaces if ws.get("title") == branch]
-            if not matching:
-                return
+        import shutil
 
-            ref = matching[0]["ref"]
-            subprocess.run(
-                ["cmux", "select-workspace", "--workspace", ref],
-                capture_output=True,
-                text=True,
-                stdin=subprocess.DEVNULL,
-                check=True,
-            )
-        except (subprocess.CalledProcessError, json.JSONDecodeError, KeyError):
-            pass
+        if shutil.which("cmux") is None:
+            return
+
+        list_result = subprocess.run(
+            ["cmux", "--json", "list-workspaces"],
+            capture_output=True,
+            text=True,
+            stdin=subprocess.DEVNULL,
+        )
+        if list_result.returncode != 0 or not list_result.stdout:
+            return
+
+        try:
+            data = json.loads(list_result.stdout)
+        except json.JSONDecodeError:
+            return
+
+        if not isinstance(data, dict):
+            return
+        workspaces = data.get("workspaces", [])
+        matching = [ws for ws in workspaces if ws.get("title") == branch]
+        if not matching:
+            return
+
+        ref = matching[0].get("ref")
+        if ref is None:
+            return
+
+        subprocess.run(
+            ["cmux", "select-workspace", "--workspace", ref],
+            capture_output=True,
+            text=True,
+            stdin=subprocess.DEVNULL,
+        )
 
     @work(thread=True)
     def _rewrite_remote_async(self: ErkDashApp, op_id: str, pr_number: int) -> None:
