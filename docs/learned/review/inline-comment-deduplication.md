@@ -6,7 +6,7 @@ read_when:
   - "changing the review prompt template's deduplication instructions"
 tripwires:
   - action: "posting inline review comments without deduplication"
-    warning: "Always deduplicate before posting. The dedup logic is prompt-embedded, not code-enforced — see Step 4 of REVIEW_PROMPT_TEMPLATE."
+    warning: "Always deduplicate before posting. The dedup logic is prompt-embedded using a collect→dedup→post flow — see Steps 4-6 of REVIEW_PROMPT_TEMPLATE."
 last_audited: "2026-02-16 14:20 PT"
 audit_result: edited
 ---
@@ -19,13 +19,19 @@ Automated reviews run repeatedly on the same PR (after each push, on re-review r
 
 ## Architecture Decision: Prompt-Embedded, Not Code-Enforced
 
-The deduplication logic lives entirely in the prompt template, not in Python code. The AI agent executing the review is instructed to fetch existing comments, build a dedup index, and skip matches — all within the prompt steps.
+The deduplication logic lives entirely in the prompt template, not in Python code. The prompt uses a **collect → dedup → post** flow across three separate steps (Steps 4-6 of `REVIEW_PROMPT_TEMPLATE`):
+
+1. **Step 4 — Collect**: The agent analyzes the diff and builds a numbered list of all violations. No comments are posted in this step.
+2. **Step 5 — Dedup**: The agent fetches existing review comments and checks each collected violation against them, outputting an explicit `NEW` or `DUPLICATE` label for every violation.
+3. **Step 6 — Post**: Only violations marked `NEW` are posted. Duplicates are skipped and counted.
 
 <!-- Source: src/erk/review/prompt_assembly.py, REVIEW_PROMPT_TEMPLATE -->
 
-This is intentional: the agent needs flexibility to interpret near-matches and make judgment calls that rigid code dedup cannot. For example, a slightly reworded violation on a line that shifted by 1 is "the same comment" to a human reviewer but would slip past exact-match code.
+This replaced an earlier interleaved approach where the agent would find violations and post comments in a single step with a side instruction to "skip if duplicate." That interleaved pattern made it easy for the agent to skip the dedup check — it would post-as-it-goes and forget to consult the dedup index.
 
-The trade-off is that dedup quality depends on the AI agent correctly following the instructions. If the prompt template's Step 4 instructions are unclear, dedup fails silently — the agent just posts duplicates.
+The collect-then-post structure forces the agent to have a complete violation list before touching GitHub, making dedup a required gate rather than an optional side-check. The forced dedup output (every violation must have a `NEW`/`DUPLICATE` label) makes silent dedup failures impossible — if the agent skips dedup, the missing output is obvious.
+
+The trade-off is that dedup quality still depends on the AI agent following the instructions. However, the structured flow and required output make failures visible rather than silent.
 
 ## Design Trade-offs in the Matching Heuristic
 
@@ -42,11 +48,11 @@ Two parameters control the dedup sensitivity, chosen to balance false positives 
 
 ## Cross-System Interaction
 
-The dedup pipeline spans three distinct components:
+The dedup pipeline spans three prompt steps and two CLI commands:
 
-1. **Fetch** — `erk exec get-pr-review-comments --include-resolved` returns existing threads with path, line, and body fields
-2. **Match** — The agent builds and queries the dedup index (prompt-instructed, not code)
-3. **Post** — `erk exec post-pr-inline-comment` posts only non-duplicate comments
+1. **Collect** (Step 4) — The agent analyzes the diff and builds a violation list (no external calls)
+2. **Dedup** (Step 5) — `erk exec get-pr-review-comments --include-resolved` fetches existing threads; the agent matches each collected violation against them
+3. **Post** (Step 6) — `erk exec post-pr-inline-comment` posts only violations labeled `NEW`
 
 <!-- Source: src/erk/cli/commands/exec/scripts/get_pr_review_comments.py, get_pr_review_comments -->
 <!-- Source: src/erk/cli/commands/exec/scripts/post_pr_inline_comment.py, post_pr_inline_comment -->

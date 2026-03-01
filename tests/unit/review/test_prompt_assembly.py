@@ -130,7 +130,7 @@ Post findings.
         assert "--pr-number 999" in prompt
 
     def test_prompt_includes_deduplication_step(self) -> None:
-        """Prompt includes a step to fetch existing review comments."""
+        """Prompt includes a step to deduplicate against existing comments."""
         review = _make_review(
             name="Dignified Python",
             marker="<!-- dignified-python -->",
@@ -144,7 +144,7 @@ Post findings.
             base_branch=None,
         )
 
-        assert "Fetch Existing Review Comments" in prompt
+        assert "Deduplicate Against Existing Comments" in prompt
         assert "erk exec get-pr-review-comments --pr 42 --include-resolved" in prompt
 
     def test_prompt_deduplication_references_review_name(self) -> None:
@@ -163,10 +163,10 @@ Post findings.
         )
 
         assert "**Tripwire Check**:" in prompt
-        assert "Skip posting if an existing comment" in prompt
+        assert "Do NOT post violations marked DUPLICATE" in prompt
 
-    def test_prompt_deduplication_step_order(self) -> None:
-        """Deduplication step comes after diff and before posting."""
+    def test_prompt_collect_dedup_post_step_order(self) -> None:
+        """Steps follow collect -> dedup -> post -> summary order."""
         review = _make_review(
             name="Test",
             marker="<!-- test -->",
@@ -181,11 +181,12 @@ Post findings.
         )
 
         diff_pos = prompt.index("## Step 3: Get the Diff")
-        dedup_pos = prompt.index("## Step 4: Fetch Existing Review Comments")
-        post_pos = prompt.index("## Step 5: Post Inline Comments")
-        summary_pos = prompt.index("## Step 6: Post Summary Comment")
+        collect_pos = prompt.index("## Step 4: Collect Violations")
+        dedup_pos = prompt.index("## Step 5: Deduplicate Against Existing Comments")
+        post_pos = prompt.index("## Step 6: Post Only NEW Violations")
+        summary_pos = prompt.index("## Step 7: Post Summary Comment")
 
-        assert diff_pos < dedup_pos < post_pos < summary_pos
+        assert diff_pos < collect_pos < dedup_pos < post_pos < summary_pos
 
     def test_summary_wraps_details_in_collapsible_block(self) -> None:
         """Summary format wraps verbose sections in a collapsible details block."""
