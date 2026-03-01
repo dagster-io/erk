@@ -212,4 +212,187 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
   "plan_number": 8548
 }
   </tool_result>
+  <tool_result tool="toolu_01GZs8rDA6rCop7XbBUNqFHv">
+{"uploaded": true, "plan_id": 8548}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017G2JkyJN2tu29Wt4AwkQHV">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk pipeline</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="309" cache_read_input_tokens="71934" cache_creation="{'ephemeral_5m_input_tokens': 309, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017G2JkyJN2tu29Wt4AwkQHV">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #8548 found (already exists)
+
+Phase 2: Getting diff
+
+Phase 3: Fetching plan context
+   Incorporating plan #8548
+
+Phase 4: Generating PR description
+   Reading diff file...
+   Diff loaded (13,120 chars)
+   Analyzing changes with Claude...
+   PR description generated
+
+Phase 5: Graphite enhancement
+
+Phase 6: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+  Action:      Updated PR #8548
+  Branch:      plnd/create-cli-push-down-skill-03-01-1404 → master
+  Title:       Create `cli-push-down` skill for pattern documentation and agent guidance
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012XXUPpDVDhQxFwrSFTZmA3">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="379" cache_read_input_tokens="72243" cache_creation="{'ephemeral_5m_input_tokens': 379, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01NpMP67CUuHv4VtzLh4Uebd">
+    <param name="command">erk pr check --stage=impl</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="379" cache_read_input_tokens="72243" cache_creation="{'ephemeral_5m_input_tokens': 379, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012XXUPpDVDhQxFwrSFTZmA3">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8548
+}
+  </tool_result>
+  <tool_result tool="toolu_01NpMP67CUuHv4VtzLh4Uebd">
+Exit code 1
+Checking PR #8548 for branch plnd/create-cli-push-down-skill-03-01-1404...
+
+[FAIL] .erk/impl-context/ still present (should be removed before submission)
+[PASS] Plan reference found (#8548)
+[PASS] PR body contains checkout footer
+
+1 check failed
+  </tool_result>
+  <assistant>The impl-context directory needs to be cleaned up. Let me handle that.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="319" cache_read_input_tokens="72622" cache_creation="{'ephemeral_5m_input_tokens': 319, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01L5fmZwGvXqufCyAnoqwZbY">
+    <param name="command">ls /home/runner/work/erk/erk/.erk/impl-context/</param>
+    <param name="description">Check impl-context contents</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="319" cache_read_input_tokens="72622" cache_creation="{'ephemeral_5m_input_tokens': 319, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01L5fmZwGvXqufCyAnoqwZbY">
+plan.md
+plnd--create-cli-push-down-skill-03-01-1404
+ref.json
+run-info.json
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01L8Q5nw1BS9dMdyzvCmzaeW">
+    <param name="command">git rm -rf .erk/impl-context/ &amp;&amp; git commit -m "Clean up .erk/impl-context/" &amp;&amp; git push</param>
+    <param name="description">Remove impl-context and push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="72941" cache_creation="{'ephemeral_5m_input_tokens': 362, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01L8Q5nw1BS9dMdyzvCmzaeW">
+Exit code 128
+fatal: pathspec '.erk/impl-context/' did not match any files
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01T4Z2U1wsk3aBrt2cUAQiL6">
+    <param name="command">git status .erk/impl-context/</param>
+    <param name="description">Check git tracking status</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="146" cache_read_input_tokens="73303" cache_creation="{'ephemeral_5m_input_tokens': 146, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01T4Z2U1wsk3aBrt2cUAQiL6">
+On branch plnd/create-cli-push-down-skill-03-01-1404
+Your branch and 'origin/plnd/create-cli-push-down-skill-03-01-1404' have diverged,
+and have 1 and 1 different commits each, respectively.
+  (use "git pull" if you want to integrate the remote branch with yours)
+
+nothing to commit, working tree clean
+  </tool_result>
+  <assistant>The branch has diverged after `erk pr submit` pushed. Let me pull and then check the impl-context status.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="189" cache_read_input_tokens="73449" cache_creation="{'ephemeral_5m_input_tokens': 189, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01YMpioAhnFEBCPHmtW2o6yp">
+    <param name="command">git pull --rebase</param>
+    <param name="description">Sync with remote</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="189" cache_read_input_tokens="73449" cache_creation="{'ephemeral_5m_input_tokens': 189, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YMpioAhnFEBCPHmtW2o6yp">
+From https://github.com/dagster-io/erk
+ * [new branch]          async-learn/8547 -&gt; origin/async-learn/8547
+ * [new branch]          async-learn/8549 -&gt; origin/async-learn/8549
+ * [new branch]          async-learn/8550 -&gt; origin/async-learn/8550
+ + 2aaca3592...26457e268 plnd/doctor-workflow-smoke-test-02-25-0128 -&gt; origin/plnd/doctor-workflow-smoke-test-02-25-0128  (forced update)
+ * [new branch]          plnd/fix-dispatch-worktree-conf-03-01-1410 -&gt; origin/plnd/fix-dispatch-worktree-conf-03-01-1410
+   34e819a7c..72ad5583d  plnd/improve-cmux-skill-03-01-1402 -&gt; origin/plnd/improve-cmux-skill-03-01-1402
+ * [new branch]          plnd/move-run-under-workflow-03-01-1409 -&gt; origin/plnd/move-run-under-workflow-03-01-1409
+ * [new branch]          plnd/show-workflow-source-03-01-1414 -&gt; origin/plnd/show-workflow-source-03-01-1414
+warning: skipped previously applied commit 42b8dfb70
+hint: use --reapply-cherry-picks to include skipped commits
+hint: Disable this message with "git config set advice.skippedCherryPicks false"
+Successfully rebased and updated refs/heads/plnd/create-cli-push-down-skill-03-01-1404.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01QjnnCqhFES8VJkqGCDTKG8">
+    <param name="command">git ls-files .erk/impl-context/</param>
+    <param name="description">Check if impl-context is tracked</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="741" cache_read_input_tokens="73638" cache_creation="{'ephemeral_5m_input_tokens': 741, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QjnnCqhFES8VJkqGCDTKG8">
+
+  </tool_result>
+  <assistant>Not tracked in git. The check must be looking at the filesystem. Let me remove it physically and push.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="112" cache_read_input_tokens="74379" cache_creation="{'ephemeral_5m_input_tokens': 112, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01BFZY8HQg9LVryKhiPKttun">
+    <param name="command">rm -rf /home/runner/work/erk/erk/.erk/impl-context/ &amp;&amp; git push</param>
+    <param name="description">Remove impl-context dir and push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="112" cache_read_input_tokens="74379" cache_creation="{'ephemeral_5m_input_tokens': 112, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BFZY8HQg9LVryKhiPKttun">
+Everything up-to-date
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01AamiKkC7nPPvtqtcskmmMd">
+    <param name="command">erk pr check --stage=impl</param>
+    <param name="description">Re-validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="74491" cache_creation="{'ephemeral_5m_input_tokens': 348, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AamiKkC7nPPvtqtcskmmMd">
+Checking PR #8548 for branch plnd/create-cli-push-down-skill-03-01-1404...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>All checks pass.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="154" cache_read_input_tokens="74839" cache_creation="{'ephemeral_5m_input_tokens': 154, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01RscP86xUVxZLd5PgDCTk6j">
+    <param name="todos">[{'content': 'Create `.claude/skills/cli-push-down/SKILL.md`', 'status': 'completed', 'act...[truncated 411 chars]...nt': 'Signal GitHub and submit PR', 'status': 'completed', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="154" cache_read_input_tokens="74839" cache_creation="{'ephemeral_5m_input_tokens': 154, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RscP86xUVxZLd5PgDCTk6j">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan execution complete. Here's a summary of what was done:
+
+**Files created/modified:**
+
+| File | Action |
+|------|--------|
+| `.claude/skills/cli-push-down/SKILL.md` | Created (150 lines) |
+| `docs/developer/agentic-engineering-patterns/README.md` | Added entry #2 for CLI Push Down |
+| `src/erk/capabilities/skills/bundled.py` | Registered skill in bundled capabilities |
+| `src/erk/core/capabilities/codex_portable.py` | Registered as codex-portable skill |
+| `pyproject.toml` | Added force-include for wheel distribution |
+
+**Skill structure:** Self-contained SKILL.md with frontmatter, pattern overview, decision table, opportunity recognition checklist, step-by-step push-down procedure, 4 real case studies from commits (`4bf1b6dcb`, `28cb8cc2f`, `4c5e7ef92`, `b94b466e9`), anti-patterns section (including the over-pushing lesson from `e2bd53d05`), and related resources.
+
+**PR:** https://github.com/dagster-io/erk/pull/8548</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="278" cache_read_input_tokens="74993" cache_creation="{'ephemeral_5m_input_tokens': 278, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>

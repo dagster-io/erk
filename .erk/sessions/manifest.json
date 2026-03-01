@@ -15,8 +15,8 @@
     {
       "session_id": "5612ceff-2ad7-4909-88dc-365ff24fc179",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-01T19:14:38.652578+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-01T19:15:50.381974+00:00",
       "files": [
         "impl-5612ceff-2ad7-4909-88dc-365ff24fc179-5612ceff-2ad7-4909-88dc-365ff24fc179-part1.xml",
         "impl-5612ceff-2ad7-4909-88dc-365ff24fc179-5612ceff-2ad7-4909-88dc-365ff24fc179-part2.xml",
