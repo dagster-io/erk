@@ -5,19 +5,34 @@ Claude CLI subprocess is too slow.
 """
 
 import os
+from abc import ABC, abstractmethod
 
 from anthropic import Anthropic
 
 
-def execute_haiku_call(client: Anthropic, prompt: str, *, system_prompt: str) -> str:
-    """Execute a single Haiku call. Raises on failure."""
-    response = client.messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=50,
-        system=system_prompt,
-        messages=[{"role": "user", "content": prompt}],
-    )
-    return response.content[0].text.strip()
+class LlmCaller(ABC):
+    @abstractmethod
+    def call(self, prompt: str, *, system_prompt: str) -> str | None:
+        """Execute an LLM call. Returns None on any failure."""
+        ...
+
+
+class AnthropicLlmCaller(LlmCaller):
+    def call(self, prompt: str, *, system_prompt: str) -> str | None:
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        if api_key is None:
+            return None
+        try:
+            client = Anthropic(api_key=api_key)
+            response = client.messages.create(
+                model="claude-haiku-4-5-20251001",
+                max_tokens=50,
+                system=system_prompt,
+                messages=[{"role": "user", "content": prompt}],
+            )
+            return response.content[0].text.strip()
+        except Exception:
+            return None
 
 
 def fast_haiku_call(prompt: str, *, system_prompt: str) -> str | None:
@@ -32,12 +47,4 @@ def fast_haiku_call(prompt: str, *, system_prompt: str) -> str | None:
     Returns:
         Response text string, or None on any failure
     """
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
-    if api_key is None:
-        return None
-
-    try:
-        client = Anthropic(api_key=api_key)
-        return execute_haiku_call(client, prompt, system_prompt=system_prompt)
-    except Exception:
-        return None
+    return AnthropicLlmCaller().call(prompt, system_prompt=system_prompt)
