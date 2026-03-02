@@ -13,6 +13,7 @@ from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.metadata.core import (
     find_metadata_block,
+    inject_metadata_block_before_footer,
     render_metadata_block,
     replace_metadata_block_in_body,
 )
@@ -654,16 +655,7 @@ class PlannedPRBackend(PlanBackend):
             lifecycle_stage=None,
         )
 
-        # Inject metadata block before footer separator if present, else append
-        footer_separator = "\n---\n"
-        footer_idx = result.body.rfind(footer_separator)
-        if footer_idx != -1:
-            before_footer = result.body[:footer_idx]
-            after_footer = result.body[footer_idx:]
-            updated_body = before_footer + "\n\n" + metadata_body + after_footer
-        else:
-            updated_body = result.body + "\n\n" + metadata_body
-
+        updated_body = inject_metadata_block_before_footer(result.body, metadata_body)
         self._github.update_pr_body(repo_root, pr_number, updated_body)
 
     def post_event(

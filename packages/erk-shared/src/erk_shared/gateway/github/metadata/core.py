@@ -689,6 +689,35 @@ def replace_metadata_block_in_body(
     return re.sub(pattern, new_block_content, body, flags=re.DOTALL)
 
 
+def inject_metadata_block_before_footer(
+    body: str,
+    rendered_block: str,
+) -> str:
+    """Inject a rendered metadata block into a body, before the footer separator.
+
+    If the body contains a footer separator (``\\n---\\n``), the block is
+    inserted just before the last occurrence. Otherwise the block is appended.
+
+    This is the generic injection logic used by ensure_*_header methods
+    to add a header block to an entity body that was created without one.
+
+    Args:
+        body: The current entity body (PR body, issue body, etc.)
+        rendered_block: The fully rendered metadata block string
+            (from ``render_metadata_block()``)
+
+    Returns:
+        Updated body with the block injected.
+    """
+    footer_separator = "\n---\n"
+    footer_idx = body.rfind(footer_separator)
+    if footer_idx != -1:
+        before_footer = body[:footer_idx]
+        after_footer = body[footer_idx:]
+        return before_footer + "\n\n" + rendered_block + after_footer
+    return body + "\n\n" + rendered_block
+
+
 def create_objective_header_block(
     *,
     created_at: str,
