@@ -10,6 +10,15 @@
       "files": [
         "planning-45b23513-2b84-4b0f-8f23-26cfecd9ce99-45b23513-2b84-4b0f-8f23-26cfecd9ce99.xml"
       ]
+    },
+    {
+      "session_id": "bb47e012-850e-4ba2-982f-ee305459cd35",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-02T09:22:36.514567+00:00",
+      "files": [
+        "impl-bb47e012-850e-4ba2-982f-ee305459cd35-bb47e012-850e-4ba2-982f-ee305459cd35.xml"
+      ]
     }
   ]
 }
