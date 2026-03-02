@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Skip impl-context cleanup for plan PRs in submit pipeline"
+}
