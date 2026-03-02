@@ -6,22 +6,46 @@ Claude CLI subprocess is too slow.
 
 import os
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 
 from anthropic import Anthropic
 
 
+@dataclass(frozen=True)
+class LlmResponse:
+    text: str
+
+
+@dataclass(frozen=True)
+class NoApiKey:
+    message: str
+
+    @property
+    def error_type(self) -> str:
+        return "no-api-key"
+
+
+@dataclass(frozen=True)
+class LlmCallFailed:
+    message: str
+
+    @property
+    def error_type(self) -> str:
+        return "llm-call-failed"
+
+
 class LlmCaller(ABC):
     @abstractmethod
-    def call(self, prompt: str, *, system_prompt: str) -> str | None:
-        """Execute an LLM call. Returns None on any failure."""
+    def call(self, prompt: str, *, system_prompt: str) -> LlmResponse | NoApiKey | LlmCallFailed:
+        """Execute an LLM call."""
         ...
 
 
 class AnthropicLlmCaller(LlmCaller):
-    def call(self, prompt: str, *, system_prompt: str) -> str | None:
+    def call(self, prompt: str, *, system_prompt: str) -> LlmResponse | NoApiKey | LlmCallFailed:
         api_key = os.environ.get("ANTHROPIC_API_KEY")
         if api_key is None:
-            return None
+            return NoApiKey(message="ANTHROPIC_API_KEY environment variable not set")
         try:
             client = Anthropic(api_key=api_key)
             response = client.messages.create(
@@ -30,21 +54,6 @@ class AnthropicLlmCaller(LlmCaller):
                 system=system_prompt,
                 messages=[{"role": "user", "content": prompt}],
             )
-            return response.content[0].text.strip()
-        except Exception:
-            return None
-
-
-def fast_haiku_call(prompt: str, *, system_prompt: str) -> str | None:
-    """Call Haiku directly via Anthropic SDK (~200ms vs ~5s subprocess).
-
-    Returns response text, or None if API key unavailable or call fails.
-
-    Args:
-        prompt: The user message to send
-        system_prompt: System prompt for the model
-
-    Returns:
-        Response text string, or None on any failure
-    """
-    return AnthropicLlmCaller().call(prompt, system_prompt=system_prompt)
+            return LlmResponse(text=response.content[0].text.strip())
+        except Exception as exc:
+            return LlmCallFailed(message=str(exc))

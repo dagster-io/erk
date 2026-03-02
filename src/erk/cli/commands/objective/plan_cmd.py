@@ -22,7 +22,7 @@ from erk.cli.commands.one_shot_dispatch import (
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.branch_slug_generator import BRANCH_SLUG_SYSTEM_PROMPT, _postprocess_slug
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
-from erk.core.fast_llm import fast_haiku_call
+from erk.core.fast_llm import AnthropicLlmCaller, LlmResponse
 from erk_shared.context.types import InteractiveAgentConfig
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
@@ -251,8 +251,10 @@ def _handle_all_unblocked(
 
         user_output(f"Dispatching node {click.style(node.id, bold=True)}: {node.description}")
 
-        raw = fast_haiku_call(node.description, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT)
-        slug = _postprocess_slug(raw) if raw else None
+        result = AnthropicLlmCaller().call(
+            node.description, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT
+        )
+        slug = _postprocess_slug(result.text) if isinstance(result, LlmResponse) else None
         if slug is None:
             slug = sanitize_worktree_name(node.description)[:25].rstrip("-")
 
@@ -714,8 +716,10 @@ def _handle_one_shot(
     user_output(f"Phase: {phase_name}")
     user_output(f"Prompt: {prompt}")
 
-    raw = fast_haiku_call(target_node.description, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT)
-    slug = _postprocess_slug(raw) if raw else None
+    result = AnthropicLlmCaller().call(
+        target_node.description, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT
+    )
+    slug = _postprocess_slug(result.text) if isinstance(result, LlmResponse) else None
     if slug is None:
         slug = sanitize_worktree_name(target_node.description)[:25].rstrip("-")
 

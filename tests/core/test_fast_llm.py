@@ -4,35 +4,53 @@ from dataclasses import dataclass
 
 import pytest
 
-from erk.core.fast_llm import LlmCaller, fast_haiku_call
+from erk.core.fast_llm import (
+    AnthropicLlmCaller,
+    LlmCaller,
+    LlmCallFailed,
+    LlmResponse,
+    NoApiKey,
+)
 
 
 @dataclass(frozen=True)
 class FakeLlmCaller(LlmCaller):
-    response: str | None
+    response: LlmResponse | NoApiKey | LlmCallFailed
 
-    def call(self, prompt: str, *, system_prompt: str) -> str | None:
+    def call(self, prompt: str, *, system_prompt: str) -> LlmResponse | NoApiKey | LlmCallFailed:
         return self.response
 
 
 def test_fake_returns_configured_response() -> None:
-    """FakeLlmCaller returns configured response string."""
-    caller = FakeLlmCaller(response="my-slug")
+    """FakeLlmCaller returns configured LlmResponse."""
+    caller = FakeLlmCaller(response=LlmResponse(text="my-slug"))
     result = caller.call("generate slug", system_prompt="system")
-    assert result == "my-slug"
+    assert isinstance(result, LlmResponse)
+    assert result.text == "my-slug"
 
 
-def test_fake_returns_none_when_configured() -> None:
-    """FakeLlmCaller returns None when configured with None."""
-    caller = FakeLlmCaller(response=None)
+def test_fake_returns_no_api_key() -> None:
+    """FakeLlmCaller returns NoApiKey when configured."""
+    caller = FakeLlmCaller(response=NoApiKey(message="no key"))
     result = caller.call("generate slug", system_prompt="system")
-    assert result is None
+    assert isinstance(result, NoApiKey)
+    assert result.message == "no key"
+    assert result.error_type == "no-api-key"
 
 
-def test_fast_haiku_call_returns_none_without_api_key(
+def test_fake_returns_llm_call_failed() -> None:
+    """FakeLlmCaller returns LlmCallFailed when configured."""
+    caller = FakeLlmCaller(response=LlmCallFailed(message="timeout"))
+    result = caller.call("generate slug", system_prompt="system")
+    assert isinstance(result, LlmCallFailed)
+    assert result.message == "timeout"
+    assert result.error_type == "llm-call-failed"
+
+
+def test_anthropic_llm_caller_returns_no_api_key_without_env(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """Returns None when ANTHROPIC_API_KEY is not set."""
+    """Returns NoApiKey when ANTHROPIC_API_KEY is not set."""
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
-    result = fast_haiku_call("test", system_prompt="system")
-    assert result is None
+    result = AnthropicLlmCaller().call("test", system_prompt="system")
+    assert isinstance(result, NoApiKey)

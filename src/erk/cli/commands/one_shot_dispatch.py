@@ -20,7 +20,7 @@ from erk.core.branch_slug_generator import (
     generate_branch_slug,
 )
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
-from erk.core.fast_llm import fast_haiku_call
+from erk.core.fast_llm import AnthropicLlmCaller, LlmResponse
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.metadata.core import (
@@ -200,8 +200,10 @@ def dispatch_one_shot(
             slug = params.slug
             user_output(click.style(f"  \u2713 Slug: {slug} (pre-generated)", dim=True))
         else:
-            raw = fast_haiku_call(params.prompt, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT)
-            slug = _postprocess_slug(raw) if raw else None
+            result = AnthropicLlmCaller().call(
+                params.prompt, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT
+            )
+            slug = _postprocess_slug(result.text) if isinstance(result, LlmResponse) else None
             if slug is None:
                 slug = sanitize_worktree_name(params.prompt)[:25].rstrip("-")
                 user_output(click.style(f"  \u2713 Slug: {slug} (sanitized)", dim=True))
