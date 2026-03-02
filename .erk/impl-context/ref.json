@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Make All Workflow Capabilities Auto-Install"
+  "plan_id": "8591",
+  "url": "https://github.com/dagster-io/erk/pull/8591",
+  "created_at": "2026-03-02T01:51:30.136958",
+  "synced_at": "2026-03-02T01:51:30.136958",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
