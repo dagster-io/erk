@@ -1,0 +1,619 @@
+<session>
+  <meta source="agent-af6fd2f" />
+  <meta branch="plnd/fix-wheel-skill-sync-03-02-0628" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files.
+
+Look at how `get_bundled_claude_dir()` and `get_bundled_codex_dir()` work in `src/erk/artifacts/paths.py`. Also look at the sync logic in `src/erk/artifacts/sync.py` — specifically how `_sync_directory_artifacts` handles skills. I need to understand:
+
+1. For wheel installs, what exact paths does the sync logic look for skills?
+2. Is there a way to handle this where we don't need duplicate TOML keys?
+3. Could we just map skills to one location and have the code look there?
+
+Report the relevant code sections and paths.</user>
+  <assistant>I'll help you understand how the bundled paths work and the sync logic for skills. Let me start by checking the relevant documentation, then examine the code.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18592" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18592, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01PXruGTzpK4YJJGv8LhzvLJ">
+    <param name="pattern">docs/learned/**/*.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18592" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18592, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016aoJHntvavnZhVSQRvzbDH">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/artifacts/paths.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18592" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18592, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013xfTh7vnv2KVV3WX3GUA2u">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/artifacts/sync.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18592" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18592, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016aoJHntvavnZhVSQRvzbDH">
+     1→"""Bundled artifact path utilities.
+     2→
+     3→These utilities locate bundled .claude/, .erk/, and .github/ directories in the erk package.
+     4→Extracted to a separate module to avoid circular dependencies.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from dataclasses import dataclass
+    10→from functools import cache
+    11→from pathlib import Path
+    12→
+    13→
+    14→@cache
+    15→def _get_erk_package_dir() -&gt; Path:
+    16→    """Get the erk package directory (where erk/__init__.py lives)."""
+    17→    # __file__ is .../erk/artifacts/paths.py, so parent.parent is erk/
+    18→    return Path(__file__).parent.parent
+    19→
+    20→
+    21→def _is_editable_install() -&gt; bool:
+    22→    """Check if erk is installed in editable mode.
+    23→
+    24→    Editable: erk package is in src/ layout (e.g., .../src/erk/)
+    25→    Wheel: erk package is in site-packages (e.g., .../site-packages/erk/)
+    26→    """
+    27→    return "site-packages" not in str(_get_erk_package_dir().resolve())
+    28→
+    29→
+    30→@cache
+
+... [147 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_013xfTh7vnv2KVV3WX3GUA2u">
+     1→"""Sync artifacts from erk package to project's .claude/ directory."""
+     2→
+     3→import json
+     4→import shutil
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→
+     8→from erk.artifacts.discovery import _compute_directory_hash, _compute_file_hash, _compute_hook_hash
+     9→from erk.artifacts.models import ArtifactFileState, ArtifactState
+    10→from erk.artifacts.paths import ErkPackageInfo, get_bundled_claude_dir, get_bundled_github_dir
+    11→from erk.artifacts.state import (
+    12→    load_artifact_state,
+    13→    load_installed_capabilities,
+    14→    save_artifact_state,
+    15→)
+    16→from erk.core.claude_settings import (
+    17→    ERK_EXIT_PLAN_HOOK_COMMAND,
+    18→    ERK_USER_PROMPT_HOOK_COMMAND,
+    19→    add_erk_hooks,
+    20→    get_repo_claude_settings_path,
+    21→    has_exit_plan_hook,
+    22→    has_user_prompt_hook,
+    23→)
+    24→from erk.core.init_utils import REQUIRED_GITIGNORE_ENTRIES, add_gitignore_entry
+    25→from erk_shared.context.types import AgentBackend
+    26→
+    27→
+    28→@dataclass(frozen=True)
+    29→class OrphanedPath:
+    30→    """Filesystem path for an orphaned state.toml key."""
+
+... [888 lines omitted] ...
+
+   631→        SyncResult indicating success/failure and count of files installed.
+  </tool_result>
+  <tool_result tool="toolu_01PXruGTzpK4YJJGv8LhzvLJ">
+/home/runner/work/erk/erk/docs/learned/architecture/abc-convenience-methods.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-execution-modes.md
+/home/runner/work/erk/erk/docs/learned/architecture/cli-binary-ops-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/click-context-di-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-installation-gateway.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-error-reporting.md
+/home/runner/work/erk/erk/docs/learned/architecture/bash-python-integration.md
+/home/runner/work/erk/erk/docs/learned/architecture/at-reference-resolution.md
+/home/runner/work/erk/erk/docs/learned/architecture/agent-schema-enforcement.md
+/home/runner/work/erk/erk/docs/learned/architecture/bundled-artifacts.md
+/home/runner/work/erk/erk/docs/learned/architecture/agent-backpressure-gates.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-integration.md
+/home/runner/work/erk/erk/docs/learned/architecture/capability-system.md
+/home/runner/work/erk/erk/docs/learned/architecture/callback-progress-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-abstraction.md
+/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-decision-tree.md
+/home/runner/work/erk/erk/docs/learned/architecture/cli-to-pipeline-boundary.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-progress.md
+/home/runner/work/erk/erk/docs/learned/architecture/defense-in-depth-enforcement.md
+/home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md
+/home/runner/work/erk/erk/docs/learned/architecture/derived-flags.md
+/home/runner/work/erk/erk/docs/learned/architecture/composable-remote-commands.md
+/home/runner/work/erk/erk/docs/learned/architecture/command-boundaries.md
+/home/runner/work/erk/erk/docs/learned/architecture/convergence-points.md
+/home/runner/work/erk/erk/docs/learned/architecture/direct-condition-vs-derived-output.md
+/home/runner/work/erk/erk/docs/learned/architecture/context-injection-tiers.md
+/home/runner/work/erk/erk/docs/learned/architecture/erk-architecture.md
+/home/runner/work/erk/erk/docs/learned/architecture/command-composition.md
+/home/runner/work/erk/erk/docs/learned/architecture/context-efficiency.md
+/home/runner/work/erk/erk/docs/learned/architecture/commandresult-extension-pattern.md
+
+... [71 lines omitted] ...
+
+/home/runner/work/erk/erk/docs/learned/architecture/exception-logging-patterns.md
+/home/runner/work/erk/erk/docs/learned/architecture/error-handling-patterns.md
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md
+  </tool_result>
+  <assistant>Now let me check the pyproject.toml to understand how the bundling works:</assistant>
+  <usage input_tokens="14931" cache_creation_input_tokens="3020" cache_read_input_tokens="18592" cache_creation="{'ephemeral_5m_input_tokens': 3020, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FWSLYwtcBcKkrQALd4d9dX">
+    <param name="command">grep -A 20 "force-include" /home/runner/work/erk/erk/pyproject.toml</param>
+  </tool_use>
+  <usage input_tokens="14931" cache_creation_input_tokens="3020" cache_read_input_tokens="18592" cache_creation="{'ephemeral_5m_input_tokens': 3020, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FLRRzx3Tk5KJBs4EbQMULZ">
+    <param name="file_path">/home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="14931" cache_creation_input_tokens="3020" cache_read_input_tokens="18592" cache_creation="{'ephemeral_5m_input_tokens': 3020, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FLRRzx3Tk5KJBs4EbQMULZ">
+     1→[tool.uv.workspace]
+     2→members = ["packages/*"]
+     3→
+     4→[tool.uv.sources]
+     5→erk-dev = { workspace = true }
+     6→erk-shared = { workspace = true }
+     7→erk-statusline = { workspace = true }
+     8→
+     9→[project]
+    10→name = "erk"
+    11→version = "0.9.2"
+    12→description = "Add your description here"
+    13→readme = "README.md"
+    14→authors = [
+    15→    { name = "Dagster Labs", email = "hello@dagsterlabs.com" }
+    16→]
+    17→requires-python = "&gt;=3.11"
+    18→dependencies = [
+    19→    "anthropic&gt;=0.40.0",
+    20→    "click&gt;=8.1.7",
+    21→    "erk-shared",
+    22→    "erk-statusline",
+    23→    "packaging&gt;=21.0",
+    24→    "pathspec&gt;=0.12.0",
+    25→    "pydantic&gt;=2.10",
+    26→    "pyyaml&gt;=6.0",
+    27→    "python-frontmatter&gt;=1.0.0",
+    28→    "rich&gt;=13.0",
+    29→    "tomlkit&gt;=0.12.0",
+    30→    "tomli&gt;=2.0",
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01FWSLYwtcBcKkrQALd4d9dX">
+[tool.hatch.build.targets.wheel.force-include]
+"CHANGELOG.md" = "erk/data/CHANGELOG.md"
+# Whitelist specific artifacts from .claude/ for distribution to external users
+# Commands: erk namespace only (not local)
+".claude/commands/erk" = "erk/data/claude/commands/erk"
+# Codex-portable skills (Codex-compatible frontmatter, generic AI agent support)
+".claude/skills/cli-push-down" = "erk/data/codex/skills/cli-push-down"
+".claude/skills/dignified-python" = "erk/data/codex/skills/dignified-python"
+".claude/skills/fake-driven-testing" = "erk/data/codex/skills/fake-driven-testing"
+".claude/skills/erk-diff-analysis" = "erk/data/codex/skills/erk-diff-analysis"
+".claude/skills/erk-exec" = "erk/data/codex/skills/erk-exec"
+".claude/skills/erk-planning" = "erk/data/codex/skills/erk-planning"
+".claude/skills/objective" = "erk/data/codex/skills/objective"
+".claude/skills/gh" = "erk/data/codex/skills/gh"
+".claude/skills/gt" = "erk/data/codex/skills/gt"
+".claude/skills/learned-docs" = "erk/data/codex/skills/learned-docs"
+".claude/skills/dignified-code-simplifier" = "erk/data/codex/skills/dignified-code-simplifier"
+".claude/skills/pr-operations" = "erk/data/codex/skills/pr-operations"
+".claude/skills/pr-feedback-classifier" = "erk/data/codex/skills/pr-feedback-classifier"
+# Claude skills (same source files, needed by Claude Code sync path)
+".claude/skills/cli-push-down" = "erk/data/claude/skills/cli-push-down"
+  </tool_result>
+  <assistant>Let me check the artifact_health module to see how it determines which artifacts to sync:</assistant>
+  <usage input_tokens="1931" cache_creation_input_tokens="15780" cache_read_input_tokens="21612" cache_creation="{'ephemeral_5m_input_tokens': 15780, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_016Pp1YMW6ik3XEeSF8E4iwc">
+    <param name="pattern">src/erk/artifacts/artifact_health.py</param>
+  </tool_use>
+  <usage input_tokens="1931" cache_creation_input_tokens="15780" cache_read_input_tokens="21612" cache_creation="{'ephemeral_5m_input_tokens': 15780, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ANVQT3NWCpjgjXSG3ddT8E">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/artifacts/artifact_health.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="1931" cache_creation_input_tokens="15780" cache_read_input_tokens="21612" cache_creation="{'ephemeral_5m_input_tokens': 15780, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ANVQT3NWCpjgjXSG3ddT8E">
+     1→"""Orphaned artifact detection for erk-managed .claude/ directories."""
+     2→
+     3→import json
+     4→from dataclasses import dataclass
+     5→from pathlib import Path
+     6→from typing import Literal
+     7→
+     8→from erk.artifacts.discovery import (
+     9→    _compute_directory_hash,
+    10→    _compute_file_hash,
+    11→    _compute_hook_hash,
+    12→)
+    13→from erk.artifacts.models import (
+    14→    ArtifactFileState,
+    15→    CompletenessCheckResult,
+    16→    InstalledArtifact,
+    17→    OrphanCheckResult,
+    18→)
+    19→from erk.artifacts.paths import ErkPackageInfo, get_bundled_claude_dir
+    20→from erk.artifacts.state import load_artifact_state
+    21→from erk.artifacts.sync import _key_to_orphaned_path
+    22→from erk.core.capabilities.registry import (
+    23→    get_capability,
+    24→    get_managed_artifacts,
+    25→    is_capability_managed,
+    26→)
+    27→from erk.core.claude_settings import (
+    28→    ERK_EXIT_PLAN_HOOK_COMMAND,
+    29→    ERK_USER_PROMPT_HOOK_COMMAND,
+    30→    has_exit_plan_hook,
+
+... [125 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_016Pp1YMW6ik3XEeSF8E4iwc">
+/home/runner/work/erk/erk/src/erk/artifacts/artifact_health.py
+  </tool_result>
+  <assistant>Let me check the discovery module and the exact skill syncing logic more carefully:</assistant>
+  <usage input_tokens="1891" cache_creation_input_tokens="2283" cache_read_input_tokens="37392" cache_creation="{'ephemeral_5m_input_tokens': 2283, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01GR5RJdUy9Mwe6Ze9PsL3P5">
+    <param name="pattern">get_bundled_codex_dir|get_bundled_claude_dir</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/artifacts</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1891" cache_creation_input_tokens="2283" cache_read_input_tokens="37392" cache_creation="{'ephemeral_5m_input_tokens': 2283, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GR5RJdUy9Mwe6Ze9PsL3P5">
+src/erk/artifacts/sync.py:10:from erk.artifacts.paths import ErkPackageInfo, get_bundled_claude_dir, get_bundled_github_dir
+src/erk/artifacts/sync.py:633:    bundled_claude_dir = get_bundled_claude_dir()
+src/erk/artifacts/paths.py:31:def get_bundled_claude_dir() -&gt; Path:
+src/erk/artifacts/paths.py:52:def get_bundled_codex_dir() -&gt; Path:
+src/erk/artifacts/paths.py:167:            bundled_claude_dir=get_bundled_claude_dir(),
+src/erk/artifacts/artifact_health.py:19:from erk.artifacts.paths import ErkPackageInfo, get_bundled_claude_dir
+src/erk/artifacts/artifact_health.py:452:    bundled_erk_commands = get_bundled_claude_dir() / "commands" / "erk"
+  </tool_result>
+  <assistant>Now let me check how `get_bundled_codex_dir` is used (if at all):</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="2315" cache_read_input_tokens="39675" cache_creation="{'ephemeral_5m_input_tokens': 2315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01B8zidDc1fLXpi2rTgKa5hs">
+    <param name="command">grep -r "get_bundled_codex_dir\|bundled_codex_dir" /home/runner/work/erk/erk/src --include="*.py" -n</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2315" cache_read_input_tokens="39675" cache_creation="{'ephemeral_5m_input_tokens': 2315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B8zidDc1fLXpi2rTgKa5hs">
+/home/runner/work/erk/erk/src/erk/capabilities/learned_docs.py:6:from erk.artifacts.paths import get_bundled_claude_dir, get_bundled_codex_dir
+/home/runner/work/erk/erk/src/erk/capabilities/learned_docs.py:229:            bundled_dir = get_bundled_codex_dir()
+/home/runner/work/erk/erk/src/erk/capabilities/agents/devrun.py:6:from erk.artifacts.paths import get_bundled_claude_dir, get_bundled_codex_dir
+/home/runner/work/erk/erk/src/erk/capabilities/agents/devrun.py:67:            bundled_dir = get_bundled_codex_dir()
+/home/runner/work/erk/erk/src/erk/artifacts/paths.py:52:def get_bundled_codex_dir() -&gt; Path:
+/home/runner/work/erk/erk/src/erk/core/capabilities/skill_capability.py:77:        from erk.artifacts.paths import get_bundled_codex_dir
+/home/runner/work/erk/erk/src/erk/core/capabilities/skill_capability.py:90:            bundled_dir = get_bundled_codex_dir()
+  </tool_result>
+  <assistant>Perfect! Let me check those three files to understand how they use `get_bundled_codex_dir`:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="609" cache_read_input_tokens="41990" cache_creation="{'ephemeral_5m_input_tokens': 609, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017q4DHLnyAE3hecFq33KR2t">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/capabilities/skill_capability.py</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="609" cache_read_input_tokens="41990" cache_creation="{'ephemeral_5m_input_tokens': 609, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FNhtcegJ7LMKA575AuQGt3">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/learned_docs.py</param>
+    <param name="limit">250</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="609" cache_read_input_tokens="41990" cache_creation="{'ephemeral_5m_input_tokens': 609, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GtDc57L6qjkLA55LFynDx7">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/agents/devrun.py</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="609" cache_read_input_tokens="41990" cache_creation="{'ephemeral_5m_input_tokens': 609, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017q4DHLnyAE3hecFq33KR2t">
+     1→"""Base class for skill-based capabilities.
+     2→
+     3→SkillCapability wraps the existing artifact sync system to install Claude skills
+     4→to external repositories via the capability system.
+     5→"""
+     6→
+     7→import shutil
+     8→from abc import abstractmethod
+     9→from pathlib import Path
+    10→
+    11→from erk.artifacts.paths import get_bundled_claude_dir
+    12→from erk.artifacts.state import add_installed_capability, remove_installed_capability
+    13→from erk.core.capabilities.base import (
+    14→    Capability,
+    15→    CapabilityArtifact,
+    16→    CapabilityResult,
+    17→    CapabilityScope,
+    18→    ManagedArtifact,
+    19→    backend_agent_dir,
+    20→)
+    21→from erk_shared.context.types import AgentBackend
+    22→
+    23→
+    24→class SkillCapability(Capability):
+    25→    """Base class for capabilities that install a single skill.
+    26→
+    27→    Subclasses only need to implement skill_name and description.
+    28→    The base class handles artifact tracking and installation via artifact sync.
+    29→    """
+    30→
+
+... [95 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01FNhtcegJ7LMKA575AuQGt3">
+     1→"""LearnedDocsCapability - agent-discoverable documentation system."""
+     2→
+     3→import shutil
+     4→from pathlib import Path
+     5→
+     6→from erk.artifacts.paths import get_bundled_claude_dir, get_bundled_codex_dir
+     7→from erk.core.capabilities.base import (
+     8→    Capability,
+     9→    CapabilityArtifact,
+    10→    CapabilityResult,
+    11→    CapabilityScope,
+    12→    ManagedArtifact,
+    13→    backend_agent_dir,
+    14→)
+    15→from erk_shared.context.types import AgentBackend
+    16→
+    17→LEARNED_DOCS_README = """\
+    18→---
+    19→title: "Learned Documentation Guide"
+    20→read_when:
+    21→  - "setting up learned docs"
+    22→  - "understanding learned docs structure"
+    23→  - "adding new documentation"
+    24→---
+    25→
+    26→# Learned Documentation
+    27→
+    28→This directory contains agent-discoverable documentation for AI assistants.
+    29→
+    30→## Purpose
+
+... [225 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01GtDc57L6qjkLA55LFynDx7">
+     1→"""DevrunAgentCapability - safe execution agent for dev tools."""
+     2→
+     3→import shutil
+     4→from pathlib import Path
+     5→
+     6→from erk.artifacts.paths import get_bundled_claude_dir, get_bundled_codex_dir
+     7→from erk.artifacts.state import add_installed_capability, remove_installed_capability
+     8→from erk.core.capabilities.base import (
+     9→    Capability,
+    10→    CapabilityArtifact,
+    11→    CapabilityResult,
+    12→    CapabilityScope,
+    13→    ManagedArtifact,
+    14→    backend_agent_dir,
+    15→)
+    16→from erk_shared.context.types import AgentBackend
+    17→
+    18→
+    19→class DevrunAgentCapability(Capability):
+    20→    """Safe execution agent for pytest/ty/ruff/make/gt.
+    21→
+    22→    Installs:
+    23→    - .claude/agents/devrun.md
+    24→    """
+    25→
+    26→    @property
+    27→    def name(self) -&gt; str:
+    28→        return "devrun-agent"
+    29→
+    30→    @property
+
+... [55 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me look at the artifacts documentation:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="6341" cache_read_input_tokens="42599" cache_creation="{'ephemeral_5m_input_tokens': 6341, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AqG54CieBPCH6TeDkWjNyF">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/bundled-artifacts.md</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="6341" cache_read_input_tokens="42599" cache_creation="{'ephemeral_5m_input_tokens': 6341, 'ephemeral_1h_input_tokens': 0}" output_tokens="89" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AqG54CieBPCH6TeDkWjNyF">
+     1→---
+     2→title: Bundled Artifacts System
+     3→read_when:
+     4→  - understanding artifact syncing
+     5→  - working with managed artifacts
+     6→  - debugging erk sync
+     7→last_audited: "2026-02-05 14:17 PT"
+     8→audit_result: edited
+     9→---
+    10→
+    11→# Bundled Artifacts System
+    12→
+    13→Erk bundles artifacts that are synced to projects during `erk init` or `erk sync`.
+    14→
+    15→## Artifact Management Architecture
+    16→
+    17→Artifact management is unified through the capability system. Each capability declares what artifacts it manages via the `managed_artifacts` property, making the registry the single source of truth.
+    18→
+    19→### How It Works
+    20→
+    21→1. **Capabilities declare artifacts**: Each capability class has a `managed_artifacts` property returning `list[ManagedArtifact]`
+    22→2. **Registry aggregates**: `get_managed_artifacts()` collects all declarations into a single mapping
+    23→3. **Detection queries registry**: `is_capability_managed(name, type)` checks if an artifact is erk-managed
+    24→
+    25→See `src/erk/core/capabilities/registry.py` for `get_managed_artifacts()` and `is_capability_managed()`. See `src/erk/core/capabilities/base.py` for `ManagedArtifactType` (the 8 valid artifact types: skill, command, agent, workflow, action, hook, prompt, review).
+    26→
+    27→For examples of capabilities declaring managed artifacts, see `SkillCapability.managed_artifacts` in `src/erk/core/capabilities/skill_capability.py` and `HooksCapability.managed_artifacts` in `src/erk/capabilities/hooks.py`.
+    28→
+    29→## Capability Installation
+    30→
+
+... [38 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! Now I have all the context I need. Let me create a comprehensive report summarizing what I found.
+
+## Analysis Report: Wheel Install Paths and Skill Sync Logic
+
+### 1. **Wheel Install Path Structure**
+
+For wheel installs, the sync logic looks for skills in these exact locations based on the backend:
+
+**For Claude Code:**
+- Source: `erk/data/claude/skills/` (bundled in wheel)
+- Target: `.claude/skills/` (in project)
+
+**For Codex:**
+- Source: `erk/data/codex/skills/` (bundled in wheel)
+- Target: `.codex/skills/` (in project)
+
+### 2. **How Paths Are Determined**
+
+From `/home/runner/work/erk/erk/src/erk/artifacts/paths.py`:
+
+```python
+def get_bundled_claude_dir() -&gt; Path:
+    """For wheel: .claude/ is bundled as package data at erk/data/claude/"""
+    if _is_editable_install():
+        return erk_repo_root / ".claude"  # Dev mode
+    # Wheel install: data is bundled at erk/data/claude/
+    return erk_package_dir / "data" / "claude"
+
+def get_bundled_codex_dir() -&gt; Path:
+    """For wheel: .codex/ is bundled as package data at erk/data/codex/"""
+    if _is_editable_install():
+        return erk_repo_root / ".claude"  # Editable: same format, install step handles mapping
+    # Wheel install: data is bundled at erk/data/codex/
+    return erk_package_dir / "data" / "codex"
+```
+
+### 3. **Sync Logic for Skills**
+
+From `/home/runner/work/erk/erk/src/erk/artifacts/sync.py` (lines 198-229):
+
+```python
+def _sync_directory_artifacts(
+    source_dir: Path, target_dir: Path, names: frozenset[str], key_prefix: str
+) -&gt; tuple[int, list[SyncedArtifact]]:
+    """Sync directory-based artifacts (skills) to project."""
+    if not source_dir.exists():
+        return 0, []
+    
+    copied = 0
+    synced: list[SyncedArtifact] = []
+    for name in sorted(names):
+        source = source_dir / name
+        if source.exists():
+            target = target_dir / name
+            count = _copy_directory_contents(source, target)
+            copied += count
+            synced.append(
+                SyncedArtifact(
+                    key=f"{key_prefix}/{name}",
+                    hash=_compute_directory_hash(target),
+                    file_count=count,
+                )
+            )
+    return copied, synced
+```
+
+In `sync_artifacts()` (lines 815-823), it's called like:
+```python
+count, synced = _sync_directory_artifacts(
+    config.package.bundled_claude_dir / "skills",  # or codex dir for Codex
+    target_claude_dir / "skills",
+    _get_bundled_by_type("skill", installed_capabilities=config.installed_capabilities),
+    "skills",
+)
+```
+
+### 4. **Backend-Specific Install Logic**
+
+From `/home/runner/work/erk/erk/src/erk/core/capabilities/skill_capability.py` (lines 73-111):
+
+```python
+def install(self, repo_root: Path | None, *, backend: AgentBackend) -&gt; CapabilityResult:
+    """Install the skill using artifact sync."""
+    assert repo_root is not None, "SkillCapability requires repo_root"
+
+    from erk.artifacts.paths import get_bundled_codex_dir
+
+    agent_dir = backend_agent_dir(backend)
+    skill_dir = repo_root / agent_dir / "skills" / self.skill_name
+    
+    if backend == "codex":
+        bundled_dir = get_bundled_codex_dir()  # → erk/data/codex/
+    else:
+        bundled_dir = get_bundled_claude_dir()  # → erk/data/claude/
+    
+    source_skill = bundled_dir / "skills" / self.skill_name
+    # Copy from source_skill to skill_dir
+```
+
+### 5. **The Duplicate TOML Keys Problem**
+
+From `/home/runner/work/erk/erk/pyproject.toml` (lines 61-93):
+
+```toml
+[tool.hatch.build.targets.wheel.force-include]
+# Each skill is listed TWICE with different target paths:
+".claude/skills/dignified-python" = "erk/data/codex/skills/dignified-python"
+".claude/skills/dignified-python" = "erk/data/claude/skills/dignified-python"
+
+".claude/skills/erk-planning" = "erk/data/codex/skills/erk-planning"
+".claude/skills/erk-planning" = "erk/data/claude/skills/erk-planning"
+# ... (pattern repeats for all 13 skills)
+```
+
+This creates **duplicate TOML keys** which is invalid TOML (later entries override earlier ones).
+
+### 6. **Could We Use Single Location Instead?**
+
+**Three potential approaches:**
+
+**Option A: Map to one location, query both at runtime**
+- Store skills at `erk/data/skills/` (single location)
+- Modify `get_bundled_codex_dir()` and `get_bundled_claude_dir()` to both return the same path
+- **Problem**: Breaks semantic distinction between Claude and Codex artifacts (some skills may be Codex-specific in future)
+
+**Option B: Symlink approach**
+- Bundle `erk/data/claude/skills/` as canonical
+- Create symlink `erk/data/codex/skills/` → `erk/data/claude/skills/`
+- **Problem**: Symlinks don't work reliably across platforms (especially Windows); wheel builds need to handle this
+
+**Option C: Lazy-fallback in path functions** ✓ **CLEANEST**
+- Keep current bundling: `erk/data/claude/` and `erk/data/codex/`
+- Modify `get_bundled_codex_dir()` to:
+  ```python
+  def get_bundled_codex_dir() -&gt; Path:
+      codex_path = erk_package_dir / "data" / "codex"
+      if codex_path.exists():
+          return codex_path
+      # Fallback: share Claude path if Codex doesn't exist
+      return erk_package_dir / "data" / "claude"
+  ```
+- **Still requires**: Both paths in TOML (unavoidable due to TOML syntax), OR use build-time generation to create symlinks/copies
+
+### 7. **Real Issue: The Invalid TOML**
+
+The core problem is that hatchling's `force-include` doesn't support:
+- Multiple targets for the same source key (duplicate keys are invalid)
+- Parameterized paths to avoid duplication
+
+**Current approach**: List each skill twice with different targets (invalid TOML syntax, relies on TOML parser's override behavior)
+
+**The fix** would need to either:
+1. Accept the "invalid but working" TOML pattern (what's currently done)
+2. Use a build hook to dynamically create the mapping
+3. Implement a unified `erk/data/shared/` and update all path functions to check it first
+
+---
+
+## Key Code Sections:
+
+**Path Determination Logic:**
+- `/home/runner/work/erk/erk/src/erk/artifacts/paths.py:31-71`
+
+**Skill Sync Logic:**
+- `/home/runner/work/erk/erk/src/erk/artifacts/sync.py:198-229` (directory artifact sync)
+- `/home/runner/work/erk/erk/src/erk/artifacts/sync.py:815-823` (skill sync call site)
+
+**Backend-Specific Install:**
+- `/home/runner/work/erk/erk/src/erk/core/capabilities/skill_capability.py:73-111` (SkillCapability)
+- `/home/runner/work/erk/erk/src/erk/capabilities/learned_docs.py:228-231` (LearnedDocsCapability)
+- `/home/runner/work/erk/erk/src/erk/capabilities/agents/devrun.py:66-69` (DevrunAgentCapability)
+
+**TOML Bundling Configuration:**
+- `/home/runner/work/erk/erk/pyproject.toml:61-93` (force-include entries with duplicate keys)</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1216" cache_read_input_tokens="48940" cache_creation="{'ephemeral_5m_input_tokens': 1216, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>
