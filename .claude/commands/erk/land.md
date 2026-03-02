@@ -1,6 +1,6 @@
 ---
 description: Land PR with objective awareness - updates objective after landing
-argument-hint: "[branch|PR#|URL] [--skip-objective]"
+argument-hint: "[branch|PR#|URL] [--skip-objective] [--skip-learn]"
 ---
 
 # /erk:land
@@ -36,6 +36,7 @@ Parse the command arguments:
 
 - `$ARGUMENTS` may contain: branch name, PR number, PR URL, or be empty (use current branch)
 - Check for `--skip-objective` flag
+- Check for `--skip-learn` flag
 
 ### Step 2: Determine Branch Name
 
@@ -115,8 +116,10 @@ erk exec get-plan-metadata <plan-number> objective_issue
 Land the PR using the resolved PR number. Use `--force` to skip interactive confirmation (required for non-TTY execution):
 
 ```bash
-erk land <PR_NUMBER> --force
+erk land <PR_NUMBER> --force [--skip-learn]
 ```
+
+Pass `--skip-learn` when the flag is present in the arguments.
 
 **If landing fails:** Report the error and exit.
 
@@ -174,6 +177,7 @@ The command lands normally (no blocking) when:
 | Plan not found                    | Warn, land normally             |
 | `objective_issue` is null/missing | Land normally, skip objective   |
 | `--skip-objective` flag passed    | Land normally, skip objective   |
+| `--skip-learn` flag passed        | Land normally, skip learn       |
 | Objective update fails            | Warn but report landing success |
 | Any parsing/API error             | Warn, continue with landing     |
 

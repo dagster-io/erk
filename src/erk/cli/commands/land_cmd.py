@@ -863,6 +863,7 @@ def _execute_land_directly(
     script: bool,
     pull_flag: bool,
     no_delete: bool,
+    skip_learn: bool,
     cleanup_confirmed: bool,
 ) -> None:
     """Execute land directly without generating a deferred script.
@@ -877,6 +878,7 @@ def _execute_land_directly(
         script: Whether running in script mode
         pull_flag: Whether to pull after landing
         no_delete: Preserve branch after landing
+        skip_learn: Skip creating a learn plan after landing
         cleanup_confirmed: Whether user confirmed cleanup during validation
     """
     branch = target.branch
@@ -909,6 +911,7 @@ def _execute_land_directly(
         script=script,
         target_child_branch=None,
         plan_id=plan_id,
+        skip_learn=skip_learn,
     )
 
     # Re-derive main_repo_root from discovery
@@ -974,6 +977,7 @@ def _land_target(
     force: bool,
     pull_flag: bool,
     no_delete: bool,
+    skip_learn: bool,
     cleanup_confirmed: bool,
     down_flag: bool,
 ) -> None:
@@ -1056,6 +1060,7 @@ def _land_target(
         objective_number=objective_number,
         plan_number=int(plan_id) if plan_id is not None else None,
         use_graphite=target.use_graphite,
+        skip_learn=skip_learn,
         cleanup_confirmed=cleanup_confirmed,
         target_path=target_path,
     )
@@ -1295,6 +1300,7 @@ def render_land_execution_script(
     objective_number: int | None,
     plan_number: int | None,
     use_graphite: bool,
+    skip_learn: bool,
     cleanup_confirmed: bool,
     target_path: Path,
 ) -> str:
@@ -1363,6 +1369,8 @@ def render_land_execution_script(
         cmd_parts.append("--use-graphite")
     if not cleanup_confirmed:
         cmd_parts.append("--no-cleanup")
+    if skip_learn:
+        cmd_parts.append("--skip-learn")
     if objective_number is not None:
         cmd_parts.append(f"--objective-number={objective_number}")
     if plan_number is not None:
@@ -1398,6 +1406,7 @@ def _execute_land(
     no_cleanup: bool,
     script: bool,
     plan_number: int | None,
+    skip_learn: bool,
 ) -> None:
     """Execute deferred land operations from activation script.
 
@@ -1443,6 +1452,7 @@ def _execute_land(
         script=script,
         target_child_branch=target_child_branch,
         plan_id=str(plan_number) if plan_number is not None else None,
+        skip_learn=skip_learn,
     )
 
     # Re-derive main_repo_root from discovery
@@ -1496,6 +1506,12 @@ def _execute_land(
     is_flag=True,
     help="Preserve the local branch and its slot assignment after landing.",
 )
+@click.option(
+    "--skip-learn",
+    "skip_learn",
+    is_flag=True,
+    help="Skip creating a learn plan after landing.",
+)
 @click.pass_obj
 def land(
     ctx: ErkContext,
@@ -1508,6 +1524,7 @@ def land(
     pull_flag: bool,
     dry_run: bool,
     no_delete: bool,
+    skip_learn: bool,
 ) -> None:
     """Merge PR and clean up branch.
 
@@ -1568,6 +1585,7 @@ def land(
         no_delete=no_delete,
         up_flag=up_flag,
         dry_run=ctx.dry_run,
+        skip_learn=skip_learn,
         target_arg=target,
         repo_root=repo.root,
         main_repo_root=main_repo_root,
@@ -1599,6 +1617,7 @@ def land(
             force=force,
             pull_flag=pull_flag,
             no_delete=no_delete,
+            skip_learn=skip_learn,
             cleanup_confirmed=result.cleanup_confirmed,
             down_flag=down_flag,
         )
@@ -1611,5 +1630,6 @@ def land(
             script=script,
             pull_flag=pull_flag,
             no_delete=no_delete,
+            skip_learn=skip_learn,
             cleanup_confirmed=result.cleanup_confirmed,
         )

@@ -81,6 +81,12 @@ from erk_shared.context.helpers import require_context
     help="User declined cleanup during validation phase",
 )
 @click.option(
+    "--skip-learn",
+    "skip_learn",
+    is_flag=True,
+    help="Skip creating a learn plan",
+)
+@click.option(
     "--script",
     is_flag=True,
     help="Output activation script path (for shell integration)",
@@ -116,6 +122,7 @@ def land_execute(
     objective_number: int | None,
     plan_number: int | None,
     use_graphite: bool,
+    skip_learn: bool,
     pull_flag: bool,
     no_delete: bool,
     no_cleanup: bool,
@@ -176,6 +183,7 @@ def land_execute(
             no_cleanup=no_cleanup,
             script=script,
             plan_number=plan_number,
+            skip_learn=skip_learn,
         )
     except SystemExit as exc:
         if exc.code != 0:

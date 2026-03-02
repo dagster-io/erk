@@ -46,6 +46,7 @@ class LandState:
     no_delete: bool
     up_flag: bool
     dry_run: bool
+    skip_learn: bool
     target_arg: str | None
 
     # Resolved target (populated by resolve_target)
@@ -428,6 +429,8 @@ def create_learn_pr(ctx: ErkContext, state: LandState) -> LandState | LandError:
     """Create a learn plan as a draft PR with preprocessed sessions for the landed plan."""
     if state.plan_id is None or state.merged_pr_number is None:
         return state
+    if state.skip_learn:
+        return state
 
     _create_learn_pr_with_sessions(ctx, state=state)
     return state
@@ -519,6 +522,7 @@ def make_initial_state(
     no_delete: bool,
     up_flag: bool,
     dry_run: bool,
+    skip_learn: bool,
     target_arg: str | None,
     repo_root: Path,
     main_repo_root: Path,
@@ -536,6 +540,7 @@ def make_initial_state(
         no_delete=no_delete,
         up_flag=up_flag,
         dry_run=dry_run,
+        skip_learn=skip_learn,
         target_arg=target_arg,
         # Pre-discovered repo paths
         repo_root=repo_root,
@@ -569,6 +574,7 @@ def make_execution_state(
     script: bool,
     target_child_branch: str | None,
     plan_id: str | None,
+    skip_learn: bool,
 ) -> LandState:
     """Create LandState for the execution pipeline from exec script args.
 
@@ -584,6 +590,7 @@ def make_execution_state(
         no_delete=no_delete,
         up_flag=False,  # --up resolved by exec script before calling
         dry_run=False,  # Execute mode never dry-runs
+        skip_learn=skip_learn,
         target_arg=None,
         # Pre-resolved from exec script args
         repo_root=cwd,

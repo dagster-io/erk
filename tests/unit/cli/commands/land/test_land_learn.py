@@ -1,6 +1,7 @@
 """Tests for land_learn module: learn plan creation logic."""
 
 import json
+from dataclasses import replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -14,7 +15,7 @@ from erk.cli.commands.land_learn import (
     _log_session_discovery,
     _should_create_learn_pr,
 )
-from erk.cli.commands.land_pipeline import LandState
+from erk.cli.commands.land_pipeline import LandState, create_learn_pr
 from erk.core.context import context_for_test
 from erk_shared.context.types import GlobalConfig, LoadedConfig
 from erk_shared.gateway.claude_installation.fake import (
@@ -75,6 +76,7 @@ def _land_state(
         no_delete=False,
         up_flag=False,
         dry_run=False,
+        skip_learn=False,
         target_arg=None,
         repo_root=tmp_path,
         main_repo_root=tmp_path,
@@ -178,6 +180,24 @@ def test_shows_warning_on_exception(
     captured = capsys.readouterr()
     assert "Warning" in captured.err
     assert "simulated network error" in captured.err
+
+
+# ---------------------------------------------------------------------------
+# create_learn_pr pipeline step — skip_learn
+# ---------------------------------------------------------------------------
+
+
+def test_create_learn_pr_skips_when_skip_learn_is_set(tmp_path: Path) -> None:
+    """Skips learn plan creation when skip_learn=True."""
+    fake_issues = FakeGitHubIssues(username="testuser")
+    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    ctx = context_for_test(github=fake_github, issues=fake_issues, cwd=tmp_path)
+    state = _land_state(tmp_path, plan_id="100", merged_pr_number=99)
+    state = replace(state, skip_learn=True)
+
+    result = create_learn_pr(ctx, state)
+    assert isinstance(result, LandState)
+    assert len(fake_github.created_prs) == 0
 
 
 # ---------------------------------------------------------------------------
