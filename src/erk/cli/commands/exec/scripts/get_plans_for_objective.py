@@ -22,6 +22,7 @@ from erk_shared.context.helpers import (
     require_repo_root,
 )
 from erk_shared.gateway.github.metadata.core import find_metadata_block
+from erk_shared.gateway.github.metadata.types import BlockKeys
 
 
 @click.command(name="get-plans-for-objective")
@@ -57,7 +58,7 @@ def get_plans_for_objective(ctx: click.Context, objective_number: int) -> None:
     # Filter plans that reference this objective
     linked_plans = []
     for plan in all_plans:
-        block = find_metadata_block(plan.body, "plan-header")
+        block = find_metadata_block(plan.body, BlockKeys.PLAN_HEADER)
         if block is None:
             continue
 

@@ -41,6 +41,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     rerender_comment_roadmap,
     update_node_in_frontmatter,
 )
+from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.parsing import parse_git_remote_url
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.github.types import BodyText, GitHubRepoId, PRNotFound
@@ -738,7 +739,7 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
 
     # Recover plan-header if missing from existing PR body
     recovered_header = None
-    header_missing = not has_metadata_block(existing_pr_body, "plan-header")
+    header_missing = not has_metadata_block(existing_pr_body, BlockKeys.PLAN_HEADER)
     if header_missing and state.plan_context is not None:
         recovered_header = recover_plan_header(
             ctx, repo_root=state.repo_root, plan_id=state.plan_context.plan_id
@@ -872,7 +873,7 @@ def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -> SubmitSta
     raw_blocks = extract_raw_metadata_blocks(issue.body)
     roadmap_block = None
     for block in raw_blocks:
-        if block.key == "objective-roadmap":
+        if block.key == BlockKeys.OBJECTIVE_ROADMAP:
             roadmap_block = block
             break
 
@@ -896,7 +897,7 @@ def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -> SubmitSta
             new_block_with_markers = render_objective_roadmap_block(block_content)
             try:
                 updated_body = replace_metadata_block_in_body(
-                    updated_body, "objective-roadmap", new_block_with_markers
+                    updated_body, BlockKeys.OBJECTIVE_ROADMAP, new_block_with_markers
                 )
             except ValueError:
                 linked_nodes.clear()
@@ -908,7 +909,7 @@ def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -> SubmitSta
 
         # Re-render comment roadmap table if applicable
         objective_comment_id = extract_metadata_value(
-            updated_body, "objective-header", "objective_comment_id"
+            updated_body, BlockKeys.OBJECTIVE_HEADER, "objective_comment_id"
         )
         if objective_comment_id is not None:
             comment_body = ctx.github_issues.get_comment_by_id(

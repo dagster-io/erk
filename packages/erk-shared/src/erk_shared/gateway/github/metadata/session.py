@@ -5,6 +5,8 @@ These support storing session prompts in GitHub issue comments for erk plan issu
 
 import re
 
+from erk_shared.gateway.github.metadata.types import BlockKeys
+
 
 def render_session_prompts_block(
     prompts: list[str],
@@ -67,14 +69,14 @@ def render_session_prompts_block(
     count_suffix = f" ({len(prompts)} prompt{'s' if len(prompts) != 1 else ''})"
 
     return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
-<!-- erk:metadata-block:planning-session-prompts -->
+<!-- erk:metadata-block:{BlockKeys.PLANNING_SESSION_PROMPTS} -->
 <details>
-<summary><code>planning-session-prompts</code>{count_suffix}</summary>
+<summary><code>{BlockKeys.PLANNING_SESSION_PROMPTS}</code>{count_suffix}</summary>
 
 {content}
 
 </details>
-<!-- /erk:metadata-block:planning-session-prompts -->"""
+<!-- /erk:metadata-block:{BlockKeys.PLANNING_SESSION_PROMPTS} -->"""
 
 
 def render_session_exchanges_block(
@@ -168,14 +170,14 @@ def render_session_exchanges_block(
     count_suffix = f" ({len(exchanges)} exchange{'s' if len(exchanges) != 1 else ''})"
 
     return f"""<!-- WARNING: Machine-generated. Manual edits may break erk tooling. -->
-<!-- erk:metadata-block:planning-session-prompts -->
+<!-- erk:metadata-block:{BlockKeys.PLANNING_SESSION_PROMPTS} -->
 <details>
-<summary><code>planning-session-prompts</code>{count_suffix}</summary>
+<summary><code>{BlockKeys.PLANNING_SESSION_PROMPTS}</code>{count_suffix}</summary>
 
 {content}
 
 </details>
-<!-- /erk:metadata-block:planning-session-prompts -->"""
+<!-- /erk:metadata-block:{BlockKeys.PLANNING_SESSION_PROMPTS} -->"""
 
 
 def extract_prompts_from_session_prompts_block(block_body: str) -> list[str] | None:

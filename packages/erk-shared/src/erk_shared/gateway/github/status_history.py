@@ -7,6 +7,7 @@ EntityLog.entries()) and transform them into status history records.
 """
 
 from erk_shared.entity_store.types import LogEntry
+from erk_shared.gateway.github.metadata.types import BlockKeys
 
 
 def extract_workflow_run_id(entries: list[LogEntry]) -> str | None:
@@ -25,7 +26,7 @@ def extract_workflow_run_id(entries: list[LogEntry]) -> str | None:
     latest_timestamp: str | None = None
 
     for entry in entries:
-        if entry.key == "workflow-started":
+        if entry.key == BlockKeys.WORKFLOW_STARTED:
             run_id = entry.data.get("workflow_run_id")
             started_at = entry.data.get("started_at")
 
@@ -57,7 +58,7 @@ def build_status_history(
     status_history: list[dict[str, str]] = []
 
     for entry in entries:
-        if entry.key == "submission-queued":
+        if entry.key == BlockKeys.SUBMISSION_QUEUED:
             queued_at = entry.data.get("queued_at")
             if queued_at:
                 status_history.append(
@@ -68,7 +69,7 @@ def build_status_history(
                     }
                 )
 
-        if entry.key == "workflow-started":
+        if entry.key == BlockKeys.WORKFLOW_STARTED:
             started_at = entry.data.get("started_at")
             if started_at:
                 status_history.append(

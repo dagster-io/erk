@@ -25,6 +25,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     render_objective_roadmap_block,
     render_roadmap_block_inner,
 )
+from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.gateway.time.abc import Time
 from erk_shared.naming import InvalidObjectiveSlug, validate_objective_slug
@@ -87,7 +88,9 @@ def _build_objective_roadmap_block(plan_content: str) -> str | None:
         valid v2 roadmap block found.
     """
     raw_blocks = extract_raw_metadata_blocks(plan_content)
-    roadmap_block = next((block for block in raw_blocks if block.key == "objective-roadmap"), None)
+    roadmap_block = next(
+        (block for block in raw_blocks if block.key == BlockKeys.OBJECTIVE_ROADMAP), None
+    )
 
     if roadmap_block is None:
         return None

@@ -4,7 +4,7 @@ import warnings
 from dataclasses import dataclass
 from typing import Any, Literal
 
-from erk_shared.gateway.github.metadata.types import MetadataBlockSchema
+from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlockSchema
 
 
 def _migrate_issue_number_to_plan_number(data: dict[str, Any]) -> None:
@@ -43,7 +43,7 @@ class ImplementationStatusSchema(MetadataBlockSchema):
             )
 
     def get_key(self) -> str:
-        return "erk-implementation-status"
+        return BlockKeys.ERK_IMPLEMENTATION_STATUS
 
 
 @dataclass(frozen=True)
@@ -90,7 +90,7 @@ class WorktreeCreationSchema(MetadataBlockSchema):
             raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
 
     def get_key(self) -> str:
-        return "erk-worktree-creation"
+        return BlockKeys.ERK_WORKTREE_CREATION
 
 
 @dataclass(frozen=True)
@@ -139,7 +139,7 @@ class PlanSchema(MetadataBlockSchema):
             raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
 
     def get_key(self) -> str:
-        return "erk-plan"
+        return BlockKeys.ERK_PLAN
 
 
 @dataclass(frozen=True)
@@ -201,7 +201,7 @@ class SubmissionQueuedSchema(MetadataBlockSchema):
             raise ValueError("validation_results must be a dict")
 
     def get_key(self) -> str:
-        return "submission-queued"
+        return BlockKeys.SUBMISSION_QUEUED
 
 
 @dataclass(frozen=True)
@@ -272,7 +272,7 @@ class WorkflowStartedSchema(MetadataBlockSchema):
             raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
 
     def get_key(self) -> str:
-        return "workflow-started"
+        return BlockKeys.WORKFLOW_STARTED
 
 
 @dataclass(frozen=True)
@@ -324,7 +324,7 @@ class PlanRetrySchema(MetadataBlockSchema):
             raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
 
     def get_key(self) -> str:
-        return "plan-retry"
+        return BlockKeys.PLAN_RETRY
 
 
 # Plan-header field name constants with Literal types
@@ -810,7 +810,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
             raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
 
     def get_key(self) -> str:
-        return "plan-header"
+        return BlockKeys.PLAN_HEADER
 
 
 # Backward compatibility alias
@@ -865,4 +865,4 @@ class ObjectiveHeaderSchema(MetadataBlockSchema):
             raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
 
     def get_key(self) -> str:
-        return "objective-header"
+        return BlockKeys.OBJECTIVE_HEADER

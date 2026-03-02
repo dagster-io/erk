@@ -15,6 +15,7 @@ from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.plan_header import extract_plan_from_comment
 from erk_shared.gateway.github.metadata.schemas import PlanHeaderSchema
+from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.pr_footer import (
     extract_header_from_body,
     is_header_at_legacy_position,
@@ -97,7 +98,7 @@ def validate_plan_format(
     issue_body = issue.body if issue.body else ""
 
     # Check 1: plan-header metadata block exists
-    plan_header_block = find_metadata_block(issue_body, "plan-header")
+    plan_header_block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if plan_header_block is None:
         checks.append((False, "plan-header metadata block present"))
     else:

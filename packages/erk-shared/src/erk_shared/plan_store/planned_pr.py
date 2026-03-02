@@ -29,7 +29,7 @@ from erk_shared.gateway.github.metadata.schemas import (
     SOURCE_REPO,
     PlanHeaderSchema,
 )
-from erk_shared.gateway.github.metadata.types import MetadataBlock
+from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.github.types import BodyText, PRDetails, PRNotFound
 from erk_shared.gateway.time.abc import Time
@@ -397,7 +397,7 @@ class PlannedPRBackend(PlanBackend):
         if isinstance(result, PRNotFound):
             return PlanNotFound(plan_id=plan_id)
 
-        block = find_metadata_block(result.body, "plan-header")
+        block = find_metadata_block(result.body, BlockKeys.PLAN_HEADER)
         if block is None:
             return None
 
@@ -423,7 +423,7 @@ class PlannedPRBackend(PlanBackend):
         if isinstance(result, PRNotFound):
             return PlanNotFound(plan_id=plan_id)
 
-        block = find_metadata_block(result.body, "plan-header")
+        block = find_metadata_block(result.body, BlockKeys.PLAN_HEADER)
         if block is None:
             return {}
 
@@ -455,7 +455,7 @@ class PlannedPRBackend(PlanBackend):
             msg = f"PR #{pr_number} not found"
             raise RuntimeError(msg)
 
-        block = find_metadata_block(result.body, "plan-header")
+        block = find_metadata_block(result.body, BlockKeys.PLAN_HEADER)
         if block is None:
             raise PlanHeaderNotFoundError("plan-header block not found in PR body")
 
@@ -470,10 +470,12 @@ class PlannedPRBackend(PlanBackend):
         schema = PlanHeaderSchema()
         schema.validate(current_data)
 
-        new_block = MetadataBlock(key="plan-header", data=current_data)
+        new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=current_data)
         new_block_content = render_metadata_block(new_block)
 
-        updated_body = replace_metadata_block_in_body(result.body, "plan-header", new_block_content)
+        updated_body = replace_metadata_block_in_body(
+            result.body, BlockKeys.PLAN_HEADER, new_block_content
+        )
         self._github.update_pr_body(repo_root, pr_number, updated_body)
 
     def update_plan_content(
@@ -504,7 +506,7 @@ class PlannedPRBackend(PlanBackend):
             raise RuntimeError(msg)
 
         # Preserve metadata prefix and replace plan content
-        plan_header = find_metadata_block(result.body, "plan-header")
+        plan_header = find_metadata_block(result.body, BlockKeys.PLAN_HEADER)
         if plan_header is not None:
             updated_body = build_plan_stage_body(
                 render_metadata_block(plan_header), content, summary=summary
@@ -620,7 +622,7 @@ class PlannedPRBackend(PlanBackend):
             msg = f"PR #{pr_number} not found"
             raise RuntimeError(msg)
 
-        if has_metadata_block(result.body, "plan-header"):
+        if has_metadata_block(result.body, BlockKeys.PLAN_HEADER):
             return
 
         created_at = result.created_at.isoformat()

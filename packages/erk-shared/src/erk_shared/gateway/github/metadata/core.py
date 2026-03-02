@@ -6,7 +6,10 @@ from typing import Any
 
 import yaml
 
-from erk_shared.gateway.github.metadata.registry import BlockCategory, get_block_type
+from erk_shared.gateway.github.metadata.registry import (
+    BlockCategory,
+    get_block_type,
+)
 from erk_shared.gateway.github.metadata.schemas import (
     ImplementationStatusSchema,
     ObjectiveHeaderSchema,
@@ -16,6 +19,7 @@ from erk_shared.gateway.github.metadata.schemas import (
     WorktreeCreationSchema,
 )
 from erk_shared.gateway.github.metadata.types import (
+    BlockKeys,
     MetadataBlock,
     MetadataBlockError,
     MetadataBlockSchema,
@@ -361,12 +365,12 @@ def create_plan_body_block(plan_content: str) -> MetadataBlock:
         plan_content: The full plan markdown content
 
     Returns:
-        MetadataBlock with key "plan-body"
+        MetadataBlock with key PLAN_BODY_KEY
     """
     data = {
         "content": plan_content,
     }
-    return MetadataBlock(key="plan-body", data=data)
+    return MetadataBlock(key=BlockKeys.PLAN_BODY, data=data)
 
 
 def render_plan_body_block(block: MetadataBlock) -> str:
@@ -814,7 +818,7 @@ def extract_objective_header_comment_id(issue_body: str) -> int | None:
     Returns:
         objective_comment_id if found, None if block is missing or field is unset
     """
-    block = find_metadata_block(issue_body, "objective-header")
+    block = find_metadata_block(issue_body, BlockKeys.OBJECTIVE_HEADER)
     if block is None:
         return None
 
@@ -830,7 +834,7 @@ def extract_objective_slug(issue_body: str) -> str | None:
     Returns:
         slug value if found, None if block is missing or field is unset
     """
-    return extract_metadata_value(issue_body, "objective-header", "slug")
+    return extract_metadata_value(issue_body, BlockKeys.OBJECTIVE_HEADER, "slug")
 
 
 def extract_objective_from_comment(comment_body: str) -> str | None:
@@ -844,7 +848,7 @@ def extract_objective_from_comment(comment_body: str) -> str | None:
     """
     raw_blocks = extract_raw_metadata_blocks(comment_body)
     for block in raw_blocks:
-        if block.key == "objective-body":
+        if block.key == BlockKeys.OBJECTIVE_BODY:
             # Extract content from <details> structure
             # The objective-body block uses <strong> tags in summary (not <code>)
             # Accept both <details> and <details open>
@@ -872,7 +876,7 @@ def update_objective_header_comment_id(
     Raises:
         ValueError: If objective-header block not found or invalid
     """
-    block = find_metadata_block(issue_body, "objective-header")
+    block = find_metadata_block(issue_body, BlockKeys.OBJECTIVE_HEADER)
     if block is None:
         raise ValueError("objective-header block not found in issue body")
 
@@ -882,7 +886,7 @@ def update_objective_header_comment_id(
     schema = ObjectiveHeaderSchema()
     schema.validate(updated_data)
 
-    new_block = MetadataBlock(key="objective-header", data=updated_data)
+    new_block = MetadataBlock(key=BlockKeys.OBJECTIVE_HEADER, data=updated_data)
     new_block_content = render_metadata_block(new_block)
 
-    return replace_metadata_block_in_body(issue_body, "objective-header", new_block_content)
+    return replace_metadata_block_in_body(issue_body, BlockKeys.OBJECTIVE_HEADER, new_block_content)

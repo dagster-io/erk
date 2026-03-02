@@ -29,6 +29,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     rerender_comment_roadmap,
     update_node_in_frontmatter,
 )
+from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
 
@@ -96,7 +97,7 @@ def objective_link_pr(
     raw_blocks = extract_raw_metadata_blocks(issue.body)
     roadmap_block = None
     for block in raw_blocks:
-        if block.key == "objective-roadmap":
+        if block.key == BlockKeys.OBJECTIVE_ROADMAP:
             roadmap_block = block
             break
 
@@ -127,7 +128,7 @@ def objective_link_pr(
         new_block_with_markers = render_objective_roadmap_block(block_content)
         try:
             updated_body = replace_metadata_block_in_body(
-                updated_body, "objective-roadmap", new_block_with_markers
+                updated_body, BlockKeys.OBJECTIVE_ROADMAP, new_block_with_markers
             )
         except ValueError:
             results = [
@@ -144,7 +145,7 @@ def objective_link_pr(
 
         # Re-render comment roadmap table if applicable
         objective_comment_id = extract_metadata_value(
-            updated_body, "objective-header", "objective_comment_id"
+            updated_body, BlockKeys.OBJECTIVE_HEADER, "objective_comment_id"
         )
         if objective_comment_id is not None:
             comment_body = github.get_comment_by_id(repo_root, objective_comment_id)

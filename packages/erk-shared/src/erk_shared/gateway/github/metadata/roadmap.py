@@ -22,6 +22,7 @@ from erk_shared.gateway.github.metadata.core import (
     extract_raw_metadata_blocks,
     parse_metadata_block_body,
 )
+from erk_shared.gateway.github.metadata.types import BlockKeys
 
 RoadmapNodeStatus = Literal["pending", "planning", "done", "in_progress", "blocked", "skipped"]
 
@@ -423,7 +424,7 @@ def parse_v2_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]] | None:
         body is not in v2 format.
     """
     raw_blocks = extract_raw_metadata_blocks(body)
-    matching_blocks = [block for block in raw_blocks if block.key == "objective-roadmap"]
+    matching_blocks = [block for block in raw_blocks if block.key == BlockKeys.OBJECTIVE_ROADMAP]
 
     if not matching_blocks:
         return None
@@ -461,7 +462,7 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
         (phases, validation_errors)
     """
     raw_blocks = extract_raw_metadata_blocks(body)
-    matching_blocks = [block for block in raw_blocks if block.key == "objective-roadmap"]
+    matching_blocks = [block for block in raw_blocks if block.key == BlockKeys.OBJECTIVE_ROADMAP]
 
     if matching_blocks:
         roadmap_block = matching_blocks[0]
@@ -724,7 +725,7 @@ def rerender_comment_roadmap(issue_body: str, comment_body: str) -> str | None:
         block or no markers found.
     """
     raw_blocks = extract_raw_metadata_blocks(issue_body)
-    matching_blocks = [block for block in raw_blocks if block.key == "objective-roadmap"]
+    matching_blocks = [block for block in raw_blocks if block.key == BlockKeys.OBJECTIVE_ROADMAP]
 
     if not matching_blocks:
         return None
