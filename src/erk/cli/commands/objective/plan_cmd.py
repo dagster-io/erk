@@ -36,6 +36,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     rerender_comment_roadmap,
 )
 from erk_shared.gateway.github.types import BodyText
+from erk_shared.naming import sanitize_worktree_name
 from erk_shared.output.output import user_output
 
 
@@ -236,6 +237,9 @@ def _handle_all_unblocked(
         user_output(f"  {node.id}: {node.description} (Phase: {phase_name})")
     user_output("")
 
+    from erk.core.branch_slug_generator import BRANCH_SLUG_SYSTEM_PROMPT, _postprocess_slug
+    from erk.core.fast_llm import fast_haiku_call
+
     dispatched_count = 0
     successful_dispatches: list[tuple[str, int]] = []
 
@@ -248,6 +252,11 @@ def _handle_all_unblocked(
 
         user_output(f"Dispatching node {click.style(node.id, bold=True)}: {node.description}")
 
+        raw = fast_haiku_call(node.description, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT)
+        slug = _postprocess_slug(raw) if raw is not None else None
+        if slug is None:
+            slug = sanitize_worktree_name(node.description)[:25].rstrip("-")
+
         params = OneShotDispatchParams(
             prompt=prompt,
             model=model,
@@ -255,7 +264,7 @@ def _handle_all_unblocked(
                 "objective_issue": str(resolved.issue_number),
                 "node_id": node.id,
             },
-            slug=None,
+            slug=slug,
         )
 
         dispatch_result = dispatch_one_shot(ctx, params=params, dry_run=dry_run)
@@ -706,6 +715,14 @@ def _handle_one_shot(
     user_output(f"Phase: {phase_name}")
     user_output(f"Prompt: {prompt}")
 
+    from erk.core.branch_slug_generator import BRANCH_SLUG_SYSTEM_PROMPT, _postprocess_slug
+    from erk.core.fast_llm import fast_haiku_call
+
+    raw = fast_haiku_call(target_node.description, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT)
+    slug = _postprocess_slug(raw) if raw is not None else None
+    if slug is None:
+        slug = sanitize_worktree_name(target_node.description)[:25].rstrip("-")
+
     params = OneShotDispatchParams(
         prompt=prompt,
         model=model,
@@ -713,7 +730,7 @@ def _handle_one_shot(
             "objective_issue": str(issue_number),
             "node_id": target_node.id,
         },
-        slug=None,
+        slug=slug,
     )
 
     dispatch_result = dispatch_one_shot(ctx, params=params, dry_run=dry_run)

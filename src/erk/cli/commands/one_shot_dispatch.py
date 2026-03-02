@@ -195,12 +195,16 @@ def dispatch_one_shot(
             slug = params.slug
             user_output(click.style(f"  \u2713 Slug: {slug} (pre-generated)", dim=True))
         else:
-            user_output(click.style("  (calling haiku for slug generation...)", dim=True))
-            slug_start = time.monotonic()
-            slug = generate_branch_slug(ctx.prompt_executor, params.prompt)
-            slug_elapsed = time.monotonic() - slug_start
-            slug_msg = f"  \u2713 Slug: {slug} ({format_duration(slug_elapsed)})"
-            user_output(click.style(slug_msg, dim=True))
+            from erk.core.branch_slug_generator import BRANCH_SLUG_SYSTEM_PROMPT, _postprocess_slug
+            from erk.core.fast_llm import fast_haiku_call
+
+            raw = fast_haiku_call(params.prompt, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT)
+            slug = _postprocess_slug(raw) if raw is not None else None
+            if slug is None:
+                slug = sanitize_worktree_name(params.prompt)[:25].rstrip("-")
+                user_output(click.style(f"  \u2713 Slug: {slug} (sanitized)", dim=True))
+            else:
+                user_output(click.style(f"  \u2713 Slug: {slug}", dim=True))
         # planned_pr: plnd/ prefix (no issue number needed)
         branch_name = generate_planned_pr_branch_name(
             slug,

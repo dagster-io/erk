@@ -16,6 +16,7 @@ authors = [
 ]
 requires-python = ">=3.11"
 dependencies = [
+    "anthropic>=0.40.0",
     "click>=8.1.7",
     "erk-shared",
     "erk-statusline",
