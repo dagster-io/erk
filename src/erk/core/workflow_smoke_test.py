@@ -51,7 +51,7 @@ class CleanupItem:
 
 
 def run_smoke_test(
-    ctx: ErkContext, dispatch_ref: str | None = None
+    ctx: ErkContext, *, dispatch_ref: str | None
 ) -> SmokeTestResult | SmokeTestError:
     """Dispatch a smoke test through the production one-shot code path.
 

@@ -41,7 +41,7 @@ class TestRunSmokeTest:
             repo_info=RepoInfo(owner="test-owner", name="test-repo"),
         )
 
-        result = run_smoke_test(ctx)
+        result = run_smoke_test(ctx, dispatch_ref=None)
 
         assert isinstance(result, SmokeTestResult)
         assert result.branch_name.startswith("plnd/smoke-test-")
@@ -86,7 +86,7 @@ class TestRunSmokeTest:
         """Smoke test returns error for NoRepoSentinel."""
         ctx = create_test_context(repo=NoRepoSentinel())
 
-        result = run_smoke_test(ctx)
+        result = run_smoke_test(ctx, dispatch_ref=None)
 
         assert isinstance(result, SmokeTestError)
         assert result.step == "validation"
