@@ -6,6 +6,7 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.context import context_for_test
+from erk_shared.context.types import LoadedConfig
 from erk_shared.gateway.codespace.fake import FakeCodespace
 from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
 from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
@@ -219,3 +220,76 @@ def test_connect_env_invalid_format_errors() -> None:
 
     assert result.exit_code == 1
     assert "Invalid --env format" in result.output
+
+
+def test_connect_uses_config_codespace_name() -> None:
+    """connect uses repo config codespace name when no CLI name provided."""
+    runner = CliRunner()
+
+    cs = RegisteredCodespace(
+        name="config-box", gh_name="user-configbox-abc", created_at=datetime(2026, 1, 20, 8, 0, 0)
+    )
+    codespace_registry = FakeCodespaceRegistry(codespaces=[cs])
+    fake_codespace = FakeCodespace()
+    local_config = LoadedConfig.test(codespace_name="config-box")
+    ctx = context_for_test(
+        codespace_registry=codespace_registry,
+        codespace=fake_codespace,
+        local_config=local_config,
+    )
+
+    result = runner.invoke(cli, ["codespace", "connect"], obj=ctx)
+
+    assert result.exit_code == 0
+    assert fake_codespace.exec_called
+    assert fake_codespace.last_call is not None
+    assert fake_codespace.last_call.gh_name == "user-configbox-abc"
+
+
+def test_connect_with_working_directory_prepends_cd() -> None:
+    """connect prepends cd to remote command when working_directory is set."""
+    runner = CliRunner()
+
+    cs = RegisteredCodespace(
+        name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
+    )
+    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
+    fake_codespace = FakeCodespace()
+    local_config = LoadedConfig.test(codespace_working_directory="/workspaces/dagster-compass")
+    ctx = context_for_test(
+        codespace_registry=codespace_registry,
+        codespace=fake_codespace,
+        local_config=local_config,
+    )
+
+    result = runner.invoke(cli, ["codespace", "connect"], obj=ctx)
+
+    assert result.exit_code == 0
+    assert fake_codespace.last_call is not None
+    assert "cd /workspaces/dagster-compass" in fake_codespace.last_call.remote_command
+    assert "git pull" in fake_codespace.last_call.remote_command
+
+
+def test_connect_with_working_directory_and_shell_flag() -> None:
+    """connect --shell with working_directory prepends cd to shell command."""
+    runner = CliRunner()
+
+    cs = RegisteredCodespace(
+        name="mybox", gh_name="user-mybox-abc123", created_at=datetime(2026, 1, 20, 8, 0, 0)
+    )
+    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
+    fake_codespace = FakeCodespace()
+    local_config = LoadedConfig.test(codespace_working_directory="/workspaces/repo")
+    ctx = context_for_test(
+        codespace_registry=codespace_registry,
+        codespace=fake_codespace,
+        local_config=local_config,
+    )
+
+    result = runner.invoke(cli, ["codespace", "connect", "--shell"], obj=ctx)
+
+    assert result.exit_code == 0
+    assert fake_codespace.last_call is not None
+    remote_command = fake_codespace.last_call.remote_command
+    assert "cd /workspaces/repo" in remote_command
+    assert "exec bash -l" in remote_command

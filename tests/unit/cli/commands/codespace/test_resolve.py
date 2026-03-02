@@ -22,7 +22,7 @@ def test_resolve_by_name_returns_matching_codespace() -> None:
     cs = _make_codespace("mybox")
     registry = FakeCodespaceRegistry(codespaces=[cs])
 
-    result = resolve_codespace(registry, "mybox")
+    result = resolve_codespace(registry, "mybox", config_codespace_name=None)
 
     assert result is cs
 
@@ -32,7 +32,7 @@ def test_resolve_by_name_exits_when_not_found() -> None:
     registry = FakeCodespaceRegistry()
 
     with pytest.raises(SystemExit):
-        resolve_codespace(registry, "nonexistent")
+        resolve_codespace(registry, "nonexistent", config_codespace_name=None)
 
 
 def test_resolve_default_returns_default_codespace() -> None:
@@ -40,7 +40,7 @@ def test_resolve_default_returns_default_codespace() -> None:
     cs = _make_codespace("mybox")
     registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
 
-    result = resolve_codespace(registry, None)
+    result = resolve_codespace(registry, None, config_codespace_name=None)
 
     assert result is cs
 
@@ -50,7 +50,7 @@ def test_resolve_default_exits_when_no_default_set() -> None:
     registry = FakeCodespaceRegistry()
 
     with pytest.raises(SystemExit):
-        resolve_codespace(registry, None)
+        resolve_codespace(registry, None, config_codespace_name=None)
 
 
 def test_resolve_default_exits_when_default_not_found() -> None:
@@ -62,4 +62,47 @@ def test_resolve_default_exits_when_default_not_found() -> None:
     registry._default_codespace = "mybox"
 
     with pytest.raises(SystemExit):
-        resolve_codespace(registry, None)
+        resolve_codespace(registry, None, config_codespace_name=None)
+
+
+def test_resolve_config_name_returns_matching_codespace() -> None:
+    """resolve_codespace uses config_codespace_name when no CLI name provided."""
+    cs = _make_codespace("config-box")
+    registry = FakeCodespaceRegistry(codespaces=[cs])
+
+    result = resolve_codespace(registry, None, config_codespace_name="config-box")
+
+    assert result is cs
+
+
+def test_resolve_cli_name_overrides_config_name() -> None:
+    """CLI name takes precedence over config_codespace_name."""
+    cs_cli = _make_codespace("cli-box")
+    cs_config = _make_codespace("config-box")
+    registry = FakeCodespaceRegistry(codespaces=[cs_cli, cs_config])
+
+    result = resolve_codespace(registry, "cli-box", config_codespace_name="config-box")
+
+    assert result is cs_cli
+
+
+def test_resolve_config_name_overrides_global_default() -> None:
+    """Config name takes precedence over global default."""
+    cs_config = _make_codespace("config-box")
+    cs_default = _make_codespace("default-box")
+    registry = FakeCodespaceRegistry(
+        codespaces=[cs_config, cs_default],
+        default_codespace="default-box",
+    )
+
+    result = resolve_codespace(registry, None, config_codespace_name="config-box")
+
+    assert result is cs_config
+
+
+def test_resolve_config_name_exits_when_not_registered() -> None:
+    """resolve_codespace raises SystemExit when config name references unregistered codespace."""
+    registry = FakeCodespaceRegistry()
+
+    with pytest.raises(SystemExit):
+        resolve_codespace(registry, None, config_codespace_name="nonexistent")

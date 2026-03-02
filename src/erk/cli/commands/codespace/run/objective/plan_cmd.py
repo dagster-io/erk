@@ -39,7 +39,11 @@ def run_plan(
     Starts the codespace if stopped, then executes 'erk objective plan'
     via SSH, streaming output to the terminal.
     """
-    codespace = resolve_codespace(ctx.codespace_registry, name)
+    codespace = resolve_codespace(
+        ctx.codespace_registry,
+        name,
+        config_codespace_name=ctx.local_config.codespace_name,
+    )
 
     click.echo(f"Starting codespace '{codespace.name}'...", err=True)
     ctx.codespace.start_codespace(codespace.gh_name)
@@ -51,7 +55,10 @@ def run_plan(
         flags.append("--all-unblocked")
     flag_str = (" " + " ".join(flags)) if flags else ""
     remote_erk_cmd = f"erk objective plan{flag_str} {issue_ref}"
-    remote_cmd = build_codespace_ssh_command(remote_erk_cmd)
+    remote_cmd = build_codespace_ssh_command(
+        remote_erk_cmd,
+        working_directory=ctx.local_config.codespace_working_directory,
+    )
     click.echo(
         f"Running '{remote_erk_cmd}' on '{codespace.name}'...",
         err=True,

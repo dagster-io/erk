@@ -6,6 +6,7 @@ from click.testing import CliRunner
 
 from erk.cli.cli import cli
 from erk.core.context import context_for_test
+from erk_shared.context.types import LoadedConfig
 from erk_shared.gateway.codespace.fake import FakeCodespace
 from erk_shared.gateway.codespace_registry.abc import RegisteredCodespace
 from erk_shared.gateway.codespace_registry.fake import FakeCodespaceRegistry
@@ -167,3 +168,56 @@ def test_run_plan_with_all_unblocked_flag() -> None:
     call = fake_codespace.ssh_calls[0]
     assert "--all-unblocked" in call.remote_command
     assert "erk objective plan" in call.remote_command
+
+
+def test_run_plan_uses_config_codespace_name() -> None:
+    """run objective plan uses repo config codespace name when no CLI name provided."""
+    runner = CliRunner()
+
+    cs = _make_codespace("config-box")
+    fake_codespace = FakeCodespace()
+    codespace_registry = FakeCodespaceRegistry(codespaces=[cs])
+    local_config = LoadedConfig.test(codespace_name="config-box")
+    ctx = context_for_test(
+        codespace=fake_codespace,
+        codespace_registry=codespace_registry,
+        local_config=local_config,
+    )
+
+    result = runner.invoke(
+        cli,
+        ["codespace", "run", "objective", "plan", "42"],
+        obj=ctx,
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    assert fake_codespace.started_codespaces == ["user-config-box-abc123"]
+    assert fake_codespace.ssh_calls[0].gh_name == "user-config-box-abc123"
+
+
+def test_run_plan_with_working_directory() -> None:
+    """run objective plan prepends cd when working_directory is set."""
+    runner = CliRunner()
+
+    cs = _make_codespace("mybox")
+    fake_codespace = FakeCodespace()
+    codespace_registry = FakeCodespaceRegistry(codespaces=[cs], default_codespace="mybox")
+    local_config = LoadedConfig.test(codespace_working_directory="/workspaces/dagster-compass")
+    ctx = context_for_test(
+        codespace=fake_codespace,
+        codespace_registry=codespace_registry,
+        local_config=local_config,
+    )
+
+    result = runner.invoke(
+        cli,
+        ["codespace", "run", "objective", "plan", "42"],
+        obj=ctx,
+        catch_exceptions=False,
+    )
+
+    assert result.exit_code == 0
+    call = fake_codespace.ssh_calls[0]
+    assert "cd /workspaces/dagster-compass" in call.remote_command
+    assert "erk objective plan 42" in call.remote_command
