@@ -54,6 +54,11 @@ on:
         required: false
         type: boolean
         default: false
+      modify_existing:
+        description: "If true, modifying an existing PR (skip plan registration)"
+        required: false
+        type: string
+        default: ""
 
 concurrency:
   group: one-shot-${{ inputs.branch_name }}
@@ -188,7 +193,10 @@ jobs:
           erk pr check ${{ steps.read_result.outputs.plan_id }}
 
       - name: Register one-shot plan with issue and PR
-        if: steps.plan.outputs.plan_success == 'true' && steps.read_result.outputs.plan_id != ''
+        if: >
+          steps.plan.outputs.plan_success == 'true'
+          && steps.read_result.outputs.plan_id != ''
+          && inputs.modify_existing != 'true'
         continue-on-error: true
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
@@ -206,6 +214,7 @@ jobs:
           && steps.read_result.outputs.plan_id != ''
           && inputs.objective_issue != ''
           && inputs.node_id != ''
+          && inputs.modify_existing != 'true'
         env:
           GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           OBJECTIVE_ISSUE: ${{ inputs.objective_issue }}
