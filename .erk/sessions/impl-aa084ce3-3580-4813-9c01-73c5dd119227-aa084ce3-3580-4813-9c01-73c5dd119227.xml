@@ -1,0 +1,613 @@
+<session>
+  <meta branch="plnd/O8470-erk-objective-plan-8-03-01-2108" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 12. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="aa084ce3-3580-4813-9c01-73c5dd119227" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="aa084ce3-3580-4813-9c01-73c5dd119227" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="aa084ce3-3580-4813-9c01-73c5dd119227" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="aa084ce3-3580-4813-9c01-73c5dd119227" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**CRITICAL**: Never delete the impl directory - leave for user review (no auto-commit).
+
+### Step 12: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 13: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement` without any arguments. Let me follow the instructions to set up implementation.
+
+Since no argument was provided, I should run `erk exec setup-impl` which will auto-detect from `.erk/impl-context/`, branch, or fail.
+
+The current branch is `plnd/O8470-erk-objective-plan-8-03-01-2108`, which looks like a plan branch. Let me run the setup command.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="13311" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13311}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="13311" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13311}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VRptBrUd8ZUXQFSLMSPLY7">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Auto-detect and set up implementation from branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="13311" cache_read_input_tokens="19113" output_tokens="262" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13311, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VRptBrUd8ZUXQFSLMSPLY7">
+Found existing impl dir for plan #8593, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/.erk/impl-context/plnd--O8470-erk-objective-plan-8-03-01-2108", "plan_number": 8593, "plan_url": "https://github.com/dagster-io/erk/pull/8593", "branch": "plnd/O8470-erk-objective-plan-8-03-01-2108", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8593, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready. Reading plan...</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="450" cache_read_input_tokens="32424" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 450}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DnPuzTV55fUYCZGLBszptt">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/.erk/impl-context/plnd--O8470-erk-objective-plan-8-03-01-2108/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="450" cache_read_input_tokens="32424" output_tokens="120" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 450, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DnPuzTV55fUYCZGLBszptt">
+     1→# Add `modify_existing` input to one-shot.yml with conditional plan registration
+     2→
+     3→## Context
+     4→
+     5→This is node 1.2 of objective #8470 ("One-Shot Modification of Existing PRs"). Node 1.1 (PR #8472) added the `_dispatch_one_shot` handler in `launch_cmd.py` that dispatches the one-shot workflow with `modify_existing: "true"` in the workflow inputs. However, the `one-shot.yml` workflow currently has no `modify_existing` input defined — GitHub Actions silently ignores unknown inputs, so the flag is discarded.
+     6→
+     7→This plan adds the `modify_existing` input to `one-shot.yml` and makes the plan registration step conditional on whether this is a new one-shot or a modification of an existing PR.
+     8→
+     9→**Why this matters:** When modifying an existing PR, the "Register one-shot plan" step should be **skipped** because:
+    10→
+    11→1. The plan entity (PR) already exists — no new plan registration is needed
+    12→2. The `register-one-shot-plan` command writes dispatch metadata and a "Queued for Implementation" comment, which are inappropriate for modifications to existing PRs
+    13→3. The lifecycle stage should not be reset to "planned" for an existing PR that may already be in a later stage
+    14→
+    15→Similarly, the "Update objective roadmap node" step should be skipped in modify-existing mode since the existing PR already has its objective linkage.
+    16→
+    17→## Changes
+    18→
+    19→### 1. `.github/workflows/one-shot.yml` — Add `modify_existing` input and conditional steps
+    20→
+    21→**Add new input** in the `workflow_dispatch.inputs` section, after `plan_only`:
+    22→
+    23→```yaml
+    24→      modify_existing:
+    25→        description: "If true, modifying an existing PR (skip plan registration)"
+    26→        required: false
+    27→        type: string
+    28→        default: ""
+    29→```
+    30→
+
+... [110 lines omitted] ...
+  </tool_result>
+  <thinking>This is a straightforward plan - it only modifies `.github/workflows/one-shot.yml` to:
+1. Add a `modify_existing` input
+2. Add a condition to skip plan registration when `modify_existing == 'true'`
+3. Add a condition to skip objective roadmap update when `modify_existing == 'true'`
+
+Let me read the workflow file to understand the current state.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2807" cache_read_input_tokens="32874" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2807}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, this is a focused YAML-only change. Let me read the workflow file and set up tasks.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2807" cache_read_input_tokens="32874" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2807}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ATQYsT4ELC1cmxvdeYxWFi">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/.github/workflows/one-shot.yml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2807" cache_read_input_tokens="32874" output_tokens="219" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2807, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ATQYsT4ELC1cmxvdeYxWFi">
+     1→name: one-shot
+     2→run-name: "one-shot:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      prompt:
+     8→        description: "Task description for autonomous execution"
+     9→        required: true
+    10→        type: string
+    11→      branch_name:
+    12→        description: "Branch to work on (created by CLI command)"
+    13→        required: true
+    14→        type: string
+    15→      pr_number:
+    16→        description: "Draft PR number (created by CLI command)"
+    17→        required: true
+    18→        type: string
+    19→      submitted_by:
+    20→        description: "GitHub username of the person who submitted"
+    21→        required: true
+    22→        type: string
+    23→      distinct_id:
+    24→        description: "Unique identifier for run discovery (base36)"
+    25→        required: true
+    26→        type: string
+    27→      model_name:
+    28→        description: "Claude model to use for execution"
+    29→        required: false
+    30→        type: string
+
+... [249 lines omitted] ...
+
+    82→            echo "::error title=Missing Secret::ERK_QUEUE_GH_PAT secret is not configured or has expired. Add a PAT with 'repo' scope at: Settings &gt; Secrets and variables &gt; Actions"
+   164→            echo "::error::Planning succeeded but .erk/impl-context/plan.md not found"
+   168→            echo "::error::Planning succeeded but .erk/impl-context/plan-result.json not found"
+   192→        continue-on-error: true
+   241→          if git ls-files --error-unmatch .erk/impl-context/prompt.md &gt;/dev/null 2&gt;&amp;1; then
+   244→          if git ls-files --error-unmatch .worker-impl/prompt.md &gt;/dev/null 2&gt;&amp;1; then
+   258→      - name: Fail workflow if planning failed
+   261→          echo "One-shot planning failed with exit code: ${{ steps.plan.outputs.exit_code }}"
+  </tool_result>
+  <thinking>Now I understand the file. Let me create the tasks and implement the changes. This is a straightforward YAML edit with 3 changes:
+
+1. Add `modify_existing` input after `plan_only` (after line 56)
+2. Update the "Register one-shot plan" step condition (line 191)
+3. Update the "Update objective roadmap node" step condition (lines 204-208)</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4210" cache_read_input_tokens="35681" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4210}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>Clear plan with 3 edits to `one-shot.yml`. Let me create tasks and implement.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4210" cache_read_input_tokens="35681" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4210}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01WeYBRGptkpAjzKYcBcnwz2">
+    <param name="subject">Add `modify_existing` input to one-shot.yml</param>
+    <param name="description">Add new workflow_dispatch input after plan_only: modify_existing (string type, default empty, not required)</param>
+    <param name="activeForm">Adding modify_existing input</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4210" cache_read_input_tokens="35681" output_tokens="256" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4210, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WeYBRGptkpAjzKYcBcnwz2">
+Task #1 created successfully: Add `modify_existing` input to one-shot.yml
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_017VF3owxMEnxdMr3UWg3C8e">
+    <param name="subject">Add condition to skip plan registration in modify-existing mode</param>
+    <param name="description">Add `&amp;&amp; inputs.modify_existing != 'true'` to the "Register one-shot plan" step's if condition</param>
+    <param name="activeForm">Updating register step condition</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="287" cache_read_input_tokens="39891" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 287, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017VF3owxMEnxdMr3UWg3C8e">
+Task #2 created successfully: Add condition to skip plan registration in modify-existing mode
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01FZUp3UELVwTgJ5sq11bqe8">
+    <param name="subject">Add condition to skip objective update in modify-existing mode</param>
+    <param name="description">Add `&amp;&amp; inputs.modify_existing != 'true'` to the "Update objective roadmap node" step's if condition</param>
+    <param name="activeForm">Updating objective step condition</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="40178" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 158, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FZUp3UELVwTgJ5sq11bqe8">
+Task #3 created successfully: Add condition to skip objective update in modify-existing mode
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01431htvaQi3R83VF2QTH1ET">
+    <param name="subject">Verify YAML syntax and validate changes</param>
+    <param name="description">Run YAML validation on the modified file and verify the logic is correct</param>
+    <param name="activeForm">Verifying YAML syntax</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="40336" output_tokens="112" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 158, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01431htvaQi3R83VF2QTH1ET">
+Task #4 created successfully: Verify YAML syntax and validate changes
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015oCyRwBk5XoHiZxgyZ9LVh">
+    <param name="command">erk exec impl-signal started --session-id="aa084ce3-3580-4813-9c01-73c5dd119227" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="139" cache_read_input_tokens="40494" output_tokens="112" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 139, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015oCyRwBk5XoHiZxgyZ9LVh">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8593
+}
+  </tool_result>
+  <assistant>Now implementing. **Phase 1: Add `modify_existing` input.**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="150" cache_read_input_tokens="40633" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 150}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01Qe7N8HXvE7CwaNHToCYVG7">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="150" cache_read_input_tokens="40633" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 150}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qe7N8HXvE7CwaNHToCYVG7">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FnQy9CJUW2ehjHssvEJ8Qk">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/.github/workflows/one-shot.yml</param>
+    <param name="old_string">      plan_only:
+        description: "If true, only run the plan phase, skip implementation"
+        required: false
+        type: boolean
+        default: false</param>
+    <param name="new_string">      plan_only:
+        description: "If true, only run the plan phase, skip implementati...[truncated 132 chars]...(skip plan registration)"
+        required: false
+        type: string
+        default: ""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="107" cache_read_input_tokens="40783" output_tokens="237" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 107, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FnQy9CJUW2ehjHssvEJ8Qk">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/.github/workflows/one-shot.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01DubFP6d5pPY58sTqSKVnD8">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="310" cache_read_input_tokens="40890" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 310, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DubFP6d5pPY58sTqSKVnD8">
+Updated task #1 status
+  </tool_result>
+  <assistant>**Phase 2: Update "Register one-shot plan" step condition.**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="41200" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01KjW8KbXSj8AtpTiQiCPqSB">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="41200" output_tokens="89" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 88, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KjW8KbXSj8AtpTiQiCPqSB">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01GZKVyYC4SGhmfvBGb1tTGn">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/.github/workflows/one-shot.yml</param>
+    <param name="old_string">      - name: Register one-shot plan with issue and PR
+        if: steps.plan.outputs.plan_success == 'true' &amp;&amp; steps.read_result.outputs.plan_id != ''</param>
+    <param name="new_string">      - name: Register one-shot plan with issue and PR
+        if: &gt;
+          steps.plan....[truncated 19 chars]...  &amp;&amp; steps.read_result.outputs.plan_id != ''
+          &amp;&amp; inputs.modify_existing != 'true'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="107" cache_read_input_tokens="41288" output_tokens="251" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 107, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GZKVyYC4SGhmfvBGb1tTGn">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/.github/workflows/one-shot.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01KTDM39sH6gGwdghd5JLgG4">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="305" cache_read_input_tokens="41395" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 305, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KTDM39sH6gGwdghd5JLgG4">
+Updated task #2 status
+  </tool_result>
+  <assistant>**Phase 3: Update "Update objective roadmap node" step condition.**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="41700" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01RsiZzGWmCZFw1kvJAuy5Au">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="41700" output_tokens="89" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 88, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RsiZzGWmCZFw1kvJAuy5Au">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019t9WfP1u8XvCM7mfysQ2Mb">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/.github/workflows/one-shot.yml</param>
+    <param name="old_string">      - name: Update objective roadmap node
+        if: &gt;
+          steps.plan.outputs.pla...[truncated 38 chars]....plan_id != ''
+          &amp;&amp; inputs.objective_issue != ''
+          &amp;&amp; inputs.node_id != ''</param>
+    <param name="new_string">      - name: Update objective roadmap node
+        if: &gt;
+          steps.plan.outputs.pla...[truncated 84 chars]...ssue != ''
+          &amp;&amp; inputs.node_id != ''
+          &amp;&amp; inputs.modify_existing != 'true'</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="107" cache_read_input_tokens="41788" output_tokens="288" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 107, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019t9WfP1u8XvCM7mfysQ2Mb">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/.github/workflows/one-shot.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01DVUbcardACWYTmEpthFdPM">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="342" cache_read_input_tokens="41895" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 342, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DVUbcardACWYTmEpthFdPM">
+Updated task #3 status
+  </tool_result>
+  <assistant>**Phase 4: Verify YAML syntax.**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="42237" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01Pxus6B9PxeEbX9YwvpZMJV">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="42237" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Pxus6B9PxeEbX9YwvpZMJV">
+Updated task #4 status
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Q9CkagTCaBbbAUmHzJRcPb">
+    <param name="command">python -c "import yaml; yaml.safe_load(open('.github/workflows/one-shot.yml')); print('YAML syntax valid')"</param>
+    <param name="description">Validate YAML syntax of modified workflow</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="102" cache_read_input_tokens="42325" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 102, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Q9CkagTCaBbbAUmHzJRcPb">
+YAML syntax valid
+  </tool_result>
+  <assistant>Let me also verify the final state of the edited sections.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="125" cache_read_input_tokens="42427" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 125}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GSnmBLhBiGYAwnWTAFqhZ5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/.github/workflows/one-shot.yml</param>
+    <param name="offset">52</param>
+    <param name="limit">12</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="125" cache_read_input_tokens="42427" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 125}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GSnmBLhBiGYAwnWTAFqhZ5">
+    52→      plan_only:
+    53→        description: "If true, only run the plan phase, skip implementation"
+    54→        required: false
+    55→        type: boolean
+    56→        default: false
+    57→      modify_existing:
+    58→        description: "If true, modifying an existing PR (skip plan registration)"
+    59→        required: false
+    60→        type: string
+    61→        default: ""
+    62→
+    63→concurrency:
+  </tool_result>
+  <tool_use name="Read" id="toolu_015rBGXpQTaT8L3R9xfi5MDb">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-58/.github/workflows/one-shot.yml</param>
+    <param name="offset">193</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="125" cache_read_input_tokens="42427" output_tokens="240" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 125, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015rBGXpQTaT8L3R9xfi5MDb">
+   193→          erk pr check ${{ steps.read_result.outputs.plan_id }}
+   194→
+   195→      - name: Register one-shot plan with issue and PR
+   196→        if: &gt;
+   197→          steps.plan.outputs.plan_success == 'true'
+   198→          &amp;&amp; steps.read_result.outputs.plan_id != ''
+   199→          &amp;&amp; inputs.modify_existing != 'true'
+   200→        continue-on-error: true
+   201→        env:
+   202→          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+   203→        run: |
+   204→          erk exec register-one-shot-plan \
+   205→            --plan-number "${{ steps.read_result.outputs.plan_id }}" \
+   206→            --run-id "${{ github.run_id }}" \
+   207→            --pr-number "${{ inputs.pr_number }}" \
+   208→            --submitted-by "${{ inputs.submitted_by }}" \
+   209→            --run-url "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+   210→
+   211→      - name: Update objective roadmap node
+   212→        if: &gt;
+   213→          steps.plan.outputs.plan_success == 'true'
+   214→          &amp;&amp; steps.read_result.outputs.plan_id != ''
+   215→          &amp;&amp; inputs.objective_issue != ''
+   216→          &amp;&amp; inputs.node_id != ''
+   217→          &amp;&amp; inputs.modify_existing != 'true'
+   218→        env:
+   219→          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+   220→          OBJECTIVE_ISSUE: ${{ inputs.objective_issue }}
+   221→          NODE_ID: ${{ inputs.node_id }}
+   222→          PLAN_NUMBER: ${{ steps.read_result.outputs.plan_id }}
+  </tool_result>
+  <assistant>All three edits look correct.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="904" cache_read_input_tokens="42552" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 904}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01XsW4icxciuyk28pUWVuWb2">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="904" cache_read_input_tokens="42552" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 904, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XsW4icxciuyk28pUWVuWb2">
+Updated task #4 status
+  </tool_result>
+  <assistant>Signaling completion and uploading session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="96" cache_read_input_tokens="43456" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 96}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MG3fmf4GghAfsG4TWC7caG">
+    <param name="command">erk exec impl-signal ended --session-id="aa084ce3-3580-4813-9c01-73c5dd119227" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="96" cache_read_input_tokens="43456" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 96}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Qz72JgycrjUFukcih67T8n">
+    <param name="command">erk exec upload-impl-session --session-id="aa084ce3-3580-4813-9c01-73c5dd119227" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="96" cache_read_input_tokens="43456" output_tokens="220" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 96, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MG3fmf4GghAfsG4TWC7caG">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8593
+}
+  </tool_result>
+</session>
