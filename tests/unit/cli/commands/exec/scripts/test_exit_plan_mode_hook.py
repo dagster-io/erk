@@ -386,15 +386,18 @@ class TestBuildBlockingMessage:
         assert "AskUserQuestion" in message
         assert "Create a plan PR" in message
         assert "(Recommended)" in message
-        # "Skip PR and implement here" option
-        assert "Skip PR and implement here" in message
+        # "New branch and implement" option
+        assert "New branch and implement" in message
         assert "small PR iterations" in message
+        # "Implement on current branch" option
+        assert "Implement on current branch" in message
         assert "/erk:plan-save" in message
         assert "Do NOT call ExitPlanMode" in message
         assert "erk exec marker create --session-id session-123" in message
         assert "exit-plan-mode-hook.implement-now" in message
         assert "If user chooses 'Create a plan PR':" in message
-        assert "If user chooses 'Skip PR and implement here':" in message
+        assert "If user chooses 'New branch and implement':" in message
+        assert "If user chooses 'Implement on current branch':" in message
 
     def test_includes_header_instruction(self) -> None:
         """Message includes header instruction for AskUserQuestion."""
@@ -497,7 +500,7 @@ class TestBuildBlockingMessage:
         assert "trunk branch" not in message
 
     def test_edit_plan_option_included(self) -> None:
-        """Third option 'View/Edit the plan' is included in message."""
+        """Fourth option 'View/Edit the plan' is included in message."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
             session_id="session-123",
@@ -511,6 +514,26 @@ class TestBuildBlockingMessage:
         )
         assert "View/Edit the plan" in message
         assert "Open plan in editor" in message
+
+    def test_implement_on_current_branch_option_included(self) -> None:
+        """Option 'Implement on current branch' is included with instruction block."""
+        plan_path = Path("/home/user/.claude/plans/session-123.md")
+        message = build_blocking_message(
+            session_id="session-123",
+            current_branch="feature-branch",
+            plan_file_path=plan_path,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_number=None,
+            editor=None,
+        )
+        assert "Implement on current branch" in message
+        assert "without creating a new branch or worktree" in message
+        assert "If user chooses 'Implement on current branch':" in message
+        assert "Do NOT run 'erk exec setup-impl' or create a new branch" in message
+        assert f"Read the plan from: {plan_path}" in message
+        assert "erk pr submit" in message
 
     def test_edit_plan_instructions_include_path(self) -> None:
         """Edit plan instructions include the plan file path for GUI editors."""
@@ -785,7 +808,8 @@ class TestBuildBlockingMessage:
         assert "Create a plan PR" in message
         assert "(Recommended)" in message
         assert "Create a draft PR with the plan" in message
-        assert "Skip PR and implement here" in message
+        assert "New branch and implement" in message
+        assert "Implement on current branch" in message
         # Should NOT contain github-backend language
         assert "Save plan as a GitHub issue" not in message
         assert "Do not save issue" not in message
@@ -836,12 +860,14 @@ class TestBuildBlockingMessage:
             editor=None,
         )
         assert "If user chooses 'Create a plan PR':" in message
-        assert "If user chooses 'Skip PR and implement here':" in message
+        assert "If user chooses 'New branch and implement':" in message
+        assert "If user chooses 'Implement on current branch':" in message
         # Should NOT contain github-backend instruction labels
         assert "If user chooses 'Save the plan':" not in message
         assert "If user chooses 'Do not save issue and implement here':" not in message
         assert "If user chooses 'Save plan and implement here':" not in message
         assert "If user chooses 'Save and submit for review':" not in message
+        assert "If user chooses 'Skip PR and implement here':" not in message
 
 
 # ============================================================================

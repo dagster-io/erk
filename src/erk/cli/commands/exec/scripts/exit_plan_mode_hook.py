@@ -331,9 +331,11 @@ def build_blocking_message(
         [
             '  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan '
             "and stop. Does NOT proceed to implementation.",
-            '  2. "Skip PR and implement here" - Skip creating a PR, implement directly '
-            "in current worktree (for small PR iterations that don't need PR tracking).",
-            '  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.',
+            '  2. "New branch and implement" - Create a new branch in the current worktree '
+            "and implement (for starting fresh).",
+            '  3. "Implement on current branch" - Implement directly on the current branch '
+            "without creating a new branch or worktree.",
+            '  4. "View/Edit the plan" - Open plan in editor to review or modify before deciding.',
         ]
     )
 
@@ -357,13 +359,31 @@ def build_blocking_message(
             "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
             "     Stay in plan mode and let the user exit manually if desired.",
             "",
-            "If user chooses 'Skip PR and implement here':",
+            "If user chooses 'New branch and implement':",
             "  1. Create implement-now marker (skip PR creation):",
             f"     erk exec marker create --session-id {session_id} \\",
             "       exit-plan-mode-hook.implement-now",
             "  2. Call ExitPlanMode",
             "  3. After exiting plan mode, implement the changes directly",
             "     (no PR tracking - this is for small PR iterations)",
+            "",
+            "If user chooses 'Implement on current branch':",
+            "  1. Create implement-now marker:",
+            f"     erk exec marker create --session-id {session_id} \\",
+            "       exit-plan-mode-hook.implement-now",
+            "  2. Call ExitPlanMode",
+            "  3. After exiting plan mode, implement the changes directly on the current branch.",
+            "     Do NOT run 'erk exec setup-impl' or create a new branch.",
+        ]
+        + (
+            [
+                f"     Read the plan from: {plan_file_path}",
+            ]
+            if plan_file_path is not None
+            else []
+        )
+        + [
+            "     Implement changes, run CI, and optionally 'erk pr submit' when done.",
         ]
     )
 
