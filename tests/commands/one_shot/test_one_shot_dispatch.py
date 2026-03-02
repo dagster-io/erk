@@ -7,6 +7,7 @@ from erk.cli.commands.one_shot_dispatch import (
     OneShotDispatchParams,
     dispatch_one_shot,
 )
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.fake import FakeGitHub
@@ -262,3 +263,39 @@ def test_dispatch_long_prompt_truncates_workflow_input() -> None:
         # Verify full prompt was committed directly to branch via branch_commits
         assert len(git.branch_commits) == 1
         assert git.branch_commits[0].files == {".erk/impl-context/prompt.md": long_prompt + "\n"}
+
+
+def test_dispatch_fails_when_branch_already_exists() -> None:
+    """Test dispatch exits with clear error when branch already exists locally."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+            create_branch_error=BranchAlreadyExists(
+                branch_name="plnd/duplicate-branch",
+                message="Branch 'plnd/duplicate-branch' already exists",
+            ),
+        )
+        issues = FakeGitHubIssues()
+        github = FakeGitHub(authenticated=True, issues_gateway=issues)
+
+        ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
+
+        result = runner.invoke(
+            cli,
+            ["one-shot", "fix the import in config.py"],
+            obj=ctx,
+        )
+
+        assert result.exit_code != 0
+        assert "already exists locally" in result.output
+        assert "erk delete" in result.output
+
+        # Verify no PR was created
+        assert len(github.created_prs) == 0
+        assert len(github.triggered_workflows) == 0
