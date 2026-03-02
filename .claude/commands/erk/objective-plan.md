@@ -208,7 +208,7 @@ The inner skill handles marker creation, marking as planning, context gathering,
 - **After parsing:** Display roadmap nodes with status
 - **After selection:** "Creating plan for node <step-id>: <description>"
 - **In plan mode:** Show plan content
-- **End:** Guide to `/erk:plan-save`
+- **End:** Always proceed with `/erk:plan-save` — do not offer direct implementation
 
 ---
 
@@ -231,3 +231,7 @@ The inner skill handles marker creation, marking as planning, context gathering,
 - **One node at a time:** Each plan should focus on a single roadmap node
 - **Link back:** Always reference the parent objective in the plan
 - **Steelthread pattern:** If planning a Phase A node, focus on minimal vertical slice
+
+## Post-Plan Behavior
+
+**CRITICAL: Objective plans must ALWAYS be saved as PRs.** When the exit-plan-mode hook presents save-or-implement options, ALWAYS proceed with "Create a plan PR" by running `/erk:plan-save`. Do NOT offer to implement directly — objective node plans require PR tracking for the objective's roadmap status to work correctly.
