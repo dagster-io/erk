@@ -1,0 +1,1480 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>Last login: Sun Mar  1 15:39:18 on ttys018
+direnv: loading ~/code/erk/.envrc
+direnv: loading ~/code/erk/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/code/erk
+-&gt; Activating venv: /Users/schrockn/code/erk/.venv (3.13.1)
+Activated: /Users/schrockn/code/erk
+direnv: export +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT ~PATH
+➜  erk git:(master) claude
+
+ ▐▛███▜▌   Claude Code v2.1.63
+▝▜█████▛▘  Haiku 4.5 · Claude Max
+  ▘▘ ▝▝    ~/code/erk
+
+❯ https://github.com/dagster-io/erk/pull/8566
+
+  in cases like this when no session materiali is found we should not create the learn plan. let the user that that is happening toh
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ https://github.com/dagster-io/erk/pull/8566
+
+  in cases like this when no session materiali is found we should not create the learn plan. let the user know that that is happening though
+
+∴ Thinking…
+
+  Let me explore the PR to understand the context, then look at the relevant code for the learn plan creation workflow.
+
+⏺ Explore(Explore PR 8566 and learn plan creation code)
+  ⎿  Done (34 tool uses · 67.3k tokens · 2m 15s)
+  (ctrl+o to expand)
+
+∴ Thinking…
+
+  Now I have a thorough understanding of the system. Let me look at the specific files mentioned to understand the exact code to modify.
+
+  The key question is: where should we make the fix? There are two potential locations:
+
+  1. land_learn.py - Skip creating the learn plan draft PR entirely when there are no session files
+  2. .claude/commands/erk/learn.md - Add a check for XML files in Step 2
+
+  Based on the user's request: "in cases like this when no session material is found we should not create the learn plan. let the user know that that is happening though"
+
+  The user wants:
+
+  1. Skip creating the learn plan when no session material exists
+  2. Let the user know this is happening
+
+  The cleanest approach is to handle this in land_learn.py - if there are no XML files found, I'll skip the learn plan PR creation entirely and instead output a message informing the user
+  that no session material was detected.
+
+⏺ Now let me read the specific files to understand the exact implementation before writing the plan.
+
+⏺ Read(src/erk/cli/commands/land_learn.py)
+  ⎿  Read 94 lines
+
+⏺ Read(.claude/commands/erk/learn.md)
+  ⎿  Read 827 lines
+
+∴ Thinking…
+
+  Now I understand the full picture. Let me understand where the fix should happen:
+
+  1. In land_learn.py: The function _create_learn_pr_impl() creates the learn plan draft PR even when there are no sessions. The fix here would be to skip creating the PR when xml_files is
+  empty (no sessions), and instead just log a message to the user.
+  2. In .claude/commands/erk/learn.md: The /erk:learn command Step 2 checks if .erk/impl-context/ exists and copies files to the learn directory. The check doesn't distinguish between
+  session XML files and metadata files. However, the user's request is specifically about the case when "no session material is found" - and at the point in the workflow where
+  _create_learn_pr_impl() runs, we already know if there are sessions or not.
+
+  The cleanest approach is to add a check in _create_learn_pr_impl() that detects when xml_files is empty and exits early with a user-facing message instead of proceeding to create an
+  incomplete learn plan PR. This is better than modifying the command itself since the decision point happens before the CI workflow even starts.
+
+  Looking at how xml_files gets populated from _log_session_discovery(), it returns a dict that becomes None when empty due to the existing xml_files or None pattern. So I need to add an
+  early return right after computing xml_files that logs "No session material found for plan #{plan_id}. Skipping learn plan creation." and exits the function.
+
+⏺ Now I have everything I need. Let me write the plan.
+
+⏺ Updated plan
+  ⎿  Wrote 50 lines to /Users/schrockn/.claude/plans/typed-napping-wombat.md
+       1 # Plan: Skip Learn Plan Creation When No Session Material Found
+       2
+       3 ## Context
+       4
+       5 When `erk land` runs, it creates a learn plan draft PR to capture implementation insights from Claude Code sessions. However, if a plan had zero tracked sessions (as in PR #8
+         566), `_create_learn_pr_impl()` still creates a learn plan draft PR containing only `plan.md` and `ref.json` — no session XML files. This creates an empty/low-value learn pla
+         n that the downstream CI (`/erk:learn`) cannot meaningfully analyze.
+       6
+       7 The fix: if no session XML files were found during preprocessing, skip creating the learn plan entirely and notify the user with a clear message explaining why.
+       8
+       9 ## Fix Location
+      10
+      11 **File:** `src/erk/cli/commands/land_learn.py`
+      12
+      13 **Function:** `_create_learn_pr_impl()`, after line 371 where `xml_files` is computed.
+      14
+      15 ## Implementation
+      16
+      17 After this existing line:
+      18 ```python
+      19 xml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
+      20 ```
+      21
+      22 Add an early-return guard:
+      23 ```python
+      24 if not xml_files:
+      25     user_output(
+      26         click.style("ℹ", fg="blue")
+      27         + f" Skipping learn plan for #{plan_id}: no session material found"
+      28         + (" (no sessions were tracked for this plan)" if not all_session_ids else " (sessions found but no XML could be extracted)")
+      29     )
+      30     return
+      31 ```
+      32
+      33 This handles two sub-cases:
+      34 - `all_session_ids` is empty → no sessions were tracked at all
+      35 - `all_session_ids` is non-empty but `xml_files` is empty → sessions exist but preprocessing failed
+      36
+      37 ## Critical Files
+      38
+      39 - `src/erk/cli/commands/land_learn.py` — the only file to modify
+      40   - `_create_learn_pr_impl()` at line 345
+      41   - The guard is inserted after line 371
+      42
+      43 ## Verification
+      44
+      45 1. Run `erk land` on a plan with zero sessions (e.g., a changelog-only PR)
+      46 2. Confirm the output shows the "Skipping learn plan" message instead of creating a draft PR
+      47 3. Confirm no new draft PR appears in the GitHub issue tracker
+      48 4. Confirm `erk land` exits cleanly (no error)
+      49
+      50 For a plan with sessions, confirm learn plan creation still works normally.
+
+∴ Thinking…
+
+  Good! I've written the plan. Now I should call ExitPlanMode to request user approval before implementation.
+
+∴ Thinking…
+
+  The hook is asking me to use AskUserQuestion to present the plan to the user and ask what they'd like to do. Let me read the plan file first and present it to the user with the options.
+
+⏺ Reading Plan(~/.claude/plans/typed-napping-wombat.md)
+  ⎿  Read 51 lines
+
+⏺ User answered Claude's questions:
+  ⎿  · 📋 Plan: Skip Learn Plan Creation When No Session Material Found
+
+     Current context: (wt:erk) (br:new-rebase-prompt)
+
+     What would you like to do with this plan? → Create a plan PR (Recommended)
+
+∴ Thinking…
+
+  The user chose "Create a plan PR (Recommended)". I should run /erk:plan-save to save the plan as a draft PR. According to the hook instructions, I should NOT call ExitPlanMode after
+  running plan-save.
+
+⏺ Perfect! I'll save the plan as a draft PR using /erk:plan-save.
+
+⏺ Skill(/erk:plan-save)
+  ⎿  Successfully loaded skill
+
+∴ Thinking…
+
+  The skill output shows the full instructions for the /erk:plan-save command. Now I need to execute the skill. Let me follow the instructions:
+
+  1. Parse arguments - no special arguments in this case, just save the plan
+  2. Generate branch slug from plan title - "Skip Learn Plan Creation When No Session Material Found"
+    - Distinctive words: skip, learn, plan, session, material
+    - Action: skip
+    - Slug could be: "skip-learn-when-no-material" or "skip-learn-no-sessions" or "skip-empty-learn"
+    - I'll go with "skip-empty-learn-plans" as it's clear and concise
+  3. Generate plan summary - 2-3 sentences describing what the plan does
+    - Plan modifies _create_learn_pr_impl() to skip creating learn plans when no session XML files are found
+    - Notifies the user with a clear message explaining why
+    - This prevents creating empty/low-value learn plans that CI can't meaningfully analyze
+  4. Run the save command with the branch slug and summary
+  5-7. Handle verification and display results
+
+  Actually, I realize I need to invoke the /erk:plan-save skill. Let me check what I need to do. The skill expects me to execute it, and it will guide me through the steps. Let me actually
+  read what the skill returned - it looks like it printed instructions. That's the skill's output - it's showing me what to do.
+
+  I should now follow those instructions and execute the plan-save command. Let me do this step by step.
+
+⏺ I'll follow the plan-save instructions. Let me generate the branch slug and summary, then save the plan.
+
+⏺ Bash(cat &gt; /tmp/plan_info.txt &lt;&lt; 'EOF'
+      Branch slug: skip-empty-learn-plans…)
+  ⎿  Branch slug: skip-empty-learn-plans
+     Plan summary: Modify erk land to skip creating learn plans when no session material was preprocessed. Adds an early-return check in _create_learn_pr_impl() and notifies the user wi
+     th a clear message explaining why the learn plan was skipped, preventing empty/low-value learn plans from clogging the issue tracker.
+
+∴ Thinking…
+
+  Good. Now I need to run the erk exec plan-save command with the branch slug and summary. The command should be:
+
+  erk exec plan-save --format json --session-id="c8e9daa0-b52d-4415-993c-e7d4c257b522" --branch-slug="skip-empty-learn-plans" --summary="Modify erk land to skip creating learn plans when no
+  session material was preprocessed. Adds an early-return check in _create_learn_pr_impl() and notifies the user with a clear message explaining why the learn plan was skipped, preventing
+  empty/low-value learn plans from clogging the issue tracker."
+
+⏺ Bash(erk exec plan-save --format json --session-id="c8e9daa0-b52d-4415-993c-e7d4c257b522" --branch-slug="skip-empty-learn-plans" --summary="Modify erk land to skip creating learn plans
+      when no session material was preprocessed. Adds an early-return check in _create_learn_pr_impl() and notifies the user with a clear message explaining why the learn plan was skipped,
+      preventing empty/low-value learn plans from clogging the issue tracker.")
+  ⎿  Error: Exit code 1
+     Traceback (most recent call last):
+       File "/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py", line 122, in run_subprocess_with_context
+         result = subprocess.run(
+             cmd,
+         ...&lt;8 lines&gt;...
+             **kwargs,
+         )
+       File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/subprocess.py", line 577, in run
+         raise CalledProcessError(retcode, process.args,
+                                  output=stdout, stderr=stderr)
+     subprocess.CalledProcessError: Command '['gh', 'api', '--method', 'POST', 'repos/{owner}/{repo}/pulls', '-f', 'head=plnd/skip-empty-learn-plans-03-01-1544', '-f', 'title=[erk-plan]
+     Plan: Skip Learn Plan Creation When No Session Material Found', '-f', 'body=Modify erk land to skip creating learn plans when no session material was preprocessed. Adds an early-return
+     check in _create_learn_pr_impl() and notifies the user with a clear message explaining why the learn plan was skipped, preventing empty/low-value learn plans from clogging the issue
+     tracker.\n\n&lt;details&gt;\n&lt;summary&gt;original-plan&lt;/summary&gt;\n\n# Plan: Skip Learn Plan Creation When No Session Material Found\n\n## Context\n\nWhen `erk land` runs, it creates a learn plan
+      draft PR to capture implementation insights from Claude Code sessions. However, if a plan had zero tracked sessions (as in PR #8566), `_create_learn_pr_impl()` still creates a learn
+     plan draft PR containing only `plan.md` and `ref.json` — no session XML files. This creates an empty/low-value learn plan that the downstream CI (`/erk:learn`) cannot meaningfully
+     analyze.\n\nThe fix: if no session XML files were found during preprocessing, skip creating the learn plan entirely and notify the user with a clear message explaining why.\n\n## Fix
+     Location\n\n**File:** `src/erk/cli/commands/land_learn.py`\n\n**Function:** `_create_learn_pr_impl()`, after line 371 where `xml_files` is computed.\n\n## Implementation\n\nAfter this
+     existing line:\n```python\nxml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)\n```\n\nAdd an early-return guard:\n```python\nif not xml_files:\n
+         user_output(\n        click.style("ℹ", fg="blue")\n        + f" Skipping learn plan for #{plan_id}: no session material found"\n        + (" (no sessions were tracked for this
+     plan)" if not all_session_ids else " (sessions found but no XML could be extracted)")\n    )\n    return\n```\n\nThis handles two sub-cases:\n- `all_session_ids` is empty → no sessions
+     were tracked at all\n- `all_session_ids` is non-empty but `xml_files` is empty → sessions exist but preprocessing failed\n\n## Critical Files\n\n- `src/erk/cli/commands/land_learn.py` —
+      the only file to modify\n  - `_create_learn_pr_impl()` at line 345\n  - The guard is inserted after line 371\n\n## Verification\n\n1. Run `erk land` on a plan with zero sessions (e.g.,
+      a changelog-only PR)\n2. Confirm the output shows the "Skipping learn plan" message instead of creating a draft PR\n3. Confirm no new draft PR appears in the GitHub issue tracker\n4.
+     Confirm `erk land` exits cleanly (no error)\n\nFor a plan with sessions, confirm learn plan creation still works normally.\n\n\n&lt;/details&gt;\n\n&lt;!-- WARNING: Machine-generated. Manual
+     edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:plan-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;plan-header&lt;/summary&gt;\n\n```yaml\n\nschema_version: \'2\'\ncreated_at:
+     \'2026-03-01T15:44:53.614873+00:00\'\ncreated_by: schrockn\nplan_comment_id: null\nlast_dispatched_run_id: null\nlast_dispatched_node_id: null\nlast_dispatched_at:
+     null\nlast_local_impl_at: null\nlast_local_impl_event: null\nlast_local_impl_session: null\nlast_local_impl_user: null\nlast_remote_impl_at: null\nlast_remote_impl_run_id:
+     null\nlast_remote_impl_session_id: null\nbranch_name: plnd/skip-empty-learn-plans-03-01-1544\ncreated_from_session: c8e9daa0-b52d-4415-993c-e7d4c257b522\nlifecycle_stage:
+     planned\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:plan-header --&gt;', '-F', 'draft=true', '-f', 'base=new-rebase-promtp']' returned non-zero exit status 1.
+
+     The above exception was the direct cause of the following exception:
+
+     Traceback (most recent call last):
+       File "/Users/schrockn/code/erk/.venv/bin/erk", line 10, in &lt;module&gt;
+         sys.exit(main())
+                  ~~~~^^
+       File "/Users/schrockn/code/erk/src/erk/cli/cli.py", line 230, in main
+         cli()
+         ~~~^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1485, in __call__
+         return self.main(*args, **kwargs)
+                ~~~~~~~~~^^^^^^^^^^^^^^^^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1406, in main
+         rv = self.invoke(ctx)
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/click/core.py", line 1873, in invoke
+         return _process_result(sub_ctx.command.invoke(sub_ctx))
+                                ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+       File "/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/cl
+
+     ... [11852 characters truncated] ...
+
+     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+         )
+         ^
+       File "/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py", line 437, in _save_plan_via_planned_pr
+         _save_as_planned_pr(
+         ~~~~~~~~~~~~~~~~~~~^
+             ctx,
+             ^^^^
+         ...&lt;11 lines&gt;...
+             session_xml_dir=session_xml_dir,
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+         )
+         ^
+       File "/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py", line 275, in _save_as_planned_pr
+         result = backend.create_plan(
+             repo_root=repo_root,
+         ...&lt;4 lines&gt;...
+             summary=summary or "",
+         )
+       File "/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py", line 351, in create_plan
+         pr_number = self._github.create_pr(
+             repo_root,
+         ...&lt;4 lines&gt;...
+             draft=True,
+         )
+       File "/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py", line 546, in create_pr
+         result = run_subprocess_with_context(
+             cmd=cmd,
+             operation_context=f"create pull request for branch '{branch}'",
+             cwd=repo_root,
+         )
+       File "/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py", line 162, in run_subprocess_with_context
+         raise RuntimeError(error_msg) from e
+     RuntimeError: Failed to create pull request for branch 'plnd/skip-empty-learn-plans-03-01-1544'
+     Command: gh api --method POST repos/{owner}/{repo}/pulls -f head=plnd/skip-empty-learn-plans-03-01-1544 -f title=[erk-plan] Plan: Skip Learn Plan Creation When No Session Material Found
+      -f body=Modify erk land to skip creating learn plans when no session material was preprocessed. Adds an early-return check in _create_learn_pr_impl() and notifies the user with a clear
+      message explaining why the learn plan was skipped, preventing empty/low-value learn plans from clogging the issue tracker.
+
+     &lt;details&gt;
+     &lt;summary&gt;original-plan&lt;/summary&gt;
+
+     # Plan: Skip Learn Plan Creation When No Session Material Found
+
+     ## Context
+
+     When `erk land` runs, it creates a learn plan draft PR to capture implementation insights from Claude Code sessions. However, if a plan had zero tracked sessions (as in PR #8566),
+     `_create_learn_pr_impl()` still creates a learn plan draft PR containing only `plan.md` and `ref.json` — no session XML files. This creates an empty/low-value learn plan that the
+     downstream CI (`/erk:learn`) cannot meaningfully analyze.
+
+     The fix: if no session XML files were found during preprocessing, skip creating the learn plan entirely and notify the user with a clear message explaining why.
+
+     ## Fix Location
+
+     **File:** `src/erk/cli/commands/land_learn.py`
+
+     **Function:** `_create_learn_pr_impl()`, after line 371 where `xml_files` is computed.
+
+     ## Implementation
+
+     After this existing line:
+     ```python
+     xml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
+     ```
+
+     Add an early-return guard:
+     ```python
+     if not xml_files:
+         user_output(
+             click.style("ℹ", fg="blue")
+             + f" Skipping learn plan for #{plan_id}: no session material found"
+             + (" (no sessions were tracked for this plan)" if not all_session_ids else " (sessions found but no XML could be extracted)")
+         )
+         return
+     ```
+
+     This handles two sub-cases:
+     - `all_session_ids` is empty → no sessions were tracked at all
+     - `all_session_ids` is non-empty but `xml_files` is empty → sessions exist but preprocessing failed
+
+     ## Critical Files
+
+     - `src/erk/cli/commands/land_learn.py` — the only file to modify
+       - `_create_learn_pr_impl()` at line 345
+       - The guard is inserted after line 371
+
+     ## Verification
+
+     1. Run `erk land` on a plan with zero sessions (e.g., a changelog-only PR)
+     2. Confirm the output shows the "Skipping learn plan" message instead of creating a draft PR
+     3. Confirm no new draft PR appears in the GitHub issue tracker
+     4. Confirm `erk land` exits cleanly (no error)
+
+     For a plan with sessions, confirm learn plan creation still works normally.
+
+
+     &lt;/details&gt;
+
+     &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+     &lt;!-- erk:metadata-block:plan-header --&gt;
+     &lt;details&gt;
+     &lt;summary&gt;plan-header&lt;/summary&gt;
+
+     ```yaml
+
+     schema_version: '2'
+     created_at: '2026-03-01T15:44:53.614873+00:00'
+     created_by: schrockn
+     plan_comment_id: null
+     last_dispatched_run_id: null
+     last_dispatched_node_id: null
+     last_dispatched_at: null
+     last_local_impl_at: null
+     last_local_impl_event: null
+     last_local_impl_session: null
+     last_local_impl_user: null
+     last_remote_impl_at: null
+     last_remote_impl_run_id: null
+     last_remote_impl_session_id: null
+     branch_name: plnd/skip-empty-learn-plans-03-01-1544
+     created_from_session: c8e9daa0-b52d-4415-993c-e7d4c257b522
+     lifecycle_stage: planned
+
+     ```
+
+     &lt;/details&gt;
+     &lt;!-- /erk:metadata-block:plan-header --&gt; -F draft=true -f base=new-rebase-promtp
+     Exit code: 1
+     stdout: {"message":"Validation
+     Failed","errors":[{"resource":"PullRequest","field":"base","code":"invalid"}],"documentation_url":"https://docs.github.com/rest/pulls/pulls#create-a-pull-request","status":"422"}
+     stderr: gh: Validation Failed (HTTP 422)
+
+∴ Thinking…
+
+  There's an error creating the PR - the base branch "new-rebase-promtp" is invalid. This looks like a typo in the branch name (it should probably be "new-rebase-prompt"). Let me check what
+  the actual current branch is, and use the correct base branch.
+
+⏺ I see the error - the base branch is invalid. Let me check the current branch setup:
+
+⏺ Bash(git status | head -20 &amp;&amp; git log --oneline -1)
+  ⎿  On branch new-rebase-promtp
+     nothing to commit, working tree clean
+     f6d55bc33 WIP: Prepare for PR submission
+
+∴ Thinking…
+
+  I see - the current branch is "new-rebase-promtp" and it doesn't exist in the remote. I need to use "master" or "main" as the base branch instead. Let me try again with --base=master
+
+⏺ Bash(erk exec plan-save --format json --session-id="c8e9daa0-b52d-4415-993c-e7d4c257b522" --branch-slug="skip-empty-learn-plans" --summary="Modify erk land to skip creating learn plans
+      when no session material was preprocessed. Adds an early-return check in _create_learn_pr_impl() and notifies the user with a clear message explaining why the learn plan was skipped,
+      preventing empty/low-value learn plans from clogging the issue tracker." --base=master 2&gt;&amp;1 | jq .)
+  ⎿  Error: Exit code 5
+     jq: parse error: Invalid numeric literal at line 1, column 6
+
+     jq: parse error: Invalid numeric literal at line 1, column 6
+
+∴ Thinking…
+
+  The jq parser failed, which means the output wasn't valid JSON. Let me try again without piping through jq to see what the actual output is.
+
+⏺ Bash(erk exec plan-save --format json --session-id="c8e9daa0-b52d-4415-993c-e7d4c257b522" --branch-slug="skip-empty-learn-plans" --summary="Modify erk land to skip creating learn plans
+      when no session material was preprocessed. Adds an early-return check in _create_learn_pr_impl() and notifies the user with a clear message explaining why the learn plan was skipped,
+      preventing empty/low-value learn plans from clogging the issue tracker." --base=master)
+  ⎿  Error: Exit code 2
+     Usage: erk exec plan-save [OPTIONS]
+     Try 'erk exec plan-save -h' for help.
+
+     Error: No such option: --base
+
+     Usage: erk exec plan-save [OPTIONS]
+     Try 'erk exec plan-save -h' for help.
+
+     Error: No such option: --base
+
+∴ Thinking…
+
+  There's no --base option for plan-save. The issue is that the plan-save command is trying to use the current branch as the base, but "new-rebase-promtp" doesn't exist on the remote. Let me
+   check what branches are available and what the issue is.Actually, looking at the error more carefully - the plan-save command created a branch and tried to open a PR with
+  base=new-rebase-promtp, which doesn't exist. The problem might be that I need to be on a proper branch first.
+
+  Let me check what the expected workflow is. It seems like I should either:1. Switch to master first before running plan-save, or
+  2. Create the branch that plan-save will base its PR on
+
+  Let me check the git branches:
+
+⏺ Bash(git branch -a | head -20 &amp;&amp; echo "---" &amp;&amp; git branch -vv | head -10)
+  ⎿    P7065-implement-step-3-4-of-obj-02-15-1010
+       P7125-register-the-integration-02-15-2102
+       P7185-erk-objective-next-plan-7-02-16-0732
+       P7247-erk-objective-next-plan-7-02-16-1849
+       P7300-erk-stack-consolidate-cur-02-17-0714
+       P7548-fix-this-github-actions-g-02-19-1002
+       P7570-O7419-erk-objective-plan-02-19-1043
+       P7596-erk-plan-update-erk-plan-02-19-1224
+       P7650-break-up-that-file-erk-te-02-20-0549
+       P7713-in-the-tui-instead-of-hav-02-21-0809
+       P7718-in-the-tui-instead-of-hav-02-21-0819
+       P7726-eliminate-the-lrn-column-02-21-0850
+       P7734-eliminate-the-lrn-column-02-21-0918
+     + __erk-slot-01-br-stub__
+     + __erk-slot-02-br-stub__
+     + __erk-slot-03-br-stub__
+     + __erk-slot-04-br-stub__
+     + __erk-slot-05-br-stub__
+     + __erk-slot-06-br-stub__
+     + __erk-slot-07-br-stub__
+     ---
+       P7065-implement-step-3-4-of-obj-02-15-1010 392cf58ba [origin/P7065-implement-step-3-4-of-obj-02-15-1010] One-shot: Implement step 3.4 of objective #6864: Migrate
+     `track_learn_result.py`, `track_learn_evaluation.py` (Phase: Migrate Exec Scripts to PlanBackend)
+       P7125-register-the-integration-02-15-2102  f689e050d [origin/P7125-register-the-integration-02-15-2102: behind 4] One-shot: Register the 'integration' custom pytest mark in
+     pyproject.toml to fix PytestUnknownMarkWarning warnings. The warnings appear in tests/integration/test_docs_check.py and tests/integration/test_real_agent_docs.py which use
+     @pytest.mark.integration but the mark is not registered. Add it to the pytest markers configuration.
+       P7185-erk-objective-next-plan-7-02-16-0732 d979e5bbd [origin/P7185-erk-objective-next-plan-7-02-16-0732: ahead 1, behind 8] One-shot: /erk:objective-next-plan 7132 Implement step
+      2.3 of objective #7132: Audit score 7 docs (47 docs) (Phase: Phase 2)
+       P7247-erk-objective-next-plan-7-02-16-1849 305ce775d [origin/P7247-erk-objective-next-plan-7-02-16-1849] One-shot: /erk:objective-next-plan 7242 Implement step 2.1 of objective
+     #7242: Rename `update-roadmap-step` → `update-objective-node`, operating through graph model internally (Phase: Phase 2)
+       P7300-erk-stack-consolidate-cur-02-17-0714 e5c8eaf26 [origin/P7300-erk-stack-consolidate-cur-02-17-0714] One-shot: erk stack consolidate currently supports --down (consolidate
+     trunk to current branch) and full-stack (default). Add a --up option that consolidates only upstack branches (current branch to leaf). The help text is:
+       P7548-fix-this-github-actions-g-02-19-1002 87f8ea71f [origin/P7548-fix-this-github-actions-g-02-19-1002: ahead 1, behind 4] One-shot: fix this:
+       P7570-O7419-erk-objective-plan-02-19-1043  8f5c5e3bf [origin/P7570-O7419-erk-objective-plan-02-19-1043: behind 5] One-shot: /erk:objective-plan 7419 Implement step 2.5 of
+     objective #74
+       P7596-erk-plan-update-erk-plan-02-19-1224  da580393c Add plan: Add Plan Backend Indicator to Statusline
+       P7650-break-up-that-file-erk-te-02-20-0549 61dc8c82d [origin/P7650-break-up-that-file-erk-te-02-20-0549: behind 4] One-shot: break up that file (erk/tests/tui/test_app.py) and
+     reorganiz
+       P7713-in-the-tui-instead-of-hav-02-21-0809 2ee7c6d5c [origin/P7713-in-the-tui-instead-of-hav-02-21-0809: behind 4] One-shot: in the tui instead of having the column sts which has
+      laptop
+
+∴ Thinking…
+
+  I see - there are many branches, but "new-rebase-promtp" is the current branch and it's not tracking a remote. The issue is that plan-save is trying to create a PR against the current
+  branch as the base, but since the current branch isn't pushed to the remote, the PR creation fails.
+
+  The solution is to switch to master first, then run plan-save. Let me do that.
+
+⏺ I need to switch to the master branch first, then save the plan:
+
+⏺ Bash(git checkout master &amp;&amp; erk exec plan-save --format json --session-id="c8e9daa0-b52d-4415-993c-e7d4c257b522" --branch-slug="skip-empty-learn-plans" --summary="Modify erk land to skip
+      creating learn plans when no session material was preprocessed. Adds an early-return check in _create_learn_pr_impl() and notifies the user with a clear message explaining why the
+      learn plan was skipped, preventing empty/low-value learn plans from clogging the issue tracker.")
+  ⎿  Switched to branch 'master'
+     Your branch is up to date with 'origin/master'.
+     {
+       "success": true,
+       "plan_number": 8570,
+       "plan_url": "https://github.com/dagster-io/erk/pull/8570",
+       "title": "[erk-plan] Plan: Skip Learn Plan Creation When No Session Material Found",
+       "branch_name": "plnd/skip-empty-learn-plans-03-01-1545",
+       "plan_backend": "planned_pr",
+       "objective_issue": null,
+       "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/c8e9daa0-b52d-4415-993c-e7d4c257b522/plan_snapshots/000001-6f75117d"
+     }
+
+∴ Thinking…
+
+  Perfect! The plan was saved successfully as PR #8570. Now I need to push the planning session and display the results. Let me follow the remaining steps from the plan-save instructions.
+
+⏺ Excellent! The plan has been saved successfully. Now let me push the planning session and display the results:
+
+⏺ Bash(erk exec upload-impl-session --session-id "c8e9daa0-b52d-4415-993c-e7d4c257b522" 2&gt;/dev/null || true)
+  ⎿  {
+       "uploaded": false,
+       "reason": "no_impl_folder"
+     }
+
+∴ Thinking…
+
+  That's fine - there's no impl folder yet since we haven't started implementation. The plan is saved successfully as PR #8570. Let me now display the results to the user. According to the
+  plan-save instructions, I should display the plan number, URL, and next steps.
+
+⏺ Perfect! Your plan has been saved successfully.
+
+  Plan Saved: Skip Learn Plan Creation When No Session Material Found
+
+  Plan #8570
+  - URL: https://github.com/dagster-io/erk/pull/8570
+  - Branch: plnd/skip-empty-learn-plans-03-01-1545
+
+  This plan addresses the issue where erk land creates empty learn plans when no session material was found. The fix adds an early-return check in _create_learn_pr_impl() to skip plan
+  creation and notify the user when no session XML files exist.
+
+  Next Steps
+
+  You can now:
+
+  1. Dispatch to queue — Let a remote agent implement the plan:
+  /erk:pr-dispatch
+  2. Implement locally — Work on the plan in a new slot:
+  erk br co --new-slot --for-plan 8570
+  3. Review on GitHub — View and edit the plan:
+    - https://github.com/dagster-io/erk/pull/8570
+
+✻ Brewed for 4m 7s
+
+❯ /erk:pr-dispatch
+
+∴ Thinking…
+
+  The user wants me to dispatch plan #8570 for remote implementation. Let me run the erk pr dispatch command with that plan number.
+
+⏺ I'll dispatch plan #8570 for remote implementation:
+
+⏺ Bash(erk pr dispatch 8570 &amp;&amp; erk exec marker delete --session-id "c8e9daa0-b52d-4415-993c-e7d4c257b522" plan-saved-issue 2&gt;/dev/null || true)
+  ⎿  Checking GitHub authentication...
+     Syncing trunk with remote...
+     Error: Root worktree is on 'new-rebase-promtp', not 'master'.
+
+     erk pr dispatch requires the root worktree to have master checked out.
+     This ensures master can be kept in sync with origin/master.
+
+     To fix:
+       cd /Users/schrockn/code/erk
+       git checkout master
+
+∴ Thinking…
+
+  I need to check out master first. Let me do that and then try the dispatch again. But wait - I notice I'm back in plan mode according to the system reminder. Let me first check out master
+  and then try dispatching again.
+
+⏺ Let me check out master and then dispatch the plan:
+
+⏺ Bash(git checkout master &amp;&amp; erk pr dispatch 8570 &amp;&amp; erk exec marker delete --session-id "c8e9daa0-b52d-4415-993c-e7d4c257b522" plan-saved-issue 2&gt;/dev/null || true)
+  ⎿  Switched to branch 'master'
+     Your branch is up to date with 'origin/master'.
+     Checking GitHub authentication...
+     Syncing trunk with remote...
+     Resolving GitHub username...
+     Validating 1 planned-PR plan(s)...
+
+     Validating PR #8570...
+
+     ✓ All 1 plan(s) validated
+
+       #8570: [erk-plan] Plan: Skip Learn Plan Creation When No Session Material Found
+
+     Dispatching PR #8570...
+
+     Fetching plan content...
+     Checking out existing plan branch: plnd/skip-empty-learn-plans-03-01-1545
+     Cleaning up previous .erk/impl-context/ folder...
+     Creating .erk/impl-context/ folder...
+     ✓ Branch pushed to remote
+
+     Triggering workflow: plan-implement.yml
+       Waiting for workflow run... (attempt 1/11)
+     (8s)
+     ctrl+b to run in background
+
+✢ Enchanting… (15s · ↓ 232 tokens · thinking)
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ➜  (git:erk) (wt:root) (br:master) | (gh:no-pr) │ (O)                                                                                                                         62885 tokens
+  ⏸ plan mode on (shift+tab to cycle) · PR #8569                                                                                                            current: 2.1.63 · latest: 2.1.63
+
+can we avoid having to checkout in these cases if we use techniques in https://github.com/dagster-io/erk/issues/7813</user>
+  <thinking>The user is asking whether we can avoid having to checkout master when running commands like `erk pr dispatch` and `erk exec plan-save`, by using techniques described in issue #7813. Let me look at that issue to understand what techniques are being discussed.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="21577" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21577}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at that issue to understand the proposed techniques.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="21577" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21577}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018LLCdo3mMX2YtWVnc8APeZ">
+    <param name="command">gh issue view 7813 --repo dagster-io/erk --json title,body,comments 2&gt;&amp;1 | head -200</param>
+    <param name="description">Fetch issue #7813 details</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="21577" cache_read_input_tokens="19113" output_tokens="191" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 21577, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018LLCdo3mMX2YtWVnc8APeZ">
+{"body":"&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;objective-header&lt;/summary&gt;\n\n```yaml\n\ncreated_at: '2026-02-22T05:13:55.482141+00:00'\ncreated_by: schrockn\nobjective_comment_id: 3940641023\nslug: eliminate-git-checkouts\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-header --&gt;\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-roadmap --&gt;\n&lt;details&gt;\n&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;\n\n```yaml\nschema_version: '4'\nnodes:\n- id: '1.1'\n  slug: null\n  description: 'upload_session.py and trigger_async_learn.py: Replace checkout cycles\n    with commit_files_to_branch + push (4 checkouts eliminated)'\n  status: done\n  pr: '#7847'\n- id: '1.2'\n  slug: null\n  description: 'plan_migrate_to_draft_pr.py and plan_create_review_branch.py (deleted):\n    Replace checkout cycles with commit_files_to_branch + push (3 checkouts eliminated)'\n  status: done\n  pr: '#7867'\n- id: '1.3'\n  slug: null\n  description: 'one_shot_dispatch.py: Replace checkout/restore cycle with commit_files_to_branch,\n    remove ~240 lines of save/restore scaffolding and finally block (2-3 checkouts\n    eliminated)'\n  status: done\n  pr: '#7906'\n- id: '2.1'\n  slug: null\n  description: Refactor create_worker_impl_folder to support returning a files dict\n    (content-only mode) alongside its existing filesystem-write mode\n  status: done\n  pr: '#7920'\n- id: '2.2'\n  slug: null\n  description: Convert _create_branch_and_pr (issue backend) and branch-exists-but-no-PR\n    path in submit.py to use commit_files_to_branch (4 checkouts eliminated)\n  status: done\n  pr: '#7972'\n- id: '2.3'\n  slug: null\n  description: Convert _submit_draft_pr_plan path where feasible, separating rebase\n    from commit operations (2 checkouts eliminated)\n  status: in_progress\n  pr: '#7991'\n- id: '3.1'\n  slug: null\n  description: Add read_file_from_ref() to git gateway ABC and implementations (formalizes\n    git show ref:path pattern from download_remote_session.py)\n  status: pending\n  pr: null\n- id: '3.2'\n  slug: null\n  description: Add lightweight remote ref check using git ls-remote as alternative\n    to full fetch for divergence detection in submit pipeline\n  status: pending\n  pr: null\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-roadmap --&gt;","comments":[{"id":"IC_kwDOPxC3hc7q4Wj_","author":{"login":"schrockn"},"authorAssociation":"MEMBER","body":"&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-body --&gt;\n&lt;details open&gt;\n&lt;summary&gt;&lt;strong&gt;Objective&lt;/strong&gt;&lt;/summary&gt;\n\n# Objective: Eliminate Unnecessary Git Checkouts via Plumbing Operations\n\nReplace save-checkout-write-commit-restore anti-patterns across erk's codebase with git plumbing operations (primarily `commit_files_to_branch()`), eliminating ~15-17 unnecessary checkout operations and simplifying error handling.\n\n## Goal\n\nAll git operations that only need to commit files to a branch — without actually needing working tree state — should use the existing `commit_files_to_branch()` plumbing primitive instead of the checkout dance. The end state is:\n\n- Zero checkout calls in exec scripts that only commit data to temporary branches\n- Reduced checkouts in the submit workflow where plan content is generated from plan data\n- Formalized gateway methods for common plumbing patterns (`read_file_from_ref`, lightweight remote checks)\n\n## Design Decisions\n\n- **Reuse existing primitive**: `commit_files_to_branch()` in `packages/erk-shared/.../commit_ops/real.py` already implements the full plumbing stack. No new low-level git abstractions needed.\n- **Tier 3 is out of scope**: Land workflow, slot operations, stack moves, and worktree creation genuinely need working tree state changes — these checkouts are structural and correct.\n- **Preserve push semantics**: Each conversion replaces only the checkout+commit portion. Push operations (`push_to_remote`) remain unchanged.\n\n## Roadmap\n\n&lt;!-- erk:roadmap-table --&gt;\n### Phase 1: Tier 1: Exec Script Checkout Elimination (2-3 PRs) (3 PR)\n| Node | Description | Status | PR |\n|------|-------------|--------|----|\n| 1.1 | upload_session.py and trigger_async_learn.py: Replace checkout cycles with commit_files_to_branch + push (4 checkouts eliminated) | done | #7847 |\n| 1.2 | plan_migrate_to_draft_pr.py and plan_create_review_branch.py (deleted): Replace checkout cycles with commit_files_to_branch + push (3 checkouts eliminated) | done | #7867 |\n| 1.3 | one_shot_dispatch.py: Replace checkout/restore cycle with commit_files_to_branch, remove ~240 lines of save/restore scaffolding and finally block (2-3 checkouts eliminated) | done | #7906 |\n\n### Phase 2: Tier 2: Submit Workflow Checkout Reduction (1-2 PRs) (3 PR)\n| Node | Description | Status | PR |\n|------|-------------|--------|----|\n| 2.1 | Refactor create_worker_impl_folder to support returning a files dict (content-only mode) alongside its existing filesystem-write mode | done | #7920 |\n| 2.2 | Convert _create_branch_and_pr (issue backend) and branch-exists-but-no-PR path in submit.py to use commit_files_to_branch (4 checkouts eliminated) | done | #7972 |\n| 2.3 | Convert _submit_draft_pr_plan path where feasible, separating rebase from commit operations (2 checkouts eliminated) | in-progress | #7991 |\n\n### Phase 3: Tier 4: Gateway Formalization and Lightweight Queries (1 PR) (0 PR)\n| Node | Description | Status | PR |\n|------|-------------|--------|----|\n| 3.1 | Add read_file_from_ref() to git gateway ABC and implementations (formalizes git show ref:path pattern from download_remote_session.py) | pending | - |\n| 3.2 | Add lightweight remote ref check using git ls-remote as alternative to full fetch for divergence detection in submit pipeline | pending | - |\n&lt;!-- /erk:roadmap-table --&gt;\n\n## Implementation Context\n\n### Phase 1 (Complete)\n\nAll five Tier 1 exec scripts have been converted to plumbing. Zero `checkout_branch` calls remain in any exec script that only commits data to branches:\n\n- `upload_session.py` uses `commit_files_to_branch` (line 110)\n- `upload_impl_session.py` uses `commit_files_to_branch` (line 114)\n- `trigger_async_learn.py` uses `commit_files_to_branch` (line 596)\n- `plan_save.py` uses `commit_files_to_branch` (line 209) — this replaced the old `plan_migrate_to_draft_pr.py` and `plan_create_review_branch.py` (both deleted)\n- `one_shot_dispatch.py` uses `commit_files_to_branch` (line 220)\n\nThe only remaining `checkout_branch` calls in exec scripts are in `setup_impl.py` and `setup_impl_from_issue.py`, which legitimately need working tree state to set up implementation folders.\n\n### Phase 2 (2.1-2.2 Complete; 2.3 Stale)\n\nNodes 2.1 and 2.2 converted the issue-backend submit path to plumbing.\n\n**Node 2.3 is stale.** PR #7991 targets `_submit_draft_pr_plan` in the old `src/erk/cli/commands/submit.py`, but that file was deleted by the `erk pr` unification (#8110). The old dual-path submit orchestration (draft-PR path vs issue-backend path) was replaced by a linear `submit_pipeline.py` + `submit_cmd.py`. The issue-based backend was also deleted entirely (#8100). The new submit pipeline has zero checkout-based commit patterns for plan data — plan files are committed via `plan_save.py` which already uses plumbing. The `pull_rebase` call remaining in `submit_pipeline.py:348` is a legitimate divergence sync for the user's current working branch, not the save-checkout-restore anti-pattern this objective targets.\n\n**Net result:** The checkout operations that node 2.3 aimed to eliminate no longer exist in the codebase. PR #7991 is orphaned and should be closed.\n\n### Phase 3 (Pending)\n\n**Node 3.1 — `read_file_from_ref()`:** Two call sites still use raw `subprocess.run([\"git\", \"show\", ...])` to read files from refs:\n- `download_remote_session.py:79` — reads session JSONL from `origin/{session_branch}:.erk/session/{session_id}.jsonl`\n- `trigger_async_learn.py:258` — reads session JSONL from `origin/{session_branch}:.erk/session/{session_id}.jsonl`\n\nBoth follow the same pattern: `git show ref:path`, capture stdout as bytes, write to a local file. A gateway method would formalize this, improve testability (no raw subprocess in application code), and enable fake-driven testing.\n\n**Node 3.2 — `git ls-remote` gateway method:** Only one existing call site uses `ls-remote` (`detect_trunk_branch.py:9,11` — a shell script, not Python). Adding a Python gateway method for lightweight remote ref checks could optimize divergence detection in the submit pipeline, but the current `is_branch_diverged_from_remote` approach works correctly.\n\n### Remaining Checkout Operations (Out of Scope)\n\nThe following `checkout_branch` calls are structural and correct (Tier 3, out of scope):\n- `wt/create_cmd.py` — worktree creation requires checkout\n- `land_cmd.py` — landing workflow needs HEAD on target branch\n- `slot/common.py`, `slot/unassign_cmd.py` — slot management requires working tree state\n- `stack/move_cmd.py`, `stack/consolidate_cmd.py` — stack operations swap branches between worktrees\n- `branch/checkout_cmd.py` — explicit user-requested checkout\n- `pr/dispatch_cmd.py` — creates and pushes dispatch branch (checkout + restore pattern still present)\n- `admin.py` — test branch operations\n\n## Exploration Notes\n\n### The Anti-Pattern (from commit 29a811918)\n\nThe pattern eliminated in the initial commit was: save current branch -&gt; checkout target -&gt; perform operation -&gt; restore original branch. This requires a `try/finally` for safety, is fragile (what if restore fails?), and causes unnecessary working tree churn.\n\n### Existing Plumbing Primitive\n\n`commit_files_to_branch()` uses: `git read-tree` -&gt; `git hash-object` -&gt; `git update-index` -&gt; `git write-tree` -&gt; `git commit-tree` -&gt; `git update-ref`, all with a temporary index file (`GIT_INDEX_FILE`). This never touches HEAD or the working tree.\n\n### Key Files\n\n- Plumbing primitive: `packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py`\n- ABC interface: `packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py`\n- Submit pipeline (no checkouts): `src/erk/cli/commands/pr/submit_pipeline.py`\n- Plan save (uses plumbing): `src/erk/cli/commands/exec/scripts/plan_save.py`\n\n## Related Documentation\n\n- Skills to load: `fake-driven-testing` (for test updates), `dignified-python`\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-body --&gt;\n\n","createdAt":"2026-02-22T10:13:56Z","includesCreatedEdit":true,"isMinimized":false,"minimizedReason":"","reactionGroups":[],"url":"https://github.com/dagster-io/erk/issues/7813#issuecomment-3940641023","viewerDidAuthor":true},{"id":"IC_kwDOPxC3hc7q7UhR","author":{"login":"schrockn"},"authorAssociation":"MEMBER","body":"## Action: Eliminated checkout cycles in session/learn upload scripts\n\n**Date:** 2026-02-22\n**PR:** #7847\n**Phase/Step:** 1.1\n\n### What Was Done\n\n- Replaced checkout-commit-checkout cycles in trigger_async_learn.py and upload_session.py with commit_files_to_branch plumbing\n- Removed shutil.copy2 file staging in favor of direct in-memory file content\n- Simplified branch lifecycle: create from origin/master, commit files, push — no working tree modification\n- Removed transient state management (original_branch, start_point, try/finally guards)\n- Updated tests to verify plumbing-based commits via FakeGit.branch_commits tracking\n\n### Lessons Learned\n\n- The commit_files_to_branch primitive worked cleanly as a drop-in replacement — no new abstractions needed\n- In-memory file content passing simplifies both implementation and test verification\n\n### Roadmap Updates\n\n- Node 1.1: in_progress -&gt; done","createdAt":"2026-02-22T17:35:28Z","includesCreatedEdit":false,"isMinimized":false,"minimizedReason":"","reactionGroups":[],"url":"https://github.com/dagster-io/erk/issues/7813#issuecomment-3941419089","viewerDidAuthor":true},{"id":"IC_kwDOPxC3hc7q7bTr","author":{"login":"schrockn"},"authorAssociation":"MEMBER","body":"## Action: Phase 1 Node 1.2: Eliminate checkout cycles in plan_migrate_to_draft_pr and plan_create_review_branch\n\n**Date:** 2026-02-22\n**PR:** #7867\n**Phase/Step:** 1.2\n\n### What Was Done\n\n- Converted plan_create_review_branch.py from checkout+write+stage+commit pattern to direct commit_files_to_branch() call\n- Converted plan_migrate_to_draft_pr.py to use commit_files_to_branch(), eliminating save/restore branch scaffolding\n- Removed try/finally restoration logic from both scripts\n- Updated tests to verify branch commits instead of filesystem state changes\n\n### Lessons Learned\n\n- The commit_files_to_branch() pattern effectively replaces the checkout dance for read-only file writes to branches\n- Direct branch commits simplify test assertions by eliminating intermediate filesystem state\n\n### Roadmap Updates\n\n- Node 1.2: status -&gt; done","createdAt":"2026-02-22T17:57:15Z","includesCreatedEdit":false,"isMinimized":false,"minimizedReason":"","reactionGroups":[],"url":"https://github.com/dagster-io/erk/issues/7813#issuecomment-3941446891","viewerDidAuthor":true},{"id":"IC_kwDOPxC3hc7q8vaY","author":{"login":"schrockn"},"authorAssociation":"MEMBER","body":"## Action: Clean up stale branch-restoration remnants in one_shot_dispatch.py\n\n**Date:** 2026-02-22\n**PR:** #7906\n**Phase/Step:** 1.3\n\n### What Was Done\n\n- Renamed original_branch variable to current_branch to accurately reflect its role as a detached HEAD guard, not a restoration target\n- Fixed stale comment that claimed branch restoration was happening in a finally block\n- Renamed test functions from stays_on_original_branch_on_error to stays_on_current_branch_on_error to match actual behavior\n- Updated docs/learned/planning/one-shot-workflow.md to document that dispatch uses git plumbing without checkouts\n\n### Lessons Learned\n\n- Cleaning up stale variable names and comments is quick and high-value — it prevents confusion for future agents working in the same file\n- The actual checkout elimination (in PR #7786) left behind misleading documentation that could have caused an agent to implement restore logic unnecessarily\n\n### Roadmap Updates\n\n- Node 1.3: planning -&gt; done (plan #7906, PR #7906)","createdAt":"2026-02-22T22:03:18Z","includesCreatedEdit":false,"isMinimized":false,"minimizedReason":"","reactionGroups":[],"url":"https://github.com/dagster-io/erk/issues/7813#issuecomment-3941791384","viewerDidAuthor":true},{"id":"IC_kwDOPxC3hc7rO2Rx","author":{"login":"schrockn"},"authorAssociation":"MEMBER","body":"## Action: Convert submit pipeline to git plumbing\n\n**Date:** 2026-02-23\n**PR:** #7972\n**Phase/Step:** 2.2\n\n### What Was Done\n\n- Replaced checkout-based workflows in submit.py _create_branch_and_pr and branch-exists-but-no-PR paths with commit_files_to_branch (4 checkouts eliminated)\n- Added build_impl_context_files() for in-memory impl-context generation without filesystem I/O\n- Introduced get_plan_backend() for environment-based plan storage resolution across 7 call sites\n- Removed defunct set-local-review-marker CI feature\n- Removed branch_rollback context manager (no longer needed)\n\n### Lessons Learned\n\n- The build_impl_context_files pattern (returning dict[str, str] for plumbing commits) worked cleanly and can be reused for node 2.3\n- Graphite linking still requires a targeted checkout scope since gt submit operates on the current stack — full checkout elimination requires Graphite-side changes\n\n### Roadmap Updates\n\n- Node 2.2: pending -&gt; done, plan=#7972, pr=#7972","createdAt":"2026-02-23T18:28:23Z","includesCreatedEdit":false,"isMinimized":false,"minimizedReason":"","reactionGroups":[],"url":"https://github.com/dagster-io/erk/issues/7813#issuecomment-3946538097","viewerDidAuthor":true},{"id":"IC_kwDOPxC3hc7rO-BJ","author":{"login":"schrockn"},"authorAssociation":"MEMBER","body":"## Action: Objective reevaluation\n\n**Date:** 2026-02-23\n**PR:** #None\n**Phase/Step:** 2.1, 1.2\n\n### What Was Done\n\n- Audited all 8 roadmap nodes against current codebase\n- Marked node 2.1 as done (PR #7920 merged 2026-02-22, create_worker_impl_folder refactored and worker_impl_folder.py deleted)\n- Updated node 1.2 description to note plan_create_review_branch.py was deleted\n\n### Lessons Learned\n\n- PR #7920 went further than planned: instead of adding content-only mode to create_worker_impl_folder, the function and module were deleted entirely in favor of build_plan_ref_json in impl_folder.py\n- branch_exists_on_remote already uses ls-remote in gateway (relevant to node 3.2 scope)\n\n### Roadmap Updates\n\n- Node 2.1: in_progress -&gt; done (PR #7920)\n\n### Body Reconciliation\n\n- **Node 1.2 description**: Added (deleted) annotation to plan_create_review_branch.py reference","createdAt":"2026-02-23T18:34:26Z","includesCreatedEdit":false,"isMinimized":false,"minimizedReason":"","reactionGroups":[],"url":"https://github.com/dagster-io/erk/issues/7813#issuecomment-3946569801","viewerDidAuthor":true}],"title":"Objective: Eliminate Unnecessary Git Checkouts via Plumbing Operations"}
+  </tool_result>
+  <thinking>Now I understand the objective. Issue #7813 is about eliminating unnecessary git checkouts by using git plumbing operations like `commit_files_to_branch()`. The key insight is that operations that only need to commit files to a branch shouldn't need to checkout that branch first.
+
+The user is asking: can we apply the same techniques from this objective to avoid needing to checkout master when running `erk pr dispatch` and `erk exec plan-save`?
+
+Let me look at what specifically caused the problem in our session:
+1. `erk exec plan-save` tried to create a PR with `base=new-rebase-promtp` (the current branch) which didn't exist remotely
+
+
+2. `erk pr dispatch` required the root worktree to be on master
+
+So I need to understand what these commands actually require from being on master versus what they could accomplish with plumbing operations instead. The objective notes that `pr/dispatch_cmd.py` still uses the checkout and restore pattern, though it's marked out of scope. For `plan_save`, the real issue was using the current branch as the PR base when it should probably default to something else.
+
+Let me dig into why `dispatch_cmd` explicitly needs master checked out and whether that's a hard requirement or just how it's currently implemented.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5670" cache_read_input_tokens="40690" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5670}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good question. Let me explore the specific code that required checkout to understand what's feasible.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5670" cache_read_input_tokens="40690" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5670}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01CHXTKrTiPMycPtaCkHvqFi">
+    <param name="description">Explore dispatch and plan-save checkout requirements</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1387 chars]... checkout
+
+Focus on the specific checkout/branch requirements, not the full file contents.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5670" cache_read_input_tokens="40690" output_tokens="909" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5670, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CHXTKrTiPMycPtaCkHvqFi">
+Perfect. Now I have all the information I need. Let me compile the analysis:
+
+## Analysis: Master Checkout Requirements in `erk pr dispatch` and `erk exec plan-save`
+
+Based on my exploration of the codebase, here's what I found:
+
+### 1. **`erk pr dispatch` - Master Checkout Requirement**
+
+**File:** `/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py` (lines 10-93)
+
+**The master check happens in `ensure_trunk_synced()`:**
+
+```python
+def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -&gt; None:
+    """Ensure root worktree is on trunk and synced with remote."""
+    # ...
+    # Check 1: Root worktree must be on trunk
+    if root_worktree.branch != trunk:
+        # ERROR: "Root worktree is on '{...}', not '{trunk}'"
+```
+
+**Why it requires master/trunk checked out:**
+
+1. **Trunk sync assumption**: The function performs a full sync of trunk with remote (lines 56-92):
+   - Fetches `origin/trunk`
+   - Compares local vs remote SHAs
+   - Performs fast-forward pull if needed
+   
+2. **Can only safely sync a checked-out branch**: The code assumes trunk is the working directory and uses plumbing operations like `pull_branch()` that require the branch to be checked out in the working tree.
+
+
+... [122 lines omitted] ...
+
+**The error occurs because:**
+  </tool_result>
+  <assistant>
+
+Good analysis. There are two distinct problems we hit in this session:
+
+1. **`plan-save`**: Uses the current branch as the PR base — if that branch doesn't exist remotely, the GitHub API rejects it. The fix is straightforward: when the current branch isn't pushed to the remote, fall back to trunk as the base.
+
+2. **`dispatch`**: `ensure_trunk_synced()` requires master to be checked out so it can `pull_branch()`. Per the objective, this could be replaced with `fetch_branch` + `update_ref` plumbing — no checkout needed.
+
+Both are directly in scope of the techniques from objective #7813. Let me design a plan for this.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3809" cache_read_input_tokens="46360" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3809}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01BFyCgGyAbuJY22JEMSc2zP">
+    <param name="description">Plan checkout elimination for plan-save and dispatch</param>
+    <param name="subagent_type">Plan</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 3404 chars]...entional for stacking)
+
+Provide a detailed implementation plan with specific code changes.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3809" cache_read_input_tokens="46360" output_tokens="1260" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3809, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BFyCgGyAbuJY22JEMSc2zP">
+Now I have all the information I need to produce a comprehensive plan. Let me synthesize everything.
+
+---
+
+## Implementation Plan: Fix plan-save and dispatch for Non-Master Branches
+
+### Problem Summary
+
+Two separate but related problems exist when running commands from a non-master branch:
+
+**Problem 1 (plan-save):** When the current branch is a feature branch that does not exist on the remote, `plan-save` uses that branch as the PR base via GitHub's API. GitHub rejects the PR creation because the base branch must exist on the remote. The stacking behavior (using current branch as base) is intentional for Graphite workflows, but only works when the branch is pushed.
+
+**Problem 2 (dispatch):** `ensure_trunk_synced()` requires the root worktree to have trunk checked out, and uses `git pull` (which requires a checkout) to sync trunk with origin. This prevents running dispatch from any non-trunk branch.
+
+### Solution Design
+
+#### Part 1: Fix plan-save Base Branch (Conditional Remote Check)
+
+The fix is straightforward: before using the current feature branch as the PR base, check if it exists on the remote. If not, fall back to trunk. The `branch_exists_on_remote()` method already exists in the `GitBranchOps` gateway (including abc, real, fake, dry_run, printing -- all 5 places).
+
+**File:** `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py`
+
+**Current code (lines 189-206):**
+```python
+current_branch = git.branch.get_current_branch(repo_root)
+
+if (
+    current_branch is not None
+    and current_branch != trunk
+    and not current_branch.startswith("learn/")
+
+... [309 lines omitted] ...
+
+    Raises SystemExit(1) on validation failure with clear error message.
+                    click.style("Error: ", fg="red")
+            click.style("Error: ", fg="red")
+            click.style("Error: ", fg="red")
+            f"Warning: This will discard any local commits on {trunk}."
+4. **Preserved error messages:** The divergence and local-ahead-of-remote error messages are preserved exactly.
+  </tool_result>
+  <assistant>
+
+Excellent analysis. Let me verify a few key details before writing the final plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6396" cache_read_input_tokens="50169" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6396}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SsArdcdSprLDemE9D6NPpr">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6396" cache_read_input_tokens="50169" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6396}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SsArdcdSprLDemE9D6NPpr">
+     1→"""Helper functions for dispatch command."""
+     2→
+     3→import click
+     4→
+     5→from erk.core.context import ErkContext
+     6→from erk.core.repo_discovery import RepoContext
+     7→from erk_shared.output.output import user_output
+     8→
+     9→
+    10→def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -&gt; None:
+    11→    """Ensure root worktree is on trunk and synced with remote.
+    12→
+    13→    Validates:
+    14→    1. Root worktree has trunk checked out
+    15→    2. Root worktree is clean (no uncommitted changes)
+    16→    3. Local trunk matches or can fast-forward to origin/trunk
+    17→
+    18→    Raises SystemExit(1) on validation failure with clear error message.
+    19→    """
+    20→    trunk = ctx.git.branch.detect_trunk_branch(repo.root)
+    21→
+    22→    # Find root worktree
+    23→    worktrees = ctx.git.worktree.list_worktrees(repo.root)
+    24→    root_worktree = None
+    25→    for wt in worktrees:
+    26→        if wt.is_root:
+    27→            root_worktree = wt
+    28→            break
+    29→
+    30→    if root_worktree is None:
+
+... [63 lines omitted] ...
+
+    37→            click.style("Error: ", fg="red")
+    50→            click.style("Error: ", fg="red") + "Root worktree has uncommitted changes.\n\n"
+    77→            click.style("Error: ", fg="red")
+    86→            click.style("Error: ", fg="red")
+    90→            f"Warning: This will discard any local commits on {trunk}."
+  </tool_result>
+  <tool_use name="Read" id="toolu_013fBNAzH7iUTokt1SNFW8Fa">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="offset">180</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6396" cache_read_input_tokens="50169" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6396}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013fBNAzH7iUTokt1SNFW8Fa">
+   180→        raise SystemExit(1)
+   181→    slug = branch_slug
+   182→    now = require_time(ctx).now()
+   183→    branch_name = generate_planned_pr_branch_name(
+   184→        slug,
+   185→        now,
+   186→        objective_id=objective_issue,
+   187→    )
+   188→
+   189→    # Determine base branch: use current branch if on a feature branch, otherwise trunk
+   190→    branch_manager = require_branch_manager(ctx)
+   191→    trunk = git.branch.detect_trunk_branch(repo_root)
+   192→    current_branch = git.branch.get_current_branch(repo_root)
+   193→
+   194→    if (
+   195→        current_branch is not None
+   196→        and current_branch != trunk
+   197→        and not current_branch.startswith("learn/")
+   198→    ):
+   199→        # Stack plan branch on current feature branch for natural Graphite stacking
+   200→        base_branch = current_branch
+   201→        create_result = branch_manager.create_branch(repo_root, branch_name, current_branch)
+   202→    else:
+   203→        # On trunk or detached HEAD: create from origin/trunk
+   204→        base_branch = trunk
+   205→        git.remote.fetch_branch(repo_root, "origin", trunk)
+   206→        create_result = branch_manager.create_branch(repo_root, branch_name, f"origin/{trunk}")
+   207→    if isinstance(create_result, BranchAlreadyExists):
+   208→        click.echo(f"Error: {create_result.message}", err=True)
+   209→        raise SystemExit(1) from None
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_013TvqefQttAa2x1komq74rw">
+    <param name="pattern">def branch_exists_on_remote</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6396" cache_read_input_tokens="50169" output_tokens="311" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6396, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013TvqefQttAa2x1komq74rw">
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py:86:    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -&gt; bool:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py:189:    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -&gt; bool:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py:93:    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -&gt; bool:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:245:    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -&gt; bool:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py:310:    def branch_exists_on_remote(self, repo_root: Path, remote: str, branch: str) -&gt; bool:
+  </tool_result>
+  <thinking>Now let me check a couple more things:
+1. Whether `find_worktree_for_branch` exists in the worktree gateway
+2. What `update-ref` does when a branch is checked out - the Plan agent suggested checking this
+
+Actually, looking at the dispatch_helpers.py code more carefully, the key change is:
+- Line 72: `ctx.git.remote.pull_branch(repo.root, "origin", trunk, ff_only=True)` - this requires trunk to be checked out
+- Replace with: `ctx.git.branch.update_local_ref(repo.root, trunk, remote_sha)` - plumbing, no checkout needed
+
+
+- The edge case is if trunk is checked out in the root worktree, `update-ref` won't update the working tree, but for the typical case where the user is running dispatch from a slot worktree, this approach works fine.
+
+- The working tree would be stale if trunk is checked out, but that's acceptable since the user would need to manually refresh it anyway.
+
+- The simplest solution is to just swap `pull_branch` for `update_local_ref` without worrying about detecting checked-out branches or uncommitted changes—it's simpler and the tradeoff is acceptable.
+
+- `git fetch origin master:master` already does what we need with proper fast-forward safety, though we'd need a gateway method for it.
+
+- The core changes are removing the "must be on trunk" and "must be clean" checks, then replacing `pull_branch` with `update_local_ref`.
+
+- I should check if `find_worktree_for_branch` already exists before deciding whether to implement it.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3477" cache_read_input_tokens="56565" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3477}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01An4ZgDWqxhZCVm9wimi27D">
+    <param name="pattern">def find_worktree_for_branch|def update_local_ref|def update_ref</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3477" cache_read_input_tokens="56565" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3477}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01An4ZgDWqxhZCVm9wimi27D">
+packages/erk-shared/src/erk_shared/gateway/git/abc.py:79:def find_worktree_for_branch(worktrees: list[WorktreeInfo], branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/printing.py:33:    def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py:79:    def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py:38:    def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py:150:    def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py:149:    def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+  </tool_result>
+  <tool_use name="Read" id="toolu_017fhisNv2gaioi4A95ySs1A">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3477" cache_read_input_tokens="56565" output_tokens="923" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3477, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017fhisNv2gaioi4A95ySs1A">
+     1→"""Dispatch plans for remote AI implementation via GitHub Actions."""
+     2→
+     3→import logging
+     4→import tomllib
+     5→from dataclasses import dataclass
+     6→from datetime import UTC, datetime
+     7→from pathlib import Path
+     8→
+     9→import click
+    10→
+    11→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+    12→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    13→from erk.cli.commands.slot.common import is_placeholder_branch
+    14→from erk.cli.constants import (
+    15→    DISPATCH_WORKFLOW_METADATA_NAME,
+    16→    DISPATCH_WORKFLOW_NAME,
+    17→    ERK_PLAN_LABEL,
+    18→)
+    19→from erk.cli.core import discover_repo_context
+    20→from erk.cli.ensure import Ensure, UserFacingCliError
+    21→from erk.core.context import ErkContext
+    22→from erk.core.repo_discovery import RepoContext
+    23→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+    24→from erk_shared.gateway.github.metadata.core import (
+    25→    create_submission_queued_block,
+    26→    render_erk_issue_event,
+    27→)
+    28→from erk_shared.gateway.github.parsing import (
+    29→    construct_pr_url,
+    30→    construct_workflow_run_url,
+
+... [20 lines omitted] ...
+  </tool_result>
+  <thinking>Good. `find_worktree_for_branch` exists in the worktree gateway. No `update_local_ref` or `update_ref` exists yet — we need to add it.
+
+Now I have everything I need to write the plan. Let me synthesize:
+
+**Part 1 - plan-save**: Add `branch_exists_on_remote` check (one line). All gateway methods already exist.
+
+**Part 2 - dispatch**: 
+1. Add `update_local_ref` to `GitBranchOps` (5-place ABC pattern)
+2. Rewrite `ensure_trunk_synced` to not require trunk checkout
+
+
+3. Swap out `pull_branch` for `update_local_ref`
+
+Let me write the final plan now.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2092" cache_read_input_tokens="60042" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2092}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good — `find_worktree_for_branch` already exists, and `update_local_ref` needs to be added. I have everything I need. Let me write the final plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2092" cache_read_input_tokens="60042" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2092}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01Ccj3jYf4e9YqUj3u6wr458">
+    <param name="file_path">/Users/schrockn/.claude/plans/purring-imagining-lobster.md</param>
+    <param name="content"># Plan: Eliminate Master Checkout Requirement from plan-save and dispatch
+
+## Context
+
+Whe...[truncated 4242 chars]... tests still pass
+4. Verify Graphite stacking still works when on a pushed feature branch
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2092" cache_read_input_tokens="60042" output_tokens="1660" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2092, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ccj3jYf4e9YqUj3u6wr458">
+File created successfully at: /Users/schrockn/.claude/plans/purring-imagining-lobster.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01PQgtGde97VDDLpQ8LC8hob">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run git commands (status, checkout, branch, diff, log)'}, {'t...[truncated 35 chars]...ispatch, exec)'}, {'tool': 'Bash', 'prompt': 'run uv commands for dependency management'}]</param>
+    <param name="plan"># Plan: Eliminate Master Checkout Requirement from plan-save and dispatch
+
+## Context
+
+Whe...[truncated 4242 chars]... tests still pass
+4. Verify Graphite stacking still works when on a pushed feature branch
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1694" cache_read_input_tokens="62134" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1694, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PQgtGde97VDDLpQ8LC8hob">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/purring-imagining-lobster.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Eliminate Master Checkout Requirement from plan-save and dispatch
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 2de413aa-af8c-49cb-a46a-417096e12b6c \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Eliminate Master Checkout Requirement from plan-save and dispatch
+
+## Context
+
+When running `erk exec plan-save` or `erk pr dispatch` from a non-master branch, both commands fail unnecessarily:
+- `plan-save` uses the current branch as the PR base — if that branch isn't pushed to remote, GitHub API rejects the PR creation
+- `dispatch` requires the root worktree to have master checked out for trunk syncing
+
+Both can be fixed using the plumbing techniques from objective #7813 (Eliminate Unnecessary Git Checkouts). The dispatch command's trunk sync currently uses `pull_branch` which requires checkout; this can be replaced with `fetch + update_local_ref`.
+
+## Changes
+
+### 1. Fix plan-save: check remote before using current branch as base
+
+**File:** `src/erk/cli/commands/exec/scripts/plan_save.py` (~line 194)
+
+Add `branch_exists_on_remote` check to the existing conditional. This method already exists in all 5 gateway implementations.
+
+### 2. Add `update_local_ref` to GitBranchOps gateway (5-place pattern)
+
+New method to update a local branch ref without checkout, using `git update-ref`.
+
+### 3. Rewrite `ensure_trunk_synced` to remove checkout requirement
+
+**File:** `src/erk/cli/commands/pr/dispatch_helpers.py`
+
+Remove the "root worktree must be on trunk" check. Replace `pull_branch` with `update_local_ref`. Add conditional clean-check only when trunk is checked out in a worktree.
+
+### 4. Tests
+
+Update existing tests + add new cases for unpushed branch fallback and non-trunk dispatch.
+
+## Verification
+
+1. `erk exec plan-save` from unpushed branch succeeds with trunk as base
+2. `erk pr dispatch` from non-master branch succeeds
+3. fast-ci passes
+4. Graphite stacking still works on pushed feature branches
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="751" cache_read_input_tokens="63828" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 751}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_015L1J17wZAeYdUVVMLv9eiy">
+    <param name="questions">[{'question': '📋 Plan: Eliminate Master Checkout Requirement from plan-save and dispatch\n...[truncated 455 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="751" cache_read_input_tokens="63828" output_tokens="705" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 751, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015L1J17wZAeYdUVVMLv9eiy">
+User has answered your questions: "📋 Plan: Eliminate Master Checkout Requirement from plan-save and dispatch
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01HdNS1ADmLisKnkDingRqWp">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="888" cache_read_input_tokens="64579" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 888, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HdNS1ADmLisKnkDingRqWp">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="2de413aa-af8c-49cb-a46a-417096e12b6c" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "2de413aa-af8c-49cb-a46a-417096e12b6c" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "2de413aa-af8c-49cb-a46a-417096e12b6c" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "2de413aa-af8c-49cb-a46a-417096e12b6c" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "2de413aa-af8c-49cb-a46a-417096e12b6c" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+I'll save the plan as a draft PR. Let me generate the branch slug and summary, then run the save command.
+
+**Branch slug:** `eliminate-master-checkout-req`
+
+**Summary:** Removes the requirement to have master checked out when running plan-save and dispatch. Adds a branch_exists_on_remote check in plan-save so unpushed branches fall back to trunk as the PR base, and rewrites ensure_trunk_synced to use a new update_local_ref plumbing method instead of pull_branch.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2605" cache_read_input_tokens="65467" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2605}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NF4k8r3DpaHVWY3To3CD72">
+    <param name="command">erk exec plan-save --format json --session-id="2de413aa-af8c-49cb-a46a-417096e12b6c" --bra...[truncated 239 chars]...ensure_trunk_synced to use a new update_local_ref plumbing method instead of pull_branch."</param>
+    <param name="description">Save plan as draft PR</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2605" cache_read_input_tokens="65467" output_tokens="319" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2605, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NF4k8r3DpaHVWY3To3CD72">
+{"success": true, "plan_number": 8574, "plan_url": "https://github.com/dagster-io/erk/pull/8574", "title": "[erk-plan] Plan: Eliminate Master Checkout Requirement from plan-save and dispatch", "branch_name": "plnd/eliminate-master-checkout-03-01-1556", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/2de413aa-af8c-49cb-a46a-417096e12b6c/plan_snapshots/000001-f3aad960"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01NQKeSGWC75ruKskAjhvyrk">
+    <param name="command">erk exec upload-impl-session --session-id "2de413aa-af8c-49cb-a46a-417096e12b6c" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="609" cache_read_input_tokens="68072" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 609, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NQKeSGWC75ruKskAjhvyrk">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan "Eliminate Master Checkout Requirement from plan-save and dispatch" saved as draft PR #8574
+URL: https://github.com/dagster-io/erk/pull/8574
+
+Next steps:
+
+View PR: https://github.com/dagster-io/erk/pull/8574
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're on trunk):
+    Local: `erk br co --new-slot --for-plan 8574`
+    Implement: `source "$(erk br co --new-slot --for-plan 8574 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8574`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="142" cache_read_input_tokens="68681" output_tokens="196" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 142, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "2de413aa-af8c-49cb-a46a-417096e12b6c" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>
+
+The most recent plan is #8574. Let me dispatch it.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="856" cache_read_input_tokens="68823" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 856}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01J5dEeZq4EbUZiPQZnjXSt2">
+    <param name="command">erk pr dispatch 8574</param>
+    <param name="description">Dispatch plan #8574 for remote implementation</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="856" cache_read_input_tokens="68823" output_tokens="118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 856, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01J5dEeZq4EbUZiPQZnjXSt2">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Syncing master with origin/master...
+✓ master synced with origin/master
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8574...
+
+✓ All 1 plan(s) validated
+
+  #8574: [erk-plan] Plan: Eliminate Master Checkout Requirement from plan-save and dispatch
+
+Dispatching PR #8574...
+
+Fetching plan content...
+Checking out existing plan branch: plnd/eliminate-master-checkout-03-01-1556
+Cleaning up previous .erk/impl-context/ folder...
+Creating .erk/impl-context/ folder...
+✓ Branch pushed to remote
+
+Triggering workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow triggered.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Az4md5cgiBnbQXuoGk3yu9">
+    <param name="command">erk exec marker delete --session-id "2de413aa-af8c-49cb-a46a-417096e12b6c" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="505" cache_read_input_tokens="69679" output_tokens="111" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 505, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Az4md5cgiBnbQXuoGk3yu9">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Plan #8574 dispatched successfully!
+
+- **Plan:** https://github.com/dagster-io/erk/pull/8574
+- **Workflow run:** https://github.com/dagster-io/erk/actions/runs/22552502698
+
+The remote agent will implement the changes (plan-save remote check + new `update_local_ref` gateway method + `ensure_trunk_synced` rewrite).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="142" cache_read_input_tokens="70184" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 142}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+</session>
