@@ -135,6 +135,6 @@ If stdout is empty, check stderr for the duplicate-detection response before ass
 ## Related Topics
 
 - [Branch Plan Resolution](branch-plan-resolution.md) - How branches resolve to plans
-- [Plan Save Branch Restoration](../architecture/plan-save-branch-restoration.md) - Git plumbing approach for branch safety
+- [Git Plumbing Patterns](../architecture/git-plumbing-patterns.md) - Git plumbing approach for branch safety
 - [Plan Storage Testing](../testing/dual-backend-testing.md) - Plan storage testing patterns
 - [Impl-Context Staging Directory](impl-context.md) - Staging directory lifecycle and cleanup

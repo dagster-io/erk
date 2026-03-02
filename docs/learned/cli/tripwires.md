@@ -42,6 +42,8 @@ Rules triggered by matching actions in code.
 
 **adding new CLI flags without validation** → Read [CLI Options Validation](cli-options-validation.md) first. Check if validation logic is needed when adding new flags. Boolean flags rarely need validation, but flags accepting values (paths, names, numbers) should validate constraints.
 
+**adding new exec script parameters with 'issue' in the name** → Read [erk exec Commands](erk-exec-commands.md) first. When adding new exec script parameters, use 'plan' terminology not 'issue'. See erk-exec-commands.md Phase 5 Terminology Standardization.
+
 **adding or modifying CLI commands without regenerating reference docs** → Read [Auto-Generated Reference Documentation](auto-generated-reference-docs.md) first. After CLI changes, run 'erk-dev gen-exec-reference-docs' to update auto-generated exec reference documentation. Stale docs confuse users and agents.
 
 **adding sequential yes/no prompts for a single decision** → Read [Prompt Consolidation Pattern](prompt-consolidation-pattern.md) first. Consolidate into one binary choice. Multiple prompts for the same decision create unnecessary cognitive load. See the branch reuse example.

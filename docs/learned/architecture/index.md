@@ -53,6 +53,7 @@
 - **[generated-files.md](generated-files.md)** — understanding how agent docs sync works, debugging generated file issues, adding new generated file types
 - **[git-graphite-quirks.md](git-graphite-quirks.md)** — debugging unexpected git/gt behavior, handling rebase/restack edge cases, writing conflict detection logic, troubleshooting detached HEAD states, handling concurrent worktree operations, understanding worktree lock files
 - **[git-operation-patterns.md](git-operation-patterns.md)** — implementing git operations in gateways, checking if git branches or refs exist, deciding between LBYL and EAFP for git commands
+- **[git-plumbing-patterns.md](git-plumbing-patterns.md)** — modifying plan_save.py branch commit behavior, understanding git plumbing patterns in erk, working with commit_files_to_branch, eliminating git checkouts, dispatch without checkout
 - **[github-admin-gateway.md](github-admin-gateway.md)** — working with GitHub repository secrets or admin operations, adding methods to the GitHubAdmin gateway, understanding the 5-place gateway pattern with security-sensitive operations
 - **[github-api-diagnostics.md](github-api-diagnostics.md)** — debugging GitHub API failures, investigating repository-specific API issues, GitHub CLI commands returning unexpected errors
 - **[github-api-rate-limits.md](github-api-rate-limits.md)** — using gh CLI commands programmatically, encountering GraphQL rate limit errors, choosing between REST and GraphQL API, implementing GitHub API calls in gateways
@@ -97,7 +98,6 @@
 - **[plan-backend-migration.md](plan-backend-migration.md)** — migrating exec scripts to use PlanBackend, working with require_plan_backend, understanding post_event vs update_metadata, Phase 3 PlanBackend consolidation
 - **[plan-context-integration.md](plan-context-integration.md)** — using PlanContextProvider for PR generation, extracting plan content from branches, understanding how PR descriptions get plan context
 - **[plan-ref-architecture.md](plan-ref-architecture.md)** — working with plan-ref.json, working with PlanRef dataclass, migrating from IssueReference to PlanRef, understanding provider-agnostic plan references
-- **[plan-save-branch-restoration.md](plan-save-branch-restoration.md)** — modifying plan_save.py branch commit behavior, understanding git plumbing patterns in erk, working with commit_files_to_branch
 - **[pr-body-assembly.md](pr-body-assembly.md)** — implementing or modifying PR body construction, working with PR footer or checkout command, adding a new PR command that generates or updates PR descriptions
 - **[pr-body-formatting.md](pr-body-formatting.md)** — adding GitHub-specific enhancements to PR descriptions, understanding separation between git commit messages and PR bodies, implementing badges, metadata, or HTML in PR bodies, debugging why HTML appears in git commit messages
 - **[pr-finalization-paths.md](pr-finalization-paths.md)** — debugging PR body content or issue closing, understanding local vs remote PR submission, working with 'Closes #N' in PRs
