@@ -24,6 +24,7 @@ def fast_haiku_call(prompt: str, *, system_prompt: str) -> str | None:
         return None
 
     try:
+        # Inline: anthropic may not be installed in all environments (e.g. CI)
         from anthropic import Anthropic
 
         client = Anthropic(api_key=api_key)
