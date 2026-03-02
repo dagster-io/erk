@@ -30,7 +30,6 @@ from erk_shared.gateway.github.types import PRDetails
 from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.sessions.discovery import SessionsForPlan
-from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
 
 def _make_pr_details(
@@ -269,18 +268,118 @@ def test_skips_when_plan_not_found(tmp_path: Path) -> None:
     assert len(fake_github.created_prs) == 0
 
 
-def test_creates_pr_and_shows_success(
+def test_skips_when_no_xml_files_and_no_sessions(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """Happy path: plan found with session, not erk-learn, creates learn draft PR."""
-    session_id = "aaaa1111-2222-3333-4444-555566667777"
-    body = format_plan_header_body_for_test(created_from_session=session_id)
+    """Skips learn plan creation when no sessions were tracked."""
     pr = _make_pr_details(
         pr_number=100,
         branch="feature",
         title="Add widgets",
-        body=body,
+        labels=("erk-plan",),
+    )
+    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
+    fake_github = FakeGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
+    fake_time = FakeTime()
+    plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
+
+    ctx = context_for_test(
+        github=fake_github,
+        issues=fake_issues,
+        plan_store=plan_store,
+        time=fake_time,
+        cwd=tmp_path,
+    )
+    state = _land_state(tmp_path, plan_id="100", merged_pr_number=42)
+
+    _create_learn_pr_impl(ctx, state=state)
+
+    # No PR should be created
+    assert len(fake_github.created_prs) == 0
+
+    captured = capsys.readouterr()
+    assert "Skipping learn plan for #100" in captured.err
+    assert "no session material found" in captured.err
+    assert "no sessions were tracked" in captured.err
+
+
+def test_skips_when_sessions_exist_but_no_xml_extracted(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Skips learn plan when sessions were tracked but no XML could be extracted."""
+    from erk.cli.commands import land_learn as learn_mod
+
+    pr = _make_pr_details(
+        pr_number=100,
+        branch="feature",
+        title="Add widgets",
+        labels=("erk-plan",),
+    )
+    fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
+    fake_github = FakeGitHub(pr_details={100: pr}, issues_gateway=fake_issues)
+    fake_time = FakeTime()
+    plan_store = PlannedPRBackend(fake_github, fake_issues, time=fake_time)
+
+    ctx = context_for_test(
+        github=fake_github,
+        issues=fake_issues,
+        plan_store=plan_store,
+        time=fake_time,
+        cwd=tmp_path,
+    )
+    state = _land_state(tmp_path, plan_id="100", merged_pr_number=42)
+
+    # Patch _log_session_discovery to return empty xml_files
+    # even though sessions exist (simulating extraction failure)
+    sessions_with_ids = SessionsForPlan(
+        planning_session_id=None,
+        implementation_session_ids=["aaaa1111-2222-3333-4444-555566667777"],
+        learn_session_ids=[],
+        last_remote_impl_at=None,
+        last_remote_impl_run_id=None,
+        last_remote_impl_session_id=None,
+        last_session_branch=None,
+        last_session_id=None,
+        last_session_source=None,
+    )
+
+    monkeypatch.setattr(
+        plan_store,
+        "find_sessions_for_plan",
+        lambda _root, _plan_id: sessions_with_ids,
+    )
+
+    def _fake_log_session_discovery(*_args: object, **_kwargs: object) -> dict[str, str]:
+        return {}
+
+    monkeypatch.setattr(learn_mod, "_log_session_discovery", _fake_log_session_discovery)
+
+    _create_learn_pr_impl(ctx, state=state)
+
+    # No PR should be created
+    assert len(fake_github.created_prs) == 0
+
+    captured = capsys.readouterr()
+    assert "Skipping learn plan for #100" in captured.err
+    assert "no session material found" in captured.err
+    assert "sessions found but no XML could be extracted" in captured.err
+
+
+def test_creates_pr_and_shows_success(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Happy path: plan found with session material, creates learn draft PR."""
+    from erk.cli.commands import land_learn as learn_mod
+
+    pr = _make_pr_details(
+        pr_number=100,
+        branch="feature",
+        title="Add widgets",
         labels=("erk-plan",),
     )
     fake_issues = FakeGitHubIssues(username="testuser", labels={"erk-pr", "erk-learn", "erk-plan"})
@@ -298,6 +397,15 @@ def test_creates_pr_and_shows_success(
         cwd=tmp_path,
     )
     state = _land_state(tmp_path, plan_id="100", merged_pr_number=42)
+
+    # Patch _log_session_discovery to return non-empty xml_files
+    # so the early-return guard is not triggered
+    stub_xml = {".erk/impl-context/sessions/impl-aaaa1111.xml": "<session>data</session>"}
+
+    def _fake_log_session_discovery(*_args: object, **_kwargs: object) -> dict[str, str]:
+        return stub_xml
+
+    monkeypatch.setattr(learn_mod, "_log_session_discovery", _fake_log_session_discovery)
 
     _create_learn_pr_impl(ctx, state=state)
 
