@@ -18,9 +18,9 @@ Stacked status is detected from two sources with a fallback strategy:
 
 2. **Fallback: GitHub `base_ref_name`** — Only when Graphite returns `None` (branch not tracked locally). The `base_ref_name` field on `PullRequestInfo` is checked against `("master", "main")`.
 
-<!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:715-725, RealPlanDataProvider._build_row_data -->
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py, RealPlanDataProvider._build_row_data -->
 
-See `RealPlanDataProvider._build_row_data()` in `real.py:715-725` for the dual-source detection logic.
+See `RealPlanDataProvider._build_row_data()` in `real.py` for the dual-source detection logic.
 
 ## Stale Data Handling
 
