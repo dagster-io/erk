@@ -1073,6 +1073,68 @@ class TestFetchCheckRuns:
         assert result == []
 
 
+class TestFetchCheckRunsDeduplication:
+    """Test that _fetch_check_runs deduplicates by check name."""
+
+    @patch("erk_statusline.statusline.subprocess.run")
+    def test_keeps_most_recent_run_per_name(self, mock_run: MagicMock) -> None:
+        """Two runs with same name, different conclusions - keeps first (most recent)."""
+        check_runs_response = {
+            "check_runs": [
+                {"name": "ci/test", "status": "completed", "conclusion": "success"},
+                {"name": "ci/test", "status": "completed", "conclusion": "cancelled"},
+            ]
+        }
+        mock_run.return_value = MagicMock(returncode=0, stdout=json.dumps(check_runs_response))
+
+        result = _fetch_check_runs(
+            owner="owner", repo="repo", ref="sha123", cwd="/cwd", timeout=1.5
+        )
+
+        assert len(result) == 1
+        assert result[0]["name"] == "ci/test"
+        assert result[0]["conclusion"] == "SUCCESS"
+
+    @patch("erk_statusline.statusline.subprocess.run")
+    def test_deduplicates_with_mixed_unique_and_duplicate(self, mock_run: MagicMock) -> None:
+        """Three runs: two dupes + one unique - returns 2 check contexts."""
+        check_runs_response = {
+            "check_runs": [
+                {"name": "ci/test", "status": "completed", "conclusion": "success"},
+                {"name": "ci/lint", "status": "completed", "conclusion": "success"},
+                {"name": "ci/test", "status": "completed", "conclusion": "failure"},
+            ]
+        }
+        mock_run.return_value = MagicMock(returncode=0, stdout=json.dumps(check_runs_response))
+
+        result = _fetch_check_runs(
+            owner="owner", repo="repo", ref="sha123", cwd="/cwd", timeout=1.5
+        )
+
+        assert len(result) == 2
+        names = [r["name"] for r in result]
+        assert "ci/test" in names
+        assert "ci/lint" in names
+
+    @patch("erk_statusline.statusline.subprocess.run")
+    def test_all_unique_names_unchanged(self, mock_run: MagicMock) -> None:
+        """All unique names - no change in count."""
+        check_runs_response = {
+            "check_runs": [
+                {"name": "ci/test", "status": "completed", "conclusion": "success"},
+                {"name": "ci/lint", "status": "completed", "conclusion": "success"},
+                {"name": "ci/build", "status": "completed", "conclusion": "success"},
+            ]
+        }
+        mock_run.return_value = MagicMock(returncode=0, stdout=json.dumps(check_runs_response))
+
+        result = _fetch_check_runs(
+            owner="owner", repo="repo", ref="sha123", cwd="/cwd", timeout=1.5
+        )
+
+        assert len(result) == 3
+
+
 class TestFetchReviewThreadCounts:
     """Test review thread counts fetching."""
 

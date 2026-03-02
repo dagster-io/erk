@@ -562,6 +562,17 @@ def _fetch_check_runs(
                 }
             )
 
+        # Deduplicate by name - GitHub returns multiple runs per check name
+        # from reruns/superseded workflows. Keep first (most recent) per name.
+        seen_names: set[str] = set()
+        deduplicated: list[dict[str, str]] = []
+        for ctx in check_contexts:
+            name = ctx.get("name", "")
+            if name not in seen_names:
+                seen_names.add(name)
+                deduplicated.append(ctx)
+        check_contexts = deduplicated
+
         _logger.debug(
             "Check runs fetched: %s/%s ref=%s in %.2fs -> %d checks",
             owner,
