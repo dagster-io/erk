@@ -13,6 +13,7 @@ from erk.core.context import ErkContext, RepoContext
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
+    extract_objective_header_comment_id,
     find_metadata_block,
 )
 from erk_shared.gateway.github.metadata.dependency_graph import (
@@ -23,7 +24,11 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     phases_from_graph,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
+    RoadmapPhase,
+    enrich_phase_names,
+    extract_roadmap_table_section,
     parse_roadmap,
+    render_roadmap_tables,
     serialize_phases,
 )
 from erk_shared.output.output import user_output
@@ -44,6 +49,7 @@ class ObjectiveValidationSuccess:
         next_step: First pending step or None
         validation_errors: Parser-level warnings from roadmap parsing
         issue_body: Raw issue body text (for phase name enrichment)
+        warnings: Non-fatal warnings (e.g., stale comment) that don't affect pass/fail
     """
 
     passed: bool
@@ -54,6 +60,7 @@ class ObjectiveValidationSuccess:
     next_node: dict[str, str] | None
     validation_errors: list[str]
     issue_body: str
+    warnings: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -64,6 +71,75 @@ class ObjectiveValidationError:
 
 
 ObjectiveValidationResult = ObjectiveValidationSuccess | ObjectiveValidationError
+
+
+def _check_comment_staleness(
+    github_issues: GitHubIssues,
+    repo_root: Path,
+    issue_body: str,
+    phases: list[RoadmapPhase],
+) -> list[str]:
+    """Check if comment roadmap tables are stale compared to YAML source of truth.
+
+    Compares the rendered tables from current YAML against the tables in the
+    objective-body comment. Returns a list of warning strings (empty if fresh).
+
+    This is a non-fatal check — staleness is cosmetic and doesn't break functionality.
+    """
+    warnings: list[str] = []
+
+    # Need objective_comment_id to fetch the comment
+    comment_id = extract_objective_header_comment_id(issue_body)
+    if comment_id is None:
+        return warnings
+
+    # Fetch comment body — may fail if comment was deleted or ID is stale.
+    # This is a third-party API boundary, so catch RuntimeError.
+    try:
+        comment_body = github_issues.get_comment_by_id(repo_root, comment_id)
+    except RuntimeError:
+        warnings.append("Could not fetch objective comment (may have been deleted)")
+        return warnings
+
+    # Extract current table section from comment
+    old_section = extract_roadmap_table_section(comment_body)
+    if old_section is None:
+        warnings.append("Comment has no roadmap table markers (may need rerender)")
+        return warnings
+
+    old_table_text = old_section[0].strip()
+
+    # Enrich phases with names from the comment body and render expected tables
+    enriched_phases: list[RoadmapPhase] = enrich_phase_names(comment_body, phases)
+    expected_tables = render_roadmap_tables(enriched_phases).strip()
+
+    # Compare
+    if old_table_text != expected_tables:
+        # Detect column count difference
+        old_col_count = _count_columns(old_table_text)
+        new_col_count = _count_columns(expected_tables)
+        if old_col_count != new_col_count:
+            warnings.append(
+                f"Comment roadmap is stale ({old_col_count}-col vs {new_col_count}-col format). "
+                f"Run: erk exec rerender-objective-comment --issue <N>"
+            )
+        else:
+            warnings.append(
+                "Comment roadmap is stale (data mismatch with YAML source). "
+                "Run: erk exec rerender-objective-comment --issue <N>"
+            )
+
+    return warnings
+
+
+def _count_columns(table_text: str) -> int:
+    """Count columns in the first non-separator table row."""
+    for line in table_text.split("\n"):
+        stripped = line.strip()
+        if stripped.startswith("|") and stripped.endswith("|") and "---" not in stripped:
+            cells = [c for c in stripped.split("|") if c.strip()]
+            return len(cells)
+    return 0
 
 
 def validate_objective(
@@ -181,6 +257,9 @@ def validate_objective(
     else:
         checks.append((False, f"Invalid reference format: {invalid_refs[0]}"))
 
+    # Warning: Comment staleness detection (does not affect pass/fail)
+    warnings = _check_comment_staleness(github_issues, repo_root, issue.body, phases)
+
     summary = compute_graph_summary(graph)
     next_node = find_graph_next_node(graph, phases)
     failed_count = sum(1 for passed, _ in checks if not passed)
@@ -194,6 +273,7 @@ def validate_objective(
         next_node=next_node,
         validation_errors=validation_errors,
         issue_body=issue.body,
+        warnings=tuple(warnings),
     )
 
 
@@ -255,6 +335,7 @@ def _output_json(result: ObjectiveValidationResult, issue_number: int) -> None:
                 "summary": result.summary,
                 "next_node": result.next_node,
                 "validation_errors": result.validation_errors,
+                "warnings": list(result.warnings),
                 "all_complete": result.graph.is_complete(),
             }
         )
@@ -277,6 +358,9 @@ def _output_human(result: ObjectiveValidationResult, issue_number: int) -> None:
     for passed, description in result.checks:
         status = click.style("[PASS]", fg="green") if passed else click.style("[FAIL]", fg="red")
         user_output(f"{status} {description}")
+
+    for warning in result.warnings:
+        user_output(click.style("[WARN]", fg="yellow") + f" {warning}")
 
     user_output("")
 

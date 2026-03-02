@@ -196,6 +196,8 @@ Rules triggered by matching actions in code.
 
 **force-updating a branch that might be currently checked out** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Git refuses to force-update the checked-out branch. Use LBYL check: compare target branch with current branch before force-update. See \_ensure_local_matches_remote() in graphite.py.
 
+**guessing import paths for metadata functions** [pattern: `from erk\..*metadata`] → Read [Metadata Module API Reference](metadata-module-api.md) first. All metadata functions live under erk_shared.gateway.github.metadata. Read this doc for exact paths.
+
 **hand-constructing frozen dataclass instances with selective field copying** → Read [Optional Field Propagation](optional-field-propagation.md) first. Always use dataclasses.replace() to preserve all fields. Hand-construction with partial field copying silently drops optional fields (learn_status, learn_plan_issue, objective_issue, etc.).
 
 **implementing CLI flags that affect post-mutation behavior** → Read [Erk Architecture Patterns](erk-architecture.md) first. Validate flag preconditions BEFORE any mutations. Example: `--up` in `erk land` checks for child branches before merging PR. This prevents partial state (PR merged, worktree deleted, but no valid navigation target).
@@ -207,6 +209,8 @@ Rules triggered by matching actions in code.
 **implementing idempotent operations that fail on missing resources** → Read [LBYL Gateway Pattern](lbyl-gateway-pattern.md) first. Use LBYL existence check to return early, making the operation truly idempotent.
 
 **implementing mtime-based cache invalidation** → Read [Graphite Cache Invalidation](graphite-cache-invalidation.md) first. Use triple-check guard pattern: (cache exists) AND (mtime exists) AND (mtime matches). Partial checks cause stale data bugs.
+
+**importing roadmap functions from core.py** [pattern: `from.*core.*import.*roadmap`] → Read [Metadata Module API Reference](metadata-module-api.md) first. Roadmap functions (parse, render, update) are in roadmap.py, not core.py. core.py handles generic metadata blocks.
 
 **importing time module or calling time.sleep() or datetime.now()** [pattern: `\bimport time\b|time\.sleep\(|datetime\.now\(`] → Read [Erk Architecture Patterns](erk-architecture.md) first. Use context.time.sleep() and context.time.now() for testability. Direct time.sleep() makes tests slow and datetime.now() makes tests non-deterministic.
 
@@ -295,6 +299,8 @@ Rules triggered by matching actions in code.
 **updating a roadmap step's PR cell** → Read [Roadmap Mutation Semantics](roadmap-mutation-semantics.md) first. The update-objective-node command computes display status from the PR value and writes it directly into the status cell. Status inference only happens during parsing when status is '-' or empty.
 
 **using --force-with-lease in multi-step workflows where earlier steps push** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Force-push silently overwrites intermediate commits from earlier workflow steps. Always `git pull --rebase` before pushing in multi-step workflows.
+
+**using -f body=@file with gh api** [pattern: `-f\s+body=@`] → Read [GitHub CLI Limits](github-cli-limits.md) first. -f body=@file sends the literal string '@file', not file contents. Use --input with a JSON payload instead.
 
 **using LiveDisplay in watch loops without try/finally blocks** → Read [LiveDisplay Gateway](live-display-gateway.md) first. guard with try/finally to ensure stop() is called even on KeyboardInterrupt
 
