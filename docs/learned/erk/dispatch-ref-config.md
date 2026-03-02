@@ -4,6 +4,7 @@ read_when:
   - "configuring which branch workflow_dispatch targets"
   - "working with .erk/config.toml dispatch settings"
   - "debugging workflow dispatch targeting the wrong branch"
+  - "using --ref CLI option to override dispatch branch per run"
 tripwires:
   - action: "assuming dispatch_ref is project-level config"
     warning: "dispatch_ref is repo-level config (.erk/config.toml), overridable at local level (.erk/config.local.toml). It is not project-level."
@@ -39,9 +40,25 @@ dispatch_ref = "my-dev-branch"
 
 Config loading reads `dispatch_ref` from TOML data, converting to `str` if present. Merge behavior: local config takes precedence over repo config when both are set.
 
+## CLI `--ref` Override
+
+All three dispatch commands accept a `--ref` option for per-run branch override:
+
+```bash
+erk one-shot "fix the auth bug" --ref my-feature-branch
+erk launch pr-address --pr 123 --ref my-feature-branch
+erk pr dispatch 456 --ref my-feature-branch
+```
+
+**Priority chain:** `--ref` CLI flag > config `dispatch_ref` > repository default branch
+
+<!-- Source: src/erk/cli/commands/launch_cmd.py, one_shot.py, pr/dispatch_cmd.py -->
+
+Each command resolves the ref once before dispatching by checking the CLI flag first, falling back to config. This enables testing workflow changes on a feature branch without modifying config.
+
 ## Call Sites
 
-`dispatch_ref` is consumed at 4 locations, all passing it to `github.trigger_workflow(ref=ctx.local_config.dispatch_ref)`:
+`dispatch_ref` is consumed at 4 locations, all passing the resolved ref to `github.trigger_workflow(ref=ref)`:
 
 | Command              | Context                                             |
 | -------------------- | --------------------------------------------------- |

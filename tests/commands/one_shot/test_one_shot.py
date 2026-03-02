@@ -61,7 +61,7 @@ def test_one_shot_happy_path() -> None:
 
         # Verify workflow was triggered: tuple is (workflow, inputs)
         assert len(github.triggered_workflows) == 1
-        workflow, inputs = github.triggered_workflows[0]
+        workflow, inputs, _ref = github.triggered_workflows[0]
         assert workflow == "one-shot.yml"
         assert inputs["prompt"] == "fix the import in config.py"
         assert "branch_name" in inputs
@@ -159,7 +159,7 @@ def test_one_shot_with_model() -> None:
 
         # Verify model was passed to workflow: tuple is (workflow, inputs)
         assert len(github.triggered_workflows) == 1
-        _workflow, inputs = github.triggered_workflows[0]
+        _workflow, inputs, _ref = github.triggered_workflows[0]
         assert inputs["model_name"] == "opus"
 
 
@@ -187,7 +187,7 @@ def test_one_shot_model_alias() -> None:
         )
 
         assert result.exit_code == 0, f"Command failed: {result.output}"
-        _workflow, inputs = github.triggered_workflows[0]
+        _workflow, inputs, _ref = github.triggered_workflows[0]
         assert inputs["model_name"] == "opus"
 
 
@@ -312,7 +312,7 @@ def test_one_shot_file_option() -> None:
 
         # Verify prompt was read from file and passed through
         assert len(github.triggered_workflows) == 1
-        _workflow, inputs = github.triggered_workflows[0]
+        _workflow, inputs, _ref = github.triggered_workflows[0]
         assert "fix the import in config.py" in inputs["prompt"]
 
 
@@ -371,7 +371,7 @@ def test_one_shot_plan_only_flag() -> None:
 
         # Verify plan_only was passed to workflow inputs
         assert len(github.triggered_workflows) == 1
-        _workflow, inputs = github.triggered_workflows[0]
+        _workflow, inputs, _ref = github.triggered_workflows[0]
         assert inputs["plan_only"] == "true"
 
 

@@ -58,6 +58,13 @@ from erk_shared.output.output import user_output
     default=None,
     help="Pre-generated branch slug (skips LLM slug generation)",
 )
+@click.option(
+    "--ref",
+    "dispatch_ref",
+    type=str,
+    default=None,
+    help="Branch to dispatch workflow from (overrides config dispatch_ref)",
+)
 @click.pass_obj
 def one_shot(
     ctx: ErkContext,
@@ -68,6 +75,7 @@ def one_shot(
     dry_run: bool,
     plan_only: bool,
     slug: str | None,
+    dispatch_ref: str | None,
 ) -> None:
     """Submit a task for fully autonomous remote execution.
 
@@ -115,4 +123,5 @@ def one_shot(
         slug=slug,
     )
 
-    dispatch_one_shot(ctx, params=params, dry_run=dry_run)
+    ref = dispatch_ref if dispatch_ref is not None else ctx.local_config.dispatch_ref
+    dispatch_one_shot(ctx, params=params, dry_run=dry_run, ref=ref)

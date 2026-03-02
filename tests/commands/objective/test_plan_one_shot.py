@@ -158,7 +158,7 @@ def test_plan_one_shot_happy_path() -> None:
         github = ctx.github
         assert isinstance(github, FakeGitHub)
         assert len(github.triggered_workflows) == 1
-        workflow, inputs = github.triggered_workflows[0]
+        workflow, inputs, _ref = github.triggered_workflows[0]
         assert workflow == "one-shot.yml"
         assert inputs["objective_issue"] == "42"
         assert inputs["node_id"] == "1.1"
@@ -203,7 +203,7 @@ def test_plan_one_shot_repeated_invocation_advances_node() -> None:
         github = ctx.github
         assert isinstance(github, FakeGitHub)
         assert len(github.triggered_workflows) == 1
-        _, inputs1 = github.triggered_workflows[0]
+        _, inputs1, _ref = github.triggered_workflows[0]
         assert inputs1["node_id"] == "1.1"
 
         # Second invocation: should dispatch node 1.2 (since 1.1 is now "planning")
@@ -216,7 +216,7 @@ def test_plan_one_shot_repeated_invocation_advances_node() -> None:
         assert result2.exit_code == 0, f"Second invocation failed: {result2.output}"
 
         assert len(github.triggered_workflows) == 2
-        _, inputs2 = github.triggered_workflows[1]
+        _, inputs2, _ref = github.triggered_workflows[1]
         assert inputs2["node_id"] == "1.2"
 
 
@@ -279,7 +279,7 @@ steps:
 
         github = ctx.github
         assert isinstance(github, FakeGitHub)
-        _workflow, inputs = github.triggered_workflows[0]
+        _workflow, inputs, _ref = github.triggered_workflows[0]
         assert inputs["node_id"] == "1.2"
         assert "Add tests" in inputs["prompt"]
 
@@ -306,7 +306,7 @@ def test_plan_one_shot_node_override() -> None:
 
         github = ctx.github
         assert isinstance(github, FakeGitHub)
-        _workflow, inputs = github.triggered_workflows[0]
+        _workflow, inputs, _ref = github.triggered_workflows[0]
         assert inputs["node_id"] == "2.1"
         assert "Build feature" in inputs["prompt"]
 
@@ -431,7 +431,7 @@ def test_plan_one_shot_model_flag() -> None:
 
         github = ctx.github
         assert isinstance(github, FakeGitHub)
-        _workflow, inputs = github.triggered_workflows[0]
+        _workflow, inputs, _ref = github.triggered_workflows[0]
         assert inputs["model_name"] == "opus"
 
 
@@ -505,7 +505,7 @@ def test_plan_one_shot_next_with_issue_ref() -> None:
         github = ctx.github
         assert isinstance(github, FakeGitHub)
         assert len(github.triggered_workflows) == 1
-        _workflow, inputs = github.triggered_workflows[0]
+        _workflow, inputs, _ref = github.triggered_workflows[0]
         assert inputs["node_id"] == "1.1"
         assert inputs["objective_issue"] == "42"
 

@@ -119,7 +119,7 @@ def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() ->
             f"Expected workflow trigger, got: {fake_gh.triggered_workflows}\n"
             f"Output: {result.output}"
         )
-        _workflow_name, inputs = fake_gh.triggered_workflows[0]
+        _workflow_name, inputs, _ref = fake_gh.triggered_workflows[0]
         assert inputs["plan_backend"] == "planned_pr"
         assert inputs["plan_id"] == "42"
         assert inputs["branch_name"] == plan_branch
@@ -245,7 +245,7 @@ def test_dispatch_auto_detects_from_impl_folder() -> None:
             f"Expected workflow trigger, got: {fake_gh.triggered_workflows}\n"
             f"Output: {result.output}"
         )
-        _workflow_name, inputs = fake_gh.triggered_workflows[0]
+        _workflow_name, inputs, _ref = fake_gh.triggered_workflows[0]
         assert inputs["plan_id"] == "42"
         assert "Traceback" not in result.output
 
@@ -319,7 +319,7 @@ def test_dispatch_auto_detects_from_impl_context() -> None:
             f"Expected workflow trigger, got: {fake_gh.triggered_workflows}\n"
             f"Output: {result.output}"
         )
-        _workflow_name, inputs = fake_gh.triggered_workflows[0]
+        _workflow_name, inputs, _ref = fake_gh.triggered_workflows[0]
         assert inputs["plan_id"] == "42"
         assert "Traceback" not in result.output
 
@@ -372,3 +372,98 @@ def test_dispatch_no_args_no_context_fails() -> None:
         assert "No plan numbers provided and could not auto-detect" in result.output
         assert "erk pr dispatch <number>" in result.output
         assert "Traceback" not in result.output
+
+
+def test_dispatch_with_ref_option_threads_ref_to_workflow() -> None:
+    """Test that --ref option is threaded through to trigger_workflow."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        plan_branch = "draft-pr-plan-branch"
+
+        plan_header = render_metadata_block(
+            MetadataBlock(
+                key="plan-header",
+                data={
+                    "schema_version": "2",
+                    "created_at": "2024-01-01T00:00:00+00:00",
+                    "created_by": "testuser",
+                    "branch_name": plan_branch,
+                },
+            )
+        )
+        pr_body = build_plan_stage_body(
+            plan_header,
+            "# Plan: Test Ref Option\n\n- Step 1: Do something",
+            summary=None,
+        )
+
+        pr_42 = PRDetails(
+            number=42,
+            url="https://github.com/test-owner/test-repo/pull/42",
+            title="[erk-plan] Test Ref Option",
+            body=pr_body,
+            state="OPEN",
+            is_draft=True,
+            base_ref_name="main",
+            head_ref_name=plan_branch,
+            is_cross_repository=False,
+            mergeable="UNKNOWN",
+            merge_state_status="UNKNOWN",
+            owner="test-owner",
+            repo="test-repo",
+            labels=("erk-plan",),
+        )
+
+        fake_gh = FakeGitHub(
+            authenticated=True,
+            polled_run_id="12345",
+            pr_details={42: pr_42},
+            prs_by_branch={plan_branch: pr_42},
+        )
+        fake_issues = FakeGitHubIssues()
+        fake_time = FakeTime()
+        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+            remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
+            remote_branches={env.cwd: ["origin/main", f"origin/{plan_branch}"]},
+            repository_roots={env.cwd: env.cwd},
+            branch_heads={"main": "abc123", "origin/main": "abc123"},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "main": BranchMetadata(
+                    name="main",
+                    parent=None,
+                    children=[],
+                    is_trunk=True,
+                    commit_sha=None,
+                ),
+            },
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            graphite=graphite,
+            github=fake_gh,
+            issues=fake_issues,
+            use_graphite=True,
+            plan_store=planned_pr_backend,
+        )
+
+        result = runner.invoke(
+            cli, ["pr", "dispatch", "42", "--base", "main", "--ref", "custom-branch"], obj=ctx
+        )
+
+        assert len(fake_gh.triggered_workflows) >= 1, (
+            f"Expected workflow trigger\nOutput: {result.output}"
+        )
+        _workflow_name, _inputs, ref = fake_gh.triggered_workflows[0]
+        assert ref == "custom-branch"

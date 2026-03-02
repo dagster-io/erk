@@ -40,7 +40,7 @@ def test_dispatch_happy_path() -> None:
             slug=None,
         )
 
-        result = dispatch_one_shot(ctx, params=params, dry_run=False)
+        result = dispatch_one_shot(ctx, params=params, dry_run=False, ref=None)
 
         assert result is not None
         # Branch should have plnd/ prefix (planned-PR naming)
@@ -76,7 +76,7 @@ def test_dispatch_happy_path() -> None:
 
         # Verify workflow was triggered with plan_backend=planned_pr
         assert len(github.triggered_workflows) == 1
-        workflow, inputs = github.triggered_workflows[0]
+        workflow, inputs, _ref = github.triggered_workflows[0]
         assert workflow == "one-shot.yml"
         assert inputs["prompt"] == "fix the import in config.py"
         assert inputs["plan_backend"] == "planned_pr"
@@ -113,14 +113,14 @@ def test_dispatch_with_extra_inputs() -> None:
             slug=None,
         )
 
-        result = dispatch_one_shot(ctx, params=params, dry_run=False)
+        result = dispatch_one_shot(ctx, params=params, dry_run=False, ref=None)
 
         assert result is not None
         # Branch should have plnd/ prefix
         assert result.branch_name.startswith("plnd/")
 
         # Verify extra inputs are in workflow trigger
-        _workflow, inputs = github.triggered_workflows[0]
+        _workflow, inputs, _ref = github.triggered_workflows[0]
         assert inputs["objective_issue"] == "42"
         assert inputs["node_id"] == "1.1"
         assert inputs["prompt"] == "implement step 1.1"
@@ -215,7 +215,7 @@ def test_dispatch_with_pre_generated_slug_skips_llm() -> None:
             slug="fix-config-import",
         )
 
-        result = dispatch_one_shot(ctx, params=params, dry_run=False)
+        result = dispatch_one_shot(ctx, params=params, dry_run=False, ref=None)
 
         assert result is not None
         # Branch should contain the pre-generated slug
@@ -249,12 +249,12 @@ def test_dispatch_long_prompt_truncates_workflow_input() -> None:
             slug=None,
         )
 
-        result = dispatch_one_shot(ctx, params=params, dry_run=False)
+        result = dispatch_one_shot(ctx, params=params, dry_run=False, ref=None)
 
         assert result is not None
 
         # Verify workflow input was truncated
-        _workflow, inputs = github.triggered_workflows[0]
+        _workflow, inputs, _ref = github.triggered_workflows[0]
         assert len(inputs["prompt"]) < len(long_prompt)
         assert inputs["prompt"].endswith(
             "... (full prompt committed to .erk/impl-context/prompt.md)"
@@ -299,3 +299,35 @@ def test_dispatch_fails_when_branch_already_exists() -> None:
         # Verify no PR was created
         assert len(github.created_prs) == 0
         assert len(github.triggered_workflows) == 0
+
+
+def test_dispatch_explicit_ref_is_passed_to_workflow() -> None:
+    """Test that an explicit ref is threaded through to trigger_workflow."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+        )
+        issues = FakeGitHubIssues()
+        github = FakeGitHub(authenticated=True, issues_gateway=issues)
+
+        ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
+
+        params = OneShotDispatchParams(
+            prompt="fix the import in config.py",
+            model=None,
+            extra_workflow_inputs={},
+            slug=None,
+        )
+
+        result = dispatch_one_shot(ctx, params=params, dry_run=False, ref="custom-ref")
+
+        assert result is not None
+        assert len(github.triggered_workflows) == 1
+        _workflow, _inputs, ref = github.triggered_workflows[0]
+        assert ref == "custom-ref"

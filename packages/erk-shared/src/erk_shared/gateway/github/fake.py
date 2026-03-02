@@ -164,7 +164,7 @@ class FakeGitHub(GitHub):
         self._merged_prs: list[int] = []
         self._closed_prs: list[int] = []
         self._marked_pr_ready: list[int] = []
-        self._triggered_workflows: list[tuple[str, dict[str, str]]] = []
+        self._triggered_workflows: list[tuple[str, dict[str, str], str | None]] = []
         self._poll_attempts: list[tuple[str, str, int, int]] = []
         self._check_auth_status_calls: list[None] = []
         self._created_prs: list[tuple[str, str, str, str | None, bool]] = []
@@ -261,7 +261,7 @@ class FakeGitHub(GitHub):
         Returns:
             A fake run ID for testing
         """
-        self._triggered_workflows.append((workflow, inputs))
+        self._triggered_workflows.append((workflow, inputs, ref))
         run_id = "1234567890"
         # Create a WorkflowRun entry so get_workflow_run() can find it
         # Use branch_name from inputs if available
@@ -377,7 +377,7 @@ class FakeGitHub(GitHub):
         return self._updated_pr_titles
 
     @property
-    def triggered_workflows(self) -> list[tuple[str, dict[str, str]]]:
+    def triggered_workflows(self) -> list[tuple[str, dict[str, str], str | None]]:
         """Read-only access to tracked workflow triggers for test assertions."""
         return self._triggered_workflows
 

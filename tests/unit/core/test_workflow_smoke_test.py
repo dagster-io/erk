@@ -76,7 +76,7 @@ class TestRunSmokeTest:
 
         # Verify workflow triggered
         assert len(github.triggered_workflows) == 1
-        workflow, inputs = github.triggered_workflows[0]
+        workflow, inputs, _ref = github.triggered_workflows[0]
         assert workflow == "one-shot.yml"
         assert inputs["branch_name"].startswith("plnd/smoke-test-")
         assert inputs["submitted_by"] == "testuser"

@@ -105,6 +105,7 @@ def dispatch_one_shot(
     *,
     params: OneShotDispatchParams,
     dry_run: bool,
+    ref: str | None,
 ) -> OneShotDispatchResult | None:
     """Execute the full dispatch sequence for a one-shot workflow.
 
@@ -166,6 +167,8 @@ def dispatch_one_shot(
         if params.model is not None:
             user_output(f"Model: {params.model}")
         user_output(f"Workflow: {ONE_SHOT_WORKFLOW}")
+        if ref is not None:
+            user_output(f"Ref: {ref}")
         if params.extra_workflow_inputs:
             for key, value in params.extra_workflow_inputs.items():
                 user_output(f"Extra input: {key}={value}")
@@ -343,7 +346,7 @@ def dispatch_one_shot(
             repo_root=repo.root,
             workflow=ONE_SHOT_WORKFLOW,
             inputs=inputs,
-            ref=ctx.local_config.dispatch_ref,
+            ref=ref,
         )
         user_output(click.style(f"  \u2192 Run ID: {run_id}", dim=True))
 
