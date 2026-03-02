@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Better error messaging for workflow dispatch failures"
+  "plan_id": "8589",
+  "url": "https://github.com/dagster-io/erk/pull/8589",
+  "created_at": "2026-03-01T20:32:59.480721",
+  "synced_at": "2026-03-01T20:32:59.480721",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
