@@ -1,0 +1,574 @@
+<session>
+  <meta branch="plnd/improve-plan-branch-msg-03-02-1541" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8640&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 12. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8640` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**CRITICAL**: Never delete the impl directory - leave for user review (no auto-commit).
+
+### Step 12: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 13: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8640.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28137" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28137, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01LF5upLcVQYDKm77piDffWo">
+    <param name="command">erk exec setup-impl --issue 8640</param>
+    <param name="description">Set up implementation for plan #8640</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28137" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28137, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LF5upLcVQYDKm77piDffWo">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--improve-plan-branch-msg-03-02-1541", "plan_number": 8640, "plan_url": "https://github.com/dagster-io/erk/pull/8640", "branch": "plnd/improve-plan-branch-msg-03-02-1541", "plan_title": "[erk-plan] Plan: Improve \"Using existing branch\" message for `--for-plan` flows", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8640, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/improve-plan-branch-msg-03-02-1541', syncing with remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="28137" cache_creation="{'ephemeral_5m_input_tokens': 353, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MdukfWb8nVJoWnfgbSLbiw">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--improve-plan-branch-msg-03-02-1541/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="353" cache_read_input_tokens="28137" cache_creation="{'ephemeral_5m_input_tokens': 353, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MdukfWb8nVJoWnfgbSLbiw">
+     1→# Plan: Improve "Using existing branch" message for `--for-plan` flows
+     2→
+     3→## Context
+     4→
+     5→When running `erk br co --for-plan &lt;number&gt;`, the message "Using existing branch: {branch}" is ambiguous — it could sound like a fallback or warning. Since the branch was deliberately created by `plan-save`, the message should convey that we're intentionally checking it out.
+     6→
+     7→## Changes
+     8→
+     9→Two files, one-line change each:
+    10→
+    11→### 1. `src/erk/cli/commands/branch/checkout_cmd.py` (line 519)
+    12→
+    13→```python
+    14→# Before:
+    15→user_output(f"Using existing branch: {branch}")
+    16→
+    17→# After:
+    18→user_output(f"Checking out plan branch: {branch}")
+    19→```
+    20→
+    21→### 2. `src/erk/cli/commands/branch/create_cmd.py` (line 170)
+    22→
+    23→```python
+    24→# Before:
+    25→user_output(f"Using existing branch: {branch_name}")
+    26→
+    27→# After:
+    28→user_output(f"Checking out plan branch: {branch_name}")
+    29→```
+    30→
+
+... [12 lines omitted] ...
+  </tool_result>
+  <assistant>Simple plan — two one-line changes. Let me read both files and make the changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="670" cache_read_input_tokens="28490" cache_creation="{'ephemeral_5m_input_tokens': 670, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01LwoxaCCEVtJhuRDWgp5T1q">
+    <param name="todos">[{'content': 'Update message in checkout_cmd.py', 'status': 'in_progress', 'activeForm': '...[truncated 152 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="670" cache_read_input_tokens="28490" cache_creation="{'ephemeral_5m_input_tokens': 670, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Hv3VMQp9LzZC6dDyTT3i17">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">510</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="670" cache_read_input_tokens="28490" cache_creation="{'ephemeral_5m_input_tokens': 670, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HEQ4KSi5GBqwGEz94xrpCY">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/create_cmd.py</param>
+    <param name="offset">160</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="670" cache_read_input_tokens="28490" cache_creation="{'ephemeral_5m_input_tokens': 670, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LwoxaCCEVtJhuRDWgp5T1q">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_result tool="toolu_01Hv3VMQp9LzZC6dDyTT3i17">
+   510→        if trunk is None:
+   511→            user_output("Error: Could not detect trunk branch.")
+   512→            raise SystemExit(1) from None
+   513→
+   514→        local_branches = ctx.git.branch.list_local_branches(repo.root)
+   515→        branch_exists_locally = branch in local_branches
+   516→
+   517→        # Plan branch was created by plan-save
+   518→        if branch_exists_locally:
+   519→            user_output(f"Using existing branch: {branch}")
+   520→        else:
+   521→            ctx.git.remote.fetch_branch(repo.root, "origin", branch)
+   522→            ctx.branch_manager.create_tracking_branch(repo.root, branch, f"origin/{branch}")
+   523→            user_output(f"Created tracking branch: {branch}")
+   524→        # Use base_ref_name from plan metadata (set by plan-save via the draft PR)
+   525→        # to determine the correct Graphite parent, instead of guessing from current branch
+   526→        base_ref = plan.metadata.get("base_ref_name") if plan is not None else None
+   527→        parent_branch = base_ref if isinstance(base_ref, str) else trunk
+   528→        # Defer track_branch until after worktree is created — for stacked plans
+   529→        # (parent != trunk), we need to rebase first so gt track succeeds
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01HEQ4KSi5GBqwGEz94xrpCY">
+   160→        user_output("Error: Could not detect trunk branch.")
+   161→        raise SystemExit(1) from None
+   162→
+   163→    # Check if branch already exists
+   164→    local_branches = ctx.git.branch.list_local_branches(repo.root)
+   165→    branch_exists_locally = branch_name in local_branches
+   166→
+   167→    if setup is not None:
+   168→        # Plan branch was created by plan-save, so it's expected to exist
+   169→        if branch_exists_locally:
+   170→            user_output(f"Using existing branch: {branch_name}")
+   171→        else:
+   172→            # Branch only on remote — fetch and create local tracking branch
+   173→            ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+   174→            ctx.branch_manager.create_tracking_branch(
+   175→                repo.root, branch_name, f"origin/{branch_name}"
+   176→            )
+   177→            user_output(f"Created tracking branch: {branch_name}")
+   178→        ctx.branch_manager.track_branch(repo.root, branch_name, trunk)
+   179→    else:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Both lines confirmed. Let me make the two edits.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1299" cache_read_input_tokens="29160" cache_creation="{'ephemeral_5m_input_tokens': 1299, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014YPbQBCnQstfQSndz6ssvQ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">            user_output(f"Using existing branch: {branch}")</param>
+    <param name="new_string">            user_output(f"Checking out plan branch: {branch}")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1299" cache_read_input_tokens="29160" cache_creation="{'ephemeral_5m_input_tokens': 1299, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Xpn3sMu7Zf3QavgSUczFGK">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/create_cmd.py</param>
+    <param name="old_string">            user_output(f"Using existing branch: {branch_name}")</param>
+    <param name="new_string">            user_output(f"Checking out plan branch: {branch_name}")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1299" cache_read_input_tokens="29160" cache_creation="{'ephemeral_5m_input_tokens': 1299, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014YPbQBCnQstfQSndz6ssvQ">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Xpn3sMu7Zf3QavgSUczFGK">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/create_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_016YoLoTyi6n9Eok9aKP9bUh">
+    <param name="todos">[{'content': 'Update message in checkout_cmd.py', 'status': 'completed', 'activeForm': 'Up...[truncated 156 chars]...CI and submit PR', 'status': 'in_progress', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="423" cache_read_input_tokens="30459" cache_creation="{'ephemeral_5m_input_tokens': 423, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016YoLoTyi6n9Eok9aKP9bUh">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Both changes are done. Now let me signal started, run CI, and submit.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="195" cache_read_input_tokens="30882" cache_creation="{'ephemeral_5m_input_tokens': 195, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_012b7tVCutuQXSAHdwTckiSw">
+    <param name="command">erk exec impl-signal started --session-id "21d9f466-0d71-488a-a565-826f54037863" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="195" cache_read_input_tokens="30882" cache_creation="{'ephemeral_5m_input_tokens': 195, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012b7tVCutuQXSAHdwTckiSw">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8640
+}
+  </tool_result>
+  <assistant>Now let me check if there are any tests that reference the old message string, and run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="168" cache_read_input_tokens="31077" cache_creation="{'ephemeral_5m_input_tokens': 168, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_013y2LDcwmyuo56yrA3nWoGs">
+    <param name="pattern">Using existing branch</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="168" cache_read_input_tokens="31077" cache_creation="{'ephemeral_5m_input_tokens': 168, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013y2LDcwmyuo56yrA3nWoGs">
+No files found
+  </tool_result>
+  <assistant>No tests reference the old string. Let me run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="120" cache_read_input_tokens="31245" cache_creation="{'ephemeral_5m_input_tokens': 120, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="SlashCommand" id="toolu_01UwVpET5wWfCB2rMbC1GKL2">
+    <param name="command">/local:fast-ci</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="120" cache_read_input_tokens="31245" cache_creation="{'ephemeral_5m_input_tokens': 120, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UwVpET5wWfCB2rMbC1GKL2">
+Launching command: /local:fast-ci
+  </tool_result>
+  <user>&lt;command-message&gt;local:fast-ci is running…&lt;/command-message&gt;
+&lt;command-name&gt;/local:fast-ci&lt;/command-name&gt;</user>
+  <user>You are an implementation finalizer for rapid development feedback. Your task is to run `make fast-ci` and iteratively fix any issues until all CI checks pass successfully.
+
+## Your Mission
+
+Run the fast CI pipeline (`make fast-ci`) from the repository root and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**Fast CI vs All CI**: The `fast-ci` target runs unit tests only, providing rapid feedback for development iteration. Use `/all-ci` when you need comprehensive validation including integration tests.
+
+## CI Pipeline (make fast-ci)
+
+The `make fast-ci` target runs these checks in order:
+
+1. **lint** - Ruff linting checks
+2. **format-check** - Ruff code formatting checks
+3. **prettier-check** - Markdown formatting checks
+4. **md-check** - AGENTS.md standard compliance validation
+5. **docs-validate** - Agent documentation frontmatter validation
+6. **ty** - Type checking
+7. **test** - Pytest unit tests only (fast feedback loop)
+8. **exec-reference-check** - Exec subcommand reference documentation validation
+
+## Iteration Process
+
+Load the `ci-iteration` skill for the iterative fix workflow.
+
+## Fail-Fast Workflow
+
+This command uses a two-phase approach to fail fast on linting and type checking issues:
+
+1. **Phase 1 (Fail-Fast)**: Run `make lint ty` together. If EITHER fails, stop immediately to fix issues before proceeding to remaining checks.
+2. **Phase 2 (Remaining Checks)**: Only after phase 1 passes, run remaining checks via `make fast-ci`.
+
+This ensures that common issues (linting/formatting and type errors) are caught and fixed first, providing rapid feedback without waiting for slower test runs.
+
+## Begin Now
+
+Start by using the Task tool with the devrun agent to run the fail-fast phase (`make lint ty`) from the repository root. If that passes, proceed with `make fast-ci` to run the complete fast CI pipeline. Track your progress with TodoWrite and report your final status clearly.
+
+**Remember**:
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>
+
+I'll run the fail-fast CI checks first (lint + type checking), then the full fast-ci pipeline.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="843" cache_read_input_tokens="31365" cache_creation="{'ephemeral_5m_input_tokens': 843, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_015j4ckz559H1Tv6JCSAJV3m">
+    <param name="description">Run make lint ty fail-fast</param>
+    <param name="prompt">Run `make lint ty` from the repository root `/home/runner/work/erk/erk` and report the results. Just run the command and report output - do not modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="843" cache_read_input_tokens="31365" cache_creation="{'ephemeral_5m_input_tokens': 843, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015j4ckz559H1Tv6JCSAJV3m">
+Results Summary:
+
+**Both checks passed successfully:**
+
+- **ruff check**: All checks passed!
+- **ty check**: All checks passed!
+
+The linting and type-checking operations completed without any violations or type errors. The virtual environment was created during the run with all dependencies installed (83 packages in 378ms).
+agentId: a46de06 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Lint and type checking passed. Now running the full fast-ci pipeline.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="266" cache_read_input_tokens="32208" cache_creation="{'ephemeral_5m_input_tokens': 266, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01CjdvD12ZXtG23NSqyixbBh">
+    <param name="description">Run make fast-ci</param>
+    <param name="prompt">Run `make fast-ci` from the repository root `/home/runner/work/erk/erk` and report the results. Just run the command and report output - do not modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="266" cache_read_input_tokens="32208" cache_creation="{'ephemeral_5m_input_tokens': 266, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CjdvD12ZXtG23NSqyixbBh">
+The `make fast-ci` command failed with exit code 2. Here's a summary of the results:
+
+## Results Summary
+
+**Overall Status:** FAILED (Exit code 2)
+
+**Prettier Check - FAILED:**
+- Code style issues found in 2 files:
+  - `/home/runner/work/erk/erk/docs/learned/integrations/github-review-decision.md`
+  - `/home/runner/work/erk/erk/docs/learned/tui/status-indicators.md`
+
+**All Other Checks - PASSED:**
+- Ruff lint: All checks passed
+- Ruff format check: 1633 files already formatted
+- Markdown checks: OK
+- Exec reference check: OK
+- Type checking (ty): All checks passed
+- Unit tests (erk): 5529 passed in 21.80s
+- Unit tests (erk-dev): 136 passed in 4.32s
+- Unit tests (erk-statusline): 115 passed in 0.82s
+- Unit tests (erkbot): 114 passed in 2.19s
+
+**The failure is due to formatting issues in 2 markdown files.** The prettier check detected code style violations that can be fixed by running Prettier with the `--write` flag on those two markdown files.
+agentId: a5d320e (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Prettier issues in 2 markdown files — these are pre-existing (not from my changes). Let me fix them and re-run.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="649" cache_read_input_tokens="32474" cache_creation="{'ephemeral_5m_input_tokens': 649, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01GK6gShxtxsMwLTb3fvP83Q">
+    <param name="description">Run prettier --write on md files</param>
+    <param name="prompt">Run `npx prettier --write docs/learned/integrations/github-review-decision.md docs/learned...[truncated 68 chars]...rt the results. Just run the command and report output - do not modify any files yourself.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="649" cache_read_input_tokens="32474" cache_creation="{'ephemeral_5m_input_tokens': 649, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GK6gShxtxsMwLTb3fvP83Q">
+**prettier passed**: Both files were formatted successfully
+
+- `/home/runner/work/erk/erk/docs/learned/integrations/github-review-decision.md` - 66ms
+- `/home/runner/work/erk/erk/docs/learned/tui/status-indicators.md` - 21ms
+
+The files have been reformatted according to Prettier's code style standards.
+agentId: abfb2a2 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Now let me re-run the prettier check to confirm it passes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="33123" cache_creation="{'ephemeral_5m_input_tokens': 325, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_015V7Ep9aa5qaPoJipfBgXYE">
+    <param name="description">Run make prettier-check</param>
+    <param name="prompt">Run `make prettier-check` from the repository root `/home/runner/work/erk/erk` and report the results. Just run the command and report output - do not modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="33123" cache_creation="{'ephemeral_5m_input_tokens': 325, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015V7Ep9aa5qaPoJipfBgXYE">
+**Result: prettier passed**
+
+All markdown files conform to Prettier code style. No formatting issues were found.
+agentId: a6de1ce (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All CI checks pass. Now let me signal completion and submit the PR.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="366" cache_read_input_tokens="33448" cache_creation="{'ephemeral_5m_input_tokens': 366, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01XpX7Q6JxnXqQQGkAT3pNYp">
+    <param name="command">erk exec impl-signal ended --session-id "21d9f466-0d71-488a-a565-826f54037863" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="366" cache_read_input_tokens="33448" cache_creation="{'ephemeral_5m_input_tokens': 366, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01MNWVB3ifvxyo9dgpLbJ2gj">
+    <param name="command">erk exec upload-impl-session --session-id "21d9f466-0d71-488a-a565-826f54037863" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="366" cache_read_input_tokens="33448" cache_creation="{'ephemeral_5m_input_tokens': 366, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XpX7Q6JxnXqQQGkAT3pNYp">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8640
+}
+  </tool_result>
+</session>
