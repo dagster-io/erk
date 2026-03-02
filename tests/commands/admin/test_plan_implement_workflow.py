@@ -130,7 +130,7 @@ def test_creates_empty_commit_before_pr() -> None:
 
         # Verify workflow was triggered via fake's mutation tracking
         assert len(fake_github.triggered_workflows) == 1
-        workflow, inputs = fake_github.triggered_workflows[0]
+        workflow, inputs, _ref = fake_github.triggered_workflows[0]
         assert workflow == "plan-implement.yml"
 
         # Verify output shows success

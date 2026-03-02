@@ -251,10 +251,10 @@ class TestHandleAllUnblocked:
 
             # Verify two workflows triggered (one per node)
             assert len(github.triggered_workflows) == 2
-            for _workflow, inputs in github.triggered_workflows:
+            for _workflow, inputs, _ref in github.triggered_workflows:
                 assert inputs["objective_issue"] == "42"
             triggered_node_ids = [
-                inputs["node_id"] for _workflow, inputs in github.triggered_workflows
+                inputs["node_id"] for _workflow, inputs, _ref in github.triggered_workflows
             ]
             assert triggered_node_ids == ["2.1", "2.2"]
 

@@ -186,6 +186,7 @@ def _dispatch_planned_pr_plan(
     validated: ValidatedPlannedPR,
     submitted_by: str,
     base_branch: str,
+    ref: str | None,
 ) -> DispatchResult:
     """Dispatch a validated planned-PR plan for implementation.
 
@@ -269,7 +270,7 @@ def _dispatch_planned_pr_plan(
         repo_root=repo.root,
         workflow=DISPATCH_WORKFLOW_NAME,
         inputs=inputs,
-        ref=ctx.local_config.dispatch_ref,
+        ref=ref,
     )
     user_output(click.style("✓", fg="green") + " Workflow dispatched.")
 
@@ -384,8 +385,17 @@ def _detect_plan_number_from_context(
     default=None,
     help="Base branch for PR (defaults to current branch).",
 )
+@click.option(
+    "--ref",
+    "dispatch_ref",
+    type=str,
+    default=None,
+    help="Branch to dispatch workflow from (overrides config dispatch_ref)",
+)
 @click.pass_obj
-def pr_dispatch(ctx: ErkContext, plan_numbers: tuple[int, ...], base: str | None) -> None:
+def pr_dispatch(
+    ctx: ErkContext, plan_numbers: tuple[int, ...], base: str | None, dispatch_ref: str | None
+) -> None:
     """Dispatch plans for remote AI implementation via GitHub Actions.
 
     Creates branch and draft PR locally (for correct commit attribution),
@@ -407,6 +417,8 @@ def pr_dispatch(ctx: ErkContext, plan_numbers: tuple[int, ...], base: str | None
         - All issues must be OPEN
         - Working directory must be clean (no uncommitted changes)
     """
+    ref = dispatch_ref if dispatch_ref is not None else ctx.local_config.dispatch_ref
+
     # Validate GitHub CLI prerequisites upfront (LBYL)
     user_output("Checking GitHub authentication...")
     Ensure.gh_authenticated(ctx)
@@ -502,6 +514,7 @@ def pr_dispatch(ctx: ErkContext, plan_numbers: tuple[int, ...], base: str | None
             validated=v,
             submitted_by=submitted_by,
             base_branch=target_branch,
+            ref=ref,
         )
         results.append(result)
         user_output("")

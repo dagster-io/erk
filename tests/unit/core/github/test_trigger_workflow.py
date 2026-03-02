@@ -19,7 +19,7 @@ def test_trigger_workflow_tracks_call() -> None:
 
     assert run_id == "1234567890"
     assert len(github.triggered_workflows) == 1
-    workflow, inputs = github.triggered_workflows[0]
+    workflow, inputs, _ref = github.triggered_workflows[0]
     assert workflow == "implement-plan.yml"
     assert inputs == {"branch-name": "feature"}
 

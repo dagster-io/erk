@@ -113,7 +113,7 @@ def test_workflow_launch_pr_rebase_triggers_workflow(tmp_path: Path) -> None:
 
         # Verify workflow was triggered with correct inputs
         assert len(github.triggered_workflows) == 1
-        workflow, inputs = github.triggered_workflows[0]
+        workflow, inputs, _ref = github.triggered_workflows[0]
         assert workflow == WORKFLOW_COMMAND_MAP["pr-rebase"]
         assert inputs["branch_name"] == "feature-branch"
         assert inputs["base_branch"] == "main"
@@ -154,7 +154,7 @@ def test_workflow_launch_pr_rebase_with_pr_option(tmp_path: Path) -> None:
 
         # Verify workflow used PR's branch, not current branch
         assert len(github.triggered_workflows) == 1
-        _, inputs = github.triggered_workflows[0]
+        _, inputs, _ref = github.triggered_workflows[0]
         assert inputs["branch_name"] == "other-branch"
 
 
@@ -190,7 +190,7 @@ def test_workflow_launch_pr_rebase_with_no_squash(tmp_path: Path) -> None:
 
         # Verify squash is false
         assert len(github.triggered_workflows) == 1
-        _, inputs = github.triggered_workflows[0]
+        _, inputs, _ref = github.triggered_workflows[0]
         assert inputs["squash"] == "false"
 
 
@@ -228,7 +228,7 @@ def test_workflow_launch_pr_address_triggers_workflow(tmp_path: Path) -> None:
 
         # Verify workflow was triggered
         assert len(github.triggered_workflows) == 1
-        workflow, inputs = github.triggered_workflows[0]
+        workflow, inputs, _ref = github.triggered_workflows[0]
         assert workflow == WORKFLOW_COMMAND_MAP["pr-address"]
         assert inputs["pr_number"] == "123"
 
@@ -274,7 +274,7 @@ def test_workflow_launch_learn_triggers_workflow(tmp_path: Path) -> None:
 
         # Verify workflow was triggered
         assert len(github.triggered_workflows) == 1
-        workflow, inputs = github.triggered_workflows[0]
+        workflow, inputs, _ref = github.triggered_workflows[0]
         assert workflow == WORKFLOW_COMMAND_MAP["learn"]
         assert inputs["plan_number"] == "123"
 
@@ -353,7 +353,7 @@ def test_workflow_launch_with_model_option(tmp_path: Path) -> None:
 
         # Verify model is passed
         assert len(github.triggered_workflows) == 1
-        _, inputs = github.triggered_workflows[0]
+        _, inputs, _ref = github.triggered_workflows[0]
         assert inputs["model_name"] == "claude-opus-4"
 
 
@@ -391,7 +391,7 @@ def test_workflow_launch_pr_rewrite_triggers_workflow(tmp_path: Path) -> None:
 
         # Verify workflow was triggered
         assert len(github.triggered_workflows) == 1
-        workflow, inputs = github.triggered_workflows[0]
+        workflow, inputs, _ref = github.triggered_workflows[0]
         assert workflow == WORKFLOW_COMMAND_MAP["pr-rewrite"]
         assert inputs["branch_name"] == "feature-branch"
         assert inputs["base_branch"] == "main"
@@ -455,7 +455,7 @@ def test_workflow_launch_one_shot_triggers_workflow(tmp_path: Path) -> None:
 
         # Verify workflow was triggered with correct inputs
         assert len(github.triggered_workflows) == 1
-        workflow, inputs = github.triggered_workflows[0]
+        workflow, inputs, _ref = github.triggered_workflows[0]
         assert workflow == WORKFLOW_COMMAND_MAP["one-shot"]
         assert inputs["prompt"] == "fix the auth bug"
         assert inputs["branch_name"] == "feature-branch"
@@ -505,7 +505,7 @@ def test_workflow_launch_one_shot_with_file(tmp_path: Path) -> None:
 
         # Verify prompt was read from file
         assert len(github.triggered_workflows) == 1
-        _, inputs = github.triggered_workflows[0]
+        _, inputs, _ref = github.triggered_workflows[0]
         assert inputs["prompt"] == "fix the auth bug from file"
 
 
@@ -589,6 +589,42 @@ def test_workflow_launch_one_shot_prompt_and_file_exclusive(tmp_path: Path) -> N
 
         assert result.exit_code == 1
         assert "--prompt and --file are mutually exclusive" in result.output
+
+
+def test_workflow_launch_with_ref_option(tmp_path: Path) -> None:
+    """Test --ref option is threaded through to trigger_workflow."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        pr_info = _make_pr_info(123, "feature-branch", "OPEN", "Add feature")
+        pr_details = _make_pr_details(
+            number=123,
+            head_ref_name="feature-branch",
+            state="OPEN",
+            base_ref_name="main",
+            title="Add feature",
+        )
+        github = FakeGitHub(
+            prs={"feature-branch": pr_info},
+            pr_details={123: pr_details},
+        )
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "master"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, github=github)
+
+        result = runner.invoke(
+            cli, ["launch", "pr-address", "--pr", "123", "--ref", "custom-branch"], obj=ctx
+        )
+
+        assert result.exit_code == 0
+        assert len(github.triggered_workflows) == 1
+        _workflow, _inputs, ref = github.triggered_workflows[0]
+        assert ref == "custom-branch"
 
 
 def test_workflow_launch_pr_rebase_closed_pr_fails(tmp_path: Path) -> None:

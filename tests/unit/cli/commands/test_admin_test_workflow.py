@@ -36,7 +36,7 @@ def test_happy_path_with_existing_issue() -> None:
         assert draft is True
         # Verify workflow was triggered
         assert len(fake_github.triggered_workflows) == 1
-        workflow, inputs = fake_github.triggered_workflows[0]
+        workflow, inputs, _ref = fake_github.triggered_workflows[0]
         assert workflow == "plan-implement.yml"
         assert inputs["plan_id"] == "42"
         # Verify output contains run URL
@@ -67,7 +67,7 @@ def test_happy_path_creating_new_issue() -> None:
         assert "Created test plan #1" in result.output
         # Verify workflow was triggered with the new plan number
         assert len(fake_github.triggered_workflows) == 1
-        _, inputs = fake_github.triggered_workflows[0]
+        _, inputs, _ref = fake_github.triggered_workflows[0]
         assert inputs["plan_id"] == "1"
 
 
@@ -100,7 +100,7 @@ def test_happy_path_uses_detected_trunk_branch() -> None:
         _branch, _title, _body, base, _draft = fake_github.created_prs[0]
         assert base == "master"
         assert len(fake_github.triggered_workflows) == 1
-        _workflow, inputs = fake_github.triggered_workflows[0]
+        _workflow, inputs, _ref = fake_github.triggered_workflows[0]
         assert inputs["base_branch"] == "master"
 
 

@@ -258,7 +258,9 @@ def _handle_all_unblocked(
             slug=None,
         )
 
-        dispatch_result = dispatch_one_shot(ctx, params=params, dry_run=dry_run)
+        dispatch_result = dispatch_one_shot(
+            ctx, params=params, dry_run=dry_run, ref=ctx.local_config.dispatch_ref
+        )
 
         if dispatch_result is not None:
             successful_dispatches.append((node.id, dispatch_result.pr_number))
@@ -716,7 +718,9 @@ def _handle_one_shot(
         slug=None,
     )
 
-    dispatch_result = dispatch_one_shot(ctx, params=params, dry_run=dry_run)
+    dispatch_result = dispatch_one_shot(
+        ctx, params=params, dry_run=dry_run, ref=ctx.local_config.dispatch_ref
+    )
 
     # After successful dispatch, immediately mark node as "planning" with draft PR
     if dispatch_result is not None:

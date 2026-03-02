@@ -75,7 +75,9 @@ def run_smoke_test(ctx: ErkContext) -> SmokeTestResult | SmokeTestError:
     )
 
     try:
-        result = dispatch_one_shot(ctx, params=params, dry_run=False)
+        result = dispatch_one_shot(
+            ctx, params=params, dry_run=False, ref=ctx.local_config.dispatch_ref
+        )
     except SystemExit as exc:
         return SmokeTestError(step="dispatch", message=f"Exit code {exc.code}")
     except (click.ClickException, RuntimeError, ValueError, KeyError) as exc:

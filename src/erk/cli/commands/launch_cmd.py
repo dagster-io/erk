@@ -32,6 +32,7 @@ def _dispatch_workflow(
     branch_name: str,
     pr_owner: str,
     pr_repo: str,
+    ref: str | None,
 ) -> None:
     """Dispatch a workflow and report the run URL."""
     workflow_file = _get_workflow_file(workflow_name)
@@ -39,7 +40,7 @@ def _dispatch_workflow(
         repo_root=repo.root,
         workflow=workflow_file,
         inputs=inputs,
-        ref=ctx.local_config.dispatch_ref,
+        ref=ref,
     )
     user_output(click.style("\u2713", fg="green") + " Workflow dispatched")
 
@@ -77,6 +78,7 @@ def _dispatch_pr_rebase(
     pr_number: int | None,
     no_squash: bool,
     model: str | None,
+    ref: str | None,
 ) -> None:
     """Dispatch pr-rebase workflow."""
     # Get PR details - either from explicit PR number or current branch
@@ -134,6 +136,7 @@ def _dispatch_pr_rebase(
         branch_name=branch_name,
         pr_owner=pr.owner,
         pr_repo=pr.repo,
+        ref=ref,
     )
 
 
@@ -143,6 +146,7 @@ def _dispatch_pr_address(
     *,
     pr_number: int,
     model: str | None,
+    ref: str | None,
 ) -> None:
     """Dispatch pr-address workflow."""
     user_output("Checking PR status...")
@@ -181,6 +185,7 @@ def _dispatch_pr_address(
         branch_name=branch_name,
         pr_owner=pr.owner,
         pr_repo=pr.repo,
+        ref=ref,
     )
 
 
@@ -190,6 +195,7 @@ def _dispatch_pr_rewrite(
     *,
     pr_number: int,
     model: str | None,
+    ref: str | None,
 ) -> None:
     """Dispatch pr-rewrite workflow."""
     user_output("Checking PR status...")
@@ -231,6 +237,7 @@ def _dispatch_pr_rewrite(
         branch_name=branch_name,
         pr_owner=pr.owner,
         pr_repo=pr.repo,
+        ref=ref,
     )
 
 
@@ -239,6 +246,7 @@ def _dispatch_learn(
     repo: RepoContext,
     *,
     issue: int,
+    ref: str | None,
 ) -> None:
     """Dispatch learn workflow."""
     user_output(f"Dispatching learn workflow for plan #{issue}...")
@@ -251,7 +259,7 @@ def _dispatch_learn(
         repo_root=repo.root,
         workflow=_get_workflow_file("learn"),
         inputs=inputs,
-        ref=ctx.local_config.dispatch_ref,
+        ref=ref,
     )
     user_output(click.style("\u2713", fg="green") + " Workflow dispatched")
 
@@ -292,6 +300,7 @@ def _dispatch_one_shot(
     pr_number: int,
     prompt: str,
     model: str | None,
+    ref: str | None,
 ) -> None:
     """Dispatch one-shot workflow against an existing PR."""
     user_output("Checking PR status...")
@@ -336,6 +345,7 @@ def _dispatch_one_shot(
         branch_name=branch_name,
         pr_owner=pr.owner,
         pr_repo=pr.repo,
+        ref=ref,
     )
 
 
@@ -377,6 +387,13 @@ def _dispatch_one_shot(
     default=None,
     help="Read prompt from a file (one-shot only)",
 )
+@click.option(
+    "--ref",
+    "dispatch_ref",
+    type=str,
+    default=None,
+    help="Branch to dispatch workflow from (overrides config dispatch_ref)",
+)
 @click.pass_obj
 def launch(
     ctx: ErkContext,
@@ -388,6 +405,7 @@ def launch(
     model: str | None,
     prompt: str | None,
     file_path: str | None,
+    dispatch_ref: str | None,
 ) -> None:
     """Dispatch a GitHub Actions workflow.
 
@@ -441,6 +459,8 @@ def launch(
     assert not isinstance(ctx.repo, NoRepoSentinel)
     repo: RepoContext = ctx.repo
 
+    ref = dispatch_ref if dispatch_ref is not None else ctx.local_config.dispatch_ref
+
     # Validate workflow name
     _ = _get_workflow_file(workflow_name)  # Raises UsageError if invalid
 
@@ -452,6 +472,7 @@ def launch(
             pr_number=pr_number,
             no_squash=no_squash,
             model=model,
+            ref=ref,
         )
     elif workflow_name == "pr-address":
         Ensure.invariant(
@@ -459,21 +480,21 @@ def launch(
             "--pr is required for pr-address workflow",
         )
         assert pr_number is not None
-        _dispatch_pr_address(ctx, repo, pr_number=pr_number, model=model)
+        _dispatch_pr_address(ctx, repo, pr_number=pr_number, model=model, ref=ref)
     elif workflow_name == "pr-rewrite":
         Ensure.invariant(
             pr_number is not None,
             "--pr is required for pr-rewrite workflow",
         )
         assert pr_number is not None
-        _dispatch_pr_rewrite(ctx, repo, pr_number=pr_number, model=model)
+        _dispatch_pr_rewrite(ctx, repo, pr_number=pr_number, model=model, ref=ref)
     elif workflow_name == "learn":
         Ensure.invariant(
             plan_number is not None,
             "--plan is required for learn workflow",
         )
         assert plan_number is not None
-        _dispatch_learn(ctx, repo, issue=plan_number)
+        _dispatch_learn(ctx, repo, issue=plan_number, ref=ref)
     elif workflow_name == "one-shot":
         Ensure.invariant(
             pr_number is not None,
@@ -493,7 +514,9 @@ def launch(
             "--prompt or --file is required for one-shot workflow",
         )
         assert resolved_prompt is not None
-        _dispatch_one_shot(ctx, repo, pr_number=pr_number, prompt=resolved_prompt, model=model)
+        _dispatch_one_shot(
+            ctx, repo, pr_number=pr_number, prompt=resolved_prompt, model=model, ref=ref
+        )
     elif workflow_name == "plan-implement":
         _dispatch_plan_implement(ctx, repo, issue=plan_number or 0, model=model)
     else:
