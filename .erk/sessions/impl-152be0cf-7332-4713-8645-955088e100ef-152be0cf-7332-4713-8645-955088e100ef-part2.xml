@@ -1,0 +1,1056 @@
+<session>
+  <meta branch="plnd/add-ref-cli-dispatch-03-02-1254" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_result tool="toolu_01CodXYwgKSwtibGarENzpcP">
+     1→"""Dispatch GitHub Actions workflows via unified interface.
+     2→
+     3→Usage examples:
+     4→    erk launch pr-address --pr 456
+     5→    erk launch pr-rebase --pr 456
+     6→    erk launch pr-rebase --pr 456 --no-squash
+     7→    erk launch plan-implement --issue 789
+     8→    erk launch learn --issue 789
+     9→    erk launch one-shot --pr 456 --prompt "fix the auth bug"
+    10→    erk launch one-shot --pr 456 -f prompt.md
+    11→"""
+    12→
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_metadata
+    18→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+    19→from erk.cli.ensure import Ensure
+    20→from erk.core.context import ErkContext
+    21→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    22→from erk_shared.gateway.github.types import PRNotFound
+    23→from erk_shared.output.output import user_output
+    24→
+    25→
+    26→def _dispatch_workflow(
+    27→    ctx: ErkContext,
+    28→    repo: RepoContext,
+    29→    *,
+    30→    workflow_name: str,
+
+... [477 lines omitted] ...
+
+    63→        click.UsageError: If workflow name is not recognized
+    67→        raise click.UsageError(
+   281→    raise click.UsageError(
+   445→    _ = _get_workflow_file(workflow_name)  # Raises UsageError if invalid
+   501→        raise click.UsageError(f"Unknown workflow: {workflow_name}")
+  </tool_result>
+  <thinking>Now I need to:
+1. Add `ref: str | None` to `_dispatch_workflow()` and change `ref=ctx.local_config.dispatch_ref` to `ref=ref`
+2. Add `ref: str | None` to `_dispatch_learn()` and change `ref=ctx.local_config.dispatch_ref` to `ref=ref`
+3. Add `--ref` option to `launch()` Click command
+4. Add `dispatch_ref: str | None` to `launch()` function signature
+5. Resolve ref once in `launch()`: `ref = dispatch_ref if dispatch_ref is not None else ctx.local_config.dispatch_ref`
+
+
+6. Now I need to pass the resolved ref through all the dispatch helper functions.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="6354" cache_read_input_tokens="57064" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6354}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I'll make all the changes to `launch_cmd.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6354" cache_read_input_tokens="57064" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6354}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BzeQEQryoiFFQzin7s5oP4">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="old_string">def _dispatch_workflow(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    workflow_na...[truncated 279 chars]...low=workflow_file,
+        inputs=inputs,
+        ref=ctx.local_config.dispatch_ref,
+    )</param>
+    <param name="new_string">def _dispatch_workflow(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    workflow_na...[truncated 274 chars]...t=repo.root,
+        workflow=workflow_file,
+        inputs=inputs,
+        ref=ref,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6354" cache_read_input_tokens="57064" output_tokens="672" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6354, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BzeQEQryoiFFQzin7s5oP4">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01XcCPgUKpLKmX84cs3dYMpx">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="old_string">def _dispatch_learn(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    issue: int,
+) ...[truncated 264 chars]...low_file("learn"),
+        inputs=inputs,
+        ref=ctx.local_config.dispatch_ref,
+    )</param>
+    <param name="new_string">def _dispatch_learn(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    issue: int,
+  ...[truncated 259 chars]...       workflow=_get_workflow_file("learn"),
+        inputs=inputs,
+        ref=ref,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="729" cache_read_input_tokens="63418" output_tokens="448" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 729, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XcCPgUKpLKmX84cs3dYMpx">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the helper calls in `_dispatch_pr_rebase`, `_dispatch_pr_address`, `_dispatch_pr_rewrite`, `_dispatch_one_shot` to accept and pass `ref`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="507" cache_read_input_tokens="64147" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 507}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PpbWQk2geFakKxWyXPHou1">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="old_string">def _dispatch_pr_rebase(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    pr_number: int | None,
+    no_squash: bool,
+    model: str | None,
+) -&gt; None:</param>
+    <param name="new_string">def _dispatch_pr_rebase(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    pr_number: int | None,
+    no_squash: bool,
+    model: str | None,
+    ref: str | None,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="507" cache_read_input_tokens="64147" output_tokens="324" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 507, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PpbWQk2geFakKxWyXPHou1">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Rfkjucr4AeBEf3sRiUTZEG">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="old_string">    # Dispatch workflow
+    user_output("Dispatching pr-rebase workflow...")
+    _dispatch...[truncated 76 chars]...        branch_name=branch_name,
+        pr_owner=pr.owner,
+        pr_repo=pr.repo,
+    )</param>
+    <param name="new_string">    # Dispatch workflow
+    user_output("Dispatching pr-rebase workflow...")
+    _dispatch...[truncated 93 chars]...me=branch_name,
+        pr_owner=pr.owner,
+        pr_repo=pr.repo,
+        ref=ref,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="383" cache_read_input_tokens="64654" output_tokens="324" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 383, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Rfkjucr4AeBEf3sRiUTZEG">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016UTphZpq8xm9iEQm7YoHNu">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="old_string">def _dispatch_pr_address(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    pr_number: int,
+    model: str | None,
+) -&gt; None:</param>
+    <param name="new_string">def _dispatch_pr_address(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    pr_number: int,
+    model: str | None,
+    ref: str | None,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="383" cache_read_input_tokens="65037" output_tokens="252" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 383, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016UTphZpq8xm9iEQm7YoHNu">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BDttjpHCvvTaNsszMLFBzW">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="old_string">    # Dispatch workflow
+    user_output("Dispatching pr-address workflow...")
+    _dispatc...[truncated 78 chars]...        branch_name=branch_name,
+        pr_owner=pr.owner,
+        pr_repo=pr.repo,
+    )</param>
+    <param name="new_string">    # Dispatch workflow
+    user_output("Dispatching pr-address workflow...")
+    _dispatc...[truncated 95 chars]...me=branch_name,
+        pr_owner=pr.owner,
+        pr_repo=pr.repo,
+        ref=ref,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="65420" output_tokens="320" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 311, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BDttjpHCvvTaNsszMLFBzW">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01K9wiyJjUg6P1sDzWZKpMNz">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="old_string">def _dispatch_pr_rewrite(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    pr_number: int,
+    model: str | None,
+) -&gt; None:</param>
+    <param name="new_string">def _dispatch_pr_rewrite(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    pr_number: int,
+    model: str | None,
+    ref: str | None,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="379" cache_read_input_tokens="65731" output_tokens="254" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 379, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01K9wiyJjUg6P1sDzWZKpMNz">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011PLkgXpzwriwBe1fa6JdCx">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="old_string">    # Dispatch workflow
+    user_output("Dispatching pr-rewrite workflow...")
+    _dispatc...[truncated 78 chars]...        branch_name=branch_name,
+        pr_owner=pr.owner,
+        pr_repo=pr.repo,
+    )</param>
+    <param name="new_string">    # Dispatch workflow
+    user_output("Dispatching pr-rewrite workflow...")
+    _dispatc...[truncated 95 chars]...me=branch_name,
+        pr_owner=pr.owner,
+        pr_repo=pr.repo,
+        ref=ref,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="571" cache_read_input_tokens="66110" output_tokens="324" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 571, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011PLkgXpzwriwBe1fa6JdCx">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01L69VhkTZwYCS8ieCMYeDgA">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="old_string">def _dispatch_one_shot(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    pr_number: int,
+    prompt: str,
+    model: str | None,
+) -&gt; None:</param>
+    <param name="new_string">def _dispatch_one_shot(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    pr_number: int,
+    prompt: str,
+    model: str | None,
+    ref: str | None,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="383" cache_read_input_tokens="66681" output_tokens="264" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 383, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01L69VhkTZwYCS8ieCMYeDgA">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01V3Ms5k8kMoAhr6vExPVQWq">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="old_string">    # Dispatch workflow
+    user_output("Dispatching one-shot workflow...")
+    _dispatch_...[truncated 74 chars]...        branch_name=branch_name,
+        pr_owner=pr.owner,
+        pr_repo=pr.repo,
+    )</param>
+    <param name="new_string">    # Dispatch workflow
+    user_output("Dispatching one-shot workflow...")
+    _dispatch_...[truncated 91 chars]...me=branch_name,
+        pr_owner=pr.owner,
+        pr_repo=pr.repo,
+        ref=ref,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="67064" output_tokens="320" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 323, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V3Ms5k8kMoAhr6vExPVQWq">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add `--ref` option to the `launch` Click command and thread it through:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="379" cache_read_input_tokens="67387" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 379}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HpzUAbNFZw9oCNULxkYpS2">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="old_string">@click.option(
+    "-f",
+    "--file",
+    "file_path",
+    type=click.Path(exists=True, d...[truncated 219 chars]...bool,
+    model: str | None,
+    prompt: str | None,
+    file_path: str | None,
+) -&gt; None:</param>
+    <param name="new_string">@click.option(
+    "-f",
+    "--file",
+    "file_path",
+    type=click.Path(exists=True, d...[truncated 408 chars]...   prompt: str | None,
+    file_path: str | None,
+    dispatch_ref: str | None,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="379" cache_read_input_tokens="67387" output_tokens="533" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 379, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HpzUAbNFZw9oCNULxkYpS2">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add ref resolution and thread it through in the `launch` function body:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="592" cache_read_input_tokens="67766" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 592}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014XXiYQwjjbf9or5QzYeDLH">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="old_string">    # Validate preconditions
+    Ensure.gh_authenticated(ctx)
+    Ensure.invariant(
+      ...[truncated 2397 chars]...kflow_file validation
+        raise click.UsageError(f"Unknown workflow: {workflow_name}")</param>
+    <param name="new_string">    # Validate preconditions
+    Ensure.gh_authenticated(ctx)
+    Ensure.invariant(
+      ...[truncated 2541 chars]...kflow_file validation
+        raise click.UsageError(f"Unknown workflow: {workflow_name}")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="592" cache_read_input_tokens="67766" output_tokens="1663" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 592, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014XXiYQwjjbf9or5QzYeDLH">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_013GwiLfXCu5BLwQM9mq8KD9">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1722" cache_read_input_tokens="68358" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1722, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013GwiLfXCu5BLwQM9mq8KD9">
+Updated task #4 status
+  </tool_result>
+  <assistant>**Phase 5: Add `--ref` to `erk pr dispatch`**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="70080" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_013Z6v7vmGnemDkZhRopBeMz">
+    <param name="taskId">5</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="70080" output_tokens="91" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 88, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013Z6v7vmGnemDkZhRopBeMz">
+Updated task #5 status
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XWmzFtLpKJ9wHwPyUWuFPE">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="109" cache_read_input_tokens="70168" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 109, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XWmzFtLpKJ9wHwPyUWuFPE">
+     1→"""Dispatch plans for remote AI implementation via GitHub Actions."""
+     2→
+     3→import logging
+     4→import tomllib
+     5→from dataclasses import dataclass
+     6→from datetime import UTC, datetime
+     7→from pathlib import Path
+     8→
+     9→import click
+    10→
+    11→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+    12→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    13→from erk.cli.commands.slot.common import is_placeholder_branch
+    14→from erk.cli.constants import (
+    15→    DISPATCH_WORKFLOW_METADATA_NAME,
+    16→    DISPATCH_WORKFLOW_NAME,
+    17→    ERK_PLAN_LABEL,
+    18→)
+    19→from erk.cli.core import discover_repo_context
+    20→from erk.cli.ensure import Ensure, UserFacingCliError
+    21→from erk.core.context import ErkContext
+    22→from erk.core.repo_discovery import RepoContext
+    23→from erk_shared.gateway.git.remote_ops.types import PushError
+    24→from erk_shared.gateway.github.metadata.core import (
+    25→    create_submission_queued_block,
+    26→    render_erk_issue_event,
+    27→)
+    28→from erk_shared.gateway.github.parsing import (
+    29→    construct_pr_url,
+    30→    construct_workflow_run_url,
+
+... [495 lines omitted] ...
+
+   154→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number} not found")
+   160→            click.style("Error: ", fg="red")
+   169→            click.style("Error: ", fg="red") + f"PR #{plan_number} is {pr_result.state}\n\n"
+   214→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number}: plan content not found")
+   243→    if isinstance(push_result, PushError):
+   244→        raise UserFacingCliError(push_result.message)
+   290→    except Exception as e:
+   292→            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+   302→    except Exception as e:
+   303→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+   334→    except Exception as e:
+   336→            click.style("Warning: ", fg="yellow")
+   337→            + f"Failed to post queued comment: {e}\n"
+   428→            click.style("Error: ", fg="red")
+   438→                click.style("Error: ", fg="red")
+   451→                click.style("Error: ", fg="red") + f"Base branch '{base}' does not exist on remote"
+  </tool_result>
+  <thinking>Now I need to:
+1. Add `ref: str | None` to `_dispatch_planned_pr_plan()` and change its `trigger_workflow` call
+2. Add `--ref` option to `pr_dispatch()` Click command
+3. Add `dispatch_ref: str | None` to `pr_dispatch()` function signature
+4. Resolve ref in `pr_dispatch()` and thread it through</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="7166" cache_read_input_tokens="70277" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7166}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now make the changes to `dispatch_cmd.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7166" cache_read_input_tokens="70277" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7166}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019pA9vCBF3nukoCAxyW3h4R">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="old_string">def _dispatch_planned_pr_plan(
+    ctx: ErkContext,
+    *,
+    repo: RepoContext,
+    validated: ValidatedPlannedPR,
+    submitted_by: str,
+    base_branch: str,
+) -&gt; DispatchResult:</param>
+    <param name="new_string">def _dispatch_planned_pr_plan(
+    ctx: ErkContext,
+    *,
+    repo: RepoContext,
+    vali...[truncated 3 chars]...PR,
+    submitted_by: str,
+    base_branch: str,
+    ref: str | None,
+) -&gt; DispatchResult:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7166" cache_read_input_tokens="70277" output_tokens="410" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7166, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019pA9vCBF3nukoCAxyW3h4R">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_013YGgqXrBueB3WVvLynXUg8">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="old_string">    run_id = ctx.github.trigger_workflow(
+        repo_root=repo.root,
+        workflow=DISPATCH_WORKFLOW_NAME,
+        inputs=inputs,
+        ref=ctx.local_config.dispatch_ref,
+    )</param>
+    <param name="new_string">    run_id = ctx.github.trigger_workflow(
+        repo_root=repo.root,
+        workflow=DISPATCH_WORKFLOW_NAME,
+        inputs=inputs,
+        ref=ref,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="467" cache_read_input_tokens="77443" output_tokens="258" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 467, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013YGgqXrBueB3WVvLynXUg8">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add `--ref` to the Click command and thread through:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="319" cache_read_input_tokens="77910" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 319}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XZ7zpucrG9tuccw66chzdB">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="old_string">@click.command("dispatch")
+@click.argument("plan_numbers", type=int, nargs=-1, required=Fa...[truncated 125 chars]...def pr_dispatch(ctx: ErkContext, plan_numbers: tuple[int, ...], base: str | None) -&gt; None:</param>
+    <param name="new_string">@click.command("dispatch")
+@click.argument("plan_numbers", type=int, nargs=-1, required=Fa...[truncated 316 chars]...text, plan_numbers: tuple[int, ...], base: str | None, dispatch_ref: str | None
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="319" cache_read_input_tokens="77910" output_tokens="439" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 319, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XZ7zpucrG9tuccw66chzdB">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add ref resolution and thread it in the `pr_dispatch` function body:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="500" cache_read_input_tokens="78229" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 500}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019yUJNiHTfxYZckszNQoyad">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="old_string">    # Validate GitHub CLI prerequisites upfront (LBYL)
+    user_output("Checking GitHub authentication...")
+    Ensure.gh_authenticated(ctx)</param>
+    <param name="new_string">    ref = dispatch_ref if dispatch_ref is not None else ctx.local_config.dispatch_ref
+
+   ...[truncated 27 chars]...BYL)
+    user_output("Checking GitHub authentication...")
+    Ensure.gh_authenticated(ctx)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="500" cache_read_input_tokens="78229" output_tokens="264" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 500, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019yUJNiHTfxYZckszNQoyad">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016fXWTZMNRSCyZ5MnbBAaFQ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="old_string">        result = _dispatch_planned_pr_plan(
+            ctx,
+            repo=repo,
+            validated=v,
+            submitted_by=submitted_by,
+            base_branch=target_branch,
+        )</param>
+    <param name="new_string">        result = _dispatch_planned_pr_plan(
+            ctx,
+            repo=repo,
+      ...[truncated 17 chars]...ted_by=submitted_by,
+            base_branch=target_branch,
+            ref=ref,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="78729" output_tokens="258" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 325, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016fXWTZMNRSCyZ5MnbBAaFQ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01UyMUgs5smMUtmuDR6suuR6">
+    <param name="taskId">5</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="319" cache_read_input_tokens="79054" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 319, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UyMUgs5smMUtmuDR6suuR6">
+Updated task #5 status
+  </tool_result>
+  <assistant>**Phase 6: Add tests for `--ref` threading**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="79373" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_0127Je5ZzBShtdYrmMhabY48">
+    <param name="taskId">6</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="79373" output_tokens="87" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 88, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0127Je5ZzBShtdYrmMhabY48">
+Updated task #6 status
+  </tool_result>
+  <assistant>Let me read the test files to understand the test patterns:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="79461" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 105}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RLQcLgfDR4HgpGF1UJqDU4">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/commands/one_shot/test_one_shot_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="79461" output_tokens="109" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 105, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RLQcLgfDR4HgpGF1UJqDU4">
+     1→"""Tests for one-shot dispatch shared logic."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk.cli.commands.one_shot_dispatch import (
+     7→    OneShotDispatchParams,
+     8→    dispatch_one_shot,
+     9→)
+    10→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    11→from erk_shared.gateway.git.fake import FakeGit
+    12→from erk_shared.gateway.git.remote_ops.types import PushError
+    13→from erk_shared.gateway.github.fake import FakeGitHub
+    14→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    15→from tests.test_utils.context_builders import build_workspace_test_context
+    16→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    17→
+    18→
+    19→def test_dispatch_happy_path() -&gt; None:
+    20→    """Test dispatch creates plnd/ branch, PR with metadata, and triggers workflow."""
+    21→    runner = CliRunner()
+    22→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    23→        env.setup_repo_structure()
+    24→
+    25→        git = FakeGit(
+    26→            git_common_dirs={env.cwd: env.git_dir},
+    27→            default_branches={env.cwd: "main"},
+    28→            trunk_branches={env.cwd: "main"},
+    29→            current_branches={env.cwd: "main"},
+    30→        )
+
+... [277 lines omitted] ...
+
+   150→            catch_exceptions=False,
+   164→def test_dispatch_stays_on_current_branch_on_error() -&gt; None:
+   175→            push_to_remote_error=PushError(message="network error"),
+   187→        # Verify command failed
+   269→    """Test dispatch exits with clear error when branch already exists locally."""
+   279→            create_branch_error=BranchAlreadyExists(
+  </tool_result>
+  <thinking>Now I understand the existing test patterns. I need to:
+
+1. Add a test to `tests/commands/one_shot/test_one_shot_dispatch.py` to verify that calling `dispatch_one_shot` with `ref="custom-ref"` sets `triggered_workflows[0][2] == "custom-ref"`
+
+2. Add a test to `tests/commands/launch/test_launch_cmd.py` to verify that `erk launch pr-address --pr 123 --ref custom-branch` captures the ref
+
+3. Add a test to `tests/commands/pr/test_dispatch.py` to verify that `erk pr dispatch 42 --ref custom-branch` captures the ref
+   
+Let me look at how the existing tests in launch and pr dispatch are structured to match the same patterns.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="9254" cache_read_input_tokens="79566" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9254}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the existing launch and pr dispatch test files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9254" cache_read_input_tokens="79566" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9254}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013uH8hLNw4nXg4XfCyWMGaK">
+    <param name="pattern">def test_</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/commands/launch/test_launch_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9254" cache_read_input_tokens="79566" output_tokens="334" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9254, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013uH8hLNw4nXg4XfCyWMGaK">
+61:def test_workflow_launch_unknown_workflow(tmp_path: Path) -&gt; None:
+80:def test_workflow_launch_pr_rebase_triggers_workflow(tmp_path: Path) -&gt; None:
+124:def test_workflow_launch_pr_rebase_with_pr_option(tmp_path: Path) -&gt; None:
+161:def test_workflow_launch_pr_rebase_with_no_squash(tmp_path: Path) -&gt; None:
+197:def test_workflow_launch_pr_address_triggers_workflow(tmp_path: Path) -&gt; None:
+236:def test_workflow_launch_pr_address_requires_pr_option(tmp_path: Path) -&gt; None:
+255:def test_workflow_launch_learn_triggers_workflow(tmp_path: Path) -&gt; None:
+282:def test_workflow_launch_learn_requires_issue_option(tmp_path: Path) -&gt; None:
+301:def test_workflow_launch_plan_implement_shows_usage_error(tmp_path: Path) -&gt; None:
+320:def test_workflow_launch_with_model_option(tmp_path: Path) -&gt; None:
+360:def test_workflow_launch_pr_rewrite_triggers_workflow(tmp_path: Path) -&gt; None:
+401:def test_workflow_launch_pr_rewrite_requires_pr_option(tmp_path: Path) -&gt; None:
+420:def test_workflow_launch_one_shot_triggers_workflow(tmp_path: Path) -&gt; None:
+467:def test_workflow_launch_one_shot_with_file(tmp_path: Path) -&gt; None:
+512:def test_workflow_launch_one_shot_requires_pr(tmp_path: Path) -&gt; None:
+535:def test_workflow_launch_one_shot_requires_prompt(tmp_path: Path) -&gt; None:
+558:def test_workflow_launch_one_shot_prompt_and_file_exclusive(tmp_path: Path) -&gt; None:
+594:def test_workflow_launch_pr_rebase_closed_pr_fails(tmp_path: Path) -&gt; None:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BxwphkENPjL7wMCgmcCRBv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/commands/launch/test_launch_cmd.py</param>
+    <param name="offset">197</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="843" cache_read_input_tokens="88820" output_tokens="126" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 843, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BxwphkENPjL7wMCgmcCRBv">
+   197→def test_workflow_launch_pr_address_triggers_workflow(tmp_path: Path) -&gt; None:
+   198→    """Test pr-address workflow trigger."""
+   199→    runner = CliRunner()
+   200→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+   201→        env.setup_repo_structure()
+   202→
+   203→        pr_info = _make_pr_info(123, "feature-branch", "OPEN", "Add feature")
+   204→        pr_details = _make_pr_details(
+   205→            number=123,
+   206→            head_ref_name="feature-branch",
+   207→            state="OPEN",
+   208→            base_ref_name="main",
+   209→            title="Add feature",
+   210→        )
+   211→        github = FakeGitHub(
+   212→            prs={"feature-branch": pr_info},
+   213→            pr_details={123: pr_details},
+   214→        )
+   215→
+   216→        git = FakeGit(
+   217→            git_common_dirs={env.cwd: env.git_dir},
+   218→            current_branches={env.cwd: "master"},
+   219→        )
+   220→
+   221→        ctx = build_workspace_test_context(env, git=git, github=github)
+   222→
+   223→        result = runner.invoke(cli, ["launch", "pr-address", "--pr", "123"], obj=ctx)
+   224→
+   225→        assert result.exit_code == 0
+   226→        assert "PR #123" in result.output
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GBo7UMtz1zXTbUHJTxghnx">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/commands/launch/test_launch_cmd.py</param>
+    <param name="offset">620</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="905" cache_read_input_tokens="89663" output_tokens="126" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 905, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GBo7UMtz1zXTbUHJTxghnx">
+   620→        result = runner.invoke(cli, ["launch", "pr-rebase"], obj=ctx)
+   621→
+   622→        assert result.exit_code == 1
+   623→        assert "Cannot rebase CLOSED PR" in result.output
+   624→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CCWAxcVE32YwWky47xAx4A">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/commands/launch/test_launch_cmd.py</param>
+    <param name="offset">1</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="283" cache_read_input_tokens="90568" output_tokens="126" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 283, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CCWAxcVE32YwWky47xAx4A">
+     1→"""Tests for erk launch command."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from click.testing import CliRunner
+     6→from tests.test_utils.context_builders import build_workspace_test_context
+     7→from tests.test_utils.env_helpers import erk_isolated_fs_env
+     8→
+     9→from erk.cli.cli import cli
+    10→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+    11→from erk_shared.gateway.git.fake import FakeGit
+    12→from erk_shared.gateway.github.fake import FakeGitHub
+    13→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    14→
+    15→
+    16→def _make_pr_info(
+    17→    number: int,
+    18→    branch: str,
+    19→    state: str,
+    20→    title: str | None,
+    21→) -&gt; PullRequestInfo:
+    22→    """Create a PullRequestInfo for testing."""
+    23→    return PullRequestInfo(
+    24→        number=number,
+    25→        state=state,
+    26→        url=f"https://github.com/owner/repo/pull/{number}",
+    27→        is_draft=False,
+    28→        title=title or f"PR #{number}",
+    29→        checks_passing=True,
+    30→        owner="owner",
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check the test_dispatch.py for pr dispatch:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="901" cache_read_input_tokens="90851" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 901}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0116DjHSTHpojDtjjUvsxScF">
+    <param name="pattern">def test_</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/commands/pr/test_dispatch.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="901" cache_read_input_tokens="90851" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 901}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0116DjHSTHpojDtjjUvsxScF">
+21:def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() -&gt; None:
+178:def test_dispatch_auto_detects_from_impl_folder() -&gt; None:
+253:def test_dispatch_auto_detects_from_impl_context() -&gt; None:
+327:def test_dispatch_no_args_no_context_fails() -&gt; None:
+  </tool_result>
+  <tool_use name="Read" id="toolu_013URfVzXBUoUgGWo9KWeCY8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/commands/pr/test_dispatch.py</param>
+    <param name="offset">1</param>
+    <param name="limit">180</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="246" cache_read_input_tokens="91752" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 246, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013URfVzXBUoUgGWo9KWeCY8">
+     1→"""Tests for erk pr dispatch command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk_shared.gateway.git.fake import FakeGit
+     7→from erk_shared.gateway.github.fake import FakeGitHub
+     8→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+     9→from erk_shared.gateway.github.metadata.core import MetadataBlock, render_metadata_block
+    10→from erk_shared.gateway.github.types import PRDetails
+    11→from erk_shared.gateway.graphite.fake import FakeGraphite
+    12→from erk_shared.gateway.graphite.types import BranchMetadata
+    13→from erk_shared.gateway.time.fake import FakeTime
+    14→from erk_shared.impl_folder import build_plan_ref_json
+    15→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    16→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    17→from tests.test_utils.context_builders import build_workspace_test_context
+    18→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    19→
+    20→
+    21→def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() -&gt; None:
+    22→    """Test that dispatching a planned-PR plan triggers workflow with plan_backend=planned_pr.
+    23→
+    24→    Planned-PR plans already have a branch and PR. Dispatch should:
+    25→    - Validate the PR has the erk-plan label and is OPEN
+    26→    - Sync local branch ref to remote and commit impl-context via git plumbing
+    27→    - Trigger workflow with plan_backend="planned_pr" in inputs
+    28→    - NOT create a new branch or PR
+    29→    """
+    30→    runner = CliRunner()
+
+... [155 lines omitted] ...
+
+   135→        # Verify: no warnings, dispatch metadata written successfully
+   136→        assert "Warning:" not in result.output
+  </tool_result>
+  <thinking>Now I have a clear picture of the test patterns. I need to add:
+
+1. A test in `test_one_shot_dispatch.py` that calls `dispatch_one_shot` with explicit `ref="custom-ref"` and asserts `triggered_workflows[0][2] == "custom-ref"`
+
+2. A test in `test_launch_cmd.py` that calls `erk launch pr-address --pr 123 --ref custom-branch` and asserts the ref is captured
+
+3. A test in `test_dispatch.py` that calls `erk pr dispatch 42 --ref custom-branch` and asserts the ref is captured
+ 
+I need to check the existing test calls to `dispatch_one_shot` in the test file to see if they're already passing the `ref` parameter or if I need to update them to include `ref=None` for backward compatibility. I need to fix those test calls too—there are four places in the test file where `dispatch_one_shot` is invoked without the new `ref` parameter, so I'll update each of them to pass `ref=None` and add a test case for when `ref` is explicitly set to a custom value.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2980" cache_read_input_tokens="91998" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2980}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I need to update the existing test calls to `dispatch_one_shot` (which now requires `ref`) and add the new ref threading tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2980" cache_read_input_tokens="91998" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2980}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01D81CwEYwXMrLZFPqsw2ABE">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/commands/one_shot/test_one_shot_dispatch.py</param>
+    <param name="old_string">        result = dispatch_one_shot(ctx, params=params, dry_run=False)</param>
+    <param name="new_string">        result = dispatch_one_shot(ctx, params=params, dry_run=False, ref=None)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2980" cache_read_input_tokens="91998" output_tokens="1011" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2980, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01D81CwEYwXMrLZFPqsw2ABE">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/commands/one_shot/test_one_shot_dispatch.py has been updated. All occurrences of '        result = dispatch_one_shot(ctx, params=params, dry_run=False)' were successfully replaced with '        result = dispatch_one_shot(ctx, params=params, dry_run=False, ref=None)'.
+  </tool_result>
+  <assistant>Now add the ref threading test at the end of the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1115" cache_read_input_tokens="94978" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1115}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01T9Z8hRSZaeFMaYUQ3J68mU">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/commands/one_shot/test_one_shot_dispatch.py</param>
+    <param name="offset">268</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1115" cache_read_input_tokens="94978" output_tokens="144" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1115, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01T9Z8hRSZaeFMaYUQ3J68mU">
+   268→def test_dispatch_fails_when_branch_already_exists() -&gt; None:
+   269→    """Test dispatch exits with clear error when branch already exists locally."""
+   270→    runner = CliRunner()
+   271→    with erk_isolated_fs_env(runner) as env:
+   272→        env.setup_repo_structure()
+   273→
+   274→        git = FakeGit(
+   275→            git_common_dirs={env.cwd: env.git_dir},
+   276→            default_branches={env.cwd: "main"},
+   277→            trunk_branches={env.cwd: "main"},
+   278→            current_branches={env.cwd: "main"},
+   279→            create_branch_error=BranchAlreadyExists(
+   280→                branch_name="plnd/duplicate-branch",
+   281→                message="Branch 'plnd/duplicate-branch' already exists",
+   282→            ),
+   283→        )
+   284→        issues = FakeGitHubIssues()
+   285→        github = FakeGitHub(authenticated=True, issues_gateway=issues)
+   286→
+   287→        ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
+   288→
+   289→        result = runner.invoke(
+   290→            cli,
+   291→            ["one-shot", "fix the import in config.py"],
+   292→            obj=ctx,
+   293→        )
+   294→
+   295→        assert result.exit_code != 0
+   296→        assert "already exists locally" in result.output
+   297→        assert "erk delete" in result.output
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QiGZjD4kezyE73JNvAnbTA">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/commands/one_shot/test_one_shot_dispatch.py</param>
+    <param name="old_string">        # Verify no PR was created
+        assert len(github.created_prs) == 0
+        assert len(github.triggered_workflows) == 0</param>
+    <param name="new_string">        # Verify no PR was created
+        assert len(github.created_prs) == 0
+        ass...[truncated 1082 chars]..._workflow, _inputs, ref = github.triggered_workflows[0]
+        assert ref == "custom-ref"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="707" cache_read_input_tokens="96093" output_tokens="562" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 707, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QiGZjD4kezyE73JNvAnbTA">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/commands/one_shot/test_one_shot_dispatch.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add a test to `test_launch_cmd.py` for the `--ref` option:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="624" cache_read_input_tokens="96800" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 624}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MbpZh3HKraMaYJm3X3HWap">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/commands/launch/test_launch_cmd.py</param>
+    <param name="offset">593</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="624" cache_read_input_tokens="96800" output_tokens="149" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 624, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MbpZh3HKraMaYJm3X3HWap">
+   593→
+   594→def test_workflow_launch_pr_rebase_closed_pr_fails(tmp_path: Path) -&gt; None:
+   595→    """Test error when PR is closed."""
+   596→    runner = CliRunner()
+   597→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+   598→        env.setup_repo_structure()
+   599→
+   600→        pr_info = _make_pr_info(111, "closed-branch", "CLOSED", "Closed PR")
+   601→        pr_details = _make_pr_details(
+   602→            number=111,
+   603→            head_ref_name="closed-branch",
+   604→            state="CLOSED",
+   605→            base_ref_name="main",
+   606→            title="Closed PR",
+   607→        )
+   608→        github = FakeGitHub(
+   609→            prs={"closed-branch": pr_info},
+   610→            pr_details={111: pr_details},
+   611→        )
+   612→
+   613→        git = FakeGit(
+   614→            git_common_dirs={env.cwd: env.git_dir},
+   615→            current_branches={env.cwd: "closed-branch"},
+   616→        )
+   617→
+   618→        ctx = build_workspace_test_context(env, git=git, github=github)
+   619→
+   620→        result = runner.invoke(cli, ["launch", "pr-rebase"], obj=ctx)
+   621→
+   622→        assert result.exit_code == 1
+
+... [7 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0189YcmkuxFBj2fjzybaH1oQ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/commands/launch/test_launch_cmd.py</param>
+    <param name="old_string">def test_workflow_launch_pr_rebase_closed_pr_fails(tmp_path: Path) -&gt; None:</param>
+    <param name="new_string">def test_workflow_launch_with_ref_option(tmp_path: Path) -&gt; None:
+    """Test --ref option...[truncated 1088 chars]...stom-branch"
+
+
+def test_workflow_launch_pr_rebase_closed_pr_fails(tmp_path: Path) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="668" cache_read_input_tokens="97424" output_tokens="565" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 668, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0189YcmkuxFBj2fjzybaH1oQ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/commands/launch/test_launch_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add a test to `test_dispatch.py` for the `--ref` option:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="623" cache_read_input_tokens="98092" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 623}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011v5ZETKJuuNDibuMLKqVih">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/commands/pr/test_dispatch.py</param>
+    <param name="offset">327</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="623" cache_read_input_tokens="98092" output_tokens="145" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 623, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011v5ZETKJuuNDibuMLKqVih">
+   327→def test_dispatch_no_args_no_context_fails() -&gt; None:
+   328→    """Test that dispatch with no arguments and no context gives helpful error."""
+   329→    runner = CliRunner()
+   330→    with erk_isolated_fs_env(runner) as env:
+   331→        fake_gh = FakeGitHub(
+   332→            authenticated=True,
+   333→            # No PRs configured — branch lookup will return PRNotFound
+   334→        )
+   335→        fake_issues = FakeGitHubIssues()
+   336→        fake_time = FakeTime()
+   337→        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
+   338→
+   339→        git = FakeGit(
+   340→            git_common_dirs={env.cwd: env.git_dir},
+   341→            current_branches={env.cwd: "some-feature-branch"},
+   342→            local_branches={env.cwd: ["main", "some-feature-branch"]},
+   343→            default_branches={env.cwd: "main"},
+   344→            remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
+   345→            remote_branches={env.cwd: ["origin/main"]},
+   346→            repository_roots={env.cwd: env.cwd},
+   347→            branch_heads={"main": "abc123", "origin/main": "abc123"},
+   348→        )
+   349→
+   350→        graphite = FakeGraphite(
+   351→            authenticated=True,
+   352→            branches={
+   353→                "main": BranchMetadata(
+   354→                    name="main", parent=None, children=[], is_trunk=True, commit_sha=None
+   355→                ),
+   356→            },
+
+... [24 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Qxvu5eKBsB4V8deRTycz7n">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/commands/pr/test_dispatch.py</param>
+    <param name="old_string">        assert result.exit_code != 0
+        assert "No plan numbers provided and could no...[truncated 28 chars]...erk pr dispatch &lt;number&gt;" in result.output
+        assert "Traceback" not in result.output</param>
+    <param name="new_string">        assert result.exit_code != 0
+        assert "No plan numbers provided and could no...[truncated 3220 chars]..._name, _inputs, ref = fake_gh.triggered_workflows[0]
+        assert ref == "custom-branch"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1181" cache_read_input_tokens="98715" output_tokens="1194" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1181, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Qxvu5eKBsB4V8deRTycz7n">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/commands/pr/test_dispatch.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_016whhzavEVhZDuVN4bjtdV9">
+    <param name="taskId">6</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1250" cache_read_input_tokens="99896" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1250, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016whhzavEVhZDuVN4bjtdV9">
+Updated task #6 status
+  </tool_result>
+  <assistant>**Phase 7: Update docs**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="101146" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01V3Zz9uhC6QnzfRFLTBBeRy">
+    <param name="taskId">7</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="101146" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 88, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V3Zz9uhC6QnzfRFLTBBeRy">
+Updated task #7 status
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GZrYKGtH9AwTtRWXt9mnn2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/docs/learned/erk/dispatch-ref-config.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="99" cache_read_input_tokens="101234" output_tokens="93" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 99, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GZrYKGtH9AwTtRWXt9mnn2">
+     1→---
+     2→title: dispatch_ref Configuration
+     3→read_when:
+     4→  - "configuring which branch workflow_dispatch targets"
+     5→  - "working with .erk/config.toml dispatch settings"
+     6→  - "debugging workflow dispatch targeting the wrong branch"
+     7→tripwires:
+     8→  - action: "assuming dispatch_ref is project-level config"
+     9→    warning: "dispatch_ref is repo-level config (.erk/config.toml), overridable at local level (.erk/config.local.toml). It is not project-level."
+    10→---
+    11→
+    12→# dispatch_ref Configuration
+    13→
+    14→Override the default branch used for GitHub Actions `workflow_dispatch` events. By default, erk dispatches workflows against the repository's default branch (usually `master`). The `dispatch_ref` config allows targeting a different branch.
+    15→
+    16→## Configuration
+    17→
+    18→Top-level key in `.erk/config.toml`:
+    19→
+    20→```toml
+    21→dispatch_ref = "my-custom-branch"
+    22→```
+    23→
+    24→Can be overridden per-user in `.erk/config.local.toml`:
+    25→
+    26→```toml
+    27→dispatch_ref = "my-dev-branch"
+    28→```
+    29→
+    30→## Type Definition
+
+... [37 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Vh3i91914Dk4oMK1vpior9">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/docs/learned/erk/dispatch-ref-config.md</param>
+    <param name="old_string">---
+title: dispatch_ref Configuration
+read_when:
+  - "configuring which branch workflow_di...[truncated 242 chars]....toml), overridable at local level (.erk/config.local.toml). It is not project-level."
+---</param>
+    <param name="new_string">---
+title: dispatch_ref Configuration
+read_when:
+  - "configuring which branch workflow_di...[truncated 307 chars]....toml), overridable at local level (.erk/config.local.toml). It is not project-level."
+---</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1060" cache_read_input_tokens="101333" output_tokens="412" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1060, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Vh3i91914Dk4oMK1vpior9">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/docs/learned/erk/dispatch-ref-config.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01G7BXXEAUZLK4uWcYrLAkrc">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/docs/learned/erk/dispatch-ref-config.md</param>
+    <param name="old_string">## Call Sites
+
+`dispatch_ref` is consumed at 4 locations, all passing it to `github.trigge...[truncated 412 chars]...r-rewrite |
+| `erk launch --learn` | Triggering learn workflows                          |</param>
+    <param name="new_string">## CLI `--ref` Override
+
+All three dispatch commands accept a `--ref` option for per-run b...[truncated 1002 chars]...r-rewrite |
+| `erk launch --learn` | Triggering learn workflows                          |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="471" cache_read_input_tokens="102393" output_tokens="596" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 471, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01G7BXXEAUZLK4uWcYrLAkrc">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/docs/learned/erk/dispatch-ref-config.md has been updated successfully.
+  </tool_result>
+</session>
