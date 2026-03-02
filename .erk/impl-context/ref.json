@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Ensure plan-header exists before writing dispatch metadata"
+}
