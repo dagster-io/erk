@@ -1,0 +1,1392 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>dagster-compass-workspace) ➜  update-erk-0-9-0 git:(update-erk-0.9.0) gt submit
+🥞 Validating that this Graphite stack is ready to submit...
+The following upstack branch has an open PR:
+▸ plnd/O2803-plugin-interface-con-03-01-2016 (#2823)
+✔ Would you like to submit this branch as well? … no
+
+✏️ Preparing to submit PRs for the following branches...
+▸ update-erk-0.9.0 (Update code)
+
+🚀 Pushing branches to remote...
+Running git push: [========================================] 100% | Done
+
+📨 Creating/updating PRs...
+update-erk-0.9.0: https://app.graphite.com/github/pr/dagster-io/dagster-compass/2789 (updated)
+(dagster-compass-workspace) ➜  update-erk-0-9-0 git:(update-erk-0.9.0) erk workflow smoke-test
+Workflow Checks
+✅ GitHub authenticated as schrockn
+✅ Workflows can create PRs
+✅ ERK_QUEUE_GH_PAT secret configured
+✅ ANTHROPIC_API_KEY configured
+✅ CLAUDE_ENABLED variable set (true)
+✅ Workflow artifacts installed (3 workflows, 1 actions)
+
+Ready to dispatch workflows
+
+Running smoke test...
+Validating GitHub authentication...
+  ✓ Authenticated as schrockn
+Dispatching one-shot...
+  Prompt: Add a code comment to any file.
+  Backend: github-draft-pr
+
+Generating branch name...
+  ✓ Slug: smoke-test (pre-generated)
+  → Branch: plnd/smoke-test-03-01-2110
+Creating branch...
+  ✓ Branch created
+Committing prompt file...
+  ✓ Committed
+Pushing to remote...
+  ✓ Pushed (2s)
+Creating draft PR...
+Failed during: Creating draft PR
+Error during dispatch: Failed to create pull request for branch 'plnd/smoke-test-03-01-2110'
+Command: gh api --method POST repos/{owner}/{repo}/pulls -f head=plnd/smoke-test-03-01-2110 -f title=One-shot: Add a code comment to any file. -f body=&lt;details&gt;
+&lt;summary&gt;original-plan&lt;/summary&gt;
+
+_One-shot: plan content will be populated by one-shot workflow._
+
+**Prompt:** Add a code comment to any file.
+
+&lt;/details&gt;
+
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:plan-header --&gt;
+&lt;details&gt;
+&lt;summary&gt;plan-header&lt;/summary&gt;
+
+```yaml
+
+schema_version: '2'
+created_at: '2026-03-01T21:10:37.465216+00:00'
+created_by: schrockn
+plan_comment_id: null
+last_dispatched_run_id: null
+last_dispatched_node_id: null
+last_dispatched_at: null
+last_local_impl_at: null
+last_local_impl_event: null
+last_local_impl_session: null
+last_local_impl_user: null
+last_remote_impl_at: null
+last_remote_impl_run_id: null
+last_remote_impl_session_id: null
+branch_name: plnd/smoke-test-03-01-2110
+lifecycle_stage: prompted
+
+```
+
+&lt;/details&gt;
+&lt;!-- /erk:metadata-block:plan-header --&gt; -F draft=true -f base=master
+Exit code: 1
+stdout: {"message":"Validation Failed","errors":[{"resource":"PullRequest","code":"custom","message":"A pull request already exists for dagster-io:plnd/smoke-test-03-01-2110."}],"documentation_url":"https://docs.github.com/rest/pulls/pulls#create-a-pull-request","status":"422"}
+stderr: gh: Validation Failed (HTTP 422)
+(dagster-compass-workspace) ➜  update-erk-0-9-0 git:(update-erk-0.9.0) erk delete plnd/smoke-test-03-01-2110 - a
+
+this error shoudl have a better message</user>
+  <user>[Request interrupted by user]</user>
+  <user>we can check for duplicate branch name ahead of time</user>
+  <thinking>The user is reporting an issue with the `erk workflow smoke-test` command. When it tries to create a draft PR, it fails because a PR already exists for that branch. The user wants:
+
+1. A better error message when this happens
+2. To check for duplicate branch names ahead of time
+
+Let me explore the codebase to understand the smoke-test workflow and the PR creation logic.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="12306" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12306}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the codebase to understand the smoke-test workflow and PR creation logic.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="12306" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12306}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_017EdgPkCG2tLxB4i5zfQiq2">
+    <param name="description">Explore smoke-test workflow</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 692 chars]...o the PR creation failure point. I need file paths and line numbers for all key functions.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="12306" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12306}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_011ijJ7NGsycAB8quBcBQ2Gv">
+    <param name="description">Explore PR creation/dispatch</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 705 chars]...g and pre-check for this case.
+
+Provide file paths and line numbers for all relevant code.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="12306" cache_read_input_tokens="19113" output_tokens="710" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12306, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011ijJ7NGsycAB8quBcBQ2Gv">
+Perfect! Now let me compile all the findings. Let me create a comprehensive report for you:
+
+## PR Creation Flow in Erk - Complete Analysis
+
+I've thoroughly explored the erk codebase and documented the PR creation flow. Here are the key findings:
+
+### 1. **Gateway Layer - PR Creation** (`/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py`)
+
+**Abstract Interface** (lines 113-136 in `abc.py`):
+```python
+def create_pr(
+    self,
+    repo_root: Path,
+    branch: str,
+    title: str,
+    body: str,
+    base: str | None = None,
+    *,
+    draft: bool = False,
+) -&gt; int:
+```
+
+**Real Implementation** (lines 498-554 in `real.py`):
+- Constructs REST API call: `POST /repos/{owner}/{repo}/pulls`
+- Passes parameters: `head={branch}`, `title`, `body`, `draft=true` (if specified)
+- Extracts PR number from JSON response: `data["number"]`
+- **NO error handling for HTTP 422 or "already exists" scenarios**
+- Uses `run_subprocess_with_context()` which raises `RuntimeError` on any failure
+
+### 2. **PR Existence Checking (LBYL Pattern)**
+
+... [164 lines omitted] ...
+
+**Issue**: If `create_pr()` fails with HTTP 422 (PR already exists), the error bubbles up as `RuntimeError` with no specific handling.
+- Returns `PR_NOT_FOUND` error if Graphite didn't create a PR
+### 5. **Error Handling Stack**
+Lines 144-162 handle `CalledProcessError`:
+except subprocess.CalledProcessError as e:
+    error_msg = f"Failed to {operation_context}"
+    error_msg += f"\nCommand: {cmd_str}"
+    error_msg += f"\nExit code: {e.returncode}"
+        error_msg += f"\nstdout: {stdout_stripped}"
+        error_msg += f"\nstderr: {stderr_stripped}"
+    raise RuntimeError(error_msg) from e
+**No 422-specific handling** - all errors bubble up as generic `RuntimeError`
+### 7. **Current Error Behavior Chain**
+3. subprocess.CalledProcessError caught → RuntimeError raised
+5. Error bubbles to user with generic message
+- Return a new type like `PRAlreadyExists` in union: `int | PRAlreadyExists | RuntimeError`
+**Option C - Error Parsing**:
+- Catch `RuntimeError` from `create_pr()` 
+| `/packages/erk-shared/src/erk_shared/subprocess_utils.py` | 73-169 | Subprocess error handling |
+This gives you a complete roadmap for implementing better error handling around the "PR already exists" HTTP 422 scenario!
+  </tool_result>
+  <tool_result tool="toolu_017EdgPkCG2tLxB4i5zfQiq2">
+Perfect! Now I have all the information needed. Let me create a comprehensive summary report:
+
+## Smoke Test &amp; Dispatch Flow Analysis
+
+I've traced the complete flow from the smoke-test command through to PR creation. Here's what I found:
+
+---
+
+### **1. SMOKE-TEST COMMAND ENTRY POINT**
+
+**File:** `/Users/schrockn/code/erk/src/erk/cli/commands/doctor_workflow.py`
+
+| Component | Location | Details |
+|-----------|----------|---------|
+| **CLI Command** | Lines 221-243 | `@workflow_group.command("smoke-test")` - calls `_handle_smoke_test()` |
+| **Handler** | Lines 283-302 | `_handle_smoke_test()` calls `run_smoke_test(ctx)` |
+
+**Smoke Test Parameters:**
+- **Slug:** `"smoke-test"` (hardcoded, line 20 of workflow_smoke_test.py)
+- **Prompt:** `"Add a code comment to any file."` (line 22)
+- **Branch Prefix:** `"plnd/smoke-test-"` (line 21)
+
+---
+
+### **2. DISPATCH ENTRY POINT**
+
+**File:** `/Users/schrockn/code/erk/src/erk/core/workflow_smoke_test.py` (lines 53-97)
+
+**Function:** `run_smoke_test(ctx: ErkContext) -&gt; SmokeTestResult | SmokeTestError`
+
+
+... [194 lines omitted] ...
+
+**Result:** If two smoke tests run within the same minute, they generate identical branch names and the second fails silently (returns error but handler ignores it, then tries to commit/push to a non-existent local branch).
+4. **Collision failure chain:** 
+   - Second smoke test in minute X: ✗ branch already exists (error returned but ignored)
+  </tool_result>
+  <thinking>Great, I have a comprehensive understanding of the issue. Let me now read the key files to verify the findings before planning.
+
+The issue is:
+1. During `erk workflow smoke-test`, the `dispatch_one_shot` function creates a branch and then tries to create a PR
+2. If a PR already exists for that branch (e.g., from a previous smoke test that wasn't cleaned up), the PR creation fails with HTTP 422
+3. The error message is unhelpful - it shows the raw GitHub API error
+4. There's no pre-check for existing PRs before attempting creation
+
+The user wants:
+1. Better error message when PR creation fails due to duplicate
+
+
+2. A check for duplicate branch names before attempting to create a PR
+
+Let me examine the relevant code to understand the current implementation and design a solution.</thinking>
+  <usage input_tokens="2350" cache_creation_input_tokens="3509" cache_read_input_tokens="31419" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3509}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the key files to verify the findings.</assistant>
+  <usage input_tokens="2350" cache_creation_input_tokens="3509" cache_read_input_tokens="31419" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3509}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KKiLH6EFiif4hLAgKdG7hx">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="offset">200</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="2350" cache_creation_input_tokens="3509" cache_read_input_tokens="31419" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3509}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KKiLH6EFiif4hLAgKdG7hx">
+   200→            slug = generate_branch_slug(ctx.prompt_executor, params.prompt)
+   201→            slug_elapsed = time.monotonic() - slug_start
+   202→            slug_msg = f"  \u2713 Slug: {slug} ({format_duration(slug_elapsed)})"
+   203→            user_output(click.style(slug_msg, dim=True))
+   204→        # planned_pr: plnd/ prefix (no issue number needed)
+   205→        branch_name = generate_planned_pr_branch_name(
+   206→            slug,
+   207→            ctx.time.now(),
+   208→            objective_id=objective_id,
+   209→        )
+   210→        user_output(click.style(f"  \u2192 Branch: {branch_name}", dim=True))
+   211→
+   212→        # Guard against detached HEAD state
+   213→        current_branch = ctx.git.branch.get_current_branch(repo.root)
+   214→        if current_branch is None:
+   215→            user_output(
+   216→                click.style("Error: ", fg="red")
+   217→                + "Not on a branch (detached HEAD state). Cannot submit from here."
+   218→            )
+   219→            raise SystemExit(1)
+   220→
+   221→        # Create branch from trunk
+   222→        current_step = "Creating branch"
+   223→        user_output("Creating branch...")
+   224→        ctx.git.branch.create_branch(repo.root, branch_name, trunk, force=False)
+   225→        user_output(click.style("  \u2713 Branch created", dim=True))
+   226→
+   227→        # Write prompt to .erk/impl-context/prompt.md directly on the branch (no checkout)
+   228→        current_step = "Committing prompt file"
+   229→        user_output("Committing prompt file...")
+
+... [90 lines omitted] ...
+
+   245→        if isinstance(push_result, PushError):
+   246→            Ensure.invariant(False, f"Failed to push branch: {push_result.message}")
+  </tool_result>
+  <tool_use name="Read" id="toolu_012gZ1q5zr8bB7HmzAqLX7Qf">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/workflow_smoke_test.py</param>
+  </tool_use>
+  <usage input_tokens="2350" cache_creation_input_tokens="3509" cache_read_input_tokens="31419" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3509}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012gZ1q5zr8bB7HmzAqLX7Qf">
+     1→"""Workflow smoke test logic for erk doctor workflow.
+     2→
+     3→Creates throwaway branches and PRs to verify the GitHub Actions
+     4→infrastructure works end-to-end by dispatching through the production
+     5→one-shot code path.
+     6→"""
+     7→
+     8→from dataclasses import dataclass
+     9→from pathlib import Path
+    10→
+    11→import click
+    12→
+    13→from erk.cli.commands.one_shot_dispatch import (
+    14→    OneShotDispatchParams,
+    15→    dispatch_one_shot,
+    16→)
+    17→from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
+    18→from erk_shared.gateway.github.parsing import construct_workflow_run_url
+    19→
+    20→SMOKE_TEST_SLUG = "smoke-test"
+    21→SMOKE_TEST_BRANCH_PREFIX = "plnd/smoke-test-"
+    22→SMOKE_TEST_PROMPT = "Add a code comment to any file."
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class SmokeTestResult:
+    27→    """Result of a successful smoke test dispatch."""
+    28→
+    29→    branch_name: str
+    30→    pr_number: int
+
+... [136 lines omitted] ...
+
+    36→class SmokeTestError:
+    37→    """Error during smoke test dispatch."""
+    53→def run_smoke_test(ctx: ErkContext) -&gt; SmokeTestResult | SmokeTestError:
+    64→        SmokeTestResult on success, SmokeTestError on failure
+    67→        return SmokeTestError(step="validation", message="Not in a git repository")
+    80→        return SmokeTestError(step="dispatch", message=f"Exit code {exc.code}")
+    81→    except (click.ClickException, RuntimeError, ValueError, KeyError) as exc:
+    82→        return SmokeTestError(step="dispatch", message=str(exc))
+    85→        return SmokeTestError(step="dispatch", message="dispatch_one_shot returned None")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01AbhceqE9GXYxjbRo8Brht5">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">490</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="2350" cache_creation_input_tokens="3509" cache_read_input_tokens="31419" output_tokens="481" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3509, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AbhceqE9GXYxjbRo8Brht5">
+   490→                f"  gh api repos/{{owner}}/{{repo}}/actions/workflows/{workflow}/runs?per_page=10",
+   491→            ]
+   492→        )
+   493→
+   494→        msg = "\n".join(msg_parts)
+   495→        debug_log(f"trigger_workflow: exhausted all attempts, error: {msg}")
+   496→        raise RuntimeError(msg)
+   497→
+   498→    def create_pr(
+   499→        self,
+   500→        repo_root: Path,
+   501→        branch: str,
+   502→        title: str,
+   503→        body: str,
+   504→        base: str | None = None,
+   505→        *,
+   506→        draft: bool = False,
+   507→    ) -&gt; int:
+   508→        """Create a pull request on GitHub.
+   509→
+   510→        Uses REST API to preserve GraphQL quota.
+   511→
+   512→        Args:
+   513→            repo_root: Repository root directory
+   514→            branch: Source branch for the PR
+   515→            title: PR title
+   516→            body: PR body (markdown)
+   517→            base: Target base branch (defaults to repository default branch if None)
+   518→            draft: If True, create as draft PR
+   519→
+
+... [40 lines omitted] ...
+  </tool_result>
+  <thinking>Now let me also check the branch creation handling and the gateway types to understand the full picture.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="7580" cache_read_input_tokens="34928" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7580}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me also check the branch creation return types and the `get_pr_for_branch` method.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7580" cache_read_input_tokens="34928" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7580}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XD4fpxwDLVCLVjWi7u7TqH">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7580" cache_read_input_tokens="34928" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7580}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XD4fpxwDLVCLVjWi7u7TqH">
+     1→"""Discriminated union types for Git branch operations.
+     2→
+     3→BranchCreated | BranchAlreadyExists follows the NonIdealState pattern
+     4→established by PushResult | PushError in remote_ops/types.py.
+     5→"""
+     6→
+     7→from dataclasses import dataclass
+     8→
+     9→
+    10→@dataclass(frozen=True)
+    11→class BranchCreated:
+    12→    """Success result from creating a branch."""
+    13→
+    14→
+    15→@dataclass(frozen=True)
+    16→class BranchAlreadyExists:
+    17→    """Error: branch already exists. Implements NonIdealState."""
+    18→
+    19→    branch_name: str
+    20→    message: str
+    21→
+    22→    @property
+    23→    def error_type(self) -&gt; str:
+    24→        return "branch-already-exists"
+    25→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RD9fzVgXP3JJAm1tcj1rc6">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">1330</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7580" cache_read_input_tokens="34928" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7580}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RD9fzVgXP3JJAm1tcj1rc6">
+  1330→            stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+  1331→        except RuntimeError:
+  1332→            # API call failed - PR not found or other error
+  1333→            return PRNotFound(pr_number=pr_number)
+  1334→
+  1335→        data = json.loads(stdout)
+  1336→        return self._parse_pr_details_from_rest_api(data, self._repo_info)
+  1337→
+  1338→    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+  1339→        """Get comprehensive PR details for a branch via GitHub REST API.
+  1340→
+  1341→        Uses gh api to call GET /repos/{owner}/{repo}/pulls?head={owner}:{branch}&amp;state=all
+  1342→        which returns PRs for the branch in a single request.
+  1343→
+  1344→        Returns:
+  1345→            PRDetails if a PR exists for the branch, PRNotFound otherwise
+  1346→        """
+  1347→        assert self._repo_info is not None, "repo_info required for get_pr_for_branch"
+  1348→        endpoint = (
+  1349→            f"/repos/{self._repo_info.owner}/{self._repo_info.name}/pulls"
+  1350→            f"?head={self._repo_info.owner}:{branch}&amp;state=all"
+  1351→        )
+  1352→
+  1353→        # GH-API-AUDIT: REST - GET pulls (filtered by head)
+  1354→        cmd = ["gh", "api", endpoint]
+  1355→        stdout = execute_gh_command_with_retry(cmd, repo_root, self._time)
+  1356→        data = json.loads(stdout)
+  1357→
+  1358→        if not data:
+  1359→            return PRNotFound(branch=branch)
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_011fsStv8SM5co3wn4fp7w9D">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="offset">100</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7580" cache_read_input_tokens="34928" output_tokens="349" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7580, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011fsStv8SM5co3wn4fp7w9D">
+   100→
+   101→
+   102→def dispatch_one_shot(
+   103→    ctx: ErkContext,
+   104→    *,
+   105→    params: OneShotDispatchParams,
+   106→    dry_run: bool,
+   107→) -&gt; OneShotDispatchResult | None:
+   108→    """Execute the full dispatch sequence for a one-shot workflow.
+   109→
+   110→    Creates branch, commits prompt file directly to branch (no checkout),
+   111→    pushes, creates draft PR, and dispatches workflow. In dry-run mode,
+   112→    prints what would happen without executing.
+   113→
+   114→    Args:
+   115→        ctx: Erk context with git/github gateways
+   116→        params: Dispatch parameters
+   117→        dry_run: If True, print preview without executing
+   118→
+   119→    Returns:
+   120→        OneShotDispatchResult with pr_number, run_id, branch_name,
+   121→        or None in dry-run mode
+   122→    """
+   123→    # Validate we're in a git repo
+   124→    Ensure.invariant(
+   125→        not isinstance(ctx.repo, NoRepoSentinel),
+   126→        "Not in a git repository",
+   127→    )
+   128→    assert not isinstance(ctx.repo, NoRepoSentinel)
+   129→    repo: RepoContext = ctx.repo
+
+... [70 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a good understanding of the issue. Let me also check the `dispatch_one_shot` error handling to see the `except` block and how errors surface.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2817" cache_read_input_tokens="42508" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2817}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BRrK864KwapZZvt9oiShbE">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="offset">320</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2817" cache_read_input_tokens="42508" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2817}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BRrK864KwapZZvt9oiShbE">
+   320→            "submitted_by": submitted_by,
+   321→            "plan_backend": "planned_pr",
+   322→        }
+   323→        if params.model is not None:
+   324→            inputs["model_name"] = params.model
+   325→        if plan_number is not None:
+   326→            inputs["plan_issue_number"] = str(plan_number)
+   327→
+   328→        # Merge extra workflow inputs
+   329→        inputs.update(params.extra_workflow_inputs)
+   330→
+   331→        # Dispatch workflow
+   332→        current_step = "Dispatching one-shot workflow"
+   333→        user_output("Dispatching one-shot workflow...")
+   334→        run_id = ctx.github.trigger_workflow(
+   335→            repo_root=repo.root,
+   336→            workflow=ONE_SHOT_WORKFLOW,
+   337→            inputs=inputs,
+   338→            ref=ctx.local_config.dispatch_ref,
+   339→        )
+   340→        user_output(click.style(f"  \u2192 Run ID: {run_id}", dim=True))
+   341→
+   342→        # Compute run_url and queued_at for use in PR body update, metadata, and comment
+   343→        run_url: str | None = None
+   344→        if repo.github is not None:
+   345→            run_url = construct_workflow_run_url(repo.github.owner, repo.github.repo, run_id)
+   346→        queued_at = ctx.time.now().replace(tzinfo=UTC).isoformat()
+   347→
+   348→        # Write dispatch metadata and post queued comment (best-effort)
+   349→        current_step = "Writing dispatch metadata"
+
+... [68 lines omitted] ...
+
+   362→            except Exception as e:
+   364→                    click.style("Warning: ", fg="yellow")
+   365→                    + f"Failed to update dispatch metadata: {e}"
+   389→            except Exception as e:
+   391→                    click.style("Warning: ", fg="yellow") + f"Failed to post queued comment: {e}"
+   396→    except Exception as exc:
+   397→        user_output(click.style(f"Failed during: {current_step}", fg="red"))
+  </tool_result>
+  <tool_use name="Read" id="toolu_015GZXPXQ4Sm7kiSxYB2cNJp">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="offset">100</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2817" cache_read_input_tokens="42508" output_tokens="269" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2817, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015GZXPXQ4Sm7kiSxYB2cNJp">
+   100→
+   101→        Args:
+   102→            repo_root: Repository root directory
+   103→            workflow: Workflow filename (e.g., "implement-plan.yml")
+   104→            inputs: Workflow inputs as key-value pairs
+   105→            ref: Branch or tag to run workflow from (default: repository default branch)
+   106→
+   107→        Returns:
+   108→            The GitHub Actions run ID as a string
+   109→        """
+   110→        ...
+   111→
+   112→    @abstractmethod
+   113→    def create_pr(
+   114→        self,
+   115→        repo_root: Path,
+   116→        branch: str,
+   117→        title: str,
+   118→        body: str,
+   119→        base: str | None = None,
+   120→        *,
+   121→        draft: bool = False,
+   122→    ) -&gt; int:
+   123→        """Create a pull request.
+   124→
+   125→        Args:
+   126→            repo_root: Repository root directory
+   127→            branch: Source branch for the PR
+   128→            title: PR title
+   129→            body: PR body (markdown)
+
+... [20 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a very clear picture. Let me design the plan. The issue is in `dispatch_one_shot` in `one_shot_dispatch.py`. There are two problems:
+
+1. **Branch creation ignores `BranchAlreadyExists` return**: Line 224 doesn't check the return value
+2. **No pre-check for existing PR**: Before creating a PR, it doesn't check if one already exists
+
+But actually, looking at the user's error more carefully, the issue was slightly different. The branch was created (successfully pushed, etc.), but a PR already existed for that branch name. This means a previous smoke test left behind a PR for a branch with the same name pattern.
+ 
+Looking at the error trace again, the branch and commit operations all succeeded, but the PR creation failed. So the fix needs to check if a PR already exists for the branch before attempting to create one, and handle that case gracefully rather than crashing. I should add a pre-check for existing PRs before attempting to create one, and ideally detect branch collisions earlier by checking if the remote branch already exists. The cleanest solution combines both approaches: verify the remote branch isn't already taken, then check for open PRs before creation, and improve error handling around the 422 response to give users clearer feedback about what went wrong. I also need to handle the `BranchAlreadyExists` error that `create_branch()` might return at line 224. Since `dispatch_one_shot` is the common entry point for both regular and smoke test flows, I should add this error handling there rather than in the gateway method—the LBYL pattern means checking upfront before calling, not catching errors after the fact.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2347" cache_read_input_tokens="45325" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2347}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture. Let me design the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2347" cache_read_input_tokens="45325" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2347}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01NihNELtvKT1gswtQ7R7pLz">
+    <param name="description">Plan dispatch pre-checks</param>
+    <param name="prompt">I need to plan improvements to the `dispatch_one_shot` function in `/Users/schrockn/code/e...[truncated 2146 chars]... needed since `get_pr_for_branch` and `create_branch` already return discriminated unions.</param>
+    <param name="subagent_type">Plan</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2347" cache_read_input_tokens="45325" output_tokens="1813" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2347, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NihNELtvKT1gswtQ7R7pLz">
+API Error: Unable to connect to API (ConnectionRefused)
+agentId: a45a28c8acd1662c3 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 0
+tool_uses: 19
+duration_ms: 14661204&lt;/usage&gt;
+  </tool_result>
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <assistant>API Error: Unable to connect to API (ConnectionRefused)</assistant>
+  <usage input_tokens="0" output_tokens="0" cache_creation_input_tokens="0" cache_read_input_tokens="0" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="None" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 0}" inference_geo="None" iterations="None" speed="None" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>continue</user>
+  <thinking>The user wants me to continue with the planning. I already have a good understanding of the issue from my previous exploration. Let me summarize what I know:
+
+1. In `dispatch_one_shot` (one_shot_dispatch.py), line 224 ignores the `BranchCreated | BranchAlreadyExists` return from `create_branch`
+2. No pre-check for existing PR before calling `create_pr`
+3. The error message when PR creation fails is unhelpful - just shows raw GitHub API error
+
+The user wants:
+1. Better error message when this happens
+2. Pre-check for duplicate branch name/PR ahead of time
+
+
+I've gathered enough context from the codebase to move forward. The solution is straightforward: after generating the branch name, I'll check if a PR already exists for that branch before attempting to create one, and provide a clearer error message if it does.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="27427" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 27427}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I already have thorough exploration from before. Let me check a couple more things and then write the plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="27427" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 27427}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_019Yv5MNnPf3ccvcKnUpZXhS">
+    <param name="pattern">get_pr_for_branch</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="27427" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 27427}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019Yv5MNnPf3ccvcKnUpZXhS">
+390:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_014jUHC154y8xbpT6FxRTXpQ">
+    <param name="pattern">get_pr_for_branch</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="27427" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 27427}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014jUHC154y8xbpT6FxRTXpQ">
+84-            repo_info: Repository owner/name info (defaults to test-owner/test-repo)
+85-            prs: Mapping of branch name -&gt; PullRequestInfo
+86-            pr_bases: Mapping of pr_number -&gt; base_branch
+87:            pr_details: Mapping of pr_number -&gt; PRDetails for get_pr() and get_pr_for_branch()
+88-            prs_by_branch: Mapping of branch name -&gt; PRDetails (simpler than prs + pr_details)
+89-            workflow_runs: List of WorkflowRun objects to return from list_workflow_runs
+90-            workflow_runs_by_node_id: Mapping of GraphQL node_id -&gt; WorkflowRun for
+--
+291-        """Record PR creation and register PR in internal state.
+292-
+293-        Auto-registers a PRDetails entry so that get_pr() and
+294:        get_pr_for_branch() work after creation without manual setup.
+295-
+296-        Returns:
+297-            An incrementing fake PR number for testing
+--
+666-            return PRNotFound(pr_number=pr_number)
+667-        return self._pr_details[pr_number]
+668-
+669:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+670-        """Get comprehensive PR details for a branch from pre-configured state.
+671-
+672-        Checks prs_by_branch first (simpler lookup), then falls back to
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Hep6hvaqVqx7aYEJDA5nMh">
+    <param name="pattern">list_remote_branches</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="27427" cache_read_input_tokens="19113" output_tokens="798" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 27427, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Hep6hvaqVqx7aYEJDA5nMh">
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-68-        """List all local branch names in the repository."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-69-        return self._wrapped.list_local_branches(repo_root)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-70-
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py:71:    def list_remote_branches(self, repo_root: Path) -&gt; list[str]:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-72-        """List all remote branch names in the repository."""
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py:73:        return self._wrapped.list_remote_branches(repo_root)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-74-
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-75-    def get_branch_head(self, repo_root: Path, branch: str) -&gt; str | None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-76-        """Get the commit SHA at the head of a branch."""
+--
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-114-        ...
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-115-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-116-    @abstractmethod
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py:117:    def list_remote_branches(self, repo_root: Path) -&gt; list[str]:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-118-        """List all remote branch names in the repository.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-119-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py-120-        Returns branch names in format 'origin/branch-name', 'upstream/feature', etc.
+--
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-74-        """List all local branch names in the repository."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-75-        return self._wrapped.list_local_branches(repo_root)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-76-
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py:77:    def list_remote_branches(self, repo_root: Path) -&gt; list[str]:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-78-        """List all remote branch names in the repository."""
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py:79:        return self._wrapped.list_remote_branches(repo_root)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-80-
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-81-    def get_branch_head(self, repo_root: Path, branch: str) -&gt; str | None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-82-        """Get the commit SHA at the head of a branch."""
+--
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-138-        branches = [line.strip() for line in result.stdout.strip().split("\n") if line.strip()]
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py-139-        return branches
+
+... [13 lines omitted] ...
+  </tool_result>
+  <thinking>Now let me check the existing tests for one_shot_dispatch to understand what test patterns are already in place.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3261" cache_read_input_tokens="46540" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3261}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check existing tests and the PRNotFound type.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3261" cache_read_input_tokens="46540" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3261}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01RYHY3ovtvmTBc2dWWMY7TW">
+    <param name="pattern">tests/**/test_one_shot*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3261" cache_read_input_tokens="46540" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3261}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018E2hrW7zNHiX1JUKQ4Ggvx">
+    <param name="pattern">class PRNotFound</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3261" cache_read_input_tokens="46540" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3261}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018E2hrW7zNHiX1JUKQ4Ggvx">
+packages/erk-shared/src/erk_shared/gateway/github/types.py-118-    def error_type(self) -&gt; str:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-119-        return "merge-failed"
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-120-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-121-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-122-@dataclass(frozen=True)
+packages/erk-shared/src/erk_shared/gateway/github/types.py:123:class PRNotFound:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-124-    """Result when a PR lookup finds no matching PR.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-125-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-126-    Used as part of union return types for LBYL-style error handling.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-127-    """
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py-128-
+  </tool_result>
+  <tool_use name="Read" id="toolu_013GRdX6FqWUXKCTU81u9dDQ">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="offset">1</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3261" cache_read_input_tokens="46540" output_tokens="331" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3261, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RYHY3ovtvmTBc2dWWMY7TW">
+/Users/schrockn/code/erk/tests/commands/one_shot/test_one_shot.py
+/Users/schrockn/code/erk/tests/commands/one_shot/test_one_shot_dispatch.py
+/Users/schrockn/code/erk/tests/tui/app/test_one_shot_prompt.py
+/Users/schrockn/code/erk/tests/tui/screens/test_one_shot_prompt_screen.py
+  </tool_result>
+  <tool_result tool="toolu_013GRdX6FqWUXKCTU81u9dDQ">
+     1→"""Shared dispatch logic for one-shot autonomous execution.
+     2→
+     3→Extracts the branch-create/push/PR/workflow-dispatch sequence into reusable
+     4→pieces so both `erk one-shot` and `erk objective plan --one-shot` can
+     5→dispatch tasks through the same CI workflow.
+     6→"""
+     7→
+     8→import logging
+     9→import time
+    10→from dataclasses import dataclass
+    11→from datetime import UTC
+    12→
+    13→import click
+    14→
+    15→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    16→from erk.cli.ensure import Ensure
+    17→from erk.core.branch_slug_generator import generate_branch_slug
+    18→from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
+    19→from erk_shared.core.prompt_executor import PromptExecutor
+    20→from erk_shared.gateway.git.remote_ops.types import PushError
+    21→from erk_shared.gateway.github.metadata.core import (
+    22→    create_submission_queued_block,
+    23→    render_erk_issue_event,
+    24→)
+    25→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    26→from erk_shared.gateway.github.parsing import construct_workflow_run_url
+    27→from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+    28→from erk_shared.gateway.time.abc import Time
+    29→from erk_shared.naming import (
+    30→    format_branch_timestamp_suffix,
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_019JEXYiFnSFmk1qCjDqcgX9">
+    <param name="file_path">/Users/schrockn/code/erk/tests/commands/one_shot/test_one_shot_dispatch.py</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1827" cache_read_input_tokens="49801" output_tokens="99" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1827, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019JEXYiFnSFmk1qCjDqcgX9">
+     1→"""Tests for one-shot dispatch shared logic."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk.cli.commands.one_shot_dispatch import (
+     7→    OneShotDispatchParams,
+     8→    dispatch_one_shot,
+     9→)
+    10→from erk_shared.gateway.git.fake import FakeGit
+    11→from erk_shared.gateway.git.remote_ops.types import PushError
+    12→from erk_shared.gateway.github.fake import FakeGitHub
+    13→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    14→from tests.test_utils.context_builders import build_workspace_test_context
+    15→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    16→
+    17→
+    18→def test_dispatch_happy_path() -&gt; None:
+    19→    """Test dispatch creates plnd/ branch, PR with metadata, and triggers workflow."""
+    20→    runner = CliRunner()
+    21→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    22→        env.setup_repo_structure()
+    23→
+    24→        git = FakeGit(
+    25→            git_common_dirs={env.cwd: env.git_dir},
+    26→            default_branches={env.cwd: "main"},
+    27→            trunk_branches={env.cwd: "main"},
+    28→            current_branches={env.cwd: "main"},
+    29→        )
+    30→        issues = FakeGitHubIssues()
+
+... [50 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have all the information needed to write the plan. Let me also check how PRNotFound works exactly so I know its signature.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="6106" cache_read_input_tokens="51628" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6106}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KpshnaDj1gMSCCGwiExcAJ">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="offset">122</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6106" cache_read_input_tokens="51628" output_tokens="163" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6106, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KpshnaDj1gMSCCGwiExcAJ">
+   122→@dataclass(frozen=True)
+   123→class PRNotFound:
+   124→    """Result when a PR lookup finds no matching PR.
+   125→
+   126→    Used as part of union return types for LBYL-style error handling.
+   127→    """
+   128→
+   129→    pr_number: int | None = None  # Set when looking up by number
+   130→    branch: str | None = None  # Set when looking up by branch
+   131→
+   132→
+   133→@dataclass(frozen=True)
+   134→class PRDetails(EnsurableResult):
+   135→    """Comprehensive PR information from a single GitHub API call.
+   136→
+   137→    This dataclass contains all commonly-needed PR fields, allowing call sites
+   138→    to fetch everything they need in one API call instead of multiple separate
+   139→    calls for title, body, base branch, etc.
+   140→    """
+   141→
+  </tool_result>
+  <assistant>I have all the context I need. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="516" cache_read_input_tokens="57734" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 516}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01HfAY8Wazu52RriwFmeqXcN">
+    <param name="file_path">/Users/schrockn/.claude/plans/delightful-brewing-noodle.md</param>
+    <param name="content"># Pre-check for duplicate branch/PR in dispatch_one_shot
+
+## Context
+
+When `erk workflow s...[truncated 2557 chars]... pass
+- Run `uv run ty check src/erk/cli/commands/one_shot_dispatch.py` for type checking
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="516" cache_read_input_tokens="57734" output_tokens="944" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 516, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HfAY8Wazu52RriwFmeqXcN">
+File created successfully at: /Users/schrockn/.claude/plans/delightful-brewing-noodle.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_0147cRq3xu5DnrC7ozSfkmdZ">
+    <param name="plan"># Pre-check for duplicate branch/PR in dispatch_one_shot
+
+## Context
+
+When `erk workflow s...[truncated 2557 chars]... pass
+- Run `uv run ty check src/erk/cli/commands/one_shot_dispatch.py` for type checking
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="984" cache_read_input_tokens="58250" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 984, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0147cRq3xu5DnrC7ozSfkmdZ">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/delightful-brewing-noodle.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Pre-check for duplicate branch/PR in dispatch_one_shot
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 59c17fef-9670-4da9-b770-f73286adf3eb \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+## Pre-check for duplicate branch/PR in dispatch_one_shot
+
+**Context:** When `erk workflow smoke-test` (or any one-shot dispatch) runs and a PR already exists for the generated branch name, `create_pr` fails with a raw HTTP 422. Two LBYL violations exist: the `BranchAlreadyExists` return is ignored, and no pre-check for existing PRs.
+
+**Changes:**
+1. **Handle `BranchAlreadyExists`** (line 224) — check return value, fail with clear message pointing to `erk delete`
+2. **Pre-check for existing PR** — after push, before `create_pr`, call `get_pr_for_branch()` and fail early if PR exists
+3. **Two new tests** — branch-already-exists and PR-already-exists scenarios
+
+**Files:** `src/erk/cli/commands/one_shot_dispatch.py`, `tests/commands/one_shot/test_one_shot_dispatch.py`
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="758" cache_read_input_tokens="59234" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 758}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01GFdysyBeK9GTsu7KfUkHBZ">
+    <param name="questions">[{'question': '📋 Pre-check for duplicate branch/PR in dispatch_one_shot\nCurrent context: ...[truncated 438 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="758" cache_read_input_tokens="59234" output_tokens="474" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 758, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GFdysyBeK9GTsu7KfUkHBZ">
+User has answered your questions: "📋 Pre-check for duplicate branch/PR in dispatch_one_shot
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01S3uPCas3rU14MVXVrBegm9">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="558" cache_read_input_tokens="59992" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 558, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S3uPCas3rU14MVXVrBegm9">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="59c17fef-9670-4da9-b770-f73286adf3eb" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "59c17fef-9670-4da9-b770-f73286adf3eb" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "59c17fef-9670-4da9-b770-f73286adf3eb" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "59c17fef-9670-4da9-b770-f73286adf3eb" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "59c17fef-9670-4da9-b770-f73286adf3eb" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+**Step 1: Parse Arguments** — No flags provided, standalone plan.
+
+**Step 2: Generate Branch Slug** — From title "Pre-check for duplicate branch/PR in dispatch_one_shot":
+
+`BRANCH_SLUG`: `precheck-duplicate-branch-pr`
+
+**Step 3: Generate Plan Summary**
+
+Adds LBYL pre-checks to dispatch_one_shot so that duplicate branch names and existing PRs are detected early with clear error messages, instead of failing with a raw GitHub API 422 error.
+
+**Step 4: Run Save Command**</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2605" cache_read_input_tokens="60550" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2605}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01V91msFaDHtmaV3h9iGQCNp">
+    <param name="command">erk exec plan-save --format json --session-id="59c17fef-9670-4da9-b770-f73286adf3eb" --bra...[truncated 129 chars]...cted early with clear error messages, instead of failing with a raw GitHub API 422 error."</param>
+    <param name="description">Save plan as draft PR via erk exec</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2605" cache_read_input_tokens="60550" output_tokens="340" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2605, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V91msFaDHtmaV3h9iGQCNp">
+{"success": true, "plan_number": 8595, "plan_url": "https://github.com/dagster-io/erk/pull/8595", "title": "[erk-plan] Pre-check for duplicate branch/PR in dispatch_one_shot", "branch_name": "plnd/precheck-duplicate-branch-03-02-0424", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/59c17fef-9670-4da9-b770-f73286adf3eb/plan_snapshots/000001-c5824778"}
+  </tool_result>
+  <assistant>No objective linked — skipping Steps 5 and 6.
+
+**Step 7: Display Results**
+
+Plan "Pre-check for duplicate branch/PR in dispatch_one_shot" saved as draft PR #8595
+URL: https://github.com/dagster-io/erk/pull/8595
+
+Next steps:
+
+View PR: https://github.com/dagster-io/erk/pull/8595
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: `erk br co --new-slot --for-plan 8595`
+    Implement: `source "$(erk br co --new-slot --for-plan 8595 --script)" &amp;&amp; erk implement --dangerous`
+
+  Same slot:
+    Local: `erk br co --for-plan 8595`
+    Implement: `source "$(erk br co --for-plan 8595 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8595`
+
+**Pushing planning session:**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="603" cache_read_input_tokens="63155" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 603}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01E8GctwKwLzhKWxDmpXJWza">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="603" cache_read_input_tokens="63155" output_tokens="385" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 603, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01E8GctwKwLzhKWxDmpXJWza">
+SESSION_ID=59c17fef-9670-4da9-b770-f73286adf3eb
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/59c17fef-9670-4da9-b770-f73286adf3eb.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01LjfALvonPn7UHRKZyn4qyn">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 58 chars]...4da9-b770-f73286adf3eb" --stage planning --source local --plan-id 8595 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="588" cache_read_input_tokens="63758" output_tokens="204" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 588, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LjfALvonPn7UHRKZyn4qyn">
+{"uploaded": true, "plan_id": 8595, "session_branch": "async-learn/8595", "session_id": "59c17fef-9670-4da9-b770-f73286adf3eb", "stage": "planning", "files": ["planning-59c17fef-9670-4da9-b770-f73286adf3eb-59c17fef-9670-4da9-b770-f73286adf3eb.xml"]}
+  </tool_result>
+  <assistant>Plan saved and session pushed. PR #8595 is ready at https://github.com/dagster-io/erk/pull/8595.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="335" cache_read_input_tokens="64346" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 335}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "59c17fef-9670-4da9-b770-f73286adf3eb" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>
+
+The most recent plan in this conversation is **#8595**. Dispatching it now.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="600" cache_read_input_tokens="64681" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 600}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TSfw4zutb39zPCwyckNTxw">
+    <param name="command">erk pr dispatch 8595</param>
+    <param name="description">Dispatch plan #8595 for remote implementation</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="600" cache_read_input_tokens="64681" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 600, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TSfw4zutb39zPCwyckNTxw">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Syncing master with origin/master...
+✓ master synced with origin/master
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8595...
+
+✓ All 1 plan(s) validated
+
+  #8595: [erk-plan] Pre-check for duplicate branch/PR in dispatch_one_shot
+
+Dispatching PR #8595...
+
+Fetching plan content...
+Syncing branch: plnd/precheck-duplicate-branch-03-02-0424
+Committing plan to branch...
+✓ Branch pushed to remote
+
+Dispatching workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow dispatched.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+... [6 lines omitted] ...
+  </tool_result>
+  <assistant>Dispatched successfully. Clearing the session marker.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="588" cache_read_input_tokens="65281" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 588}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017Y7mMHgGgw6AEnk1cFif4Q">
+    <param name="command">erk exec marker delete --session-id "59c17fef-9670-4da9-b770-f73286adf3eb" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker for this session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="588" cache_read_input_tokens="65281" output_tokens="126" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 588, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017Y7mMHgGgw6AEnk1cFif4Q">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Plan #8595 has been dispatched for remote implementation:
+
+- **Plan PR:** https://github.com/dagster-io/erk/pull/8595
+- **Workflow run:** https://github.com/dagster-io/erk/actions/runs/22569560354
+
+The remote agent will implement the LBYL pre-checks for duplicate branch/PR detection in `dispatch_one_shot`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="157" cache_read_input_tokens="65869" output_tokens="97" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 157, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
