@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Auto-Remove Orphaned Artifacts During `erk artifact sync`"
+  "plan_id": "8590",
+  "url": "https://github.com/dagster-io/erk/pull/8590",
+  "created_at": "2026-03-02T01:41:54.775161",
+  "synced_at": "2026-03-02T01:41:54.775161",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
