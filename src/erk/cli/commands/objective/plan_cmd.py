@@ -715,7 +715,7 @@ def _handle_one_shot(
     user_output(f"Prompt: {prompt}")
 
     raw = fast_haiku_call(target_node.description, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT)
-    slug = _postprocess_slug(raw) if raw is not None else None
+    slug = _postprocess_slug(raw) if raw else None
     if slug is None:
         slug = sanitize_worktree_name(target_node.description)[:25].rstrip("-")
 
