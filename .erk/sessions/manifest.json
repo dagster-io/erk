@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "plan_id": 8633,
+  "sessions": [
+    {
+      "session_id": "b0f5e60d-1e5c-46ae-be4f-0fd24a2ebf65",
+      "stage": "impl",
+      "source": "remote",
+      "uploaded_at": "2026-03-02T20:37:47.498781+00:00",
+      "files": [
+        "impl-b0f5e60d-1e5c-46ae-be4f-0fd24a2ebf65-b0f5e60d-1e5c-46ae-be4f-0fd24a2ebf65-part1.xml",
+        "impl-b0f5e60d-1e5c-46ae-be4f-0fd24a2ebf65-b0f5e60d-1e5c-46ae-be4f-0fd24a2ebf65-part2.xml",
+        "impl-b0f5e60d-1e5c-46ae-be4f-0fd24a2ebf65-b0f5e60d-1e5c-46ae-be4f-0fd24a2ebf65-part3.xml"
+      ]
+    }
+  ]
+}
