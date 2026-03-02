@@ -249,7 +249,9 @@ class ErkCommandGroup(click.Group):
             "down",
             "implement",
             "land",
+            "launch",
             "list",
+            "one-shot",
             "up",
             "upgrade",
         ]
@@ -271,6 +273,7 @@ class ErkCommandGroup(click.Group):
             "run",
             "slot",
             "stack",
+            "workflow",
             "wt",
         ]
         initialization = ["init"]

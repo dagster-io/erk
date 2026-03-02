@@ -25,7 +25,7 @@ from erk.core.context import ErkContext
 from erk_shared.output.output import user_output
 
 
-@click.command("one-shot", hidden=True)
+@click.command("one-shot")
 @click.argument("prompt", required=False, default=None)
 @click.option(
     "-f",
