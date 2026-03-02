@@ -16,11 +16,11 @@ Every erk worktree runs an activation script on entry. The script refreshes work
 
 ## Package Refresh
 
-<!-- Source: src/erk/cli/activation.py:193 -->
+<!-- Source: src/erk/cli/activation.py, render_activation_script -->
 
 The activation script includes this line:
 
-<!-- See the uv pip install command in src/erk/cli/activation.py:193 -->
+<!-- See the uv pip install command in src/erk/cli/activation.py, render_activation_script -->
 
 The activation script reinstalls the three workspace packages (`erk`, `erk-shared`, `erk-statusline`) as editable installs with `--no-deps --quiet` on every worktree activation.
 
