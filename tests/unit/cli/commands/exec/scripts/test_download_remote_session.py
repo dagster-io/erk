@@ -85,10 +85,10 @@ def test_cli_missing_session_id() -> None:
 
 
 def test_error_download_fails_when_branch_not_found(tmp_path: Path) -> None:
-    """Test error when git show fails to extract session from branch.
+    """Test error when file not found at ref.
 
-    tmp_path is not a git repository, so subprocess git show returns non-zero.
-    The FakeGit records the fetch_branch call but does not make real git calls.
+    FakeGit returns None for unconfigured ref_file_contents,
+    simulating a missing file on the branch.
     """
     fake_git = FakeGit(current_branches={tmp_path: "main"})
 
@@ -107,6 +107,30 @@ def test_error_download_fails_when_branch_not_found(tmp_path: Path) -> None:
     assert ("origin", "async-learn/42") in fake_git.fetched_branches
 
 
+def test_success_downloads_session_from_branch(tmp_path: Path) -> None:
+    """Test successful session download via gateway."""
+    session_content = b'{"type":"message","role":"user"}\n'
+    fake_git = FakeGit(
+        current_branches={tmp_path: "main"},
+        ref_file_contents={
+            ("origin/async-learn/42", ".erk/session/test-session-123.jsonl"): session_content,
+        },
+    )
+
+    exit_code, output = _execute_download(
+        repo_root=tmp_path,
+        session_branch="async-learn/42",
+        session_id="test-session-123",
+        git=fake_git,
+    )
+
+    assert exit_code == 0
+    assert output["success"] is True
+    assert output["source"] == "branch"
+    session_file = Path(str(output["path"]))
+    assert session_file.read_bytes() == session_content
+
+
 def test_cleanup_existing_directory_on_redownload(tmp_path: Path) -> None:
     """Test that existing directory contents are cleaned up before download attempt."""
     session_id = "redownload-session"
@@ -118,7 +142,7 @@ def test_cleanup_existing_directory_on_redownload(tmp_path: Path) -> None:
     old_file = session_dir / "old-session.jsonl"
     old_file.write_text('{"old": true}\n', encoding="utf-8")
 
-    # Download attempt (will fail since tmp_path is not a git repo)
+    # Download attempt (will fail since no ref_file_contents configured)
     exit_code, _output = _execute_download(
         repo_root=tmp_path,
         session_branch="async-learn/42",
@@ -128,5 +152,5 @@ def test_cleanup_existing_directory_on_redownload(tmp_path: Path) -> None:
 
     # Old file should be cleaned up even though download failed
     assert not old_file.exists(), "Old file should be cleaned up before download attempt"
-    # Download fails because tmp_path is not a git repo
+    # Download fails because file not found at ref
     assert exit_code == 1
