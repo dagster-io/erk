@@ -265,12 +265,25 @@ def _dispatch_planned_pr_plan(
         **workflow_config,
     }
 
-    run_id = ctx.github.trigger_workflow(
-        repo_root=repo.root,
-        workflow=DISPATCH_WORKFLOW_NAME,
-        inputs=inputs,
-        ref=ctx.local_config.dispatch_ref,
-    )
+    try:
+        run_id = ctx.github.trigger_workflow(
+            repo_root=repo.root,
+            workflow=DISPATCH_WORKFLOW_NAME,
+            inputs=inputs,
+            ref=ctx.local_config.dispatch_ref,
+        )
+    except RuntimeError as e:
+        error_text = str(e)
+        if "404" in error_text or "Not Found" in error_text:
+            raise UserFacingCliError(
+                f"Workflow '{DISPATCH_WORKFLOW_NAME}' not found in this repository.\n\n"
+                "The dispatch workflow must be installed before dispatching plans.\n"
+                "Install it with:\n\n"
+                f"  erk init capability add erk-impl-workflow"
+            ) from e
+        raise UserFacingCliError(
+            f"Failed to dispatch workflow '{DISPATCH_WORKFLOW_NAME}'.\n\n{error_text}"
+        ) from e
     user_output(click.style("✓", fg="green") + " Workflow dispatched.")
 
     # Compute workflow URL
