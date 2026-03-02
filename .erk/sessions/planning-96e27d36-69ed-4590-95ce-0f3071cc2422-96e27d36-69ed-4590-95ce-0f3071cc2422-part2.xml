@@ -1,0 +1,852 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01B3MX1uVKLwfFKD9vL1kH6A">
+   370→            self.call_from_thread(
+   371→                self.notify,
+   372→                f"Failed to check objective #{plan_id}: {error_msg}",
+   373→                severity="error",
+   374→                timeout=5,
+   375→            )
+   376→
+   377→    @work(thread=True)
+   378→    def _one_shot_plan_async(self: ErkDashApp, op_id: str, plan_id: int) -&gt; None:
+   379→        """Dispatch one-shot plan in background thread with toast."""
+   380→        result = self._run_streaming_operation(
+   381→            op_id=op_id,
+   382→            command=["erk", "objective", "plan", str(plan_id), "--one-shot"],
+   383→        )
+   384→        self.call_from_thread(self._finish_operation, op_id=op_id)
+   385→        if result.success:
+   386→            self.call_from_thread(
+   387→                self.notify, f"Dispatched one-shot plan for objective #{plan_id}", timeout=3
+   388→            )
+   389→            self.call_from_thread(self.action_refresh)
+   390→        else:
+   391→            error_msg = last_output_line(result)
+   392→            self.call_from_thread(
+   393→                self.notify,
+   394→                f"Failed to dispatch one-shot plan for objective #{plan_id}: {error_msg}",
+   395→                severity="error",
+   396→                timeout=5,
+   397→            )
+   398→
+   399→    @work(thread=True)
+
+... [30 lines omitted] ...
+
+   411→            error_msg = last_output_line(result)
+   414→                f"One-shot dispatch failed: {error_msg}",
+   415→                severity="error",
+  </tool_result>
+  <tool_use name="Read" id="toolu_0121F5mdP6AYqti1QUq5VMoz">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/prompt_executor.py</param>
+    <param name="offset">530</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="318" cache_read_input_tokens="74701" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 318}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0121F5mdP6AYqti1QUq5VMoz">
+   530→                    "falling back to inherited descriptors"
+   531→                )
+   532→
+   533→        # Strip nested session guard before replacing process.
+   534→        # Claude Code sets CLAUDECODE=1 to block nested sessions, but execvp
+   535→        # replaces the current process entirely — no resources are shared.
+   536→        os.environ.pop("CLAUDECODE", None)
+   537→
+   538→        # Replace current process with Claude
+   539→        os.execvp("claude", cmd_args)
+   540→        # Never returns - process is replaced
+   541→
+   542→    def execute_prompt(
+   543→        self,
+   544→        prompt: str,
+   545→        *,
+   546→        model: str,
+   547→        tools: list[str] | None,
+   548→        cwd: Path | None,
+   549→        system_prompt: str | None,
+   550→        dangerous: bool,
+   551→    ) -&gt; PromptResult:
+   552→        """Execute a single prompt and return the result.
+   553→
+   554→        Implementation details:
+   555→        - Uses subprocess.run with --print and --output-format text
+   556→        - When system_prompt is provided, uses --system-prompt to replace
+   557→          Claude Code's default system prompt
+   558→        - When dangerous is True, adds --dangerously-skip-permissions
+   559→        - Returns PromptResult with success status and output
+
+... [50 lines omitted] ...
+
+   592→                error=f"Prompt execution timed out after {PROMPT_TIMEOUT_SECONDS}s",
+   599→                error=format_prompt_error(
+   609→            error=None,
+  </tool_result>
+  <tool_use name="Read" id="toolu_013HuYHxVfvszFf9dyndV3z7">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/branch_slug_generator.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="318" cache_read_input_tokens="74701" output_tokens="1413" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 318, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013HuYHxVfvszFf9dyndV3z7">
+     1→"""Branch slug generation via LLM inference.
+     2→
+     3→This module provides branch name slug generation using a fast LLM call
+     4→to distill plan titles into meaningful 2-4 word slugs before they
+     5→enter the branch naming pipeline.
+     6→
+     7→Follows the CommitMessageGenerator pattern from src/erk/core/commit_message_generator.py.
+     8→"""
+     9→
+    10→from __future__ import annotations
+    11→
+    12→from dataclasses import dataclass
+    13→
+    14→from erk_shared.core.prompt_executor import PromptExecutor
+    15→from erk_shared.naming import sanitize_worktree_name
+    16→
+    17→BRANCH_SLUG_SYSTEM_PROMPT = """\
+    18→You are a branch name slug generator. Given a title, return ONLY a concise
+    19→2-4 word slug using lowercase letters and hyphens. No explanation.
+    20→
+    21→Rules:
+    22→- Use 2-4 hyphenated words (e.g., "fix-auth-session", "add-plan-validation")
+    23→- Capture the distinctive essence, not generic words
+    24→- Drop filler words: "the", "a", "for", "and", "implementation", "plan"
+    25→- Prefer verbs: add, fix, refactor, update, consolidate, extract, migrate
+    26→- Never exceed 30 characters total
+    27→- Output ONLY the slug, nothing else"""
+    28→
+    29→
+    30→@dataclass(frozen=True)
+
+... [122 lines omitted] ...
+
+    37→        error_message: Error description if generation failed
+    42→    error_message: str | None
+    65→            BranchSlugResult with success status and slug or error
+    80→                error_message=result.error or "LLM execution failed",
+    88→                error_message=f"Invalid LLM output: {result.output!r}",
+    94→            error_message=None,
+   135→    """Generate a slug from title, falling back to raw title on failure.
+   138→    or the raw title on failure (so sanitize_worktree_name handles it downstream).
+   145→        LLM-generated slug on success, raw title on failure
+  </tool_result>
+  <thinking>Now I understand the full picture. Let me check if there's an Anthropic SDK dependency in the project that could be used as an alternative to spawning a full `claude` CLI subprocess.
+
+Let me also think about the user's questions:
+
+1. **Can we use inference hoisting?** - The issue is that `erk objective plan --one-shot` is called from the TUI as a CLI subprocess. There's no "skill layer" to hoist to in the TUI context. The skill layer only exists within Claude Code sessions. From the TUI, the call chain is: TUI → `erk objective plan --one-shot` → `dispatch_one_shot()` → `generate_branch_slug()` → `claude --print --model haiku` subprocess.
+   
+   The real bottleneck is that we're spawning a full CLI tool just to generate a slug. We could potentially use the Anthropic Python SDK directly instead, which would eliminate the subprocess overhead entirely. That would be much faster than the current approach.
+
+2. **Why does this happen from the TUI?** - It's not really an error, just a performance issue. The TUI calls `erk objective plan`, which in turn spawns the Claude CLI subprocess to generate the slug.
+
+Actually, wait - the user mentioned it's "excessively slow" and the screenshot shows it stuck on that step. Maybe the subprocess itself is hanging rather than just being slow. If the TUI was launched from within a Claude Code session, there could be environment variables causing issues with the child process. Let me think through what could actually be blocking here.
+
+Looking at the options: I could use the Anthropic SDK directly to skip the subprocess overhead, pre-compute the slug at the TUI level before calling the CLI, or skip the LLM call entirely by generating the slug deterministically from the node description. Actually, the node description is already a meaningful name - I don't need an LLM call at all for this.
+
+Looking at the code, both `_handle_one_shot()` and `_handle_all_unblocked()` construct prompts that include the target node's description, which is something like "Add user authentication" or "Refactor gateway ABC" - that's already perfect material for generating a branch slug without any additional LLM processing.
+
+So the solution is to hoist this logic to the caller level: have `_handle_one_shot` and `_handle_all_unblocked` derive a slug directly from `target_node.description` and pass it to `OneShotDispatchParams` rather than leaving it to be inferred downstream. This is inference hoisting in practice - we're doing the naming work at the call site that already has the descriptive context.
+
+Now for the one-shot dispatch cases where there isn't a node available...
+
+The fallback should also be deterministic - just apply `sanitize_worktree_name` to the raw prompt. But I'm wondering if that produces branch names good enough for what the user wants. Looking at some examples: "Add user authentication" becomes "add-user-authentication", "Refactor gateway ABC implementation" gets truncated to "refactor-gateway-abc-imple", "Fix import ordering in config.py" becomes "fix-import-ordering-in-co". They're functional but not ideal - an LLM would pick the essential words better. The question is whether that trade-off is worth it.
+
+Actually, I could use the Anthropic SDK directly instead of subprocess calls for a much faster response, avoiding that 5+ second delay. Let me check if the SDK is already available.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="6898" cache_read_input_tokens="75019" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6898}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check if the Anthropic SDK is available in the project — that could make the LLM call fast without needing to spawn a full `claude` subprocess.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6898" cache_read_input_tokens="75019" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6898}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RdRKMXTtkPeqZdR5uka4m4">
+    <param name="pattern">anthropic</param>
+    <param name="glob">pyproject.toml</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6898" cache_read_input_tokens="75019" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6898}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RdRKMXTtkPeqZdR5uka4m4">
+No matches found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01N15BMzuXWq2arXWLtEiHAY">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/prompt_executor.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6898" cache_read_input_tokens="75019" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6898}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N15BMzuXWq2arXWLtEiHAY">
+     1→"""Claude CLI prompt execution implementation.
+     2→
+     3→This module provides the ClaudePromptExecutor implementation and re-exports
+     4→ABC and types from erk_shared.core.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import json
+    10→import logging
+    11→import os
+    12→import shutil
+    13→import subprocess
+    14→import sys
+    15→import threading
+    16→from collections.abc import Iterator
+    17→from pathlib import Path
+    18→from typing import TYPE_CHECKING
+    19→
+    20→if TYPE_CHECKING:
+    21→    from erk_shared.context.types import PermissionMode
+    22→
+    23→from erk_shared.context.types import permission_mode_to_claude
+    24→from erk_shared.core.prompt_executor import (
+    25→    CommandResult,  # noqa: F401 - re-exported for erk.cli.output
+    26→    ErrorEvent,
+    27→    ExecutorEvent,
+    28→    IssueNumberEvent,
+    29→    NoOutputEvent,
+    30→    NoTurnsEvent,
+
+... [20 lines omitted] ...
+
+    32→    ProcessErrorEvent,
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GAAXSjdqJ1oTTtxfiwsPG9">
+    <param name="pattern">anthropic</param>
+    <param name="glob">**/pyproject.toml</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2326" cache_read_input_tokens="81917" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2326, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GAAXSjdqJ1oTTtxfiwsPG9">
+No matches found
+  </tool_result>
+  <thinking>No Anthropic SDK dependency. So we can't use the API directly without adding a new dependency. That rules out that approach.
+
+Let me think about this more carefully. The user wants:
+1. Good branch names (not just sanitized node descriptions)
+2. Fast operation (not spending 5+ seconds on slug generation)
+3. To understand why this is slow
+
+The options are:
+
+A. **Add anthropic SDK dependency** and call the API directly — fast LLM call without subprocess overhead
+B. **Hoist to TUI level** — but TUI doesn't have LLM access
+C. **Deterministic but smart** — the node descriptions are already descriptive
+
+
+D. **Keep the `claude --print` call but understand why it's slow** — maybe something is wrong with the environment
+
+Actually, the user mentioned this step is "excessively slow." A 2-5 second LLM call isn't unreasonable, but it's definitely slow for generating a branch name. I'm wondering if the `claude` CLI is doing extra work beyond just the API call — like loading config files, checking for updates, or initializing session infrastructure.
+
+The `--no-session-persistence` flag should skip most of that overhead, but `--print` mode might still be loading config and checking auth. Let me focus on what the user actually needs: they want to keep the LLM quality for slugs but make it faster, and they're confused why the TUI context triggers this error. The real issue isn't the TUI itself — it's that `erk objective plan --one-shot` always calls `generate_branch_slug()` when `slug=None`, which spawns a subprocess regardless of where it's invoked from.
+
+For the hoisting question, the skill layer can handle LLM calls, but the TUI bypasses that by calling the CLI directly. I could add a `--slug` parameter to `erk objective plan` and have the handlers fall back to deterministic slugs when it's not provided, keeping the LLM approach available for the skill path.
+
+But actually, the faster solution is probably what matters here — using the Anthropic SDK directly instead of spawning a subprocess would cut slug generation down to under a second, giving the user both good names and speed. I should present both the deterministic fallback approach and the direct API approach so they can decide what fits their workflow better.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="110" cache_read_input_tokens="84243" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 110}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>OK, now I have the full picture. Here's what's happening and the options:
+
+**Why it's slow from the TUI:** It's not a TUI-specific issue — it's that `erk objective plan --one-shot` always hits this code path when `slug=None`:
+
+```python
+# one_shot_dispatch.py:197-200
+slug = generate_branch_slug(ctx.prompt_executor, params.prompt)
+```
+
+This spawns `claude --print --no-session-persistence --model haiku "&lt;prompt&gt;"` as a **full subprocess**. That means: process fork, Claude CLI cold start, config loading, API auth, network round-trip to Anthropic, response parsing. All for a 3-word slug. It's the same whether called from TUI, terminal, or Claude Code — the TUI just makes it visible in the status bar.
+
+It's not hanging/deadlocking (that would only happen nested inside Claude Code). It's just inherently slow because `claude --print` has significant startup overhead.
+
+**On inference hoisting:** The hoisting pattern moves LLM calls from exec scripts → skills (`.claude/commands/`). But from the TUI, there's no skill layer — the TUI calls the CLI directly (`["erk", "objective", "plan", str(plan_id), "--one-shot"]`). There's nowhere to hoist to in the TUI context.
+
+The project also doesn't have the `anthropic` SDK as a dependency, so we can't call the API directly (which would be sub-second).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="110" cache_read_input_tokens="84243" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 110}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01XDYNP4d6TwgaMcG3sPNksk">
+    <param name="questions">[{'question': "How should we handle slug generation for the TUI/CLI path where there's no ...[truncated 652 chars]...tic if API key unavailable or call fails. Graceful degradation.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="110" cache_read_input_tokens="84243" output_tokens="1524" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 110, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XDYNP4d6TwgaMcG3sPNksk">
+User has answered your questions: "How should we handle slug generation for the TUI/CLI path where there's no skill layer to hoist to?"="Add anthropic SDK". You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>The user wants to add the anthropic SDK and create a fast API-based slug generator. Let me explore what's needed:
+
+1. Where to add the dependency (which pyproject.toml)
+2. How to create an API-based prompt executor or slug generator
+3. Where to get the API key from (environment variable, config file, etc.)
+4. How to integrate this with the existing PromptExecutor pattern
+
+Let me explore the project structure for package management.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1669" cache_read_input_tokens="84353" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1669}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the dependency setup and how API keys are handled.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1669" cache_read_input_tokens="84353" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1669}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Qpfv2P6m3GupzzqF3aFJKo">
+    <param name="description">Explore API key and dependency setup</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 856 chars]...e ABC definition
+
+Be thorough with the pyproject.toml exploration - read the actual files.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1669" cache_read_input_tokens="84353" output_tokens="476" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1669, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Qpfv2P6m3GupzzqF3aFJKo">
+Perfect! Now I have all the information I need. Let me compile a comprehensive report.
+
+## Comprehensive Analysis: Adding Anthropic Python SDK to Erk
+
+Based on my thorough exploration of the codebase, here's what I found:
+
+### 1. Project Package Structure
+
+The project is a monorepo with a root workspace managed by `uv`:
+
+| Package | Location | Role |
+|---------|----------|------|
+| **erk** | `/Users/schrockn/code/erk/` (root) | Main CLI tool - 0.9.1 |
+| **erk-shared** | `/Users/schrockn/code/erk/packages/erk-shared/` | Shared utilities, ABCs, interfaces |
+| **erk-dev** | `/Users/schrockn/code/erk/packages/erk-dev/` | Development tools |
+| **erk-statusline** | `/Users/schrockn/code/erk/packages/erk-statusline/` | Custom Claude Code status line |
+| **erkbot** | `/Users/schrockn/code/erk/packages/erkbot/` | Slack bot integration - 0.1.0 |
+
+Root `pyproject.toml` declares `[tool.uv.workspace]` with members. Dependencies are managed via `uv` (not pip).
+
+### 2. Dependency Declaration Patterns
+
+**Root pyproject.toml** (`/Users/schrockn/code/erk/pyproject.toml`):
+- Main dependencies listed directly in `[project]` section
+- Uses `uv.sources` for workspace packages (e.g., `erk-shared`)
+- Example: `"click&gt;=8.1.7"`, `"pydantic&gt;=2.10"`, `"textual&gt;=3.0.0"`
+
+**erk-shared** (`/Users/schrockn/code/erk/packages/erk-shared/pyproject.toml`):
+```toml
+[project]
+
+... [175 lines omitted] ...
+
+- `require_prompt_executor(ctx)` - Gets PromptExecutor or exits with error
+  </tool_result>
+  <thinking>Great context. Now I need to think about the right design. The user wants to use the Anthropic SDK directly for fast slug generation. A few key considerations:
+
+1. We don't need to implement the full `PromptExecutor` ABC — that's heavyweight with streaming, tool use, etc. We just need a fast, lightweight way to call Haiku for slug generation.
+
+2. The simplest approach: add `anthropic` as a dependency, and create a new `AnthropicSlugGenerator` (or modify `BranchSlugGenerator`) to optionally use the SDK directly when available, falling back to the subprocess path.
+
+
+3. I could create an `AnthropicPromptExecutor` that only implements `execute_prompt`, but the ABC requires all methods, so that's not cleaner. Instead, I'll add a fast path directly in `BranchSlugGenerator` that uses the Anthropic SDK and bypasses `PromptExecutor` entirely. For the API key, I'll rely on `ANTHROPIC_API_KEY` from the environment, though the Claude CLI handles auth differently through oauth.
+
+4. There's a wrinkle though—users might be on Claude Max with oauth rather than having a direct API key, which means `ANTHROPIC_API_KEY` might not exist. The Anthropic SDK only works with API keys, so I need a fallback strategy. I could either make a direct HTTP call using `httpx` (already a dependency) and fall back to `claude --print` if no API key is available, or add `anthropic` as a dependency and create a lightweight function that handles both paths.
+
+Actually, the real constraint is that I need fast branch name generation (~200ms instead of ~5s) that works from the TUI context. The simplest path forward is to add the `anthropic` SDK to dependencies and modify `BranchSlugGenerator` to support a direct API call path when an API key is available, with a deterministic fallback when it's not. I'm creating a new module to handle fast API calls directly through the Anthropic SDK, with a function that takes a prompt and system prompt, checks for the API key, and returns the response text or None if unavailable.
+
+Then in the dispatch function, I'm integrating this fast call as the primary path for slug generation, falling back to a postprocessing step if the raw response exists, and handling the case where slug generation fails.
+
+Now I'm realizing there's a potential issue with API key availability—if the user is on Claude Max with OAuth instead of having `ANTHROPIC_API_KEY` set, the SDK call would always fall back to the deterministic approach. I should also make sure I'm using the full model ID rather than just "haiku" since the SDK needs the complete identifier, and I need to think through where this dependency should live in the codebase structure.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2903" cache_read_input_tokens="86022" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2903}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have the full picture. Let me update the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2903" cache_read_input_tokens="86022" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2903}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WCfbRf2v1R1iVPotRtdzyF">
+    <param name="file_path">/Users/schrockn/.claude/plans/mighty-sparking-eclipse.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2903" cache_read_input_tokens="86022" output_tokens="1637" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2903, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WCfbRf2v1R1iVPotRtdzyF">
+     1→# Fix: Eliminate unnecessary LLM call for slug generation in one-shot dispatch
+     2→
+     3→## Context
+     4→
+     5→When `erk objective plan --one-shot` (or `--all-unblocked`) is called from the TUI, the "calling haiku for slug generation..." step is excessively slow. `dispatch_one_shot()` calls `generate_branch_slug(ctx.prompt_executor, params.prompt)`, which spawns a full `claude --print --model haiku` subprocess just to produce a 3-word branch slug. This means cold-starting the Claude CLI + an API round-trip for something that can be done deterministically from the node description that's already in hand.
+     6→
+     7→The `/erk:one-shot` **skill** already avoids this — it generates the slug inline in the skill layer (step 2) and passes `--slug "${BRANCH_SLUG}"` to the CLI. But the `erk objective plan --one-shot` **CLI path** bypasses the skill entirely and passes `slug=None` to `OneShotDispatchParams`, triggering the subprocess LLM call.
+     8→
+     9→Additionally, this same code path would deadlock if called from within a Claude Code session (inference hoisting violation), so fixing it is defense-in-depth.
+    10→
+    11→## Changes
+    12→
+    13→### 1. Generate deterministic slugs in `_handle_one_shot` and `_handle_all_unblocked`
+    14→
+    15→**File:** `src/erk/cli/commands/objective/plan_cmd.py`
+    16→
+    17→Both functions already have `target_node.description` (or `node.description`) available — a human-readable string that describes the work. Use `sanitize_worktree_name()` to produce a deterministic slug from it, and pass it to `OneShotDispatchParams(slug=...)`.
+    18→
+    19→In `_handle_one_shot` (~line 709):
+    20→```python
+    21→# Before:
+    22→params = OneShotDispatchParams(
+    23→    prompt=prompt,
+    24→    model=model,
+    25→    extra_workflow_inputs={...},
+    26→    slug=None,  # triggers nested LLM call
+    27→)
+    28→
+    29→# After:
+    30→slug = sanitize_worktree_name(target_node.description)[:25].rstrip("-")
+
+... [58 lines omitted] ...
+  </tool_result>
+  <tool_use name="Write" id="toolu_01SJ7nQUUPgJoGpYYLSRKNU1">
+    <param name="file_path">/Users/schrockn/.claude/plans/mighty-sparking-eclipse.md</param>
+    <param name="content"># Fix: Fast slug generation via Anthropic SDK
+
+## Context
+
+When `erk objective plan --one-...[truncated 4857 chars]... from TUI — slug step should be ~200ms (with API key) or instant (deterministic fallback)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3072" cache_read_input_tokens="88925" output_tokens="1651" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3072, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SJ7nQUUPgJoGpYYLSRKNU1">
+The file /Users/schrockn/.claude/plans/mighty-sparking-eclipse.md has been updated successfully.
+  </tool_result>
+  <thinking>Now I need to ask the user about one key question: the `anthropic` dependency should go in `erk-shared` (since `fast_llm.py` lives there) or in the root `pyproject.toml`. Since I'm creating the file in `packages/erk-shared/src/erk_shared/core/fast_llm.py`, the dependency should be in `erk-shared`'s `pyproject.toml`. Let me fix that in the plan.
+
+Actually, wait - I should also think about whether this should live in erk-shared or in the main erk package. The `BranchSlugGenerator` is in `src/erk/core/` (main package), not in erk-shared. 
+
+But the `PromptExecutor` ABC is in erk-shared, and I proposed putting `fast_llm.py` there too. Though actually, since `fast_llm.py` is a general utility that could be useful elsewhere, it might be better to put it in the main `erk` package instead and add `anthropic` to the root `pyproject.toml`. That way the heavyweight dependency doesn't get forced onto everything that depends on erk-shared.
+
+There's also the question of whether the user is using Claude Max OAuth instead of an API key—if so, `ANTHROPIC_API_KEY` won't be set and the SDK approach won't work. I should probably mention this as a consideration, though the deterministic fallback handles the no-API-key case anyway. Let me finalize the plan with `fast_llm.py` in the right location.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2887" cache_read_input_tokens="91997" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2887}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>One thing to verify — the dependency placement. Let me fix the plan: `fast_llm.py` should live in the main erk package (not erk-shared) to avoid adding `anthropic` as a transitive dependency for all packages.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2887" cache_read_input_tokens="91997" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2887}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01U75zvS2jEjrrh5U8x5PQ1w">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/mighty-sparking-eclipse.md</param>
+    <param name="old_string">**New file:** `packages/erk-shared/src/erk_shared/core/fast_llm.py`</param>
+    <param name="new_string">**New file:** `src/erk/core/fast_llm.py`</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2887" cache_read_input_tokens="91997" output_tokens="711" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2887, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01U75zvS2jEjrrh5U8x5PQ1w">
+The file /Users/schrockn/.claude/plans/mighty-sparking-eclipse.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01SkUaGU39NKg1DjQjXKi7ia">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/mighty-sparking-eclipse.md</param>
+    <param name="old_string">from erk_shared.core.fast_llm import fast_haiku_call</param>
+    <param name="new_string">from erk.core.fast_llm import fast_haiku_call</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="877" cache_read_input_tokens="94884" output_tokens="163" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 877, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SkUaGU39NKg1DjQjXKi7ia">
+The file /Users/schrockn/.claude/plans/mighty-sparking-eclipse.md has been updated. All occurrences of 'from erk_shared.core.fast_llm import fast_haiku_call' were successfully replaced with 'from erk.core.fast_llm import fast_haiku_call'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FEkXtNeyoZNzaGrrDzycwV">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/mighty-sparking-eclipse.md</param>
+    <param name="old_string">| `packages/erk-shared/src/erk_shared/core/fast_llm.py` | **New** — lightweight SDK-based Haiku calls |</param>
+    <param name="new_string">| `src/erk/core/fast_llm.py` | **New** — lightweight SDK-based Haiku calls |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="252" cache_read_input_tokens="95761" output_tokens="196" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 252, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FEkXtNeyoZNzaGrrDzycwV">
+The file /Users/schrockn/.claude/plans/mighty-sparking-eclipse.md has been updated successfully.
+  </tool_result>
+  <assistant>Now one question before finalizing:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="234" cache_read_input_tokens="96013" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 234}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01Tiqjzw2XYgYXUQEFe8Z6Qs">
+    <param name="questions">[{'question': "Do you have ANTHROPIC_API_KEY set in your environment, or do you use Claude...[truncated 401 chars]..._OAUTH_TOKEN or find another way to get credentials to the SDK.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="234" cache_read_input_tokens="96013" output_tokens="222" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 234, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Tiqjzw2XYgYXUQEFe8Z6Qs">
+User has answered your questions: "Do you have ANTHROPIC_API_KEY set in your environment, or do you use Claude Max OAuth? The Anthropic SDK needs an API key directly — if you only use OAuth, the fast path won't activate and it'll always fall back to deterministic slugs."="I have ANTHROPIC_API_KEY". You can now continue with the user's answers in mind.
+  </tool_result>
+  <assistant>Good — the plan is solid then. The fast SDK path will work, with deterministic fallback as a safety net.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="421" cache_read_input_tokens="96247" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 421}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_016C8Pp44oW2DYXPcNs6EZx8">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests via devrun pattern'}, {'tool': 'Bash', 'prompt': 'run ty/ruff checks'}, {'tool': 'Bash', 'prompt': 'install dependencies with uv'}]</param>
+    <param name="plan"># Fix: Fast slug generation via Anthropic SDK
+
+## Context
+
+When `erk objective plan --one-...[truncated 4789 chars]... from TUI — slug step should be ~200ms (with API key) or instant (deterministic fallback)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="421" cache_read_input_tokens="96247" output_tokens="140" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 421, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016C8Pp44oW2DYXPcNs6EZx8">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/mighty-sparking-eclipse.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: Fast slug generation via Anthropic SDK
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 96e27d36-69ed-4590-95ce-0f3071cc2422 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the final plan:
+
+# Fix: Fast slug generation via Anthropic SDK
+
+## Context
+When `erk objective plan --one-shot` is called from the TUI, slug generation spawns a full `claude --print --model haiku` subprocess (~5s). Fix: call Haiku directly via the Anthropic SDK (~200ms), with deterministic fallback.
+
+## Changes
+1. **Add `anthropic` dependency** to root `pyproject.toml`
+2. **New `src/erk/core/fast_llm.py`** — lightweight direct SDK call to Haiku, returns `None` on failure
+3. **`one_shot_dispatch.py`** — replace `generate_branch_slug()` subprocess call with fast SDK + deterministic fallback
+4. **`objective/plan_cmd.py`** — pre-compute slugs from node descriptions in `_handle_one_shot` and `_handle_all_unblocked`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="753" cache_read_input_tokens="96668" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 753}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01K21jmRdqfj8QgnnVoWA6p2">
+    <param name="questions">[{'question': '📋 Fix: Fast slug generation via Anthropic SDK\nCurrent context: (wt:erk) (b...[truncated 427 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="753" cache_read_input_tokens="96668" output_tokens="447" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 753, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01K21jmRdqfj8QgnnVoWA6p2">
+User has answered your questions: "📋 Fix: Fast slug generation via Anthropic SDK
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01NVjDumZmVup7nKTm7yArPv">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="527" cache_read_input_tokens="97421" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 527}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NVjDumZmVup7nKTm7yArPv">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="96e27d36-69ed-4590-95ce-0f3071cc2422" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "96e27d36-69ed-4590-95ce-0f3071cc2422" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "96e27d36-69ed-4590-95ce-0f3071cc2422" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "96e27d36-69ed-4590-95ce-0f3071cc2422" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "96e27d36-69ed-4590-95ce-0f3071cc2422" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>The plan-save skill has been loaded. I need to follow its steps to save the plan as a draft PR.
+
+Let me go through the steps:
+
+1. Parse arguments - no special flags
+2. Generate branch slug from plan title
+3. Generate plan summary
+4. Run save command
+5. Display results
+
+Let me start:
+
+Step 1: No arguments (no --plan-type, no --objective)
+- PLAN_TYPE_FLAG = ""
+- OBJECTIVE_FLAG = ""
+
+Step 2: The plan title is "Fix: Fast slug generation via Anthropic SDK"
+- Branch slug: "fast-slug-generation-sdk" (captures essence, drops filler)
+
+
+- BRANCH_SLUG = "fast-slug-generation-sdk"
+
+Step 3: Now I'm creating the plan summary that describes replacing the slow subprocess call with a direct SDK call, which cuts latency from about 5 seconds down to 200 milliseconds, with a fallback to deterministic sanitization when the API key isn't available.
+
+Step 4: I need to check if we're on trunk before running the save command and displaying the results.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2695" cache_read_input_tokens="97948" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2695}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Following the plan-save steps:
+
+**Step 1:** No flags — `PLAN_TYPE_FLAG` and `OBJECTIVE_FLAG` are both empty.
+
+**Step 2:** Plan title is "Fix: Fast slug generation via Anthropic SDK" → `BRANCH_SLUG="fast-slug-gen-sdk"`
+
+**Step 3:** Summary: "Replaces the slow claude --print subprocess call for branch slug generation with a direct Anthropic SDK call, reducing latency from ~5s to ~200ms. Falls back to deterministic sanitization when no API key is available."
+
+**Step 4:** Running save command.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2695" cache_read_input_tokens="97948" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2695}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017LYJ7z7ACerWaXzTbpXFFx">
+    <param name="command">erk exec plan-save --format json --session-id="96e27d36-69ed-4590-95ce-0f3071cc2422" --bra...[truncated 148 chars]...rom ~5s to ~200ms. Falls back to deterministic sanitization when no API key is available."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2695" cache_read_input_tokens="97948" output_tokens="612" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2695, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017LYJ7z7ACerWaXzTbpXFFx">
+{"success": true, "plan_number": 8597, "plan_url": "https://github.com/dagster-io/erk/pull/8597", "title": "[erk-plan] Fix: Fast slug generation via Anthropic SDK", "branch_name": "plnd/fast-slug-gen-sdk-03-02-0432", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/96e27d36-69ed-4590-95ce-0f3071cc2422/plan_snapshots/000001-588c904d"}
+  </tool_result>
+  <assistant>**Step 5:** No objective linked — skipping verification.
+
+**Step 6:** No objective — skipping roadmap update.
+
+**Step 7:** Pushing planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="889" cache_read_input_tokens="100643" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 889}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Cd3X2ob8ruEQDehpXzFwGb">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="889" cache_read_input_tokens="100643" output_tokens="127" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 889, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Cd3X2ob8ruEQDehpXzFwGb">
+SESSION_ID=96e27d36-69ed-4590-95ce-0f3071cc2422
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/96e27d36-69ed-4590-95ce-0f3071cc2422.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01T1Z4zEMd9oAGsF6cpuPApH">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 58 chars]...4590-95ce-0f3071cc2422" --stage planning --source local --plan-id 8597 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="218" cache_read_input_tokens="101532" output_tokens="184" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 218, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
