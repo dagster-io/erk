@@ -50,7 +50,9 @@ class CleanupItem:
     deleted_branch: bool
 
 
-def run_smoke_test(ctx: ErkContext) -> SmokeTestResult | SmokeTestError:
+def run_smoke_test(
+    ctx: ErkContext, *, dispatch_ref: str | None
+) -> SmokeTestResult | SmokeTestError:
     """Dispatch a smoke test through the production one-shot code path.
 
     Delegates to dispatch_one_shot() to create a branch, PR with proper
@@ -59,6 +61,7 @@ def run_smoke_test(ctx: ErkContext) -> SmokeTestResult | SmokeTestError:
 
     Args:
         ctx: ErkContext with git/github gateways
+        dispatch_ref: Branch to dispatch from (defaults to config dispatch_ref)
 
     Returns:
         SmokeTestResult on success, SmokeTestError on failure
@@ -74,10 +77,9 @@ def run_smoke_test(ctx: ErkContext) -> SmokeTestResult | SmokeTestError:
         slug=SMOKE_TEST_SLUG,
     )
 
+    ref = dispatch_ref if dispatch_ref is not None else ctx.local_config.dispatch_ref
     try:
-        result = dispatch_one_shot(
-            ctx, params=params, dry_run=False, ref=ctx.local_config.dispatch_ref
-        )
+        result = dispatch_one_shot(ctx, params=params, dry_run=False, ref=ref)
     except SystemExit as exc:
         return SmokeTestError(step="dispatch", message=f"Exit code {exc.code}")
     except (click.ClickException, RuntimeError, ValueError, KeyError) as exc:

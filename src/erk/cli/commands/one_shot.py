@@ -20,6 +20,7 @@ from erk.cli.commands.one_shot_dispatch import (
     OneShotDispatchParams,
     dispatch_one_shot,
 )
+from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk_shared.output.output import user_output
@@ -65,6 +66,12 @@ from erk_shared.output.output import user_output
     default=None,
     help="Branch to dispatch workflow from (overrides config dispatch_ref)",
 )
+@click.option(
+    "--ref-current",
+    is_flag=True,
+    default=False,
+    help="Dispatch workflow from the current branch",
+)
 @click.pass_obj
 def one_shot(
     ctx: ErkContext,
@@ -76,6 +83,7 @@ def one_shot(
     plan_only: bool,
     slug: str | None,
     dispatch_ref: str | None,
+    ref_current: bool,
 ) -> None:
     """Submit a task for fully autonomous remote execution.
 
@@ -123,5 +131,5 @@ def one_shot(
         slug=slug,
     )
 
-    ref = dispatch_ref if dispatch_ref is not None else ctx.local_config.dispatch_ref
+    ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
     dispatch_one_shot(ctx, params=params, dry_run=dry_run, ref=ref)

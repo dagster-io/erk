@@ -15,6 +15,7 @@ from pathlib import Path
 import click
 
 from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_metadata
+from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.constants import WORKFLOW_COMMAND_MAP
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
@@ -394,6 +395,12 @@ def _dispatch_one_shot(
     default=None,
     help="Branch to dispatch workflow from (overrides config dispatch_ref)",
 )
+@click.option(
+    "--ref-current",
+    is_flag=True,
+    default=False,
+    help="Dispatch workflow from the current branch",
+)
 @click.pass_obj
 def launch(
     ctx: ErkContext,
@@ -406,6 +413,7 @@ def launch(
     prompt: str | None,
     file_path: str | None,
     dispatch_ref: str | None,
+    ref_current: bool,
 ) -> None:
     """Dispatch a GitHub Actions workflow.
 
@@ -459,7 +467,7 @@ def launch(
     assert not isinstance(ctx.repo, NoRepoSentinel)
     repo: RepoContext = ctx.repo
 
-    ref = dispatch_ref if dispatch_ref is not None else ctx.local_config.dispatch_ref
+    ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
 
     # Validate workflow name
     _ = _get_workflow_file(workflow_name)  # Raises UsageError if invalid
