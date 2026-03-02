@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix `--plan` \u2192 `--pr` in one-shot.yml"
+}
