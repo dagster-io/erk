@@ -11,6 +11,10 @@ inputs:
   claude-code-oauth-token:
     description: "CLAUDE_CODE_OAUTH_TOKEN secret"
     required: false
+  python-version:
+    description: "Python version for uv"
+    required: false
+    default: "3.12"
 
 runs:
   using: "composite"
@@ -29,7 +33,7 @@ runs:
 
     - uses: astral-sh/setup-uv@v5
       with:
-        python-version: "3.13"
+        python-version: ${{ inputs.python-version }}
 
     - uses: ./.github/actions/setup-claude-code
 
