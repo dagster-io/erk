@@ -10,6 +10,16 @@
       "files": [
         "planning-52ceeee0-8261-4bdc-baf0-44e8a2fd8920-52ceeee0-8261-4bdc-baf0-44e8a2fd8920.xml"
       ]
+    },
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-02T15:53:27.438714+00:00",
+      "files": [
+        "impl--f3bc03e9-6edd-41c2-bccd-6ee065791565-part1.xml",
+        "impl--f3bc03e9-6edd-41c2-bccd-6ee065791565-part2.xml"
+      ]
     }
   ]
 }
