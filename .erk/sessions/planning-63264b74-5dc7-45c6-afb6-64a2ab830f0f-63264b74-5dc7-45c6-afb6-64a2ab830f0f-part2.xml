@@ -1,0 +1,36 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Bash" id="toolu_01RnZxMcPp9qJ8nBfWDUydrz">
+    <param name="command">erk exec plan-save --format json --session-id="63264b74-5dc7-45c6-afb6-64a2ab830f0f" --bra...[truncated 190 chars]...o conveniently dispatch workflows from the current branch without typing the branch name."</param>
+    <param name="description">Save plan as draft PR via erk exec</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2615" cache_read_input_tokens="60758" output_tokens="295" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2615, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RnZxMcPp9qJ8nBfWDUydrz">
+{"success": true, "plan_number": 8617, "plan_url": "https://github.com/dagster-io/erk/pull/8617", "title": "[erk-plan] Add `--ref` and `--ref-current` flags to dispatch commands", "branch_name": "plnd/add-ref-current-dispatch-03-02-0737", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/63264b74-5dc7-45c6-afb6-64a2ab830f0f/plan_snapshots/000001-09221f48"}
+  </tool_result>
+  <assistant>Plan saved successfully. Now let me push the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="562" cache_read_input_tokens="63373" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 562}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017SxVvJCS2qrz23Yz1jMQwS">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="562" cache_read_input_tokens="63373" output_tokens="118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 562, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017SxVvJCS2qrz23Yz1jMQwS">
+SESSION_ID=63264b74-5dc7-45c6-afb6-64a2ab830f0f
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/63264b74-5dc7-45c6-afb6-64a2ab830f0f.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015eRD2ZiZrncHM8vcTgo96f">
+    <param name="command">erk exec push-session \
+    --session-file "/Users/schrockn/.claude/projects/-Users-schroc...[truncated 94 chars]...\
+    --stage planning \
+    --source local \
+    --plan-id 8617 \
+    2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="215" cache_read_input_tokens="63935" output_tokens="226" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 215, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
