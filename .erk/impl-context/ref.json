@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: Fast slug generation via Anthropic SDK"
+}
