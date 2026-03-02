@@ -12,11 +12,13 @@ from typing import TYPE_CHECKING
 
 from erk_shared.core.fakes import (
     FakeCodespaceRegistry,
+    FakeLlmCaller,
     FakeObjectiveListService,
     FakePlanListService,
     FakePromptExecutor,
     FakeScriptWriter,
 )
+from erk_shared.core.llm_caller import LlmResponse
 
 if TYPE_CHECKING:
     from erk_shared.context.context import ErkContext
@@ -139,6 +141,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         github_admin=FakeGitHubAdmin(),
         claude_installation=RealClaudeInstallation(),
         prompt_executor=FakePromptExecutor(),
+        llm_caller=FakeLlmCaller(response=LlmResponse(text="slug")),
         graphite=fake_graphite,
         graphite_branch_ops=None,  # Graphite disabled, so None
         console=ScriptConsole(),

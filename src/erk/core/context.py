@@ -34,7 +34,8 @@ from erk_shared.context.types import NoRepoSentinel as NoRepoSentinel
 from erk_shared.context.types import RepoContext as RepoContext
 
 # Import ABCs and fakes from erk_shared.core
-from erk_shared.core.fakes import FakeObjectiveListService, FakePlanListService
+from erk_shared.core.fakes import FakeLlmCaller, FakeObjectiveListService, FakePlanListService
+from erk_shared.core.llm_caller import LlmCaller, LlmResponse
 from erk_shared.core.objective_list_service import ObjectiveListService
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.prompt_executor import PromptExecutor
@@ -181,6 +182,7 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         codespace_registry=FakeCodespaceRegistry(),
         claude_installation=FakeClaudeInstallation.for_test(),
         prompt_executor=FakePromptExecutor(),
+        llm_caller=FakeLlmCaller(response=LlmResponse(text="test-slug")),
         cwd=cwd,
         global_config=None,
         local_config=LoadedConfig.test(),
@@ -214,6 +216,7 @@ def context_for_test(
     codespace_registry: CodespaceRegistry | None = None,
     claude_installation: ClaudeInstallation | None = None,
     prompt_executor: PromptExecutor | None = None,
+    llm_caller: LlmCaller | None = None,
     cwd: Path | None = None,
     global_config: GlobalConfig | None = None,
     local_config: LoadedConfig | None = None,
@@ -375,6 +378,9 @@ def context_for_test(
     if prompt_executor is None:
         prompt_executor = FakePromptExecutor()
 
+    if llm_caller is None:
+        llm_caller = FakeLlmCaller(response=LlmResponse(text="test-slug"))
+
     if global_config is None:
         global_config = GlobalConfig(
             erk_root=Path("/test/erks"),
@@ -422,6 +428,7 @@ def context_for_test(
         codespace_registry=codespace_registry,
         claude_installation=claude_installation,
         prompt_executor=prompt_executor,
+        llm_caller=llm_caller,
         cwd=cwd or sentinel_path(),
         global_config=global_config,
         local_config=local_config,
@@ -633,7 +640,12 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
             graphite_branch_ops = DryRunGraphiteBranchOps(graphite_branch_ops)
         github = DryRunGitHub(github)
 
-    # 10. Create claude installation and prompt executor
+    # 10. Create LLM caller for lightweight operations (slug generation)
+    from erk.core.fast_llm import AnthropicLlmCaller
+
+    llm_caller = AnthropicLlmCaller()
+
+    # 11. Create claude installation and prompt executor
     from erk_shared.gateway.agent_docs.dry_run import DryRunAgentDocs
     from erk_shared.gateway.agent_launcher.real import RealAgentLauncher
     from erk_shared.gateway.claude_installation.real import RealClaudeInstallation
@@ -648,12 +660,12 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         console=console,
     )
 
-    # 11. Create package info
+    # 12. Create package info
     from erk.artifacts.paths import ErkPackageInfo
 
     package_info = ErkPackageInfo.from_project_dir(cwd)
 
-    # 12. Create context with all values
+    # 13. Create context with all values
     return ErkContext(
         git=git,
         github=github,
@@ -677,6 +689,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         ),
         claude_installation=real_claude_installation,
         prompt_executor=prompt_executor,
+        llm_caller=llm_caller,
         cwd=cwd,
         global_config=global_config,
         local_config=local_config,

@@ -14,8 +14,13 @@ import click
 
 from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
 from erk.cli.ensure import Ensure
-from erk.core.branch_slug_generator import generate_branch_slug
+from erk.core.branch_slug_generator import (
+    BRANCH_SLUG_SYSTEM_PROMPT,
+    _postprocess_slug,
+    generate_branch_slug,
+)
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
+from erk_shared.core.llm_caller import LlmCallFailed, NoApiKey
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.git.remote_ops.types import PushError
@@ -199,12 +204,22 @@ def dispatch_one_shot(
             slug = params.slug
             user_output(click.style(f"  \u2713 Slug: {slug} (pre-generated)", dim=True))
         else:
-            user_output(click.style("  (calling haiku for slug generation...)", dim=True))
-            slug_start = time.monotonic()
-            slug = generate_branch_slug(ctx.prompt_executor, params.prompt)
-            slug_elapsed = time.monotonic() - slug_start
-            slug_msg = f"  \u2713 Slug: {slug} ({format_duration(slug_elapsed)})"
-            user_output(click.style(slug_msg, dim=True))
+            result = ctx.llm_caller.call(params.prompt, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT)
+            if isinstance(result, NoApiKey):
+                user_output(click.style("  \u26a0 No API key: ", fg="yellow") + result.message)
+                slug = sanitize_worktree_name(params.prompt)[:25].rstrip("-")
+                user_output(click.style(f"  \u2713 Slug: {slug} (sanitized)", dim=True))
+            elif isinstance(result, LlmCallFailed):
+                user_output(click.style("  \u26a0 LLM failed: ", fg="yellow") + result.message)
+                slug = sanitize_worktree_name(params.prompt)[:25].rstrip("-")
+                user_output(click.style(f"  \u2713 Slug: {slug} (sanitized)", dim=True))
+            else:
+                slug = _postprocess_slug(result.text)
+                if slug is None:
+                    slug = sanitize_worktree_name(params.prompt)[:25].rstrip("-")
+                    user_output(click.style(f"  \u2713 Slug: {slug} (sanitized)", dim=True))
+                else:
+                    user_output(click.style(f"  \u2713 Slug: {slug}", dim=True))
         # planned_pr: plnd/ prefix (no issue number needed)
         branch_name = generate_planned_pr_branch_name(
             slug,
