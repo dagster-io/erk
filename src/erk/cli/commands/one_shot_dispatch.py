@@ -200,9 +200,7 @@ def dispatch_one_shot(
             slug = params.slug
             user_output(click.style(f"  \u2713 Slug: {slug} (pre-generated)", dim=True))
         else:
-            result = ctx.llm_caller.call(
-                params.prompt, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT
-            )
+            result = ctx.llm_caller.call(params.prompt, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT)
             if isinstance(result, NoApiKey):
                 user_output(click.style("  \u26a0 No API key: ", fg="yellow") + result.message)
                 slug = sanitize_worktree_name(params.prompt)[:25].rstrip("-")
@@ -213,7 +211,11 @@ def dispatch_one_shot(
                 user_output(click.style(f"  \u2713 Slug: {slug} (sanitized)", dim=True))
             else:
                 slug = _postprocess_slug(result.text)
-                user_output(click.style(f"  \u2713 Slug: {slug}", dim=True))
+                if slug is None:
+                    slug = sanitize_worktree_name(params.prompt)[:25].rstrip("-")
+                    user_output(click.style(f"  \u2713 Slug: {slug} (sanitized)", dim=True))
+                else:
+                    user_output(click.style(f"  \u2713 Slug: {slug}", dim=True))
         # planned_pr: plnd/ prefix (no issue number needed)
         branch_name = generate_planned_pr_branch_name(
             slug,

@@ -58,7 +58,10 @@ def _generate_slug(llm_caller: LlmCaller, description: str) -> str:
     result = llm_caller.call(description, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT)
     if isinstance(result, (NoApiKey, LlmCallFailed)):
         return sanitize_worktree_name(description)[:25].rstrip("-")
-    return _postprocess_slug(result.text)
+    slug = _postprocess_slug(result.text)
+    if slug is None:
+        return sanitize_worktree_name(description)[:25].rstrip("-")
+    return slug
 
 
 def _find_node_in_phases(
