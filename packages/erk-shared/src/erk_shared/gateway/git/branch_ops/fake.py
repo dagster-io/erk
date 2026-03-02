@@ -106,6 +106,7 @@ class FakeGitBranchOps(GitBranchOps):
         self._checked_out_branches: list[tuple[Path, str]] = []
         self._detached_checkouts: list[tuple[Path, str]] = []
         self._created_tracking_branches: list[tuple[str, str]] = []  # (branch, remote_ref)
+        self._updated_refs: list[tuple[Path, str, str]] = []  # (repo_root, branch, target_sha)
 
     def create_branch(
         self, cwd: Path, branch_name: str, start_point: str, *, force: bool
@@ -238,6 +239,23 @@ class FakeGitBranchOps(GitBranchOps):
         """
         return self._created_tracking_branches.copy()
 
+    @property
+    def updated_refs(self) -> list[tuple[Path, str, str]]:
+        """Get list of ref updates during test.
+
+        Returns list of (repo_root, branch, target_sha) tuples.
+        This property is for test assertions only.
+        """
+        return self._updated_refs.copy()
+
+    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -> None:
+        """Update a local branch ref (fake implementation).
+
+        Tracks the update for test assertions and updates branch_heads state.
+        """
+        self._updated_refs.append((repo_root, branch, target_sha))
+        self._branch_heads[branch] = target_sha
+
     def link_mutation_tracking(
         self,
         created_branches: list[tuple[Path, str, str, bool]],
@@ -245,6 +263,7 @@ class FakeGitBranchOps(GitBranchOps):
         checked_out_branches: list[tuple[Path, str]],
         detached_checkouts: list[tuple[Path, str]],
         created_tracking_branches: list[tuple[str, str]],
+        updated_refs: list[tuple[Path, str, str]],
     ) -> None:
         """Link mutation tracking lists to allow shared tracking with FakeGit.
 
@@ -257,12 +276,14 @@ class FakeGitBranchOps(GitBranchOps):
             checked_out_branches: Reference to FakeGit's checked_out_branches list
             detached_checkouts: Reference to FakeGit's detached_checkouts list
             created_tracking_branches: Reference to FakeGit's created_tracking_branches list
+            updated_refs: Reference to FakeGit's updated_refs list
         """
         self._created_branches = created_branches
         self._deleted_branches = deleted_branches
         self._checked_out_branches = checked_out_branches
         self._detached_checkouts = detached_checkouts
         self._created_tracking_branches = created_tracking_branches
+        self._updated_refs = updated_refs
 
     # ============================================================================
     # Query Operations

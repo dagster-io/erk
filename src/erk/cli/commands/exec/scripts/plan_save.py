@@ -195,6 +195,7 @@ def _save_as_planned_pr(
         current_branch is not None
         and current_branch != trunk
         and not current_branch.startswith("learn/")
+        and git.branch.branch_exists_on_remote(repo_root, "origin", current_branch)
     ):
         # Stack plan branch on current feature branch for natural Graphite stacking
         base_branch = current_branch

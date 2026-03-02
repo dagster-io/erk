@@ -279,6 +279,21 @@ class GitBranchOps(ABC):
         ...
 
     @abstractmethod
+    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -> None:
+        """Update a local branch ref to point at a new commit without checkout.
+
+        Uses git update-ref to move the branch pointer. This is safe to use
+        when the branch is NOT currently checked out in any worktree. If the
+        branch IS checked out, the working tree will not be updated.
+
+        Args:
+            repo_root: Path to the git repository root
+            branch: Local branch name to update
+            target_sha: Commit SHA to point the branch at
+        """
+        ...
+
+    @abstractmethod
     def get_branch_commits_with_authors(
         self, repo_root: Path, branch: str, trunk: str, *, limit: int
     ) -> list[dict[str, str]]:

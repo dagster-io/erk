@@ -86,6 +86,7 @@ def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() ->
             remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
             remote_branches={env.cwd: ["origin/main", f"origin/{plan_branch}"]},
             repository_roots={env.cwd: env.cwd},
+            branch_heads={"main": "abc123", "origin/main": "abc123"},
         )
 
         graphite = FakeGraphite(
@@ -214,6 +215,7 @@ def test_dispatch_auto_detects_from_impl_folder() -> None:
             remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
             remote_branches={env.cwd: ["origin/main", f"origin/{plan_branch}"]},
             repository_roots={env.cwd: env.cwd},
+            branch_heads={"main": "abc123", "origin/main": "abc123"},
         )
 
         graphite = FakeGraphite(
@@ -288,6 +290,7 @@ def test_dispatch_auto_detects_from_impl_context() -> None:
             remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
             remote_branches={env.cwd: ["origin/main", f"origin/{plan_branch}"]},
             repository_roots={env.cwd: env.cwd},
+            branch_heads={"main": "abc123", "origin/main": "abc123"},
         )
 
         graphite = FakeGraphite(
@@ -341,6 +344,7 @@ def test_dispatch_no_args_no_context_fails() -> None:
             remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
             remote_branches={env.cwd: ["origin/main"]},
             repository_roots={env.cwd: env.cwd},
+            branch_heads={"main": "abc123", "origin/main": "abc123"},
         )
 
         graphite = FakeGraphite(

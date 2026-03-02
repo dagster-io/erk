@@ -58,6 +58,10 @@ class DryRunGitBranchOps(GitBranchOps):
         # Do nothing - prevents actual tracking branch creation
         pass
 
+    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -> None:
+        """No-op for updating local ref in dry-run mode."""
+        user_output(f"[DRY RUN] Would run: git update-ref refs/heads/{branch} {target_sha[:8]}")
+
     # ============================================================================
     # Query Operations (pass-through delegation)
     # ============================================================================

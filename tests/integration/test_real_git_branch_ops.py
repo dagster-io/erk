@@ -202,6 +202,50 @@ def test_delete_branch_idempotent_when_branch_missing(
     # (If we got here, the test passed)
 
 
+def test_update_local_ref_advances_branch_pointer(
+    git_branch_ops: GitBranchOpsSetup,
+) -> None:
+    """Test that update_local_ref moves a branch pointer to a new commit."""
+    branch_ops, git, repo = git_branch_ops
+
+    # Arrange: Create a second commit on main
+    (repo / "second.txt").write_text("second commit", encoding="utf-8")
+    subprocess.run(["git", "add", "second.txt"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-m", "Second commit"], cwd=repo, check=True)
+
+    head_sha = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+
+    # Create a feature branch at the first commit (one behind HEAD)
+    first_sha = subprocess.run(
+        ["git", "rev-list", "--max-parents=0", "HEAD"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+
+    subprocess.run(["git", "branch", "feature-branch", first_sha], cwd=repo, check=True)
+
+    # Act: Advance feature-branch to HEAD via update_local_ref
+    branch_ops.update_local_ref(repo, "feature-branch", head_sha)
+
+    # Assert: feature-branch now points to HEAD
+    result = subprocess.run(
+        ["git", "rev-parse", "feature-branch"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert result.stdout.strip() == head_sha
+
+
 def test_get_all_branch_heads_returns_all_branches(
     git_branch_ops: GitBranchOpsSetup,
 ) -> None:
