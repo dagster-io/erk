@@ -7,21 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of: 45ada49e0 -->
+## [0.9.2] - 2026-03-02 06:11 PT
 
 ### Added
 
-- Add `--skip-learn` option to `erk land` to skip automatic learn plan creation after landing (845e845c4)
-- Show workflow source and switch `erk run list` to PR-centric view with direct PR extraction (018306dcf)
+- Add `--skip-learn` option to `erk land` to skip automatic learn plan creation after landing
+- Show workflow source and switch `erk run list` to PR-centric view with direct PR extraction
+- Auto-remove orphaned artifacts during `erk artifact sync`
+- Add `--ref` CLI option to `erk one-shot`, `erk launch`, and `erk pr dispatch` for workflow dispatch branch override
+- Add per-repo codespace configuration via `[codespace]` section in `.erk/config.toml`
+- Detect existing `impl-context` directory in `erk implement` and resume directly
 
 ### Changed
 
-- Eliminate master checkout requirement from plan-save and dispatch, allowing these commands to work from any branch (81af72930)
+- Eliminate master checkout requirement from plan-save and dispatch, allowing these commands to work from any branch
+- Speed up slug generation in objective planning from ~5s to ~200ms via Anthropic SDK
+- Reclassify CLI help groups for workflow, launch, and one-shot commands
+- Hide required system capabilities from user-facing capability lists
+- Make all workflow capabilities auto-install as required
 
 ### Fixed
 
-- Fix `erk land` hanging when no sessions discovered for learn plan (e7bd0cbcd)
-- Fix `erk land` creating empty learn plan draft PRs when no session material is found (b6f3d9ea3)
+- Fix `erk land` hanging when no sessions discovered for learn plan
+- Fix `erk land` creating empty learn plan draft PRs when no session material is found
+- Fix one-shot dispatch error when branch already exists
 
 ## [0.9.1] - 2026-03-01 16:06 PT
 
