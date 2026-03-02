@@ -1,0 +1,835 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>▐▛███▜▌   Claude Code v2.1.63
+▝▜█████▛▘  Opus 4.6 · Claude Max
+  ▘▘ ▝▝    ~/code/internal
+
+❯ Prepare all required actions
+  Getting action download info
+  Download action repository 'astral-sh/setup-uv@v5' (SHA:d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86)
+  Run ./.github/actions/erk-remote-setup
+  Run if [ -z "***" ]; then
+  Run astral-sh/setup-uv@v5
+  Downloading uv from "https://github.com/astral-sh/uv/releases/download/0.10.7/uv-x86_64-unknown-linux-gnu.tar.gz" ...
+  /usr/bin/tar xz --warning=no-unknown-keyword --overwrite -C /home/runner/work/_temp/8db09a7a-caff-46b4-aaae-3b10b304a523 -f
+  /home/runner/work/_temp/207539e1-1548-4522-ac4b-6fb334eab578
+  Added /home/runner/.local/bin to the path
+  Added /opt/hostedtoolcache/uv/0.10.7/x86_64 to the path
+  Set UV_PYTHON to 3.13
+  Activating python venv...
+  Set UV_CACHE_DIR to /home/runner/work/_temp/setup-uv-cache
+  Successfully installed uv version 0.10.7
+  Searching files using cache dependency glob: **/uv.lock,**/requirements*.txt
+  /home/runner/work/internal/internal/dagster-cloud/integration_tests/python_modules/dagster-cloud-test-infra/dagster_cloud_test_infra/pex/sample
+  -repos/repo-with-python-file/requirements.txt
+  /home/runner/work/internal/internal/dagster-cloud/python_modules/dagster-cloud/dagster_cloud_tests/sample-repos/local-package-a/requirements.tx
+  t
+  /home/runner/work/internal/internal/dagster-cloud/python_modules/dagster-cloud/dagster_cloud_tests/sample-repos/local-package-b/requirements.tx
+  t
+  /home/runner/work/internal/internal/dagster-cloud/python_modules/dagster-cloud/dagster_cloud_tests/sample-repos/repo-with-requirements-txt/requ
+  irements.txt
+  /home/runner/work/internal/internal/dagster-cloud/python_modules/dagster-cloud/dagster_cloud_tests/sample-repos/repo-with-requirements-txt-hash
+  es/requirements.txt
+  /home/runner/work/internal/internal/dagster-cloud/python_modules/dagster-cloud-datahub/uv.lock
+  /home/runner/work/internal/internal/dagster-cloud/sandbox/user_cloud/from_source/docker_pex/requirements.txt
+  /home/runner/work/internal/internal/dagster-cloud/sandbox/user_code/requirements.txt
+  /home/runner/work/internal/internal/dagster-oss/docs/sphinx/_ext/sphinx-click/requirements.txt
+  /home/runner/work/internal/internal/dagster-oss/docs/sphinx/requirements.txt
+  /home/runner/work/internal/internal/dagster-oss/examples/airlift-migration-tutorial/tutorial_example/shared/dbt/requirements.txt
+  /home/runner/work/internal/internal/dagster-oss/examples/airlift-mwaa-example/dags/requirements.txt
+  /home/runner/work/internal/internal/dagster-oss/examples/components_yaml_checks_dsl/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/data-quality-patterns/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/deploy_docker/requirements.txt
+  /home/runner/work/internal/internal/dagster-oss/examples/deploy_ecs/requirements-dagster.txt
+  /home/runner/work/internal/internal/dagster-oss/examples/deploy_ecs/requirements-webserver.txt
+  /home/runner/work/internal/internal/dagster-oss/examples/docs_projects/project_ask_ai_dagster/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/docs_projects/project_atproto_dashboard/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/docs_projects/project_components_pdf_extraction/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/docs_projects/project_dagster_modal_pipes/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/docs_projects/project_dbt/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/docs_projects/project_dspy/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/docs_projects/project_etl_tutorial/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/docs_projects/project_llm_fine_tune/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/docs_projects/project_mini/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/docs_projects/project_ml/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/docs_projects/project_prompt_eng/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/docs_snippets/docs_snippets/guides/tutorials/dagster_tutorial/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/docs_snippets/docs_snippets_tests/snippet_checks/guides/dg/test_migrating_project/my-e
+  xisting-project-uv/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/experimental/script_to_assets_branching_io_manager/requirements.txt
+  /home/runner/work/internal/internal/dagster-oss/examples/ingestion-patterns/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/project_databricks_and_snowflake/deployments/local/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/project_databricks_and_snowflake/projects/databricks-delta/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/project_databricks_and_snowflake/projects/snowflake-medallion/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/quickstart_etl/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/snowflake_cortex/dagster_snowflake/uv.lock
+  /home/runner/work/internal/internal/dagster-oss/examples/starlift-demo/dbt_example/shared/dbt/requirements.txt
+  /home/runner/work/internal/internal/dagster-oss/pyright/alt-1/requirements-pinned.txt
+  /home/runner/work/internal/internal/dagster-oss/pyright/alt-1/requirements.txt
+  /home/runner/work/internal/internal/dagster-oss/pyright/master/requirements-pinned.txt
+  /home/runner/work/internal/internal/dagster-oss/pyright/master/requirements.txt
+  /home/runner/work/internal/internal/dagster-oss/python_modules/automation/automation/docker/images/buildkite-build-test-project-image/requireme
+  nts.txt
+  /home/runner/work/internal/internal/dagster-oss/python_modules/libraries/dagster-airlift/dagster_airlift_tests/mwaa_integration_tests/airflow_p
+  roject/requirements.txt
+  /home/runner/work/internal/internal/dagster-oss/python_modules/libraries/dagster-aws/dagster_aws_tests/emr_tests/requirements.txt
+  /home/runner/work/internal/internal/dagster-oss/uv.lock
+  /home/runner/work/internal/internal/infra/k8s/multitenant_host/host-schema/uv.lock
+  /home/runner/work/internal/internal/infra/terragrunt/modules/ip-fraud-lambda/fraud_lambda/requirements.txt
+  /home/runner/work/internal/internal/infra/terragrunt/modules/telemetry/listener/requirements.txt
+  /home/runner/work/internal/internal/public/cicd_quickstart/requirements.txt
+  /home/runner/work/internal/internal/python_modules/compass-data/uv.lock
+  /home/runner/work/internal/internal/python_modules/dagster-open-platform/uv.lock
+  /home/runner/work/internal/internal/python_modules/insights-consumption-test/requirements.txt
+  /home/runner/work/internal/internal/python_modules/platform-perf/uv.lock
+  /home/runner/work/internal/internal/python_modules/product-operations/uv.lock
+  /home/runner/work/internal/internal/python_modules/purina/uv.lock
+  /home/runner/work/internal/internal/python_modules/toys/requirements.txt
+  /home/runner/work/internal/internal/scripts/serverless/requirements.txt
+  /home/runner/work/internal/internal/services/flux-branch-manager/uv.lock
+  /home/runner/work/internal/internal/services/validating-admission-webhook/uv.lock
+  Using CPython 3.13.12
+  error: The requested interpreter resolved to Python 3.13.12, which is incompatible with the project's Python requirement: `&gt;=3.11, &lt;3.13`.
+  The following `requires-python` declarations do not permit this version:
+  - dagster-internal-buildkite: &gt;=3.10, &lt;3.13
+  - internal: &gt;3.10, &lt;3.13
+  Error: Process completed with exit code 2.
+
+∴ Thinking…
+
+  The user is showing me a CI/GitHub Actions log where a workflow is failing. The error is:
+
+  error: The requested interpreter resolved to Python 3.13.12, which is incompatible with the project's Python requirement: `&gt;=3.11, &lt;3.13`.
+  The following `requires-python` declarations do not permit this version:
+  - dagster-internal-buildkite: &gt;=3.10, &lt;3.13
+  - internal: &gt;3.10, &lt;3.13
+
+  The issue is that UV_PYTHON is being set to 3.13 in the setup action, but the project's requires-python constraint is &lt;3.13, so Python 3.13 is not
+  compatible.
+
+  The user wants me to fix this CI failure, so I need to look at the relevant configuration files to understand what's setting the Python version and
+  adjust it to be compatible with the project's constraints.
+
+⏺ The CI is failing because UV_PYTHON is set to 3.13 but the project's requires-python constrains to &lt;3.13. Let me explore the relevant files to
+  understand the fix needed.
+
+⏺ Explore(Explore erk-remote-setup action)
+  ⎿  Done (16 tool uses · 37.9k tokens · 46s)
+  (ctrl+o to expand)
+
+⏺ Explore(Explore requires-python constraints)
+  ⎿  Done (17 tool uses · 41.5k tokens · 1m 13s)
+  (ctrl+o to expand)
+
+∴ Thinking…
+
+  Now I have a clear picture. The issue is:
+
+  1. .github/actions/erk-remote-setup/action.yml sets python-version: "3.13" when calling astral-sh/setup-uv@v5
+  2. The root pyproject.toml has requires-python = "&gt;3.10,&lt;3.13"
+  3. dagster-internal-buildkite has requires-python = "&gt;=3.10, &lt;3.13"
+  4. Many other packages also have &lt;3.13 constraints
+
+  So the fix is simple: change the Python version in the erk-remote-setup action from 3.13 to 3.12.
+
+  Let me check the action file to confirm the exact location and make the necessary change.
+
+⏺ Now let me read the action file to see the exact line that needs changing.
+
+⏺ Read(.github/actions/erk-remote-setup/action.yml)
+  ⎿  Read 63 lines
+
+∴ Thinking…
+
+  The fix is straightforward: change python-version: "3.13" to python-version: "3.12" in line 32 of .github/actions/erk-remote-setup/action.yml.
+
+  The root pyproject.toml has &gt;3.10,&lt;3.13, meaning Python 3.12 is the highest allowed version.
+
+  Let me write the plan and exit plan mode.
+
+⏺ The issue is clear. Line 32 of .github/actions/erk-remote-setup/action.yml sets python-version: "3.13", but the root pyproject.toml and
+  dagster-internal-buildkite both require &lt;3.13. Python 3.12 is the highest compatible version.
+
+⏺ Updated plan
+  ⎿  Wrote 20 lines to /Users/schrockn/.claude/plans/warm-snacking-wand.md
+       1 # Fix: Python version mismatch in erk-remote-setup action
+       2
+       3 ## Context
+       4
+       5 The `erk-remote-setup` GitHub Action is failing because it configures Python 3.13 via `astral-sh/setup-uv@v5`, but the project's `requ
+         ires-python` constraints restrict to `&lt;3.13`:
+       6 - Root `pyproject.toml` (`internal`): `&gt;3.10,&lt;3.13`
+       7 - `.buildkite/dagster-internal-buildkite`: `&gt;=3.10, &lt;3.13`
+       8 - Multiple other packages (compass-data, purina, product-operations, etc.) also cap at `&lt;3.13`
+       9
+      10 Python 3.12 is the highest version compatible with all workspace packages.
+      11
+      12 ## Change
+      13
+      14 **File:** `.github/actions/erk-remote-setup/action.yml` (line 32)
+      15
+      16 Change `python-version: "3.13"` → `python-version: "3.12"`
+      17
+      18 ## Verification
+      19
+      20 Re-run any workflow that uses this action (plan-implement, pr-address, pr-rebase, learn, one-shot) and confirm the `setup-uv` step suc
+         ceeds without the Python version incompatibility error.
+
+∴ Thinking…
+
+  The hook wants me to display the plan and ask the user about what to do with it. Let me follow the instructions.
+
+⏺ Here's the plan:
+
+  ---
+  Fix: Python version mismatch in erk-remote-setup action
+
+  Context
+
+  The erk-remote-setup GitHub Action is failing because it configures Python 3.13 via astral-sh/setup-uv@v5, but the project's requires-python
+  constraints restrict to &lt;3.13:
+  - Root pyproject.toml (internal): &gt;3.10,&lt;3.13
+  - .buildkite/dagster-internal-buildkite: &gt;=3.10, &lt;3.13
+  - Multiple other packages (compass-data, purina, product-operations, etc.) also cap at &lt;3.13
+
+  Python 3.12 is the highest version compatible with all workspace packages.
+
+  Change
+
+  File: .github/actions/erk-remote-setup/action.yml (line 32)
+
+  Change python-version: "3.13" → python-version: "3.12"
+
+  Verification
+
+  Re-run any workflow that uses this action (plan-implement, pr-address, pr-rebase, learn, one-shot) and confirm the setup-uv step succeeds without
+  the Python version incompatibility error.
+
+  ---
+
+⏺ User answered Claude's questions:
+  ⎿  · 📋 Fix: Python version mismatch in erk-remote-setup action
+     Current context: (wt:internal) (br:master)
+
+     What would you like to do with this plan? → Create a plan PR
+
+⏺ Skill(/erk:plan-save)
+  ⎿  Successfully loaded skill
+
+∴ Thinking…
+
+  Let me follow the plan-save skill instructions step by step.
+
+  Step 1: Parse Arguments
+
+  No --plan-type or --objective flags provided.
+  - PLAN_TYPE_FLAG = ""
+  - OBJECTIVE_FLAG = ""
+
+  Step 2: Generate Branch Slug
+
+  The plan title is "Fix: Python version mismatch in erk-remote-setup action"
+  Branch slug: "fix-python-version-erk-setup" (28 chars, good)
+
+  Step 3: Generate Plan Summary
+
+  "The erk-remote-setup GitHub Action sets Python 3.13 via setup-uv, but the workspace requires-python constraints cap at &lt;3.13. This changes the
+  configured Python version to 3.12, the highest compatible version."
+
+  Now I'm executing the save command to persist this plan.
+
+⏺ Bash(erk exec plan-save --format json --session-id="7f5b504c-d52f-44f2-984a-3dbb730102ba" --branch-slug="fix-python-version-erk-setup"
+      --summary="The erk-remote-setup GitHub Action sets Python 3.13 via setup-uv, but the workspace requires-python constraints cap at less than
+      3.13. This changes the configured Python version to 3.12, the highest compatible version.")
+  ⎿  {
+       "success": true,
+       "plan_number": 21229,
+       "plan_url": "https://github.com/dagster-io/internal/pull/21229",
+       "title": "[erk-plan] Fix: Python version mismatch in erk-remote-setup action",
+       "branch_name": "plnd/fix-python-version-erk-set-03-02-1309",
+       "plan_backend": "planned_pr",
+       "objective_issue": null,
+       "archived_to": "/Users/schrockn/code/internal/.erk/scratch/sessions/7f5b504c-d52f-44f2-984a-3dbb730102ba/plan_snapshots/000001-898c3e0f"
+     }
+  ⎿  (timeout 1m)
+
+∴ Thinking…
+
+  The plan was saved successfully. No objective linked (objective_issue is null), so I skip Steps 5 and 6.
+
+  Now Step 7: Display Results.
+
+  The plan was saved as draft PR #21229. I'm on master (trunk), so I should show the trunk-first slot options.
+
+  Then Step 5 (the second Step 5 - push planning session): push the session.
+
+⏺ Bash(erk exec capture-session-info 2&gt;/dev/null | head -5)
+  ⎿  SESSION_ID=7f5b504c-d52f-44f2-984a-3dbb730102ba
+     SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-internal/7f5b504c-d52f-44f2-984a-3dbb730102ba.jsonl
+
+⏺ Bash(erk exec push-session \
+          --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-code-internal/7f5b504c-d52f-44f2-984a-3dbb730102ba.jsonl" \
+          --session-id "7f5b504c-d52f-44f2-984a-3dbb730102ba" \
+          --stage planning \
+          --source local \
+          --plan-id 21229 \
+          2&gt;/dev/null || true)
+  ⎿  {
+       "uploaded": true,
+       "plan_id": 21229,
+       "session_branch": "async-learn/21229",
+       "session_id": "7f5b504c-d52f-44f2-984a-3dbb730102ba",
+       "stage": "planning",
+       "files": [
+         "planning-7f5b504c-d52f-44f2-984a-3dbb730102ba-7f5b504c-d52f-44f2-984a-3dbb730102ba.xml"
+       ]
+     }
+  ⎿  (timeout 30s)
+
+⏺ Plan "[erk-plan] Fix: Python version mismatch in erk-remote-setup action" saved as draft PR #21229
+  URL: https://github.com/dagster-io/internal/pull/21229
+
+  Next steps:
+
+  View PR: https://github.com/dagster-io/internal/pull/21229
+
+  In Claude Code:
+    Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+  OR exit Claude Code first, then run one of:
+
+    New slot (recommended — you're on trunk):
+      Local: erk br co --new-slot --for-plan 21229
+      Implement: source "$(erk br co --new-slot --for-plan 21229 --script)" &amp;&amp; erk implement --dangerous
+
+    Same slot:
+      Local: erk br co --for-plan 21229
+      Implement: source "$(erk br co --for-plan 21229 --script)" &amp;&amp; erk implement --dangerous
+
+    Dispatch to Queue: erk pr dispatch 21229
+
+✻ Baked for 3m 0s
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ➜  (git:internal) (wt:root) (br:master) | (gh:no-pr) │ (O)                                                                            38965 tokens
+  ⏸ plan mode on (shift+tab to cycle)                                                                               current: 2.1.63 · latest: 2.1.63
+
+looks like we need to make python vesrion configurable. let's plan a fix</user>
+  <thinking>The user wants to make the Python version configurable in the erk-remote-setup action rather than just hardcoding 3.12. Let me explore the action file and understand how it's used across workflows to plan this properly.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="25309" cache_read_input_tokens="10748" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25309}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore how the action is used across workflows to understand the right approach.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="25309" cache_read_input_tokens="10748" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25309}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015EzzgXQWupCwj3UVre4K8X">
+    <param name="file_path">/Users/schrockn/code/erk/.github/actions/erk-remote-setup/action.yml</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="25309" cache_read_input_tokens="10748" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25309}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015EzzgXQWupCwj3UVre4K8X">
+     1→name: "Setup Erk Remote Environment"
+     2→description: "Consolidated setup for remote workflow execution"
+     3→
+     4→inputs:
+     5→  erk-pat:
+     6→    description: "ERK_QUEUE_GH_PAT secret"
+     7→    required: true
+     8→  anthropic-api-key:
+     9→    description: "ANTHROPIC_API_KEY secret"
+    10→    required: false
+    11→  claude-code-oauth-token:
+    12→    description: "CLAUDE_CODE_OAUTH_TOKEN secret"
+    13→    required: false
+    14→
+    15→runs:
+    16→  using: "composite"
+    17→  steps:
+    18→    - name: Validate secrets
+    19→      shell: bash
+    20→      run: |
+    21→        if [ -z "${{ inputs.erk-pat }}" ]; then
+    22→          echo "::error title=Missing Secret::ERK_QUEUE_GH_PAT not configured"
+    23→          exit 1
+    24→        fi
+    25→        if [ -z "${{ inputs.anthropic-api-key }}" ] &amp;&amp; [ -z "${{ inputs.claude-code-oauth-token }}" ]; then
+    26→          echo "::error title=Missing Secret::Either ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN must be configured"
+    27→          exit 1
+    28→        fi
+    29→
+    30→    - uses: astral-sh/setup-uv@v5
+
+... [33 lines omitted] ...
+  </tool_result>
+  <tool_use name="Agent" id="toolu_0199ZFyo6om8q1B2Xq5o4EWS">
+    <param name="description">Find all workflow callers</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+
+Find all GitH...[truncated 299 chars]...s to `erk-remote-setup`. Also check the root pyproject.toml for the requires-python field.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="25309" cache_read_input_tokens="10748" output_tokens="362" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 25309, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0199ZFyo6om8q1B2Xq5o4EWS">
+Perfect! Now I have all the information needed. Let me compile my findings:
+
+## Summary
+
+I've completed a comprehensive search of all GitHub Actions workflows that use the `erk-remote-setup` action. Here are my findings:
+
+### 1. Workflows Using `erk-remote-setup`
+
+**All 6 workflows found use the action without passing a `python-version` input:**
+
+1. **`/Users/schrockn/code/erk/.github/workflows/one-shot.yml`** (line 91)
+2. **`/Users/schrockn/code/erk/.github/workflows/pr-rewrite.yml`** (line 52)
+3. **`/Users/schrockn/code/erk/.github/workflows/plan-implement.yml`** (line 117)
+4. **`/Users/schrockn/code/erk/.github/workflows/pr-rebase.yml`** (line 57)
+5. **`/Users/schrockn/code/erk/.github/workflows/pr-address.yml`** (line 44)
+6. **`/Users/schrockn/code/erk/.github/workflows/learn.yml`** (line 55)
+
+All 6 workflows call the action identically with no python-version parameter:
+```yaml
+- uses: ./.github/actions/erk-remote-setup
+  with:
+    erk-pat: ${{ secrets.ERK_QUEUE_GH_PAT }}
+    anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+    claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+```
+
+### 2. The `erk-remote-setup` Action Definition
+
+**File:** `/Users/schrockn/code/erk/.github/actions/erk-remote-setup/action.yml`
+
+
+... [31 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a clear picture. The erk repo's pyproject.toml says `&gt;=3.11`, but the CI log the user showed is from the `internal` repo which has `&lt;3.13`. The action is used in 6 workflows, none pass python-version.
+
+The fix is to:
+1. Add a `python-version` input with a default to the action
+2. Use that input in the setup-uv step
+
+The question is what the default should be. Since this is the erk repo and requires-python is &gt;=3.11, but the action is used in CI for the `internal` repo too (the error was from `internal`). Let me re-read the CI log - it says `/home/runner/work/internal/internal/` so this action is being used from the internal repo context.
+
+
+Looking at the CI output more carefully, I see the constraints are `&gt;=3.10, &lt;3.13` for both the buildkite and internal repos, so the action needs to work across different monorepos with varying Python requirements. I'll add a `python-version` input with a sensible default like "3.12" and reference it in the setup-uv step, then workflows can override it if needed.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2060" cache_read_input_tokens="36057" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2060}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good context. The erk repo itself allows `&gt;=3.11`, but when this action runs in the `internal` monorepo context, the `&lt;3.13` constraints from dagster packages cause the failure. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2060" cache_read_input_tokens="36057" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2060}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01HSkyukavebqRjiv3nmmz6L">
+    <param name="file_path">/Users/schrockn/.claude/plans/curried-chasing-whale.md</param>
+    <param name="content"># Make Python version configurable in erk-remote-setup action
+
+## Context
+
+The `erk-remote...[truncated 982 chars]...at uses this action and confirm the `setup-uv` step resolves to Python 3.12 and succeeds.
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2060" cache_read_input_tokens="36057" output_tokens="1020" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2060, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HSkyukavebqRjiv3nmmz6L">
+File created successfully at: /Users/schrockn/.claude/plans/curried-chasing-whale.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01RLvtbjrrMyK6ifuLFT6Ddh">
+    <param name="plan"># Make Python version configurable in erk-remote-setup action
+
+## Context
+
+The `erk-remote...[truncated 982 chars]...at uses this action and confirm the `setup-uv` step resolves to Python 3.12 and succeeds.
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1147" cache_read_input_tokens="38117" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1147, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RLvtbjrrMyK6ifuLFT6Ddh">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/curried-chasing-whale.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Make Python version configurable in erk-remote-setup action
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id be49c58d-ca80-4e9b-8eb6-a2a94caeba05 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+## Make Python version configurable in erk-remote-setup action
+
+### Context
+
+The `erk-remote-setup` GitHub Action hardcodes `python-version: "3.13"` when calling `astral-sh/setup-uv@v5`. This fails when the action runs in repos with stricter Python constraints (e.g., the `internal` monorepo requires `&lt;3.13`). The version needs to be configurable so each workflow/repo can specify what works for its dependency graph.
+
+### Change
+
+**File:** `.github/actions/erk-remote-setup/action.yml`
+
+1. Add a `python-version` input with default `"3.12"`:
+   ```yaml
+   python-version:
+     description: "Python version for uv"
+     required: false
+     default: "3.12"
+   ```
+
+2. Reference the input in the setup-uv step:
+   ```yaml
+   - uses: astral-sh/setup-uv@v5
+     with:
+       python-version: ${{ inputs.python-version }}
+   ```
+
+No workflow file changes needed — all 6 callers (one-shot, pr-rewrite, plan-implement, pr-rebase, pr-address, learn) will pick up the default `3.12` automatically. Any caller can override by passing `python-version: "3.11"` etc.
+
+### Verification
+
+Re-run any workflow that uses this action and confirm the `setup-uv` step resolves to Python 3.12 and succeeds.
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="658" cache_read_input_tokens="39264" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 658}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01BJDzJBtA6zGCn7wDQAV6u4">
+    <param name="questions">[{'question': '📋 Make Python version configurable in erk-remote-setup action\nCurrent cont...[truncated 443 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="658" cache_read_input_tokens="39264" output_tokens="596" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 658, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BJDzJBtA6zGCn7wDQAV6u4">
+User has answered your questions: "📋 Make Python version configurable in erk-remote-setup action
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01ChimnsAmJWVCQW24Pk5rRA">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="679" cache_read_input_tokens="39922" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 679, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ChimnsAmJWVCQW24Pk5rRA">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="be49c58d-ca80-4e9b-8eb6-a2a94caeba05" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "be49c58d-ca80-4e9b-8eb6-a2a94caeba05" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "be49c58d-ca80-4e9b-8eb6-a2a94caeba05" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "be49c58d-ca80-4e9b-8eb6-a2a94caeba05" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "be49c58d-ca80-4e9b-8eb6-a2a94caeba05" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+**Step 1: Parse Arguments** — No `--plan-type` or `--objective` flags provided.
+
+**Step 2: Branch Slug** — `config-python-version-setup`
+
+**Step 3: Plan Summary** — The erk-remote-setup action hardcodes Python 3.13, which is incompatible with repos constraining to less than 3.13. This adds a configurable python-version input defaulting to 3.12 so each caller can specify the version matching its dependency graph.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2615" cache_read_input_tokens="40601" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2615}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RPiJpdqGRuysoWjxsoLYA8">
+    <param name="command">erk exec plan-save --format json --session-id="be49c58d-ca80-4e9b-8eb6-a2a94caeba05" --bra...[truncated 191 chars]... defaulting to 3.12 so each caller can specify the version matching its dependency graph."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2615" cache_read_input_tokens="40601" output_tokens="328" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2615, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RPiJpdqGRuysoWjxsoLYA8">
+{"success": true, "plan_number": 8635, "plan_url": "https://github.com/dagster-io/erk/pull/8635", "title": "[erk-plan] Make Python version configurable in erk-remote-setup action", "branch_name": "plnd/config-python-version-setu-03-02-1332", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/be49c58d-ca80-4e9b-8eb6-a2a94caeba05/plan_snapshots/000001-7068d017"}
+  </tool_result>
+  <assistant>No objective linked — skipping Steps 5 and 6. Now pushing the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="717" cache_read_input_tokens="43216" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 717}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LUoC9XXEo1RFyCpgQkP7gE">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null | head -5</param>
+    <param name="description">Get session file path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="717" cache_read_input_tokens="43216" output_tokens="110" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 717, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LUoC9XXEo1RFyCpgQkP7gE">
+SESSION_ID=be49c58d-ca80-4e9b-8eb6-a2a94caeba05
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/be49c58d-ca80-4e9b-8eb6-a2a94caeba05.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01D4hDxjmj6CHSWhQ9m9wAaV">
+    <param name="command">erk exec push-session \
+    --session-file "/Users/schrockn/.claude/projects/-Users-schroc...[truncated 94 chars]...\
+    --stage planning \
+    --source local \
+    --plan-id 8635 \
+    2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="207" cache_read_input_tokens="43933" output_tokens="221" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 207, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
