@@ -586,7 +586,7 @@ wheels = [
 
 [[package]]
 name = "erk"
-version = "0.9.3"
+version = "0.9.4"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
@@ -657,7 +657,7 @@ dev = [
 
 [[package]]
 name = "erk-dev"
-version = "0.9.3"
+version = "0.9.4"
 source = { editable = "packages/erk-dev" }
 dependencies = [
     { name = "click" },
@@ -672,7 +672,7 @@ requires-dist = [
 
 [[package]]
 name = "erk-shared"
-version = "0.9.3"
+version = "0.9.4"
 source = { editable = "packages/erk-shared" }
 dependencies = [
     { name = "click" },
@@ -693,7 +693,7 @@ requires-dist = [
 
 [[package]]
 name = "erk-statusline"
-version = "0.9.3"
+version = "0.9.4"
 source = { editable = "packages/erk-statusline" }
 dependencies = [
     { name = "erk-shared" },

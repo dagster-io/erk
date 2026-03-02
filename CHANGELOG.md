@@ -7,16 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of: b57587588 -->
+## [0.9.4] - 2026-03-02 12:11 PT
 
 ### Added
 
-- Add `--ref-current` convenience flag to all dispatch commands and add missing `--ref` support to `erk workflow smoke-test` and `erk objective plan` (cff33ce55)
+- Add `--ref-current` convenience flag to all dispatch commands and add missing `--ref` support to `erk workflow smoke-test` and `erk objective plan`
+
+### Changed
+
+- Loosen Pydantic version constraints from `>=2.10` to `>=2.0` for greater dependency resolution flexibility
 
 ### Fixed
 
-- Fix stale virtual environments in worktree activation by always running `uv sync` when activating a worktree slot (b57587588)
-- Fix statusline showing inflated failure counts by deduplicating check runs by name (db646b84e)
+- Fix stale virtual environments in worktree activation by always running `uv sync` when activating a worktree slot
+- Fix statusline showing inflated failure counts by deduplicating check runs by name
 
 ## [0.9.3] - 2026-03-02 07:16 PT
 
