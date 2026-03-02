@@ -8,7 +8,11 @@ from pathlib import Path
 from erk.artifacts.discovery import _compute_directory_hash, _compute_file_hash, _compute_hook_hash
 from erk.artifacts.models import ArtifactFileState, ArtifactState
 from erk.artifacts.paths import ErkPackageInfo, get_bundled_claude_dir, get_bundled_github_dir
-from erk.artifacts.state import load_installed_capabilities, save_artifact_state
+from erk.artifacts.state import (
+    load_artifact_state,
+    load_installed_capabilities,
+    save_artifact_state,
+)
 from erk.core.claude_settings import (
     ERK_EXIT_PLAN_HOOK_COMMAND,
     ERK_USER_PROMPT_HOOK_COMMAND,
@@ -22,11 +26,20 @@ from erk_shared.context.types import AgentBackend
 
 
 @dataclass(frozen=True)
+class OrphanedPath:
+    """Filesystem path for an orphaned state.toml key."""
+
+    path: Path
+    is_directory: bool
+
+
+@dataclass(frozen=True)
 class SyncResult:
     """Result of artifact sync operation."""
 
     success: bool
     artifacts_installed: int
+    orphans: tuple[OrphanedPath, ...]
     message: str
 
 
@@ -77,6 +90,109 @@ class SyncedArtifact:
     key: str  # e.g. "skills/dignified-python", "commands/erk/system/impl-execute.md"
     hash: str
     file_count: int
+
+
+def _key_to_orphaned_path(key: str, project_dir: Path) -> OrphanedPath | None:
+    """Map a state.toml key to the filesystem path it represents.
+
+    Returns None for keys that should never be auto-removed (hooks).
+    """
+    # hooks/ keys should never be auto-removed
+    if key.startswith("hooks/"):
+        return None
+
+    claude_dir = project_dir / ".claude"
+
+    # skills/X -> .claude/skills/X/ (directory)
+    if key.startswith("skills/"):
+        name = key.removeprefix("skills/")
+        return OrphanedPath(path=claude_dir / "skills" / name, is_directory=True)
+
+    # agents/X.md -> .claude/agents/X.md (file)
+    # agents/X -> .claude/agents/X/ (directory)
+    if key.startswith("agents/"):
+        suffix = key.removeprefix("agents/")
+        if suffix.endswith(".md"):
+            return OrphanedPath(path=claude_dir / "agents" / suffix, is_directory=False)
+        return OrphanedPath(path=claude_dir / "agents" / suffix, is_directory=True)
+
+    # commands/erk/X -> .claude/commands/erk/X (file)
+    if key.startswith("commands/erk/"):
+        relative = key.removeprefix("commands/erk/")
+        path = claude_dir / "commands" / "erk" / relative
+        return OrphanedPath(path=path, is_directory=False)
+
+    # workflows/X -> .github/workflows/X (file)
+    if key.startswith("workflows/"):
+        filename = key.removeprefix("workflows/")
+        path = project_dir / ".github" / "workflows" / filename
+        return OrphanedPath(path=path, is_directory=False)
+
+    # actions/X -> .github/actions/X/ (directory)
+    if key.startswith("actions/"):
+        name = key.removeprefix("actions/")
+        return OrphanedPath(path=project_dir / ".github" / "actions" / name, is_directory=True)
+
+    # reviews/X -> .erk/reviews/X (file)
+    if key.startswith("reviews/"):
+        filename = key.removeprefix("reviews/")
+        return OrphanedPath(path=project_dir / ".erk" / "reviews" / filename, is_directory=False)
+
+    return None
+
+
+def find_orphaned_artifact_paths(
+    project_dir: Path,
+    *,
+    old_keys: frozenset[str],
+    new_keys: frozenset[str],
+) -> list[OrphanedPath]:
+    """Find artifacts that were in old state but not in new state.
+
+    Uses state.toml as the ownership ledger: keys present in old state but
+    absent from new synced state are orphaned erk artifacts safe to remove.
+
+    Returns list of orphaned paths that exist on disk (read-only, no deletion).
+    """
+    orphaned_keys = old_keys - new_keys
+    result: list[OrphanedPath] = []
+
+    for key in sorted(orphaned_keys):
+        orphan = _key_to_orphaned_path(key, project_dir)
+        if orphan is None:
+            continue
+
+        if not orphan.path.exists():
+            continue
+
+        result.append(orphan)
+
+    return result
+
+
+def delete_orphaned_artifacts(orphans: list[OrphanedPath]) -> int:
+    """Delete orphaned artifacts from disk.
+
+    Returns count of artifacts actually removed.
+    """
+    removed = 0
+
+    for orphan in orphans:
+        if not orphan.path.exists():
+            continue
+
+        if orphan.is_directory:
+            shutil.rmtree(orphan.path)
+        else:
+            orphan.path.unlink()
+            # Clean up empty parent directory
+            parent = orphan.path.parent
+            if parent.exists() and not any(parent.iterdir()):
+                parent.rmdir()
+
+        removed += 1
+
+    return removed
 
 
 def _sync_directory_artifacts(
@@ -548,6 +664,7 @@ def sync_dignified_review(project_dir: Path) -> SyncResult:
     return SyncResult(
         success=True,
         artifacts_installed=total_copied,
+        orphans=(),
         message=f"Installed dignified-review ({total_copied} files)",
     )
 
@@ -673,6 +790,7 @@ def sync_artifacts(
         return SyncResult(
             success=True,
             artifacts_installed=0,
+            orphans=(),
             message="Development mode: state.toml updated (artifacts read from source)",
         )
 
@@ -680,8 +798,13 @@ def sync_artifacts(
         return SyncResult(
             success=False,
             artifacts_installed=0,
+            orphans=(),
             message=f"Bundled .claude/ not found at {config.package.bundled_claude_dir}",
         )
+
+    # Load old state before sync to detect orphaned artifacts
+    old_state = load_artifact_state(project_dir)
+    old_keys = frozenset(old_state.files.keys()) if old_state is not None else frozenset()
 
     target_claude_dir = project_dir / ".claude"
     target_claude_dir.mkdir(parents=True, exist_ok=True)
@@ -772,6 +895,10 @@ def sync_artifacts(
             hash=artifact.hash,
         )
 
+    # Find orphaned artifacts: keys in old state but not in new synced state
+    new_keys = frozenset(files.keys())
+    orphans = find_orphaned_artifact_paths(project_dir, old_keys=old_keys, new_keys=new_keys)
+
     # Save state with current version and per-artifact state
     save_artifact_state(
         project_dir, ArtifactState(version=config.package.current_version, files=files)
@@ -780,5 +907,6 @@ def sync_artifacts(
     return SyncResult(
         success=True,
         artifacts_installed=total_copied,
+        orphans=tuple(orphans),
         message=f"Synced {total_copied} artifact files",
     )

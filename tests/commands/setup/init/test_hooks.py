@@ -178,7 +178,10 @@ def test_init_syncs_artifacts_successfully() -> None:
             mock.patch("erk.cli.commands.init.main.create_artifact_sync_config"),
         ):
             mock_sync.return_value = SyncResult(
-                success=True, artifacts_installed=5, message="Synced 5 artifact files"
+                success=True,
+                artifacts_installed=5,
+                orphans=(),
+                message="Synced 5 artifact files",
             )
 
             result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
@@ -214,7 +217,10 @@ def test_init_shows_warning_on_artifact_sync_failure() -> None:
             mock.patch("erk.cli.commands.init.main.create_artifact_sync_config"),
         ):
             mock_sync.return_value = SyncResult(
-                success=False, artifacts_installed=0, message="Bundled .claude/ not found"
+                success=False,
+                artifacts_installed=0,
+                orphans=(),
+                message="Bundled .claude/ not found",
             )
 
             result = runner.invoke(cli, ["init", "--no-interactive"], obj=test_ctx)
