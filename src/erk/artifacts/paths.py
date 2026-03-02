@@ -52,9 +52,9 @@ def get_bundled_claude_dir() -> Path:
 def get_bundled_codex_dir() -> Path:
     """Get path to bundled .codex/ directory in installed erk package.
 
-    For wheel installs: .codex/ is bundled as package data at erk/data/codex/
-    via pyproject.toml force-include. Skills are mapped from .claude/skills/
-    to erk/data/codex/skills/ with Codex-compatible frontmatter.
+    For wheel installs: skills are bundled at erk/data/claude/ (shared with
+    Claude backend). Falls back to erk/data/claude/ since both backends use
+    the same source files from .claude/skills/.
 
     For editable installs: .codex/ doesn't exist in the repo. Falls back to
     .claude/ since the file formats are identical (both use YAML frontmatter
@@ -66,8 +66,8 @@ def get_bundled_codex_dir() -> Path:
         # Editable: return .claude/ (same format, install step handles target mapping)
         return erk_package_dir.parent.parent / ".claude"
 
-    # Wheel install: data is bundled at erk/data/codex/
-    return erk_package_dir / "data" / "codex"
+    # Wheel install: skills are bundled at erk/data/claude/ (shared path)
+    return erk_package_dir / "data" / "claude"
 
 
 @cache
