@@ -1,4 +1,3 @@
-from datetime import datetime
 from pathlib import Path
 
 from click.testing import CliRunner
@@ -9,13 +8,12 @@ from erk.core.context import context_for_test
 from erk_shared.gateway.erk_installation.fake import FakeErkInstallation, GlobalConfig
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.time.fake import DEFAULT_FAKE_TIME
 from erk_shared.naming import WORKTREE_DATE_SUFFIX_FORMAT
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
-
-def _get_current_date_suffix() -> str:
-    """Get the current date suffix for plan-derived worktrees."""
-    return datetime.now().strftime(WORKTREE_DATE_SUFFIX_FORMAT)
+# Deterministic date suffix from FakeTime, used by ctx.time.now() in tests
+_FAKE_DATE_SUFFIX = DEFAULT_FAKE_TIME.strftime(WORKTREE_DATE_SUFFIX_FORMAT)
 
 
 def test_create_with_plan_file() -> None:
@@ -50,9 +48,8 @@ def test_create_with_plan_file() -> None:
         )
         assert result.exit_code == 0, f"Command failed: {result.output}"
 
-        # --from-plan-file flag adds date suffix in format -YY-MM-DD-HHMM
-        date_suffix = _get_current_date_suffix()
-        expected_name = f"add-auth-feature-{date_suffix}"
+        # --from-plan-file adds date suffix -YY-MM-DD-HHMM (deterministic via FakeTime)
+        expected_name = f"add-auth-feature-{_FAKE_DATE_SUFFIX}"
 
         # Verify worktree was created with sanitized name and date suffix
         worktree_path = env.erk_root / "repos" / "repo" / "worktrees" / expected_name
@@ -103,9 +100,8 @@ def test_create_with_plan_name_sanitization() -> None:
         )
         assert result.exit_code == 0, f"Command failed: {result.output}"
 
-        # --from-plan-file flag adds date suffix in format -YY-MM-DD-HHMM
-        date_suffix = _get_current_date_suffix()
-        expected_name = f"my-cool-file-{date_suffix}"
+        # --from-plan-file adds date suffix -YY-MM-DD-HHMM (deterministic via FakeTime)
+        expected_name = f"my-cool-file-{_FAKE_DATE_SUFFIX}"
 
         # Verify worktree name is lowercase with hyphens, "plan" removed, and date suffix added
         worktree_path = env.erk_root / "repos" / "repo" / "worktrees" / expected_name

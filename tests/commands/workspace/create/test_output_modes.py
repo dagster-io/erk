@@ -8,7 +8,8 @@ from erk.cli.cli import cli
 from erk.cli.config import LoadedConfig
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.fake import FakeGit
-from tests.commands.workspace.create.conftest import get_current_date_suffix
+from erk_shared.gateway.time.fake import DEFAULT_FAKE_TIME
+from erk_shared.naming import WORKTREE_DATE_SUFFIX_FORMAT
 from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
 
 
@@ -145,7 +146,9 @@ def test_create_with_json_and_plan_file() -> None:
         # Verify JSON output includes plan file
         output_data = json.loads(result.output)
         # Name is derived from "test-feature-plan.md" -> "test-feature" with date suffix
-        date_suffix = get_current_date_suffix()
+        # FakeTime.DEFAULT_FAKE_TIME is used by context_for_test, which flows through
+        # ctx.time.now() into the naming functions for deterministic timestamps.
+        date_suffix = DEFAULT_FAKE_TIME.strftime(WORKTREE_DATE_SUFFIX_FORMAT)
         expected_name = f"test-feature-{date_suffix}"
         assert output_data["worktree_name"] == expected_name
         wt_path = repo_dir / "worktrees" / expected_name
@@ -278,8 +281,8 @@ def test_create_with_stay_and_plan_file() -> None:
         )
 
         assert result.exit_code == 0, result.output
-        # Verify worktree was created with date suffix
-        date_suffix = get_current_date_suffix()
+        # Verify worktree was created with date suffix (deterministic via FakeTime)
+        date_suffix = DEFAULT_FAKE_TIME.strftime(WORKTREE_DATE_SUFFIX_FORMAT)
         wt_path = repo_dir / "worktrees" / f"test-feature-{date_suffix}"
         assert wt_path.exists()
         # Impl folder should be created

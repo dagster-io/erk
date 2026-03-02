@@ -718,7 +718,9 @@ def extract_objective_number(branch_name: str) -> int | None:
     return None
 
 
-def ensure_unique_worktree_name_with_date(base_name: str, worktrees_dir: Path, git_ops) -> str:
+def ensure_unique_worktree_name_with_date(
+    base_name: str, worktrees_dir: Path, git_ops, *, now: datetime | None = None
+) -> str:
     """Ensure unique worktree name with datetime suffix and smart versioning.
 
     Adds datetime suffix in format -YY-MM-DD-HHMM to the base name.
@@ -732,6 +734,8 @@ def ensure_unique_worktree_name_with_date(base_name: str, worktrees_dir: Path, g
         base_name: Sanitized worktree base name (without datetime suffix)
         worktrees_dir: Directory containing worktrees
         git_ops: Git operations interface for checking path existence
+        now: Optional datetime to use for the suffix. Falls back to datetime.now()
+             if not provided. Callers should pass ctx.time.now() for testability.
 
     Returns:
         Guaranteed unique worktree name with datetime suffix
@@ -741,7 +745,7 @@ def ensure_unique_worktree_name_with_date(base_name: str, worktrees_dir: Path, g
         Duplicate: "my-feature" → "my-feature-25-11-08-1430-2"
         Next minute: "my-feature" → "my-feature-25-11-08-1431"
     """
-    date_suffix = datetime.now().strftime(WORKTREE_DATE_SUFFIX_FORMAT)
+    date_suffix = (now or datetime.now()).strftime(WORKTREE_DATE_SUFFIX_FORMAT)
     candidate_name = f"{base_name}-{date_suffix}"
 
     # Check if the base candidate exists
@@ -784,7 +788,9 @@ def ensure_simple_worktree_name(base_name: str, worktrees_dir: Path, git_ops) ->
     return candidate_name
 
 
-def ensure_unique_worktree_name(base_name: str, worktrees_dir: Path, git_ops) -> str:
+def ensure_unique_worktree_name(
+    base_name: str, worktrees_dir: Path, git_ops, *, now: datetime | None = None
+) -> str:
     """Deprecated: Use ensure_unique_worktree_name_with_date for plan-derived worktrees.
 
     This function is kept for backward compatibility but will be removed in the future.
@@ -792,7 +798,7 @@ def ensure_unique_worktree_name(base_name: str, worktrees_dir: Path, git_ops) ->
     - ensure_unique_worktree_name_with_date() for plan-derived worktrees
     - ensure_simple_worktree_name() for manual checkout operations
     """
-    return ensure_unique_worktree_name_with_date(base_name, worktrees_dir, git_ops)
+    return ensure_unique_worktree_name_with_date(base_name, worktrees_dir, git_ops, now=now)
 
 
 def default_branch_for_worktree(name: str) -> str:
