@@ -13,7 +13,7 @@ def resolve_codespace(
     registry: CodespaceRegistry,
     name: str | None,
     *,
-    config_codespace_name: str | None = None,
+    config_codespace_name: str | None,
 ) -> RegisteredCodespace:
     """Resolve a codespace by name, repo config, or global default.
 

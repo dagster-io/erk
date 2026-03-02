@@ -62,9 +62,9 @@ def connect_codespace(
     #
     # IMPORTANT: The entire remote command (bash -l -c '...') must be a single argument.
     # SSH concatenates command arguments with spaces without preserving grouping.
+    export_prefix = _build_export_prefix(env_vars)
     working_dir = ctx.local_config.codespace_working_directory
     cd_prefix = f"cd {shlex.quote(working_dir)} && " if working_dir is not None else ""
-    export_prefix = _build_export_prefix(env_vars)
     if shell:
         if export_prefix or cd_prefix:
             remote_command = f"bash -l -c '{cd_prefix}{export_prefix}exec bash -l'"

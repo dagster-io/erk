@@ -10,7 +10,7 @@ import shlex
 def build_codespace_ssh_command(
     erk_command: str,
     *,
-    working_directory: str | None = None,
+    working_directory: str | None,
 ) -> str:
     """Wrap an erk CLI command for streaming codespace execution.
 
