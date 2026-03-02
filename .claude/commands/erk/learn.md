@@ -750,7 +750,7 @@ Parse the JSON output. If `count` is 0, no comment was added (no candidates foun
 erk exec track-learn-result \
     --issue <parent-issue-number> \
     --status completed_with_plan \
-    --plan-issue <new-learn-plan-issue-number>
+    --learn-plan <learn-plan-number>
 ```
 
 This sets `learn_status: completed_with_plan` and `learn_plan_issue: <N>` on the parent plan,

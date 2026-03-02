@@ -129,7 +129,7 @@ def test_started_no_plan_reference(tmp_path: Path) -> None:
     data = json.loads(result.output)
     assert data["success"] is False
     assert data["event"] == "started"
-    assert data["error_type"] == "no-issue-reference"
+    assert data["error_type"] == "no-plan-reference"
 
 
 def test_ended_no_plan_reference(tmp_path: Path) -> None:
@@ -149,7 +149,7 @@ def test_ended_no_plan_reference(tmp_path: Path) -> None:
     data = json.loads(result.output)
     assert data["success"] is False
     assert data["event"] == "ended"
-    assert data["error_type"] == "no-issue-reference"
+    assert data["error_type"] == "no-plan-reference"
 
 
 def test_started_missing_impl_folder(tmp_path: Path) -> None:
@@ -165,7 +165,7 @@ def test_started_missing_impl_folder(tmp_path: Path) -> None:
     data = json.loads(result.output)
     assert data["success"] is False
     assert data["event"] == "started"
-    assert data["error_type"] == "no-issue-reference"
+    assert data["error_type"] == "no-plan-reference"
 
 
 def test_ended_missing_impl_folder(tmp_path: Path) -> None:
@@ -181,7 +181,7 @@ def test_ended_missing_impl_folder(tmp_path: Path) -> None:
     data = json.loads(result.output)
     assert data["success"] is False
     assert data["event"] == "ended"
-    assert data["error_type"] == "no-issue-reference"
+    assert data["error_type"] == "no-plan-reference"
 
 
 def test_impl_context_fallback(tmp_path: Path) -> None:
@@ -200,7 +200,7 @@ def test_impl_context_fallback(tmp_path: Path) -> None:
 
     assert result.exit_code == 0
     data = json.loads(result.output)
-    assert data["error_type"] == "no-issue-reference"
+    assert data["error_type"] == "no-plan-reference"
 
 
 def test_invalid_event() -> None:
@@ -475,7 +475,7 @@ def test_submitted_no_plan_ref(tmp_path: Path) -> None:
     data = json.loads(result.output)
     assert data["success"] is False
     assert data["event"] == "submitted"
-    assert data["error_type"] == "no-issue-reference"
+    assert data["error_type"] == "no-plan-reference"
 
 
 def test_submitted_no_session_id_ok(tmp_path: Path) -> None:
@@ -529,4 +529,4 @@ def test_submitted_issue_not_found(tmp_path: Path) -> None:
     data = json.loads(result.output)
     assert data["success"] is False
     assert data["event"] == "submitted"
-    assert data["error_type"] == "issue-not-found"
+    assert data["error_type"] == "plan-not-found"
