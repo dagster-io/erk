@@ -12,9 +12,9 @@ Session XML files are embedded in learn plan PR diffs so that async learn agents
 
 ## Codepath 1: plan_save.py (`--session-xml-dir` flag)
 
-<!-- Source: src/erk/cli/commands/exec/scripts/plan_save.py:229-234, 506-511 -->
+<!-- Source: src/erk/cli/commands/exec/scripts/plan_save.py, _save_as_planned_pr -->
 
-The `plan_save.py` exec script accepts a `--session-xml-dir` Click option (lines 506-511) pointing to a directory of pre-generated XML files. The script globs them with `sorted(session_xml_dir.glob("*.xml"))` for deterministic ordering (lines 229-234) and places each under `.erk/impl-context/sessions/{filename}` in the PR diff.
+See `_save_as_planned_pr()` in `src/erk/cli/commands/exec/scripts/plan_save.py` for the session embedding logic. The `plan_save.py` exec script accepts a `--session-xml-dir` Click option pointing to a directory of pre-generated XML files. The script globs XML files from that directory in sorted order for deterministic ordering and places each under `.erk/impl-context/sessions/{filename}` in the PR diff.
 
 This codepath is used by the `/erk:learn` skill (Step 7), which preprocesses sessions into XML files in a temp directory before calling `plan_save.py`.
 
