@@ -1,0 +1,856 @@
+<session>
+  <meta branch="plnd/add-ref-current-dispatch-03-02-0737" />
+  <meta model="claude-opus-4-6" />
+  <user>why is statusline reporting failure
+
+graphite say all green</user>
+  <thinking>The user is asking why the status line is reporting a failure (showing 🚫:9) when Graphite shows all checks as green/passing. Let me look at the status line more carefully.
+
+From the screenshot, the status line shows:
+- `chks:[✅:21 🚫:9] cmts:0/3`
+
+So it's showing 21 passing checks and 9 failing checks. But Graphite shows all checks as green. Let me investigate what the status line hook is doing to fetch check information, and why it might be counting some checks as failed.
+
+I notice that "autofix" and "ci-summarize" have a different icon (⊘) which looks like "skipped" status. 
+
+The status line might be counting those skipped checks as failures instead of treating them as a separate status. I should look at the check counting logic in the status line implementation to see how it's categorizing these different check states.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="12380" cache_read_input_tokens="19965" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12380}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Looking at the status line, I see `chks:[✅:21 🚫:9]` — it's reporting 9 failures. But on Graphite, I can see that `autofix` and `ci-summarize` have a "skipped" icon (⊘), and all others are green. The status line is likely counting **skipped** checks as failures.
+
+Let me find the relevant code.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="12380" cache_read_input_tokens="19965" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12380}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0191BvA5sEDT9fwDeethSfbe">
+    <param name="pattern">skipped|cancelled|failure|fail_count|check.*count</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="12380" cache_read_input_tokens="19965" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12380}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0191BvA5sEDT9fwDeethSfbe">
+Found 20 files limit: 20, offset: 0
+src/erk/core/workflow_smoke_test.py
+src/erk/cli/commands/objective/plan_cmd.py
+src/erk/cli/commands/doctor_workflow.py
+tests/core/test_health_checks.py
+tests/commands/setup/init/test_hooks.py
+tests/artifacts/test_orphans.py
+src/erk/cli/commands/init/main.py
+src/erk/cli/commands/init/capability/remove_cmd.py
+src/erk/cli/commands/init/capability/add_cmd.py
+src/erk/artifacts/sync.py
+src/erk/artifacts/artifact_health.py
+packages/erk-shared/src/erk_shared/gateway/github/fake.py
+tests/unit/test_github_parsing.py
+tests/unit/status/test_orchestrator.py
+tests/unit/test_forward_references.py
+tests/unit/services/test_objective_list_service.py
+tests/unit/services/test_plan_list_service.py
+tests/unit/shared/test_issue_workflow.py
+tests/unit/review/test_parsing.py
+tests/unit/gateways/gt/fake_ops.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Xa3eGuX269QQ8EDSGnef7a">
+    <param name="pattern">statusline|status.line|status_line</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="12380" cache_read_input_tokens="19965" output_tokens="615" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12380, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xa3eGuX269QQ8EDSGnef7a">
+Found 20 files limit: 20, offset: 0
+tests/unit/core/test_capabilities.py
+src/erk/core/capabilities/registry.py
+src/erk/cli/commands/init/main.py
+src/erk/cli/commands/init/capability/remove_cmd.py
+src/erk/cli/commands/init/capability/add_cmd.py
+packages/erk-statusline/src/erk_statusline/__init__.py
+tests/unit/core/test_health_checks_statusline.py
+tests/unit/core/test_claude_settings.py
+tests/unit/cli/test_activation.py
+tests/unit/cli/commands/init/capability/test_check_cmd.py
+tests/unit/cli/commands/init/capability/test_list_cmd.py
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py
+tests/commands/setup/init/test_statusline.py
+tests/commands/pr/test_submit_pr_cache_polling.py
+src/erk/core/health_checks/statusline_configured.py
+src/erk/core/health_checks/__init__.py
+src/erk/core/claude_settings.py
+src/erk/cli/commands/pr/submit_cmd.py
+src/erk/cli/commands/init/__init__.py
+src/erk/cli/commands/exec/scripts/push_and_create_pr.py
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01ToJrq1Ze3PFUNi5ynmd8gU">
+    <param name="pattern">**/erk-statusline/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1337" cache_read_input_tokens="32345" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1337}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ToJrq1Ze3PFUNi5ynmd8gU">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-statusline/src/erk_statusline/__main__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-statusline/src/erk_statusline/colored_tokens.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-statusline/src/erk_statusline/context.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-statusline/src/erk_statusline/statusline.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-statusline/tests/test_colored_tokens.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-statusline/tests/test_context.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-statusline/tests/test_statusline.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-statusline/src/erk_statusline/__init__.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_013JKZZe3hDiYvZLsXyb8gnt">
+    <param name="pattern">check.*status|pr.*check|check.*conclusion</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-statusline</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1337" cache_read_input_tokens="32345" output_tokens="179" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1337, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013JKZZe3hDiYvZLsXyb8gnt">
+Found 5 files
+packages/erk-statusline/src/erk_statusline/colored_tokens.py
+packages/erk-statusline/src/erk_statusline/statusline.py
+packages/erk-statusline/tests/test_colored_tokens.py
+packages/erk-statusline/tests/test_statusline.py
+packages/erk-statusline/README.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_013qBuipvcErUcvVopPxwBoX">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="703" cache_read_input_tokens="33682" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 703}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013qBuipvcErUcvVopPxwBoX">
+     1→#!/usr/bin/env python3
+     2→"""
+     3→Claude Code status line - robbyrussell theme style.
+     4→
+     5→Matches the robbyrussell Oh My Zsh theme format:
+     6→➜  directory (git:branch) ✗
+     7→
+     8→With added Claude-specific info on the right.
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→import hashlib
+    14→import json
+    15→import logging
+    16→import os
+    17→import subprocess
+    18→import sys
+    19→import time
+    20→from concurrent.futures import ThreadPoolExecutor
+    21→from pathlib import Path
+    22→from typing import NamedTuple
+    23→
+    24→from erk_statusline.colored_tokens import Color, Token, TokenSeq, context_label
+    25→from erk_statusline.context import StatuslineContext
+    26→
+    27→# Cache configuration
+    28→CACHE_DIR = Path("/tmp/erk-statusline-cache")
+    29→CACHE_TTL_SECONDS = 30
+    30→
+
+... [1218 lines omitted] ...
+
+    96→    except (json.JSONDecodeError, OSError, KeyError):
+    97→        _logger.debug("Cache miss: %s/%s branch=%s (parse error)", owner, repo, branch)
+   159→    except (ValueError, OSError):
+   221→        except json.JSONDecodeError:
+   311→            except (OSError, UnicodeDecodeError):
+   315→    except (OSError, ValueError):
+   339→    except (ValueError, OSError):
+   398→    except ValueError:
+   432→    head_sha: str  # Commit SHA of the PR head (empty string on error)
+   457→                "PR details fetch failed: %s/%s #%d returncode=%d in %.2fs",
+   502→    except (subprocess.SubprocessError, json.JSONDecodeError) as e:
+   505→            "PR details error: %s/%s #%d in %.2fs - %s", owner, repo, pr_number, elapsed, e
+   542→                "Check runs fetch failed: %s/%s ref=%s returncode=%d in %.2fs",
+   585→    except (subprocess.SubprocessError, json.JSONDecodeError) as e:
+   588→            "Check runs error: %s/%s ref=%s in %.2fs - %s",
+   616→        Tuple of (resolved_count, total_count). Returns (0, 0) on error.
+   659→                "Review threads fetch failed: %s/%s #%d returncode=%d in %.2fs",
+   716→    except (subprocess.SubprocessError, json.JSONDecodeError) as e:
+   719→            "Review threads error: %s/%s #%d in %.2fs - %s",
+   804→    except TimeoutError:
+   861→            elif conclusion in ("FAILURE", "TIMED_OUT", "ACTION_REQUIRED", "CANCELLED"):
+   875→            elif state in ("FAILURE", "ERROR"):
+  1241→    except Exception as e:
+  1242→        _logger.exception("Statusline error: %s", e)
+  1243→        print(f"➜  error │ {e}", end="")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WgoorcJEniHKtje62xR1Tv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-statusline/src/erk_statusline/colored_tokens.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="703" cache_read_input_tokens="33682" output_tokens="182" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 703, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WgoorcJEniHKtje62xR1Tv">
+     1→"""Colored Tokens - Builder API for Terminal-Formatted Strings
+     2→
+     3→This module provides an immutable, declarative API for constructing terminal-formatted
+     4→strings with ANSI color codes and proper escaping. It eliminates error-prone manual
+     5→string interpolation and centralized color/escape handling.
+     6→
+     7→Core Concepts
+     8→-------------
+     9→
+    10→Token: An atomic piece of text, optionally colored
+    11→    Example: Token("main", color=Color.CYAN)
+    12→    Renders: "\033[96mmain\033[90m" (cyan text, then restore to gray)
+    13→
+    14→TokenSeq: An immutable sequence of Tokens and/or other TokenSeqs
+    15→    Example: TokenSeq((Token("(git:"), Token("main", color=Color.CYAN), Token(")")))
+    16→    Renders: "(git:\033[96mmain\033[90m)"
+    17→
+    18→Immutability
+    19→------------
+    20→Both Token and TokenSeq are immutable (frozen dataclasses). Operations like add() and
+    21→extend() return NEW instances rather than modifying existing ones. This prevents
+    22→accidental mutations and makes the code easier to reason about.
+    23→
+    24→Usage Patterns
+    25→--------------
+    26→
+    27→1. Simple colored token:
+    28→    token = Token("main", color=Color.CYAN)
+    29→    print(token.render())  # "\033[96mmain\033[90m"
+    30→
+
+... [237 lines omitted] ...
+  </tool_result>
+  <thinking>Now I can see the issue. Look at `_categorize_check_buckets` on line 838:
+
+```python
+def _categorize_check_buckets(check_contexts: list[dict[str, str]]) -&gt; tuple[int, int, int]:
+    for context in check_contexts:
+        typename = context.get("__typename", "")
+
+        if typename == "CheckRun":
+            conclusion = context.get("conclusion", "")
+            status = context.get("status", "")
+
+            # Map CheckRun states to buckets
+            if conclusion in ("SUCCESS", "NEUTRAL", "SKIPPED"):
+
+
+```
+
+The function maps check run conclusions to pass, fail, and pending buckets, where `SKIPPED` is correctly categorized as a pass. But looking at the actual REST API response structure for check runs, I need to verify how the data is actually being returned. I'm realizing the normalization handles null conclusions by converting them to empty strings, which then falls into the pending bucket. For skipped checks from GitHub's API with `status: "completed"` and `conclusion: "skipped"`, those get normalized to uppercase and should land in the pass bucket. But I'm seeing skipped checks in the UI with a different icon, so there might be something else going on with how those conclusions are being categorized.
+
+Looking at the actual count from the status output—21 passing and 9 failing—I can verify this against the Graphite UI by listing out the individual checks I see marked as passing.
+
+The discrepancy between what's visible on Graphite and the total count suggests the GitHub API is returning check runs from previous attempts or pushes, not just the latest ones. The API likely includes cancelled or failed runs from earlier commits, which would explain why the fail count is higher than what appears on the page. I'm realizing the REST API returns all check runs for a commit without deduplication, so if workflows were rerun or multiple runs happened, there could be duplicate entries with different conclusions. The Graphite UI handles this by showing only the latest run per check name, but the status line code counts everything. I need to deduplicate by check name and keep only the most recent one to get accurate counts—21 plus 9 equals 30 total, which suggests duplicates are inflating the numbers. Let me manually verify the check count from the screenshot to confirm this theory.
+
+Counting through the checks in Graphite...
+
+there are 19 visible ones, but the status line shows 30 total. That 11-check gap matches what I'd expect from duplicate runs. The issue is that the status line isn't deduplicating by check name—when GitHub returns multiple runs for the same check from reruns or workflow retries, they all get counted. Cancelled runs are being bucketed as failures, which inflates the fail count.
+
+The real fix is to deduplicate check runs by name and keep only the latest one per check, since that's what GitHub's own status display does. I should modify `_fetch_check_runs` to handle this deduplication using the timestamp fields to identify the most recent run for each check name.
+
+Alternatively, I could handle the deduplication in `_categorize_check_buckets` instead. Let me work out the best approach.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="19031" cache_read_input_tokens="34385" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19031}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Found it. Look at `_categorize_check_buckets` (line 838) and `_fetch_check_runs` (line 510).
+
+The problem is that the GitHub REST API (`/commits/{ref}/check-runs`) returns **all** check runs for a commit, including duplicates from re-runs and superseded workflow attempts. The status line counts them all without deduplication.
+
+On Graphite, you have ~19 unique checks (17 green + 2 skipped). But the status line sees 30 total (21 + 9) because it's also counting old/cancelled runs from previous CI attempts. `CANCELLED` conclusions are bucketed as failures (line 861):
+
+```python
+elif conclusion in ("FAILURE", "TIMED_OUT", "ACTION_REQUIRED", "CANCELLED"):
+    fail_count += 1
+```
+
+The fix is to deduplicate check runs by name, keeping only the latest one. Want me to fix it?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="19031" cache_read_input_tokens="34385" output_tokens="2366" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 19031, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>yes plan fix</user>
+  <assistant>
+
+Let me explore the codebase to understand the full picture before planning the fix.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="57100" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 57100}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01As7vAJXaKMvz1Vqh4jAuuK">
+    <param name="description">Explore check run dedup logic</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1100 chars]...e best dedup strategy would be (by name, keeping latest by started_at or just last entry).</param>
+    <param name="model">haiku</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="57100" cache_read_input_tokens="0" output_tokens="470" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 57100, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01As7vAJXaKMvz1Vqh4jAuuK">
+Now let me compile a comprehensive report based on my findings. Let me create a summary document:
+
+## Investigation Report: Check Run Fetching and Deduplication in erk-statusline
+
+Based on my thorough investigation of the erk-statusline package, here are my findings:
+
+### 1. **Current Check Context Structure**
+
+The `_fetch_check_runs` function (lines 510-595 in statusline.py) returns a `list[dict[str, str]]` where each dict has this structure:
+
+```python
+{
+    "__typename": "CheckRun",
+    "conclusion": "SUCCESS" | "FAILURE" | "CANCELLED" | "TIMED_OUT" | "ACTION_REQUIRED" | "NEUTRAL" | "SKIPPED" | "",
+    "status": "COMPLETED" | "IN_PROGRESS" | "QUEUED" | "PENDING" | "WAITING" | "",
+    "name": "test-suite-name"
+}
+```
+
+**Current extraction logic (lines 555-563):**
+```python
+check_contexts.append(
+    {
+        "__typename": "CheckRun",
+        "conclusion": (run.get("conclusion") or "").upper(),
+        "status": (run.get("status") or "").upper(),
+        "name": run.get("name", ""),
+    }
+)
+```
+
+... [163 lines omitted] ...
+
+- A single failing test might appear as multiple failures if it was re-run
+- CheckRun with FAILURE → counts as fail
+    # FAILURE, TIMED_OUT, ACTION_REQUIRED, CANCELLED → fail
+    # FAILURE, ERROR → fail
+    "conclusion": "success" | "failure" | "cancelled" | "timed_out" | "action_required" | null,
+                "conclusion": "failure",
+  </tool_result>
+  <assistant>
+
+Good exploration. Now let me look at the key test file to understand the exact test patterns before designing the fix.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2764" cache_read_input_tokens="57100" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2764}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UD7vNXo6sprP2Ufa4yMS5Q">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-statusline/tests/test_statusline.py</param>
+    <param name="limit">100</param>
+    <param name="offset">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2764" cache_read_input_tokens="57100" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2764}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UD7vNXo6sprP2Ufa4yMS5Q">
+     1→"""Tests for statusline.py GitHub integration."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import json
+     6→import os
+     7→import tempfile
+     8→import time
+     9→from pathlib import Path
+    10→from unittest.mock import MagicMock, patch
+    11→
+    12→from erk_shared.gateway.branch_manager.fake import FakeBranchManager
+    13→from erk_shared.gateway.branch_manager.types import PrInfo
+    14→from erk_shared.gateway.git.abc import WorktreeInfo
+    15→from erk_shared.gateway.git.fake import FakeGit
+    16→from erk_shared.gateway.github.fake import FakeGitHub
+    17→from erk_shared.gateway.graphite.fake import FakeGraphite
+    18→from erk_statusline.context import StatuslineContext
+    19→from erk_statusline.statusline import (
+    20→    CACHE_TTL_SECONDS,
+    21→    GitHubData,
+    22→    PRDetailsResult,
+    23→    RepoInfo,
+    24→    _categorize_check_buckets,
+    25→    _fetch_check_runs,
+    26→    _fetch_pr_details,
+    27→    _fetch_review_thread_counts,
+    28→    _get_cache_path,
+    29→    _get_cached_pr_info,
+    30→    _parse_github_repo_from_url,
+
+... [70 lines omitted] ...
+
+    71→    def test_checkrun_failure_counts_as_fail(self) -&gt; None:
+    72→        """CheckRun with FAILURE conclusion should count as fail."""
+    76→                "conclusion": "FAILURE",
+  </tool_result>
+  <tool_use name="Read" id="toolu_019u3jHf4vbyzJw29fvxjF7o">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-statusline/tests/test_statusline.py</param>
+    <param name="limit">80</param>
+    <param name="offset">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1471" cache_read_input_tokens="59864" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1471, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019u3jHf4vbyzJw29fvxjF7o">
+   100→        contexts = [
+   101→            {
+   102→                "__typename": "CheckRun",
+   103→                "conclusion": "SUCCESS",
+   104→                "status": "COMPLETED",
+   105→                "name": "test1",
+   106→            },
+   107→            {"__typename": "CheckRun", "conclusion": "", "status": "IN_PROGRESS", "name": "test2"},
+   108→            {
+   109→                "__typename": "CheckRun",
+   110→                "conclusion": "FAILURE",
+   111→                "status": "COMPLETED",
+   112→                "name": "test3",
+   113→            },
+   114→        ]
+   115→        result = _categorize_check_buckets(contexts)
+   116→        assert result == (1, 1, 1)
+   117→
+   118→
+   119→class TestGetRepoInfo:
+   120→    """Test GitHubData to RepoInfo conversion."""
+   121→
+   122→    def test_none_input_returns_empty_repo_info(self) -&gt; None:
+   123→        """None input should return empty RepoInfo."""
+   124→        result = get_repo_info(None)
+   125→        assert result == RepoInfo(
+   126→            owner="",
+   127→            repo="",
+   128→            pr_number="",
+   129→            pr_url="",
+
+... [50 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have a clear picture. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1215" cache_read_input_tokens="61335" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1215}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01Ax95PZ5yQ9aGrHSUvo69Ty">
+    <param name="file_path">/Users/schrockn/.claude/plans/dynamic-sprouting-cupcake.md</param>
+    <param name="content"># Fix: Statusline counting stale check runs as failures
+
+## Context
+
+The statusline shows ...[truncated 2308 chars]...s | length'` vs `jq '[.check_runs[].name] | unique | length'` to confirm duplicates exist
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1215" cache_read_input_tokens="61335" output_tokens="808" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1215, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ax95PZ5yQ9aGrHSUvo69Ty">
+File created successfully at: /Users/schrockn/.claude/plans/dynamic-sprouting-cupcake.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01QVy4qfjS2x6teTxrt8XTxb">
+    <param name="plan"># Fix: Statusline counting stale check runs as failures
+
+## Context
+
+The statusline shows ...[truncated 2308 chars]...s | length'` vs `jq '[.check_runs[].name] | unique | length'` to confirm duplicates exist
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="847" cache_read_input_tokens="62550" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 847, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QVy4qfjS2x6teTxrt8XTxb">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/dynamic-sprouting-cupcake.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: Statusline counting stale check runs as failures
+Current context: (wt:erk-slot-60) (br:plnd/add-ref-current-dispatch-03-02-0737) (pr:#8617)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/add-"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 45b23513-2b84-4b0f-8f23-26cfecd9ce99 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+## Fix: Statusline counting stale check runs as failures
+
+### Context
+
+The statusline shows `chks:[✅:21 🚫:9]` even though all checks are green on Graphite. The GitHub REST API endpoint (`/commits/{ref}/check-runs`) returns **all** check runs for a commit, including duplicates from re-runs and superseded workflow attempts. The statusline counts every run without deduplication, so old cancelled/failed runs inflate the fail count.
+
+Graphite deduplicates by check name (showing only the latest). The statusline should do the same.
+
+### Plan
+
+**1. Add deduplication in `_fetch_check_runs`**
+
+File: `packages/erk-statusline/src/erk_statusline/statusline.py`
+
+After building `check_contexts` from raw runs, deduplicate by `name`, keeping only the first occurrence per name. The GitHub API returns runs in reverse chronological order (newest first), so first = most recent.
+
+**2. Add tests for deduplication**
+
+File: `packages/erk-statusline/tests/test_statusline.py`
+
+Test cases: duplicate names with different conclusions, mixed dupes + unique, all unique.
+
+### Verification
+
+Run statusline unit tests, then manually verify duplicate count via `gh api`.
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="63397" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 651}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01PJFV21fSb794YHbyiEAqiF">
+    <param name="questions">[{'question': 'Fix: Statusline counting stale check runs as failures\nCurrent context: (wt...[truncated 491 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="63397" output_tokens="547" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 651, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PJFV21fSb794YHbyiEAqiF">
+User has answered your questions: "Fix: Statusline counting stale check runs as failures
+Current context: (wt:erk-slot-60) (br:plnd/add-ref-current-dispatch-03-02-0737) (pr:#8617)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_016CvXXTzwTJd6V9dwJA3PM7">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1005" cache_read_input_tokens="64048" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1005, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016CvXXTzwTJd6V9dwJA3PM7">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="45b23513-2b84-4b0f-8f23-26cfecd9ce99" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "45b23513-2b84-4b0f-8f23-26cfecd9ce99" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "45b23513-2b84-4b0f-8f23-26cfecd9ce99" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "45b23513-2b84-4b0f-8f23-26cfecd9ce99" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "45b23513-2b84-4b0f-8f23-26cfecd9ce99" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>The user chose "Create a plan PR" so I need to follow the /erk:plan-save skill instructions. Let me work through the steps.
+
+Step 1: Parse Arguments - No flags provided, so PLAN_TYPE_FLAG and OBJECTIVE_FLAG are empty.
+
+Step 2: Generate Branch Slug from the plan title "Fix: Statusline counting stale check runs as failures"
+- Branch slug: "fix-statusline-check-dedup"
+
+Step 3: Generate Plan Summary
+- The statusline incorrectly counts stale/cancelled check runs from GitHub's REST API as failures, inflating the fail count. Deduplicates check runs by name in _fetch_check_runs, keeping only the most recent run per check name.
+
+
+- Now I'm executing the save command to create the plan PR with these details.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2615" cache_read_input_tokens="65053" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2615}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll save this plan as a draft PR. Let me work through the steps.
+
+**Branch slug:** `fix-statusline-check-dedup`
+
+**Summary:** The statusline incorrectly counts stale and cancelled check runs from GitHub REST API as failures, inflating the fail count. This adds deduplication by check name in _fetch_check_runs, keeping only the most recent run per check.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2615" cache_read_input_tokens="65053" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2615}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WrgEgyJhv5f7Pb5TywCX6T">
+    <param name="command">erk exec plan-save --format json --session-id="45b23513-2b84-4b0f-8f23-26cfecd9ce99" --bra...[truncated 168 chars]...plication by check name in _fetch_check_runs, keeping only the most recent run per check."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2615" cache_read_input_tokens="65053" output_tokens="521" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2615, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WrgEgyJhv5f7Pb5TywCX6T">
+{"success": true, "plan_number": 8619, "plan_url": "https://github.com/dagster-io/erk/pull/8619", "title": "[erk-plan] Fix: Statusline counting stale check runs as failures", "branch_name": "plnd/fix-statusline-check-dedup-03-02-0912", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.erk/scratch/sessions/45b23513-2b84-4b0f-8f23-26cfecd9ce99/plan_snapshots/000001-04d9a2c7"}
+  </tool_result>
+  <assistant>Now let me push the planning session and get the session file path.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="796" cache_read_input_tokens="67668" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 796}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DARyisd1MHLAodry8qaGcb">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="796" cache_read_input_tokens="67668" output_tokens="120" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 796, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DARyisd1MHLAodry8qaGcb">
+SESSION_ID=45b23513-2b84-4b0f-8f23-26cfecd9ce99
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-60/45b23513-2b84-4b0f-8f23-26cfecd9ce99.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01VY1MQrWjoEjoDWyosfs5Zt">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn--er...[truncated 86 chars]...4b0f-8f23-26cfecd9ce99" --stage planning --source local --plan-id 8619 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="328" cache_read_input_tokens="68464" output_tokens="222" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 328, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VY1MQrWjoEjoDWyosfs5Zt">
+{"uploaded": true, "plan_id": 8619, "session_branch": "async-learn/8619", "session_id": "45b23513-2b84-4b0f-8f23-26cfecd9ce99", "stage": "planning", "files": ["planning-45b23513-2b84-4b0f-8f23-26cfecd9ce99-45b23513-2b84-4b0f-8f23-26cfecd9ce99.xml"]}
+  </tool_result>
+  <assistant>Plan **"Fix: Statusline counting stale check runs as failures"** saved as draft PR **#8619**
+
+URL: https://github.com/dagster-io/erk/pull/8619
+
+**Next steps:**
+
+View PR: https://github.com/dagster-io/erk/pull/8619
+
+In Claude Code:
+- Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+  - Local: `erk br co --for-plan 8619`
+  - Implement: `source "$(erk br co --for-plan 8619 --script)" &amp;&amp; erk implement --dangerous`
+
+  New slot:
+  - Local: `erk br co --new-slot --for-plan 8619`
+  - Implement: `source "$(erk br co --new-slot --for-plan 8619 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8619`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="68792" output_tokens="259" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 359, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
