@@ -15,6 +15,7 @@ from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     create_metadata_block,
     find_metadata_block,
+    has_metadata_block,
     render_metadata_block,
     replace_metadata_block_in_body,
 )
@@ -51,7 +52,7 @@ class EntityState:
 
     def has(self, key: str) -> bool:
         """Check if a metadata block exists in the body."""
-        return find_metadata_block(self.body, key) is not None
+        return has_metadata_block(self.body, key)
 
 
 def fetch_entity_body(

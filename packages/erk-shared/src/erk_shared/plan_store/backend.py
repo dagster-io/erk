@@ -427,6 +427,23 @@ class PlanBackend(ABC):
         ...
 
     @abstractmethod
+    def ensure_plan_header(self, repo_root: Path, plan_id: str) -> None:
+        """Ensure plan has a plan-header metadata block.
+
+        If the plan already has a plan-header, this is a no-op.
+        If missing, creates a minimal plan-header with required fields
+        (schema_version, created_at, created_by) and injects it.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: Provider-specific identifier
+
+        Raises:
+            RuntimeError: If plan not found
+        """
+        ...
+
+    @abstractmethod
     def post_event(
         self,
         repo_root: Path,

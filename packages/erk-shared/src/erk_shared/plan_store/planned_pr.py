@@ -12,7 +12,9 @@ from pathlib import Path
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.metadata.core import (
+    add_metadata_block,
     find_metadata_block,
+    has_metadata_block,
     render_metadata_block,
     replace_metadata_block_in_body,
 )
@@ -595,6 +597,66 @@ class PlannedPRBackend(PlanBackend):
 
         comment_id = self._github.create_pr_comment(repo_root, pr_number, body)
         return str(comment_id)
+
+    def ensure_plan_header(self, repo_root: Path, plan_id: str) -> None:
+        """Ensure plan has a plan-header metadata block.
+
+        If the plan already has a plan-header, this is a no-op.
+        If missing, creates a minimal plan-header with required fields
+        (schema_version, created_at, created_by) and injects it into the PR body.
+
+        Uses the PR's created_at timestamp and author for the metadata fields.
+
+        Args:
+            repo_root: Repository root directory
+            plan_id: PR number as string
+
+        Raises:
+            RuntimeError: If PR not found
+        """
+        pr_number = int(plan_id)
+        result = self._github.get_pr(repo_root, pr_number)
+        if isinstance(result, PRNotFound):
+            msg = f"PR #{pr_number} not found"
+            raise RuntimeError(msg)
+
+        if has_metadata_block(result.body, "plan-header"):
+            return
+
+        created_at = result.created_at.isoformat()
+        created_by = result.author if result.author else "unknown"
+
+        metadata_body = format_plan_header_body(
+            created_at=created_at,
+            created_by=created_by,
+            worktree_name=None,
+            branch_name=result.head_ref_name,
+            plan_comment_id=None,
+            last_dispatched_run_id=None,
+            last_dispatched_node_id=None,
+            last_dispatched_at=None,
+            last_local_impl_at=None,
+            last_local_impl_event=None,
+            last_local_impl_session=None,
+            last_local_impl_user=None,
+            last_remote_impl_at=None,
+            last_remote_impl_run_id=None,
+            last_remote_impl_session_id=None,
+            source_repo=None,
+            objective_issue=None,
+            created_from_session=None,
+            created_from_workflow_run_url=None,
+            last_learn_session=None,
+            last_learn_at=None,
+            learn_status=None,
+            learn_plan_issue=None,
+            learn_plan_pr=None,
+            learned_from_issue=None,
+            lifecycle_stage=None,
+        )
+
+        updated_body = add_metadata_block(result.body, metadata_body)
+        self._github.update_pr_body(repo_root, pr_number, updated_body)
 
     def post_event(
         self,
