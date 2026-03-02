@@ -35,9 +35,71 @@ from erk.cli.help_formatter import CommandWithHiddenOptions
 from erk.core.context import ErkContext
 from erk.core.prompt_executor import PromptExecutor
 from erk.core.repo_discovery import ensure_erk_metadata_dir
-from erk_shared.impl_folder import create_impl_folder, get_impl_dir, save_plan_ref
+from erk_shared.context.types import RepoContext
+from erk_shared.impl_folder import create_impl_folder, get_impl_dir, resolve_impl_dir, save_plan_ref
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import PlanNotFound
+
+
+def _execute(
+    ctx: ErkContext,
+    *,
+    repo: RepoContext,
+    submit: bool,
+    dangerous: bool,
+    script: bool,
+    no_interactive: bool,
+    verbose: bool,
+    model: str | None,
+    executor: PromptExecutor,
+) -> None:
+    """Execute implementation in current directory (impl-context must already exist).
+
+    Callers must handle dry-run before calling this function.
+
+    Args:
+        ctx: Erk context
+        repo: RepoContext from discover_repo_context
+        submit: Whether to auto-submit PR after implementation
+        dangerous: Whether to skip permission prompts
+        script: Whether to output activation script
+        no_interactive: Whether to execute non-interactively
+        verbose: Whether to show raw output or filtered output
+        model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
+        executor: Prompt executor for command execution
+    """
+    branch = ctx.git.branch.get_current_branch(ctx.cwd) or "current"
+
+    if script:
+        output_activation_instructions(
+            ctx,
+            wt_path=ctx.cwd,
+            branch=branch,
+            script=script,
+            submit=submit,
+            dangerous=dangerous,
+            model=model,
+            target_description="impl-context",
+        )
+    elif no_interactive:
+        commands = build_command_sequence(submit)
+        execute_non_interactive_mode(
+            worktree_path=ctx.cwd,
+            commands=commands,
+            dangerous=dangerous,
+            verbose=verbose,
+            model=model,
+            executor=executor,
+        )
+    else:
+        execute_interactive_mode(
+            ctx,
+            repo_root=repo.root,
+            worktree_path=ctx.cwd,
+            dangerous=dangerous,
+            model=model,
+            executor=executor,
+        )
 
 
 def _show_dry_run_output(
@@ -166,43 +228,17 @@ def _implement_from_issue(
     )
     ctx.console.success(f"✓ Saved plan reference: {plan.url}")
 
-    # Execute based on mode
-    if script:
-        # Script mode - output activation script (stays in current directory)
-        if branch is None:
-            branch = "current"
-        target_description = f"#{plan_number}"
-        output_activation_instructions(
-            ctx,
-            wt_path=ctx.cwd,
-            branch=branch,
-            script=script,
-            submit=submit,
-            dangerous=dangerous,
-            model=model,
-            target_description=target_description,
-        )
-    elif no_interactive:
-        # Non-interactive mode - execute via subprocess
-        commands = build_command_sequence(submit)
-        execute_non_interactive_mode(
-            worktree_path=ctx.cwd,
-            commands=commands,
-            dangerous=dangerous,
-            verbose=verbose,
-            model=model,
-            executor=executor,
-        )
-    else:
-        # Interactive mode - hand off to Claude (never returns)
-        execute_interactive_mode(
-            ctx,
-            repo_root=repo.root,
-            worktree_path=ctx.cwd,
-            dangerous=dangerous,
-            model=model,
-            executor=executor,
-        )
+    _execute(
+        ctx,
+        repo=repo,
+        submit=submit,
+        dangerous=dangerous,
+        script=script,
+        no_interactive=no_interactive,
+        verbose=verbose,
+        model=model,
+        executor=executor,
+    )
 
 
 def _implement_from_file(
@@ -268,43 +304,17 @@ def _implement_from_file(
     # NOTE: We do NOT delete the original plan file. The user may want to
     # reference it or use it again.
 
-    # Execute based on mode
-    if script:
-        # Script mode - output activation script (stays in current directory)
-        if branch is None:
-            branch = "current"
-        target_description = str(plan_file)
-        output_activation_instructions(
-            ctx,
-            wt_path=ctx.cwd,
-            branch=branch,
-            script=script,
-            submit=submit,
-            dangerous=dangerous,
-            model=model,
-            target_description=target_description,
-        )
-    elif no_interactive:
-        # Non-interactive mode - execute via subprocess
-        commands = build_command_sequence(submit)
-        execute_non_interactive_mode(
-            worktree_path=ctx.cwd,
-            commands=commands,
-            dangerous=dangerous,
-            verbose=verbose,
-            model=model,
-            executor=executor,
-        )
-    else:
-        # Interactive mode - hand off to Claude (never returns)
-        execute_interactive_mode(
-            ctx,
-            repo_root=repo.root,
-            worktree_path=ctx.cwd,
-            dangerous=dangerous,
-            model=model,
-            executor=executor,
-        )
+    _execute(
+        ctx,
+        repo=repo,
+        submit=submit,
+        dangerous=dangerous,
+        script=script,
+        no_interactive=no_interactive,
+        verbose=verbose,
+        model=model,
+        executor=executor,
+    )
 
 
 @alias("impl")
@@ -387,23 +397,45 @@ def implement(
         script=script,
     )
 
-    # Auto-detect plan number from branch name when TARGET is omitted
+    # Auto-detect from impl-context or branch name when TARGET is omitted
     if target is None:
-        # Extract plan number from current branch
+        current_branch = ctx.git.branch.get_current_branch(ctx.cwd)
+
+        # Strategy 1: Check existing .erk/impl-context/
+        impl_dir = resolve_impl_dir(ctx.cwd, branch_name=current_branch)
+        if impl_dir is not None and (impl_dir / "plan.md").exists():
+            user_output(f"Auto-detected impl-context at {impl_dir.relative_to(ctx.cwd)}")
+            if dry_run:
+                user_output("Would execute implementation from existing impl-context")
+                return
+            repo = discover_repo_context(ctx, ctx.cwd)
+            _execute(
+                ctx,
+                repo=repo,
+                submit=submit,
+                dangerous=dangerous,
+                script=script,
+                no_interactive=no_interactive,
+                verbose=verbose,
+                model=model,
+                executor=ctx.prompt_executor,
+            )
+            return
+
+        # Strategy 2: Extract plan number from GitHub PR
         detected_plan = extract_plan_from_current_branch(ctx)
-        if detected_plan is None:
-            current_branch = ctx.git.branch.get_current_branch(ctx.cwd) or "unknown"
+        if detected_plan is not None:
+            target = detected_plan
+            user_output(f"Auto-detected plan #{target} from branch")
+        else:
+            branch_display = current_branch or "unknown"
             raise click.ClickException(
-                f"Could not auto-detect plan number from branch '{current_branch}'.\n\n"
-                f"No plan-ref.json found. Either:\n"
+                f"Could not auto-detect plan from branch '{branch_display}'.\n\n"
+                f"No impl-context or plan PR found. Either:\n"
                 f"  1. Provide TARGET explicitly: erk implement <TARGET>\n"
                 f"  2. Switch to a plan branch: erk pr co <plan>\n"
-                f"  3. Set up impl first: erk exec setup-impl --plan <plan>"
+                f"  3. Set up impl first: erk exec setup-impl --issue <plan>"
             )
-
-        # Use detected plan number as target
-        target = detected_plan
-        user_output(f"Auto-detected plan #{target} from branch name")
 
     # Detect target type
     target_info = detect_target_type(target)
