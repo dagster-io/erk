@@ -12,8 +12,9 @@ from pathlib import Path
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.metadata.core import (
+    add_metadata_block,
     find_metadata_block,
-    inject_metadata_block_before_footer,
+    has_metadata_block,
     render_metadata_block,
     replace_metadata_block_in_body,
 )
@@ -619,8 +620,7 @@ class PlannedPRBackend(PlanBackend):
             msg = f"PR #{pr_number} not found"
             raise RuntimeError(msg)
 
-        existing_block = find_metadata_block(result.body, "plan-header")
-        if existing_block is not None:
+        if has_metadata_block(result.body, "plan-header"):
             return
 
         created_at = result.created_at.isoformat()
@@ -655,7 +655,7 @@ class PlannedPRBackend(PlanBackend):
             lifecycle_stage=None,
         )
 
-        updated_body = inject_metadata_block_before_footer(result.body, metadata_body)
+        updated_body = add_metadata_block(result.body, metadata_body)
         self._github.update_pr_body(repo_root, pr_number, updated_body)
 
     def post_event(

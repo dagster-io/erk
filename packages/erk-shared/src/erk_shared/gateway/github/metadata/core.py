@@ -622,6 +622,19 @@ def find_metadata_block(text: str, key: str) -> MetadataBlock | None:
     return None
 
 
+def has_metadata_block(text: str, key: str) -> bool:
+    """Check whether a metadata block with the given key exists.
+
+    Args:
+        text: Markdown text to search.
+        key: The metadata block key to look for.
+
+    Returns:
+        True if the block exists, False otherwise.
+    """
+    return find_metadata_block(text, key) is not None
+
+
 def extract_metadata_value(
     text: str,
     key: str,
@@ -689,17 +702,14 @@ def replace_metadata_block_in_body(
     return re.sub(pattern, new_block_content, body, flags=re.DOTALL)
 
 
-def inject_metadata_block_before_footer(
+def add_metadata_block(
     body: str,
     rendered_block: str,
 ) -> str:
-    """Inject a rendered metadata block into a body, before the footer separator.
+    """Add a rendered metadata block to an entity body.
 
-    If the body contains a footer separator (``\\n---\\n``), the block is
-    inserted just before the last occurrence. Otherwise the block is appended.
-
-    This is the generic injection logic used by ensure_*_header methods
-    to add a header block to an entity body that was created without one.
+    Inserts the block before the last footer separator (``\\n---\\n``)
+    if one exists, otherwise appends it.
 
     Args:
         body: The current entity body (PR body, issue body, etc.)
@@ -707,7 +717,7 @@ def inject_metadata_block_before_footer(
             (from ``render_metadata_block()``)
 
     Returns:
-        Updated body with the block injected.
+        Updated body with the block added.
     """
     footer_separator = "\n---\n"
     footer_idx = body.rfind(footer_separator)

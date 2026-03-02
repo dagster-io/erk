@@ -33,7 +33,7 @@ from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     extract_metadata_value,
     extract_raw_metadata_blocks,
-    find_metadata_block,
+    has_metadata_block,
     replace_metadata_block_in_body,
 )
 from erk_shared.gateway.github.metadata.roadmap import (
@@ -738,7 +738,7 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
 
     # Recover plan-header if missing from existing PR body
     recovered_header = None
-    header_missing = find_metadata_block(existing_pr_body, "plan-header") is None
+    header_missing = not has_metadata_block(existing_pr_body, "plan-header")
     if header_missing and state.plan_context is not None:
         recovered_header = recover_plan_header(
             ctx, repo_root=state.repo_root, plan_id=state.plan_context.plan_id
