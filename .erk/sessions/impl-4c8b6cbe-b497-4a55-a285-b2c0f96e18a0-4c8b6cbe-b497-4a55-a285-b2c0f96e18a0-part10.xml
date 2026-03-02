@@ -1,0 +1,202 @@
+<session>
+  <meta source="agent-af1bb08" />
+  <meta branch="plnd/add-dispatch-ref-flag-03-02-0931" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Read these files and report on terminology changes:
+1. `src/erk/cli/commands/exec/scripts/track_learn_result.py` - Look for --learn-plan flag (around line 76)
+2. `src/erk/cli/commands/exec/scripts/impl_signal.py` - Look for error codes: missing-learn-plan, unexpected-learn-plan, no-plan-reference, plan-not-found (around lines 191, 304, 383, 408)
+3. Report exact flag names and error code strings found at those locations.</user>
+  <assistant>I'll search for the terminology changes in those files, starting with reading the relevant documentation and then examining the files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18587" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18587, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011xjcKG13TP8L8ghN2e1UpQ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18587" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18587, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AEbxHS4JHAGzUsYPCDetFC">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/impl_signal.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18587" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18587, 'ephemeral_1h_input_tokens': 0}" output_tokens="175" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011xjcKG13TP8L8ghN2e1UpQ">
+     1→"""Track learn workflow result on a plan.
+     2→
+     3→This exec script updates the plan-header metadata block to record the result
+     4→of a learn workflow. It sets the learn_status field and optionally records
+     5→the learn_plan_issue if a plan was created.
+     6→
+     7→Usage:
+     8→    erk exec track-learn-result --plan-id 123 --status completed_no_plan
+     9→    erk exec track-learn-result --plan-id 123 --status completed_with_plan --learn-plan 456
+    10→
+    11→Output:
+    12→    JSON object with tracking result:
+    13→    {
+    14→        "success": true,
+    15→        "plan_id": "123",
+    16→        "learn_status": "completed_no_plan"
+    17→    }
+    18→
+    19→Exit Codes:
+    20→    0: Success
+    21→    1: Error (invalid issue, GitHub failure, validation error, etc.)
+    22→"""
+    23→
+    24→import json
+    25→from dataclasses import asdict, dataclass
+    26→
+    27→import click
+    28→
+    29→from erk_shared.context.helpers import require_plan_backend, require_repo_root
+    30→from erk_shared.gateway.github.metadata.schemas import LearnStatusValue
+
+... [171 lines omitted] ...
+
+    31→from erk_shared.plan_store.types import PlanHeaderNotFoundError
+    46→class TrackLearnResultError:
+    47→    """Error result when tracking fails."""
+    50→    error: str
+   102→        error = TrackLearnResultError(
+   104→            error="missing-learn-plan",
+   107→        click.echo(json.dumps(asdict(error)))
+   112→        error = TrackLearnResultError(
+   114→            error="unexpected-learn-plan",
+   117→        click.echo(json.dumps(asdict(error)))
+   122→        error = TrackLearnResultError(
+   124→            error="missing-plan-pr",
+   127→        click.echo(json.dumps(asdict(error)))
+   132→        error = TrackLearnResultError(
+   134→            error="unexpected-learn-plan",
+   137→        click.echo(json.dumps(asdict(error)))
+   142→        error = TrackLearnResultError(
+   144→            error="unexpected-plan-pr",
+   147→        click.echo(json.dumps(asdict(error)))
+   168→    except PlanHeaderNotFoundError:
+   169→        error = TrackLearnResultError(
+   171→            error="no-metadata-block",
+   176→        click.echo(json.dumps(asdict(error)), err=True)
+   178→    except RuntimeError as e:
+   179→        error = TrackLearnResultError(
+   181→            error="github-api-failed",
+   182→            message=f"Failed to update learn status on plan {plan_id}: {e}",
+   184→        click.echo(json.dumps(asdict(error)), err=True)
+  </tool_result>
+  <tool_result tool="toolu_01AEbxHS4JHAGzUsYPCDetFC">
+     1→"""Signal implementation events (started/ended/submitted) to GitHub.
+     2→
+     3→This exec command wraps the start/end/submit signaling operations:
+     4→- "started": Posts start comment and marks implementation as started
+     5→- "ended": Marks implementation as ended
+     6→- "submitted": Sets lifecycle_stage to "impl" after PR submission
+     7→
+     8→Provides a single entry point for /erk:plan-implement to signal events
+     9→with graceful failure (always exits 0 for || true pattern).
+    10→
+    11→Usage:
+    12→    erk exec impl-signal started
+    13→    erk exec impl-signal ended
+    14→    erk exec impl-signal submitted
+    15→
+    16→Output:
+    17→    JSON with success status or error information
+    18→    Always exits with code 0 (graceful degradation for || true pattern)
+    19→
+    20→Exit Codes:
+    21→    0: Always (even on error, to support || true pattern)
+    22→
+    23→Examples:
+    24→    $ erk exec impl-signal started
+    25→    {"success": true, "event": "started", "plan_number": 123}
+    26→
+    27→    $ erk exec impl-signal ended
+    28→    {"success": true, "event": "ended", "plan_number": 123}
+    29→
+    30→    $ erk exec impl-signal submitted
+
+... [430 lines omitted] ...
+
+    70→class SignalError:
+    71→    """Error response for signal command."""
+    75→    error_type: str
+    79→def _output_error(event: str, error_type: str, message: str) -&gt; None:
+    80→    """Output error JSON and exit gracefully."""
+    81→    result = SignalError(
+    84→        error_type=error_type,
+   103→        True if file was deleted, False if not found or error.
+   141→    except subprocess.CalledProcessError:
+   158→    except subprocess.CalledProcessError:
+   168→        _output_error(
+   181→        _output_error(event, "context-not-initialized", "Context not initialized")
+   191→        _output_error(event, "no-plan-reference", "No plan reference found")
+   202→        _output_error(event, "context-not-initialized", "Context not initialized")
+   208→        _output_error(event, "worktree-detection-failed", "Could not determine worktree name")
+   213→        _output_error(event, "branch-detection-failed", "Could not determine branch name")
+   229→    except (FileNotFoundError, ValueError) as e:
+   230→        _output_error(event, "local-state-write-failed", f"Failed to write local state: {e}")
+   237→        _output_error(event, "context-not-initialized", "Context not initialized")
+   272→    except RuntimeError as e:
+   273→        _output_error(event, "github-api-failed", f"Failed to post event: {e}")
+   294→        _output_error(event, "context-not-initialized", "Context not initialized")
+   304→        _output_error(event, "no-plan-reference", "No plan reference found")
+   311→        _output_error(event, "context-not-initialized", "Context not initialized")
+   327→    except (FileNotFoundError, ValueError) as e:
+   328→        _output_error(event, "local-state-write-failed", f"Failed to write local state: {e}")
+   335→        _output_error(event, "context-not-initialized", "Context not initialized")
+   351→    except RuntimeError as e:
+   352→        _output_error(event, "github-api-failed", f"Failed to update metadata: {e}")
+   373→        _output_error(event, "context-not-initialized", "Context not initialized")
+   383→        _output_error(event, "no-plan-reference", "No plan reference found")
+   390→        _output_error(event, "context-not-initialized", "Context not initialized")
+   397→        _output_error(event, "context-not-initialized", "Context not initialized")
+   408→        _output_error(event, "plan-not-found", f"Plan #{plan_ref.plan_id} not found")
+   414→    except RuntimeError as e:
+   415→        _output_error(event, "github-api-failed", f"Failed to update metadata: {e}")
+  </tool_result>
+  <assistant>Perfect! I have found all the terminology changes requested. Here's my report:
+
+## Terminology Changes Report
+
+### 1. `track_learn_result.py` - Flag Names (line 76)
+
+**Flag Name:** `--learn-plan`
+- **Location:** Line 76 in the `@click.option` decorator
+- **Usage:** Required when status is `completed_with_plan`
+- **Type:** Integer (plan number)
+
+### 2. `impl_signal.py` - Error Code Strings
+
+Found the following error codes at the specified locations:
+
+**Line 191 (in `_signal_started` function):**
+- Error code: `"no-plan-reference"`
+- Message: "No plan reference found"
+
+**Line 304 (in `_signal_ended` function):**
+- Error code: `"no-plan-reference"`
+- Message: "No plan reference found"
+
+**Line 383 (in `_signal_submitted` function):**
+- Error code: `"no-plan-reference"`
+- Message: "No plan reference found"
+
+**Line 408 (in `_signal_submitted` function):**
+- Error code: `"plan-not-found"`
+- Message: "Plan #{plan_id} not found"
+
+### Additional Error Codes Found in `track_learn_result.py`
+
+For completeness, the error codes in `track_learn_result.py` around the requested region are:
+- **Line 104:** `"missing-learn-plan"`
+- **Line 114:** `"unexpected-learn-plan"`
+- **Line 124:** `"missing-plan-pr"`
+- **Line 144:** `"unexpected-plan-pr"`
+
+### Summary
+
+The terminology appears consistent:
+- The flag uses underscores: `--learn-plan`
+- Error codes use hyphens and are descriptive: `missing-learn-plan`, `unexpected-learn-plan`, `no-plan-reference`, `plan-not-found`
+- The terminology is consistent with kebab-case naming conventions for CLI flags and error codes</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="9036" cache_read_input_tokens="18587" cache_creation="{'ephemeral_5m_input_tokens': 9036, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

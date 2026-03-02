@@ -1,0 +1,132 @@
+<session>
+  <meta source="agent-a817b4e" />
+  <meta branch="plnd/add-dispatch-ref-flag-03-02-0931" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Read these files and report key patterns:
+1. `src/erk/tui/commands/types.py` - Look for the `launch_key` field on CommandDefinition (around line 60)
+2. `src/erk/tui/commands/registry.py` - Look for all launch_key assignments (around lines 230-260) and the _key_to_command_id dict construction
+3. Report the exact current launch key assignments for both plan view and objective view commands</user>
+  <assistant>I'll help you find the launch key patterns in the TUI commands. Let me start by reading the relevant files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18566" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18566, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01P9mQhL1KdinJkTq7iN5tug">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/commands/types.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18566" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18566, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01M7kzZwrbvhQ7ginZyaBWGi">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/commands/registry.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18566" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18566, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01P9mQhL1KdinJkTq7iN5tug">
+     1→"""Data types for command palette."""
+     2→
+     3→from collections.abc import Callable
+     4→from dataclasses import dataclass
+     5→from enum import Enum, auto
+     6→
+     7→from erk.tui.data.types import PlanRowData
+     8→from erk.tui.views.types import ViewMode
+     9→
+    10→
+    11→class CommandCategory(Enum):
+    12→    """Category of a command in the command palette.
+    13→
+    14→    Used to determine the emoji prefix displayed in the palette.
+    15→    """
+    16→
+    17→    ACTION = auto()  # ⚡ Mutative operations
+    18→    OPEN = auto()  # 🔗 Browser navigation
+    19→    COPY = auto()  # 📋 Clipboard operations
+    20→
+    21→
+    22→@dataclass(frozen=True)
+    23→class CommandContext:
+    24→    """Context available to commands.
+    25→
+    26→    Attributes:
+    27→        row: The plan row data for the selected plan
+    28→        view_mode: The active view mode (plans, learn, objectives)
+    29→    """
+    30→
+
+... [38 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01M7kzZwrbvhQ7ginZyaBWGi">
+     1→"""Command registry for command palette.
+     2→
+     3→This module defines all available commands and their availability predicates.
+     4→Commands are organized by category: Actions, Opens, Copies.
+     5→Plan commands appear only in Plans/Learn views; objective commands appear only in Objectives view.
+     6→"""
+     7→
+     8→from erk.tui.commands.types import CommandCategory, CommandContext, CommandDefinition
+     9→from erk.tui.views.types import ViewMode
+    10→
+    11→CATEGORY_EMOJI: dict[CommandCategory, str] = {
+    12→    CommandCategory.ACTION: "⚡",
+    13→    CommandCategory.OPEN: "🔗",
+    14→    CommandCategory.COPY: "📋",
+    15→}
+    16→
+    17→
+    18→# === View Mode Predicates ===
+    19→
+    20→
+    21→def _is_plan_view(ctx: CommandContext) -&gt; bool:
+    22→    """True when not in Objectives view (i.e., Plans or Learn)."""
+    23→    return ctx.view_mode != ViewMode.OBJECTIVES
+    24→
+    25→
+    26→def _is_objectives_view(ctx: CommandContext) -&gt; bool:
+    27→    """True when in Objectives view."""
+    28→    return ctx.view_mode == ViewMode.OBJECTIVES
+    29→
+    30→
+
+... [526 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! I found the exact patterns you're looking for. Here's a comprehensive report on the launch key assignments:
+
+## Current Launch Key Assignments
+
+### Plan View Commands (lines 203-279)
+Plan view uses these launch keys for ACTION commands:
+
+| Command ID | Launch Key | Name | View |
+|------------|-----------|------|------|
+| `close_plan` | **`c`** | Close Plan | Plans/Learn |
+| `dispatch_to_queue` | **`d`** | Dispatch to Queue | Plans/Learn |
+| `land_pr` | **`l`** | Land PR | Plans/Learn |
+| `rebase_remote` | **`r`** | Rebase Remote | Plans/Learn |
+| `address_remote` | **`a`** | Address Remote | Plans/Learn |
+| `rewrite_remote` | **`w`** | Rewrite Remote | Plans/Learn |
+| `cmux_sync` | **`m`** | cmux sync | Plans/Learn |
+
+### Objective View Commands (lines 280-310)
+Objective view uses these launch keys for ACTION commands:
+
+| Command ID | Launch Key | Name | View |
+|------------|-----------|------|------|
+| `one_shot_plan` | **`s`** | Plan (One-Shot) | Objectives |
+| `check_objective` | **`k`** | Check Objective | Objectives |
+| `close_objective` | **`c`** | Close Objective | Objectives |
+
+## Key Pattern Observations
+
+1. **Collision within Objectives view**: Both `close_objective` and `one_shot_plan` want to use different keys, but there's a potential conflict—actually no collision since `one_shot_plan` uses `s` and `close_objective` uses `c`.
+
+2. **No cross-view collisions**: The views are isolated (`_is_plan_view` vs `_is_objectives_view`), so `c` can be used in both contexts without conflict.
+
+3. **Only ACTION commands get launch_keys**: All OPEN (browser) and COPY (clipboard) commands have `launch_key=None` (lines 318-499).
+
+4. **Launch key assignment location**: Lines 209, 219, 229, 241, 251, 261, 271 (plan view) and lines 287, 297, 307 (objective view).
+
+5. **Shortcut vs launch_key distinction**:
+   - `shortcut`: For command palette display (can be duplicated across views)
+   - `launch_key`: Single-key binding for Launch modal (context-aware, view-specific)
+
+The data structure at line 60 in `types.py` defines `launch_key: str | None` as an optional field on `CommandDefinition`.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="9986" cache_read_input_tokens="18566" cache_creation="{'ephemeral_5m_input_tokens': 9986, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

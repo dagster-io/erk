@@ -1,0 +1,199 @@
+<session>
+  <meta source="agent-adb0d32" />
+  <meta branch="plnd/add-dispatch-ref-flag-03-02-0931" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Read these files and report key patterns:
+1. `src/erk/cli/commands/run/list_cmd.py` - Full file, report: PR-centric display pattern, run-name format parsing, WORKFLOW_COMMAND_MAP usage, constants, deduplication pattern
+2. `src/erk/cli/commands/run/shared.py` - Full file, report: extract_pr_number() function, regex pattern used
+3. Report line numbers for each pattern.</user>
+  <assistant>I'll help you analyze those files. Let me start by checking the documentation index, then read the specific files you're asking about.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18565" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18565, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DokCvQaBpRXjGDCGLtQj2e">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18565" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18565, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012Y9VAZT6XC8sV8htvoJM4a">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18565" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18565, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014FQMWLSrS1qMvMS2Pu3RCy">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/run/shared.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18565" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18565, 'ephemeral_1h_input_tokens': 0}" output_tokens="226" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DokCvQaBpRXjGDCGLtQj2e">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_012Y9VAZT6XC8sV8htvoJM4a">
+     1→"""List workflow runs command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→import click
+     6→from rich.console import Console
+     7→from rich.markup import escape as escape_markup
+     8→from rich.table import Table
+     9→
+    10→from erk.cli.commands.pr.list_cmd import format_pr_cell
+    11→from erk.cli.commands.run.shared import extract_plan_number, extract_pr_number
+    12→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+    13→from erk.cli.core import discover_repo_context
+    14→from erk.cli.ensure import Ensure
+    15→from erk.core.context import ErkContext
+    16→from erk.core.display_utils import (
+    17→    format_submission_time,
+    18→    format_workflow_outcome,
+    19→    format_workflow_run_id,
+    20→)
+    21→from erk.core.pr_utils import select_display_pr
+    22→from erk_shared.gateway.github.emoji import format_checks_cell
+    23→from erk_shared.gateway.github.parsing import github_repo_location_from_url
+    24→from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo, WorkflowRun
+    25→from erk_shared.output.output import user_output
+    26→
+    27→_MAX_DISPLAY_RUNS = 50
+    28→_PER_WORKFLOW_LIMIT = 20
+    29→_MAX_TITLE_LENGTH = 50
+    30→
+
+... [167 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014FQMWLSrS1qMvMS2Pu3RCy">
+     1→"""Shared utilities for run commands."""
+     2→
+     3→import re
+     4→
+     5→
+     6→def extract_pr_number(display_title: str | None) -&gt; int | None:
+     7→    """Extract PR number from display_title containing '#NNN'.
+     8→
+     9→    Handles:
+    10→    - "pr-address:#456:abc123" → 456
+    11→    - "8559:#460:abc123" → 460
+    12→    - "one-shot:#458:abc123" → 458
+    13→    - "rebase:#456:abc123" → 456
+    14→    - "8559:abc123" (old format, no #) → None
+    15→    - "Some title [abc123]" (legacy) → None
+    16→    - None or empty → None
+    17→    """
+    18→    if not display_title:
+    19→        return None
+    20→    match = re.search(r"#(\d+)", display_title)
+    21→    if match is None:
+    22→        return None
+    23→    return int(match.group(1))
+    24→
+    25→
+    26→def extract_plan_number(display_title: str | None) -&gt; int | None:
+    27→    """Extract plan number from display_title format '123:abc456'.
+    28→
+    29→    Handles:
+    30→    - New format: "123:abc456" → 123
+
+... [17 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! I've read both files. Let me provide you with a comprehensive report of the key patterns with line numbers:
+
+## Report: Pattern Analysis
+
+### 1. `src/erk/cli/commands/run/list_cmd.py` - Key Patterns
+
+**PR-Centric Display Pattern (Lines 32-184)**
+- Entire function `_list_runs()` implements a PR-centric table view
+- Core design: Runs are grouped and correlated with PRs for unified display
+- The table layout (lines 114-121) structures columns: run-id, status, submitted, workflow, pr, title, chks
+
+**Run-Name Format Parsing (Lines 68-79)**
+- Extracts PR numbers from `display_title` using `extract_pr_number()` (line 73)
+- Falls back to extracting plan numbers using `extract_plan_number()` (line 77)
+- Stores results in `run_pr_numbers` dict (line 69) for efficient lookup
+
+**WORKFLOW_COMMAND_MAP Usage (Lines 42-45)**
+- Iterates over `WORKFLOW_COMMAND_MAP.items()` to get command names and workflow files
+- Maps each workflow file to its registered command name
+- Fetches runs per workflow, limited by `_PER_WORKFLOW_LIMIT` (20 runs per workflow)
+
+**Constants (Lines 27-29)**
+- `_MAX_DISPLAY_RUNS = 50` - maximum runs shown in output
+- `_PER_WORKFLOW_LIMIT = 20` - runs fetched per workflow
+- `_MAX_TITLE_LENGTH = 50` - title truncation threshold (lines 153-154)
+
+**Deduplication Pattern (Lines 47-52)**
+- Uses dict keying by `run.run_id` to deduplicate
+- `seen` dict tracks unique runs across all workflows
+- Final `tagged_runs` list contains deduplicated results
+
+---
+
+### 2. `src/erk/cli/commands/run/shared.py` - Key Patterns
+
+**extract_pr_number() Function (Lines 6-23)**
+- Signature: `def extract_pr_number(display_title: str | None) -&gt; int | None`
+- Input validation (lines 18-19): Returns None if `display_title` is None or empty
+- **Regex Pattern Used (Line 20)**: `r"#(\d+)"`
+  - Matches a literal '#' followed by one or more digits
+  - Captures the digit group for extraction
+- Extraction (lines 21-23): Returns the captured number as int, or None if no match
+
+**Handled Formats (Lines 9-15 docstring):**
+- `"pr-address:#456:abc123"` → 456
+- `"8559:#460:abc123"` → 460
+- `"one-shot:#458:abc123"` → 458
+- `"rebase:#456:abc123"` → 456
+- `"8559:abc123"` (old format, no #) → None
+- `"Some title [abc123]"` (legacy) → None
+
+**extract_plan_number() Function (Lines 26-41)**
+- Signature: `def extract_plan_number(display_title: str | None) -&gt; int | None`
+- Format: Parses `"NUMBER:HASH"` format (colon-separated)
+- Validation (lines 34-40): Checks for colon presence, splits, validates first part is numeric with `.isdigit()`
+- Returns integer plan number or None
+
+---
+
+### Summary Table
+
+| Pattern | File | Lines | Details |
+|---------|------|-------|---------|
+| PR-centric display | list_cmd.py | 32-184 | Entire function builds run→PR table view |
+| WORKFLOW_COMMAND_MAP iteration | list_cmd.py | 42-45 | Fetches runs from each registered workflow |
+| Deduplication by run_id | list_cmd.py | 47-52 | Dict keying on `run.run_id` to eliminate duplicates |
+| Constants | list_cmd.py | 27-29 | MAX_DISPLAY_RUNS, PER_WORKFLOW_LIMIT, MAX_TITLE_LENGTH |
+| extract_pr_number() | shared.py | 6-23 | Regex `#(\d+)` extracts PR number from display_title |
+| Regex pattern | shared.py | 20 | `r"#(\d+)"` matches literal # + digits |
+| extract_plan_number() | shared.py | 26-41 | Colon-split parsing for `"NUMBER:HASH"` format |</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4950" cache_read_input_tokens="18565" cache_creation="{'ephemeral_5m_input_tokens': 4950, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
