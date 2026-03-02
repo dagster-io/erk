@@ -212,7 +212,7 @@ def test_get_bundled_codex_dir_editable_install() -> None:
 
 
 def test_get_bundled_codex_dir_wheel_install() -> None:
-    """Returns erk/data/codex/ for wheel installs."""
+    """Returns erk/data/claude/ for wheel installs (shared path with claude backend)."""
     _get_erk_package_dir.cache_clear()
     get_bundled_codex_dir.cache_clear()
     with patch(
@@ -220,7 +220,7 @@ def test_get_bundled_codex_dir_wheel_install() -> None:
         return_value=Path("/home/user/.venv/lib/python3.11/site-packages/erk"),
     ):
         result = get_bundled_codex_dir()
-        assert result == Path("/home/user/.venv/lib/python3.11/site-packages/erk/data/codex")
+        assert result == Path("/home/user/.venv/lib/python3.11/site-packages/erk/data/claude")
     _get_erk_package_dir.cache_clear()
     get_bundled_codex_dir.cache_clear()
 
