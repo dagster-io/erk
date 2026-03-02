@@ -9,4 +9,4 @@ During the 0.9.4 release, the PR was created with `git push` + `gh pr create` in
 1. Run `gt submit --no-interactive` to register the branch with Graphite and sync the existing PR
 2. Verify `gt pr` opens the PR afterward
 
-No changes to RELEASING.md needed — Step 7 already says `erk pr submit`.
+3. Update RELEASING.md Step 7 to add an emphatic warning against using `git push` + `gh pr create` instead of `erk pr submit`, explaining that raw git/gh commands bypass Graphite tracking
