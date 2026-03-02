@@ -1,0 +1,1429 @@
+<session>
+  <meta branch="plnd/O7813-erk-objective-plan-7-03-01-2108" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 12. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="c2232994-909f-4421-909a-ab9b0b336ab5" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="c2232994-909f-4421-909a-ab9b0b336ab5" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="c2232994-909f-4421-909a-ab9b0b336ab5" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="c2232994-909f-4421-909a-ab9b0b336ab5" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**CRITICAL**: Never delete the impl directory - leave for user review (no auto-commit).
+
+### Step 12: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 13: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement` without any arguments. Let me follow the instructions to set up implementation.
+
+Step 1: Run `erk exec setup-impl` with no arguments since no plan number/URL/file was provided. This will auto-detect from `.erk/impl-context/`, branch, or fail.
+
+The current branch is `plnd/O7813-erk-objective-plan-7-03-01-2108` which looks like a plan branch.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="13307" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13307}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="13307" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13307}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YYufZPDNKR7hFpSUs8H7Wd">
+    <param name="command">erk exec setup-impl</param>
+    <param name="description">Auto-detect and set up implementation from branch</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="13307" cache_read_input_tokens="19113" output_tokens="261" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13307, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YYufZPDNKR7hFpSUs8H7Wd">
+Found existing impl dir for plan #8594, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/.erk/impl-context/plnd--O7813-erk-objective-plan-7-03-01-2108", "plan_number": 8594, "plan_url": "https://github.com/dagster-io/erk/pull/8594", "branch": "plnd/O7813-erk-objective-plan-7-03-01-2108", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8594, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready, reading plan...</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="33155" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 33155}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HyffAwqf2ekURkixB1QKcG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/.erk/impl-context/plnd--O7813-erk-objective-plan-7-03-01-2108/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="33155" cache_read_input_tokens="0" output_tokens="120" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 33155, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HyffAwqf2ekURkixB1QKcG">
+     1→# Add Lightweight Remote Ref Check via `git ls-remote` for Divergence Detection
+     2→
+     3→## Context &amp; Problem
+     4→
+     5→The submit pipeline's Graphite-first flow (`_graphite_first_flow()` in `submit_pipeline.py`) performs a 3-step guard chain before `gt submit` to detect divergence:
+     6→
+     7→1. `branch_exists_on_remote()` — `git ls-remote origin &lt;branch&gt;` (lightweight, queries remote directly)
+     8→2. `fetch_branch()` — `git fetch origin &lt;branch&gt;` (heavy, downloads objects + updates local refs, 120s timeout)
+     9→3. `is_branch_diverged_from_remote()` — `git rev-parse --verify` + 2x `git rev-list --count` (local-only, compares refs)
+    10→
+    11→The `fetch_branch()` step is the bottleneck. It performs a full fetch (downloading objects, updating refs), which is expensive for the common case where the branch hasn't been updated remotely. The objective (#7813) aims to eliminate unnecessary git operations; this node (3.2) adds a lightweight alternative that can detect whether a fetch is even necessary.
+    12→
+    13→## Solution: `get_remote_ref()` Gateway Method
+    14→
+    15→Add a new `get_remote_ref()` method to the `GitRemoteOps` subgateway that runs `git ls-remote` to get the current remote ref SHA without downloading any objects. This enables a fast "has the remote changed?" check: compare the remote SHA from `ls-remote` with the local remote-tracking ref SHA from `git rev-parse`. If they match, the expensive `fetch_branch()` can be skipped entirely.
+    16→
+    17→### Why `GitRemoteOps` (not `GitBranchOps`)
+    18→
+    19→`branch_exists_on_remote()` currently lives on `GitBranchOps` because it checks branch existence (a branch property). The new `get_remote_ref()` is a **remote query operation** — it talks to the remote server to retrieve ref SHAs. This aligns with `GitRemoteOps`'s responsibility (fetch, push, pull — operations that touch remotes). Placing it here follows the decomposition principle: operations that touch the network belong on `remote_ops`.
+    20→
+    21→Note: `branch_exists_on_remote()` on `GitBranchOps` already uses `git ls-remote` internally, and could arguably be on `remote_ops` too, but moving it is out of scope for this plan.
+    22→
+    23→## Changes
+    24→
+    25→### 1. Add `get_remote_ref()` to GitRemoteOps ABC
+    26→
+    27→**File**: `packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py`
+    28→
+    29→Add a new abstract method in the "Query Operations" section (after `get_remote_url()`):
+    30→
+
+... [547 lines omitted] ...
+
+    84→- Returns `None` on any failure (non-zero exit, empty output) — callers should fall back to full fetch
+   100→    fetch_branch_raises: Exception | None = None,
+   400→The rest of the divergence handling (error creation, effective_force logic) remains unchanged.
+   403→- `remote_sha is None`: `get_remote_ref` failed or ref doesn't exist — fall back to fetch (safe)
+   416→    raise click.ClickException(f"No remote tracking branch: origin/{current_branch}")
+  </tool_result>
+  <thinking>This is a detailed plan. Let me understand the key phases:
+
+1. Add `get_remote_ref()` to GitRemoteOps ABC
+2. Implement in RealGitRemoteOps
+3. Implement in FakeGitRemoteOps
+4. Implement in DryRunGitRemoteOps
+5. Implement in PrintingGitRemoteOps
+6. Update FakeGit constructor passthrough
+7-10. Add `get_local_tracking_ref_sha()` (same 5-place pattern + FakeGit)
+11. Update submit pipeline
+12. Tests
+
+
+Now I need to load the required skills and examine the relevant files to start implementing this.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="9345" cache_read_input_tokens="33155" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9345}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me load required skills and read the key files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9345" cache_read_input_tokens="33155" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9345}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01JHzU64cjb7KuAe7zoZHzSB">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9345" cache_read_input_tokens="33155" output_tokens="238" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9345, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JHzU64cjb7KuAe7zoZHzSB">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <thinking>Let me load the core dignified-python standards and the fake-driven-testing skill, then read the key source files I need to modify.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="1070" cache_read_input_tokens="42500" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1070}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_012E5NGT1D5KFdmaabEyio2B">
+    <param name="skill">fake-driven-testing</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1070" cache_read_input_tokens="42500" output_tokens="101" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1070, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012E5NGT1D5KFdmaabEyio2B">
+Launching skill: fake-driven-testing
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/.claude/skills/fake-driven-testing
+
+# Fake-Driven Testing Architecture for Python
+
+**Use this skill when**: Writing tests, fixing bugs, adding features, or modifying gateway layers in Python projects.
+
+**Prerequisites**: For Python code standards, load the `dignified-python-313` skill first. This skill focuses on testing architecture, not Python syntax.
+
+## Overview
+
+This skill provides a **defense-in-depth testing strategy** with five layers for Python applications:
+
+```
+┌─────────────────────────────────────────┐
+│  Layer 5: Business Logic Integration Tests (5%)  │  ← Smoke tests over real system
+├─────────────────────────────────────────┤
+│  Layer 4: Business Logic Tests (70%)   │  ← Tests over fakes (MOST TESTS)
+├─────────────────────────────────────────┤
+│  Layer 3: Pure Unit Tests (10%)        │  ← Zero dependencies, isolated testing
+├─────────────────────────────────────────┤
+│  Layer 2: Integration Sanity Tests (10%)│  ← Fast validation with mocking
+├─────────────────────────────────────────┤
+│  Layer 1: Fake Infrastructure Tests (5%)│  ← Verify test doubles work
+└─────────────────────────────────────────┘
+```
+
+**Philosophy**: Test business logic extensively over fast in-memory fakes. Use real implementations sparingly for integration validation.
+
+**Terminology note**: The "gateway layer" (also called adapters/providers) refers to thin wrappers around heavyweight external APIs (databases, filesystems, HTTP APIs, message queues, etc.). The pattern matters more than the name.
+
+## Quick Decision: What Should I Read?
+
+**Adding a feature or fixing a bug?**
+→ Read `quick-reference.md` first, then `workflows.md#adding-a-new-feature`
+
+**Need to understand where to put a test?**
+→ Read `testing-strategy.md`
+
+**Working with Python-specific patterns?**
+→ Read `python-specific.md`
+
+**Adding/changing a gateway interface?**
+→ Read `gateway-architecture.md`, then `workflows.md#adding-a-gateway-method`
+
+**Creating a backend (higher-level abstraction over gateways)?**
+→ Read `gateway-architecture.md#gateways-vs-backends` - backends compose gateways and do NOT have fakes
+
+**Need to implement a specific pattern (CliRunner, builders, etc.)?**
+→ Read `patterns.md`
+
+**Not sure if I'm doing it right?**
+→ Read `anti-patterns.md`
+
+**Just need a quick lookup?**
+→ Read `quick-reference.md`
+
+## When to Read Each Reference Document
+
+### 📖 `gateway-architecture.md`
+
+**Read when**:
+
+- Adding or changing gateway/ABC interfaces
+- Understanding the ABC/Real/Fake/DryRun pattern
+- Need examples of gateway implementations
+- Want to understand what gateways are (and why they're thin)
+- **Creating a backend** (higher-level abstraction that composes gateways)
+
+**Contents**:
+
+- What are gateway classes? (naming: gateways/adapters/providers)
+- The four implementations (ABC, Real, Fake, DryRun)
+- Code examples for each
+- When to add/change gateway methods
+- Design principles (keep gateways thin)
+- Common gateway types (Database, API, FileSystem, MessageQueue)
+- **Gateways vs Backends** - critical distinction for DI boundaries
+
+### 📖 `testing-strategy.md`
+
+**Read when**:
+
+- Deciding where to put a test
+- Understanding the five testing layers
+- Need test distribution guidance (5/70/10/10/5 rule)
+- Want to know which layer tests what
+
+**Contents**:
+
+- Layer 1: Unit tests of fakes (verify test infrastructure)
+- Layer 2: Integration sanity tests with mocking (quick validation)
+- Layer 3: Pure unit tests (zero dependencies, isolated testing)
+- Layer 4: Business logic over fakes (majority of tests)
+- Layer 5: Business logic integration tests (smoke tests over real systems)
+- Decision tree: where should my test go?
+- Test distribution examples
+
+### 📖 `python-specific.md`
+
+**Read when**:
+
+- Working with pytest fixtures
+- Need Python mocking patterns
+- Testing Flask/FastAPI/Django applications
+- Understanding Python testing tools
+- Need Python-specific commands
+
+**Contents**:
+
+- pytest fixtures and parametrization
+- Mocking with unittest.mock and pytest-mock
+- Testing web frameworks (Flask, FastAPI, Django)
+- Python testing commands
+- Type hints in tests
+- Python packaging for test utilities
+
+### 📖 `workflows.md`
+
+**Read when**:
+
+- Adding a new feature (step-by-step)
+- Fixing a bug (step-by-step)
+- Adding a gateway method (complete checklist)
+- Changing an interface (what to update)
+- Managing dry-run features
+
+**Contents**:
+
+- Adding a new feature (TDD workflow)
+- Fixing a bug (reproduce → fix → regression test)
+- Adding a gateway method (8-step checklist with examples)
+- Changing an interface (update all layers)
+- Managing dry-run features (wrapping pattern)
+- Testing with builder patterns
+
+### 📖 `patterns.md`
+
+**Read when**:
+
+- Implementing constructor injection for fakes
+- Adding mutation tracking to fakes
+- Using CliRunner for CLI tests
+- Building complex test scenarios with builders
+- Testing dry-run behavior
+- Need code examples of specific patterns
+
+**Contents**:
+
+- Constructor injection (how and why)
+- Mutation tracking properties (read-only access)
+- Using CliRunner (not subprocess)
+- Builder patterns for complex scenarios
+- Simulated environment pattern
+- Error injection pattern
+- Dry-run testing pattern
+
+### 📖 `anti-patterns.md`
+
+**Read when**:
+
+- Unsure if your approach is correct
+- Want to avoid common mistakes
+- Reviewing code for bad patterns
+- Debugging why tests are slow/brittle
+
+**Contents**:
+
+- ❌ Testing speculative features
+- ❌ Hardcoded paths in tests (catastrophic)
+- ❌ Not updating all layers
+- ❌ Using subprocess in unit tests
+- ❌ Complex logic in gateway classes
+- ❌ Fakes with I/O operations
+- ❌ Testing implementation details
+- ❌ Incomplete test coverage for gateways
+
+### 📖 `quick-reference.md`
+
+**Read when**:
+
+- Quick lookup for file locations
+- Finding example tests to reference
+- Looking up common fixtures
+- Need command reference
+- Want test distribution guidelines
+
+**Contents**:
+
+- Decision tree (where to add test)
+- File location map (source + tests)
+- Common fixtures (tmp_path, CliRunner, etc.)
+- Common test patterns (code snippets)
+- Example tests to reference
+- Useful commands (pytest, ty, etc.)
+- Quick checklist for adding gateway methods
+
+## Quick Navigation by Task
+
+### I'm adding a new feature
+
+1. **Quick start**: `quick-reference.md` → Decision tree
+2. **Step-by-step**: `workflows.md#adding-a-new-feature`
+3. **Patterns**: `patterns.md` (CliRunner, builders)
+4. **Avoid**: `anti-patterns.md` (speculative tests, hardcoded paths)
+
+### I'm fixing a bug
+
+1. **Step-by-step**: `workflows.md#fixing-a-bug`
+2. **Patterns**: `patterns.md#constructor-injection-for-fakes`
+3. **Examples**: `quick-reference.md#example-tests-to-reference`
+
+### I'm adding/changing a gateway method
+
+1. **Understanding**: `gateway-architecture.md`
+2. **Step-by-step**: `workflows.md#adding-a-gateway-method`
+3. **Checklist**: `quick-reference.md#quick-checklist-adding-a-new-gateway-method`
+4. **Avoid**: `anti-patterns.md#not-updating-all-layers`
+
+### I don't know where my test should go
+
+1. **Decision tree**: `quick-reference.md#decision-tree`
+2. **Detailed guide**: `testing-strategy.md`
+3. **Examples**: `quick-reference.md#example-tests-to-reference`
+
+### I need to implement a pattern
+
+1. **All patterns**: `patterns.md`
+2. **Examples**: `quick-reference.md#common-test-patterns`
+
+### I think I'm doing something wrong
+
+1. **Anti-patterns**: `anti-patterns.md`
+2. **Correct approach**: `workflows.md`
+
+## Visual Layer Guide
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 5: Business Logic Integration Tests (5%)               │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Real database, filesystem, APIs, actual subprocess        │ │
+│ │ Purpose: Smoke tests, catch integration issues           │ │
+│ │ When: Sparingly, for critical workflows                  │ │
+│ │ Speed: Seconds per test                                   │ │
+│ │ Location: tests/e2e/ or tests/integration/               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 4: Business Logic Tests (70%) ← MOST TESTS HERE       │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ FakeDatabase, FakeApiClient, FakeFileSystem              │ │
+│ │ Purpose: Test features and business logic extensively    │ │
+│ │ When: For EVERY feature and bug fix                      │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/, tests/services/, tests/commands/  │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 3: Pure Unit Tests (10%)                               │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Zero dependencies, no fakes, no mocks                    │ │
+│ │ Purpose: Test isolated utilities and helpers             │ │
+│ │ When: For pure functions, data structures, parsers       │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/                                     │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 2: Integration Sanity Tests (10%)                      │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ RealDatabase with mocked connections                     │ │
+│ │ Purpose: Quick validation, catch syntax errors           │ │
+│ │ When: When adding/changing real implementation           │ │
+│ │ Speed: Fast (mocked)                                      │ │
+│ │ Location: tests/integration/test_real_*.py               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 1: Fake Infrastructure Tests (5%)                      │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Test FakeDatabase itself                                 │ │
+│ │ Purpose: Verify test infrastructure is reliable          │ │
+│ │ When: When adding/changing fake implementation           │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/fakes/test_fake_*.py               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+```
+
+## Key Principles
+
+1. **Thin gateway layer**: Wrap external state, push complexity to business logic
+2. **Fast tests over fakes**: 70% of tests should use in-memory fakes
+3. **Defense in depth**: Fakes → sanity tests → pure unit → business logic → integration
+4. **Test what you're building**: No speculative tests, only active work
+5. **Update all layers**: When changing interfaces, update ABC/real/fake/dry-run
+6. **Gateways vs Backends**: Gateways have fakes; backends compose gateways and do NOT have fakes
+
+## Layer Selection Guide
+
+**Distinguishing Layer 3 (Pure Unit) from Layer 4 (Business Logic):**
+
+- **Layer 3 (Pure Unit Tests)**: ZERO dependencies - no fakes, no mocks, no external state
+  - Testing string utilities: `sanitize_branch_name("feat/FOO")` → `"feat-foo"`
+  - Testing parsers: `parse_git_status("## main")` → `{"branch": "main"}`
+  - Testing data structures: `LinkedList.append()` without any external dependencies
+
+- **Layer 4 (Business Logic Tests)**: Uses fakes for external dependencies
+  - Testing commands: `create_worktree(fake_git, name="feature")`
+  - Testing workflows: `submit_pr(fake_gh, fake_git, ...)`
+  - Testing business logic that coordinates multiple integrations
+
+**If your test imports a Fake\*, it belongs in Layer 4, not Layer 3.**
+
+## Default Testing Strategy
+
+**When in doubt**:
+
+- Write test over fakes (Layer 4) for business logic
+- Write pure unit test (Layer 3) for utilities/helpers with no dependencies
+- Use `pytest` with fixtures
+- Use `tmp_path` fixture (not hardcoded paths)
+- Follow examples in `quick-reference.md`
+
+## Summary
+
+**For quick tasks**: Start with `quick-reference.md`
+
+**For understanding**: Start with `testing-strategy.md` or `gateway-architecture.md`
+
+**For step-by-step guidance**: Use `workflows.md`
+
+**For implementation details**: Use `patterns.md`
+
+**For validation**: Check `anti-patterns.md`
+
+**For Python specifics**: Check `python-specific.md`
+</user>
+  <thinking>Now let me read the key source files I need to modify. Let me start with the gateway files and the submit pipeline.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="3791" cache_read_input_tokens="43570" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3791}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the key files I'll be modifying.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="3791" cache_read_input_tokens="43570" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3791}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018hrYmC9fN3BoKbbo1SC5Dt">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3791" cache_read_input_tokens="43570" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3791}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018hrYmC9fN3BoKbbo1SC5Dt">
+     1→"""Abstract base class for Git remote operations.
+     2→
+     3→This sub-gateway extracts remote operations from the main Git gateway,
+     4→including fetch, pull, and push operations.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from pathlib import Path
+    11→
+    12→from erk_shared.gateway.git.remote_ops.types import (
+    13→    PullRebaseError,
+    14→    PullRebaseResult,
+    15→    PushError,
+    16→    PushResult,
+    17→)
+    18→
+    19→
+    20→class GitRemoteOps(ABC):
+    21→    """Abstract interface for Git remote operations.
+    22→
+    23→    This interface contains both mutation and query operations for remotes.
+    24→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    25→    """
+    26→
+    27→    @abstractmethod
+    28→    def fetch_branch(self, repo_root: Path, remote: str, branch: str) -&gt; None:
+    29→        """Fetch a specific branch from a remote.
+    30→
+
+... [105 lines omitted] ...
+
+    68→            subprocess.CalledProcessError: If git command fails
+    81→    ) -&gt; PushResult | PushError:
+    92→            PushResult on success, PushError on failure.
+    99→    ) -&gt; PullRebaseResult | PullRebaseError:
+   112→            PullRebaseResult on success, PullRebaseError on failure.
+   132→            ValueError: If remote doesn't exist or has no URL
+  </tool_result>
+  <tool_use name="Read" id="toolu_0182vWVMPxZoj5zCzy4H5gT1">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/real.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3791" cache_read_input_tokens="43570" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3791}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0182vWVMPxZoj5zCzy4H5gT1">
+     1→"""Production implementation of Git remote operations using subprocess."""
+     2→
+     3→import subprocess
+     4→from pathlib import Path
+     5→
+     6→from erk_shared.gateway.git.lock import wait_for_index_lock
+     7→from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+     8→from erk_shared.gateway.git.remote_ops.types import (
+     9→    PullRebaseError,
+    10→    PullRebaseResult,
+    11→    PushError,
+    12→    PushResult,
+    13→)
+    14→from erk_shared.gateway.time.abc import Time
+    15→from erk_shared.subprocess_utils import copied_env_for_git_subprocess, run_subprocess_with_context
+    16→
+    17→# Timeout in seconds for network-touching git operations (push, pull, fetch).
+    18→# Prevents indefinite hangs on network issues or credential prompts.
+    19→_GIT_NETWORK_TIMEOUT = 120
+    20→
+    21→
+    22→class RealGitRemoteOps(GitRemoteOps):
+    23→    """Real implementation of Git remote operations using subprocess."""
+    24→
+    25→    def __init__(self, time: Time) -&gt; None:
+    26→        """Initialize RealGitRemoteOps with Time provider.
+    27→
+    28→        Args:
+    29→            time: Time provider for lock waiting
+    30→        """
+
+... [110 lines omitted] ...
+
+    84→    ) -&gt; PushResult | PushError:
+   101→        except RuntimeError as e:
+   102→            return PushError(message=str(e))
+   107→    ) -&gt; PullRebaseResult | PullRebaseError:
+   117→        except RuntimeError as e:
+   118→            return PullRebaseError(message=str(e))
+   125→            ValueError: If remote doesn't exist or has no URL
+   135→            raise ValueError(f"Remote '{remote}' not found in repository")
+   138→            raise ValueError(f"Remote '{remote}' has no URL configured")
+  </tool_result>
+  <tool_use name="Read" id="toolu_016zzjKqbUop8PNqfZgvqSq9">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3791" cache_read_input_tokens="43570" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3791}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016zzjKqbUop8PNqfZgvqSq9">
+     1→"""Fake implementation of Git remote operations for testing."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from pathlib import Path
+     6→from typing import TYPE_CHECKING
+     7→
+     8→from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+     9→from erk_shared.gateway.git.remote_ops.types import (
+    10→    PullRebaseError,
+    11→    PullRebaseResult,
+    12→    PushError,
+    13→    PushResult,
+    14→)
+    15→
+    16→if TYPE_CHECKING:
+    17→    # Import PushedBranch type from parent module to avoid circular import
+    18→    from erk_shared.gateway.git.fake import PushedBranch
+    19→
+    20→
+    21→class FakeGitRemoteOps(GitRemoteOps):
+    22→    """In-memory fake implementation of Git remote operations.
+    23→
+    24→    This fake accepts pre-configured state in its constructor and tracks
+    25→    mutations for test assertions.
+    26→
+    27→    Constructor Injection:
+    28→    ---------------------
+    29→    - remote_urls: Mapping of (repo_root, remote_name) -&gt; remote URL
+    30→    - pull_branch_raises: Exception to raise when pull_branch() is called
+
+... [177 lines omitted] ...
+
+    31→    - push_to_remote_error: PushError to return when push_to_remote() is called
+    32→    - pull_rebase_error: PullRebaseError to return when pull_rebase() is called
+    48→        fetch_branch_raises: Exception | None = None,
+    49→        pull_branch_raises: Exception | None = None,
+    50→        push_to_remote_error: PushError | None = None,
+    51→        pull_rebase_error: PullRebaseError | None = None,
+    57→            fetch_branch_raises: Exception to raise when fetch_branch() is called
+    58→            pull_branch_raises: Exception to raise when pull_branch() is called
+    59→            push_to_remote_error: PushError to return when push_to_remote() is called
+    60→            pull_rebase_error: PullRebaseError to return when pull_rebase() is called
+    66→        self._push_to_remote_error = push_to_remote_error
+    67→        self._pull_rebase_error = pull_rebase_error
+   107→    ) -&gt; PushResult | PushError:
+   108→        """Record push to remote, or return error if failure configured."""
+   112→        if self._push_to_remote_error is not None:
+   113→            return self._push_to_remote_error
+   121→    ) -&gt; PullRebaseResult | PullRebaseError:
+   124→        Tracks call for test assertions. Returns configured error if set.
+   127→        if self._pull_rebase_error is not None:
+   128→            return self._pull_rebase_error
+   135→            ValueError: If remote doesn't exist or has no URL
+   139→            raise ValueError(f"Remote '{remote}' not found in repository")
+  </tool_result>
+  <tool_use name="Read" id="toolu_017tyiuYzrBmX3av5nUKntwY">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/dry_run.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3791" cache_read_input_tokens="43570" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3791}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017tyiuYzrBmX3av5nUKntwY">
+     1→"""No-op Git remote operations wrapper for dry-run mode.
+     2→
+     3→This module provides a wrapper that prevents execution of destructive
+     4→remote operations while delegating read-only operations to the wrapped implementation.
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→
+     9→from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+    10→from erk_shared.gateway.git.remote_ops.types import (
+    11→    PullRebaseResult,
+    12→    PushResult,
+    13→)
+    14→
+    15→
+    16→class DryRunGitRemoteOps(GitRemoteOps):
+    17→    """No-op wrapper that prevents execution of destructive remote operations.
+    18→
+    19→    This wrapper intercepts destructive git operations (fetch, pull, push) and
+    20→    returns without executing. Read-only operations (get_remote_url) are delegated
+    21→    to the wrapped implementation.
+    22→
+    23→    Usage:
+    24→        real_ops = RealGitRemoteOps(time)
+    25→        noop_ops = DryRunGitRemoteOps(real_ops)
+    26→
+    27→        # Query operations work normally
+    28→        url = noop_ops.get_remote_url(repo_root, "origin")
+    29→
+    30→        # Mutation operations are no-ops
+
+... [56 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MwgNoAMov19Uqk7dZMf1Ty">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/printing.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3791" cache_read_input_tokens="43570" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3791}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MwgNoAMov19Uqk7dZMf1Ty">
+     1→"""Printing Git remote operations wrapper for verbose output.
+     2→
+     3→This module provides a wrapper that prints styled output for remote operations
+     4→before delegating to the wrapped implementation.
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→
+     9→from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+    10→from erk_shared.gateway.git.remote_ops.types import (
+    11→    PullRebaseError,
+    12→    PullRebaseResult,
+    13→    PushError,
+    14→    PushResult,
+    15→)
+    16→from erk_shared.printing.base import PrintingBase
+    17→
+    18→
+    19→class PrintingGitRemoteOps(PrintingBase, GitRemoteOps):
+    20→    """Wrapper that prints remote operations before delegating to inner implementation.
+    21→
+    22→    This wrapper prints styled output for operations, then delegates to the
+    23→    wrapped implementation (which could be Real or DryRun).
+    24→
+    25→    Usage:
+    26→        # For production
+    27→        printing_ops = PrintingGitRemoteOps(real_ops, script_mode=False, dry_run=False)
+    28→
+    29→        # For dry-run
+    30→        noop_inner = DryRunGitRemoteOps(real_ops)
+
+... [61 lines omitted] ...
+
+    68→    ) -&gt; PushResult | PushError:
+    79→    ) -&gt; PullRebaseResult | PullRebaseError:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Fg8qnYwupMTy5W67VRnXiJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3791" cache_read_input_tokens="43570" output_tokens="590" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3791, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Fg8qnYwupMTy5W67VRnXiJ">
+     1→"""Fake git operations for testing.
+     2→
+     3→FakeGit is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from collections.abc import Callable
+    10→from pathlib import Path
+    11→from typing import NamedTuple
+    12→
+    13→from erk_shared.gateway.git.abc import (
+    14→    BranchDivergence,
+    15→    BranchSyncInfo,
+    16→    Git,
+    17→    RebaseResult,
+    18→    WorktreeInfo,
+    19→)
+    20→from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+    21→from erk_shared.gateway.git.analysis_ops.fake import FakeGitAnalysisOps
+    22→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    23→from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
+    24→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    25→from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+    26→from erk_shared.gateway.git.commit_ops.fake import (
+    27→    BranchCommitRecord,
+    28→    CommitRecord,
+    29→    FakeGitCommitOps,
+    30→)
+
+... [692 lines omitted] ...
+
+    37→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+   135→        delete_branch_raises: dict[str, Exception] | None = None,
+   138→        tracking_branch_failures: dict[str, str] | None = None,
+   148→        add_all_raises: Exception | None = None,
+   149→        fetch_branch_raises: Exception | None = None,
+   150→        pull_branch_raises: Exception | None = None,
+   153→        rebase_continue_raises: Exception | None = None,
+   160→        push_to_remote_error: PushError | None = None,
+   164→        rebase_abort_raises: Exception | None = None,
+   165→        pull_rebase_error: PullRebaseError | None = None,
+   167→        create_branch_error: BranchAlreadyExists | None = None,
+   168→        add_worktree_error: str | None = None,
+   169→        remove_worktree_error: str | None = None,
+   170→        ahead_behind_raises: RuntimeError | None = None,
+   194→            delete_branch_raises: Mapping of branch name -&gt; exception to raise on delete
+   198→            tracking_branch_failures: Mapping of branch name -&gt; error message to raise
+   209→            add_all_raises: Exception to raise when add_all() is called
+   210→            fetch_branch_raises: Exception to raise when fetch_branch() is called
+   211→            pull_branch_raises: Exception to raise when pull_branch() is called
+   215→            rebase_continue_raises: Exception to raise when rebase_continue() is called
+   222→            push_to_remote_error: PushError to return when push_to_remote() is called
+   227→            rebase_abort_raises: Exception to raise when rebase_abort() is called
+   228→            pull_rebase_error: PullRebaseError to return when pull_rebase() is called
+   232→            create_branch_error: BranchAlreadyExists to return from create_branch()
+   233→            add_worktree_error: Error message to raise as RuntimeError from add_worktree()
+   234→            remove_worktree_error: Error message to raise as RuntimeError from remove_worktree()
+   235→            ahead_behind_raises: If set, get_ahead_behind() raises this error
+   257→        self._tracking_branch_failures = tracking_branch_failures or {}
+   277→        self._push_to_remote_error = push_to_remote_error
+   282→        self._pull_rebase_error = pull_rebase_error
+   284→        self._remove_worktree_error = remove_worktree_error
+   344→            add_worktree_error=add_worktree_error,
+   345→            remove_worktree_error=self._remove_worktree_error,
+   363→            tracking_branch_failures=self._tracking_branch_failures,
+   364→            create_branch_error=create_branch_error,
+   382→            push_to_remote_error=self._push_to_remote_error,
+   383→            pull_rebase_error=self._pull_rebase_error,
+   614→            FileNotFoundError: If path not in file_contents mapping.
+   617→            raise FileNotFoundError(f"No content for {path}")
+  </tool_result>
+  <thinking>Now let me read the submit pipeline file to understand the divergence detection block I need to modify.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="20464" cache_read_input_tokens="47361" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 20464}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the submit pipeline to understand the current divergence detection logic.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="20464" cache_read_input_tokens="47361" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 20464}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01A4uN4F3JCnDrDk5mdAJQ1r">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/src/erk/cli/commands/pr/submit_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="20464" cache_read_input_tokens="47361" output_tokens="147" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 20464, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A4uN4F3JCnDrDk5mdAJQ1r">
+     1→"""Linear pipeline for PR submission.
+     2→
+     3→Replaces the dual-path branching orchestration with a sequence of plain
+     4→functions transforming a frozen SubmitState dataclass.
+     5→
+     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+     7→"""
+     8→
+     9→import dataclasses
+    10→import sys
+    11→import uuid
+    12→from collections.abc import Callable
+    13→from dataclasses import dataclass
+    14→from functools import cache
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.pr.shared import (
+    20→    assemble_pr_body,
+    21→    echo_plan_context_status,
+    22→    maybe_advance_lifecycle_to_impl,
+    23→    recover_plan_header,
+    24→    run_commit_message_generation,
+    25→)
+    26→from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
+    27→from erk.cli.ensure import UserFacingCliError
+    28→from erk.core.commit_message_generator import CommitMessageGenerator
+    29→from erk.core.context import ErkContext
+    30→from erk.core.plan_context_provider import PlanContext, PlanContextProvider
+
+... [1021 lines omitted] ...
+
+    31→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+   114→class SubmitError:
+   115→    """Error result from a pipeline step."""
+   118→    error_type: str
+   127→SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
+   130→def prepare_state(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   143→        return SubmitError(
+   145→            error_type="no_branch",
+   159→        except ValueError as e:
+   160→            return SubmitError(
+   162→                error_type="issue_linkage_mismatch",
+   193→def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   213→def commit_wip(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   223→def capture_existing_pr_body(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   235→def push_and_create_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   250→def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   257→    # but the first submit attempt failed before pushing.
+   271→            return SubmitError(
+   273→                error_type="remote_diverged",
+   303→    except RuntimeError as e:
+   304→        error_str = str(e)
+   305→        if "restack" in error_str.lower():
+   306→            return SubmitError(
+   308→                error_type="graphite_restack_required",
+   317→        return SubmitError(
+   319→            error_type="graphite_submit_failed",
+   320→            message=f"Graphite submit failed: {e}",
+   332→        return SubmitError(
+   334→            error_type="pr_not_found",
+   363→def _core_submit_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   371→        return SubmitError(
+   373→            error_type="github_auth_failed",
+   383→        return SubmitError(
+   385→            error_type="no_commits",
+   403→        if isinstance(pull_result, PullRebaseError):
+   404→            return SubmitError(
+   406→                error_type="rebase_failed",
+   408→                    f"Failed to rebase '{state.branch_name}' on origin.\n"
+   409→                    f"Error: {pull_result.message}\n\n"
+   419→        return SubmitError(
+   421→            error_type="branch_diverged",
+   440→    if isinstance(push_result, PushError):
+   442→            return SubmitError(
+   444→                error_type="branch_diverged",
+   453→        raise UserFacingCliError(push_result.message)
+   463→                return SubmitError(
+   465→                    error_type="parent_branch_no_pr",
+   541→def extract_diff(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   548→        return SubmitError(
+   550→            error_type="no_base_branch",
+   580→def fetch_plan_context(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   599→def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   606→        return SubmitError(
+   608→            error_type="no_diff_file",
+   609→            message="Failed to extract diff for AI analysis",
+   629→        return SubmitError(
+   631→            error_type="ai_generation_failed",
+   632→            message=f"Failed to generate message: {msg_result.error_message}",
+   645→def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   689→    except RuntimeError as e:
+   690→        error_msg = str(e).lower()
+   691→        if "nothing to submit" in error_msg or "no changes" in error_msg:
+   695→        return SubmitError(
+   697→            error_type="graphite_enhance_failed",
+   698→            message=f"Graphite enhancement failed: {e}",
+   715→def finalize_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   722→        return SubmitError(
+   724→            error_type="no_pr_number",
+   791→        except OSError as e:
+   793→                click.echo(click.style(f"   Failed to clean up diff file: {e}", dim=True))
+   837→def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   863→                f"   Warning: Objective #{objective_id} not found, skipping node linking",
+   901→            except ValueError:
+   955→def run_push_and_create_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   960→        except Exception as e:
+   962→            return SubmitError(
+   964→                error_type="unhandled_exception",
+   965→                message=f"Unexpected error in {step_name}: {e}",
+   969→        if isinstance(result, SubmitError):
+   992→def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   993→    """Run the submit pipeline, returning final state or first error."""
+   997→        except Exception as e:
+   999→            return SubmitError(
+  1001→                error_type="unhandled_exception",
+  1002→                message=f"Unexpected error in {step_name}: {e}",
+  1006→        if isinstance(result, SubmitError):
+  </tool_result>
+  <thinking>Now let me check if there are existing tests for the graphite first flow and fake remote ops.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="14316" cache_read_input_tokens="67825" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14316}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check existing test files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="14316" cache_read_input_tokens="67825" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14316}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_017DUwZzkSfZtetZmLfjQrQ1">
+    <param name="pattern">tests/unit/gateway/git/remote_ops/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14316" cache_read_input_tokens="67825" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14316}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017DUwZzkSfZtetZmLfjQrQ1">
+No files found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01TeKBVes2ngvFFHssp5XPgi">
+    <param name="pattern">tests/unit/cli/commands/pr/submit_pipeline/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14316" cache_read_input_tokens="67825" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14316}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TeKBVes2ngvFFHssp5XPgi">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/tests/unit/cli/commands/pr/submit_pipeline/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/tests/unit/cli/commands/pr/submit_pipeline/test_capture_existing_pr_body.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/tests/unit/cli/commands/pr/submit_pipeline/test_commit_wip.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/tests/unit/cli/commands/pr/submit_pipeline/test_fetch_plan_context.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/tests/unit/cli/commands/pr/submit_pipeline/test_generate_description.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/tests/unit/cli/commands/pr/submit_pipeline/test_run_pipeline.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01TQ51E3X5tXUShtzsLnCFkK">
+    <param name="pattern">tests/integration/**/test_real_git_remote_ops*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14316" cache_read_input_tokens="67825" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14316}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TQ51E3X5tXUShtzsLnCFkK">
+No files found
+  </tool_result>
+  <tool_use name="Read" id="toolu_015sub5L522rvnvbHbeMkJ8D">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1005" cache_read_input_tokens="82141" output_tokens="103" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1005, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015sub5L522rvnvbHbeMkJ8D">
+     1→"""Unit tests for _graphite_first_flow pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitError,
+     7→    SubmitState,
+     8→    _graphite_first_flow,
+     9→)
+    10→from erk.core.context import context_for_test
+    11→from erk_shared.context.types import GlobalConfig
+    12→from erk_shared.gateway.git.abc import BranchDivergence
+    13→from erk_shared.gateway.git.fake import FakeGit
+    14→from erk_shared.gateway.github.fake import FakeGitHub
+    15→from erk_shared.gateway.github.types import PRDetails
+    16→from erk_shared.gateway.graphite.fake import FakeGraphite
+    17→
+    18→
+    19→def _make_state(
+    20→    *,
+    21→    cwd: Path,
+    22→    repo_root: Path | None = None,
+    23→    branch_name: str = "feature",
+    24→    parent_branch: str = "main",
+    25→    trunk_branch: str = "main",
+    26→    use_graphite: bool = True,
+    27→    force: bool = False,
+    28→    debug: bool = False,
+    29→    session_id: str = "test-session",
+    30→    plan_id: str | None = None,
+
+... [333 lines omitted] ...
+
+    89→def test_submit_failure_returns_error(tmp_path: Path) -&gt; None:
+    90→    """SubmitError(error_type='graphite_submit_failed') on RuntimeError."""
+    92→        submit_stack_raises=RuntimeError("gt submit failed"),
+   109→    assert isinstance(result, SubmitError)
+   110→    assert result.error_type == "graphite_submit_failed"
+   113→def test_restack_error_returns_actionable_message(tmp_path: Path) -&gt; None:
+   114→    """SubmitError(error_type='graphite_restack_required') when restack needed."""
+   116→        submit_stack_raises=RuntimeError(
+   117→            "gt submit failed (exit code 1): "
+   118→            "ERROR: You must restack and resolve conflicts with gt restack before submitting."
+   136→    assert isinstance(result, SubmitError)
+   137→    assert result.error_type == "graphite_restack_required"
+   142→def test_pr_not_found_after_submit_returns_error(tmp_path: Path) -&gt; None:
+   143→    """SubmitError(error_type='pr_not_found') when no PR after gt submit."""
+   162→    assert isinstance(result, SubmitError)
+   163→    assert result.error_type == "pr_not_found"
+   202→    """Plan impl branch (plan_id set) auto-forces when behind remote; no error returned."""
+   308→def test_non_plan_branch_errors_on_divergence(tmp_path: Path) -&gt; None:
+   309→    """Non-plan branch (no plan_id) still errors when behind remote."""
+   331→    assert isinstance(result, SubmitError)
+   332→    assert result.error_type == "remote_diverged"
+   335→def test_branch_behind_remote_returns_error(tmp_path: Path) -&gt; None:
+   336→    """SubmitError(error_type='remote_diverged') when branch is behind remote."""
+   360→    assert isinstance(result, SubmitError)
+   361→    assert result.error_type == "remote_diverged"
+  </tool_result>
+  <thinking>Good, I have a clear picture now. Let me create the task list and start implementing.
+
+The plan has these main phases:
+1. Add `get_remote_ref()` to ABC (+ 4 implementations + FakeGit passthrough)
+2. Add `get_local_tracking_ref_sha()` to ABC (+ 4 implementations + FakeGit passthrough)
+3. Update submit pipeline `_graphite_first_flow()`
+4. Write tests
+
+Let me create tasks and start implementing.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="9096" cache_read_input_tokens="83146" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9096}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture of all the files. Let me create tasks and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9096" cache_read_input_tokens="83146" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9096}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01FH6mHyvy7c7691H8ayt4mx">
+    <param name="subject">Add get_remote_ref() and get_local_tracking_ref_sha() to GitRemoteOps ABC</param>
+    <param name="description">Add two new abstract methods to the GitRemoteOps ABC in remote_ops/abc.py</param>
+    <param name="activeForm">Adding abstract methods to GitRemoteOps ABC</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9096" cache_read_input_tokens="83146" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9096}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FH6mHyvy7c7691H8ayt4mx">
+Task #1 created successfully: Add get_remote_ref() and get_local_tracking_ref_sha() to GitRemoteOps ABC
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_014NpdgpccLUpxSbudC9xa4G">
+    <param name="subject">Implement in Real, Fake, DryRun, Printing + FakeGit passthrough</param>
+    <param name="description">Implement get_remote_ref() and get_local_tracking_ref_sha() in all 4 gateway implementations, plus update FakeGit constructor passthrough</param>
+    <param name="activeForm">Implementing gateway methods across 5 files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9096" cache_read_input_tokens="83146" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9096}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014NpdgpccLUpxSbudC9xa4G">
+Task #2 created successfully: Implement in Real, Fake, DryRun, Printing + FakeGit passthrough
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_017o12VXoGZw7q3bEJntj958">
+    <param name="subject">Optimize submit pipeline divergence detection</param>
+    <param name="description">Modify _graphite_first_flow() to use lightweight get_remote_ref() check before falling back to full fetch_branch()</param>
+    <param name="activeForm">Optimizing submit pipeline divergence detection</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9096" cache_read_input_tokens="83146" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9096}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017o12VXoGZw7q3bEJntj958">
+Task #3 created successfully: Optimize submit pipeline divergence detection
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01SF23ds1xDheCWZFRdi9KkC">
+    <param name="subject">Write tests for new gateway methods and fetch optimization</param>
+    <param name="description">Unit tests for fake remote ops, unit tests for submit pipeline fetch-skip optimization</param>
+    <param name="activeForm">Writing tests for gateway methods and fetch optimization</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9096" cache_read_input_tokens="83146" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9096}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SF23ds1xDheCWZFRdi9KkC">
+Task #4 created successfully: Write tests for new gateway methods and fetch optimization
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01M9GQph8podLhDQrRciWhTW">
+    <param name="subject">Run CI and submit PR</param>
+    <param name="description">Run CI checks iteratively, fix any issues, then submit the PR</param>
+    <param name="activeForm">Running CI and submitting PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9096" cache_read_input_tokens="83146" output_tokens="729" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9096, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M9GQph8podLhDQrRciWhTW">
+Task #5 created successfully: Run CI and submit PR
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014EoY5jE3YFKnK2z2PpLZ5k">
+    <param name="command">erk exec impl-signal started --session-id="c2232994-909f-4421-909a-ab9b0b336ab5" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="964" cache_read_input_tokens="92242" output_tokens="113" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 964, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014EoY5jE3YFKnK2z2PpLZ5k">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8594
+}
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_014wf6hRoiSqvPfHwENxSVue">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="151" cache_read_input_tokens="93206" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 151, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014wf6hRoiSqvPfHwENxSVue">
+Updated task #1 status
+  </tool_result>
+  <assistant>**Phase 1: Add abstract methods to GitRemoteOps ABC**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="93357" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VGYGq8mzjm9V8aXdjWyPRo">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py</param>
+    <param name="old_string">    @abstractmethod
+    def get_remote_url(self, repo_root: Path, remote: str) -&gt; str:
+   ...[truncated 198 chars]...ses:
+            ValueError: If remote doesn't exist or has no URL
+        """
+        ...</param>
+    <param name="new_string">    @abstractmethod
+    def get_remote_url(self, repo_root: Path, remote: str) -&gt; str:
+   ...[truncated 1358 chars]...SHA hex string, or None if the tracking ref doesn't exist locally.
+        """
+        ...</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="93357" output_tokens="663" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 90, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VGYGq8mzjm9V8aXdjWyPRo">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-57/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01VtCjpn5itLY5bJU9MTUr8s">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="752" cache_read_input_tokens="93447" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 752}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VtCjpn5itLY5bJU9MTUr8s">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01SHoikd6kHGhcjVggoJGHXZ">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="752" cache_read_input_tokens="93447" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 752}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SHoikd6kHGhcjVggoJGHXZ">
+Updated task #2 status
+  </tool_result>
+</session>
