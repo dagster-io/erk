@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Always run `uv sync` in worktree activation scripts"
+}
