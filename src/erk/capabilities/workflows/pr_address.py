@@ -31,6 +31,10 @@ class PrAddressWorkflowCapability(Capability):
         return "GitHub Action for addressing PR review comments"
 
     @property
+    def required(self) -> bool:
+        return True
+
+    @property
     def scope(self) -> CapabilityScope:
         return "project"
 

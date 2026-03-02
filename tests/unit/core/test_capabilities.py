@@ -1288,8 +1288,6 @@ def test_default_capabilities_not_required() -> None:
     # Most capabilities should be optional
     optional_caps = [
         LearnedDocsCapability(),
-        ErkImplWorkflowCapability(),
-        LearnWorkflowCapability(),
         DevrunAgentCapability(),
         ErkBashPermissionsCapability(),
         StatuslineCapability(claude_installation=None),
@@ -1303,6 +1301,20 @@ def test_default_capabilities_not_required() -> None:
         cap = get_capability(skill_name)
         assert cap is not None
         assert cap.required is False, f"{skill_name} should not be required"
+
+
+def test_workflow_capabilities_are_required() -> None:
+    """Test that all workflow capabilities are required."""
+    workflow_caps = [
+        ErkImplWorkflowCapability(),
+        LearnWorkflowCapability(),
+        OneShotWorkflowCapability(),
+        PrAddressWorkflowCapability(),
+        PrRebaseWorkflowCapability(),
+    ]
+
+    for cap in workflow_caps:
+        assert cap.required is True, f"{cap.name} should be required"
 
 
 def test_capability_base_required_default_is_false() -> None:

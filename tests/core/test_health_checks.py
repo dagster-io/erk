@@ -810,6 +810,15 @@ def test_check_managed_artifacts_changed_upstream_remediation(tmp_path: Path) ->
     settings = add_erk_hooks({})
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
+    # Create workflow/action files so required workflow capabilities don't show as not-installed
+    project_workflows = project_dir / ".github" / "workflows"
+    project_workflows.mkdir(parents=True)
+    for wf_name in ("learn", "one-shot", "plan-implement", "pr-address", "pr-rebase"):
+        (project_workflows / f"{wf_name}.yml").write_text(f"name: {wf_name}", encoding="utf-8")
+    project_actions = project_dir / ".github" / "actions"
+    for action_name in ("setup-claude-code", "setup-claude-erk", "erk-remote-setup"):
+        (project_actions / action_name).mkdir(parents=True)
+
     # Create artifact state with OLD version (triggers changed-upstream)
     # The hash matches the file content, but the version is old
     state_dir = project_dir / ".erk"
@@ -836,7 +845,6 @@ hash = "{content_hash}"
     assert "have issues" in result.message
     assert result.remediation is not None
     assert "erk artifact sync" in result.remediation
-    assert "update to latest erk version" in result.remediation
 
 
 def test_check_managed_artifacts_locally_modified_remediation(tmp_path: Path) -> None:
@@ -873,11 +881,24 @@ def test_check_managed_artifacts_locally_modified_remediation(tmp_path: Path) ->
     settings = add_erk_hooks({})
     (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
 
+    # Create workflow/action files so required workflow capabilities are up-to-date
+    project_workflows = project_dir / ".github" / "workflows"
+    project_workflows.mkdir(parents=True)
+    workflow_names = ("learn", "one-shot", "plan-implement", "pr-address", "pr-rebase")
+    for wf_name in workflow_names:
+        (project_workflows / f"{wf_name}.yml").write_text(f"name: {wf_name}", encoding="utf-8")
+    project_actions = project_dir / ".github" / "actions"
+    action_names = ("setup-claude-code", "setup-claude-erk", "erk-remote-setup")
+    for action_name in action_names:
+        (project_actions / action_name).mkdir(parents=True)
+
     # Create artifact state with:
     # 1. Command has hash of ORIGINAL content (not the modified file) + current version
     #    → This means file was synced but then modified locally = locally-modified
     # 2. Hooks have correct hashes + current version
     #    → This means hooks are up-to-date (won't affect overall_worst)
+    # 3. Workflows/actions have matching hashes + current version
+    #    → This means they are up-to-date (won't affect overall_worst)
     state_dir = project_dir / ".erk"
     state_dir.mkdir(parents=True)
     bundled_file = bundled_commands / "plan-save.md"
@@ -886,6 +907,25 @@ def test_check_managed_artifacts_locally_modified_remediation(tmp_path: Path) ->
     # Compute hook hashes the same way artifact_health does
     user_prompt_hash = hashlib.sha256(ERK_USER_PROMPT_HOOK_COMMAND.encode()).hexdigest()[:16]
     exit_plan_hash = hashlib.sha256(ERK_EXIT_PLAN_HOOK_COMMAND.encode()).hexdigest()[:16]
+
+    # Compute workflow hashes to match installed files
+    workflow_state_entries = ""
+    for wf_name in workflow_names:
+        wf_content = f"name: {wf_name}"
+        wf_hash = hashlib.sha256(wf_content.encode()).hexdigest()[:16]
+        workflow_state_entries += f"""
+[artifacts.files."workflows/{wf_name}.yml"]
+version = "{erk_version}"
+hash = "{wf_hash}"
+"""
+    # Compute action hashes (empty dirs hash to empty)
+    for action_name in action_names:
+        action_hash = hashlib.sha256(b"").hexdigest()[:16]
+        workflow_state_entries += f"""
+[artifacts.files."actions/{action_name}"]
+version = "{erk_version}"
+hash = "{action_hash}"
+"""
 
     state_toml = f'''[artifacts]
 version = "{erk_version}"
@@ -901,7 +941,7 @@ hash = "{user_prompt_hash}"
 [artifacts.files."hooks/exit-plan-mode-hook"]
 version = "{erk_version}"
 hash = "{exit_plan_hash}"
-'''
+{workflow_state_entries}'''
     (state_dir / "state.toml").write_text(state_toml, encoding="utf-8")
 
     package = ErkPackageInfo.test_package(

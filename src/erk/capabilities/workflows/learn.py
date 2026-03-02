@@ -31,6 +31,10 @@ class LearnWorkflowCapability(Capability):
         return "GitHub Action for automated documentation learning"
 
     @property
+    def required(self) -> bool:
+        return True
+
+    @property
     def scope(self) -> CapabilityScope:
         return "project"
 
