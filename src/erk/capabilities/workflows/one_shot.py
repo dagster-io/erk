@@ -31,6 +31,10 @@ class OneShotWorkflowCapability(Capability):
         return "GitHub Action for autonomous one-shot planning and implementation"
 
     @property
+    def required(self) -> bool:
+        return True
+
+    @property
     def scope(self) -> CapabilityScope:
         return "project"
 

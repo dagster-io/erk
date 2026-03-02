@@ -31,6 +31,10 @@ class PrRebaseWorkflowCapability(Capability):
         return "GitHub Action for rebasing PRs"
 
     @property
+    def required(self) -> bool:
+        return True
+
+    @property
     def scope(self) -> CapabilityScope:
         return "project"
 
