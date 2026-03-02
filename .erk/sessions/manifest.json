@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "plan_id": 8607,
+  "sessions": [
+    {
+      "session_id": "no-session",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-02T12:41:58.184788+00:00",
+      "files": [
+        "impl-no-session-4a95231e-1f05-4380-9af3-7221d6be851d-part1.xml",
+        "impl-no-session-4a95231e-1f05-4380-9af3-7221d6be851d-part2.xml"
+      ]
+    }
+  ]
+}
