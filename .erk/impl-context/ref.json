@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix: Re-submit release PR via Graphite"
+  "plan_id": "8633",
+  "url": "https://github.com/dagster-io/erk/pull/8633",
+  "created_at": "2026-03-02T12:32:29.433429",
+  "synced_at": "2026-03-02T12:32:29.433429",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
