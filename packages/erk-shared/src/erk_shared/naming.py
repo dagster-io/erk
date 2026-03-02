@@ -719,7 +719,7 @@ def extract_objective_number(branch_name: str) -> int | None:
 
 
 def ensure_unique_worktree_name_with_date(
-    base_name: str, worktrees_dir: Path, git_ops, *, now: datetime | None = None
+    base_name: str, worktrees_dir: Path, git_ops, *, now: datetime
 ) -> str:
     """Ensure unique worktree name with datetime suffix and smart versioning.
 
@@ -734,8 +734,8 @@ def ensure_unique_worktree_name_with_date(
         base_name: Sanitized worktree base name (without datetime suffix)
         worktrees_dir: Directory containing worktrees
         git_ops: Git operations interface for checking path existence
-        now: Optional datetime to use for the suffix. Falls back to datetime.now()
-             if not provided. Callers should pass ctx.time.now() for testability.
+        now: Datetime to use for the suffix. Callers should pass ctx.time.now()
+             for testability.
 
     Returns:
         Guaranteed unique worktree name with datetime suffix
@@ -745,7 +745,7 @@ def ensure_unique_worktree_name_with_date(
         Duplicate: "my-feature" → "my-feature-25-11-08-1430-2"
         Next minute: "my-feature" → "my-feature-25-11-08-1431"
     """
-    date_suffix = (now or datetime.now()).strftime(WORKTREE_DATE_SUFFIX_FORMAT)
+    date_suffix = now.strftime(WORKTREE_DATE_SUFFIX_FORMAT)
     candidate_name = f"{base_name}-{date_suffix}"
 
     # Check if the base candidate exists
@@ -789,7 +789,7 @@ def ensure_simple_worktree_name(base_name: str, worktrees_dir: Path, git_ops) ->
 
 
 def ensure_unique_worktree_name(
-    base_name: str, worktrees_dir: Path, git_ops, *, now: datetime | None = None
+    base_name: str, worktrees_dir: Path, git_ops, *, now: datetime
 ) -> str:
     """Deprecated: Use ensure_unique_worktree_name_with_date for plan-derived worktrees.
 
