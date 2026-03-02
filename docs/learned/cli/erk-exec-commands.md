@@ -10,6 +10,8 @@ tripwires:
     warning: "Check syntax with `erk exec <command> -h` first, or load erk-exec skill for workflow guidance."
   - action: "using erk exec commands in scripts"
     warning: "Some erk exec subcommands don't support `--format json`. Always check with `erk exec <command> -h` first."
+  - action: "adding new exec script parameters with 'issue' in the name"
+    warning: "When adding new exec script parameters, use 'plan' terminology not 'issue'. See erk-exec-commands.md Phase 5 Terminology Standardization."
 ---
 
 # erk exec Commands
@@ -215,6 +217,25 @@ These commands were renamed from issue-oriented to PR-oriented terminology:
 | `setup-impl-from-issue`     | `setup-impl-from-pr`     |
 | `issue-title-to-filename`   | `plan-title-to-filename` |
 | `create-issue-from-session` | `create-pr-from-session` |
+
+#### Phase 5 Terminology Standardization (PR #8580)
+
+CLI flags and error codes were standardized from "issue" to "plan" terminology:
+
+| Old Name                             | New Name                |
+| ------------------------------------ | ----------------------- |
+| `--plan-issue` (flag)                | `--learn-plan`          |
+| `missing-plan-issue` (error code)    | `missing-learn-plan`    |
+| `unexpected-plan-issue` (error code) | `unexpected-learn-plan` |
+| `no-issue-reference` (error code)    | `no-plan-reference`     |
+| `issue-not-found` (error code)       | `plan-not-found`        |
+
+YAML schema fields (e.g., `learn_plan_issue`) were NOT renamed for stability.
+
+Source files:
+
+- `src/erk/cli/commands/exec/scripts/track_learn_result.py` (flag at line 76)
+- `src/erk/cli/commands/exec/scripts/impl_signal.py` (error codes at lines 191, 304, 383, 408)
 
 ### PR Validation Operations
 

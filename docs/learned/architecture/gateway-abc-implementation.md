@@ -774,6 +774,18 @@ Key patterns demonstrated:
 
 See PR #6329 for the migration that introduced this pattern.
 
+## Completed Migrations to Gateway Pattern
+
+Notable examples of migrating raw subprocess calls to gateway methods:
+
+| Script                       | Old Pattern                            | New Pattern                                | PR    |
+| ---------------------------- | -------------------------------------- | ------------------------------------------ | ----- |
+| `download_remote_session.py` | `subprocess.run(["git", "show", ...])` | `git.commit.read_file_from_ref(ref, path)` | #8584 |
+
+After PR #8584, all callers of `read_file_from_ref` are gateway-based: fetch_sessions, push_session, get_learn_sessions, and download_remote_session.
+
+<!-- Source: src/erk/cli/commands/exec/scripts/download_remote_session.py:77-81 -->
+
 ## Related Documentation
 
 - [Erk Architecture Patterns](erk-architecture.md) - Dependency injection, dry-run patterns

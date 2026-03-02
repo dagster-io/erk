@@ -32,13 +32,23 @@ The complete binding inventory is defined in `ErkDashApp.BINDINGS`. The bindings
 
 **System:** ctrl+p (command palette), r (refresh), ? (help), q/escape (quit)
 
+## Launch Keys
+
+Launch keys are defined in `CommandDefinition.launch_key` fields in `src/erk/tui/commands/registry.py`, not a separate LAUNCH_KEYS dict. See [TUI Command Registration](tui-command-registration.md) for the full table of current assignments.
+
+Key highlights:
+
+- Plan view: c (close), d (dispatch), l (land), r (rebase), a (address), w (rewrite), m (cmux)
+- Objective view: c (close), s (one-shot), k (check)
+- Rebase changed from `f` to `r` in PR #8560 for mnemonic consistency
+
 ## Naming Convention
 
 Action methods follow the pattern `action_<verb>_<noun>`:
 
-- `action_open_pr` — opens the PR in browser
-- `action_open_run` — opens the GitHub Actions run URL
-- `action_view_comments` — opens the comments modal
+- `action_open_pr` -- opens the PR in browser
+- `action_open_run` -- opens the GitHub Actions run URL
+- `action_view_comments` -- opens the comments modal
 
 ## Adding New Bindings
 
@@ -49,5 +59,6 @@ Action methods follow the pattern `action_<verb>_<noun>`:
 
 ## Related Documentation
 
-- [TUI Modal Screen Pattern](modal-screen-pattern.md) — How modal screens handle key events
-- [TUI Architecture](architecture.md) — Overall TUI design
+- [TUI Modal Screen Pattern](modal-screen-pattern.md) -- How modal screens handle key events
+- [TUI Architecture](architecture.md) -- Overall TUI design
+- [TUI Command Registration](tui-command-registration.md) -- Launch key assignments and command palette
