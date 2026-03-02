@@ -1,0 +1,1251 @@
+<session>
+  <meta branch="plnd/consolidate-learn-docs-03-02-1752" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:pr-address is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-address&lt;/command-name&gt;
+&lt;command-args&gt;--pr 8623&lt;/command-args&gt;</user>
+  <user># /erk:pr-address
+
+## Description
+
+Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+
+## Usage
+
+```bash
+/erk:pr-address
+/erk:pr-address --all               # Include resolved threads (for reference)
+/erk:pr-address --pr 6631           # Target specific PR
+/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Prerequisite
+
+**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+
+## Agent Instructions
+
+&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+&gt;
+&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+### Phase 1: Classify Feedback
+
+Use the Task tool (NOT a `/pr-feedback-classifier` skill invocation) to run the classifier. The skill's `context: fork` metadata does not create true subagent isolation in `--print` mode, so we must use an explicit Task tool call to guarantee the classifier runs in a separate agent context:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Parse the JSON response. The skill returns:
+
+- `success`: Whether the operation succeeded
+- `pr_number`, `pr_title`, `pr_url`: PR metadata
+- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`
+  - `classification`: `"actionable"` (code changes needed) or `"informational"` (user decides to act or dismiss)
+- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`
+- `batches`: Execution order with `item_indices` referencing the arrays above
+  - Includes an **Informational** batch (last) for `classification: "informational"` threads
+- `error`: Error message if `success` is false
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+### Phase 2: Display Batched Plan
+
+Show the user the batched execution plan from the classifier output:
+
+```
+## Execution Plan
+
+### Batch 1: Local Fixes (3 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | foo.py:42 | Use LBYL pattern |
+| 2 | bar.py:15 | Add type annotation |
+| 3 | baz.py:99 | Fix typo |
+
+### Batch 2: Single-File Changes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 4 | impl.py (multiple) | Rename `old_name` to `new_name` throughout |
+
+### Batch 3: Cross-Cutting Changes (2 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 5 | Multiple files | Update all callers of deprecated function |
+| 6 | docs/ | Update documentation per reviewer request |
+
+### Batch 4: Complex Changes (2 comments -&gt; 1 unified change)
+| # | Location | Summary |
+|---|----------|---------|
+| 7 | impl.py:50 | Fold validate into prepare with union types |
+| 8 | cmd.py:100 | (related to #7 - same refactor) |
+```
+
+**User confirmation flow:**
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval before executing
+
+### Phase 3: Execute by Batch
+
+For each batch, execute this workflow using the thread IDs from the classifier JSON:
+
+#### Pre-Existing Batch (Special Handling)
+
+If the batch has `complexity: "pre_existing"`, handle it differently — no code changes, no CI, no commit:
+
+1. Resolve all threads in the batch via `erk exec resolve-review-threads` with a standard comment:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Pre-existing issue — this code was moved/restructured, not newly introduced."}, ...]' | erk exec resolve-review-threads
+```
+
+2. Report progress:
+
+```
+## Batch 0: Pre-Existing (Auto-Resolve)
+
+Auto-resolved N pre-existing threads (bot comments on moved/restructured code).
+No code changes needed.
+```
+
+3. Continue to the next batch. Skip Steps 1-5 below for this batch.
+
+#### Step 1: Address All Comments in the Batch
+
+For each comment in the batch:
+
+**For Informational Review Threads** (`classification: "informational"`):
+
+Present the user with a choice using AskUserQuestion:
+
+- **Act**: Make the suggested change, then resolve the thread
+- **Dismiss**: Resolve the thread without code changes (reply with a brief message like "Acknowledged, not acting on this suggestion")
+
+If the user chooses **Act**, proceed as a normal review thread (read file, make fix, track change). If the user chooses **Dismiss**, skip to Step 4 to resolve the thread with a dismissal reply.
+
+**For Actionable Review Threads** (`classification: "actionable"`):
+
+1. Read the file to understand context:
+   - If `line` is specified: Read around that line number
+   - If `line` is null (outdated thread): Read the entire file or search for relevant code mentioned in the comment
+2. Make the fix following the reviewer's feedback
+3. Track the change for the batch commit message
+
+**For Discussion Comments:**
+
+1. Determine if action is needed:
+   - If it's a request (e.g., "Please update docs"), take the requested action
+   - If it's a question, provide an answer or make clarifying changes
+   - If it's architectural feedback/suggestion, investigate the codebase to understand implications
+   - If it's just acknowledgment/thanks, note it and move on
+2. **Investigate the codebase** when the comment requires understanding existing code:
+   - Search for relevant patterns, existing implementations, or related code
+   - Note any interesting findings that inform your decision
+   - Record these findings - they become permanent documentation in the reply
+3. Take action if needed
+
+**Handling False Positives from Automated Reviewers:**
+
+Automated review bots (like `dignified-python-review`, linters, or security scanners) can flag false positives. Before making code changes:
+
+1. **Read the flagged code carefully** - understand what the bot is complaining about
+2. **Verify if it's a false positive** by checking:
+   - Is the pattern the bot wants already implemented nearby? (e.g., LBYL check already exists on a preceding line)
+   - Is the bot misunderstanding the code structure?
+   - Is the bot applying a rule that doesn't fit this specific context?
+3. **If it's a false positive**, do NOT make unnecessary code changes. Instead:
+   - Reply to the comment explaining why it's a false positive
+   - Reference specific line numbers where the correct pattern already exists
+   - Resolve the thread
+
+**For Outdated Review Threads** (`is_outdated: true`):
+
+Outdated threads have `line: null` because the code has changed since the comment was made.
+
+1. **Read the file** at the path (ignore line number - search for relevant code)
+2. **Check if the issue is already fixed** in the current code
+3. **Take action:**
+   - If already fixed -&gt; Proceed directly to Step 4 to resolve the thread
+   - If not fixed -&gt; Apply the fix, then proceed to Step 4
+
+**IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
+Do not skip resolution just because no code change was needed.
+
+#### Step 2: Run CI Checks
+
+After making all changes in the batch:
+
+```bash
+# Run relevant CI checks for changed files
+# (This may vary by project - use project's test commands)
+```
+
+If CI fails, fix the issues before proceeding.
+
+#### Step 3: Commit the Batch
+
+Create a single commit for all changes in the batch:
+
+```bash
+git add &lt;changed files&gt;
+git commit -m "Address PR review comments (batch N/M)
+
+- &lt;summary of comment 1&gt;
+- &lt;summary of comment 2&gt;
+..."
+```
+
+**Note:** If any changed files are in `.erk/impl-context/` (plan-only PRs), use `git add -f` instead — the directory is gitignored.
+
+#### Step 4: Resolve All Threads in the Batch (MANDATORY)
+
+**This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
+
+After committing, resolve review threads and mark discussion comments.
+
+**For Review Threads** - use the batch command `erk exec resolve-review-threads` to resolve all review threads in a single call. Pipe a JSON array via stdin:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed in commit abc1234"}, {"thread_id": "PRRT_def", "comment": "Applied suggestion"}]' | erk exec resolve-review-threads
+```
+
+Each item has `thread_id` (required) and `comment` (optional). Build the JSON array from the batch's thread IDs and resolution messages, then pipe it in one call.
+
+**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with the `comment_id` from the JSON, with a substantive reply that quotes the original comment and explains what action was taken.
+
+#### Step 5: Report Progress
+
+After completing the batch, report:
+
+```
+## Batch N Complete
+
+Addressed:
+- foo.py:42 - Used LBYL pattern
+- bar.py:15 - Added type annotation
+
+Committed: abc1234 "Address PR review comments (batch 1/3)"
+
+Resolved threads: 2
+Remaining batches: 2
+```
+
+Then proceed to the next batch.
+
+### Phase 4: Final Verification
+
+After all batches complete, re-invoke the classifier to verify all threads are resolved. Use Task tool (NOT skill invocation) for the same `--print` mode isolation reason as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Verify PR feedback resolved",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if originally specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items. Both `actionable` and `informational` classified threads should be resolved (either by code changes or by dismissal).
+
+#### Report Final Summary
+
+```
+## All PR Comments Addressed
+
+Total comments: 8
+Pre-existing (auto-resolved): 3
+Actionable (code changes): 5
+Batches: 4
+Commits: 3
+
+All review threads resolved.
+All discussion comments marked with reaction.
+
+Next steps:
+1. Push changes:
+   - **Graphite repos**: `gt submit` (or `gt ss`)
+   - **Plain git repos**: `git push`
+   - If push is rejected (non-fast-forward): Run `/erk:reconcile-with-remote` to resolve. Do NOT use `git pull --rebase`.
+2. Wait for CI to pass
+3. Request re-review if needed
+```
+
+#### Handle Any Skipped Comments
+
+If the user explicitly skipped any comments during the process, list them:
+
+```
+## Skipped Comments (user choice)
+- #5: src/legacy.py:100 - "Refactor this module" (user deferred)
+```
+
+### Phase 5: Update PR Title and Body
+
+After all review comments have been addressed, update the PR to reflect the full scope of changes.
+
+Run:
+
+```bash
+erk exec update-pr-description --session-id "${CLAUDE_SESSION_ID}"
+```
+
+This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.
+
+### Phase 6: Upload Address Session
+
+After addressing review comments, upload the session for cross-machine learning.
+Resolve the plan_id from the current branch, then push the session:
+
+```bash
+erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This is non-critical — if it fails (no plan tracking, no session found), addressing was still successful.
+
+### Common Mistakes
+
+See `pr-operations` skill for the complete table of common mistakes and correct approaches.
+
+### Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+
+**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+
+
+ARGUMENTS: --pr 8623</user>
+  <assistant>
+
+I'll start by loading the `pr-operations` skill as required, then classify the PR feedback.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="12327" cache_read_input_tokens="16934" cache_creation="{'ephemeral_5m_input_tokens': 12327, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01VaWEkKo4HrLLn7FK7wi4ye">
+    <param name="skill">pr-operations</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="12327" cache_read_input_tokens="16934" cache_creation="{'ephemeral_5m_input_tokens': 12327, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VaWEkKo4HrLLn7FK7wi4ye">
+Launching skill: pr-operations
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/pr-operations
+
+# PR Operations Skill
+
+## Core Rule
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands for PR Thread Operations**
+&gt;
+&gt; - ❌ DO NOT use raw `gh api` calls for thread operations
+&gt; - ❌ DO NOT use `gh pr` commands directly for thread resolution
+&gt; - ✅ ONLY use `erk exec` commands listed below
+&gt;
+&gt; The `erk exec` commands handle thread resolution correctly. Raw API calls only reply without resolving.
+
+## Quick Reference
+
+| Command                       | Purpose                           | Key Point                          |
+| ----------------------------- | --------------------------------- | ---------------------------------- |
+| `get-pr-review-comments`      | Fetch unresolved review threads   | Returns threads with line info     |
+| `get-pr-discussion-comments`  | Fetch PR discussion comments      | Returns top-level comments         |
+| `resolve-review-thread`       | Reply AND resolve a single thread | Does both in one operation         |
+| `resolve-review-threads`      | Batch resolve multiple threads    | JSON stdin, one call for N threads |
+| `reply-to-discussion-comment` | Reply to discussion comment       | For non-code feedback              |
+| `post-pr-inline-comment`      | Post new inline comment           | Creates new review thread          |
+
+## When to Use Each Command
+
+### Fetching Comments
+
+```bash
+# Get all unresolved review threads (code comments)
+erk exec get-pr-review-comments
+
+# Get all discussion comments (top-level PR comments)
+erk exec get-pr-discussion-comments
+
+# Include resolved threads (for reference)
+erk exec get-pr-review-comments --all
+```
+
+### Resolving Review Threads
+
+```bash
+# Resolve a single thread
+erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Fixed in commit abc1234"
+
+# Batch resolve multiple threads (preferred for pr-address batches)
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed"}, {"thread_id": "PRRT_def", "comment": "Applied"}]' | erk exec resolve-review-threads
+```
+
+### Replying to Discussion Comments
+
+```bash
+# For PR discussion comments (not code review threads)
+erk exec reply-to-discussion-comment --comment-id 12345 --reply "**Action taken:** Updated the docs as requested."
+```
+
+## Common Mistakes
+
+| Mistake                                        | Why It's Wrong                | Correct Approach                      |
+| ---------------------------------------------- | ----------------------------- | ------------------------------------- |
+| Using `gh api repos/.../comments/{id}/replies` | Only replies, doesn't resolve | Use `erk exec resolve-review-thread`  |
+| Using `gh pr comment`                          | Doesn't resolve threads       | Use `erk exec resolve-review-thread`  |
+| Skipping resolution for outdated threads       | Threads stay open in PR       | Always resolve, even if already fixed |
+| Generic replies like "Noted"                   | Not useful for PR history     | Include investigation findings        |
+
+## Replying vs Resolving
+
+&gt; **IMPORTANT: Replying ≠ Resolving**
+&gt;
+&gt; - **Replying** (via raw `gh api .../replies`): Adds a comment but thread stays OPEN
+&gt; - **Resolving** (via `erk exec resolve-review-thread`): Adds a comment AND marks thread as RESOLVED
+&gt;
+&gt; Always use `erk exec resolve-review-thread` (single) or `erk exec resolve-review-threads` (batch) - they do both in one operation.
+
+## Comment Classification Model
+
+When analyzing PR feedback, classify comments by complexity and group into batches.
+
+### Complexity Categories
+
+- **Local fix**: Single comment → single location change (e.g., "Fix typo", "Add type annotation")
+- **Multi-location**: Single comment → changes in multiple spots in one file
+- **Cross-cutting**: Single comment → changes across multiple files
+- **Related**: Multiple comments that inform a single unified change
+
+### Batch Ordering
+
+Process batches from simplest to most complex:
+
+| Batch | Complexity                 | Description                         | Example                                                   |
+| ----- | -------------------------- | ----------------------------------- | --------------------------------------------------------- |
+| 1     | Local fixes                | One file, one location per comment  | "Use LBYL pattern at line 42"                             |
+| 2     | Single-file multi-location | One file, multiple locations        | "Rename this variable everywhere in this file"            |
+| 3     | Cross-cutting              | Multiple files affected             | "Update all callers of this function"                     |
+| 4     | Complex/Related            | Multiple comments inform one change | "Fold validate into prepare" + "Use union types for this" |
+
+**Note**: Discussion comments requiring doc updates go in Batch 3 (cross-cutting).
+
+### Batch Confirmation Flow
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval
+
+## Inline Comment Deduplication
+
+When posting inline review comments, always deduplicate to prevent re-posting existing comments:
+
+1. **Build dedup key**: `(file_path, line_number, body_prefix)` where prefix is first 80 characters of comment body
+2. **Check proximity**: Match within 2-line tolerance (line 42 matches existing comments at lines 40–44)
+3. **Skip duplicates**: If a matching key exists, do not post the comment
+
+This prevents the same feedback from appearing multiple times across review iterations. See [Inline Comment Deduplication](../../docs/learned/review/inline-comment-deduplication.md) for full algorithm details.
+
+## Detailed Documentation
+
+For complete command documentation including JSON output formats, options, and examples:
+
+@references/commands.md
+</user>
+  <assistant>
+
+Now let me classify the PR feedback using the classifier agent.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1512" cache_read_input_tokens="29261" cache_creation="{'ephemeral_5m_input_tokens': 1512, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01FRRS8BE7iBiMYh8fJfdB6F">
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="description">Classify PR feedback</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Arguments: --pr 8623
+Return the complete JSON output as your final message.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1512" cache_read_input_tokens="29261" cache_creation="{'ephemeral_5m_input_tokens': 1512, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FRRS8BE7iBiMYh8fJfdB6F">
+Perfect! Now I have the PR feedback data and the file restructuring context. Let me classify the review threads according to the Comment Classification Model.
+
+Based on the fetched PR feedback for PR #8623, here is the complete classification:
+
+```json
+{
+  "success": true,
+  "pr_number": 8623,
+  "pr_title": "Consolidate 4 learn-plan PRs into single documentation update",
+  "pr_url": "https://github.com/dagster-io/erk/pull/8623",
+  "actionable_threads": [
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5xnb2P",
+      "type": "review",
+      "path": "docs/learned/architecture/worktree-dispatch-detection.md",
+      "line": 21,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Replace verbatim source code copy with source pointer format from documentation guidelines",
+      "complexity": "local",
+      "original_comment": "**Audit PR Docs**: Verbatim source code copy detected.\n\nSource: `src/erk/cli/commands/pr/dispatch_cmd.py:229-247`\n\nThis code block copies ~10 lines of erk source implementation and will go stale if the dispatch command is refactored.\n\nSuggested fix: Replace with the source pointer format from `docs/learned/documentation/source-pointers.md` (HTML comment + prose reference). The surrounding prose already describes the pattern clearly — the code block adds maintenance burden without adding insight."
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5xngYJ",
+      "type": "review",
+      "path": "docs/learned/architecture/worktree-dispatch-detection.md",
+      "line": 32,
+      "is_outdated": false,
+      "classification": "actionable",
+
+... [110 lines omitted] ...
+
+      "original_comment": "**Audit PR Docs**: Verbatim source code copy detected.\n\nSource: `src/erk/agent_docs/operations.py:31-42`\n\nThis code block copies the complete `resolve_docs_project_root()` function body (8 lines). If the function is updated (different exception type, added logging, changed default behavior), this block silently diverges.\n\nSuggested fix: Replace with the source pointer format from `docs/learned/documentation/source-pointers.md`:\n\n```\n&lt;!-- Source: src/erk/agent_docs/operations.py, resolve_docs_project_root --&gt;\nSee `resolve_docs_project_root()` in `src/erk/agent_docs/operations.py` for the resolver logic.\n```"
+  "error": null
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01PB4BJXQGXRfPcsjuBfUvLj">
+    <param name="todos">[{'content': 'Display batched execution plan', 'status': 'in_progress', 'activeForm': 'Dis...[truncated 1772 chars]...'Upload address session', 'status': 'pending', 'activeForm': 'Uploading address session'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2743" cache_read_input_tokens="30773" cache_creation="{'ephemeral_5m_input_tokens': 2743, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PB4BJXQGXRfPcsjuBfUvLj">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>## Execution Plan
+
+### Batch 1: Local Fixes (7 comments)
+
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | `worktree-dispatch-detection.md:21` | Replace verbatim source code copy with source pointer format |
+| 2 | `worktree-dispatch-detection.md:32` | Verify and correct source file and line number references |
+| 3 | `ci/job-ordering-strategy.md:60` | Replace line number reference with name-based identifier |
+| 4 | `config/external-docs-path.md:36` | Replace verbatim `resolve_docs_project_root()` copy with source pointer |
+| 5 | `config/external-docs-path.md:36` | (duplicate of #4 — same location, same fix) |
+| 6 | `testing/artifact-distribution-sync.md:56` | Correct TOML path from `codex/skills/` to `claude/skills/` |
+| 7 | `tui/architecture.md:171` | Replace verbatim `ErkDashApp` class MRO copy with source pointer |
+
+All are local fixes — auto-proceeding without confirmation.
+
+Let me start by reading all the affected files and the source-pointers documentation in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="638" cache_read_input_tokens="33516" cache_creation="{'ephemeral_5m_input_tokens': 638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01XZi4Kv2Tz9pWXJyEDkG3ik">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/worktree-dispatch-detection.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="638" cache_read_input_tokens="33516" cache_creation="{'ephemeral_5m_input_tokens': 638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01LLTHbbKxGqeLHq6bwC61EB">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/job-ordering-strategy.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="638" cache_read_input_tokens="33516" cache_creation="{'ephemeral_5m_input_tokens': 638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0155htpbEkiTdhhyZGqMjP7E">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/config/external-docs-path.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="638" cache_read_input_tokens="33516" cache_creation="{'ephemeral_5m_input_tokens': 638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01DsZVTdHwxVdqJB1c8NQbrf">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/artifact-distribution-sync.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="638" cache_read_input_tokens="33516" cache_creation="{'ephemeral_5m_input_tokens': 638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01W3zAL3dmUdgChScgFJ8Cpf">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/architecture.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="638" cache_read_input_tokens="33516" cache_creation="{'ephemeral_5m_input_tokens': 638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013WAnjWhxDMGAqhSxuYG4RP">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/documentation/source-pointers.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="638" cache_read_input_tokens="33516" cache_creation="{'ephemeral_5m_input_tokens': 638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XZi4Kv2Tz9pWXJyEDkG3ik">
+     1→---
+     2→title: Worktree Detection in Dispatch
+     3→read_when:
+     4→  - "modifying dispatch command logic"
+     5→  - "working with worktree branch detection"
+     6→tripwires:
+     7→  - action: "assuming plan branch is always in root worktree"
+     8→    warning: "Branch may already be checked out in a slot worktree. Use find_worktree_for_branch() to detect."
+     9→---
+    10→
+    11→# Worktree Detection in Dispatch
+    12→
+    13→## Problem
+    14→
+    15→`erk pr dispatch` needs to check out a plan branch, commit `.erk/impl-context/`, and push. Previously it assumed the branch could always be checked out in the root worktree, but the branch may already be checked out in a slot worktree (e.g., from a prior `erk implement`).
+    16→
+    17→## Solution
+    18→
+    19→LBYL pattern using `find_worktree_for_branch()` to detect if the branch is already in a worktree before attempting checkout:
+    20→
+    21→```python
+    22→existing_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, branch_name)
+    23→if existing_worktree is not None:
+    24→    work_dir = existing_worktree
+    25→    checked_out_in_root = False
+    26→else:
+    27→    ctx.branch_manager.checkout_branch(repo.root, branch_name)
+    28→    work_dir = repo.root
+    29→    checked_out_in_root = True
+    30→```
+
+... [24 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01LLTHbbKxGqeLHq6bwC61EB">
+     1→---
+     2→title: CI Job Ordering Strategy
+     3→read_when:
+     4→  - "modifying CI job dependencies"
+     5→  - "adding new CI jobs"
+     6→  - "understanding fix-formatting gating"
+     7→  - "debugging why CI restarted after a push"
+     8→tripwires:
+     9→  - action: "adding a new CI job without including fix-formatting in its needs list"
+    10→    warning: "All validation jobs must depend on both check-submission and fix-formatting. Without fix-formatting, the job may run against unformatted code and fail unnecessarily."
+    11→  - action: "removing test jobs from autofix's needs list"
+    12→    warning: "Autofix depends on ALL validation jobs including unit-tests and integration-tests. It needs full failure context to attempt fixes. See autofix-job-needs.md."
+    13→---
+    14→
+    15→# CI Job Ordering Strategy
+    16→
+    17→The CI workflow uses a three-tier architecture where a gate job controls entry, an auto-fix job runs formatting corrections, and seven parallel validation jobs run against the cleaned state.
+    18→
+    19→&lt;!-- Source: .github/workflows/ci.yml --&gt;
+    20→
+    21→## Three-Tier Architecture
+    22→
+    23→```
+    24→Tier 1: check-submission (gate)
+    25→    │
+    26→Tier 2: fix-formatting (auto-fix, independent of parallel jobs)
+    27→    │
+    28→Tier 3: ┌──────┬──────┬───────────┬────┬────────────┬─────────────┬──────────────┐
+    29→         format  lint  docs-check  ty  unit-tests  integration  erkbot-tests
+    30→```
+
+... [50 lines omitted] ...
+
+    66→**`ci-summarize`** depends on all validation jobs and runs only on failure. It uses a lightweight model to summarize CI failures for developers.
+    68→**`autofix`** depends on all validation jobs: format, lint, fix-formatting, docs-check, ty, unit-tests, and integration-tests. It runs after all checks complete to have full failure context. Currently disabled via kill-switch (`false &amp;&amp;` guard).
+  </tool_result>
+  <tool_result tool="toolu_0155htpbEkiTdhhyZGqMjP7E">
+     1→---
+     2→title: External Docs Path Configuration
+     3→read_when:
+     4→  - "configuring docs path in .erk/config.local.toml"
+     5→  - "adding new configurable paths to the config system"
+     6→tripwires:
+     7→  - action: "setting docs.path at global config level"
+     8→    warning: "docs_path is REPO_ONLY in RepoConfigSchema. Per-user paths go in .erk/config.local.toml (gitignored)."
+     9→---
+    10→
+    11→# External Docs Path Configuration
+    12→
+    13→## Feature
+    14→
+    15→The `[docs] path` setting in `.erk/config.local.toml` points erk docs commands to an external repository instead of the current project root.
+    16→
+    17→## Configuration
+    18→
+    19→```toml
+    20→# .erk/config.local.toml (gitignored, per-user)
+    21→[docs]
+    22→path = "/path/to/external/docs-repo"
+    23→```
+    24→
+    25→## Schema
+    26→
+    27→- Field: `docs_path: str | None` on `LoadedConfig`
+    28→- Config level: `REPO_ONLY` in `RepoConfigSchema` (not available at global level)
+    29→- Merge precedence: local config overrides repo config; `None` defaults to repo_root
+    30→
+
+... [29 lines omitted] ...
+
+    41→        raise click.ClickException(f"Configured docs.path does not exist: {docs_path}")
+  </tool_result>
+  <tool_result tool="toolu_01DsZVTdHwxVdqJB1c8NQbrf">
+     1→---
+     2→title: Artifact Distribution Sync Testing
+     3→read_when:
+     4→  - "adding portable skills to codex_portable_skills()"
+     5→  - "modifying pyproject.toml force-include entries"
+     6→  - "understanding bundled skill testing and distribution"
+     7→tripwires:
+     8→  - action: "adding a skill to codex_portable_skills() without a pyproject.toml force-include entry"
+     9→    warning: "The wheel won't contain the skill. Add a force-include entry in pyproject.toml [tool.hatch.build.targets.wheel.force-include]. test_codex_portable_skills_match_force_include will catch this."
+    10→  - action: "adding a force-include entry without registering in codex_portable_skills()"
+    11→    warning: "The skill will be distributed but not recognized by the runtime. Add it to codex_portable_skills() in src/erk/core/capabilities/codex_portable.py."
+    12→---
+    13→
+    14→# Artifact Distribution Sync Testing
+    15→
+    16→The artifact distribution tests enforce bidirectional synchronization between the Python skill registry and the wheel build manifest. This prevents shipping skills that aren't registered or registering skills that aren't packaged.
+    17→
+    18→## Three-Layer Validation Pyramid
+    19→
+    20→&lt;!-- Source: tests/unit/artifacts/test_codex_compatibility.py --&gt;
+    21→
+    22→```
+    23→Layer 1: Frontmatter Validation
+    24→├── test_all_skills_have_codex_required_frontmatter()
+    25→└── Every SKILL.md has valid name (≤64 chars) and description (≤1024 chars)
+    26→
+    27→Layer 2: On-Disk Inventory
+    28→├── test_portable_skills_match_bundled()
+    29→├── test_claude_only_skills_exist()
+    30→├── test_codex_portable_and_claude_only_cover_all_skills()
+
+... [59 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01W3zAL3dmUdgChScgFJ8Cpf">
+     1→---
+     2→title: TUI Architecture Overview
+     3→read_when:
+     4→  - "understanding TUI structure"
+     5→  - "implementing TUI components"
+     6→  - "working with TUI data providers"
+     7→tripwires:
+     8→  - action: "reusing same DOM element id across loading/empty/content states"
+     9→    warning: "query_one() returns wrong element silently when id is reused across lifecycle phases. Use unique IDs per phase."
+    10→  - action: "calling widget methods directly from @work(thread=True) background threads"
+    11→    warning: "Direct widget calls from background threads cause silent UI corruption. Must use self.app.call_from_thread(callback, ...)."
+    12→  - action: "extending PlanDataProvider ABC"
+    13→    warning: "Requires 3-file update: abc.py + real.py + fake.py. Fake must initialize new dict in __init__. Missing init causes AttributeError at test time."
+    14→  - action: "adding a DataTable column with add_column(key=...)"
+    15→    warning: "Column key is a data binding contract — must match data field name. Silent failure when mismatched."
+    16→  - action: "moving @on decorated event handlers to a mixin"
+    17→    warning: "Textual's _MessagePumpMeta only scans class.__dict__, not inherited methods. Event handlers on mixins are silently ignored."
+    18→last_audited: "2026-02-17 18:30 PT"
+    19→audit_result: clean
+    20→---
+    21→
+    22→# TUI Architecture Overview
+    23→
+    24→The erk TUI is built with Textual and follows a layered architecture separating data fetching, filtering, and rendering.
+    25→
+    26→## Directory Structure
+    27→
+    28→```
+    29→src/erk/tui/
+    30→├── app.py              # Main Textual App (ErkDashApp)
+
+... [190 lines omitted] ...
+
+   126→Use fake providers instead of mocking. `FakePlanDataProvider` lives in `erk_shared.gateway.plan_data_provider.fake` and accepts keyword-only arguments (`plans`, `clipboard`, `browser`, `repo_root`, `fetch_error`). The `make_plan_row()` helper in the same module creates test `PlanRowData` instances with sensible defaults.
+  </tool_result>
+  <tool_result tool="toolu_013WAnjWhxDMGAqhSxuYG4RP">
+     1→---
+     2→title: Source Pointers
+     3→read_when:
+     4→  - writing or updating documentation with code references
+     5→  - deciding whether to include a code block in docs
+     6→  - addressing verbatim code violations from audit-pr-docs review
+     7→tripwires:
+     8→  - action: "copying source code into a docs/learned/ markdown file"
+     9→    warning: "Use a source pointer instead. See source-pointers.md for the two-part format (HTML comment + prose reference)."
+    10→  - action: "using line numbers in source pointers"
+    11→    warning: "Prefer name-based identifiers (ClassName.method) over line numbers. Names survive refactoring; line numbers go stale silently."
+    12→  - action: "copying a verbatim code block from erk source into documentation"
+    13→    warning: "Verbatim code blocks silently go stale. Use a source pointer instead. Even partial excerpts create the same problem."
+    14→    score: 7
+    15→  - action: "referencing private (_underscore) methods by name in documentation prose"
+    16→    warning: "Private methods are implementation details that change frequently. Point to the public API or ABC method instead."
+    17→    score: 6
+    18→  - action: "submitting documentation PR without running code review"
+    19→    warning: "Run /local:review or /local:code-review before submitting documentation PRs to catch verbatim code, stale references, and formatting issues."
+    20→    score: 4
+    21→last_audited: "2026-02-25 00:00 PT"
+    22→audit_result: clean
+    23→---
+    24→
+    25→# Source Pointers
+    26→
+    27→Source pointers are the canonical format for referencing code from `docs/learned/` files. They exist because verbatim code blocks silently go stale — a copied function signature looks authoritative even after the real signature changed three PRs ago. Source pointers replace this silent failure with a loud one: a stale file path or symbol name is immediately obvious when an agent tries to navigate to it.
+    28→
+    29→For the deeper rationale behind this trade-off, see [stale-code-blocks-are-silent-bugs.md](stale-code-blocks-are-silent-bugs.md).
+    30→
+
+... [90 lines omitted] ...
+
+    60→Source pointers replace all code blocks _except_ the four cases where the One Code Rule grants an exception. The decision is mechanical:
+    74→**Partial excerpts are not an exception.** Copying "just the interesting lines" from a source file creates the same staleness problem as copying the whole function. If the code is erk source, use a pointer regardless of length.
+  </tool_result>
+  <assistant>Good, I've read all the files. Now I need to verify the actual source references before making changes. Let me check the dispatch_cmd.py to verify comment #2's claim about incorrect line references.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11689" cache_read_input_tokens="34154" cache_creation="{'ephemeral_5m_input_tokens': 11689, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01SfC8dhXZeqY8bbD1mhWNjV">
+    <param name="todos">[{'content': 'Display batched execution plan', 'status': 'completed', 'activeForm': 'Displ...[truncated 1573 chars]...'Upload address session', 'status': 'pending', 'activeForm': 'Uploading address session'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11689" cache_read_input_tokens="34154" cache_creation="{'ephemeral_5m_input_tokens': 11689, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SfC8dhXZeqY8bbD1mhWNjV">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Grep" id="toolu_016mDsJZjqgxmJDGqDaqHP2i">
+    <param name="pattern">find_worktree_for_branch</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="45843" cache_creation="{'ephemeral_5m_input_tokens': 620, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01FJoRKupa2pZokC1siKfYYQ">
+    <param name="pattern">find_worktree_for_branch</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="45843" cache_creation="{'ephemeral_5m_input_tokens': 620, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_0132mkvpgFBHyS5Q7QGSmRR5">
+    <param name="pattern">force-include</param>
+    <param name="path">/home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="620" cache_read_input_tokens="45843" cache_creation="{'ephemeral_5m_input_tokens': 620, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0132mkvpgFBHyS5Q7QGSmRR5">
+56-build-backend = "hatchling.build"
+57-
+58-[tool.hatch.build.targets.wheel]
+59-packages = ["src/erk"]
+60-
+61:[tool.hatch.build.targets.wheel.force-include]
+62-"CHANGELOG.md" = "erk/data/CHANGELOG.md"
+63-# Whitelist specific artifacts from .claude/ for distribution to external users
+64-# Commands: erk namespace only (not local)
+65-".claude/commands/erk" = "erk/data/claude/commands/erk"
+66-# Skills (bundled to claude path; codex backend falls back to claude path at runtime)
+  </tool_result>
+  <tool_result tool="toolu_01FJoRKupa2pZokC1siKfYYQ">
+/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py-152-    )
+/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py-153-
+/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py-154-    current_worktree_path = Ensure.not_none(
+src/erk/cli/commands/land_pipeline.py:155:        ctx.git.worktree.find_worktree_for_branch(repo_root, current_branch),
+/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py-156-        f"Cannot find worktree for current branch '{current_branch}'.",
+/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py-157-    )
+/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py-158-
+--
+/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py-240-    branch = resolve_branch_for_pr(ctx, main_repo_root, pr_details)
+/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py-241-    current_branch = ctx.git.branch.get_current_branch(ctx.cwd)
+/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py-242-    is_current_branch = current_branch == branch
+src/erk/cli/commands/land_pipeline.py:243:    worktree_path = ctx.git.worktree.find_worktree_for_branch(main_repo_root, branch)
+/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py-244-
+/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py-245-    return dataclasses.replace(
+/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py-246-        state,
+--
+/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py-270-
+/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py-271-    current_branch = ctx.git.branch.get_current_branch(ctx.cwd)
+/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py-272-    is_current_branch = current_branch == branch_name
+src/erk/cli/commands/land_pipeline.py:273:    worktree_path = ctx.git.worktree.find_worktree_for_branch(main_repo_root, branch_name)
+/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py-274-
+/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py-275-    return dataclasses.replace(
+/home/runner/work/erk/erk/src/erk/cli/commands/land_pipeline.py-276-        state,
+--
+/home/runner/work/erk/erk/src/erk/cli/commands/navigation_helpers.py-530-    target_branch = children[0]
+/home/runner/work/erk/erk/src/erk/cli/commands/navigation_helpers.py-531-
+/home/runner/work/erk/erk/src/erk/cli/commands/navigation_helpers.py-532-    # Check if target branch has a worktree, create if necessary
+src/erk/cli/commands/navigation_helpers.py:533:    target_wt_path = ctx.git.worktree.find_worktree_for_branch(repo.root, target_branch)
+src/erk/cli/commands/navigation_helpers.py-534-    if target_wt_path is None:
+/home/runner/work/erk/erk/src/erk/cli/commands/navigation_helpers.py-535-        # Auto-create worktree for target branch
+
+... [113 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_016mDsJZjqgxmJDGqDaqHP2i">
+No matches found
+  </tool_result>
+  <tool_use name="Read" id="toolu_015xVCSK3KVDnAHdUU7gMFqU">
+    <param name="file_path">/home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="offset">61</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="5292" cache_creation_input_tokens="448" cache_read_input_tokens="46463" cache_creation="{'ephemeral_5m_input_tokens': 448, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015xVCSK3KVDnAHdUU7gMFqU">
+    61→[tool.hatch.build.targets.wheel.force-include]
+    62→"CHANGELOG.md" = "erk/data/CHANGELOG.md"
+    63→# Whitelist specific artifacts from .claude/ for distribution to external users
+    64→# Commands: erk namespace only (not local)
+    65→".claude/commands/erk" = "erk/data/claude/commands/erk"
+    66→# Skills (bundled to claude path; codex backend falls back to claude path at runtime)
+    67→".claude/skills/cli-push-down" = "erk/data/claude/skills/cli-push-down"
+    68→".claude/skills/dignified-python" = "erk/data/claude/skills/dignified-python"
+    69→".claude/skills/fake-driven-testing" = "erk/data/claude/skills/fake-driven-testing"
+    70→".claude/skills/erk-diff-analysis" = "erk/data/claude/skills/erk-diff-analysis"
+    71→".claude/skills/erk-exec" = "erk/data/claude/skills/erk-exec"
+    72→".claude/skills/erk-planning" = "erk/data/claude/skills/erk-planning"
+    73→".claude/skills/objective" = "erk/data/claude/skills/objective"
+    74→".claude/skills/gh" = "erk/data/claude/skills/gh"
+    75→".claude/skills/gt" = "erk/data/claude/skills/gt"
+    76→".claude/skills/learned-docs" = "erk/data/claude/skills/learned-docs"
+    77→".claude/skills/dignified-code-simplifier" = "erk/data/claude/skills/dignified-code-simplifier"
+    78→".claude/skills/pr-operations" = "erk/data/claude/skills/pr-operations"
+    79→".claude/skills/pr-feedback-classifier" = "erk/data/claude/skills/pr-feedback-classifier"
+    80→# Agents: devrun and learn
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Good. Now I have all the context I need. Key findings:
+
+1. **worktree-dispatch-detection.md**: `find_worktree_for_branch` does NOT exist in `dispatch_cmd.py` at all. It's used in `dispatch_helpers.py`, `checkout_cmd.py`, `land_cmd.py`, etc. The doc's code block is verbatim source that needs a source pointer, and the file reference is inaccurate.
+2. **job-ordering-strategy.md:60**: Line number reference `ci.yml:15-17` needs to be name-based (`concurrency block`).
+3. **external-docs-path.md:36**: Verbatim copy of `resolve_docs_project_root()` function.
+4. **artifact-distribution-sync.md:56**: TOML example uses `erk/data/codex/skills/` but actual pyproject.toml uses `erk/data/claude/skills/`.
+5. **tui/architecture.md:171**: Verbatim copy of `ErkDashApp` class MRO.
+
+Let me now find the correct source file for the worktree dispatch pattern:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6008" cache_read_input_tokens="46911" cache_creation="{'ephemeral_5m_input_tokens': 6008, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01AeqdTr4T52sfoA6bpLbVcA">
+    <param name="pattern">find_worktree_for_branch.*branch_name</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">8</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6008" cache_read_input_tokens="46911" cache_creation="{'ephemeral_5m_input_tokens': 6008, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AeqdTr4T52sfoA6bpLbVcA">
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-208-    # For cross-repository PRs (forks), use pr/&lt;number&gt; to avoid conflicts
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-209-    # For same-repository PRs, use the actual branch name
+src/erk/cli/commands/pr/checkout_cmd.py-210-    if pr.is_cross_repository:
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-211-        branch_name = f"pr/{pr_number}"
+src/erk/cli/commands/pr/checkout_cmd.py-212-    else:
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-213-        branch_name = pr.head_ref_name
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-214-
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-215-    # Check if branch already exists in a worktree - handle immediately
+src/erk/cli/commands/pr/checkout_cmd.py:216:    existing_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, branch_name)
+src/erk/cli/commands/pr/checkout_cmd.py-217-    if existing_worktree is not None:
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-218-        navigate_and_display_checkout(
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-219-            ctx,
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-220-            worktree_path=existing_worktree,
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-221-            branch_name=branch_name,
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-222-            script=script,
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-223-            command_name="pr-checkout",
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-224-            already_existed=True,
+--
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-408-            f"Could not find PR #{pr_number}\n\n"
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-409-            "Check the PR number and ensure you're authenticated with gh CLI."
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-410-        )
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-411-        raise SystemExit(1)
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-412-
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-413-    branch_name = pr.head_ref_name
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-414-
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-415-    # Check if branch already exists in a worktree - handle this case immediately
+src/erk/cli/commands/pr/checkout_cmd.py:416:    existing_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, branch_name)
+src/erk/cli/commands/pr/checkout_cmd.py-417-    if existing_worktree is not None:
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-418-        navigate_and_display_checkout(
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py-419-            ctx,
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>The `find_worktree_for_branch` pattern is used in many places but not in `dispatch_cmd.py` itself. It's used in `dispatch_helpers.py` and `checkout_cmd.py`. The LBYL pattern shown in the doc most closely matches `checkout_cmd.py` or `checkout_helpers.py`. Let me check `checkout_helpers.py` since it has the `existing` variable pattern:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2174" cache_read_input_tokens="52919" cache_creation="{'ephemeral_5m_input_tokens': 2174, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018mMLLEHCiyuKjHfLZoyvCX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/checkout_helpers.py</param>
+    <param name="offset">235</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2174" cache_read_input_tokens="52919" cache_creation="{'ephemeral_5m_input_tokens': 2174, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018mMLLEHCiyuKjHfLZoyvCX">
+   235→        branch_name: Name of the branch to checkout
+   236→        no_slot: If True, create worktree without slot assignment
+   237→        force: Auto-unassign oldest branch if pool is full
+   238→
+   239→    Returns:
+   240→        Tuple of (worktree_path, already_existed) where already_existed
+   241→        is True if the branch was already in a worktree.
+   242→    """
+   243→    # Check if branch already exists in a worktree
+   244→    existing = ctx.git.worktree.find_worktree_for_branch(repo.root, branch_name)
+   245→    if existing is not None:
+   246→        return existing, True
+   247→
+   248→    # Create worktree (with or without slot)
+   249→    if no_slot:
+   250→        worktree_path = worktree_path_for(repo.worktrees_dir, branch_name)
+   251→        ctx.git.worktree.add_worktree(
+   252→            repo.root,
+   253→            worktree_path,
+   254→            branch=branch_name,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now I have all the context. The documented pattern is a general LBYL pattern for worktree detection — it's not specific to dispatch anymore. It's used across multiple files. The doc should reference the ABC method as the stable pointer target.
+
+Now let me make all the edits. I'll do them in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="592" cache_read_input_tokens="55093" cache_creation="{'ephemeral_5m_input_tokens': 592, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01DZC1XVRfpJH4tZdeLqAXkd">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/worktree-dispatch-detection.md</param>
+    <param name="old_string">LBYL pattern using `find_worktree_for_branch()` to detect if the branch is already in a wo...[truncated 312 chars]...cked_out_in_root = True
+```
+
+**Source:** `src/erk/cli/commands/pr/dispatch_cmd.py:229-247`</param>
+    <param name="new_string">LBYL pattern using `find_worktree_for_branch()` to detect if the branch is already in a wo...[truncated 413 chars]...sed in `checkout_helpers.py`, `checkout_cmd.py`, `dispatch_helpers.py`, and `land_cmd.py`.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="592" cache_read_input_tokens="55093" cache_creation="{'ephemeral_5m_input_tokens': 592, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_013BsbEhqCMBo6Tj981PCo1E">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/job-ordering-strategy.md</param>
+    <param name="old_string">&lt;!-- Source: .github/workflows/ci.yml:15-17 --&gt;</param>
+    <param name="new_string">&lt;!-- Source: .github/workflows/ci.yml, concurrency block --&gt;</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="592" cache_read_input_tokens="55093" cache_creation="{'ephemeral_5m_input_tokens': 592, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01YEakDK45QXhsH4XFT5WBoi">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/config/external-docs-path.md</param>
+    <param name="old_string">`resolve_docs_project_root()` in `src/erk/agent_docs/operations.py:31-42` resolves the eff...[truncated 212 chars]...ck.ClickException(f"Configured docs.path does not exist: {docs_path}")
+    return path
+```</param>
+    <param name="new_string">&lt;!-- Source: src/erk/agent_docs/operations.py, resolve_docs_project_root --&gt;
+
+`resolve_doc...[truncated 140 chars]...configured path exists (raising `ClickException` if not), and returns the resolved `Path`.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="592" cache_read_input_tokens="55093" cache_creation="{'ephemeral_5m_input_tokens': 592, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01HZ3Ruka8GJFuZuJPdPRHuM">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/testing/artifact-distribution-sync.md</param>
+    <param name="old_string">```toml
+".claude/skills/dignified-python" = "erk/data/codex/skills/dignified-python"
+".claude/skills/fake-driven-testing" = "erk/data/codex/skills/fake-driven-testing"
+```</param>
+    <param name="new_string">```toml
+".claude/skills/dignified-python" = "erk/data/claude/skills/dignified-python"
+".claude/skills/fake-driven-testing" = "erk/data/claude/skills/fake-driven-testing"
+```</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="592" cache_read_input_tokens="55093" cache_creation="{'ephemeral_5m_input_tokens': 592, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_012agHtFCVrKVpAoDWhkYCNR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/architecture.md</param>
+    <param name="old_string">```python
+class ErkDashApp(
+    NavigationActionsMixin,    # URL opening, clipboard, brows...[truncated 241 chars]...  App,                       # Textual base
+):
+```
+
+**Source:** `src/erk/tui/app.py:43-50`</param>
+    <param name="new_string">&lt;!-- Source: src/erk/tui/app.py, ErkDashApp --&gt;
+
+See `ErkDashApp` in `src/erk/tui/app.py` ...[truncated 205 chars]...reaming output), `BackgroundWorkersMixin` (background workers), plus Textual's `App` base.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="592" cache_read_input_tokens="55093" cache_creation="{'ephemeral_5m_input_tokens': 592, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DZC1XVRfpJH4tZdeLqAXkd">
+The file /home/runner/work/erk/erk/docs/learned/architecture/worktree-dispatch-detection.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_013BsbEhqCMBo6Tj981PCo1E">
+The file /home/runner/work/erk/erk/docs/learned/ci/job-ordering-strategy.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01YEakDK45QXhsH4XFT5WBoi">
+The file /home/runner/work/erk/erk/docs/learned/config/external-docs-path.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01HZ3Ruka8GJFuZuJPdPRHuM">
+The file /home/runner/work/erk/erk/docs/learned/testing/artifact-distribution-sync.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_012agHtFCVrKVpAoDWhkYCNR">
+The file /home/runner/work/erk/erk/docs/learned/tui/architecture.md has been updated successfully.
+  </tool_result>
+  <assistant>All edits are done. Let me update the todos and run CI checks.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2210" cache_read_input_tokens="55685" cache_creation="{'ephemeral_5m_input_tokens': 2210, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_0118FVLBdXY2f9TTrMXQx67B">
+    <param name="todos">[{'content': 'Display batched execution plan', 'status': 'completed', 'activeForm': 'Displ...[truncated 1585 chars]...'Upload address session', 'status': 'pending', 'activeForm': 'Uploading address session'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2210" cache_read_input_tokens="55685" cache_creation="{'ephemeral_5m_input_tokens': 2210, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0118FVLBdXY2f9TTrMXQx67B">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Task" id="toolu_018fmHzwK7BLSioE82pbKmB6">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run docs-check CI</param>
+    <param name="prompt">Run `make docs-check` in /home/runner/work/erk/erk and report results. This validates documentation files.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="593" cache_read_input_tokens="57895" cache_creation="{'ephemeral_5m_input_tokens': 593, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018fmHzwK7BLSioE82pbKmB6">
+**make docs-check passed:** All documentation validation checks completed successfully.
+
+**Summary:**
+- Frontmatter validation: 538 files passed
+- Generated files: 55 files verified in sync
+- Agent docs health check: PASSED
+- Exit code: 0 (success)
+
+The documentation system is healthy with all metadata properly structured and generated files synchronized.
+agentId: aa3ee10 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>CI checks pass. Now let me commit and resolve all threads.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="233" cache_read_input_tokens="58488" cache_creation="{'ephemeral_5m_input_tokens': 233, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_018jxvPLXHm5drbZxyzThvkP">
+    <param name="todos">[{'content': 'Display batched execution plan', 'status': 'completed', 'activeForm': 'Displ...[truncated 1587 chars]...'Upload address session', 'status': 'pending', 'activeForm': 'Uploading address session'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="233" cache_read_input_tokens="58488" cache_creation="{'ephemeral_5m_input_tokens': 233, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018jxvPLXHm5drbZxyzThvkP">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PimoVEhcAoJpYGuTA63ayn">
+    <param name="command">git add docs/learned/architecture/worktree-dispatch-detection.md docs/learned/ci/job-order...[truncated 754 chars]...de](https://claude.com/claude-code)
+
+Co-Authored-By: Claude &lt;noreply@anthropic.com&gt;
+EOF
+)"</param>
+    <param name="description">Commit batch 1 changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="590" cache_read_input_tokens="58721" cache_creation="{'ephemeral_5m_input_tokens': 590, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PimoVEhcAoJpYGuTA63ayn">
+[plnd/consolidate-learn-docs-03-02-1752 47b2a7092] Address PR review comments (batch 1/1)
+ 5 files changed, 11 insertions(+), 37 deletions(-)
+  </tool_result>
+  <assistant>Now let me resolve all 7 review threads. Thread 4 and 5 are both on the same file/line — I'll resolve both since both flagged the same verbatim code copy that I fixed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="418" cache_read_input_tokens="59311" cache_creation="{'ephemeral_5m_input_tokens': 418, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01B1EAzQg6dMLC2LVeTuRtBk">
+    <param name="command">echo '[{"thread_id": "PRRT_kwDOPxC3hc5xnb2P", "comment": "Replaced verbatim code block wit...[truncated 1406 chars]...py`. Prose lists all mixin names and their purposes."}]' | erk exec resolve-review-threads</param>
+    <param name="description">Batch resolve all 7 review threads</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="418" cache_read_input_tokens="59311" cache_creation="{'ephemeral_5m_input_tokens': 418, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01B1EAzQg6dMLC2LVeTuRtBk">
+{
+  "success": false,
+  "error_type": "invalid-json",
+  "message": "Failed to parse JSON: Expecting value: line 1 column 1 (char 0)"
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01KXYxzihxanXngK2c3tdZ6s">
+    <param name="command">cat &lt;&lt;'JSONEOF' | erk exec resolve-review-threads
+[{"thread_id": "PRRT_kwDOPxC3hc5xnb2P", ...[truncated 1028 chars]...DashApp class MRO copy with source pointer to ErkDashApp in src/erk/tui/app.py."}]
+JSONEOF</param>
+    <param name="description">Batch resolve review threads via heredoc</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="755" cache_read_input_tokens="59729" cache_creation="{'ephemeral_5m_input_tokens': 755, 'ephemeral_1h_input_tokens': 0}" output_tokens="525" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KXYxzihxanXngK2c3tdZ6s">
+{
+  "success": true,
+  "results": [
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5xnb2P",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5xngYJ",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5xncNq",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5xncF3",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5xndRj",
+      "comment_added": true
+    },
+    {
+      "success": true,
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>## Batch 1 Complete
+
+Addressed:
+- `worktree-dispatch-detection.md:21` — Replaced verbatim source code with source pointer to ABC
+- `worktree-dispatch-detection.md:32` — Corrected inaccurate source file reference
+- `job-ordering-strategy.md:60` — Replaced line number reference with name-based identifier
+- `external-docs-path.md:36` — Replaced verbatim function copy with source pointer + prose
+- `artifact-distribution-sync.md:56` — Corrected TOML paths (codex → claude)
+- `tui/architecture.md:171` — Replaced verbatim class MRO with source pointer
+
+Committed: `47b2a7092` "Address PR review comments (batch 1/1)"
+
+Resolved threads: 7/7
+
+Now let me verify all threads are resolved.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="892" cache_read_input_tokens="60484" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_016TMVzq8zDdUAtZnj2rRH4D">
+    <param name="todos">[{'content': 'Display batched execution plan', 'status': 'completed', 'activeForm': 'Displ...[truncated 1589 chars]...'Upload address session', 'status': 'pending', 'activeForm': 'Uploading address session'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="892" cache_read_input_tokens="60484" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016TMVzq8zDdUAtZnj2rRH4D">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Task" id="toolu_01J92D19nxDwB1Dp4yh2UrUr">
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="description">Verify PR feedback resolved</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Arguments: --pr 8623
+Return the complete JSON output as your final message.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="787" cache_read_input_tokens="61376" cache_creation="{'ephemeral_5m_input_tokens': 787, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01J92D19nxDwB1Dp4yh2UrUr">
+Based on the PR feedback data and the diff analysis, I'll now classify the feedback. This PR has significant file restructuring (major changes to docs/learned/, deletion of erkdesk/ directory, file renames like `pr-fix-conflicts.yml` → `pr-rebase.yml`, etc.).
+
+The PR has 3 discussion comments from bots related to the audit report, which are informational/auto-generated status updates. There are no review threads (code review comments). Let me analyze the classification:
+
+```json
+{
+  "success": true,
+  "pr_number": 8623,
+  "pr_title": "Consolidate 4 learn-plan PRs into single documentation update",
+  "pr_url": "https://github.com/dagster-io/erk/pull/8623",
+  "actionable_threads": [
+    {
+      "thread_id": "3986040200",
+      "type": "discussion",
+      "path": null,
+      "line": null,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Fix 3 violations in documentation: verbatim code block in external-docs-path.md:36, inaccurate source reference in worktree-dispatch-detection.md:32, inaccurate code example in artifact-distribution-sync.md:56",
+      "complexity": "single_file",
+      "original_comment": "Audit PR Docs - Found 3 violations across 3 files. Inline comments posted for each."
+    }
+  ],
+  "discussion_actions": [
+    {
+      "comment_id": 3985964579,
+      "action_summary": "Plan submission confirmation - workflow dispatch initiated",
+      "complexity": "informational",
+      "original_comment": "Plan Queued for Implementation - Plan submitted by schrockn at 2026-03-02T17:55:00.958594+00:00."
+
+... [57 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <assistant>The verification shows all 7 review threads are resolved. The remaining items are:
+- 1 discussion comment (audit bot summary) — this is the parent comment that spawned the inline review threads, which are all resolved now. I should reply to acknowledge.
+- 3 informational discussion comments (workflow status updates) — these are automated bot messages that don't need action.
+
+Let me reply to the audit bot summary discussion comment and then proceed to the final steps.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1109" cache_read_input_tokens="62163" cache_creation="{'ephemeral_5m_input_tokens': 1109, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01WzJJB46davV4DQqfyVbXAv">
+    <param name="command">erk exec reply-to-discussion-comment --comment-id 3986040200 --reply "All 3 violations add...[truncated 131 chars]...tionally addressed 4 other review threads from the same audit (7 total threads resolved)."</param>
+    <param name="description">Reply to audit bot summary comment</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1109" cache_read_input_tokens="62163" cache_creation="{'ephemeral_5m_input_tokens': 1109, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WzJJB46davV4DQqfyVbXAv">
+{
+  "success": true,
+  "comment_id": 3986040200,
+  "reply_id": 3986484294,
+  "pr_number": 8623
+}
+  </tool_result>
+  <assistant>Now let me update the PR description and upload the session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="316" cache_read_input_tokens="63272" cache_creation="{'ephemeral_5m_input_tokens': 316, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_014ru5LrzYzTpSRZQiuFhPwa">
+    <param name="todos">[{'content': 'Display batched execution plan', 'status': 'completed', 'activeForm': 'Displ...[truncated 1591 chars]...'Upload address session', 'status': 'pending', 'activeForm': 'Uploading address session'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="316" cache_read_input_tokens="63272" cache_creation="{'ephemeral_5m_input_tokens': 316, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014ru5LrzYzTpSRZQiuFhPwa">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+</session>
