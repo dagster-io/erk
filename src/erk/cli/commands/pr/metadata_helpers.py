@@ -45,6 +45,7 @@ def write_dispatch_metadata(
     if isinstance(plan_result, PlanNotFound):
         raise RuntimeError(f"Plan #{plan_number} not found")
 
+    plan_backend.ensure_plan_header(repo_root, plan_id)
     plan_backend.update_metadata(
         repo_root,
         plan_id,
@@ -67,10 +68,13 @@ def maybe_update_plan_dispatch_metadata(
     This function is used after triggering a remote workflow to record dispatch
     metadata (run_id, node_id, timestamp) on the associated plan.
 
+    If the plan lacks a plan-header metadata block, one is automatically created
+    before writing dispatch metadata. This handles plans created through
+    non-standard paths that bypass the normal create_plan() pipeline.
+
     Uses early returns to skip updates when:
     - Branch doesn't match P{plan_number} pattern
     - Workflow run node ID is not available
-    - Plan doesn't have a plan-header metadata block
 
     Args:
         ctx: Erk context with gateways
@@ -86,23 +90,7 @@ def maybe_update_plan_dispatch_metadata(
     if node_id is None:
         return
 
-    # LBYL: Check if plan-header block exists with all required fields before
-    # attempting update. This catches both missing blocks (non-erk-plan issues
-    # that happen to have P{number} prefix) and incomplete blocks (e.g.,
-    # schema_version present but created_at/created_by missing).
-    all_metadata = ctx.plan_backend.get_all_metadata_fields(repo.root, plan_id)
-    if isinstance(all_metadata, PlanNotFound):
-        return
-    required_fields = {"schema_version", "created_at", "created_by"}
-    missing = required_fields - all_metadata.keys()
-    if missing:
-        user_output(
-            click.style("⚠", fg="yellow")
-            + f" Plan #{plan_id} has incomplete plan-header"
-            + f" (missing {', '.join(sorted(missing))}), skipping dispatch metadata update"
-        )
-        return
-
+    ctx.plan_backend.ensure_plan_header(repo.root, plan_id)
     ctx.plan_backend.update_metadata(
         repo.root,
         plan_id,

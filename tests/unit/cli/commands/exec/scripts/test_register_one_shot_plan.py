@@ -139,8 +139,8 @@ def test_all_fail_when_issue_and_pr_missing(tmp_path: Path) -> None:
     assert output["lifecycle_stage"]["success"] is False
 
 
-def test_dispatch_fails_others_succeed(tmp_path: Path) -> None:
-    """No plan-header block causes dispatch and lifecycle_stage to fail; comment still works."""
+def test_dispatch_succeeds_when_plan_header_missing(tmp_path: Path) -> None:
+    """Missing plan-header is auto-created by ensure_plan_header; all operations succeed."""
     issue = _issue(123, "# No plan-header")
     issues = FakeGitHubIssues(issues={123: issue})
     github = FakeGitHub(
@@ -152,7 +152,6 @@ def test_dispatch_fails_others_succeed(tmp_path: Path) -> None:
     )
     assert result.exit_code == 0
     output = json.loads(result.output)
-    assert output["dispatch_metadata"]["success"] is False
+    assert output["dispatch_metadata"]["success"] is True
     assert output["queued_comment"]["success"] is True
-    # lifecycle_stage also fails — update_metadata needs the plan-header block
-    assert output["lifecycle_stage"]["success"] is False
+    assert output["lifecycle_stage"]["success"] is True
