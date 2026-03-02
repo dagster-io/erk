@@ -129,7 +129,7 @@ def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() ->
         # Verify: expected output messages for git plumbing path
         assert "Syncing branch:" in result.output
         assert "Committing plan to branch..." in result.output
-        assert "Workflow triggered" in result.output
+        assert "Workflow dispatched" in result.output
 
         # Verify: no warnings, dispatch metadata written successfully
         assert "Warning:" not in result.output

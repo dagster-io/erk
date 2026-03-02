@@ -109,7 +109,7 @@ def test_workflow_launch_pr_rebase_triggers_workflow(tmp_path: Path) -> None:
         assert "PR #123" in result.output
         assert "Add feature" in result.output
         assert "Base branch: main" in result.output
-        assert "Workflow triggered" in result.output
+        assert "Workflow dispatched" in result.output
 
         # Verify workflow was triggered with correct inputs
         assert len(github.triggered_workflows) == 1
@@ -224,7 +224,7 @@ def test_workflow_launch_pr_address_triggers_workflow(tmp_path: Path) -> None:
 
         assert result.exit_code == 0
         assert "PR #123" in result.output
-        assert "Workflow triggered" in result.output
+        assert "Workflow dispatched" in result.output
 
         # Verify workflow was triggered
         assert len(github.triggered_workflows) == 1
@@ -270,7 +270,7 @@ def test_workflow_launch_learn_triggers_workflow(tmp_path: Path) -> None:
         result = runner.invoke(cli, ["launch", "learn", "--plan", "123"], obj=ctx)
 
         assert result.exit_code == 0
-        assert "Workflow triggered" in result.output
+        assert "Workflow dispatched" in result.output
 
         # Verify workflow was triggered
         assert len(github.triggered_workflows) == 1
@@ -387,7 +387,7 @@ def test_workflow_launch_pr_rewrite_triggers_workflow(tmp_path: Path) -> None:
 
         assert result.exit_code == 0
         assert "PR #123" in result.output
-        assert "Workflow triggered" in result.output
+        assert "Workflow dispatched" in result.output
 
         # Verify workflow was triggered
         assert len(github.triggered_workflows) == 1
@@ -451,7 +451,7 @@ def test_workflow_launch_one_shot_triggers_workflow(tmp_path: Path) -> None:
 
         assert result.exit_code == 0
         assert "PR #123" in result.output
-        assert "Workflow triggered" in result.output
+        assert "Workflow dispatched" in result.output
 
         # Verify workflow was triggered with correct inputs
         assert len(github.triggered_workflows) == 1
@@ -501,7 +501,7 @@ def test_workflow_launch_one_shot_with_file(tmp_path: Path) -> None:
         )
 
         assert result.exit_code == 0
-        assert "Workflow triggered" in result.output
+        assert "Workflow dispatched" in result.output
 
         # Verify prompt was read from file
         assert len(github.triggered_workflows) == 1
