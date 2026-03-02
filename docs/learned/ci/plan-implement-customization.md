@@ -24,43 +24,6 @@ Python version is auto-discovered by uv from standard repo config — no erk-spe
 
 To control which Python version erk remote workflows use, add a `.python-version` file to your repo root (e.g., `3.11`).
 
-## Extension Point
-
-The workflow checks for a local composite action at `.github/actions/erk-impl-setup/action.yml` after checkout. If present, it runs before uv installation.
-
-## Example: Repository with System Dependencies
-
-Create `.github/actions/erk-impl-setup/action.yml`:
-
-```yaml
-name: "Erk CI Setup"
-description: "Repo-specific setup for erk-impl workflow"
-
-runs:
-  using: "composite"
-  steps:
-    - name: Install system dependencies
-      shell: bash
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libxml2-dev libxslt-dev libgit2-dev
-```
-
-## When to Use
-
-Use a local composite action when your repository needs:
-
-- **System dependencies**: Libraries not available in ubuntu-latest
-- **Environment variables**: Set before uv/erk installation
-- **Pre-installation setup**: Any arbitrary setup steps
-
-## Workflow Behavior
-
-1. **No action exists**: Workflow uses defaults (no extra setup)
-2. **Action exists**: Workflow runs it, then uses its outputs (if any)
-
-The `hashFiles()` check ensures zero overhead for repos without customization.
-
 ## Step Output Gating Pattern
 
 The erk-impl workflow uses step outputs to conditionally execute downstream steps based on implementation results.
