@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Extract generic `inject_metadata_block_before_footer` utility"
+}
