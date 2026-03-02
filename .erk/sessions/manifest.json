@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "plan_id": 8609,
+  "sessions": [
+    {
+      "session_id": "dde102f8-f26b-464a-a801-edb171c55897",
+      "stage": "planning",
+      "source": "local",
+      "uploaded_at": "2026-03-02T05:13:08.149946+00:00",
+      "files": [
+        "planning-dde102f8-f26b-464a-a801-edb171c55897-dde102f8-f26b-464a-a801-edb171c55897.xml"
+      ]
+    }
+  ]
+}

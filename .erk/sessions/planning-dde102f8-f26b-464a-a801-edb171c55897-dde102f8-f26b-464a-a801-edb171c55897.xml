@@ -1,0 +1,1137 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>list all capabilities available fo users to install</user>
+  <thinking>The user wants to see all capabilities available for users to install. Let me explore the codebase to find what capabilities are available.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="11058" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11058}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01PLHB28HxKy3ZuZCtSddfyv">
+    <param name="description">Find all installable capabilities</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 487 chars]...ook at the capabilities/ directory structure and any enum or registry of capability names.</param>
+    <param name="model">haiku</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11058" cache_read_input_tokens="19113" output_tokens="297" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11058, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PLHB28HxKy3ZuZCtSddfyv">
+Perfect! Now let me compile all the information I've gathered. Let me create a comprehensive summary:
+
+## Summary: All Available Erk Capabilities
+
+Based on my exploration of the erk codebase, here's the complete list of capabilities available for users to install. The capabilities are defined in `/Users/schrockn/code/erk/src/erk/core/capabilities/registry.py` which is the single source of truth for all registered capabilities.
+
+### How Capabilities Work
+
+1. **Registration**: All capabilities are registered in `/Users/schrockn/code/erk/src/erk/core/capabilities/registry.py` via the `_all_capabilities()` function
+2. **Installation**: Users can install/uninstall capabilities via `erk init capability add &lt;name&gt;` and `erk init capability remove &lt;name&gt;` commands
+3. **Discovery**: List all capabilities with `erk init capability list`
+4. **Scopes**: Capabilities are either "project" (per-repository) or "user" (global)
+5. **Required**: Some capabilities auto-install during `erk init` (marked as `required=True`)
+
+### Complete Capabilities List
+
+#### REQUIRED CAPABILITIES (auto-installed during erk init)
+
+| Name | Type | Scope | Description |
+|------|------|-------|-------------|
+| `learned-docs` | Documentation System | Project | Autolearning documentation system for agent-discoverable docs |
+| `erk-impl-workflow` | Workflow | Project | GitHub Action for automated implementation |
+| `code-reviews-system` | GitHub Infrastructure | Project | GitHub Actions infrastructure for convention-based code reviews |
+| `erk-hooks` | Hooks/Settings | Project | Configure Claude Code hooks for session management |
+
+**File locations:**
+- `/Users/schrockn/code/erk/src/erk/capabilities/learned_docs.py`
+- `/Users/schrockn/code/erk/src/erk/capabilities/workflows/erk_impl.py`
+- `/Users/schrockn/code/erk/src/erk/capabilities/code_reviews_system.py`
+- `/Users/schrockn/code/erk/src/erk/capabilities/hooks.py`
+
+... [120 lines omitted] ...
+  </tool_result>
+  <assistant>Here are all **29 capabilities** available for users to install via `erk init capability add &lt;name&gt;`:
+
+### Required (auto-installed during `erk init`)
+
+| Name | Description |
+|------|-------------|
+| `learned-docs` | Autolearning documentation system for agent-discoverable docs |
+| `erk-impl-workflow` | GitHub Action for automated implementation |
+| `code-reviews-system` | GitHub Actions infrastructure for convention-based code reviews |
+| `erk-hooks` | Configure Claude Code hooks for session management |
+
+### Bundled Skills (12)
+
+| Name | Description |
+|------|-------------|
+| `cli-push-down` | Moving mechanical computation from prompts to exec commands |
+| `dignified-python` | Python coding standards (LBYL, modern types, ABCs) |
+| `fake-driven-testing` | 5-layer test architecture with fakes |
+| `erk-diff-analysis` | Code diff analysis for commit messages |
+| `erk-exec` | Erk exec subcommand reference |
+| `erk-planning` | Plan management |
+| `objective` | Objective tracking and management |
+| `gh` | GitHub CLI integration |
+| `gt` | Graphite stacked PR management |
+| `dignified-code-simplifier` | Code simplification review |
+| `pr-operations` | Pull request operations |
+| `pr-feedback-classifier` | PR feedback classification |
+
+### Code Reviews (3) — require `code-reviews-system`
+
+| Name | Description |
+|------|-------------|
+| `review-tripwires` | Tripwires code review for detecting dangerous patterns |
+| `review-dignified-python` | Dignified Python style code review |
+| `review-dignified-code-simplifier` | Code simplification suggestions review |
+
+### Workflows (4)
+
+| Name | Description |
+|------|-------------|
+| `learn-workflow` | GitHub Action for learn documentation workflow |
+| `one-shot-workflow` | GitHub Action for one-shot workflow |
+| `pr-address-workflow` | GitHub Action for PR address workflow |
+| `pr-rebase-workflow` | GitHub Action for PR rebase workflow |
+
+### Agent (1)
+
+| Name | Description |
+|------|-------------|
+| `devrun-agent` | Safe execution agent for pytest/ty/ruff/make/gt |
+
+### Reminders (4) — opt-in context injection
+
+| Name | Description |
+|------|-------------|
+| `devrun-reminder` | Remind agent to use devrun for CI tool commands |
+| `dignified-python-reminder` | Remind agent to follow dignified-python standards |
+| `explore-docs-reminder` | Remind agent to include doc-first instructions in Explore prompts |
+| `tripwires-reminder` | Remind agent to check tripwires.md |
+
+### Settings/Configuration (3)
+
+| Name | Description |
+|------|-------------|
+| `erk-bash-permissions` | Allow `Bash(erk:*)` commands in Claude Code |
+| `ruff-format` | Auto-format Python files with ruff after Write/Edit |
+| `statusline` | Claude Code status line configuration (user-scoped) |
+
+All capabilities are **project-scoped** except `statusline` which is **user-scoped**. Install with `erk init capability add &lt;name&gt;`, remove with `erk init capability remove &lt;name&gt;`, list with `erk init capability list`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2728" cache_read_input_tokens="30171" output_tokens="817" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2728, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>
+  ┌─────────────────────┬────────────────────────────────────────────────┐
+  │        Name         │                  Description                   │
+  ├─────────────────────┼────────────────────────────────────────────────┤
+  │ learn-workflow      │ GitHub Action for learn documentation workflow │
+  ├─────────────────────┼────────────────────────────────────────────────┤
+  │ one-shot-workflow   │ GitHub Action for one-shot workflow            │
+  ├─────────────────────┼────────────────────────────────────────────────┤
+  │ pr-address-workflow │ GitHub Action for PR address workflow          │
+  ├─────────────────────┼────────────────────────────────────────────────┤
+  │ pr-rebase-workflow  │ GitHub Action for PR rebase workflow           │
+  └─────────────────────┴──────────────────────────────────────────────
+
+----
+
+include these by default
+
+----
+
+
+  │ pr-operations             │ Pull request operations                                     │
+  ├───────────────────────────┼─────────────────────────────────────────────────────────────┤
+  │ pr-feedback-classifier    │ PR feedback classification
+
+│ erk-diff-analysis         │ Code diff analysis for commit messages                      │
+  ├───────────────────────────┼─────────────────────────────────────────────────────────────┤
+  │ erk-exec                  │ Erk exec subcommand reference
+
+  │ objective                 │ Objective tracking and management
+
+----
+
+also include these by default
+
+│ erk-impl-workflow   │ GitHub Action for automated implementation                      │
+
+default</user>
+  <thinking>The user wants me to make several capabilities required (auto-installed by default). Let me identify which ones:
+
+1. `learn-workflow`
+2. `one-shot-workflow`
+3. `pr-address-workflow`
+4. `pr-rebase-workflow`
+5. `pr-operations`
+6. `pr-feedback-classifier`
+7. `erk-diff-analysis`
+8. `erk-exec`
+9. `objective`
+10. `erk-impl-workflow` (already required based on my earlier research, but user is confirming)
+
+Let me find where `required` is set for each capability and make the changes. I need to look at the capability definitions.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="1404" cache_read_input_tokens="32899" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1404}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll find the capability definitions to mark them as required.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1404" cache_read_input_tokens="32899" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1404}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Gw5wEwWMsS6UJUvoNuzS6s">
+    <param name="description">Find capability required flags</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 580 chars]...s set (or defaults) for each of these capabilities so we can change them to required=True.</param>
+    <param name="model">haiku</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1404" cache_read_input_tokens="32899" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1404}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Gw5wEwWMsS6UJUvoNuzS6s">
+Perfect! Now I have most of the information. Let me create a comprehensive summary by compiling all the findings:
+
+## Summary: `required` Field Locations for All Specified Capabilities
+
+Based on my code analysis, here are the exact file paths and line numbers where `required` is set (or defaults) for each capability:
+
+### 1. **learn-workflow**
+- **File**: `/Users/schrockn/code/erk/src/erk/capabilities/workflows/learn.py`
+- **Class**: `LearnWorkflowCapability`
+- **Setting**: Lines 33-35
+  ```python
+  @property
+  def required(self) -&gt; bool:
+      return True
+  ```
+
+### 2. **one-shot-workflow**
+- **File**: `/Users/schrockn/code/erk/src/erk/capabilities/workflows/one_shot.py`
+- **Class**: `OneShotWorkflowCapability`
+- **Setting**: Lines 33-35
+  ```python
+  @property
+  def required(self) -&gt; bool:
+      return True
+  ```
+
+### 3. **pr-address-workflow**
+- **File**: `/Users/schrockn/code/erk/src/erk/capabilities/workflows/pr_address.py`
+- **Class**: `PrAddressWorkflowCapability`
+- **Setting**: Lines 33-35
+
+... [79 lines omitted] ...
+  </tool_result>
+  <thinking>So the workflows are already `required=True`. The bundled skills (pr-operations, pr-feedback-classifier, erk-diff-analysis, erk-exec, objective) default to `required=False` via the base class.
+
+I need to make those 5 bundled skills required. Let me read the bundled.py file to see how best to do this.
+
+Also, erk-impl-workflow is already required. The user mentioned it but it's already done.
+
+Let me read the bundled.py file.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1720" cache_read_input_tokens="34303" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1720}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The 4 workflow capabilities and `erk-impl-workflow` are already `required=True`. I need to make the 5 bundled skills required. Let me read the bundled skills file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1720" cache_read_input_tokens="34303" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1720}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CTJhycFtF7zj2aDYeLN9tF">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/capabilities/skills/bundled.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1720" cache_read_input_tokens="34303" output_tokens="254" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1720, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CTJhycFtF7zj2aDYeLN9tF">
+     1→"""Bundled skill capabilities — cached factory.
+     2→
+     3→All simple skill capabilities (those that only need a name and description)
+     4→are registered here. The dict is created lazily via a cached function to
+     5→avoid module-import-time allocation.
+     6→
+     7→Skills with custom install/uninstall logic (like learned-docs) are NOT here;
+     8→they have their own capability classes.
+     9→"""
+    10→
+    11→from functools import cache
+    12→
+    13→from erk.core.capabilities.codex_portable import codex_portable_skills
+    14→from erk.core.capabilities.skill_capability import SkillCapability
+    15→from erk_shared.context.types import AgentBackend
+    16→
+    17→
+    18→@cache
+    19→def bundled_skills() -&gt; dict[str, str]:
+    20→    """Return the bundled skills dict. Cached to avoid re-creation."""
+    21→    return {
+    22→        "cli-push-down": "Moving mechanical computation from prompts to exec commands",
+    23→        "dignified-python": "Python coding standards (LBYL, modern types, ABCs)",
+    24→        "fake-driven-testing": "5-layer test architecture with fakes",
+    25→        "erk-diff-analysis": "Code diff analysis for commit messages",
+    26→        "erk-exec": "Erk exec subcommand reference",
+    27→        "erk-planning": "Plan management",
+    28→        "objective": "Objective tracking and management",
+    29→        "gh": "GitHub CLI integration",
+    30→        "gt": "Graphite stacked PR management",
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RBe6WoyvevcDE3Zx7tXg1D">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/capabilities/skill_capability.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1202" cache_read_input_tokens="36023" output_tokens="79" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1202, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RBe6WoyvevcDE3Zx7tXg1D">
+     1→"""Base class for skill-based capabilities.
+     2→
+     3→SkillCapability wraps the existing artifact sync system to install Claude skills
+     4→to external repositories via the capability system.
+     5→"""
+     6→
+     7→import shutil
+     8→from abc import abstractmethod
+     9→from pathlib import Path
+    10→
+    11→from erk.artifacts.paths import get_bundled_claude_dir
+    12→from erk.artifacts.state import add_installed_capability, remove_installed_capability
+    13→from erk.core.capabilities.base import (
+    14→    Capability,
+    15→    CapabilityArtifact,
+    16→    CapabilityResult,
+    17→    CapabilityScope,
+    18→    ManagedArtifact,
+    19→    backend_agent_dir,
+    20→)
+    21→from erk_shared.context.types import AgentBackend
+    22→
+    23→
+    24→class SkillCapability(Capability):
+    25→    """Base class for capabilities that install a single skill.
+    26→
+    27→    Subclasses only need to implement skill_name and description.
+    28→    The base class handles artifact tracking and installation via artifact sync.
+    29→    """
+    30→
+
+... [113 lines omitted] ...
+  </tool_result>
+  <thinking>Now I understand the structure. The `BundledSkillCapability` inherits from `SkillCapability` which inherits from `Capability`, and `required` defaults to `False` in the base `Capability` class.
+
+To make specific bundled skills required, the cleanest approach is to:
+1. Add a `_REQUIRED_BUNDLED_SKILLS` set in bundled.py
+2. Override `required` property in `BundledSkillCapability` to check membership
+
+Let me also check which workflows are already required vs not.
+
+Actually, the user said:
+1. The 4 workflow capabilities (learn-workflow, one-shot-workflow, pr-address-workflow, pr-rebase-workflow) - "include these by default" → already required=True per the explore agent
+
+
+2. pr-operations, pr-feedback-classifier, erk-diff-analysis, erk-exec, objective - "also include these by default" → need to become required
+3. erk-impl-workflow - "default" → already required=True
+
+So I need to make 5 bundled skills required. Let me write the plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1956" cache_read_input_tokens="37225" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1956}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have the full picture. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1956" cache_read_input_tokens="37225" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1956}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01Vs3yyTx4xfGumTtxJ5zPmw">
+    <param name="file_path">/Users/schrockn/.claude/plans/delegated-weaving-babbage.md</param>
+    <param name="content"># Make additional capabilities required by default
+
+## Context
+
+Several bundled skill capa...[truncated 849 chars]...ist` and confirm the 5 skills show as required
+- Run tests: `pytest tests/ -k capability`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1956" cache_read_input_tokens="37225" output_tokens="667" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1956, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Vs3yyTx4xfGumTtxJ5zPmw">
+File created successfully at: /Users/schrockn/.claude/plans/delegated-weaving-babbage.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01V5QZPv2qNmjsoEvKELXeak">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run erk init capability list'}]</param>
+    <param name="plan"># Make additional capabilities required by default
+
+## Context
+
+Several bundled skill capa...[truncated 849 chars]...ist` and confirm the 5 skills show as required
+- Run tests: `pytest tests/ -k capability`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="703" cache_read_input_tokens="39181" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 703, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V5QZPv2qNmjsoEvKELXeak">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/delegated-weaving-babbage.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Make additional capabilities required by default
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id dde102f8-f26b-464a-a801-edb171c55897 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+## Make additional capabilities required by default
+
+### Context
+
+Several bundled skill capabilities that are broadly useful should auto-install during `erk init` instead of requiring manual `erk init capability add`. The 4 workflow capabilities and `erk-impl-workflow` are already `required=True`. Five bundled skills need to become required as well.
+
+### Changes
+
+**File: `src/erk/capabilities/skills/bundled.py`**
+
+1. Add a module-level `_REQUIRED_BUNDLED_SKILLS` frozenset containing the 5 skill names:
+   - `erk-diff-analysis`
+   - `erk-exec`
+   - `objective`
+   - `pr-operations`
+   - `pr-feedback-classifier`
+
+2. Override the `required` property on `BundledSkillCapability` to check membership
+
+No other files need changes — the registry already discovers `required` via the property.
+
+### Verification
+
+- Run `erk init capability list` and confirm the 5 skills show as required
+- Run tests: `pytest tests/ -k capability`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="798" cache_read_input_tokens="39884" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 798}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01EPhFgRj3WZSazL1Kp1f33L">
+    <param name="questions">[{'question': '📋 Make additional capabilities required by default\nCurrent context: (wt:er...[truncated 432 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="798" cache_read_input_tokens="39884" output_tokens="478" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 798, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EPhFgRj3WZSazL1Kp1f33L">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>I don't want them visible to the user as capabilities. they are just part of the system. the required capabilities should be largely invisible</user>
+  <thinking>The user wants these capabilities to not be visible to users at all - they should just be silently installed as part of the system without appearing in `erk init capability list`. Let me understand the current architecture better to figure out the right approach.
+
+Let me look at how capabilities are listed and how the "required" ones are handled vs optional ones.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="843" cache_read_input_tokens="40682" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 843}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me understand how capabilities are listed and filtered to design the right approach.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="843" cache_read_input_tokens="40682" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 843}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XY61R15mwqgPsGmShXtXRQ">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/capabilities/registry.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="843" cache_read_input_tokens="40682" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 843}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XY61R15mwqgPsGmShXtXRQ">
+     1→"""Capability registry - hardcoded list of all capabilities."""
+     2→
+     3→from functools import cache
+     4→
+     5→from erk.capabilities.agents.devrun import DevrunAgentCapability
+     6→from erk.capabilities.code_reviews_system import CodeReviewsSystemCapability
+     7→from erk.capabilities.erk_bash_permissions import ErkBashPermissionsCapability
+     8→from erk.capabilities.hooks import HooksCapability
+     9→from erk.capabilities.learned_docs import LearnedDocsCapability
+    10→from erk.capabilities.reminders.devrun import DevrunReminderCapability
+    11→from erk.capabilities.reminders.dignified_python import DignifiedPythonReminderCapability
+    12→from erk.capabilities.reminders.explore_docs import ExploreDocsReminderCapability
+    13→from erk.capabilities.reminders.tripwires import TripwiresReminderCapability
+    14→from erk.capabilities.reviews.dignified_code_simplifier import (
+    15→    DignifiedCodeSimplifierReviewDefCapability,
+    16→)
+    17→from erk.capabilities.reviews.dignified_python import DignifiedPythonReviewDefCapability
+    18→from erk.capabilities.reviews.tripwires import TripwiresReviewDefCapability
+    19→from erk.capabilities.ruff_format import RuffFormatCapability
+    20→from erk.capabilities.skills.bundled import create_bundled_skill_capabilities
+    21→from erk.capabilities.statusline import StatuslineCapability
+    22→from erk.capabilities.workflows.erk_impl import ErkImplWorkflowCapability
+    23→from erk.capabilities.workflows.learn import LearnWorkflowCapability
+    24→from erk.capabilities.workflows.one_shot import OneShotWorkflowCapability
+    25→from erk.capabilities.workflows.pr_address import PrAddressWorkflowCapability
+    26→from erk.capabilities.workflows.pr_rebase import PrRebaseWorkflowCapability
+    27→from erk.core.capabilities.base import Capability
+    28→from erk_shared.context.types import AgentBackend
+    29→
+    30→
+
+... [103 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VPauaEqbHdQE689nkKXE9y">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/init/capability/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="843" cache_read_input_tokens="40682" output_tokens="247" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 843, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VPauaEqbHdQE689nkKXE9y">
+     1→"""List capabilities and their installation status."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import click
+     6→
+     7→from erk.cli.commands.init.capability.backend_utils import resolve_backend
+     8→from erk.core.capabilities.base import Capability, CapabilityArtifact
+     9→from erk.core.capabilities.registry import get_capability, list_capabilities
+    10→from erk.core.context import ErkContext
+    11→from erk.core.repo_discovery import NoRepoSentinel, discover_repo_or_sentinel
+    12→from erk_shared.context.types import AgentBackend
+    13→from erk_shared.output.output import user_output
+    14→
+    15→
+    16→@click.command("list")
+    17→@click.argument("name", required=False)
+    18→@click.pass_obj
+    19→def list_cmd(ctx: ErkContext, name: str | None) -&gt; None:
+    20→    """List capabilities and their installation status.
+    21→
+    22→    Without NAME: shows all capabilities with installed status.
+    23→    With NAME: shows detailed status for that specific capability.
+    24→
+    25→    Project-level capabilities require being in a git repository.
+    26→    User-level capabilities can be checked from anywhere.
+    27→    """
+    28→    # Lazy repo discovery - only done if needed
+    29→    erk_root = ctx.erk_installation.root()
+    30→    repo_or_sentinel = discover_repo_or_sentinel(ctx.cwd, erk_root, ctx.git)
+
+... [107 lines omitted] ...
+
+    49→        user_output(click.style("Error: ", fg="red") + f"Unknown capability: {name}")
+    58→            click.style("Error: ", fg="red")
+  </tool_result>
+  <thinking>Now I understand. The user wants these capabilities to be invisible - not showing up in `erk init capability list`. Currently `list_capabilities()` returns ALL capabilities. I need to add a concept of "visible" vs "internal" capabilities, where required/system capabilities are hidden from the user-facing list.
+
+Let me look at the base Capability class to see the full property set.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3941" cache_read_input_tokens="41525" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3941}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Y6tGYYuXY7sHQAnfuDXHW9">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/capabilities/base.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3941" cache_read_input_tokens="41525" output_tokens="174" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3941, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Y6tGYYuXY7sHQAnfuDXHW9">
+     1→"""Base classes and types for the capability system.
+     2→
+     3→Capabilities are optional features that can be installed via `erk init capability add &lt;name&gt;`.
+     4→Each capability knows how to detect if it's installed and how to install itself.
+     5→"""
+     6→
+     7→from abc import ABC, abstractmethod
+     8→from dataclasses import dataclass
+     9→from pathlib import Path
+    10→from typing import Literal
+    11→
+    12→from erk_shared.context.types import AgentBackend
+    13→
+    14→# Type alias for capability scope
+    15→CapabilityScope = Literal["project", "user"]
+    16→
+    17→# Artifact types that capabilities can declare they manage
+    18→ManagedArtifactType = Literal[
+    19→    "skill", "command", "agent", "workflow", "action", "hook", "prompt", "review"
+    20→]
+    21→
+    22→
+    23→@dataclass(frozen=True)
+    24→class ManagedArtifact:
+    25→    """Describes an artifact managed by a capability for artifact detection.
+    26→
+    27→    This bridges capability declarations with artifact detection/health checks.
+    28→    Used by the registry to determine which artifacts are erk-managed.
+    29→    """
+    30→
+
+... [165 lines omitted] ...
+
+    61→    raise ValueError(f"Unknown agent backend: {backend!r}")
+  </tool_result>
+  <assistant>Now let me check how the `list_capabilities` function is consumed — specifically in the `add` and `remove` commands and `erk init`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2324" cache_read_input_tokens="45466" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2324}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016DB5n2HYEefC9zxgZMz95a">
+    <param name="pattern">list_capabilities|list_required_capabilities</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2324" cache_read_input_tokens="45466" output_tokens="145" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2324, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016DB5n2HYEefC9zxgZMz95a">
+src/erk/core/capabilities/registry.py:76:def list_capabilities() -&gt; list[Capability]:
+src/erk/core/capabilities/registry.py:85:def list_required_capabilities() -&gt; list[Capability]:
+src/erk/core/capabilities/registry.py:94:def list_capabilities_for_backend(*, backend: AgentBackend) -&gt; list[Capability]:
+src/erk/cli/commands/init/main.py:17:from erk.core.capabilities.registry import list_capabilities, list_required_capabilities
+src/erk/cli/commands/init/main.py:561:        for cap in list_required_capabilities():
+src/erk/cli/commands/init/main.py:640:        for cap in list_required_capabilities():
+src/erk/cli/commands/init/main.py:682:    all_caps = list_capabilities()
+src/erk/cli/commands/init/capability/remove_cmd.py:8:from erk.core.capabilities.registry import get_capability, list_capabilities
+src/erk/cli/commands/init/capability/remove_cmd.py:44:            for c in list_capabilities():
+src/erk/cli/commands/init/capability/add_cmd.py:8:from erk.core.capabilities.registry import get_capability, list_capabilities
+src/erk/cli/commands/init/capability/add_cmd.py:45:            for c in list_capabilities():
+src/erk/cli/commands/init/capability/list_cmd.py:9:from erk.core.capabilities.registry import get_capability, list_capabilities
+src/erk/cli/commands/init/capability/list_cmd.py:51:        for c in list_capabilities():
+src/erk/cli/commands/init/capability/list_cmd.py:114:    caps = list_capabilities()
+src/erk/artifacts/sync.py:760:        from erk.core.capabilities.registry import list_capabilities
+src/erk/artifacts/sync.py:763:        for cap in list_capabilities():
+  </tool_result>
+  <tool_use name="Read" id="toolu_01K9Zk2cmNvVQujqSpco2QJQ">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/init/main.py</param>
+    <param name="offset">550</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="754" cache_read_input_tokens="47790" output_tokens="113" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 754, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01K9Zk2cmNvVQujqSpco2QJQ">
+   550→
+   551→        # Sync artifacts with force=True to ensure all files are updated
+   552→        config = create_artifact_sync_config(repo_root, backend=backend)
+   553→        sync_result = sync_artifacts(repo_root, True, config=config)
+   554→        if sync_result.success:
+   555→            user_output(click.style("  ✓ ", fg="green") + sync_result.message)
+   556→        else:
+   557→            warn_msg = f"Artifact sync failed: {sync_result.message}"
+   558→            user_output(click.style("  ⚠ ", fg="yellow") + warn_msg)
+   559→
+   560→        # Re-install required capabilities (e.g., hooks)
+   561→        for cap in list_required_capabilities():
+   562→            if backend not in cap.supported_backends:
+   563→                continue
+   564→            check_repo_root = repo_root if cap.scope == "project" else None
+   565→            result = cap.install(check_repo_root, backend=backend)
+   566→            if result.success:
+   567→                user_output(click.style("  ✓ ", fg="green") + result.message)
+   568→            else:
+   569→                warn_msg = f"{cap.name} install failed: {result.message}"
+   570→                user_output(click.style("  ⚠ ", fg="yellow") + warn_msg)
+   571→
+   572→        # Sync gitignore entries
+   573→        interactive = not no_interactive
+   574→        missing = find_missing_gitignore_entries(repo_root)
+   575→        if missing:
+   576→            if interactive:
+   577→                click.echo(f"  Missing .gitignore entries: {', '.join(missing)}")
+   578→                if click.confirm("  Add missing entries to .gitignore?", default=True):
+   579→                    add_missing_gitignore_entries(repo_root, missing)
+
+... [120 lines omitted] ...
+
+   634→            # Non-fatal: warn but continue init
+   635→            warn_msg = f"Artifact sync failed: {sync_result.message}"
+   649→                    warn_msg = f"{cap.name} install failed: {result.message}"
+  </tool_result>
+  <thinking>Now I have a clear picture. The user wants required capabilities to be invisible to the user. Currently:
+
+1. `list_capabilities()` returns ALL capabilities, and it's used in:
+   - `list_cmd.py` - the `erk init capability list` command
+   - `add_cmd.py` and `remove_cmd.py` - for showing available capabilities when invalid name given
+   - `main.py` line 682 - in Step 3 of `erk init` to show capability status
+   - `sync.py` - for artifact sync
+
+2. `list_required_capabilities()` returns required ones, used in `main.py` for auto-install.
+   
+The cleanest solution is to add a `visible` property to the `Capability` base class that defaults to `not self.required`, then make the 5 bundled skills required so they're automatically hidden from the UI, and update the list command to filter by visibility instead of showing everything.
+
+Now I'm mapping out the specific files that need changes: I'll mark the bundled skills as required in `bundled.py`, filter the list view in `list_cmd.py`, hide required capabilities from the Step 3 output in `main.py`, and update the error messages in both `add_cmd.py` and `remove_cmd.py` to only show optional capabilities. I should also consider whether to prevent removing required capabilities entirely.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2617" cache_read_input_tokens="48544" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2617}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012GPpEqLjo8kg8MrWGZwPgZ">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/init/capability/add_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2617" cache_read_input_tokens="48544" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2617}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012GPpEqLjo8kg8MrWGZwPgZ">
+     1→"""Add capabilities to a repository."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import click
+     6→
+     7→from erk.cli.commands.init.capability.backend_utils import resolve_backend
+     8→from erk.core.capabilities.registry import get_capability, list_capabilities
+     9→from erk.core.context import ErkContext
+    10→from erk.core.repo_discovery import NoRepoSentinel, discover_repo_or_sentinel
+    11→from erk_shared.output.output import user_output
+    12→
+    13→
+    14→@click.command("add")
+    15→@click.argument("names", nargs=-1, required=True)
+    16→@click.pass_obj
+    17→def add_cmd(ctx: ErkContext, names: tuple[str, ...]) -&gt; None:
+    18→    """Install capabilities in the current repository or user settings.
+    19→
+    20→    NAMES are the capability names to install. Multiple can be
+    21→    specified at once.
+    22→
+    23→    Project-level capabilities require being in a git repository.
+    24→    User-level capabilities can be installed from anywhere.
+    25→
+    26→    \b
+    27→    Examples:
+    28→        erk init capability add learned-docs
+    29→        erk init capability add learned-docs dignified-python
+    30→        erk init capability add statusline  # user-level, works outside repos
+
+... [71 lines omitted] ...
+
+    32→    # Track success/failure for exit code
+    33→    any_failed = False
+    47→            any_failed = True
+    67→                any_failed = True
+    87→            any_failed = True
+    97→            any_failed = True
+    99→    if any_failed:
+  </tool_result>
+  <tool_use name="Read" id="toolu_0131eqmVSN96GJvUKKHFMmc9">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/init/capability/remove_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2617" cache_read_input_tokens="48544" output_tokens="736" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2617, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0131eqmVSN96GJvUKKHFMmc9">
+     1→"""Remove capabilities from a repository."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import click
+     6→
+     7→from erk.cli.commands.init.capability.backend_utils import resolve_backend
+     8→from erk.core.capabilities.registry import get_capability, list_capabilities
+     9→from erk.core.context import ErkContext
+    10→from erk.core.repo_discovery import NoRepoSentinel, discover_repo_or_sentinel
+    11→from erk_shared.output.output import user_output
+    12→
+    13→
+    14→@click.command("remove")
+    15→@click.argument("names", nargs=-1, required=True)
+    16→@click.pass_obj
+    17→def remove_cmd(ctx: ErkContext, names: tuple[str, ...]) -&gt; None:
+    18→    """Remove capabilities from the current repository or user settings.
+    19→
+    20→    NAMES are the capability names to remove. Multiple can be
+    21→    specified at once.
+    22→
+    23→    Required capabilities (like erk-hooks) cannot be removed.
+    24→
+    25→    \b
+    26→    Examples:
+    27→        erk init capability remove dignified-python
+    28→        erk init capability remove learned-docs devrun-agent
+    29→        erk init capability remove statusline  # user-level
+    30→    """
+
+... [66 lines omitted] ...
+
+    31→    # Track success/failure for exit code
+    32→    any_failed = False
+    46→            any_failed = True
+    54→            any_failed = True
+    74→                any_failed = True
+    92→            any_failed = True
+    94→    if any_failed:
+  </tool_result>
+  <assistant>Good. Now I have the full picture. The `remove_cmd` already blocks removing required capabilities. Now I need to update the plan to hide required capabilities from all user-facing lists.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3385" cache_read_input_tokens="51161" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3385}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01XG2BVAK6cmo5u4fpssnfPM">
+    <param name="file_path">/Users/schrockn/.claude/plans/delegated-weaving-babbage.md</param>
+    <param name="content"># Make additional capabilities required and hide them from user-facing lists
+
+## Context
+
+...[truncated 2734 chars]...l silently auto-installs all required capabilities
+- `pytest tests/ -k capability` passes
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3385" cache_read_input_tokens="51161" output_tokens="1009" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3385, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XG2BVAK6cmo5u4fpssnfPM">
+The file /Users/schrockn/.claude/plans/delegated-weaving-babbage.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_012tpRUSBmM1tn8sjSjoDETU">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run erk commands'}]</param>
+    <param name="plan"># Make additional capabilities required and hide them from user-facing lists
+
+## Context
+
+...[truncated 2734 chars]...l silently auto-installs all required capabilities
+- `pytest tests/ -k capability` passes
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1147" cache_read_input_tokens="54546" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1147, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012tpRUSBmM1tn8sjSjoDETU">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/delegated-weaving-babbage.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Make additional capabilities required and hide them from user-facing lists
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id dde102f8-f26b-464a-a801-edb171c55897 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+## Make additional capabilities required and hide them from user-facing lists
+
+### Context
+Required capabilities should be invisible to users — they're system infrastructure, not optional enhancements. 5 bundled skills need to become required, and all required capabilities need to be hidden from user-facing lists.
+
+### Changes (6 files)
+
+1. **`src/erk/capabilities/skills/bundled.py`** — Add `_REQUIRED_BUNDLED_SKILLS` frozenset (`erk-diff-analysis`, `erk-exec`, `objective`, `pr-operations`, `pr-feedback-classifier`) and override `required` property on `BundledSkillCapability`
+
+2. **`src/erk/core/capabilities/registry.py`** — Add `list_optional_capabilities()` that filters out `required=True` caps
+
+3. **`src/erk/cli/commands/init/capability/list_cmd.py`** — Use `list_optional_capabilities()` in list display and error hints
+
+4. **`src/erk/cli/commands/init/capability/add_cmd.py`** — Use `list_optional_capabilities()` in error hints
+
+5. **`src/erk/cli/commands/init/capability/remove_cmd.py`** — Use `list_optional_capabilities()` in error hints
+
+6. **`src/erk/cli/commands/init/main.py`** — Use `list_optional_capabilities()` in Step 3 display
+
+Internal functions (`list_capabilities()`, `list_required_capabilities()`) unchanged.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="693" cache_read_input_tokens="55693" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 693}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_012hkpLKyM8y1xCsFaWyotS3">
+    <param name="questions">[{'question': '📋 Make additional capabilities required and hide them from user-facing list...[truncated 458 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="693" cache_read_input_tokens="55693" output_tokens="597" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 693, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012hkpLKyM8y1xCsFaWyotS3">
+User has answered your questions: "📋 Make additional capabilities required and hide them from user-facing lists
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_016N3VdhoyVMb6YULepB8aZM">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="40467" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 40467}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016N3VdhoyVMb6YULepB8aZM">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="dde102f8-f26b-464a-a801-edb171c55897" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "dde102f8-f26b-464a-a801-edb171c55897" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "dde102f8-f26b-464a-a801-edb171c55897" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "dde102f8-f26b-464a-a801-edb171c55897" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "dde102f8-f26b-464a-a801-edb171c55897" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>Let me follow the plan-save instructions. I need to:
+
+1. Parse arguments - no special flags
+2. Generate a branch slug from the plan title
+3. Generate a plan summary
+4. Run the save command
+
+The plan title is "Make additional capabilities required and hide them from user-facing lists"
+
+Branch slug: "hide-required-capabilities" (concise, action verb, under 30 chars)
+
+Plan summary: Makes 5 bundled skills (erk-diff-analysis, erk-exec, objective, pr-operations, pr-feedback-classifier) required so they auto-install during erk init. Adds list_optional_capabilities() to the registry and updates all user-facing CLI commands to hide required capabilities from display.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2600" cache_read_input_tokens="57080" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2600}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me save the plan to GitHub.
+
+**Branch slug:** `hide-required-capabilities`
+
+**Plan summary:** Makes 5 bundled skills required so they auto-install during erk init. Adds list_optional_capabilities to the registry and updates all user-facing CLI commands to hide required capabilities from display.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2600" cache_read_input_tokens="57080" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2600}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AJzKKax71fVrUzTLRJVQCJ">
+    <param name="command">erk exec plan-save --format json --session-id="dde102f8-f26b-464a-a801-edb171c55897" --bra...[truncated 142 chars]...stry and updates all user-facing CLI commands to hide required capabilities from display."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2600" cache_read_input_tokens="57080" output_tokens="432" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2600, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AJzKKax71fVrUzTLRJVQCJ">
+{"success": true, "plan_number": 8609, "plan_url": "https://github.com/dagster-io/erk/pull/8609", "title": "[erk-plan] Make additional capabilities required and hide them from user-facing lists", "branch_name": "plnd/hide-required-capabilities-03-02-0512", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/dde102f8-f26b-464a-a801-edb171c55897/plan_snapshots/000001-b39ac96a"}
+  </tool_result>
+  <assistant>Now let me push the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1803" cache_read_input_tokens="59680" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1803}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016MRLNY4kKVgMF7LziyaMpk">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1803" cache_read_input_tokens="59680" output_tokens="94" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1803, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016MRLNY4kKVgMF7LziyaMpk">
+SESSION_ID=dde102f8-f26b-464a-a801-edb171c55897
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/dde102f8-f26b-464a-a801-edb171c55897.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01A8byDvh8adcMTwNCjPkw4N">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 58 chars]...464a-a801-edb171c55897" --stage planning --source local --plan-id 8609 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="295" cache_read_input_tokens="61483" output_tokens="197" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 295, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
