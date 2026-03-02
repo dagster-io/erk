@@ -1,30 +1,32 @@
 ---
 title: Customizing erk-impl Workflow via Composite Actions
-last_audited: "2026-02-16 14:20 PT"
+last_audited: "2026-03-02 15:00 PT"
 audit_result: clean
 read_when:
   - customizing erk-impl workflow for a specific repository
   - installing system dependencies in erk-impl CI
-  - overriding Python version in erk-impl workflow
+  - configuring Python version for erk remote workflows
 ---
 
 # Customizing erk-impl Workflow via Composite Actions
 
 ## Overview
 
-The `plan-implement.yml` workflow supports per-repository customization via local composite actions. This allows repos to install system dependencies, set environment variables, or specify Python versions without modifying the shared workflow.
+The `plan-implement.yml` workflow supports per-repository customization via local composite actions. This allows repos to install system dependencies or set environment variables without modifying the shared workflow.
+
+## Python Version
+
+Python version is auto-discovered by uv from standard repo config — no erk-specific configuration needed. uv checks (in order):
+
+1. `.python-version` file in the repo root
+2. `requires-python` in `pyproject.toml`
+3. System Python / auto-download
+
+To control which Python version erk remote workflows use, add a `.python-version` file to your repo root (e.g., `3.11`).
 
 ## Extension Point
 
 The workflow checks for a local composite action at `.github/actions/erk-impl-setup/action.yml` after checkout. If present, it runs before uv installation.
-
-### Outputs
-
-The composite action can provide outputs that the workflow consumes:
-
-| Output           | Purpose                          | Default |
-| ---------------- | -------------------------------- | ------- |
-| `python-version` | Python version for uv to install | `3.13`  |
 
 ## Example: Repository with System Dependencies
 
@@ -34,20 +36,9 @@ Create `.github/actions/erk-impl-setup/action.yml`:
 name: "Erk CI Setup"
 description: "Repo-specific setup for erk-impl workflow"
 
-outputs:
-  python-version:
-    description: "Python version to use (default: 3.13)"
-    value: ${{ steps.config.outputs.python-version }}
-
 runs:
   using: "composite"
   steps:
-    - name: Set configuration
-      id: config
-      shell: bash
-      run: |
-        echo "python-version=3.11" >> $GITHUB_OUTPUT
-
     - name: Install system dependencies
       shell: bash
       run: |
@@ -60,13 +51,12 @@ runs:
 Use a local composite action when your repository needs:
 
 - **System dependencies**: Libraries not available in ubuntu-latest
-- **Custom Python version**: Different from the default 3.13
 - **Environment variables**: Set before uv/erk installation
 - **Pre-installation setup**: Any arbitrary setup steps
 
 ## Workflow Behavior
 
-1. **No action exists**: Workflow uses defaults (Python 3.13, no extra setup)
+1. **No action exists**: Workflow uses defaults (no extra setup)
 2. **Action exists**: Workflow runs it, then uses its outputs (if any)
 
 The `hashFiles()` check ensures zero overhead for repos without customization.

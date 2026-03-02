@@ -28,8 +28,6 @@ runs:
         fi
 
     - uses: astral-sh/setup-uv@v5
-      with:
-        python-version: "3.13"
 
     - uses: ./.github/actions/setup-claude-code
 
