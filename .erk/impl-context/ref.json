@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Consolidate documentation from Mar 2 learn sessions"
+  "plan_id": "8592",
+  "url": "https://github.com/dagster-io/erk/pull/8592",
+  "created_at": "2026-03-02T02:03:16.016605",
+  "synced_at": "2026-03-02T02:03:16.016605",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
