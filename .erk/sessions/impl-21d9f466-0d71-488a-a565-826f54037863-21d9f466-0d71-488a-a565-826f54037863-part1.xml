@@ -571,4 +571,83 @@ agentId: a6de1ce (for resuming to continue this agent's work if needed)
   "plan_number": 8640
 }
   </tool_result>
+  <tool_result tool="toolu_01MNWVB3ifvxyo9dgpLbJ2gj">
+{"uploaded": true, "plan_id": 8640}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01GEakqwGLyenoieNPYR7h4t">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="486" cache_read_input_tokens="33814" cache_creation="{'ephemeral_5m_input_tokens': 486, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GEakqwGLyenoieNPYR7h4t">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #8640 found (already exists)
+
+Phase 2: Getting diff
+
+Phase 3: Fetching plan context
+   Incorporating plan #8640
+
+Phase 4: Generating PR description
+   Reading diff file...
+   Diff loaded (3,128 chars)
+   Analyzing changes with Claude...
+   PR description generated
+
+Phase 5: Graphite enhancement
+
+Phase 6: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+  Action:      Updated PR #8640
+  Branch:      plnd/improve-plan-branch-msg-03-02-1541 → master
+  Title:       Improve "Using existing branch" message for `--for-plan` flows
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01NQvFq5mBdojBGmZBrwDkfr">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="377" cache_read_input_tokens="34300" cache_creation="{'ephemeral_5m_input_tokens': 377, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01B4xabQrHR5ixX2QtAdzHHX">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="377" cache_read_input_tokens="34300" cache_creation="{'ephemeral_5m_input_tokens': 377, 'ephemeral_1h_input_tokens': 0}" output_tokens="155" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NQvFq5mBdojBGmZBrwDkfr">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8640
+}
+  </tool_result>
+  <tool_result tool="toolu_01B4xabQrHR5ixX2QtAdzHHX">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_015MXuxtjVWFqhoAgzD55fh7">
+    <param name="todos">[{'content': 'Update message in checkout_cmd.py', 'status': 'completed', 'activeForm': 'Up...[truncated 154 chars]...n CI and submit PR', 'status': 'completed', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="34677" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015MXuxtjVWFqhoAgzD55fh7">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan #8640 implementation complete.
+
+**Summary of changes:**
+- `src/erk/cli/commands/branch/checkout_cmd.py:519` — Changed `"Using existing branch: {branch}"` → `"Checking out plan branch: {branch}"`
+- `src/erk/cli/commands/branch/create_cmd.py:170` — Changed `"Using existing branch: {branch_name}"` → `"Checking out plan branch: {branch_name}"`
+- Fixed pre-existing prettier formatting in 2 docs files
+
+**PR:** https://github.com/dagster-io/erk/pull/8640</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="193" cache_read_input_tokens="35074" cache_creation="{'ephemeral_5m_input_tokens': 193, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>
