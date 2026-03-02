@@ -370,8 +370,16 @@ def _create_learn_pr_impl(
     # Log session discovery summary and collect XML files for embedding
     xml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
 
-    # Skip learn plan creation if no sessions were discovered — nothing meaningful to capture
-    if not all_session_ids:
+    if not xml_files:
+        if not all_session_ids:
+            detail = " (no sessions were tracked for this plan)"
+        else:
+            detail = " (sessions found but no XML could be extracted)"
+        user_output(
+            click.style("ℹ", fg="blue")
+            + f" Skipping learn plan for #{plan_id}: no session material found"
+            + detail
+        )
         return
 
     # Build learn plan body

@@ -3,6 +3,8 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
+import pytest
+
 from erk.cli.commands.land_pipeline import (
     LandError,
     LandState,
@@ -79,8 +81,13 @@ def test_returns_state_unchanged_when_merged_pr_none(tmp_path: Path) -> None:
     assert len(fake_github.created_prs) == 0
 
 
-def test_returns_state_after_creating_pr(tmp_path: Path) -> None:
+def test_returns_state_after_creating_pr(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """With plan_id and merged_pr_number set, delegates to learn PR creation."""
+    from erk.cli.commands import land_learn as learn_mod
+
     now = datetime(2024, 1, 1, tzinfo=UTC)
     session_id = "aaaa1111-2222-3333-4444-555566667777"
     body = format_plan_header_body_for_test(created_from_session=session_id)
@@ -117,6 +124,15 @@ def test_returns_state_after_creating_pr(tmp_path: Path) -> None:
         cwd=tmp_path,
     )
     state = _execution_state(tmp_path, plan_id="100", merged_pr_number=42)
+
+    # Patch _log_session_discovery to return non-empty xml_files
+    # so the skip-empty-sessions guard is not triggered
+    stub_xml = {".erk/impl-context/sessions/planning-aaaa1111.xml": "<session>data</session>"}
+
+    def _fake_log_session_discovery(*_args: object, **_kwargs: object) -> dict[str, str]:
+        return stub_xml
+
+    monkeypatch.setattr(learn_mod, "_log_session_discovery", _fake_log_session_discovery)
 
     result = create_learn_pr(ctx, state)
 
