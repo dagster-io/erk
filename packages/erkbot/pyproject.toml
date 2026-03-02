@@ -12,8 +12,8 @@ dependencies = [
     "claude-agent-sdk>=0.1.0",
     "erk>=0.7.4",
     "erk-shared",
-    "pydantic>=2.10",
-    "pydantic-settings>=2.4.0",
+    "pydantic>=2.0",
+    "pydantic-settings>=2.0",
     "python-dotenv>=1.0.1",
     "slack-bolt>=1.21.2",
 ]
