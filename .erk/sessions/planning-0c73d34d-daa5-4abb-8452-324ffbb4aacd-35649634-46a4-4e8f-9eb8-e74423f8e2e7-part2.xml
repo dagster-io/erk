@@ -1,0 +1,950 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Read" id="toolu_013mHZTRd5QaA1QZN6UG1Wp3">
+    <param name="file_path">/workspaces/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">260</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5499" cache_read_input_tokens="49435" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5499}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013mHZTRd5QaA1QZN6UG1Wp3">
+   260→        "plan_title": validated.title,
+   261→        "branch_name": branch_name,
+   262→        "pr_number": str(plan_number),
+   263→        "base_branch": base_branch,
+   264→        "plan_backend": "planned_pr",
+   265→        **workflow_config,
+   266→    }
+   267→
+   268→    run_id = ctx.github.trigger_workflow(
+   269→        repo_root=repo.root,
+   270→        workflow=DISPATCH_WORKFLOW_NAME,
+   271→        inputs=inputs,
+   272→        ref=ctx.local_config.dispatch_ref,
+   273→    )
+   274→    user_output(click.style("✓", fg="green") + " Workflow dispatched.")
+   275→
+   276→    # Compute workflow URL
+   277→    workflow_url = _build_workflow_run_url(validated.url, run_id)
+   278→
+   279→    # Write dispatch metadata FIRST (before any PR body modification)
+   280→    try:
+   281→        write_dispatch_metadata(
+   282→            plan_backend=ctx.plan_backend,
+   283→            github=ctx.github,
+   284→            repo_root=repo.root,
+   285→            plan_number=plan_number,
+   286→            run_id=run_id,
+   287→            dispatched_at=queued_at,
+   288→        )
+   289→        user_output(click.style("✓", fg="green") + " Dispatch metadata written")
+
+... [50 lines omitted] ...
+
+   290→    except Exception as e:
+   292→            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+   302→    except Exception as e:
+   303→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+   334→    except Exception as e:
+   336→            click.style("Warning: ", fg="yellow")
+   337→            + f"Failed to post queued comment: {e}\n"
+  </tool_result>
+  <tool_use name="Read" id="toolu_011MMyYURc9BTWhCZH7s7nqB">
+    <param name="file_path">/workspaces/erk/src/erk/cli/ensure.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5499" cache_read_input_tokens="49435" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5499}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011MMyYURc9BTWhCZH7s7nqB">
+     1→"""CLI error handling utilities with styled output.
+     2→
+     3→This module provides the Ensure class for asserting invariants in CLI commands
+     4→with consistent, user-friendly error messages. All errors use red "Error:" prefix
+     5→for visual consistency.
+     6→
+     7→Domain-Specific Methods:
+     8→- Git state validations (branch checks, worktree existence, clean state)
+     9→- Configuration validations (required fields, format checks)
+    10→- Argument validations (count, type, range)
+    11→- File/path validations (readable, writable, not hidden)
+    12→- String/collection validations (non-empty, non-null)
+    13→- External tool validations (gh CLI installed)
+    14→"""
+    15→
+    16→from __future__ import annotations
+    17→
+    18→import shutil
+    19→from pathlib import Path
+    20→from typing import TYPE_CHECKING, Any, TypeVar
+    21→
+    22→import click
+    23→
+    24→from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledError
+    25→from erk_shared.output.output import user_output
+    26→
+    27→if TYPE_CHECKING:
+    28→    from erk.core.context import ErkContext
+    29→
+    30→T = TypeVar("T")
+
+... [526 lines omitted] ...
+
+    33→class UserFacingCliError(click.ClickException):
+    34→    """Exception for user-facing CLI errors with styled output.
+    36→    Extends click.ClickException so Click catches it automatically at every
+    37→    level (groups, subgroups, commands) and converts it to a styled error
+    42→        raise UserFacingCliError("Not a GitHub repository")
+    43→        raise UserFacingCliError(push_result.message)
+    51→        """Display styled error message to stderr."""
+    52→        user_output(click.style("Error: ", fg="red") + self.format_message())
+    56→    """Helper class for asserting invariants with consistent error handling."""
+    59→    def invariant(condition: bool, error_message: str) -&gt; None:
+    60→        """Ensure condition is true, otherwise output styled error and exit.
+    64→            error_message: Error message to display if condition is false.
+    65→                          "Error: " prefix will be added automatically in red.
+    68→            UserFacingCliError: If condition is false
+    71→            raise UserFacingCliError(error_message)
+    74→    def truthy(value: T, error_message: str) -&gt; T:
+    75→        """Ensure value is truthy, otherwise output styled error and exit.
+    79→            error_message: Error message to display if value is falsy.
+    80→                          "Error: " prefix will be added automatically in red.
+    86→            UserFacingCliError: If value is falsy
+    89→            raise UserFacingCliError(error_message)
+    93→    def not_none(value: T | None, error_message: str) -&gt; T:
+    94→        """Ensure value is not None, otherwise output styled error and exit.
+   102→            error_message: Error message to display if value is None.
+   103→                          "Error: " prefix will be added automatically in red.
+   109→            UserFacingCliError: If value is None
+   118→            raise UserFacingCliError(error_message)
+   125→        error_message: str | None = None,
+   127→        """Ensure path exists, otherwise output styled error and exit.
+   138→            error_message: Optional custom error message. If not provided,
+   140→                          "Error: " prefix will be added automatically in red.
+   143→            UserFacingCliError: If path does not exist
+   146→            &gt;&gt;&gt; # Basic usage with default error message
+   149→            &gt;&gt;&gt; # With custom error message
+   153→            if error_message is None:
+   154→                error_message = f"Path not found: {path}"
+   155→            raise UserFacingCliError(error_message)
+   158→    def not_empty(value: str | list | dict | None, error_message: str) -&gt; None:
+   163→            error_message: Error message to display if value is empty.
+   164→                          "Error: " prefix will be added automatically in red.
+   167→            UserFacingCliError: If value is None, empty string, empty list, or empty dict
+   174→            raise UserFacingCliError(error_message)
+   178→        """Ensure worktree exists at path, otherwise output styled error and exit.
+   183→            name: Optional worktree name for friendlier error message
+   190→            &gt;&gt;&gt; Ensure.git_worktree_exists(ctx, wt_path)  # Uses path in error
+   193→            error_message = f"Worktree '{name}' does not exist"
+   195→            error_message = f"Worktree not found: {wt_path}"
+   196→        Ensure.path_exists(ctx, wt_path, error_message)
+   200→        """Ensure git branch exists, otherwise output styled error and exit.
+   208→            UserFacingCliError: If branch does not exist
+   215→            raise UserFacingCliError(
+   221→        """Ensure currently in a git worktree, otherwise output styled error and exit.
+   224→            ctx: Application context (for error handling)
+   228→            UserFacingCliError: If not in a git worktree
+   235→            raise UserFacingCliError(
+   243→        error_message: str | None = None,
+   245→        """Ensure argument count matches expected, otherwise output styled error and exit.
+   250→            error_message: Optional custom error message
+   253→            UserFacingCliError: If argument count does not match expected
+   260→            if error_message is None:
+   262→                    error_message = f"Expected no arguments, got {len(args)}"
+   264→                    error_message = f"Expected 1 argument, got {len(args)}"
+   266→                    error_message = f"Expected {expected} arguments, got {len(args)}"
+   267→            raise UserFacingCliError(error_message)
+   273→        error_message: str | None = None,
+   275→        """Ensure configuration field is set, otherwise output styled error and exit.
+   280→            error_message: Optional custom error message
+   283→            UserFacingCliError: If field is not set (None or missing)
+   294→        except AttributeError:
+   297→            except (KeyError, TypeError):
+   301→            if error_message is None:
+   302→                error_message = (
+   306→            raise UserFacingCliError(error_message)
+   309→    def path_is_dir(ctx: ErkContext, path: Path, error_message: str | None = None) -&gt; None:
+   310→        """Ensure path exists and is a directory, otherwise output styled error and exit.
+   315→            error_message: Optional custom error message
+   318→            UserFacingCliError: If path doesn't exist or is not a directory
+   323→        Ensure.path_exists(ctx, path, error_message)
+   325→            if error_message is None:
+   326→                error_message = f"Path is not a directory: {path}"
+   327→            raise UserFacingCliError(error_message)
+   330→    def path_not_exists(ctx: ErkContext, path: Path, error_message: str) -&gt; None:
+   331→        """Ensure path does NOT exist, otherwise output styled error and exit.
+   338→            error_message: Error message to display if path exists
+   341→            UserFacingCliError: If path already exists
+   352→            raise UserFacingCliError(error_message)
+   362→            UserFacingCliError: If gh CLI is not found on PATH
+   370→            raise UserFacingCliError(
+   384→            UserFacingCliError: If gt CLI is not found on PATH
+   392→            raise UserFacingCliError(
+   403→        outputs a helpful error message based on why Graphite is unavailable
+   412→            UserFacingCliError: If Graphite is disabled or not installed
+   420→            error = GraphiteDisabledError(ctx.graphite.reason)
+   421→            raise UserFacingCliError(str(error))
+   431→            UserFacingCliError: If claude CLI is not found on PATH
+   439→            raise UserFacingCliError(
+   456→            UserFacingCliError: If gt is not authenticated
+   466→            raise UserFacingCliError(
+   485→            UserFacingCliError: If gh is not installed or not authenticated
+   496→            raise UserFacingCliError(
+   518→        If branch exists and is NOT tracked, errors with remediation steps.
+   545→        # Branch exists but is not tracked - error with remediation
+   546→        raise UserFacingCliError(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Xvj3Cq64dwjf21coKd9CJp">
+    <param name="file_path">/workspaces/erk/docs/learned/cli/error-handling-antipatterns.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5499" cache_read_input_tokens="49435" output_tokens="394" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5499, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xvj3Cq64dwjf21coKd9CJp">
+     1→---
+     2→title: CLI Error Handling Anti-Patterns
+     3→last_audited: "2026-02-13 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "handling expected CLI failures"
+     7→  - "deciding between RuntimeError and UserFacingCliError"
+     8→  - "converting exception-based error handling to UserFacingCliError"
+     9→  - "writing actionable error messages for pipeline failures"
+    10→tripwires:
+    11→  - score: 7
+    12→    action: "Using RuntimeError for expected CLI failures"
+    13→    warning: "RuntimeError signals a programmer error (bug in the code), NOT expected user-facing failures. Use UserFacingCliError for expected conditions (missing files, invalid input, precondition violations) that should exit cleanly with an actionable message."
+    14→    context: "Expected failures are part of normal CLI operation. RuntimeError implies something impossible happened; UserFacingCliError implies the user needs to fix their input or environment."
+    15→---
+    16→
+    17→# CLI Error Handling Anti-Patterns
+    18→
+    19→## The Core Problem: Semantic Mismatch
+    20→
+    21→**RuntimeError communicates the wrong thing.** When a CLI command raises `RuntimeError("Branch name is required")`, it signals "a programmer forgot to validate inputs" rather than "the user forgot to provide a required argument."
+    22→
+    23→This semantic confusion creates three failure modes:
+    24→
+    25→1. **Misleading stack traces** — Users see Python internals for expected failures like missing files or invalid arguments
+    26→2. **Hard to catch selectively** — Generic `RuntimeError` can't distinguish between "user error" and "actual bug"
+    27→3. **Inconsistent UX** — Some errors are styled, others are raw Python exceptions
+    28→
+    29→## The Solution: Exception Types That Match Intent
+    30→
+
+... [201 lines omitted] ...
+
+    31→&lt;!-- Source: src/erk/cli/ensure.py, UserFacingCliError --&gt;
+    33→Use `UserFacingCliError` for expected CLI failures. See the `UserFacingCliError` class in `src/erk/cli/ensure.py`.
+    37→- Extends `click.ClickException` so Click automatically intercepts it at all command levels
+    38→- Provides styled error output (`Error: ` prefix in red) through `.show()` method
+    42→## Decision Table: Which Exception Type?
+    46→| `UserFacingCliError` | Expected user-facing failures          | Missing config, invalid input, precondition violations    |
+    47→| `RuntimeError`       | Programmer errors (impossible states)  | Assertion violations, logic bugs, unreachable branches    |
+    48→| Gateway error types  | Internal operation failures (consumed) | `PushError`, `GitOperationError` (converted to CLI error) |
+    50→**The bright line:** If a user can trigger the error through normal CLI usage (wrong flag, missing file, invalid state), it's `UserFacingCliError`. If it indicates a bug in erk's code, it's `RuntimeError`.
+    54→PR #6353 converted 8 files from `RuntimeError` to `UserFacingCliError`. The pattern:
+    60→    raise RuntimeError("Branch name is required")
+    67→    raise UserFacingCliError("Branch name is required")
+    72→- Correct semantic signal (user error, not code bug)
+    73→- Consistent error styling through Click's exception handling
+    74→- Type-based error handling in tests
+    75→- No stack trace for expected failures
+    79→**WRONG** — RuntimeError for expected validation failure:
+    85→        raise RuntimeError("No .erk/impl-context/ folder found in current directory")
+    89→**CORRECT** — UserFacingCliError with actionable guidance:
+    95→        raise UserFacingCliError(
+   104→1. Multiline error message with blank line separator
+   106→3. Exception type that signals "user needs to act" not "code is broken"
+   112→The `Ensure` class provides domain-specific assertion methods that all raise `UserFacingCliError`. See methods like `Ensure.invariant()`, `Ensure.path_exists()`, `Ensure.git_branch_exists()` in `src/erk/cli/ensure.py`.
+   118→- Include default error messages with remediation hints
+   119→- Enable LBYL pattern enforcement (check before operation, not exception recovery)
+   134→## When RuntimeError Is Correct
+   136→RuntimeError is **appropriate** for:
+   138→1. **Assertion failures** — Internal invariants violated (`assert len(branches) &gt; 0` with RuntimeError in handler)
+   140→3. **Developer configuration errors** — Mistakes in erk's own code/config (not user input)
+   142→Example of correct RuntimeError usage:
+   145→if error_type not in {"validation", "execution"}:
+   146→    raise RuntimeError(f"Unknown error_type: {error_type}")  # Code bug if this executes
+   155→- 8 files converted from RuntimeError → UserFacingCliError
+   156→- ~5 files still contain RuntimeError instances (some legitimate, some anti-patterns)
+   157→- Ongoing migration: Convert anti-pattern RuntimeErrors when editing affected code
+   159→When you encounter `RuntimeError` in CLI command code, ask: "Can a user trigger this through normal CLI usage?" If yes, migrate to `UserFacingCliError`.
+   161→### Exception Chaining with `from e`
+   163→When converting `RuntimeError` catch blocks to `UserFacingCliError`, always preserve the exception chain:
+   166→except RuntimeError as e:
+   167→    raise UserFacingCliError(str(e)) from e
+   170→The `from e` preserves the causal chain for debugging while presenting a clean user-facing error message. This pattern was established in PR #6860.
+   172→## Actionable Error Messages in Pipelines
+   174→The same principle applies within pipeline error types like `SubmitError`. Even though these are consumed by the CLI layer (not raised as exceptions), the `message` field should tell the user what happened and what to do.
+   187→**Anti-pattern:** Wrapping raw subprocess stderr directly into the error message. The user sees internal tool output without context or remediation guidance.
+   189→## Multi-Layer Error Wrapping Without Semantic Interpretation
+   191→When subprocess calls fail, the error passes through multiple layers:
+   193→1. `CalledProcessError` (subprocess) with raw stderr
+   194→2. `RuntimeError` (gateway layer) wrapping the subprocess error
+   195→3. `SubmitError` (pipeline layer) wrapping the RuntimeError
+   196→4. `ClickException` (CLI layer) presenting the SubmitError message
+   198→Each layer adds wrapping but, without pattern detection, none adds semantic value. The user sees nested error messages that read like internal debugging output.
+   200→**Solution:** At the pipeline boundary (where RuntimeError is caught), detect known error patterns and convert to semantic error types with actionable guidance. The pipeline layer is the right place because it has domain context (what operation was attempted) that the gateway layer lacks.
+   202→See `_graphite_first_flow()` in `src/erk/cli/commands/pr/submit_pipeline.py` for the pattern of catching RuntimeError and routing to specific SubmitError error_types based on keyword detection.
+   204→## Case Study: Bypass Flag vs Actionable Error (PR #6885)
+   210→**Why bypass was wrong:** The restack isn't optional -- the stack genuinely has conflicts. A `--no-restack` flag would let users push diverged stacks, creating worse problems downstream. The correct response is an actionable error message explaining how to resolve the actual issue.
+   212→**Principle:** When a subprocess failure requires user intervention, the error message should guide users through resolution, not offer a flag to skip the problem. Technical bypasses hide issues; actionable errors solve them.
+   216→- **Discriminated union error handling** — `docs/learned/architecture/discriminated-union-error-handling.md` explains when to use `T | ErrorType` instead of exceptions
+   217→- **Output styling** — `docs/learned/cli/output-styling.md` documents the `Error: ` prefix convention and Click styling patterns
+   219→- **Error detection patterns** — `docs/learned/cli/error-detection-patterns.md` documents keyword-based error classification for subprocess failures
+   223→Correct exception types make error handling predictable:
+   225→- Test assertions can catch specific exception types
+   226→- Agents reading stack traces understand whether they hit a bug or user error
+   227→- CLI error output is consistently styled
+   230→Semantic precision in exception types is semantic precision in program behavior.
+  </tool_result>
+  <thinking>Now I have a comprehensive understanding of the issue and the codebase patterns. Let me also quickly look at the `_dispatch_planned_pr_plan` function more broadly to understand the full context, and also check the `DISPATCH_WORKFLOW_NAME` constant.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="12130" cache_read_input_tokens="54934" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12130}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the workflow name constant and the broader function context.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12130" cache_read_input_tokens="54934" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12130}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WZu6rri8f6DWEsQFbiHFKt">
+    <param name="file_path">/workspaces/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12130" cache_read_input_tokens="54934" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12130}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WZu6rri8f6DWEsQFbiHFKt">
+     1→"""Dispatch plans for remote AI implementation via GitHub Actions."""
+     2→
+     3→import logging
+     4→import tomllib
+     5→from dataclasses import dataclass
+     6→from datetime import UTC, datetime
+     7→from pathlib import Path
+     8→
+     9→import click
+    10→
+    11→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+    12→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    13→from erk.cli.commands.slot.common import is_placeholder_branch
+    14→from erk.cli.constants import (
+    15→    DISPATCH_WORKFLOW_METADATA_NAME,
+    16→    DISPATCH_WORKFLOW_NAME,
+    17→    ERK_PLAN_LABEL,
+    18→)
+    19→from erk.cli.core import discover_repo_context
+    20→from erk.cli.ensure import Ensure, UserFacingCliError
+    21→from erk.core.context import ErkContext
+    22→from erk.core.repo_discovery import RepoContext
+    23→from erk_shared.gateway.git.remote_ops.types import PushError
+    24→from erk_shared.gateway.github.metadata.core import (
+    25→    create_submission_queued_block,
+    26→    render_erk_issue_event,
+    27→)
+    28→from erk_shared.gateway.github.parsing import (
+    29→    construct_pr_url,
+    30→    construct_workflow_run_url,
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_019AuSbBEM3ZtZBziRHyArjF">
+    <param name="pattern">DISPATCH_WORKFLOW_NAME</param>
+    <param name="path">/workspaces/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12130" cache_read_input_tokens="54934" output_tokens="279" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12130, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019AuSbBEM3ZtZBziRHyArjF">
+16:    DISPATCH_WORKFLOW_NAME,
+251:    workflow_config = load_workflow_config(repo.root, DISPATCH_WORKFLOW_NAME)
+255:    user_output(f"Dispatching workflow: {click.style(DISPATCH_WORKFLOW_NAME, fg='cyan')}")
+270:        workflow=DISPATCH_WORKFLOW_NAME,
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01H8PV1wiT1wwuGBSTgqHg7k">
+    <param name="pattern">DISPATCH_WORKFLOW_NAME</param>
+    <param name="path">/workspaces/erk/src/erk/cli/constants.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1198" cache_read_input_tokens="67064" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1198}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H8PV1wiT1wwuGBSTgqHg7k">
+15-# GitHub Actions workflow for remote implementation dispatch
+16:DISPATCH_WORKFLOW_NAME = "plan-implement.yml"
+17-DISPATCH_WORKFLOW_METADATA_NAME = "plan-implement"
+--
+33-WORKFLOW_COMMAND_MAP: dict[str, str] = {
+34:    "plan-implement": DISPATCH_WORKFLOW_NAME,  # plan-implement.yml
+35-    "pr-rebase": REBASE_WORKFLOW_NAME,  # pr-rebase.yml
+  </tool_result>
+  <tool_use name="Read" id="toolu_014WDrriHmdHfBM6Gm4Mrd4Z">
+    <param name="file_path">/workspaces/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">230</param>
+    <param name="limit">45</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1198" cache_read_input_tokens="67064" output_tokens="222" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014WDrriHmdHfBM6Gm4Mrd4Z">
+   230→        objective_id=plan.objective_id,
+   231→        now_iso=ctx.time.now().isoformat(),
+   232→        node_ids=None,
+   233→    )
+   234→    ctx.git.commit.commit_files_to_branch(
+   235→        repo.root,
+   236→        branch=branch_name,
+   237→        files=files,
+   238→        message=f"Add plan for PR #{plan_number}",
+   239→    )
+   240→    push_result = ctx.git.remote.push_to_remote(
+   241→        repo.root, "origin", branch_name, set_upstream=False, force=False
+   242→    )
+   243→    if isinstance(push_result, PushError):
+   244→        raise UserFacingCliError(push_result.message)
+   245→    user_output(click.style("✓", fg="green") + " Branch pushed to remote")
+   246→
+   247→    # Gather submission metadata
+   248→    queued_at = datetime.now(UTC).isoformat()
+   249→
+   250→    # Load workflow-specific config
+   251→    workflow_config = load_workflow_config(repo.root, DISPATCH_WORKFLOW_NAME)
+   252→
+   253→    # Build inputs dict with plan_backend="planned_pr"
+   254→    user_output("")
+   255→    user_output(f"Dispatching workflow: {click.style(DISPATCH_WORKFLOW_NAME, fg='cyan')}")
+   256→
+   257→    inputs = {
+   258→        "plan_id": str(plan_number),
+   259→        "submitted_by": submitted_by,
+
+... [15 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a clear picture. Let me also check the `trigger_workflow` method in the gateway interface (ABC) to understand the return type and error contract.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1112" cache_read_input_tokens="68262" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1112}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the gateway interface for `trigger_workflow` to understand the ABC contract.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1112" cache_read_input_tokens="68262" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1112}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01816tz8YUs4S3nVqdy9CxZQ">
+    <param name="pattern">def trigger_workflow</param>
+    <param name="path">/workspaces/erk/packages/erk-shared</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1112" cache_read_input_tokens="68262" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1112}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01816tz8YUs4S3nVqdy9CxZQ">
+packages/erk-shared/src/erk_shared/gateway/github/printing.py-118-    ) -&gt; str:
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/printing.py-119-        ref_arg = f"--ref {ref} " if ref else ""
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/printing.py-120-        input_args = " ".join(f"-f {key}={value}" for key, value in inputs.items())
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/printing.py-121-        return f"gh workflow run {workflow} {ref_arg}{input_args}"
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/printing.py-122-
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:123:    def trigger_workflow(
+packages/erk-shared/src/erk_shared/gateway/github/printing.py-124-        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
+packages/erk-shared/src/erk_shared/gateway/github/printing.py-125-    ) -&gt; str:
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/printing.py-126-        """Trigger workflow with printed output.
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/printing.py-127-
+packages/erk-shared/src/erk_shared/gateway/github/printing.py-128-        Returns:
+--
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-91-            MergeResult on success, MergeError on failure
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-92-        """
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-93-        ...
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-94-
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-95-    @abstractmethod
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:96:    def trigger_workflow(
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-97-        self, *, repo_root: Path, workflow: str, inputs: dict[str, str], ref: str | None
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-98-    ) -&gt; str:
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-99-        """Trigger a GitHub Actions workflow via gh CLI.
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-100-
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-101-        Args:
+--
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py-244-            self._merged_prs.append(pr_number)
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py-245-            self._operation_log.append(("merge_pr", pr_number))
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py-246-            return MergeResult(pr_number=pr_number)
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py-247-        return MergeError(pr_number=pr_number, message="Merge failed (configured to fail in test)")
+/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py-248-
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:249:    def trigger_workflow(
+
+... [29 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have all the information I need. Let me also look at the `real.py` `trigger_workflow` method more closely to see the full error flow.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2402" cache_read_input_tokens="69374" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2402}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UJM2FfJcckhMqe8HzyrNNF">
+    <param name="file_path">/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="offset">340</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2402" cache_read_input_tokens="69374" output_tokens="165" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2402, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UJM2FfJcckhMqe8HzyrNNF">
+   340→        Returns:
+   341→            The distinct_id used for correlation
+   342→        """
+   343→        distinct_id = self._generate_distinct_id()
+   344→        debug_log(
+   345→            f"_dispatch_workflow_impl: workflow={workflow}, distinct_id={distinct_id}, ref={ref}"
+   346→        )
+   347→
+   348→        ref_value = ref if ref is not None else self._get_default_branch(repo_root)
+   349→        payload = json.dumps({"ref": ref_value, "inputs": {"distinct_id": distinct_id, **inputs}})
+   350→
+   351→        # GH-API-AUDIT: REST - POST workflows/{id}/dispatches
+   352→        cmd = [
+   353→            "gh",
+   354→            "api",
+   355→            "--method",
+   356→            "POST",
+   357→            f"repos/{{owner}}/{{repo}}/actions/workflows/{workflow}/dispatches",
+   358→            "--input",
+   359→            "-",
+   360→        ]
+   361→
+   362→        debug_log(f"_dispatch_workflow_impl: executing command: {' '.join(cmd)}")
+   363→        run_subprocess_with_context(
+   364→            cmd=cmd,
+   365→            operation_context=f"trigger workflow '{workflow}'",
+   366→            cwd=repo_root,
+   367→            input=payload,
+   368→        )
+   369→        debug_log("_dispatch_workflow_impl: workflow dispatched successfully")
+
+... [30 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a complete picture. Let me write the plan. The issue is clear:
+
+1. `trigger_workflow` in `real.py` calls `_dispatch_workflow_impl` which uses `run_subprocess_with_context`
+2. When the workflow doesn't exist, `gh api` returns 404
+3. `run_subprocess_with_context` converts this to a `RuntimeError`
+4. The `dispatch_cmd.py` code at line 268 has NO error handling around `trigger_workflow`
+5. The `RuntimeError` bubbles up to Click's top-level handler, showing a raw traceback
+
+The fix should:
+
+
+- Catch the `RuntimeError` from `trigger_workflow` at the CLI boundary in `dispatch_cmd.py`
+- Detect if it's a 404 (workflow not found) error by checking the error message
+- Convert it to `UserFacingCliError` with a helpful message that suggests running `erk init capability add erk-impl-workflow`
+
+This aligns with the error-handling pattern documented in the codebase — intercept `RuntimeError` at the CLI layer, identify the specific error condition, and surface a user-friendly message with remediation steps. I'm leaning toward the CLI-level catch approach since that's where the error naturally surfaces.
+
+I'm also thinking about whether a pre-flight check makes sense — the capability system has `is_installed()` for local checks, but since the dispatch goes through GitHub's API, the workflow file needs to exist on the remote repository, not just locally. A pre-flight check might be worth exploring, but the error handling at the CLI boundary is the more straightforward solution. capability system would only catch local absence, not remote. The post-hoc error detection is the right approach.
+
+Actually, let me reconsider. The dispatch cmd already pushes the branch to remote. If the workflow exists locally, it should also exist on remote after the push. But the workflow file is on the default branch, not the plan branch. So the local check (does `.github/workflows/plan-implement.yml` exist in the repo root) is actually a good proxy — if the workflow was never installed via `erk init capability add`, it won't exist on the default branch either.
+
+Actually the better approach is the LBYL one - check the capability is installed before trying to dispatch. But that couples the dispatch command to the capability system, which may not be desired. The error catch is simpler and handles all cases (including when the file exists locally but not on the remote default branch).
+
+So I'll catch the RuntimeError when the workflow dispatch fails, look for the 404 pattern in the error, and raise a UserFacingCliError with clear guidance on how to fix it.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1001" cache_read_input_tokens="71776" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1001}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have everything I need. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1001" cache_read_input_tokens="71776" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1001}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01NgdBtEdHUKPDqiin1n71wz">
+    <param name="file_path">/home/vscode/.claude/plans/imperative-whistling-treehouse.md</param>
+    <param name="content"># Plan: Better error messaging for workflow dispatch failures
+
+## Context
+
+When `erk pr di...[truncated 2309 chars]...ould see clean `Error: Workflow 'plan-implement.yml' not found...` instead of a traceback
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1001" cache_read_input_tokens="71776" output_tokens="1537" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1001, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NgdBtEdHUKPDqiin1n71wz">
+File created successfully at: /home/vscode/.claude/plans/imperative-whistling-treehouse.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01HRJ4vCnCeE65mf2YBw4XoW">
+    <param name="plan"># Plan: Better error messaging for workflow dispatch failures
+
+## Context
+
+When `erk pr di...[truncated 2309 chars]...ould see clean `Error: Workflow 'plan-implement.yml' not found...` instead of a traceback
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1662" cache_read_input_tokens="72777" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1662}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HRJ4vCnCeE65mf2YBw4XoW">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /home/vscode/.claude/plans/imperative-whistling-treehouse.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Better error messaging for workflow dispatch failures
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 35649634-46a4-4e8f-9eb8-e74423f8e2e7 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <thinking>The hook is telling me to display the plan and ask the user what they want to do with it. Let me follow those instructions.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="654" cache_read_input_tokens="74439" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 654}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Better error messaging for workflow dispatch failures
+
+## Context
+
+When `erk pr dispatch` fails because the target repository doesn't have the `plan-implement.yml` workflow installed, users see a raw Python traceback (RuntimeError from subprocess) instead of an actionable error message. Per erk's error handling conventions, this should be a `UserFacingCliError` with remediation guidance.
+
+The root cause: `dispatch_cmd.py:268` calls `ctx.github.trigger_workflow()` with no error handling. When the workflow doesn't exist, GitHub returns HTTP 404, `run_subprocess_with_context` wraps it as `RuntimeError`, and it bubbles up as a traceback.
+
+## Implementation
+
+### File: `src/erk/cli/commands/pr/dispatch_cmd.py` (~line 268)
+
+Wrap the `trigger_workflow()` call in a try/except that catches `RuntimeError`, detects the 404/workflow-not-found pattern, and raises `UserFacingCliError` with actionable guidance:
+
+```python
+try:
+    run_id = ctx.github.trigger_workflow(
+        repo_root=repo.root,
+        workflow=DISPATCH_WORKFLOW_NAME,
+        inputs=inputs,
+        ref=ctx.local_config.dispatch_ref,
+    )
+except RuntimeError as e:
+    error_text = str(e)
+    if "404" in error_text or "Not Found" in error_text:
+        raise UserFacingCliError(
+            f"Workflow '{DISPATCH_WORKFLOW_NAME}' not found in this repository.\n\n"
+            "The dispatch workflow must be installed before dispatching plans.\n"
+            "Install it with:\n\n"
+            f"  erk init capability add erk-impl-workflow"
+        ) from e
+    raise UserFacingCliError(
+        f"Failed to dispatch workflow '{DISPATCH_WORKFLOW_NAME}'.\n\n"
+        f"{error_text}"
+    ) from e
+```
+
+This follows the established pattern from `docs/learned/cli/error-handling-antipatterns.md`:
+- Detect known error patterns via keywords at the CLI boundary
+- Convert `RuntimeError` to `UserFacingCliError` with `from e` chaining
+- Provide actionable remediation command
+- Re-raise unexpected errors as `UserFacingCliError` too (not bare RuntimeError) since all `trigger_workflow` failures are user-triggerable
+
+### No other files modified
+
+The `UserFacingCliError` import already exists at line 20 of `dispatch_cmd.py`. The `DISPATCH_WORKFLOW_NAME` constant is already imported at line 16.
+
+## Verification
+
+1. Run `make fast-ci` to verify no regressions
+2. Manually test by running `erk pr dispatch` against a repo without the workflow — should see clean `Error: Workflow 'plan-implement.yml' not found...` instead of a traceback
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="654" cache_read_input_tokens="74439" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 654}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01X5Aq1k5wV6T32R3yLBDBkW">
+    <param name="questions">[{'question': '📋 Plan: Better error messaging for workflow dispatch failures\nCurrent cont...[truncated 443 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="654" cache_read_input_tokens="74439" output_tokens="970" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 654, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X5Aq1k5wV6T32R3yLBDBkW">
+User has answered your questions: "📋 Plan: Better error messaging for workflow dispatch failures
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01NXeYgufhAjbxPdTQXNFopp">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1160" cache_read_input_tokens="75093" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1160, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NXeYgufhAjbxPdTQXNFopp">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="35649634-46a4-4e8f-9eb8-e74423f8e2e7" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "35649634-46a4-4e8f-9eb8-e74423f8e2e7" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "35649634-46a4-4e8f-9eb8-e74423f8e2e7" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "35649634-46a4-4e8f-9eb8-e74423f8e2e7" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "35649634-46a4-4e8f-9eb8-e74423f8e2e7" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me save the plan as a draft PR.
+
+**Branch slug:** `fix-dispatch-workflow-error`
+
+**Summary:** Catches RuntimeError from trigger_workflow in the dispatch command and converts 404 errors into a UserFacingCliError with actionable guidance to install the erk-impl-workflow capability. Follows established error handling patterns from the CLI error handling documentation.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2620" cache_read_input_tokens="76253" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2620}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014cFw6EVxSTQTe6z9ewWWdf">
+    <param name="command">erk exec plan-save --format json --session-id="35649634-46a4-4e8f-9eb8-e74423f8e2e7" --bra...[truncated 214 chars]...y. Follows established error handling patterns from the CLI error handling documentation."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2620" cache_read_input_tokens="76253" output_tokens="285" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2620, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014cFw6EVxSTQTe6z9ewWWdf">
+{"success": true, "plan_number": 8589, "plan_url": "https://github.com/dagster-io/erk/pull/8589", "title": "[erk-plan] Plan: Better error messaging for workflow dispatch failures", "branch_name": "plnd/fix-dispatch-workflow-erro-03-02-0122", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/workspaces/erk/.erk/scratch/sessions/35649634-46a4-4e8f-9eb8-e74423f8e2e7/plan_snapshots/000001-be3b2af3"}
+  </tool_result>
+  <assistant>No objective linked, so skipping steps 5-6. Let me push the session and display results.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="555" cache_read_input_tokens="78873" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 555}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01U3uN4YUnziomRdMnfiCasM">
+    <param name="command">erk exec upload-impl-session --session-id "35649634-46a4-4e8f-9eb8-e74423f8e2e7" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="555" cache_read_input_tokens="78873" output_tokens="141" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 555, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01U3uN4YUnziomRdMnfiCasM">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+</session>

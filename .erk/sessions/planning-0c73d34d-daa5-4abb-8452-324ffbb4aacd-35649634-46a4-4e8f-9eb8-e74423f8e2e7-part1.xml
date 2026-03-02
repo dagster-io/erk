@@ -1,0 +1,1122 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>▐▛███▜▌   Claude Code v2.1.63
+▝▜█████▛▘  Opus 4.6 · Claude Max
+  ▘▘ ▝▝    ~/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0
+
+❯ /erk:objective-plan 2803
+
+⏺ Loading objective #2803...
+
+⏺ Agent(Fetch objective #2803 data) Haiku 4.5
+  ⎿  Done (19 tool uses · 24.1k tokens · 51s)
+  (ctrl+o to expand)
+
+⏺ Bash(erk exec marker read --session-id "4cc24abc-4774-4d73-95b3-25926611602c" objective-context)
+  ⎿  Error: Exit code 127
+     (eval):1: command not found: erk
+
+     (eval):1: command not found: erk
+
+⏺ Bash(which erk || command -v erk || (ls /Users/schrockn/.erk/bin/ 2&gt;/dev/null) || echo "erk not found")
+  ⎿  erk not found
+     erk not found
+
+⏺ Bash(ls /Users/schrockn/.erk/bin/ 2&gt;/dev/null || ls /Users/schrockn/.local/bin/erk 2&gt;/dev/null || find /Users/schrockn/.erk -name "erk" -type f 2&gt;/dev/null | head -5)
+  ⎿  /Users/schrockn/.erk/repos/dagster-compass/worktrees/erk-slot-07/.venv/bin/erk
+     /Users/schrockn/.erk/repos/dagster-compass/worktrees/erk-slot-06/.venv/bin/erk
+     /Users/schrockn/.erk/repos/dagster-compass/worktrees/erk-slot-08/.venv/bin/erk
+     … +2 lines (ctrl+o to expand)
+
+⏺ Bash(/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/bin/erk exec marker read --session-id "4cc24abc-4774-4d73-95b3-25926611602c"
+      objective-context)
+  ⎿  Error: Exit code 1
+
+⏺ Bash(/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/bin/erk exec marker create --session-id "4cc24abc-4774-4d73-95b3-25926611602c"
+      --associated-objective 2803 objective-context)
+  ⎿  {
+       "success": true,
+       "message": "Created marker: objective-context"
+     }
+
+⏺ Bash(/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/bin/erk exec get-issue-body 2803 2&gt;&amp;1 | head -80)
+  ⎿  {"success": true, "issue_number": 2803, "title": "Objective: Plugin Bot System for Compass", "body": "# Objective: Plugin Bot System for Compass\n\nAdd a plugin
+     system to Compass that enables new bot types alongside the existing csbot. Each plugin is a separate Python package discovered via entry points. The first plugin
+     is an erkbot for plan-oriented engineering via Slack.\n\n## Goal\n\nA Slack channel configured as a `PLUGIN` instance type loads a named plugin (e.g., `erkbot`)
+     that provides:\n- **Custom tools** \u2014 the plugin's tool set replaces compass's standard tools\n- **Custom system prompt** \u2014 plugin-provided base prompt,
+     with org/channel prompts from the context store layered on top\n- **Custom config** \u2014 plugin-specific configuration (e.g., target repo) per bot instance\n-
+     **Context store access** \u2014 plugin bots have a context store like any other bot, enabling org admins to customize behavior and the playground to manage
+     context\n\nThe erkbot plugin enables users to create implementation plans, review them in Slack threads, and dispatch GitHub Actions for implementation \u2014 all
+      through Slack conversation.\n\n## Design Decisions\n\n- **In-process plugins** (not CLI/MCP/HTTP): erk and compass evolve in lockstep. Plugin code directly calls
+      erk's core functions via `erk-shared` Python dependency.\n- **Plugins are separate packages**: Each plugin has its own `pyproject.toml`, dependencies, and tests.
+      The erkbot plugin lives at `plugins/erkbot/` in the compass monorepo but is structurally identical to what a user-provided external package would look like.\n-
+     **Entry-point-based discovery**: Plugins register via `[project.entry-points.\"compass.plugins\"]` in their `pyproject.toml`. Compass discovers them at startup
+     using `importlib.metadata.entry_points()` \u2014 the same pattern dagster's `dg` CLI uses for `dagster_dg_cli.registry_modules`.\n- **One plugin per bot
+     instance**: Simpler. Composition can come later.\n- **Context store integration**: Plugin bots have a full context store. System prompt layering is: plugin base
+     prompt \u2192 org prompt (from context store) \u2192 channel prompt (from context store) \u2192 skills catalog. Playground `get_context()`,
+     `commit_context_changes()`, and `chat()` all work with plugin bots.\n- **Per-instance config as JSON field**: Add `plugin_config: dict` to
+     `CompassBotSingleChannelConfig`. Keeps everything in the existing config system.\n- **Blank tool set by default**: Plugins define their own tools. If a plugin
+     wants `search_web` or `search_context`, it explicitly includes it.\n- **No hot-reloading**: Restart-on-change is fine for now.\n- **Webhook integration
+     deferred**: Users can poll plan status via `list_plans`. Async notifications later.\n- **Transport layer unchanged**: Streaming, Slack UI, and conversation
+     history work identically for plugin bots.\n- **Full management infrastructure reuse**: Plugin bots are configured through the same admin tools, stored in the same
+      DB, routed through the same event pipeline, and accessible in the playground \u2014 just another `BotInstanceType`.\n\n## Roadmap\n\n### Phase 1: Plugin Bot
+     Steelthread (1 PR)\n\nMinimal vertical slice: plugin discovery via entry points, one plugin package (erkbot) with one working tool, context store integration,
+     playground-compatible, responding to Slack messages end-to-end.\n\n| Node | Description | Status | PR |\n|------|-------------|--------|----|\n| 1.1 | Define
+     CompassPlugin base class and PluginContext dataclass \u2014 the contract between compass and plugins. PluginContext exposes context store, config, GitHub
+     credentials, Slack response, and target repo info. | pending | - |\n| 1.2 | Implement entry-point-based plugin discovery using
+     importlib.metadata.entry_points(group=\"compass.plugins\") | pending | - |\n| 1.3 | Create PluginBotInstance subclass of CompassChannelBaseBotInstance.
+     get_system_prompt() layers plugin system_prompt.md as base, then org/channel prompts from context store on top. get_tools_for_message() delegates to plugin. |
+     pending | - |\n| 1.4 | Add PLUGIN to BotInstanceType enum (Python + protobuf admin.proto), update from_db_value(), update flags.py mode helpers to handle plugin
+     bots, wire into CompassChannelBotInstanceFactory.construct() | pending | - |\n| 1.5 | Create erkbot as a separate Python package (plugins/erkbot/) with its own
+     pyproject.toml, entry point registration, list_plans tool, and system_prompt.md | pending | - |\n| 1.6 | Add erk-shared as a dependency of the erkbot package and
+     construct PlannedPRBackend from compass credentials via PluginContext | pending | - |\n\n**Test:** Configure a channel as PLUGIN instance type with erkbot plugin
+     name. Bot discovers erkbot via entry points at startup. Send a message \u2014 bot responds with erkbot system prompt + context store org/channel prompts. Invoke
+     list_plans \u2014 returns plans from the target repo. Playground chat and get_context work with the plugin bot.\n\n### Phase 2: Complete Erkbot Plugin (1
+     PR)\n\nFull erk tool set, plugin config system, and testing infrastructure.\n\n| Node | Description | Status | PR |\n|------|-------------|--------|----|\n| 2.1 |
+      Implement create_plan, dispatch_plan, and view_plan tools in the erkbot package | pending | - |\n| 2.2 | Add plugin.yaml schema parsing and per-instance
+     plugin_config JSON field on CompassBotSingleChannelConfig | pending | - |\n| 2.3 | Unit tests for plugin discovery and PluginBotInstance; integration tests for
+     erkbot tools using fake gateways | pending | - |\n| 2.4 | Error handling: graceful degradation when plugin loading fails, tool execution errors surface to user |
+     pending | - |\n\n**Test:** Full erkbot workflow: user asks for a plan \u2192 create_plan creates draft PR \u2192 user approves \u2192 dispatch_plan triggers
+     GitHub Actions. All tools tested with fake gateways. Plugin discovery tested with entry point mocking.\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break
+     erk tooling. --&gt;\n&lt;!-- erk:metadata-block:objective-roadmap --&gt;\n&lt;details&gt;\n&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;\n\n```yaml\nschema_version:
+     '4'\nnodes:\n- id: '1.1'\n  slug: plugin-interface\n  description: Define CompassPlugin base class and PluginContext dataclass \u2014 the contract\n    between
+     compass and plugins. PluginContext exposes context store, config, GitHub\n    credentials, Slack response, and target repo info.\n  status: pending\n  pr: null\n-
+      id: '1.2'\n  slug: plugin-discovery\n  description: Implement entry-point-based plugin discovery using
+     importlib.metadata.entry_points(group=\"compass.plugins\")\n  status: pending\n  pr: null\n- id: '1.3'\n  slug: plugin-bot-instance\n  description: Create
+     PluginBotInstance subclass of CompassChannelBaseBotInstance.\n    get_system_prompt() layers plugin system_prompt.md as base, then org/channel prompts\n    from
+     context store on top. get_tools_for_message() delegates to plugin.\n  status: pending\n  pr: null\n- id: '1.4'\n  slug: factory-wiring\n  description: Add PLUGIN
+     to BotInstanceType enum (Python + protobuf admin.proto),\n    update from_db_value(), update flags.py mode helpers to handle plugin bots, wire\n    into
+     CompassChannelBotInstanceFactory.construct()\n  status: pending\n  pr: null\n- id: '1.5'\n  slug: erkbot-package\n  description: Create erkbot as a separate
+     Python package (plugins/erkbot/) with its\n    own pyproject.toml, entry point registration, list_plans tool, and system_prompt.md\n  status: pending\n  pr:
+     null\n- id: '1.6'\n  slug: erk-dependency\n  description: Add erk-shared as a dependency of the erkbot package and construct\n    PlannedPRBackend from compass
+     credentials via PluginContext\n  status: pending\n  pr: null\n- id: '2.1'\n  slug: remaining-erk-tools\n  description: Implement create_plan, dispatch_plan, and
+     view_plan tools in the erkbot\n    package\n  status: pending\n  pr: null\n- id: '2.2'\n  slug: plugin-config-system\n  description: Add plugin.yaml schema
+     parsing and per-instance plugin_config JSON\n    field on CompassBotSingleChannelConfig\n  status: pending\n  pr: null\n- id: '2.3'\n  slug: plugin-testing\n
+     description: Unit tests for plugin discovery and PluginBotInstance; integration\n    tests for erkbot tools using fake gateways\n  status: pending\n  pr: null\n-
+     id: '2.4'\n  slug: error-handling\n  description: 'Error handling: graceful degradation when plugin loading fails, tool\n    execution errors surface to user'\n
+     status: pending\n  pr: null\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:objective-roadmap --&gt;\n\n## Implementation Context\n\n### System prompt
+     layering\n\n```\nPlugin system_prompt.md    (replaces hardcoded base prompt role definition)\n  + Org system prompt       (from context store \u2014 applies to
+     all bots in org)\n  + Channel system prompt   (from context store \u2014 channel-specific)\n  + Skills catalog\n```\n\n`PluginBotInstance.get_system_prompt()`
+     reads the plugin's markdown as the base, then calls the existing context store logic for org/channel layers. Playground `get_context()` returns the plugin base +
+     context store prompts. `commit_context_changes()` works as-is against the context store.\n\n### Plugin package
+     structure\n\n```\ndagster-compass/\n\u251c\u2500\u2500 plugins/\n\u2502   \u2514\u2500\u2500 erkbot/\n\u2502       \u251c\u2500\u2500 pyproject.toml          #
+     declares compass.plugins entry point\n\u2502       \u251c\u2500\u2500 src/\n\u2502       \u2502   \u2514\u2500\u2500 compass_erkbot/\n\u2502       \u2502
+     \u251c\u2500\u2500 __init__.py     # exports CompassPlugin subclass\n\u2502       \u2502       \u251c\u2500\u2500 tools.py        # register_tools() \u2192
+     dict[str, Tool]\n\u2502       \u2502       \u2514\u2500\u2500 system_prompt.md\n\u2502       \u2514\u2500\u2500 tests/\n\u251c\u2500\u2500 packages/csbot/
+              # existing bot infrastructure\n\u2514\u2500\u2500 pyproject.toml                  # workspace references plugins/erkbot\n```\n\n```toml\n#
+     plugins/erkbot/pyproject.toml\n[project.entry-points.\"compass.plugins\"]\nerkbot = \"compass_erkbot\"\n```\n\n### Bot instance construction pipeline\n\n```\nDB
+     (agents table, instance_type=\"plugin\", plugin_name=\"erkbot\")\n  \u2192 storage.load_agent() \u2192 CompassBotSingleChannelConfig\n    \u2192
+     BotReconciler._create_agent() \u2192 factory.construct()\n      \u2192 PluginBotInstance (cached)\n        \u2192 playground._get_bot()     \u2190 just a lookup,
+     works as-is\n        \u2192 handle_event() routing    \u2190 works as-is\n```\n\n### Files requiring changes for new BotInstanceType\n\n| File | Change
+     |\n|------|--------|\n| `packages/csbot/src/csbot/slackbot/storage/interface.py` | Add `PLUGIN = \"plugin\"` to enum, update `from_db_value()` |\n|
+     `packages/compass-admin-panel/proto/compass/admin/v1/admin.proto` | Add `BOT_INSTANCE_TYPE_PLUGIN = 3` |\n|
+     `packages/csbot/src/csbot/slackbot/channel_bot/bot_factory.py` | Add PLUGIN branch to `construct()` |\n| `packages/csbot/src/csbot/slackbot/flags.py` | Handle
+     plugin bots in mode helpers (not prospector, not community) |\n| `packages/csbot/src/csbot/slackbot/slackbot_core.py` | Add `plugin_name` and `plugin_config` to
+     config |\n| `packages/csbot/src/csbot/slackbot/storage/postgresql.py` | Load plugin fields from DB |\n\n### Dagster dg CLI pattern (reference)\n\nThe `dg` CLI
+     uses `importlib.metadata.entry_points(group=\"dagster_dg_cli.registry_modules\")`. Each package registers via `pyproject.toml` entry points. Key files:\n-
+     `dagster-dg-core/dagster_dg_core/context.py` \u2014 entry point group constant\n- `dagster/dagster/components/core/package_entry.py` \u2014
+     `discover_entry_point_package_objects()`\n\n## Exploration Notes\n\n### CompassChannelBaseBotInstance constructor complexity\n\nThe base class constructor takes
+     ~17 parameters. `PluginBotInstance` will accept all of them. Many won't be used directly by plugin code (csbot_client, etc.) but they're required by the base
+     class and used by inherited behavior like context store access.\n\n### Tool wrapping pattern\n\nAll tools return `ToolExecutionResult` with
+     `ToolExecutionMetadata`. Plugin tools should return `ToolExecutionResult` with empty metadata since they don't use compass's data warehouse.\n\n###
+     PlanBackend.create_plan() requirements\n\n`PlannedPRBackend.create_plan()` requires metadata with `branch_name` key. No standalone `create_plan_draft_pr` function
+      exists \u2014 use `PlanBackend.create_plan()` directly.\n\n### Playground compatibility\n\nPlayground does not construct its own bot instances \u2014 it looks
+     them up via `_bot_server.bot_manager.get_agent(org_id, agent_id)` from the reconciler cache. Operations: `chat()`, `get_system_prompt()`, `get_context()`,
+     `commit_context_changes()`, `generate_context()`. All operate on the bot instance interface, so `PluginBotInstance` works if it implements the same methods.\n\n##
+      Related Documentation\n\n- Skills to load: `dignified-python`\n- Dagster reference:
+     `/Users/schrockn/code/dagster/python_modules/dagster/dagster/components/core/package_entry.py`\n- Key compass files: `bot.py`, `bot_factory.py`,
+     `storage/interface.py`, `flags.py`, `playground_service_impl.py`\n- Erk shared: `erk_shared.plan_store.backend.PlanBackend`,
+     `erk_shared.plan_store.planned_pr.PlannedPRBackend`\n", "state": "OPEN", "labels": ["erk-objective"], "url":
+     "https://github.com/dagster-io/dagster-compass/issues/2803"}
+
+⏺ Bash(/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/bin/erk objective check 2803 --json-output --allow-legacy 2&gt;&amp;1)
+  ⎿  Error: Exit code 2
+     Usage: erk objective check [OPTIONS] OBJECTIVE_REF
+     Try 'erk objective check -h' for help.
+
+     Error: No such option: --allow-legacy
+
+     Usage: erk objective check [OPTIONS] OBJECTIVE_REF
+     Try 'erk objective check -h' for help.
+
+     Error: No such option: --allow-legacy
+
+⏺ Bash(/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/bin/erk objective check 2803 --json-output 2&gt;&amp;1)
+  ⎿  {"success": true, "issue_number": 2803, "checks": [{"passed": true, "description": "Issue has erk-objective label"}, {"passed": true, "description": "Roadmap
+     parses successfully"}, {"passed": true, "description": "Status/PR consistency"}, {"passed": true, "description": "No orphaned done statuses (done steps have PR
+     references)"}, {"passed": true, "description": "Phase numbering is sequential"}, {"passed": true, "description": "PR references use '#' prefix"}], "phases":
+     [{"number": 1, "suffix": "", "name": "Phase 1", "nodes": [{"id": "1.1", "slug": "plugin-interface", "description": "Define CompassPlugin base class and
+     PluginContext dataclass \u2014 the contract between compass and plugins. PluginContext exposes context store, config, GitHub credentials, Slack response, and
+     target repo info.", "status": "pending", "pr": null, "depends_on": []}, {"id": "1.2", "slug": "plugin-discovery", "description": "Implement entry-point-based
+     plugin discovery using importlib.metadata.entry_points(group=\"compass.plugins\")", "status": "pending", "pr": null, "depends_on": ["1.1"]}, {"id": "1.3", "slug":
+      "plugin-bot-instance", "description": "Create PluginBotInstance subclass of CompassChannelBaseBotInstance. get_system_prompt() layers plugin system_prompt.md as
+     base, then org/channel prompts from context store on top. get_tools_for_message() delegates to plugin.", "status": "pending", "pr": null, "depends_on": ["1.2"]},
+     {"id": "1.4", "slug": "factory-wiring", "description": "Add PLUGIN to BotInstanceType enum (Python + protobuf admin.proto), update from_db_value(), update
+     flags.py mode helpers to handle plugin bots, wire into CompassChannelBotInstanceFactory.construct()", "status": "pending", "pr": null, "depends_on": ["1.3"]},
+     {"id": "1.5", "slug": "erkbot-package", "description": "Create erkbot as a separate Python package (plugins/erkbot/) with its own pyproject.toml, entry point
+     registration, list_plans tool, and system_prompt.md", "status": "pending", "pr": null, "depends_on": ["1.4"]}, {"id": "1.6", "slug": "erk-dependency",
+     "description": "Add erk-shared as a dependency of the erkbot package and construct PlannedPRBackend from compass credentials via PluginContext", "status":
+     "pending", "pr": null, "depends_on": ["1.5"]}]}, {"number": 2, "suffix": "", "name": "Phase 2", "nodes": [{"id": "2.1", "slug": "remaining-erk-tools",
+     "description": "Implement create_plan, dispatch_plan, and view_plan tools in the erkbot package", "status": "pending", "pr": null, "depends_on": ["1.6"]}, {"id":
+     "2.2", "slug": "plugin-config-system", "description": "Add plugin.yaml schema parsing and per-instance plugin_config JSON field on CompassBotSingleChannelConfig",
+      "status": "pending", "pr": null, "depends_on": ["2.1"]}, {"id": "2.3", "slug": "plugin-testing", "description": "Unit tests for plugin discovery and
+     PluginBotInstance; integration tests for erkbot tools using fake gateways", "status": "pending", "pr": null, "depends_on": ["2.2"]}, {"id": "2.4", "slug":
+     "error-handling", "description": "Error handling: graceful degradation when plugin loading fails, tool execution errors surface to user", "status": "pending",
+     "pr": null, "depends_on": ["2.3"]}]}], "summary": {"total_nodes": 10, "pending": 10, "planning": 0, "done": 0, "in_progress": 0, "blocked": 0, "skipped": 0},
+     "next_node": {"id": "1.1", "slug": "plugin-interface", "description": "Define CompassPlugin base class and PluginContext dataclass \u2014 the contract between
+     compass and plugins. PluginContext exposes context store, config, GitHub credentials, Slack response, and target repo info.", "phase": "Plugin Bot Steelthread",
+     "status": "pending"}, "validation_errors": [], "all_complete": false}
+
+⏺ Here's the roadmap for Objective #2803 — Plugin Bot System for Compass:
+
+  ┌──────┬─────────┬────────────────────────────────────────────────────────────────────┬─────────┐
+  │ Node │  Phase  │                            Description                             │ Status  │
+  ├──────┼─────────┼────────────────────────────────────────────────────────────────────┼─────────┤
+  │ 1.1  │ Phase 1 │ Define CompassPlugin base class and PluginContext dataclass        │ pending │
+  ├──────┼─────────┼────────────────────────────────────────────────────────────────────┼─────────┤
+  │ 1.2  │ Phase 1 │ Implement entry-point-based plugin discovery                       │ pending │
+  ├──────┼─────────┼────────────────────────────────────────────────────────────────────┼─────────┤
+  │ 1.3  │ Phase 1 │ Create PluginBotInstance subclass of CompassChannelBaseBotInstance │ pending │
+  ├──────┼─────────┼────────────────────────────────────────────────────────────────────┼─────────┤
+  │ 1.4  │ Phase 1 │ Add PLUGIN to BotInstanceType enum, update factory wiring          │ pending │
+  ├──────┼─────────┼────────────────────────────────────────────────────────────────────┼─────────┤
+  │ 1.5  │ Phase 1 │ Create erkbot package with list_plans tool                         │ pending │
+  ├──────┼─────────┼────────────────────────────────────────────────────────────────────┼─────────┤
+  │ 1.6  │ Phase 1 │ Add erk-shared dependency, construct PlannedPRBackend              │ pending │
+  ├──────┼─────────┼────────────────────────────────────────────────────────────────────┼─────────┤
+  │ 2.1  │ Phase 2 │ Implement create_plan, dispatch_plan, view_plan tools              │ pending │
+  ├──────┼─────────┼────────────────────────────────────────────────────────────────────┼─────────┤
+  │ 2.2  │ Phase 2 │ Add plugin.yaml schema and per-instance plugin_config              │ pending │
+  ├──────┼─────────┼────────────────────────────────────────────────────────────────────┼─────────┤
+  │ 2.3  │ Phase 2 │ Unit tests for plugin discovery; integration tests for erkbot      │ pending │
+  ├──────┼─────────┼────────────────────────────────────────────────────────────────────┼─────────┤
+  │ 2.4  │ Phase 2 │ Error handling: graceful degradation for plugin loading failures   │ pending │
+  └──────┴─────────┴────────────────────────────────────────────────────────────────────┴─────────┘
+
+  All 10 nodes are pending. The recommended next step is Node 1.1.
+
+⏺ User answered Claude's questions:
+  ⎿  
+
+∴ Thinking…
+
+  The user selected node 1.1. Now I should invoke the inner skill /erk:system:objective-plan-node 2803 --node 1.1.
+
+⏺ Skill(/erk:system:objective-plan-node)
+  ⎿  Successfully loaded skill · 5 tools allowed
+
+∴ Thinking…
+
+  The user selected node 1.1 from the objective #2803. Now I need to follow the inner skill instructions for /erk:system:objective-plan-node 2803 --node 1.1.
+
+  Let me parse the arguments:
+  - Objective number: 2803
+  - Node ID: 1.1
+
+  Step 2: The objective context marker was already created earlier in the conversation. Let me verify it.
+
+  Step 3: Verify the marker.
+
+  Step 4: Create roadmap-step marker and mark as planning.
+
+  Let me proceed with steps 3-4, since step 2 was already done.
+
+⏺ Planning node 1.1 of objective #2803...
+
+  The objective context marker was already created earlier. Let me verify it and set up the roadmap step marker.
+
+⏺ Bash(/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/bin/erk exec marker read --session-id "4cc24abc-4774-4d73-95b3-25926611602c"
+      objective-context)
+  ⎿  2803
+
+⏺ Bash(/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/bin/erk exec marker create --session-id "4cc24abc-4774-4d73-95b3-25926611602c" --content
+      "1.1" roadmap-step)
+  ⎿  {
+       "success": true,
+       "message": "Created marker: roadmap-step"
+     }
+
+⏺ Bash(/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/bin/erk exec update-objective-node 2803 --node 1.1 --status planning 2&gt;&amp;1)
+  ⎿  {
+       "success": true,
+       "issue_number": 2803,
+       "node_id": "1.1",
+       "previous_pr": null,
+       "new_pr": null,
+       "url": "https://github.com/dagster-io/dagster-compass/issues/2803"
+     }
+
+⏺ Good. Markers created and node marked as planning. Now let me explore the codebase to gather context for planning this node.
+
+⏺ Explore(Explore bot instance architecture)
+  ⎿  Done (38 tool uses · 70.9k tokens · 1m 25s)
+  (ctrl+o to expand)
+
+⏺ Explore(Explore erk-shared plugin deps)
+  ⎿  Done (35 tool uses · 63.1k tokens · 1m 6s)
+  (ctrl+o to expand)
+
+∴ Thinking…
+
+  Now I have comprehensive context from both exploration agents. Let me synthesize this and design the plan for Node 1.1. Let me launch a Plan agent to design the
+  implementation approach.
+
+  Actually, let me first read some key files myself to deepen my understanding before writing the plan. I should look at:
+
+  1. The tool.py file to understand exact Tool type
+  2. The bot.py file to understand the base class interface more precisely
+  3. The messaging_client.py for the MessagingClient protocol
+
+  Let me also think about what Node 1.1 specifically requires:
+
+  Node 1.1: "Define CompassPlugin base class and PluginContext dataclass — the contract between compass and plugins. PluginContext exposes context store, config, GitHub
+  credentials, Slack response, and target repo info."
+
+  I need to focus on the core interface contract here. The main pieces are the CompassPlugin abstract base class that all plugins will inherit from, and the PluginContext
+  frozen dataclass that Compass will instantiate and pass to plugins. Let me examine the critical files to understand the exact types and dependencies involved before
+  designing this.
+
+⏺ Good, I have thorough exploration results. Let me read the critical files to refine my understanding before writing the plan.
+
+⏺ Read(packages/csbot/src/csbot/agents/tool.py)
+  ⎿  Read 48 lines
+
+⏺ Read(packages/csbot/src/csbot/slackbot/messaging_client.py)
+  ⎿  Read 515 lines
+
+⏺ Read(packages/csbot/src/csbot/slackbot/channel_bot/bot.py)
+  ⎿  Read 200 lines
+
+⏺ Read(packages/csbot/src/csbot/slackbot/channel_bot/bot.py)
+  ⎿  Read 120 lines
+
+⏺ Read(packages/csbot/src/csbot/contextengine/protocol.py)
+  ⎿  Read 261 lines
+
+⏺ Read(packages/csbot/src/csbot/slackbot/slackbot_core.py)
+  ⎿  Read 100 lines
+
+⏺ Read(packages/csbot/src/csbot/slackbot/slackbot_core.py)
+  ⎿  Read 100 lines
+
+⏺ Read(packages/csbot/src/csbot/slackbot/channel_bot/bot.py)
+  ⎿  Read 130 lines
+
+⏺ Search(pattern: "class GithubAuthSource", path: "packages/csbot")
+  ⎿  Found 1 file (ctrl+o to expand)
+
+⏺ Search(pattern: "class GithubConfig", path: "packages/csbot")
+  ⎿  Found 1 file (ctrl+o to expand)
+
+⏺ Read(packages/csbot/src/csbot/slackbot/channel_bot/bot_factory.py)
+  ⎿  Read 225 lines
+
+⏺ Read(packages/csbot/src/csbot/local_context_store/github/config.py)
+  ⎿  Read 289 lines
+
+⏺ Bash(ls /Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/packages/csbot/src/csbot/slackbot/channel_bot/)
+  ⎿  __init__.py
+     bot_factory.py
+     bot.py
+     … +8 lines (ctrl+o to expand)
+
+∴ Thinking…
+
+  Now I have a comprehensive understanding of the architecture. Let me also check where the GithubAuthSource is defined and what the GithubConfig type is, since the
+  PluginContext needs to expose GitHub credentials.
+
+  Let me also look at the bot_factory.py to understand the construction flow better, and check if there's already a plugin module or directory.
+
+∴ Thinking…
+
+  Now I have a comprehensive understanding. Let me now design the plan. I have all the context I need:
+
+  1. CompassPlugin ABC - needs to define what plugins must implement
+  2. PluginContext dataclass - needs to expose what compass provides to plugins
+
+  Key insights:
+  - Plugin tools return dict[str, Tool] where Tool is from csbot.agents.tool
+  - Plugin system prompt is a string (loaded from markdown)
+  - PluginContext needs: context store access, config, GitHub credentials, Slack response, target repo info
+  - This is the interface/contract only - no wiring into the factory yet (that's Node 1.3/1.4)
+
+  - Following dignified-python conventions with ABC-based design, frozen dataclasses, and absolute imports
+
+  Now I'm determining what PluginContext should expose: the context store manager for reading and writing, per-instance config from the database, GitHub authentication for
+  API access, a messaging client for Slack responses, the target repository identifier, and the bot instance itself.
+
+  For the CompassPlugin abstract base class, I need to define what plugins must implement: a method to return their custom tools, a method for their base system prompt, and
+   a name property. The key insight is that plugins completely replace Compass's standard tools with their own, provide a base prompt that gets layered with org and
+  channel-specific prompts from the context store, and receive instance-specific configuration—all while maintaining access to the same context store infrastructure as
+  regular bots.
+
+  Defining the interface... I'm seeing that PluginContext needs to include the messaging client and Slack-specific fields like channel and thread info, but I'm realizing
+  the target repo concept is erkbot-specific and should live in plugin_config rather than cluttering the core context that compass provides.
+
+  Now I'm thinking about where this code should live in the codebase. Since PluginContext and CompassPlugin define the plugin interface that compass exposes, they should go
+   in the csbot package—probably in packages/csbot/src/csbot/slackbot/plugin.py since the slackbot infrastructure uses them, though a top-level
+  packages/csbot/src/csbot/plugin.py would also work.
+
+  I need to keep dignified-python conventions in mind: no default arguments on dataclass fields, use frozen dataclasses, and base on ABC rather than Protocol. For the
+  get_tools method, I'm realizing the tools themselves are likely static—just the set the plugin provides—but they need access to PluginContext for things like the
+  messaging client and GitHub auth. Some context is per-message though, like the thread timestamp, so I need to think through what gets passed where.
+
+  The cleaner approach is to have PluginContext hold session-level stuff (org info, config, auth sources, context store), and let tools capture per-message details through
+  closures the way the existing bot pattern does. So get_tools should receive per-message context similar to how get_tools_for_message works now—passing in the message
+  context, user, and client so tools can close over what they need. I'm settling on keeping PluginContext as session-level only, with per-message parameters passed directly
+   to get_tools so plugins can build tool closures that capture both contexts. I'm defining PluginContext as a frozen dataclass holding the bot name, organization details,
+  plugin config, GitHub auth, and context store manager.
+
+  Defining the plugin interface... I'm second-guessing the default arguments here—the coding standards say no defaults, but since these are abstract methods, the
+  implementations will handle the parameters anyway. The caller will explicitly pass None when needed in API or playground contexts, so that works fine. Actually, I think
+  I'm overcomplicating the per-message context design. Let me step back and reconsider: PluginContext should probably contain everything needed—the context store, config,
+  credentials, and repo info—and it gets instantiated fresh for each message.
+
+  Looking at what erkbot actually needs, it requires the plugin config for the target repo, GitHub auth to run plan operations, the context store manager for reading and
+  writing state, and a messaging client for status updates. I'll just add messaging_client directly to PluginContext to keep things straightforward.
+
+  Defining the PluginContext dataclass with all the necessary fields...
+
+  Defining the abstract CompassPlugin base class with methods for the plugin name, system prompt, and getting tools...
+
+  Actually, I'm realizing messaging_client might be problematic here since it changes per message. Let me reconsider—looking at how it's passed in get_tools_for_message,
+  the client itself is actually consistent across all messages in a bot instance, so this should work fine.
+
+  Now I'm weighing two approaches for PluginContext: either include everything needed at the tool-invocation level, or keep it session-focused...
+
+  I'm going with Option A since the objective explicitly calls out "Slack response" as part of PluginContext, which means the messaging client needs to be included even
+  though it might be None in playground contexts. The PluginBotInstance will handle whether to cache or recreate the context per message depending on whether the client
+  changes.
+
+  Now let me write out the implementation plan.
+
+⏺ Now I have a thorough understanding of the architecture. Let me write the plan.
+
+⏺ Updated plan
+  ⎿  Wrote 143 lines to /Users/schrockn/.claude/plans/cozy-herding-sutton.md
+        1 # Plan: Define CompassPlugin and PluginContext (Objective #2803, Node 1.1)
+        2
+        3 ## Context
+        4
+        5 Part of **Objective #2803 — Plugin Bot System for Compass**, Node 1.1 (`plugin-interface`).
+        6
+        7 Compass currently has a monolithic bot system where all bot instances share the same hardcoded tool set and system prompt (with minor variations for prospe
+          ctor/community modes). To enable new bot types like erkbot, we need a plugin contract that lets external packages define custom tools and system prompts wh
+          ile reusing Compass's infrastructure (context store, GitHub auth, Slack messaging, analytics, etc.).
+        8
+        9 This node defines the **interface only** — the `CompassPlugin` ABC and `PluginContext` dataclass that form the contract between Compass and plugins. No wir
+          ing into the factory or bot instance creation (that's Nodes 1.3-1.4).
+       10
+       11 ## Implementation
+       12
+       13 ### New file: `packages/csbot/src/csbot/slackbot/plugin.py`
+       14
+       15 Create a single module with two types:
+       16
+       17 #### 1. `PluginContext` — frozen dataclass
+       18
+       19 What Compass provides to plugins for tool execution. Per the objective: "PluginContext exposes context store, config, GitHub credentials, Slack response, a
+          nd target repo info."
+       20
+       21 ```python
+       22 @dataclass(frozen=True)
+       23 class PluginContext:
+       24     """Context provided to a CompassPlugin by the host bot instance.
+       25
+       26     Created by PluginBotInstance and passed to the plugin's get_tools method.
+       27     Exposes Compass infrastructure that plugins need for tool execution.
+       28     """
+       29
+       30     bot_name: str
+       31     organization_id: int
+       32     organization_name: str
+       33     plugin_config: dict[str, Any]
+       34     github_auth_source: GithubAuthSource
+       35     context_store_manager: ContextStoreManager
+       36     messaging_client: MessagingClient | None
+       37 ```
+       38
+       39 Fields:
+       40 - `bot_name` — bot instance name (used for context store channel lookups)
+       41 - `organization_id` / `organization_name` — org identity
+       42 - `plugin_config` — per-instance config dict from DB (e.g. `{"target_repo": "owner/repo"}` for erkbot). Plugin interprets its own config schema.
+       43 - `github_auth_source` — `GithubAuthSource` ABC (PAT or GitHub App) for GitHub API access. Plugins use this to construct their own GitHub clients (e.g. erk
+          bot builds `PlannedPRBackend`).
+       44 - `context_store_manager` — `ContextStoreManager` protocol for reading/writing the bot's context store
+       45 - `messaging_client` — `MessagingClient` protocol for Slack messaging. `None` in playground/API context where there's no Slack client.
+       46
+       47 #### 2. `CompassPlugin` — ABC
+       48
+       49 The contract that plugin packages must implement:
+       50
+       51 ```python
+       52 class CompassPlugin(ABC):
+       53     """Base class for Compass bot plugins.
+       54
+       55     Plugins provide custom tools and system prompts for specialized bot types.
+       56     Discovered via entry points in the 'compass.plugins' group.
+       57
+       58     Each plugin package exports a subclass of CompassPlugin and registers it
+       59     as an entry point in pyproject.toml:
+       60
+       61         [project.entry-points."compass.plugins"]
+       62         erkbot = "compass_erkbot:ErkbotPlugin"
+       63     """
+       64
+       65     @property
+       66     @abstractmethod
+       67     def name(self) -&gt; str:
+       68         """Plugin identifier name (e.g. 'erkbot')."""
+       69         ...
+       70
+       71     @abstractmethod
+       72     def get_system_prompt_text(self) -&gt; str:
+       73         """Return the plugin's base system prompt text.
+       74
+       75         This text is the foundation layer. Compass layers context store
+       76         org and channel prompts on top, followed by the skills catalog.
+       77         """
+       78         ...
+       79
+       80     @abstractmethod
+       81     async def get_tools(self, context: PluginContext) -&gt; dict[str, Tool]:
+       82         """Return the plugin's tool set for message processing.
+       83
+       84         The returned tools completely replace Compass's standard tools
+       85         (run_sql_query, search_datasets, etc.). If a plugin wants standard
+       86         tools, it must explicitly include them.
+       87
+       88         Tools should return ToolExecutionResult with metadata=None since
+       89         plugin tools don't use Compass's data warehouse tracking.
+       90         """
+       91         ...
+       92 ```
+       93
+       94 ### Imports
+       95
+       96 ```python
+       97 import abc
+       98 from dataclasses import dataclass
+       99 from typing import Any
+      100
+      101 from csbot.agents.tool import Tool
+      102 from csbot.contextengine.protocol import ContextStoreManager
+      103 from csbot.local_context_store.github.config import GithubAuthSource
+      104 from csbot.slackbot.messaging_client import MessagingClient
+      105 ```
+      106
+      107 ### Files to modify
+      108
+      109 | File | Change |
+      110 |------|--------|
+      111 | `packages/csbot/src/csbot/slackbot/plugin.py` | **New file** — `CompassPlugin` ABC + `PluginContext` dataclass |
+      112
+      113 ### Files referenced (read-only, for type imports)
+      114
+      115 | File | Types used |
+      116 |------|-----------|
+      117 | `packages/csbot/src/csbot/agents/tool.py` | `Tool`, `ToolExecutionResult` |
+      118 | `packages/csbot/src/csbot/contextengine/protocol.py` | `ContextStoreManager` |
+      119 | `packages/csbot/src/csbot/local_context_store/github/config.py` | `GithubAuthSource` |
+      120 | `packages/csbot/src/csbot/slackbot/messaging_client.py` | `MessagingClient` |
+      121
+      122 ## Design Decisions
+      123
+      124 1. **`PluginContext` includes `messaging_client`** — The objective explicitly lists "Slack response" as part of PluginContext. Plugins may need to post sta
+          tus updates or upload files during tool execution.
+      125
+      126 2. **`messaging_client` is `MessagingClient | None`** — `None` when the plugin is used from the playground/API where there's no Slack client. Plugins must
+          handle this.
+      127
+      128 3. **`github_auth_source` not `GithubConfig`** — `GithubConfig` bundles `auth_source` with `repo_name`, but the repo is the *context store* repo, not the p
+          lugin's target repo. Plugins get the auth source and construct their own GitHub clients for their target repo (from `plugin_config`).
+      129
+      130 4. **`plugin_config` is `dict[str, Any]`** — Each plugin defines its own config schema. Compass stores it as JSON in the DB. Schema validation is the plugi
+          n's responsibility (Node 2.2 adds `plugin.yaml` for formal schemas).
+      131
+      132 5. **`get_tools` takes `PluginContext`** — A single context object keeps the interface clean and extensible. Adding new context fields doesn't require chan
+          ging all plugin implementations.
+      133
+      134 6. **`get_system_prompt_text` returns `str`** — Simple string return. The `PluginBotInstance` (Node 1.3) handles layering org/channel prompts and skills ca
+          talog on top.
+      135
+      136 7. **No `__init__` contract on `CompassPlugin`** — Plugin construction is the plugin's responsibility. The entry point loader calls the class constructor.
+          Plugins can take whatever init args they need.
+      137
+      138 ## Verification
+      139
+      140 1. **Type checking**: `make pyright` — verify no type errors in the new module
+      141 2. **Lint**: `make ruff` — verify code style compliance
+      142 3. **Import test**: `python -c "from csbot.slackbot.plugin import CompassPlugin, PluginContext"` — verify the module is importable
+      143 4. **No test file needed for Node 1.1** — These are pure interface definitions (ABC + frozen dataclass) with no logic. Tests come in Node 2.3 when implemen
+          tations exist.
+  ⎿  Tool use rejected with user message: save plan
+
+⏺ Skill(/erk:plan-save)
+  ⎿  Successfully loaded skill
+
+∴ Thinking…
+
+  The user wants me to save the plan using /erk:plan-save. Let me follow the instructions.
+
+  Step 1: Parse Arguments
+
+  No --plan-type or --objective flags in the args. But the objective-context marker was already created (2803), so it will be picked up automatically.
+
+  Step 2: Generate Branch Slug
+
+  The plan title is "Plan: Define CompassPlugin and PluginContext (Objective #2803, Node 1.1)"
+  Branch slug: "plugin-interface-contract" (captures the essence - defining the plugin interface)
+
+  Step 3: Generate Plan Summary
+
+  Let me write a concise summary.
+
+  Now I'm executing the save command with the generated branch slug and summary.
+
+⏺ Let me save the plan to GitHub.
+
+  First, let me read the plan file to get the title for the branch slug.
+
+⏺ Reading Plan(~/.claude/plans/cozy-herding-sutton.md)
+  ⎿  Read 3 lines
+
+⏺ Now let me run the save command. Branch slug: plugin-interface-contract. Summary: "Defines the CompassPlugin ABC and PluginContext frozen dataclass that form the contract
+   between Compass and plugin packages. A single new file in csbot exposes context store, GitHub auth, Slack messaging, and per-instance config to plugins."
+
+⏺ Bash(/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/bin/erk exec plan-save --format json --session-id="4cc24abc-4774-4d73-95b3-25926611602c"
+      --branch-slug="plugin-interface-contract" --summary="Defines the CompassPlugin ABC and PluginContext frozen dataclass that form the contract between Compass and
+      plugin packages. A single new file in csbot exposes context store, GitHub auth, Slack messaging, and per-instance config to plugins.")
+  ⎿  Linked to objective #2803 from session context
+     {
+       "success": true,
+       "plan_number": 2823,
+       "plan_url": "https://github.com/dagster-io/dagster-compass/pull/2823",
+       "title": "[erk-plan] Plan: Define CompassPlugin and PluginContext (Objective #2803, Node 1.1)",
+       "branch_name": "plnd/O2803-plugin-interface-con-03-01-2016",
+       "plan_backend": "planned_pr",
+       "objective_issue": 2803,
+       "archived_to":
+     "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.erk/scratch/sessions/4cc24abc-4774-4d73-95b3-25926611602c/plan_snapshots/000001-e406584e"
+     }
+  ⎿  (timeout 1m)
+
+⏺ Plan saved. Now let me verify the objective link and update the roadmap.
+
+⏺ Bash(/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/bin/erk exec get-plan-metadata 2823 objective_issue)
+  ⎿  {
+       "success": true,
+       "value": 2803,
+       "plan_number": 2823,
+       "field": "objective_issue"
+     }
+
+⏺ Bash(/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/bin/erk exec marker read --session-id "4cc24abc-4774-4d73-95b3-25926611602c"
+      roadmap-step)
+  ⎿  1.1
+
+⏺ Verified objective link: #2803. Now updating the roadmap.
+
+⏺ Bash(/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/bin/erk exec update-objective-node 2803 --node "1.1" --pr "#2823" --status in_progress)
+  ⎿  {
+       "success": true,
+       "issue_number": 2803,
+       "node_id": "1.1",
+       "previous_pr": null,
+       "new_pr": "#2823",
+       "url": "https://github.com/dagster-io/dagster-compass/issues/2803"
+     }
+
+⏺ Bash(/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/bin/erk exec upload-impl-session --session-id "4cc24abc-4774-4d73-95b3-25926611602c"
+      2&gt;/dev/null || true)
+  ⎿  {
+       "uploaded": false,
+       "reason": "no_impl_folder"
+     }
+
+⏺ Plan "Define CompassPlugin and PluginContext" saved as draft PR #2823
+
+  URL: https://github.com/dagster-io/dagster-compass/pull/2823
+
+  Verified objective link: #2803
+  Updated objective #2803 roadmap: node 1.1 → plan #2823
+
+  ---
+  Next steps:
+
+  View PR: https://github.com/dagster-io/dagster-compass/pull/2823
+
+  In Claude Code:
+    Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+  OR exit Claude Code first, then run one of:
+
+    Same slot (recommended — you're in a slot):
+      Local: erk br co --for-plan 2823
+      Implement: source "$(erk br co --for-plan 2823 --script)" &amp;&amp; erk implement --dangerous
+
+    New slot:
+      Local: erk br co --new-slot --for-plan 2823
+      Implement: source "$(erk br co --new-slot --for-plan 2823 --script)" &amp;&amp; erk implement --dangerous
+
+    Dispatch to Queue: erk pr dispatch 2823
+
+✻ Baked for 7m 52s
+
+❯ /erk:pr-dispatch
+
+⏺ The most recent plan is #2823. Let me dispatch it for remote implementation.
+
+⏺ Bash(/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/bin/erk pr dispatch 2823)
+  ⎿  Error: Exit code 1
+     Checking GitHub authentication...
+     Syncing trunk with remote...
+     Resolving GitHub username...
+     Validating 1 planned-PR plan(s)...
+
+     Validating PR #2823...
+
+     ✓ All 1 plan(s) validated
+
+       #2823: [erk-plan] Plan: Define CompassPlugin and PluginContext (Objective #2803, Node 1.1)
+
+     Dispatching PR #2823...
+
+     Fetching plan content...
+     Checking out existing plan branch: plnd/O2803-plugin-interface-con-03-01-2016
+     Cleaning up previous .erk/impl-context/ folder...
+     Creating .erk/impl-context/ folder...
+     ✓ Branch pushed to remote
+
+     Triggering workflow: plan-implement.yml
+     Traceback (most recent call last):
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/erk_shared/subprocess_utils.py", line 122, in
+     run_subprocess_with_context
+         result = subprocess.run(
+             cmd,
+         ...&lt;8 lines&gt;...
+             **kwargs,
+         )
+       File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/subprocess.py", line 577, in run
+         raise CalledProcessError(retcode, process.args,
+                                  output=stdout, stderr=stderr)
+     subprocess.CalledProcessError: Command '['gh', 'api', '--method', 'POST', 'repos/{owner}/{repo}/actions/workflows/plan-implement.yml/dispatches', '--input', '-']'
+     returned non-zero exit status 1.
+
+     The above exception was the direct cause of the following exception:
+
+     Traceback (most recent call last):
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/bin/erk", line 10, in &lt;module&gt;
+         sys.exit(main())
+                  ~~~~^^
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/erk/cli/cli.py", line 230, in main
+         cli()
+         ~~~^^
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/click/core.py", line 1462, in __call__
+         return self.main(*args, **kwargs)
+                ~~~~~~~~~^^^^^^^^^^^^^^^^^
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/click/core.py", line 1383, in main
+         rv = self.invoke(ctx)
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/click/core.py", line 1850, in invoke
+         return _process_result(sub_ctx.command.invoke(sub_ctx))
+                                ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/click/core.py", line 1850, in invoke
+         return _process_result(sub_ctx.command.invoke(sub_ctx))
+                                ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/click/core.py", line 1246, in invoke
+         return ctx.invoke(self.callback, **ctx.params)
+                ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/click/core.py", line 814, in invoke
+         return callback(*args, **kwargs)
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/click/decorators.py", line 46, in new_func
+         return f(get_current_context().obj, *args, **kwargs)
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/erk/cli/commands/pr/dispatch_cmd.py", line 544, in
+     pr_dispatch
+         result = _dispatch_planned_pr_plan(
+             ctx,
+         ...&lt;4 lines&gt;...
+             base_branch=target_branch,
+         )
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/erk/cli/commands/pr/dispatch_cmd.py", line 313, in
+     _dispatch_planned_pr_plan
+         run_id = ctx.github.trigger_workflow(
+             repo_root=repo.root,
+         ...&lt;2 lines&gt;...
+             ref=ctx.local_config.dispatch_ref,
+         )
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/erk_shared/gateway/github/real.py", line 389, in
+     trigger_workflow
+         distinct_id = self._dispatch_workflow_impl(
+             repo_root=repo_root, workflow=workflow, inputs=inputs, ref=ref
+         )
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/erk_shared/gateway/github/real.py", line 363, in
+     _dispatch_workflow_impl
+         run_subprocess_with_context(
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+             cmd=cmd,
+             ^^^^^^^^
+         ...&lt;2 lines&gt;...
+             input=payload,
+             ^^^^^^^^^^^^^^
+         )
+         ^
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/erk_shared/subprocess_utils.py", line 162, in
+     run_subprocess_with_context
+         raise RuntimeError(error_msg) from e
+     RuntimeError: Failed to trigger workflow 'plan-implement.yml'
+     Command: gh api --method POST repos/{owner}/{repo}/actions/workflows/plan-implement.yml/d
+
+     ... [418 characters truncated] ...
+
+     n: Define CompassPlugin and PluginContext (Objective #2803, Node 1.1)
+
+     Dispatching PR #2823...
+
+     Fetching plan content...
+     Checking out existing plan branch: plnd/O2803-plugin-interface-con-03-01-2016
+     Cleaning up previous .erk/impl-context/ folder...
+     Creating .erk/impl-context/ folder...
+     ✓ Branch pushed to remote
+
+     Triggering workflow: plan-implement.yml
+     Traceback (most recent call last):
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/erk_shared/subprocess_utils.py", line 122, in
+     run_subprocess_with_context
+         result = subprocess.run(
+             cmd,
+         ...&lt;8 lines&gt;...
+             **kwargs,
+         )
+       File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/subprocess.py", line 577, in run
+         raise CalledProcessError(retcode, process.args,
+                                  output=stdout, stderr=stderr)
+     subprocess.CalledProcessError: Command '['gh', 'api', '--method', 'POST', 'repos/{owner}/{repo}/actions/workflows/plan-implement.yml/dispatches', '--input', '-']'
+     returned non-zero exit status 1.
+
+     The above exception was the direct cause of the following exception:
+
+     Traceback (most recent call last):
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/bin/erk", line 10, in &lt;module&gt;
+         sys.exit(main())
+                  ~~~~^^
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/erk/cli/cli.py", line 230, in main
+         cli()
+         ~~~^^
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/click/core.py", line 1462, in __call__
+         return self.main(*args, **kwargs)
+                ~~~~~~~~~^^^^^^^^^^^^^^^^^
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/click/core.py", line 1383, in main
+         rv = self.invoke(ctx)
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/click/core.py", line 1850, in invoke
+         return _process_result(sub_ctx.command.invoke(sub_ctx))
+                                ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/click/core.py", line 1850, in invoke
+         return _process_result(sub_ctx.command.invoke(sub_ctx))
+                                ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/click/core.py", line 1246, in invoke
+         return ctx.invoke(self.callback, **ctx.params)
+                ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/click/core.py", line 814, in invoke
+         return callback(*args, **kwargs)
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/click/decorators.py", line 46, in new_func
+         return f(get_current_context().obj, *args, **kwargs)
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/erk/cli/commands/pr/dispatch_cmd.py", line 544, in
+     pr_dispatch
+         result = _dispatch_planned_pr_plan(
+             ctx,
+         ...&lt;4 lines&gt;...
+             base_branch=target_branch,
+         )
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/erk/cli/commands/pr/dispatch_cmd.py", line 313, in
+     _dispatch_planned_pr_plan
+         run_id = ctx.github.trigger_workflow(
+             repo_root=repo.root,
+         ...&lt;2 lines&gt;...
+             ref=ctx.local_config.dispatch_ref,
+         )
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/erk_shared/gateway/github/real.py", line 389, in
+     trigger_workflow
+         distinct_id = self._dispatch_workflow_impl(
+             repo_root=repo_root, workflow=workflow, inputs=inputs, ref=ref
+         )
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/erk_shared/gateway/github/real.py", line 363, in
+     _dispatch_workflow_impl
+         run_subprocess_with_context(
+         ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+             cmd=cmd,
+             ^^^^^^^^
+         ...&lt;2 lines&gt;...
+             input=payload,
+             ^^^^^^^^^^^^^^
+         )
+         ^
+       File "/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0/.venv/lib/python3.13/site-packages/erk_shared/subprocess_utils.py", line 162, in
+     run_subprocess_with_context
+         raise RuntimeError(error_msg) from e
+     RuntimeError: Failed to trigger workflow 'plan-implement.yml'
+     Command: gh api --method POST repos/{owner}/{repo}/actions/workflows/plan-implement.yml/dispatches --input -
+     Exit code: 1
+     stdout: {"message":"Not Found","documentation_url":"https://docs.github.com/rest/actions/workflows#create-a-workflow-dispatch-event","status":"404"}
+     stderr: gh: Not Found (HTTP 404)
+
+⏺ The dispatch failed — the plan-implement.yml workflow was not found (HTTP 404). This means the repository doesn't have a plan-implement.yml GitHub Actions workflow
+  configured.
+
+  The branch was pushed successfully, so the plan is ready for implementation. You can implement it locally instead:
+
+  Local implementation options:
+
+  Same slot (recommended — you're in a slot):
+  - Checkout: erk br co --for-plan 2823
+  - Implement: source "$(erk br co --for-plan 2823 --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+  - Checkout: erk br co --new-slot --for-plan 2823
+  - Implement: source "$(erk br co --new-slot --for-plan 2823 --script)" &amp;&amp; erk implement --dangerous
+
+  Or view the plan PR: https://github.com/dagster-io/dagster-compass/pull/2823
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ➜  (git:dagster-compass) (wt:update-erk-0-9-0) (br:update-erk-0.9.0) | (gh:#2789 st:👀 chks:[✅:2 🔄:1]) │ (O)                                              94587 tokens
+  ⏸ plan mode on (shift+tab to cycle) · PR #2789                                                                                          current: 2.1.63 · latest: 2.1.63
+
+we should have better error messaging here
+
+(dagster-compass-workspace) ➜  update-erk-0-9-0 git:(update-erk-0.9.0) erk init capability list
+Erk capabilities:
+  ○ cli-push-down             [project]  Moving mechanical computation from prompts to exec commands
+    Checked: .claude/skills/cli-push-down/ directory exists
+  ○ code-reviews-system       [project]  GitHub Actions infrastructure for convention-based code reviews
+    Checked: .github/workflows/code-reviews.yml exists
+  ✓ devrun-agent              [project]  Safe execution agent for pytest/ty/ruff/make/gt
+    Checked: .claude/agents/devrun.md exists
+  ○ devrun-reminder           [project]  Remind agent to use devrun for CI tool commands
+    Checked: 'devrun' in .erk/state.toml [reminders] section
+  ○ dignified-code-simplifier [project]  Code simplification review
+    Checked: .claude/skills/dignified-code-simplifier/ directory exists
+  ✓ dignified-python          [project]  Python coding standards (LBYL, modern types, ABCs)
+    Checked: .claude/skills/dignified-python/ directory exists
+  ○ dignified-python-reminder [project]  Remind agent to follow dignified-python standards
+    Checked: 'dignified-python' in .erk/state.toml [reminders] section
+  ✓ erk-bash-permissions      [project]  Allow Bash(erk:*) commands in Claude Code
+    Checked: Bash(erk:*) in .claude/settings.json permissions.allow
+  ✓ erk-diff-analysis         [project]  Code diff analysis for commit messages
+    Checked: .claude/skills/erk-diff-analysis/ directory exists
+  ○ erk-exec                  [project]  Erk exec subcommand reference
+    Checked: .claude/skills/erk-exec/ directory exists
+  ✓ erk-hooks                 [project]  Configure Claude Code hooks for session management
+    Checked: UserPromptSubmit and ExitPlanMode hooks in .claude/settings.json
+  ✓ erk-impl-workflow         [project]  GitHub Action for automated implementation
+    Checked: .github/workflows/plan-implement.yml exists
+  ○ erk-planning              [project]  Plan management
+    Checked: .claude/skills/erk-planning/ directory exists
+  ○ explore-docs-reminder     [project]  Remind agent to include doc-first instructions in Explore prompts
+    Checked: 'explore-docs' in .erk/state.toml [reminders] section
+  ○ fake-driven-testing       [project]  5-layer test architecture with fakes
+    Checked: .claude/skills/fake-driven-testing/ directory exists
+  ○ gh                        [project]  GitHub CLI integration
+    Checked: .claude/skills/gh/ directory exists
+  ○ gt                        [project]  Graphite stacked PR management
+    Checked: .claude/skills/gt/ directory exists
+  ○ learn-workflow            [project]  GitHub Action for automated documentation learning
+    Checked: .github/workflows/learn.yml exists
+  ○ learned-docs              [project]  Autolearning documentation system
+    Checked: docs/learned/, .claude/skills/learned-docs/, and .claude/agents/learn/ directories exist
+  ○ objective                 [project]  Objective tracking and management
+    Checked: .claude/skills/objective/ directory exists
+  ○ one-shot-workflow         [project]  GitHub Action for autonomous one-shot planning and implementation
+    Checked: .github/workflows/one-shot.yml exists
+  ○ pr-address-workflow       [project]  GitHub Action for addressing PR review comments
+    Checked: .github/workflows/pr-address.yml exists
+  ○ pr-feedback-classifier    [project]  PR feedback classification
+    Checked: .claude/skills/pr-feedback-classifier/ directory exists
+  ○ pr-operations             [project]  Pull request operations
+    Checked: .claude/skills/pr-operations/ directory exists
+  ○ pr-rebase-workflow        [project]  GitHub Action for rebasing PRs
+    Checked: .github/workflows/pr-rebase.yml exists
+  ○ review-dignified-code-simplifier [project]  Code simplification suggestions review
+    Checked: .erk/reviews/dignified-code-simplifier.md file exists
+  ○ review-dignified-python   [project]  Dignified Python style code review
+    Checked: .erk/reviews/dignified-python.md file exists
+  ○ review-tripwires          [project]  Tripwires code review for detecting dangerous patterns
+    Checked: .erk/reviews/tripwires.md file exists
+  ○ ruff-format               [project]  Auto-format Python files with ruff after Write/Edit
+    Checked: PostToolUse ruff format hook in .claude/settings.json
+  ✓ statusline                [user]     Claude Code status line configuration
+    Checked: statusLine configured in ~/.claude/settings.json
+  ○ tripwires-reminder        [project]  Remind agent to check tripwires.md
+    Checked: 'tripwires' in .erk/state.toml [reminders] section
+(dagster-compass-workspace) ➜  update-erk-0-9-0 git:(update-erk-0.9.0) pwd
+/Users/schrockn/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0
+(dagster-compass-workspace) ➜  update-erk-0-9-0 git:(update-erk-0.9.0)
+
+-----
+
+</user>
+  <thinking>The user is pointing out that the error messaging when `erk pr dispatch` fails due to a missing workflow file (`plan-implement.yml`) is poor. The error shows a raw Python traceback instead of a user-friendly error message.
+
+Looking at the error, the issue is:
+1. The `plan-implement.yml` workflow doesn't exist in the target repo (HTTP 404)
+2. Instead of a clear error message like "Workflow 'plan-implement.yml' not found. Run `erk init capability enable erk-impl-workflow` to set it up.", it shows a full Python traceback
+
+The user also showed `erk init capability list` which shows that `erk-impl-workflow` is a capability that checks for `.github/workflows/plan-implement.yml`. The capability is marked with `○` (not enabled) in the dagster-compass repo.
+
+
+I need to catch the 404 error when dispatching the workflow and replace it with a helpful message that suggests enabling the `erk-impl-workflow` capability. I'll explore the dispatch command code and error handling patterns to understand where to intercept this, then design a fix.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="30322" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 30322}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>The dispatch failure shows a raw Python traceback instead of a helpful error message when the workflow doesn't exist. Let me explore the relevant code to plan the fix.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="30322" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 30322}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01PmqgX2JxW64oPzkDoQix1D">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore dispatch error handling</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 845 chars]...for the relevant code. Look at how other commands handle subprocess/API errors gracefully.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="30322" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 30322}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01NUGxQNNpYJFTdeqs35NP6X">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore capability system</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 493 chars]...ism
+- How capability status is determined
+
+Look in `src/erk/` for capability-related code.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="30322" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 30322}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PmqgX2JxW64oPzkDoQix1D">
+Now let me create a final comprehensive report with code examples:
+
+## Summary Report: Error Handling Flow for `erk pr dispatch` with Missing GitHub Actions Workflow
+
+Based on my thorough exploration of the erk codebase, here's the complete error handling flow when `erk pr dispatch` fails due to a missing GitHub Actions workflow:
+
+### Key Findings
+
+#### 1. **Error Source: HTTP 404 from GitHub API**
+
+The error originates in `_dispatch_workflow_impl()` at line 363 of `/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py`:
+
+```python
+run_subprocess_with_context(
+    cmd=cmd,
+    operation_context=f"trigger workflow '{workflow}'",
+    cwd=repo_root,
+    input=payload,
+)
+```
+
+This executes: `gh api --method POST repos/{owner}/{repo}/actions/workflows/{workflow}/dispatches`
+
+When the workflow file doesn't exist, GitHub returns HTTP 404, which `gh` CLI converts to a non-zero exit code.
+
+#### 2. **Error Conversion: Subprocess Wrapper**
+
+At `/workspaces/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py` (lines 144-162), the `run_subprocess_with_context()` function catches `CalledProcessError`:
+
+```python
+
+... [146 lines omitted] ...
+
+except subprocess.CalledProcessError as e:
+    error_msg = f"Failed to {operation_context}"
+    error_msg += f"\nCommand: {cmd_str}"
+    error_msg += f"\nExit code: {e.returncode}"
+            error_msg += f"\nstderr: {stderr_stripped}"
+    raise RuntimeError(error_msg) from e
+This wraps the subprocess error as a `RuntimeError` with enriched context but **does not decode or parse the error details**.
+There is **NO try/except block** around this call. The `RuntimeError` bubbles directly up through the call stack to the CLI entry point, which displays it as a raw Python traceback to the user.
+#### 4. **Error Handling Pattern Gap**
+- **What exists**: Discriminated union error handling in gateways (line 268 shows it returns a string, not a union)
+- **What's missing**: Error boundary layer between the gateway and CLI that could catch and categorize the error
+The dispatch command follows a simpler pattern (no pipeline) compared to `erk pr submit`, which has a full error pipeline with structured `SubmitError` types.
+#### Error Handling Patterns (from documentation):
+1. **CLI Error Handling Anti-Patterns** (`docs/learned/cli/error-handling-antipatterns.md`):
+   - `RuntimeError` = programmer error (wrong semantic for expected failures)
+   - `UserFacingCliError` = expected CLI failures that should display with clean formatting
+   - Decision: "If a user can trigger the error through normal CLI usage, it's `UserFacingCliError`"
+2. **Error Detection Patterns** (`docs/learned/cli/error-detection-patterns.md`):
+   - Uses keyword detection pattern for parsing error text
+   - Example: Detects "restack" keyword in git errors for specific failure modes
+3. **Gateway Error Boundaries** (`docs/learned/architecture/gateway-error-boundaries.md`):
+   - **Only real.py catches exceptions** (lines 95-496 in real.py)
+   - Error types flow through discriminated unions, not exceptions
+class SubmitError:
+    """Error result from a pipeline step."""
+    error_type: str
+Each pipeline step returns `State | SubmitError`, allowing **semantic error routing** based on error_type.
+dispatch_cmd.pr_dispatch() [no error handling]
+subprocess.CalledProcessError with returncode=1
+run_subprocess_with_context() catches → raises RuntimeError
+RuntimeError bubbles to CLI entry point
+except RuntimeError as e:
+    # Parse error: is this a 404? missing workflow?
+        raise UserFacingCliError(
+    raise  # Re-raise unexpected errors
+UserFacingCliError caught at Click entry point
+Clean "Error: " prefix output to user
+Key files involved in the error flow:
+1. `/workspaces/erk/src/erk/cli/commands/pr/dispatch_cmd.py` - Dispatch command (no error handling)
+4. `/workspaces/erk/src/erk/cli/ensure.py` - `UserFacingCliError` exception class
+5. `/workspaces/erk/src/erk/cli/commands/pr/submit_pipeline.py` - Error handling pattern reference (SubmitError model)
+- `/workspaces/erk/docs/learned/cli/error-handling-antipatterns.md` - When to use `UserFacingCliError` vs `RuntimeError`
+- `/workspaces/erk/docs/learned/cli/error-detection-patterns.md` - Keyword detection pattern for parsing subprocess errors
+- `/workspaces/erk/docs/learned/architecture/gateway-error-boundaries.md` - Where error boundaries belong in gateway patterns
+  </tool_result>
+  <tool_result tool="toolu_01NUGxQNNpYJFTdeqs35NP6X">
+Perfect! Now let me compile all the information I've gathered. Let me create a comprehensive report.
+
+## Summary
+
+I've completed a thorough exploration of the erk capability system. Here's what I found:
+
+## Key Findings
+
+### 1. **How `erk-impl-workflow` Capability is Defined**
+
+**Location:** `/workspaces/erk/src/erk/capabilities/workflows/erk_impl.py`
+
+The `ErkImplWorkflowCapability` class:
+- **Name:** `"erk-impl-workflow"`
+- **Description:** `"GitHub Action for automated implementation"`
+- **Scope:** `"project"` (requires git repository)
+- **Installation Check:** Looks for `.github/workflows/plan-implement.yml` existence
+- **Artifacts Installed:**
+  - `.github/workflows/plan-implement.yml` (workflow file)
+  - `.github/actions/setup-claude-code/` (action directory)
+  - `.github/actions/setup-claude-erk/` (action directory)
+  - `.github/actions/erk-remote-setup/` (action directory)
+
+**Managed Artifacts Declaration:** The capability declares it manages:
+- `ManagedArtifact(name="plan-implement", artifact_type="workflow")`
+- `ManagedArtifact(name="setup-claude-code", artifact_type="action")`
+- `ManagedArtifact(name="setup-claude-erk", artifact_type="action")`
+- `ManagedArtifact(name="erk-remote-setup", artifact_type="action")`
+
+### 2. **Where Capabilities are Registered**
+
+... [128 lines omitted] ...
+
+### 5. **Workflow Dispatch and Error Handling**
+- If the workflow doesn't exist, the `gh` command will fail with a 404 error
+- The error is caught by `run_subprocess_with_context()` which converts it to a `RuntimeError`
+**Current behavior when workflow is missing:** The dispatch command will fail with a RuntimeError from the gh API call, not a user-friendly message suggesting to enable the capability.
+- **Current state:** NOT implemented. Dispatch fails with generic RuntimeError when workflow is missing.
+- **Opportunity:** When `trigger_workflow()` gets a 404 error from `gh api`, the error handling could detect "workflow not found" and suggest `erk init capability add erk-impl-workflow`
+- **Where to add:** In `/workspaces/erk/src/erk/cli/commands/pr/dispatch_cmd.py` around the `trigger_workflow()` call, wrap it in try/except to catch the RuntimeError and check if it mentions "not found"
+  </tool_result>
+  <thinking>Now I have a thorough understanding of the issue and the codebase patterns. Let me read the key files directly to refine my plan before writing it.
+
+Key findings:
+1. The dispatch command at `dispatch_cmd.py` has NO error handling around `trigger_workflow()` call
+2. `UserFacingCliError` is the correct error type for user-triggered errors
+3. The capability system can check if `erk-impl-workflow` is installed
+4. The error detection pattern (keyword matching on subprocess errors) is an established pattern
+
+Let me read the specific lines in dispatch_cmd.py to understand the exact code structure.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5499" cache_read_input_tokens="49435" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5499}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good exploration results. Let me read the key files to refine the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5499" cache_read_input_tokens="49435" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5499}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+</session>
