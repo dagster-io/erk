@@ -61,16 +61,9 @@ The file inventory logger reports all files committed to the learn plan PR, show
 
 ## Fire-and-Forget Error Resilience
 
-The entire learn workflow in the land command is wrapped in a try/except:
+<!-- Source: src/erk/cli/commands/land_learn.py, _create_learn_pr_with_sessions -->
 
-```python
-try:
-    _create_learn_pr_impl(ctx, state=state)
-except Exception as exc:
-    user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
-```
-
-This ensures that learn failures never block the primary `erk land` operation. A failed learn plan is a warning, not an error.
+See `_create_learn_pr_with_sessions()` in `src/erk/cli/commands/land_learn.py` for the fire-and-forget wrapper. The entire learn workflow is wrapped in a try/except that catches all exceptions and emits a warning instead of raising. This ensures that learn failures never block the primary `erk land` operation. A failed learn plan is a warning, not an error.
 
 ## TUI Learn Plan Toast
 
