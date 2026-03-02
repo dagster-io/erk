@@ -1,0 +1,851 @@
+<session>
+  <meta branch="plnd/ensure-plan-header-dispatc-03-02-1835" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Edit" id="toolu_011VLZbSnv6n7zmMSuZrBs7D">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="old_string">        created_at = result.created_at.replace(tzinfo=UTC).isoformat() if result.created_a...[truncated 12 chars]...tzinfo=UTC).isoformat()
+        created_by = result.author if result.author else "unknown"</param>
+    <param name="new_string">        created_at = result.created_at.isoformat()
+        created_by = result.author if result.author else "unknown"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="574" cache_read_input_tokens="85096" cache_creation="{'ephemeral_5m_input_tokens': 574, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011VLZbSnv6n7zmMSuZrBs7D">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py has been updated successfully.
+  </tool_result>
+  <assistant>`created_at` is a `datetime` that already has `tzinfo=UTC` set, so `.isoformat()` is sufficient.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="85670" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01RufStW1EDJBrD1WtGoHede">
+    <param name="todos">[{'content': 'Add ensure_plan_header() abstract method to PlanBackend ABC', 'status': 'com...[truncated 683 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="85670" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RufStW1EDJBrD1WtGoHede">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 3: Update `write_dispatch_metadata()` to call ensure first</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="377" cache_read_input_tokens="86002" cache_creation="{'ephemeral_5m_input_tokens': 377, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01QiyMBUSBHRduNaj8K2Bi6a">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
+    <param name="old_string">    plan_backend.update_metadata(
+        repo_root,
+        plan_id,
+        {
+          ...[truncated 39 chars]...tched_node_id": node_id,
+            "last_dispatched_at": dispatched_at,
+        },
+    )</param>
+    <param name="new_string">    plan_backend.ensure_plan_header(repo_root, plan_id)
+    plan_backend.update_metadata(
+...[truncated 95 chars]...tched_node_id": node_id,
+            "last_dispatched_at": dispatched_at,
+        },
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="377" cache_read_input_tokens="86002" cache_creation="{'ephemeral_5m_input_tokens': 377, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QiyMBUSBHRduNaj8K2Bi6a">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01XJUYD5T4Ghyfb3R6MXM9eq">
+    <param name="todos">[{'content': 'Add ensure_plan_header() abstract method to PlanBackend ABC', 'status': 'com...[truncated 685 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="86379" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XJUYD5T4Ghyfb3R6MXM9eq">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 4: Simplify `maybe_update_plan_dispatch_metadata()` guards
+
+Now I'll replace the manual incomplete-header checks with `ensure_plan_header()`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="345" cache_read_input_tokens="86736" cache_creation="{'ephemeral_5m_input_tokens': 345, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_016vQy8siJP7LcgtYVzDsA7G">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
+    <param name="old_string">    # LBYL: Check if plan-header block exists with all required fields before
+    # attemp...[truncated 653 chars]... dispatch metadata update"
+        )
+        return
+
+    ctx.plan_backend.update_metadata(</param>
+    <param name="new_string">    ctx.plan_backend.ensure_plan_header(repo.root, plan_id)
+    ctx.plan_backend.update_metadata(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="345" cache_read_input_tokens="86736" cache_creation="{'ephemeral_5m_input_tokens': 345, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016vQy8siJP7LcgtYVzDsA7G">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me clean up unused imports:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="479" cache_read_input_tokens="87081" cache_creation="{'ephemeral_5m_input_tokens': 479, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012BdiS3oAV1o6h5GqfDFFaR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="479" cache_read_input_tokens="87081" cache_creation="{'ephemeral_5m_input_tokens': 479, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012BdiS3oAV1o6h5GqfDFFaR">
+     1→"""Helpers for plan dispatch metadata updates.
+     2→
+     3→This module extracts shared logic for updating plan dispatch metadata
+     4→when triggering remote workflows on branches that follow the P{plan}-pattern.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from pathlib import Path
+    10→from typing import TYPE_CHECKING
+    11→
+    12→import click
+    13→
+    14→from erk_shared.output.output import user_output
+    15→from erk_shared.plan_store.backend import PlanBackend
+    16→from erk_shared.plan_store.types import PlanNotFound
+    17→
+    18→if TYPE_CHECKING:
+    19→    from erk.core.context import ErkContext
+    20→    from erk.core.repo_discovery import RepoContext
+    21→    from erk_shared.gateway.github.abc import GitHub
+    22→
+    23→
+    24→def write_dispatch_metadata(
+    25→    *,
+    26→    plan_backend: PlanBackend,
+    27→    github: GitHub,
+    28→    repo_root: Path,
+    29→    plan_number: int,
+    30→    run_id: str,
+
+... [78 lines omitted] ...
+
+    36→        RuntimeError: If plan not found or node_id unavailable.
+    40→        raise RuntimeError(f"Could not get node_id for run {run_id}")
+    46→        raise RuntimeError(f"Plan #{plan_number} not found")
+  </tool_result>
+  <assistant>I see that `PlanNotFound` is still used in `write_dispatch_metadata`, and `click` and `user_output` are still used in `maybe_update_plan_dispatch_metadata`. Let me also update the docstring for `maybe_update_plan_dispatch_metadata` since the "Plan doesn't have a plan-header" early return is no longer there (it auto-creates now):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1438" cache_read_input_tokens="87560" cache_creation="{'ephemeral_5m_input_tokens': 1438, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01ELZVK7Ua2DgHcNjMzgddrT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py</param>
+    <param name="old_string">    """Update plan dispatch metadata if branch follows P{plan}-pattern.
+
+    This function...[truncated 222 chars]...n node ID is not available
+    - Plan doesn't have a plan-header metadata block
+
+    Args:</param>
+    <param name="new_string">    """Update plan dispatch metadata if branch follows P{plan}-pattern.
+
+    This function...[truncated 394 chars]...oesn't match P{plan_number} pattern
+    - Workflow run node ID is not available
+
+    Args:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1438" cache_read_input_tokens="87560" cache_creation="{'ephemeral_5m_input_tokens': 1438, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ELZVK7Ua2DgHcNjMzgddrT">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/metadata_helpers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check if there are unused imports to clean up. `PlanNotFound` is still used in `write_dispatch_metadata`. But `click` and `user_output` are still used. Let me check if `PlanBackend` is only imported for type use or also used directly:
+
+Looking at the file, `PlanBackend` is used in `write_dispatch_metadata` parameter type. `PlanNotFound` is used in `write_dispatch_metadata`. `click` and `user_output` are used in `maybe_update_plan_dispatch_metadata`. All imports are still needed. Good.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="711" cache_read_input_tokens="88998" cache_creation="{'ephemeral_5m_input_tokens': 711, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01N5aDAU6X9HgFhzsJohusAd">
+    <param name="todos">[{'content': 'Add ensure_plan_header() abstract method to PlanBackend ABC', 'status': 'com...[truncated 687 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="711" cache_read_input_tokens="88998" cache_creation="{'ephemeral_5m_input_tokens': 711, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01N5aDAU6X9HgFhzsJohusAd">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 5: Write tests
+
+Now let me write the tests. I need to add tests for:
+1. `ensure_plan_header` creates header when missing
+2. `ensure_plan_header` is a no-op when header exists
+3. `write_dispatch_metadata` succeeds when plan-header is initially missing
+4. `maybe_update_plan_dispatch_metadata` now succeeds when plan-header is missing (instead of skipping)</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="483" cache_read_input_tokens="89709" cache_creation="{'ephemeral_5m_input_tokens': 483, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01KmpeTX13z4rJFjG5RaV4Ki">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="483" cache_read_input_tokens="89709" cache_creation="{'ephemeral_5m_input_tokens': 483, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KmpeTX13z4rJFjG5RaV4Ki">
+     1→"""Unit tests for plan dispatch metadata helpers."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→import pytest
+     7→
+     8→from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_metadata
+     9→from erk.core.context import context_for_test
+    10→from erk.core.repo_discovery import RepoContext
+    11→from erk_shared.gateway.github.fake import FakeGitHub
+    12→from erk_shared.gateway.github.metadata.core import render_metadata_block
+    13→from erk_shared.gateway.github.metadata.types import MetadataBlock
+    14→from erk_shared.gateway.time.fake import FakeTime
+    15→from tests.commands.dispatch.conftest import create_plan, make_plan_body
+    16→from tests.test_utils.plan_helpers import create_plan_store_with_plans
+    17→
+    18→
+    19→def _register_branch_alias(fake_github: FakeGitHub, plan_id: str, branch: str) -&gt; None:
+    20→    """Register an additional branch name for an existing PR in FakeGitHub.
+    21→
+    22→    PlannedPRBackend resolves plans via get_pr_for_branch, which requires
+    23→    the PR to be registered under the actual branch name.
+    24→    """
+    25→    synthetic_branch = f"plan-{plan_id}"
+    26→    fake_github._prs[branch] = fake_github._prs[synthetic_branch]
+    27→    fake_github._prs_by_branch[branch] = fake_github._pr_details[int(plan_id)]
+    28→
+    29→
+    30→def _make_repo(tmp_path: Path) -&gt; RepoContext:
+
+... [102 lines omitted] ...
+  </tool_result>
+  <assistant>The `test_update_incomplete_metadata_skips_update` test needs to be updated because the behavior changed: instead of skipping, it now creates the header. Let me also understand what a "no plan-header" body looks like when used through the plan_helpers. Let me create a helper to make a plan body without plan-header:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2383" cache_read_input_tokens="90192" cache_creation="{'ephemeral_5m_input_tokens': 2383, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_014UbHyYg4jwwcq6J4PXXh5x">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py</param>
+    <param name="old_string">"""Unit tests for plan dispatch metadata helpers."""
+
+from datetime import UTC, datetime
+f...[truncated 4961 chars]...ptured.err
+    assert "created_at" in captured.err
+    assert "created_by" in captured.err</param>
+    <param name="new_string">"""Unit tests for plan dispatch metadata helpers."""
+
+from datetime import UTC, datetime
+f...[truncated 7156 chars]...dy
+    block = find_metadata_block(final_body, "plan-header")
+    assert block is not None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2383" cache_read_input_tokens="90192" cache_creation="{'ephemeral_5m_input_tokens': 2383, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014UbHyYg4jwwcq6J4PXXh5x">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the tests to see if they pass:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4344" cache_read_input_tokens="92575" cache_creation="{'ephemeral_5m_input_tokens': 4344, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01EbTVwG4bd7HBw6sAANEfWb">
+    <param name="description">Run metadata_helpers tests</param>
+    <param name="prompt">Run the following test command and report the results. Do NOT fix any errors - just report what happens:
+
+```
+uv run pytest tests/unit/cli/commands/pr/test_metadata_helpers.py -xvs
+```</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4344" cache_read_input_tokens="92575" cache_creation="{'ephemeral_5m_input_tokens': 4344, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EbTVwG4bd7HBw6sAANEfWb">
+Test Results Report:
+
+**pytest failed: 1 issue found**
+
+Test: `test_ensure_plan_header_creates_when_missing`  
+File: `tests/unit/cli/commands/pr/test_metadata_helpers.py:131`  
+Assertion Error: Expected 1 updated PR body in `fake_github.updated_pr_bodies`, but got 0
+
+The test is verifying that when `ensure_plan_header()` is called on a plan without a plan-header, it should create one and update the PR. However, the fake GitHub object shows no updated PR bodies were recorded, indicating the update dispatch call is not being made.
+
+Summary: 4 passed, 1 failed in 1.68s
+agentId: ad3b720 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>The test failure is because `_make_body_without_plan_header()` creates a plain body, but `create_plan_store_with_plans` (via `_plan_to_pr_details`) auto-synthesizes a plan-header when the body doesn't have one. So `ensure_plan_header` sees the header already exists and does nothing. Let me trace through this:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="581" cache_read_input_tokens="96919" cache_creation="{'ephemeral_5m_input_tokens': 581, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01EcuSbPKaGQjtSdRsg4d9FL">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py</param>
+    <param name="offset">40</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="581" cache_read_input_tokens="96919" cache_creation="{'ephemeral_5m_input_tokens': 581, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EcuSbPKaGQjtSdRsg4d9FL">
+    40→    # Build PR body: if the plan body has a metadata block, reformat it with separator
+    41→    # and wrap plan content in &lt;details&gt; tags (new lifecycle format)
+    42→    body = plan.body
+    43→    end_marker_idx = body.find(_PLAN_HEADER_END_MARKER)
+    44→    if end_marker_idx != -1:
+    45→        # Body contains a plan-header block - split into metadata and content parts
+    46→        metadata_part = body[: end_marker_idx + len(_PLAN_HEADER_END_MARKER)]
+    47→        content_part = body[end_marker_idx + len(_PLAN_HEADER_END_MARKER) :].strip()
+    48→        details_section = DETAILS_OPEN + content_part + DETAILS_CLOSE
+    49→        pr_body = details_section + "\n\n" + metadata_part
+    50→    else:
+    51→        # Plain body without a plan-header block - synthesize one with branch_name so
+    52→        # PlannedPRBackend._convert_to_plan() can populate header_fields["branch_name"].
+    53→        # Real planned-PR plans always have branch_name in plan-header (set by plan_save).
+    54→        metadata_body = format_plan_header_body_for_test(branch_name=branch_name)
+    55→        details_section = DETAILS_OPEN + body + DETAILS_CLOSE
+    56→        pr_body = details_section + "\n\n" + metadata_body
+    57→
+    58→    # Include erk-plan label plus any existing labels
+    59→    labels = tuple(plan.labels) if "erk-plan" in plan.labels else ("erk-plan", *plan.labels)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Confirmed — the `_plan_to_pr_details` helper always synthesizes a plan-header when none exists. To test `ensure_plan_header` creating a header when missing, I need to set up the FakeGitHub PR directly with a body that has no plan-header, bypassing the `create_plan_store_with_plans` helper.
+
+Let me look at how to set up the FakeGitHub with a custom PR body:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="732" cache_read_input_tokens="97500" cache_creation="{'ephemeral_5m_input_tokens': 732, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01LgKVBaRR2RRsm7TyFZq5Kx">
+    <param name="pattern">class FakeGitHub</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">40</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="732" cache_read_input_tokens="97500" cache_creation="{'ephemeral_5m_input_tokens': 732, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LgKVBaRR2RRsm7TyFZq5Kx">
+37:class FakeGitHub(GitHub):
+38-    """In-memory fake implementation of GitHub operations.
+39-
+40-    This class has NO public setup methods. All state is provided via constructor
+41-    using keyword arguments with sensible defaults (empty dicts).
+42-    """
+43-
+44-    def __init__(
+45-        self,
+46-        *,
+47-        repo_info: RepoInfo | None = None,
+48-        prs: dict[str, PullRequestInfo] | None = None,
+49-        pr_bases: dict[int, str] | None = None,
+50-        pr_details: dict[int, PRDetails] | None = None,
+51-        prs_by_branch: dict[str, PRDetails] | None = None,
+52-        workflow_runs: list[WorkflowRun] | None = None,
+53-        workflow_runs_by_node_id: dict[str, WorkflowRun] | None = None,
+54-        run_logs: dict[str, str] | None = None,
+55-        pr_plan_linkages: dict[int, list[PullRequestInfo]] | None = None,
+56-        polled_run_id: str | None = None,
+57-        authenticated: bool = True,
+58-        auth_username: str | None = "test-user",
+59-        auth_hostname: str | None = "github.com",
+60-        issues_gateway: GitHubIssues | None = None,
+61-        issues_data: list[IssueInfo] | None = None,
+62-        pr_titles: dict[int, str] | None = None,
+63-        pr_bodies_by_number: dict[int, str] | None = None,
+64-        pr_diffs: dict[int, str] | None = None,
+65-        pr_changed_files: dict[int, list[str]] | None = None,
+66-        merge_should_succeed: bool = True,
+
+... [11 lines omitted] ...
+
+71-        resolve_thread_failures: set[str] | None = None,
+72-        pr_diff_error: str | None = None,
+73-        workflow_runs_error: str | None = None,
+  </tool_result>
+  <assistant>I can construct `FakeGitHub` with `pr_details` and `prs` directly, giving it a PR body without a plan-header. Let me update the tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1192" cache_read_input_tokens="98232" cache_creation="{'ephemeral_5m_input_tokens': 1192, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01VQCQNkMwSBSLfaqjfFSDhd">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1192" cache_read_input_tokens="98232" cache_creation="{'ephemeral_5m_input_tokens': 1192, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VQCQNkMwSBSLfaqjfFSDhd">
+     1→"""Unit tests for plan dispatch metadata helpers."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→from erk.cli.commands.pr.metadata_helpers import (
+     7→    maybe_update_plan_dispatch_metadata,
+     8→    write_dispatch_metadata,
+     9→)
+    10→from erk.core.context import context_for_test
+    11→from erk.core.repo_discovery import RepoContext
+    12→from erk_shared.gateway.github.fake import FakeGitHub
+    13→from erk_shared.gateway.github.metadata.core import find_metadata_block
+    14→from erk_shared.gateway.time.fake import FakeTime
+    15→from tests.commands.dispatch.conftest import create_plan, make_plan_body
+    16→from tests.test_utils.plan_helpers import create_plan_store_with_plans
+    17→
+    18→
+    19→def _register_branch_alias(fake_github: FakeGitHub, plan_id: str, branch: str) -&gt; None:
+    20→    """Register an additional branch name for an existing PR in FakeGitHub.
+    21→
+    22→    PlannedPRBackend resolves plans via get_pr_for_branch, which requires
+    23→    the PR to be registered under the actual branch name.
+    24→    """
+    25→    synthetic_branch = f"plan-{plan_id}"
+    26→    fake_github._prs[branch] = fake_github._prs[synthetic_branch]
+    27→    fake_github._prs_by_branch[branch] = fake_github._pr_details[int(plan_id)]
+    28→
+    29→
+    30→def _make_repo(tmp_path: Path) -&gt; RepoContext:
+
+... [160 lines omitted] ...
+  </tool_result>
+  <assistant>The problem is clear: `create_plan_store_with_plans` → `_plan_to_pr_details` auto-synthesizes a plan-header when the body doesn't have one (line 54 of plan_helpers.py). So the tests that need a PR without a plan-header need to construct the FakeGitHub directly with a custom PRDetails body.
+
+Let me create a helper that builds the backend with a raw PR body (no auto-synthesis):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3229" cache_read_input_tokens="99424" cache_creation="{'ephemeral_5m_input_tokens': 3229, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01E1hqe2ZEYNzkTKsAH4fFmD">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py</param>
+    <param name="old_string">"""Unit tests for plan dispatch metadata helpers."""
+
+from datetime import UTC, datetime
+f...[truncated 1524 chars]...dy with no plan-header metadata block."""
+    return "# Plan\n\nImplementation details..."</param>
+    <param name="new_string">"""Unit tests for plan dispatch metadata helpers."""
+
+from datetime import UTC, datetime
+f...[truncated 3118 chars]...RBackend(fake_github, fake_github.issues, time=FakeTime())
+    return backend, fake_github</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3229" cache_read_input_tokens="99424" cache_creation="{'ephemeral_5m_input_tokens': 3229, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01E1hqe2ZEYNzkTKsAH4fFmD">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the tests that need a PR without plan-header to use the new helper:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2078" cache_read_input_tokens="102653" cache_creation="{'ephemeral_5m_input_tokens': 2078, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01WCy47yJu8r5VMFj7437d9d">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py</param>
+    <param name="old_string">def test_ensure_plan_header_creates_when_missing(tmp_path: Path) -&gt; None:
+    """PR with n...[truncated 2494 chars]...dy
+    block = find_metadata_block(final_body, "plan-header")
+    assert block is not None</param>
+    <param name="new_string">def test_ensure_plan_header_creates_when_missing(tmp_path: Path) -&gt; None:
+    """PR with n...[truncated 2426 chars]...dy
+    block = find_metadata_block(final_body, "plan-header")
+    assert block is not None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2078" cache_read_input_tokens="102653" cache_creation="{'ephemeral_5m_input_tokens': 2078, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WCy47yJu8r5VMFj7437d9d">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/test_metadata_helpers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the tests again:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1932" cache_read_input_tokens="104731" cache_creation="{'ephemeral_5m_input_tokens': 1932, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01QQdGQnpZb2648J2b5ryzEU">
+    <param name="description">Run metadata_helpers tests</param>
+    <param name="prompt">Run the following test command and report the results. Do NOT fix any errors - just report what happens:
+
+```
+uv run pytest tests/unit/cli/commands/pr/test_metadata_helpers.py -xvs
+```</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1932" cache_read_input_tokens="104731" cache_creation="{'ephemeral_5m_input_tokens': 1932, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QQdGQnpZb2648J2b5ryzEU">
+Test passed: All 7 tests in the metadata_helpers test suite passed successfully in 0.69 seconds.
+
+The test output shows:
+- **7 passed** in 0.69 seconds
+- Two additional status messages indicating successful dispatch metadata updates on plans #321 and #400
+agentId: a543ff8 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All 7 tests pass. Let me mark tests as complete and move to CI.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="477" cache_read_input_tokens="106663" cache_creation="{'ephemeral_5m_input_tokens': 477, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_017wUgdoPb1QmRiuXif9FFX7">
+    <param name="todos">[{'content': 'Add ensure_plan_header() abstract method to PlanBackend ABC', 'status': 'com...[truncated 689 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="477" cache_read_input_tokens="106663" cache_creation="{'ephemeral_5m_input_tokens': 477, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017wUgdoPb1QmRiuXif9FFX7">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 6: Run CI</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="366" cache_read_input_tokens="107140" cache_creation="{'ephemeral_5m_input_tokens': 366, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="SlashCommand" id="toolu_014LrknA5x4X8nuWfCXdGqDQ">
+    <param name="command">/local:fast-ci</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="366" cache_read_input_tokens="107140" cache_creation="{'ephemeral_5m_input_tokens': 366, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014LrknA5x4X8nuWfCXdGqDQ">
+Launching command: /local:fast-ci
+  </tool_result>
+  <user>&lt;command-message&gt;local:fast-ci is running…&lt;/command-message&gt;
+&lt;command-name&gt;/local:fast-ci&lt;/command-name&gt;</user>
+  <user>You are an implementation finalizer for rapid development feedback. Your task is to run `make fast-ci` and iteratively fix any issues until all CI checks pass successfully.
+
+## Your Mission
+
+Run the fast CI pipeline (`make fast-ci`) from the repository root and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**Fast CI vs All CI**: The `fast-ci` target runs unit tests only, providing rapid feedback for development iteration. Use `/all-ci` when you need comprehensive validation including integration tests.
+
+## CI Pipeline (make fast-ci)
+
+The `make fast-ci` target runs these checks in order:
+
+1. **lint** - Ruff linting checks
+2. **format-check** - Ruff code formatting checks
+3. **prettier-check** - Markdown formatting checks
+4. **md-check** - AGENTS.md standard compliance validation
+5. **docs-validate** - Agent documentation frontmatter validation
+6. **ty** - Type checking
+7. **test** - Pytest unit tests only (fast feedback loop)
+8. **exec-reference-check** - Exec subcommand reference documentation validation
+
+## Iteration Process
+
+Load the `ci-iteration` skill for the iterative fix workflow.
+
+## Fail-Fast Workflow
+
+This command uses a two-phase approach to fail fast on linting and type checking issues:
+
+1. **Phase 1 (Fail-Fast)**: Run `make lint ty` together. If EITHER fails, stop immediately to fix issues before proceeding to remaining checks.
+2. **Phase 2 (Remaining Checks)**: Only after phase 1 passes, run remaining checks via `make fast-ci`.
+
+This ensures that common issues (linting/formatting and type errors) are caught and fixed first, providing rapid feedback without waiting for slower test runs.
+
+## Begin Now
+
+Start by using the Task tool with the devrun agent to run the fail-fast phase (`make lint ty`) from the repository root. If that passes, proceed with `make fast-ci` to run the complete fast CI pipeline. Track your progress with TodoWrite and report your final status clearly.
+
+**Remember**:
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>
+
+I'll run the fast CI pipeline. Let me start with the fail-fast phase.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="681" cache_read_input_tokens="107506" cache_creation="{'ephemeral_5m_input_tokens': 681, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01T71XxD1MPXCdzorCw44g5a">
+    <param name="description">Run lint and ty checks</param>
+    <param name="prompt">Run `make lint ty` from the repository root `/home/runner/work/erk/erk` and report the results. Do NOT fix any errors - just report what happens.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="681" cache_read_input_tokens="107506" cache_creation="{'ephemeral_5m_input_tokens': 681, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01T71XxD1MPXCdzorCw44g5a">
+The `make lint ty` command has failed due to a linting error before the type checker could run.
+
+**Result: FAILED**
+
+**ruff (linting) error:**
+- **File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:661:101`
+- **Rule**: E501 (Line too long)
+- **Issue**: Line exceeds 100 character limit by 3 characters (103 &gt; 100)
+- **Code**: `updated_body = result.body[:footer_idx] + "\n\n" + metadata_body + result.body[footer_idx:]`
+
+The linting check found 1 error and exited with code 1, preventing the `ty` type checker from running. The error is a line length violation in the plan store module where metadata body is being constructed.
+agentId: a5b46d4 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Line too long in `planned_pr.py`. Let me fix it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="396" cache_read_input_tokens="108187" cache_creation="{'ephemeral_5m_input_tokens': 396, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01CAoTPgRisqLaZj7W8r5nTk">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="offset">655</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="396" cache_read_input_tokens="108187" cache_creation="{'ephemeral_5m_input_tokens': 396, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CAoTPgRisqLaZj7W8r5nTk">
+   655→        )
+   656→
+   657→        # Inject metadata block before footer separator if present, else append
+   658→        footer_separator = "\n---\n"
+   659→        footer_idx = result.body.rfind(footer_separator)
+   660→        if footer_idx != -1:
+   661→            updated_body = result.body[:footer_idx] + "\n\n" + metadata_body + result.body[footer_idx:]
+   662→        else:
+   663→            updated_body = result.body + "\n\n" + metadata_body
+   664→
+   665→        self._github.update_pr_body(repo_root, pr_number, updated_body)
+   666→
+   667→    def post_event(
+   668→        self,
+   669→        repo_root: Path,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01S4gp488McUdA7yfFQM9i8q">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="old_string">        if footer_idx != -1:
+            updated_body = result.body[:footer_idx] + "\n\n" + metadata_body + result.body[footer_idx:]
+        else:</param>
+    <param name="new_string">        if footer_idx != -1:
+            before_footer = result.body[:footer_idx]
+        ...[truncated 28 chars]...        updated_body = before_footer + "\n\n" + metadata_body + after_footer
+        else:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="656" cache_read_input_tokens="108583" cache_creation="{'ephemeral_5m_input_tokens': 656, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01S4gp488McUdA7yfFQM9i8q">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py has been updated successfully.
+  </tool_result>
+  <assistant>Now re-run the fail-fast phase:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="109239" cache_creation="{'ephemeral_5m_input_tokens': 286, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01BeNHoKbHm44qJXubUnPcM4">
+    <param name="description">Re-run lint and ty checks</param>
+    <param name="prompt">Run `make lint ty` from the repository root `/home/runner/work/erk/erk` and report the results. Do NOT fix any errors - just report what happens.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="109239" cache_creation="{'ephemeral_5m_input_tokens': 286, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BeNHoKbHm44qJXubUnPcM4">
+**Results:**
+
+All checks passed successfully.
+
+- **ruff check**: All checks passed!
+- **ty check**: All checks passed!
+
+No linting violations or type errors were found in the codebase.
+agentId: a1c395a (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Lint and type checks pass. Now run the full fast-ci:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="450" cache_read_input_tokens="109525" cache_creation="{'ephemeral_5m_input_tokens': 450, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_019q1mizNCbbNrvT2JADczn6">
+    <param name="description">Run full fast-ci pipeline</param>
+    <param name="prompt">Run `make fast-ci` from the repository root `/home/runner/work/erk/erk` and report the results. Do NOT fix any errors - just report what happens. This may take a while so use a 300000ms timeout.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="450" cache_read_input_tokens="109525" cache_creation="{'ephemeral_5m_input_tokens': 450, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019q1mizNCbbNrvT2JADczn6">
+## Test Results Summary
+
+**make fast-ci failed** with 1 test failure out of 5797 total tests.
+
+### Failure Details
+
+**File:** `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py`
+
+**Test:** `test_dispatch_fails_others_succeed` (line 155)
+
+**Error:** 
+```
+assert output["dispatch_metadata"]["success"] is False
+AssertionError: assert True is False
+```
+
+**Test Description:** The test verifies that when a plan issue has no `plan-header` block, the dispatch operation should fail while other operations (like comment) should still work. However, the dispatch operation is currently succeeding when it should be failing.
+
+### Test Statistics
+
+- **erk package tests:** 5531 passed, 1 failed (in 24.05s)
+- **erk-dev tests:** 136 passed (in 5.05s)
+- **erk-statusline tests:** 115 passed (in 1.02s)
+- **erkbot tests:** 114 passed (in 2.38s)
+
+### Other CI Checks (Passed)
+
+- Lint: All checks passed
+- Format: 1633 files already formatted
+- Prettier: No formatting issues after fixes
+
+... [4 lines omitted] ...
+  </tool_result>
+  <assistant>There's a failing test in `test_register_one_shot_plan.py` — the test expects dispatch to fail when plan-header is missing, but now `ensure_plan_header` auto-creates it. This is expected behavior change. Let me examine and update that test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="534" cache_read_input_tokens="109975" cache_creation="{'ephemeral_5m_input_tokens': 534, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01FxKsFZNDNmDqLFgPB26kLZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py</param>
+    <param name="offset">130</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="534" cache_read_input_tokens="109975" cache_creation="{'ephemeral_5m_input_tokens': 534, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FxKsFZNDNmDqLFgPB26kLZ">
+   130→            "--run-url",
+   131→            RUN_URL,
+   132→        ],
+   133→        obj=_ctx(tmp_path, issues=FakeGitHubIssues(), github=FakeGitHub()),
+   134→    )
+   135→    assert result.exit_code == 1
+   136→    output = json.loads(result.output)
+   137→    assert output["dispatch_metadata"]["success"] is False
+   138→    assert output["queued_comment"]["success"] is False
+   139→    assert output["lifecycle_stage"]["success"] is False
+   140→
+   141→
+   142→def test_dispatch_fails_others_succeed(tmp_path: Path) -&gt; None:
+   143→    """No plan-header block causes dispatch and lifecycle_stage to fail; comment still works."""
+   144→    issue = _issue(123, "# No plan-header")
+   145→    issues = FakeGitHubIssues(issues={123: issue})
+   146→    github = FakeGitHub(
+   147→        issues_gateway=issues,
+   148→        pr_details={42: _pr(42, "Draft PR"), 123: issue_info_to_pr_details(issue)},
+   149→    )
+   150→    result = CliRunner().invoke(
+   151→        register_one_shot_plan, CLI_ARGS, obj=_ctx(tmp_path, issues=issues, github=github)
+   152→    )
+   153→    assert result.exit_code == 0
+   154→    output = json.loads(result.output)
+   155→    assert output["dispatch_metadata"]["success"] is False
+   156→    assert output["queued_comment"]["success"] is True
+   157→    # lifecycle_stage also fails — update_metadata needs the plan-header block
+   158→    assert output["lifecycle_stage"]["success"] is False
+   159→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Let me read more of this test to understand the full context — what does the script do and does it also call `ensure_plan_header`?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="962" cache_read_input_tokens="110509" cache_creation="{'ephemeral_5m_input_tokens': 962, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01U7XM4azuHnqwg2Fn1QddRA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="962" cache_read_input_tokens="110509" cache_creation="{'ephemeral_5m_input_tokens': 962, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01U7XM4azuHnqwg2Fn1QddRA">
+     1→"""Tests for register-one-shot-plan exec command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.exec.scripts.register_one_shot_plan import register_one_shot_plan
+    10→from erk_shared.context.context import ErkContext
+    11→from erk_shared.gateway.github.fake import FakeGitHub
+    12→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    13→from erk_shared.gateway.github.issues.types import IssueInfo
+    14→from erk_shared.gateway.github.types import PRDetails
+    15→from erk_shared.gateway.time.fake import FakeTime
+    16→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    17→from tests.test_utils.plan_helpers import issue_info_to_pr_details
+    18→
+    19→RUN_URL = "https://github.com/test-owner/test-repo/actions/runs/99999"
+    20→CLI_ARGS = [
+    21→    "--plan-number",
+    22→    "123",
+    23→    "--run-id",
+    24→    "99999",
+    25→    "--pr-number",
+    26→    "42",
+    27→    "--submitted-by",
+    28→    "alice",
+    29→    "--run-url",
+    30→    RUN_URL,
+
+... [134 lines omitted] ...
+
+    35→    return """&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <assistant>Let me check the `register_one_shot_plan` script to see how it calls dispatch metadata:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2303" cache_read_input_tokens="111471" cache_creation="{'ephemeral_5m_input_tokens': 2303, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_013LtPYmF7fVU5DEkseyzDsK">
+    <param name="pattern">src/erk/cli/commands/exec/scripts/register_one_shot_plan.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2303" cache_read_input_tokens="111471" cache_creation="{'ephemeral_5m_input_tokens': 2303, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013LtPYmF7fVU5DEkseyzDsK">
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/register_one_shot_plan.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_012F2ggGJBp6Z8AJxizeqc91">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/register_one_shot_plan.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="366" cache_read_input_tokens="113774" cache_creation="{'ephemeral_5m_input_tokens': 366, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012F2ggGJBp6Z8AJxizeqc91">
+     1→"""Register a one-shot plan: dispatch metadata and queued comment.
+     2→
+     3→Composes independent operations that ``erk pr dispatch`` performs but
+     4→one-shot cannot do at submit time (the plan doesn't exist yet).
+     5→Each operation is best-effort; failures are logged but don't block others.
+     6→"""
+     7→
+     8→import json
+     9→from datetime import UTC, datetime
+    10→
+    11→import click
+    12→
+    13→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    14→from erk_shared.context.helpers import (
+    15→    require_github,
+    16→    require_issues,
+    17→    require_plan_backend,
+    18→    require_repo_root,
+    19→)
+    20→from erk_shared.gateway.github.issues.types import IssueNotFound
+    21→
+    22→
+    23→@click.command(name="register-one-shot-plan")
+    24→@click.option("--plan-number", type=int, required=True)
+    25→@click.option("--run-id", type=str, required=True)
+    26→@click.option("--pr-number", type=int, required=True)
+    27→@click.option("--submitted-by", type=str, required=True)
+    28→@click.option("--run-url", type=str, required=True)
+    29→@click.pass_context
+    30→def register_one_shot_plan(
+
+... [76 lines omitted] ...
+
+    57→    except Exception as exc:
+    58→        results["dispatch_metadata"] = {"success": False, "error": str(exc)}
+    64→            raise RuntimeError(f"Plan #{plan_number} not found")
+    84→    except Exception as exc:
+    85→        results["queued_comment"] = {"success": False, "error": str(exc)}
+    95→    except Exception as exc:
+    96→        results["lifecycle_stage"] = {"success": False, "error": str(exc)}
+  </tool_result>
+  <assistant>I see. The `register_one_shot_plan` script calls `write_dispatch_metadata` (Op 1) which now calls `ensure_plan_header` — so that succeeds. Then Op 3 calls `update_metadata` directly (without `ensure_plan_header`) — but now Op 1 has already created the header, so Op 3 also succeeds.
+
+This is correct new behavior. The test `test_dispatch_fails_others_succeed` was testing the old behavior where missing plan-header caused failures. Now with auto-creation, all three operations should succeed when the plan exists but lacks a header. Let me update the test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1538" cache_read_input_tokens="114140" cache_creation="{'ephemeral_5m_input_tokens': 1538, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_019yahQpDqrC6NBizp3vSwou">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py</param>
+    <param name="old_string">def test_dispatch_fails_others_succeed(tmp_path: Path) -&gt; None:
+    """No plan-header bloc...[truncated 653 chars]...adata needs the plan-header block
+    assert output["lifecycle_stage"]["success"] is False</param>
+    <param name="new_string">def test_dispatch_succeeds_when_plan_header_missing(tmp_path: Path) -&gt; None:
+    """Missin...[truncated 581 chars]...ueued_comment"]["success"] is True
+    assert output["lifecycle_stage"]["success"] is True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1538" cache_read_input_tokens="114140" cache_creation="{'ephemeral_5m_input_tokens': 1538, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019yahQpDqrC6NBizp3vSwou">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me re-run the full fast-ci to confirm everything passes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1051" cache_read_input_tokens="115678" cache_creation="{'ephemeral_5m_input_tokens': 1051, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01KQjcgzbvKCiUd8NDtaS14R">
+    <param name="description">Re-run full fast-ci pipeline</param>
+    <param name="prompt">Run `make fast-ci` from the repository root `/home/runner/work/erk/erk` and report the results. Do NOT fix any errors - just report what happens. Use a 300000ms timeout.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1051" cache_read_input_tokens="115678" cache_creation="{'ephemeral_5m_input_tokens': 1051, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KQjcgzbvKCiUd8NDtaS14R">
+## make fast-ci Results
+
+The build **failed** with exit code 2. Here's what happened:
+
+### Failures
+- **Prettier formatting issues** in 2 files:
+  - `docs/learned/integrations/github-review-decision.md`
+  - `docs/learned/tui/status-indicators.md`
+  - These files need formatting via `prettier --write`
+
+### Successes
+- **Linting**: All checks passed
+- **Format check**: 1633 files already formatted
+- **Markdown check**: Passed
+- **Exec reference check**: `.claude/skills/erk-exec/reference.md` is up to date
+- **Type checking (ty)**: All checks passed
+- **Unit tests (erk)**: 5532 passed in 13.02s
+- **Unit tests (erk-dev)**: 136 passed in 4.88s
+- **Unit tests (erk-statusline)**: 115 passed in 0.91s
+- **Unit tests (erkbot)**: 114 passed in 1.59s
+
+### Summary
+The CI pipeline failed specifically due to **2 Markdown files** with code style issues that need to be formatted with Prettier. All tests pass and type checking is clean. The issue is isolated to formatting.
+agentId: aff96e8 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All 5532+136+115+114 tests pass. The only failure is pre-existing prettier formatting issues in documentation files unrelated to my changes. Let me verify these files aren't part of my changes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="492" cache_read_input_tokens="116729" cache_creation="{'ephemeral_5m_input_tokens': 492, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01UiV3fpnhqY9NQqg5mwfsJG">
+    <param name="command">git diff --name-only</param>
+    <param name="description">Check modified files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="492" cache_read_input_tokens="116729" cache_creation="{'ephemeral_5m_input_tokens': 492, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UiV3fpnhqY9NQqg5mwfsJG">
+packages/erk-shared/src/erk_shared/plan_store/backend.py
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+src/erk/cli/commands/pr/metadata_helpers.py
+tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py
+tests/unit/cli/commands/pr/test_metadata_helpers.py
+  </tool_result>
+  <assistant>Confirmed — the prettier failures are in `docs/learned/integrations/github-review-decision.md` and `docs/learned/tui/status-indicators.md`, which are not in my changeset. All tests pass, lint and type checks pass. CI is green for my changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="462" cache_read_input_tokens="117221" cache_creation="{'ephemeral_5m_input_tokens': 462, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01HweZQYz245KMz8nhh87FXD">
+    <param name="todos">[{'content': 'Add ensure_plan_header() abstract method to PlanBackend ABC', 'status': 'com...[truncated 691 chars]...ation'}, {'content': 'Submit PR', 'status': 'in_progress', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="462" cache_read_input_tokens="117221" cache_creation="{'ephemeral_5m_input_tokens': 462, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HweZQYz245KMz8nhh87FXD">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 7: Submit PR</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="410" cache_read_input_tokens="117683" cache_creation="{'ephemeral_5m_input_tokens': 410, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01L4QvLdsxDyWwmS7PXGUs5S">
+    <param name="command">erk exec impl-signal ended --session-id="3459f72f-da6f-431e-a6d2-bad6aa3aae2b" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="410" cache_read_input_tokens="117683" cache_creation="{'ephemeral_5m_input_tokens': 410, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01BLeHearcuucbFiQrGkgF1d">
+    <param name="command">erk exec upload-impl-session --session-id="3459f72f-da6f-431e-a6d2-bad6aa3aae2b" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="410" cache_read_input_tokens="117683" cache_creation="{'ephemeral_5m_input_tokens': 410, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01L4QvLdsxDyWwmS7PXGUs5S">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8627
+}
+  </tool_result>
+</session>
