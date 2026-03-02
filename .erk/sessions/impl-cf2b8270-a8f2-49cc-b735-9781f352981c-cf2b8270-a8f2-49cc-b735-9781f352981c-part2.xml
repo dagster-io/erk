@@ -1,0 +1,985 @@
+<session>
+  <meta branch="plnd/add-ref-current-dispatch-03-02-0737" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <assistant>Now moving to task #4: Adding --ref and --ref-current to objective plan_cmd.py.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="139" cache_read_input_tokens="51772" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 139}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01JQsFcFRSWUWEmH1zL8gvJZ">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="139" cache_read_input_tokens="51772" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 139, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JQsFcFRSWUWEmH1zL8gvJZ">
+Updated task #4 status
+  </tool_result>
+  <thinking>Let me search for the objective_plan_cmd function and the dispatch_one_shot call sites.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="163" cache_read_input_tokens="51911" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 163}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YLojEVAMFpNf485k6CaUYU">
+    <param name="command">grep -n "objective_plan_cmd\|dispatch_one_shot" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py | head -30</param>
+    <param name="description">Find objective_plan_cmd and dispatch_one_shot call sites</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="163" cache_read_input_tokens="51911" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 163}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YLojEVAMFpNf485k6CaUYU">
+20:    dispatch_one_shot,
+288:        dispatch_result = dispatch_one_shot(
+750:    dispatch_result = dispatch_one_shot(
+  </tool_result>
+  <thinking>Let me find the objective_plan_cmd function definition to understand its signature and decorator.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="230" cache_read_input_tokens="52074" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 230}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LAZSdezsPiEiTpU9FS3BdQ">
+    <param name="command">grep -n "@click.command\|def objective_plan_cmd" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py | head -5</param>
+    <param name="description">Find objective_plan_cmd definition</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="230" cache_read_input_tokens="52074" output_tokens="163" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 230, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LAZSdezsPiEiTpU9FS3BdQ">
+462:@click.command("plan")
+  </tool_result>
+  <thinking>Let me read the area around line 462 to see the full decorator list.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="191" cache_read_input_tokens="52304" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 191}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012Bs7N1mVdAf8K41P58WJNt">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="offset">462</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="191" cache_read_input_tokens="52304" output_tokens="154" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 191, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012Bs7N1mVdAf8K41P58WJNt">
+   462→@click.command("plan")
+   463→@click.argument("issue_ref", required=False, default=None)
+   464→@click.option(
+   465→    "-d",
+   466→    "--dangerous",
+   467→    is_flag=True,
+   468→    default=False,
+   469→    help="Allow dangerous permissions by passing --allow-dangerously-skip-permissions to Claude",
+   470→)
+   471→@click.option(
+   472→    "--one-shot",
+   473→    "one_shot_mode",
+   474→    is_flag=True,
+   475→    default=False,
+   476→    help="Dispatch via one-shot workflow for fully autonomous execution",
+   477→)
+   478→@click.option(
+   479→    "-m",
+   480→    "--model",
+   481→    type=str,
+   482→    default=None,
+   483→    help="Model to use for one-shot execution (requires --one-shot)",
+   484→)
+   485→@click.option(
+   486→    "--dry-run",
+   487→    is_flag=True,
+   488→    default=False,
+   489→    help="Show what would happen without executing (requires --one-shot)",
+   490→)
+   491→@click.option(
+
+... [95 lines omitted] ...
+
+   556→        raise click.ClickException("--all-unblocked and --node are mutually exclusive")
+   558→        raise click.ClickException("--all-unblocked and --next are mutually exclusive")
+   560→        raise click.ClickException("--next and --node are mutually exclusive")
+   563→        raise click.ClickException("ISSUE_REF is required unless --next or --all-unblocked is used")
+   572→            raise click.ClickException("--model requires --one-shot")
+   574→            raise click.ClickException("--dry-run requires --one-shot")
+  </tool_result>
+  <thinking>I see the objective_plan_cmd is called `plan_objective` (line 513). I need to:1. Add --ref and --ref-current options to the decorators2. Add parameters to the function signature3. Pass them to the two dispatch_one_shot call sites (lines ~288 and ~750)
+
+Let me read the dispatch_one_shot call sites first to understand the context.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="1746" cache_read_input_tokens="52495" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1746}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RGQ3rNXsBQDrXStQRwpsa1">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="offset">280</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1746" cache_read_input_tokens="52495" output_tokens="225" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1746, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RGQ3rNXsBQDrXStQRwpsa1">
+   280→            model=model,
+   281→            extra_workflow_inputs={
+   282→                "objective_issue": str(resolved.issue_number),
+   283→                "node_id": node.id,
+   284→            },
+   285→            slug=slug,
+   286→        )
+   287→
+   288→        dispatch_result = dispatch_one_shot(
+   289→            ctx, params=params, dry_run=dry_run, ref=ctx.local_config.dispatch_ref
+   290→        )
+   291→
+   292→        if dispatch_result is not None:
+   293→            successful_dispatches.append((node.id, dispatch_result.pr_number))
+   294→            dispatched_count += 1
+   295→
+   296→    # Single atomic update after all dispatches complete
+   297→    if successful_dispatches:
+   298→        assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
+   299→        user_output("Updating objective roadmap...")
+   300→        _batch_update_objective_nodes(
+   301→            ctx.issues,
+   302→            ctx.repo.root,
+   303→            issue_number=resolved.issue_number,
+   304→            node_updates=successful_dispatches,
+   305→        )
+   306→
+   307→    if dry_run:
+   308→        user_output(
+   309→            f"\n{click.style('Dry-run complete:', fg='cyan', bold=True)} "
+
+... [5 lines omitted] ...
+  </tool_result>
+  <thinking>Good, I found the first dispatch_one_shot call at line 289. Now let me find the second one.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="692" cache_read_input_tokens="54241" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 692}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KnuRo6kQVS9Qs8AFQ9sEZ3">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="offset">740</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="692" cache_read_input_tokens="54241" output_tokens="162" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 692, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KnuRo6kQVS9Qs8AFQ9sEZ3">
+   740→    params = OneShotDispatchParams(
+   741→        prompt=prompt,
+   742→        model=model,
+   743→        extra_workflow_inputs={
+   744→            "objective_issue": str(issue_number),
+   745→            "node_id": target_node.id,
+   746→        },
+   747→        slug=slug,
+   748→    )
+   749→
+   750→    dispatch_result = dispatch_one_shot(
+   751→        ctx, params=params, dry_run=dry_run, ref=ctx.local_config.dispatch_ref
+   752→    )
+   753→
+   754→    # After successful dispatch, immediately mark node as "planning" with draft PR
+   755→    if dispatch_result is not None:
+   756→        # repo is guaranteed to be RepoContext here:
+   757→        # - use_next path: _resolve_next validates repo
+   758→        # - non-use_next path: repo is assigned above
+   759→        assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
+   760→        user_output("Updating objective roadmap...")
+   761→        _update_objective_node(
+   762→            ctx.issues,
+   763→            ctx.repo.root,
+   764→            issue_number=issue_number,
+   765→            node_id=target_node.id,
+   766→            pr_number=dispatch_result.pr_number,
+   767→        )
+   768→
+
+
+... [4 lines omitted] ...
+  </tool_result>
+  <thinking>Good! Now I found both call sites - lines 289 and 751. Let me check the imports first to ensure I have everything I need.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="627" cache_read_input_tokens="54933" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 627}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QoyyuDQ89PGX2kDqKWc5Zo">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="offset">1</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="627" cache_read_input_tokens="54933" output_tokens="168" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 627, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QoyyuDQ89PGX2kDqKWc5Zo">
+     1→"""Create a plan from an objective node."""
+     2→
+     3→from dataclasses import dataclass
+     4→from pathlib import Path
+     5→
+     6→import click
+     7→
+     8→from erk.cli.commands.exec.scripts.update_objective_node import (
+     9→    _replace_node_refs_in_body,
+    10→)
+    11→from erk.cli.commands.implement_shared import normalize_model_name
+    12→from erk.cli.commands.objective.check_cmd import (
+    13→    ObjectiveValidationError,
+    14→    ObjectiveValidationSuccess,
+    15→    validate_objective,
+    16→)
+    17→from erk.cli.commands.objective_helpers import get_objective_for_branch
+    18→from erk.cli.commands.one_shot_dispatch import (
+    19→    OneShotDispatchParams,
+    20→    dispatch_one_shot,
+    21→)
+    22→from erk.cli.github_parsing import parse_issue_identifier
+    23→from erk.core.branch_slug_generator import BRANCH_SLUG_SYSTEM_PROMPT, _postprocess_slug
+    24→from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
+    25→from erk_shared.context.types import InteractiveAgentConfig
+    26→from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, NoApiKey
+    27→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    28→from erk_shared.gateway.github.issues.types import IssueNotFound
+    29→from erk_shared.gateway.github.metadata.core import extract_metadata_value
+    30→from erk_shared.gateway.github.metadata.dependency_graph import (
+
+... [15 lines omitted] ...
+  </tool_result>
+  <thinking>Good! Now I need to:1. Add import for resolve_dispatch_ref2. Add --ref and --ref-current options to the plan_objective command3. Add parameters to the function signature4. Update both dispatch_one_shot call sites to use resolve_dispatch_ref
+
+Let me start by adding the import.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="844" cache_read_input_tokens="55560" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 844}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Xim6gqaS4oJborm1DHdJ8R">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="old_string">from erk.cli.commands.implement_shared import normalize_model_name
+from erk.cli.commands.o...[truncated 5 chars]... (
+    ObjectiveValidationError,
+    ObjectiveValidationSuccess,
+    validate_objective,
+)</param>
+    <param name="new_string">from erk.cli.commands.implement_shared import normalize_model_name
+from erk.cli.commands.o...[truncated 70 chars]...    validate_objective,
+)
+from erk.cli.commands.ref_resolution import resolve_dispatch_ref</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="844" cache_read_input_tokens="55560" output_tokens="358" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 844, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xim6gqaS4oJborm1DHdJ8R">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py has been updated successfully.
+  </tool_result>
+  <thinking>Now let me add the --ref and --ref-current options to the decorators.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="426" cache_read_input_tokens="56404" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 426}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Fm25UAetexWVV39ZA2SzrB">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="old_string">@click.option(
+    "--all-unblocked",
+    "all_unblocked",
+    is_flag=True,
+    default=F...[truncated 243 chars]...un: bool,
+    node_id: str | None,
+    use_next: bool,
+    all_unblocked: bool,
+) -&gt; None:</param>
+    <param name="new_string">@click.option(
+    "--all-unblocked",
+    "all_unblocked",
+    is_flag=True,
+    default=F...[truncated 584 chars]...,
+    all_unblocked: bool,
+    dispatch_ref: str | None,
+    ref_current: bool,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="426" cache_read_input_tokens="56404" output_tokens="604" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 426, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Fm25UAetexWVV39ZA2SzrB">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py has been updated successfully.
+  </tool_result>
+  <thinking>Now I need to pass dispatch_ref and ref_current to the _handle_all_unblocked and _handle_one_shot_mode functions. Let me find where plan_objective calls these functions.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="672" cache_read_input_tokens="56830" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 672}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017CHmuxhGnyDj5hrJGqqdG6">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="offset">575</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="672" cache_read_input_tokens="56830" output_tokens="181" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 672, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017CHmuxhGnyDj5hrJGqqdG6">
+   575→    if use_next and node_id is not None:
+   576→        raise click.ClickException("--next and --node are mutually exclusive")
+   577→
+   578→    if issue_ref is None and not use_next and not all_unblocked:
+   579→        raise click.ClickException("ISSUE_REF is required unless --next or --all-unblocked is used")
+   580→
+   581→    # --all-unblocked implies --one-shot
+   582→    if all_unblocked:
+   583→        one_shot_mode = True
+   584→
+   585→    # Validate flag dependencies: --model, --dry-run require --one-shot
+   586→    if not one_shot_mode:
+   587→        if model is not None:
+   588→            raise click.ClickException("--model requires --one-shot")
+   589→        if dry_run:
+   590→            raise click.ClickException("--dry-run requires --one-shot")
+   591→
+   592→    if all_unblocked:
+   593→        _handle_all_unblocked(
+   594→            ctx,
+   595→            issue_ref=issue_ref,
+   596→            model=model,
+   597→            dry_run=dry_run,
+   598→        )
+   599→    elif one_shot_mode:
+   600→        _handle_one_shot(
+   601→            ctx,
+   602→            issue_ref=issue_ref,
+   603→            model=model,
+   604→            dry_run=dry_run,
+
+... [25 lines omitted] ...
+  </tool_result>
+  <thinking>I see that both _handle_all_unblocked and _handle_one_shot are called. I need to pass dispatch_ref and ref_current to both, and then thread them through to the dispatch_one_shot calls. Let me first update the calls in plan_objective.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="903" cache_read_input_tokens="57502" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 903}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PWPT6jaipqL9oTMnhJDZDq">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="old_string">    if all_unblocked:
+        _handle_all_unblocked(
+            ctx,
+            issue_re...[truncated 190 chars]...    dry_run=dry_run,
+            node_id=node_id,
+            use_next=use_next,
+        )</param>
+    <param name="new_string">    if all_unblocked:
+        _handle_all_unblocked(
+            ctx,
+            issue_re...[truncated 342 chars]...ext,
+            dispatch_ref=dispatch_ref,
+            ref_current=ref_current,
+        )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="903" cache_read_input_tokens="57502" output_tokens="505" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 903, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PWPT6jaipqL9oTMnhJDZDq">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py has been updated successfully.
+  </tool_result>
+  <thinking>Good! Now I need to update the _handle_all_unblocked and _handle_one_shot functions to accept and use these parameters. Let me find their signatures.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="844" cache_read_input_tokens="58405" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 844}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01ViGyLdFJ3GeRGhqe44Y2Xw">
+    <param name="command">grep -n "def _handle_all_unblocked\|def _handle_one_shot" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="description">Find _handle_all_unblocked and _handle_one_shot function definitions</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="844" cache_read_input_tokens="58405" output_tokens="196" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 844, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ViGyLdFJ3GeRGhqe44Y2Xw">
+244:def _handle_all_unblocked(
+680:def _handle_one_shot(
+  </tool_result>
+  <thinking>Let me read _handle_all_unblocked to see its signature and where it calls dispatch_one_shot.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="238" cache_read_input_tokens="59249" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 238}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015HeWXnTgMQvjRT7QPFqmmo">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="offset">244</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="238" cache_read_input_tokens="59249" output_tokens="162" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 238, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015HeWXnTgMQvjRT7QPFqmmo">
+   244→def _handle_all_unblocked(
+   245→    ctx: ErkContext,
+   246→    *,
+   247→    issue_ref: str | None,
+   248→    model: str | None,
+   249→    dry_run: bool,
+   250→) -&gt; None:
+   251→    """Dispatch one-shot workflows for all unblocked pending nodes."""
+   252→    resolved = _resolve_all_unblocked(ctx, issue_ref=issue_ref)
+   253→
+   254→    # Normalize model name
+   255→    model = normalize_model_name(model)
+   256→
+   257→    user_output(
+   258→        f"Found {click.style(len(resolved.nodes), bold=True)} "
+   259→        f"unblocked pending node(s) in objective #{resolved.issue_number}:"
+   260→    )
+   261→    for node, phase_name in resolved.nodes:
+   262→        user_output(f"  {node.id}: {node.description} (Phase: {phase_name})")
+   263→    user_output("")
+   264→
+   265→    dispatched_count = 0
+   266→    successful_dispatches: list[tuple[str, int]] = []
+   267→
+   268→    for node, phase_name in resolved.nodes:
+   269→        prompt = (
+   270→            f"/erk:objective-plan {resolved.issue_number}\n"
+   271→            f"Implement step {node.id} of objective #{resolved.issue_number}: "
+   272→            f"{node.description} (Phase: {phase_name})"
+   273→        )
+
+... [55 lines omitted] ...
+  </tool_result>
+  <thinking>Perfect! I can see the dispatch_one_shot call at line 290. Now let me update the _handle_all_unblocked function signature to accept dispatch_ref and ref_current, and update the call to dispatch_one_shot.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="1284" cache_read_input_tokens="59487" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1284}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01R8Ss7SXpfPKFRhq8in8QcS">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="old_string">def _handle_all_unblocked(
+    ctx: ErkContext,
+    *,
+    issue_ref: str | None,
+    mode...[truncated 1370 chars]...          ctx, params=params, dry_run=dry_run, ref=ctx.local_config.dispatch_ref
+        )</param>
+    <param name="new_string">def _handle_all_unblocked(
+    ctx: ErkContext,
+    *,
+    issue_ref: str | None,
+    mode...[truncated 1486 chars]...lt = dispatch_one_shot(
+            ctx, params=params, dry_run=dry_run, ref=ref
+        )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1284" cache_read_input_tokens="59487" output_tokens="1205" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1284, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01R8Ss7SXpfPKFRhq8in8QcS">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py has been updated successfully.
+  </tool_result>
+  <thinking>Good! Now I need to update _handle_one_shot function similarly. Let me read its signature and the dispatch_one_shot call.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="1273" cache_read_input_tokens="60771" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1273}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01C3TY4rwZJ737AqFY1PqXCa">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="offset">685</param>
+    <param name="limit">90</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1273" cache_read_input_tokens="60771" output_tokens="167" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1273, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C3TY4rwZJ737AqFY1PqXCa">
+   685→    ctx: ErkContext,
+   686→    *,
+   687→    issue_ref: str | None,
+   688→    model: str | None,
+   689→    dry_run: bool,
+   690→    node_id: str | None,
+   691→    use_next: bool,
+   692→) -&gt; None:
+   693→    """Dispatch objective node via one-shot workflow."""
+   694→    if use_next:
+   695→        resolved = _resolve_next(ctx, issue_ref=issue_ref)
+   696→        issue_number = resolved.issue_number
+   697→        target_node = resolved.node
+   698→        phase_name = resolved.phase_name
+   699→    else:
+   700→        assert issue_ref is not None  # type narrowing: validated in plan_objective
+   701→        # Parse issue identifier
+   702→        issue_number = parse_issue_identifier(issue_ref)
+   703→
+   704→        # Validate repo context
+   705→        if isinstance(ctx.repo, NoRepoSentinel):
+   706→            raise click.ClickException("Not in a git repository")
+   707→        assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
+   708→        repo: RepoContext = ctx.repo
+   709→
+   710→        # Validate objective
+   711→        result = validate_objective(ctx.issues, repo.root, issue_number)
+   712→
+   713→        if isinstance(result, ObjectiveValidationError):
+   714→            raise click.ClickException(result.error)
+
+... [65 lines omitted] ...
+
+   719→            raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
+   727→                raise click.ClickException(
+   741→                raise click.ClickException(
+   742→                    f"Internal error: next_node '{result.next_node['id']}' not found"
+  </tool_result>
+  <thinking>Let me find the function definition line and then read a bit more to see the dispatch_one_shot call.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="1425" cache_read_input_tokens="62044" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1425}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UXy84uqwvCFw5EjXonvGgB">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="offset">683</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1425" cache_read_input_tokens="62044" output_tokens="160" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1425, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UXy84uqwvCFw5EjXonvGgB">
+   683→
+   684→def _handle_one_shot(
+   685→    ctx: ErkContext,
+   686→    *,
+   687→    issue_ref: str | None,
+   688→    model: str | None,
+   689→    dry_run: bool,
+   690→    node_id: str | None,
+   691→    use_next: bool,
+   692→) -&gt; None:
+   693→    """Dispatch objective node via one-shot workflow."""
+   694→    if use_next:
+   695→        resolved = _resolve_next(ctx, issue_ref=issue_ref)
+   696→        issue_number = resolved.issue_number
+   697→        target_node = resolved.node
+   698→        phase_name = resolved.phase_name
+   699→    else:
+   700→        assert issue_ref is not None  # type narrowing: validated in plan_objective
+   701→        # Parse issue identifier
+   702→        issue_number = parse_issue_identifier(issue_ref)
+   703→
+   704→        # Validate repo context
+   705→        if isinstance(ctx.repo, NoRepoSentinel):
+   706→            raise click.ClickException("Not in a git repository")
+   707→        assert not isinstance(ctx.repo, NoRepoSentinel)  # type narrowing
+   708→        repo: RepoContext = ctx.repo
+   709→
+   710→        # Validate objective
+   711→        result = validate_objective(ctx.issues, repo.root, issue_number)
+   712→
+
+... [75 lines omitted] ...
+
+   713→        if isinstance(result, ObjectiveValidationError):
+   714→            raise click.ClickException(result.error)
+   719→            raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
+   727→                raise click.ClickException(
+   741→                raise click.ClickException(
+   742→                    f"Internal error: next_node '{result.next_node['id']}' not found"
+  </tool_result>
+  <thinking>Perfect! I can see the dispatch_one_shot call at line 775. Now I need to update the _handle_one_shot function signature and update the call.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="1559" cache_read_input_tokens="63469" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1559}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_018ogcpjgvqfEwAPpNbk3ZTF">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="old_string">def _handle_one_shot(
+    ctx: ErkContext,
+    *,
+    issue_ref: str | None,
+    model: st...[truncated 31 chars]...e,
+    use_next: bool,
+) -&gt; None:
+    """Dispatch objective node via one-shot workflow."""</param>
+    <param name="new_string">def _handle_one_shot(
+    ctx: ErkContext,
+    *,
+    issue_ref: str | None,
+    model: st...[truncated 84 chars]...    ref_current: bool,
+) -&gt; None:
+    """Dispatch objective node via one-shot workflow."""</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1559" cache_read_input_tokens="63469" output_tokens="376" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1559, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018ogcpjgvqfEwAPpNbk3ZTF">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py has been updated successfully.
+  </tool_result>
+  <thinking>Now I need to add the ref resolution and update the dispatch_one_shot call in _handle_one_shot. I'll add the ref resolution before the prompt building section.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="444" cache_read_input_tokens="65028" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 444}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Xhh6nqPZQpv9wFjtjAZNWx">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py</param>
+    <param name="old_string">    # Normalize model name
+    model = normalize_model_name(model)
+
+    # Build prompt
+   ...[truncated 718 chars]...shot(
+        ctx, params=params, dry_run=dry_run, ref=ctx.local_config.dispatch_ref
+    )</param>
+    <param name="new_string">    # Normalize model name
+    model = normalize_model_name(model)
+
+    # Resolve dispatch...[truncated 808 chars]...tch_result = dispatch_one_shot(
+        ctx, params=params, dry_run=dry_run, ref=ref
+    )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="444" cache_read_input_tokens="65028" output_tokens="804" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 444, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xhh6nqPZQpv9wFjtjAZNWx">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/objective/plan_cmd.py has been updated successfully.
+  </tool_result>
+  <thinking>Good! Now task 4 is complete. Let me mark it as completed and move to task 5.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="872" cache_read_input_tokens="65472" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 872}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_011RcZSyNJmDuoJbn2ezkxHT">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="872" cache_read_input_tokens="65472" output_tokens="101" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 872, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011RcZSyNJmDuoJbn2ezkxHT">
+Updated task #4 status
+  </tool_result>
+  <thinking>Now let me work on task 5: Adding --ref-current flag to launch_cmd.py.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="126" cache_read_input_tokens="66344" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 126}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now moving to task #5: Adding --ref-current flag to launch_cmd.py.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="126" cache_read_input_tokens="66344" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 126}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_0151EprwLtDcCCbhXGBeyCV3">
+    <param name="taskId">5</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="126" cache_read_input_tokens="66344" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 126, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0151EprwLtDcCCbhXGBeyCV3">
+Updated task #5 status
+  </tool_result>
+  <thinking>I need to:1. Add import for resolve_dispatch_ref to launch_cmd.py2. Add @click.option for --ref-current to the launch command3. Add ref_current parameter to the launch function4. Replace the ref resolution at line 462 with call to resolve_dispatch_refLet me start.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="148" cache_read_input_tokens="66470" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 148}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01H1ymTmv7U1CSsL5GNpqLKM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="offset">1</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="148" cache_read_input_tokens="66470" output_tokens="206" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 148, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H1ymTmv7U1CSsL5GNpqLKM">
+     1→"""Dispatch GitHub Actions workflows via unified interface.
+     2→
+     3→Usage examples:
+     4→    erk launch pr-address --pr 456
+     5→    erk launch pr-rebase --pr 456
+     6→    erk launch pr-rebase --pr 456 --no-squash
+     7→    erk launch plan-implement --issue 789
+     8→    erk launch learn --issue 789
+     9→    erk launch one-shot --pr 456 --prompt "fix the auth bug"
+    10→    erk launch one-shot --pr 456 -f prompt.md
+    11→"""
+    12→
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_metadata
+    18→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+    19→from erk.cli.ensure import Ensure
+    20→from erk.core.context import ErkContext
+    21→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    22→from erk_shared.gateway.github.types import PRNotFound
+    23→from erk_shared.output.output import user_output
+    24→
+    25→
+    26→def _dispatch_workflow(
+    27→    ctx: ErkContext,
+    28→    repo: RepoContext,
+    29→    *,
+    30→    workflow_name: str,
+
+... [5 lines omitted] ...
+  </tool_result>
+  <thinking>Let me add the import for resolve_dispatch_ref.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="680" cache_read_input_tokens="66618" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 680}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Hva5z8oRHGqkNR4Q5uZUeC">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="old_string">import click
+
+from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_metadata
+from erk.cli.constants import WORKFLOW_COMMAND_MAP
+from erk.cli.ensure import Ensure</param>
+    <param name="new_string">import click
+
+from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_...[truncated 48 chars]...h_ref
+from erk.cli.constants import WORKFLOW_COMMAND_MAP
+from erk.cli.ensure import Ensure</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="680" cache_read_input_tokens="66618" output_tokens="292" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 680, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Hva5z8oRHGqkNR4Q5uZUeC">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py has been updated successfully.
+  </tool_result>
+  <thinking>Now let me add the --ref-current option to the decorators and the parameter to the function.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="358" cache_read_input_tokens="67298" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 358}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01W2LCsNEb5FsMp2neBUSQSz">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="old_string">@click.option(
+    "--ref",
+    "dispatch_ref",
+    type=str,
+    default=None,
+    help="...[truncated 230 chars]...   prompt: str | None,
+    file_path: str | None,
+    dispatch_ref: str | None,
+) -&gt; None:</param>
+    <param name="new_string">@click.option(
+    "--ref",
+    "dispatch_ref",
+    type=str,
+    default=None,
+    help="...[truncated 382 chars]...    file_path: str | None,
+    dispatch_ref: str | None,
+    ref_current: bool,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="358" cache_read_input_tokens="67298" output_tokens="522" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 358, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01W2LCsNEb5FsMp2neBUSQSz">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py has been updated successfully.
+  </tool_result>
+  <thinking>Now I need to replace the ref resolution line at line 462. Let me update that.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="588" cache_read_input_tokens="67656" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 588}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XnkhASRERvsTVQRkmz7kML">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="old_string">    assert not isinstance(ctx.repo, NoRepoSentinel)
+    repo: RepoContext = ctx.repo
+
+    ...[truncated 1 chars]... dispatch_ref is not None else ctx.local_config.dispatch_ref
+
+    # Validate workflow name</param>
+    <param name="new_string">    assert not isinstance(ctx.repo, NoRepoSentinel)
+    repo: RepoContext = ctx.repo
+
+    ...[truncated 3 chars]...ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
+
+    # Validate workflow name</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="588" cache_read_input_tokens="67656" output_tokens="295" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 588, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XnkhASRERvsTVQRkmz7kML">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py has been updated successfully.
+  </tool_result>
+  <thinking>Good! Now task 5 is done. Let me mark it as completed and move to task 6.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="361" cache_read_input_tokens="68244" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 361}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01SKiKC4rvRK6NTfJCMFTqj5">
+    <param name="taskId">5</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="361" cache_read_input_tokens="68244" output_tokens="101" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 361, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SKiKC4rvRK6NTfJCMFTqj5">
+Updated task #5 status
+  </tool_result>
+  <thinking>Now moving to task 6: Adding --ref-current flag to one_shot.py.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="126" cache_read_input_tokens="68605" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 126}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now moving to task #6: Adding --ref-current flag to one_shot.py.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="126" cache_read_input_tokens="68605" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 126}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01G3M1VBiYAr7ZvsFLJu18Nk">
+    <param name="taskId">6</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="126" cache_read_input_tokens="68605" output_tokens="121" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 126, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01G3M1VBiYAr7ZvsFLJu18Nk">
+Updated task #6 status
+  </tool_result>
+  <thinking>Let me read one_shot.py more carefully to understand its structure and find where to make changes.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="146" cache_read_input_tokens="68731" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 146}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CUV5C1jWiarKUaMMcTPSNZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/one_shot.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="146" cache_read_input_tokens="68731" output_tokens="122" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 146, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CUV5C1jWiarKUaMMcTPSNZ">
+     1→"""Command to dispatch a task for fully autonomous remote execution.
+     2→
+     3→No local planning — the remote Claude explores the codebase, plans the change,
+     4→implements it, and creates a PR.
+     5→
+     6→Usage:
+     7→    erk one-shot "fix the import in config.py"
+     8→    erk one-shot --file prompt.md
+     9→    erk one-shot "add type hints to utils.py" --model opus
+    10→    erk one-shot "fix the typo in README.md" --dry-run
+    11→    erk one-shot "rename issue_number to plan_number in impl_init.py" --plan-only
+    12→"""
+    13→
+    14→from pathlib import Path
+    15→
+    16→import click
+    17→
+    18→from erk.cli.commands.implement_shared import normalize_model_name
+    19→from erk.cli.commands.one_shot_dispatch import (
+    20→    OneShotDispatchParams,
+    21→    dispatch_one_shot,
+    22→)
+    23→from erk.cli.ensure import Ensure
+    24→from erk.core.context import ErkContext
+    25→from erk_shared.output.output import user_output
+    26→
+    27→
+    28→@click.command("one-shot")
+    29→@click.argument("prompt", required=False, default=None)
+    30→@click.option(
+
+... [103 lines omitted] ...
+  </tool_result>
+  <thinking>Perfect! I can see at line 126 the ref resolution pattern I need to replace. Let me:1. Add import for resolve_dispatch_ref2. Add --ref-current option to the decorators3. Add ref_current parameter to the function4. Replace line 126 with the call to resolve_dispatch_ref</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="1734" cache_read_input_tokens="68877" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1734}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013A1Ruk93hYqHKqihc2p57a">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/one_shot.py</param>
+    <param name="old_string">import click
+
+from erk.cli.commands.implement_shared import normalize_model_name
+from erk....[truncated 15 chars]...rt (
+    OneShotDispatchParams,
+    dispatch_one_shot,
+)
+from erk.cli.ensure import Ensure</param>
+    <param name="new_string">import click
+
+from erk.cli.commands.implement_shared import normalize_model_name
+from erk....[truncated 80 chars]....cli.commands.ref_resolution import resolve_dispatch_ref
+from erk.cli.ensure import Ensure</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1734" cache_read_input_tokens="68877" output_tokens="376" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1734, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013A1Ruk93hYqHKqihc2p57a">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/one_shot.py has been updated successfully.
+  </tool_result>
+  <thinking>Now let me add the --ref-current option and parameter.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="442" cache_read_input_tokens="70611" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 442}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01V3RvzDcUkS3SSwX8u14av5">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/one_shot.py</param>
+    <param name="old_string">@click.option(
+    "--ref",
+    "dispatch_ref",
+    type=str,
+    default=None,
+    help="...[truncated 193 chars]... bool,
+    plan_only: bool,
+    slug: str | None,
+    dispatch_ref: str | None,
+) -&gt; None:</param>
+    <param name="new_string">@click.option(
+    "--ref",
+    "dispatch_ref",
+    type=str,
+    default=None,
+    help="...[truncated 345 chars]...ool,
+    slug: str | None,
+    dispatch_ref: str | None,
+    ref_current: bool,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="442" cache_read_input_tokens="70611" output_tokens="492" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 442, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V3RvzDcUkS3SSwX8u14av5">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/one_shot.py has been updated successfully.
+  </tool_result>
+  <thinking>Now let me replace the ref resolution at line 126.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="558" cache_read_input_tokens="71053" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 558}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EU2RfUUZDJHxeSnRWGrhcY">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/one_shot.py</param>
+    <param name="old_string">    params = OneShotDispatchParams(
+        prompt=prompt,
+        model=model,
+        ex...[truncated 96 chars]...al_config.dispatch_ref
+    dispatch_one_shot(ctx, params=params, dry_run=dry_run, ref=ref)</param>
+    <param name="new_string">    params = OneShotDispatchParams(
+        prompt=prompt,
+        model=model,
+        ex...[truncated 98 chars]...f_current=ref_current)
+    dispatch_one_shot(ctx, params=params, dry_run=dry_run, ref=ref)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="558" cache_read_input_tokens="71053" output_tokens="352" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 558, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EU2RfUUZDJHxeSnRWGrhcY">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/one_shot.py has been updated successfully.
+  </tool_result>
+  <thinking>Good! Now task 6 is done. Let me mark it as completed and move to task 7.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="418" cache_read_input_tokens="71611" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 418}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01S1zAR9XTkmBsfeK3f2JfMN">
+    <param name="taskId">6</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="418" cache_read_input_tokens="71611" output_tokens="101" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 418, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S1zAR9XTkmBsfeK3f2JfMN">
+Updated task #6 status
+  </tool_result>
+  <thinking>Now moving to task 7: Adding --ref-current flag to dispatch_cmd.py.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="126" cache_read_input_tokens="72029" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 126}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now moving to task #7: Adding --ref-current flag to dispatch_cmd.py.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="126" cache_read_input_tokens="72029" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 126}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01ETpF3j271AYPF276xtdDFu">
+    <param name="taskId">7</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="126" cache_read_input_tokens="72029" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 126}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ETpF3j271AYPF276xtdDFu">
+Updated task #7 status
+  </tool_result>
+  <thinking>Let me read dispatch_cmd.py to find the location where I need to make changes.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="146" cache_read_input_tokens="72155" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 146}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0149FBen8AACLjKGydm8dEbf">
+    <param name="command">grep -n "def dispatch_cmd\|dispatch_ref" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/dispatch_cmd.py | head -20</param>
+    <param name="description">Find dispatch_cmd function and dispatch_ref references</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="146" cache_read_input_tokens="72155" output_tokens="165" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 146, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0149FBen8AACLjKGydm8dEbf">
+390:    "dispatch_ref",
+393:    help="Branch to dispatch workflow from (overrides config dispatch_ref)",
+397:    ctx: ErkContext, plan_numbers: tuple[int, ...], base: str | None, dispatch_ref: str | None
+420:    ref = dispatch_ref if dispatch_ref is not None else ctx.local_config.dispatch_ref
+  </tool_result>
+  <thinking>Let me read the area around the function definition to see the full decorator structure.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="270" cache_read_input_tokens="72301" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 270}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ENCwv85JvhByFMgGvB4G3S">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">370</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="270" cache_read_input_tokens="72301" output_tokens="153" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 270, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ENCwv85JvhByFMgGvB4G3S">
+   370→    """
+   371→    impl_dir = resolve_impl_dir(repo.root, branch_name=branch_name)
+   372→    if impl_dir is not None:
+   373→        plan_ref = read_plan_ref(impl_dir)
+   374→        if plan_ref is not None and plan_ref.plan_id.isdigit():
+   375→            return int(plan_ref.plan_id)
+   376→
+   377→    return None
+   378→
+   379→
+   380→@click.command("dispatch")
+   381→@click.argument("plan_numbers", type=int, nargs=-1, required=False)
+   382→@click.option(
+   383→    "--base",
+   384→    type=str,
+   385→    default=None,
+   386→    help="Base branch for PR (defaults to current branch).",
+   387→)
+   388→@click.option(
+   389→    "--ref",
+   390→    "dispatch_ref",
+   391→    type=str,
+   392→    default=None,
+   393→    help="Branch to dispatch workflow from (overrides config dispatch_ref)",
+   394→)
+   395→@click.pass_obj
+   396→def pr_dispatch(
+   397→    ctx: ErkContext, plan_numbers: tuple[int, ...], base: str | None, dispatch_ref: str | None
+   398→) -&gt; None:
+   399→    """Dispatch plans for remote AI implementation via GitHub Actions.
+
+... [35 lines omitted] ...
+  </tool_result>
+  <thinking>Good! I can see the structure. Now let me check the imports at the top of the file.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="972" cache_read_input_tokens="72571" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 972}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01M2unQHsWFRzghicbTGG1go">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">1</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="972" cache_read_input_tokens="72571" output_tokens="158" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 972, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M2unQHsWFRzghicbTGG1go">
+     1→"""Dispatch plans for remote AI implementation via GitHub Actions."""
+     2→
+     3→import logging
+     4→import tomllib
+     5→from dataclasses import dataclass
+     6→from datetime import UTC, datetime
+     7→from pathlib import Path
+     8→
+     9→import click
+    10→
+    11→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+    12→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    13→from erk.cli.commands.slot.common import is_placeholder_branch
+    14→from erk.cli.constants import (
+    15→    DISPATCH_WORKFLOW_METADATA_NAME,
+    16→    DISPATCH_WORKFLOW_NAME,
+    17→    ERK_PLAN_LABEL,
+    18→)
+    19→from erk.cli.core import discover_repo_context
+    20→from erk.cli.ensure import Ensure, UserFacingCliError
+    21→from erk.core.context import ErkContext
+    22→from erk.core.repo_discovery import RepoContext
+    23→from erk_shared.gateway.git.remote_ops.types import PushError
+    24→from erk_shared.gateway.github.metadata.core import (
+    25→    create_submission_queued_block,
+    26→    render_erk_issue_event,
+    27→)
+    28→from erk_shared.gateway.github.parsing import (
+    29→    construct_pr_url,
+    30→    construct_workflow_run_url,
+
+... [15 lines omitted] ...
+  </tool_result>
+  <thinking>Now let me add the import for resolve_dispatch_ref and then add the --ref-current option and parameter.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="793" cache_read_input_tokens="73543" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 793}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Vk71RzeTEW35eGnbrSohzT">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="old_string">import click
+
+from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata</param>
+    <param name="new_string">import click
+
+from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+from er...[truncated 20 chars]...t write_dispatch_metadata
+from erk.cli.commands.ref_resolution import resolve_dispatch_ref</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="793" cache_read_input_tokens="73543" output_tokens="286" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 793, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Vk71RzeTEW35eGnbrSohzT">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <thinking>Now let me add the --ref-current option to the decorators.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="354" cache_read_input_tokens="74336" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 354}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011xRLT6FzJdYdgv7NDQ6who">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="old_string">@click.option(
+    "--ref",
+    "dispatch_ref",
+    type=str,
+    default=None,
+    help="...[truncated 97 chars]...text, plan_numbers: tuple[int, ...], base: str | None, dispatch_ref: str | None
+) -&gt; None:</param>
+    <param name="new_string">@click.option(
+    "--ref",
+    "dispatch_ref",
+    type=str,
+    default=None,
+    help="...[truncated 262 chars].....],
+    base: str | None,
+    dispatch_ref: str | None,
+    ref_current: bool,
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="354" cache_read_input_tokens="74336" output_tokens="421" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 354, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011xRLT6FzJdYdgv7NDQ6who">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <thinking>Now let me replace the ref resolution at line 420.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="489" cache_read_input_tokens="74690" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 489}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>

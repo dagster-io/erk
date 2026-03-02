@@ -1,0 +1,1050 @@
+<session>
+  <meta branch="plnd/add-ref-current-dispatch-03-02-0737" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 12. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="cf2b8270-a8f2-49cc-b735-9781f352981c" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="cf2b8270-a8f2-49cc-b735-9781f352981c" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="cf2b8270-a8f2-49cc-b735-9781f352981c" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="cf2b8270-a8f2-49cc-b735-9781f352981c" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**CRITICAL**: Never delete the impl directory - leave for user review (no auto-commit).
+
+### Step 12: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 13: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement`, which according to the command message loaded above is the primary implementation workflow for erk. Let me understand what this means:
+
+1. I'm in a git worktree (`erk-slot-60`) 
+2. The current branch is `plnd/add-ref-current-dispatch-03-02-0737`
+3. There's a recent commit about adding a plan: "Add plan: Add `--ref` and `--ref-current` flags to dispatch commands"
+4. The workflow instructs me to implement a plan
+
+According to the instructions, I should:
+
+**Step 1: Set Up Implementation**
+- Since I'm on a plan branch (`plnd/...`), I should run `erk exec setup-impl` to auto-detect from the branch
+- Or if there's already an impl directory, use that
+
+Let me start by checking if there's already an impl directory under `.erk/impl-context/`, and then follow the setup workflow.
+
+Actually, looking at the instructions more carefully, the command is loaded as `/erk:plan-implement`. The user hasn't provided any arguments, so I should:
+
+1. First, run `erk exec setup-impl` to auto-detect from the current branch or impl context
+2. Then proceed with reading the plan and executing implementation
+
+Let me start Step 1.</thinking>
+  <usage input_tokens="9" cache_creation_input_tokens="32536" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 32536}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll implement the plan on the current branch. Let me start by setting up the implementation environment.</assistant>
+  <usage input_tokens="9" cache_creation_input_tokens="32536" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 32536}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EC7LsAsuVccm1FeG5hN852">
+    <param name="command">erk exec setup-impl</param>
+    <param name="description">Auto-detect and set up implementation from current branch</param>
+  </tool_use>
+  <usage input_tokens="9" cache_creation_input_tokens="32536" cache_read_input_tokens="0" output_tokens="417" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 32536, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EC7LsAsuVccm1FeG5hN852">
+Found existing impl dir for plan #8617, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.erk/impl-context/plnd--add-ref-current-dispatch-03-02-0737", "plan_number": 8617, "plan_url": "https://github.com/dagster-io/erk/pull/8617", "branch": "plnd/add-ref-current-dispatch-03-02-0737", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8617, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <thinking>Good! The setup succeeded. I have:
+- impl_path: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.erk/impl-context/plnd--add-ref-current-dispatch-03-02-0737`
+- plan_number: 8617
+- plan_url: https://github.com/dagster-io/erk/pull/8617
+- valid: true
+
+Now I need to:
+1. Read the plan.md file from the impl directory
+2. Understand the plan
+3. Load any related documentation/skills
+4. Create task entries
+5. Signal GitHub that implementation started
+6. Execute the plan phases
+7. Run CI
+8. Submit the PR
+
+Let me read the plan first.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="627" cache_read_input_tokens="32536" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 627}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EGYntEQ47uMxmb1sbwcw4L">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.erk/impl-context/plnd--add-ref-current-dispatch-03-02-0737/plan.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="627" cache_read_input_tokens="32536" output_tokens="295" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 627, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EGYntEQ47uMxmb1sbwcw4L">
+     1→# Add `--ref` and `--ref-current` flags to dispatch commands
+     2→
+     3→## Context
+     4→
+     5→The `--ref` flag (for overriding `dispatch_ref` from config) exists on `erk launch`, `erk pr dispatch`, and `erk one-shot`, but is missing from two commands that also dispatch workflows:
+     6→
+     7→- `erk workflow smoke-test` — hardcodes `ctx.local_config.dispatch_ref`
+     8→- `erk objective plan` — hardcodes `ctx.local_config.dispatch_ref`
+     9→
+    10→Additionally, all dispatch commands should support `--ref-current` as a convenience flag to dispatch from the current branch without typing its name.
+    11→
+    12→## Changes
+    13→
+    14→### 1. Add `--ref` to `erk workflow smoke-test`
+    15→
+    16→**`src/erk/cli/commands/doctor_workflow.py`** (~line 221):
+    17→- Add `@click.option("--ref", "dispatch_ref", ...)` and `@click.option("--ref-current", is_flag=True, ...)` to `workflow_smoke_test_cmd`
+    18→- Pass both to `_handle_smoke_test` → `run_smoke_test`
+    19→
+    20→**`src/erk/core/workflow_smoke_test.py`** (`run_smoke_test`):
+    21→- Add `dispatch_ref: str | None` parameter
+    22→- Resolve ref with same pattern as other commands
+    23→
+    24→### 2. Add `--ref` to `erk objective plan`
+    25→
+    26→**`src/erk/cli/commands/objective/plan_cmd.py`** (~line 505):
+    27→- Add `@click.option("--ref", "dispatch_ref", ...)` and `@click.option("--ref-current", is_flag=True, ...)`
+    28→- Thread to both `dispatch_one_shot` call sites (lines 289, 751)
+    29→
+    30→### 3. Add `--ref-current` flag to all 5 dispatch commands
+
+... [67 lines omitted] ...
+
+    45→`--ref` and `--ref-current` are mutually exclusive — if both provided, error.
+    64→        raise click.UsageError("--ref and --ref-current are mutually exclusive")
+    68→            raise click.UsageError("--ref-current requires being on a branch (not detached HEAD)")
+    90→- Passing both `--ref` and `--ref-current` produces a usage error
+  </tool_result>
+  <thinking>Perfect! I have the plan. Let me understand what needs to be done:
+
+1. Add `--ref` flag to `erk workflow smoke-test` command
+2. Add `--ref` flag to `erk objective plan` command  
+3. Add `--ref-current` flag to all 5 dispatch commands
+4. Extract a shared ref resolution helper in a new file
+
+The changes are:
+- New file: `src/erk/cli/commands/ref_resolution.py` (shared helper)
+- Modify: `src/erk/cli/commands/doctor_workflow.py` (add --ref, --ref-current)
+- Modify: `src/erk/core/workflow_smoke_test.py` (accept dispatch_ref parameter)
+- Modify: `src/erk/cli/commands/objective/plan_cmd.py` (add --ref, --ref-current at 2 call sites)
+- Modify: `src/erk/cli/commands/launch_cmd.py` (add --ref-current, use resolver)
+- Modify: `src/erk/cli/commands/one_shot.py` (add --ref-current, use resolver)
+- Modify: `src/erk/cli/commands/pr/dispatch_cmd.py` (add --ref-current, use resolver)
+
+This is a pretty straightforward plan - adding CLI flags and extracting a helper function.
+
+Now let me signal GitHub that implementation has started, then create task entries.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="1946" cache_read_input_tokens="33163" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1946}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Implementation environment ready. Reading plan and setting up tasks.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1946" cache_read_input_tokens="33163" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1946}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018Smox59XXuPX1J1MPPLtFA">
+    <param name="command">erk exec impl-signal started --session-id="cf2b8270-a8f2-49cc-b735-9781f352981c" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub that implementation has started</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1946" cache_read_input_tokens="33163" output_tokens="479" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1946, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018Smox59XXuPX1J1MPPLtFA">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8617
+}
+  </tool_result>
+  <thinking>Good! Now I'll create task entries for the plan. The plan has clear phases, so I'll create tasks for each:
+
+1. Create shared ref resolution helper
+2. Add --ref and --ref-current to doctor_workflow (workflow smoke-test)
+3. Modify workflow_smoke_test.py to accept dispatch_ref parameter
+4. Add --ref and --ref-current to objective plan_cmd
+5. Add --ref-current to launch_cmd using the helper
+6. Add --ref-current to one_shot.py using the helper
+7. Add --ref-current to dispatch_cmd using the helper
+8. Run tests and CI
+9. Verify the changes</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="519" cache_read_input_tokens="35109" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 519}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01LPVusGq8jk5NZHFQ9igDig">
+    <param name="subject">Create shared ref resolution helper function</param>
+    <param name="description">Create new file `src/erk/cli/commands/ref_resolution.py` with `resolve_dispatch_ref` helpe...[truncated 183 chars]...to dispatch_ref or config default
+- Raises UsageError for detached HEAD with --ref-current</param>
+    <param name="activeForm">Creating ref resolution helper</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="519" cache_read_input_tokens="35109" output_tokens="355" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 519, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LPVusGq8jk5NZHFQ9igDig">
+Task #1 created successfully: Create shared ref resolution helper function
+  </tool_result>
+  <thinking>Now let me read the existing dispatch command files to understand the pattern before creating the remaining tasks.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="381" cache_read_input_tokens="35628" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 381}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QkkVAt6YYUjCrYyVPCy1QX">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="offset">450</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="381" cache_read_input_tokens="35628" output_tokens="154" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 381, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QkkVAt6YYUjCrYyVPCy1QX">
+   450→    - GitHub CLI (gh) must be authenticated
+   451→    - Required GitHub Actions secrets must be configured
+   452→    """
+   453→    # Validate preconditions
+   454→    Ensure.gh_authenticated(ctx)
+   455→    Ensure.invariant(
+   456→        not isinstance(ctx.repo, NoRepoSentinel),
+   457→        "Not in a git repository",
+   458→    )
+   459→    assert not isinstance(ctx.repo, NoRepoSentinel)
+   460→    repo: RepoContext = ctx.repo
+   461→
+   462→    ref = dispatch_ref if dispatch_ref is not None else ctx.local_config.dispatch_ref
+   463→
+   464→    # Validate workflow name
+   465→    _ = _get_workflow_file(workflow_name)  # Raises UsageError if invalid
+   466→
+   467→    # Dispatch to workflow-specific handler
+   468→    if workflow_name == "pr-rebase":
+   469→        _dispatch_pr_rebase(
+   470→            ctx,
+   471→            repo,
+   472→            pr_number=pr_number,
+   473→            no_squash=no_squash,
+   474→            model=model,
+   475→            ref=ref,
+   476→        )
+   477→    elif workflow_name == "pr-address":
+   478→        Ensure.invariant(
+   479→            pr_number is not None,
+
+... [5 lines omitted] ...
+  </tool_result>
+  <thinking>I can see line 462 has the pattern I need to replace. Let me look at the decorator section to understand the full parameter definition.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="614" cache_read_input_tokens="36009" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 614}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01D7GEznyWBD2m6BKaE5g84g">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="offset">1</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="614" cache_read_input_tokens="36009" output_tokens="164" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 614, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01D7GEznyWBD2m6BKaE5g84g">
+     1→"""Dispatch GitHub Actions workflows via unified interface.
+     2→
+     3→Usage examples:
+     4→    erk launch pr-address --pr 456
+     5→    erk launch pr-rebase --pr 456
+     6→    erk launch pr-rebase --pr 456 --no-squash
+     7→    erk launch plan-implement --issue 789
+     8→    erk launch learn --issue 789
+     9→    erk launch one-shot --pr 456 --prompt "fix the auth bug"
+    10→    erk launch one-shot --pr 456 -f prompt.md
+    11→"""
+    12→
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.commands.pr.metadata_helpers import maybe_update_plan_dispatch_metadata
+    18→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+    19→from erk.cli.ensure import Ensure
+    20→from erk.core.context import ErkContext
+    21→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    22→from erk_shared.gateway.github.types import PRNotFound
+    23→from erk_shared.output.output import user_output
+    24→
+    25→
+    26→def _dispatch_workflow(
+    27→    ctx: ErkContext,
+    28→    repo: RepoContext,
+    29→    *,
+    30→    workflow_name: str,
+
+... [75 lines omitted] ...
+
+    64→        click.UsageError: If workflow name is not recognized
+    68→        raise click.UsageError(
+  </tool_result>
+  <thinking>Let me find the launch_cmd command definition with the Click decorators.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="1562" cache_read_input_tokens="36623" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1562}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QdLQPsEHzHDX4CdeLAyurv">
+    <param name="command">grep -n "@click.command\|@click.option.*dispatch_ref" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py | head -20</param>
+    <param name="description">Find launch_cmd decorator and dispatch_ref option</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1562" cache_read_input_tokens="36623" output_tokens="163" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1562, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QdLQPsEHzHDX4CdeLAyurv">
+352:@click.command("launch")
+  </tool_result>
+  <thinking>Let me read from line 352 onwards to see the full decorator list.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="191" cache_read_input_tokens="38185" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 191}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Wxpxjk2Sc6HytyXRnH22Lq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/launch_cmd.py</param>
+    <param name="offset">352</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="191" cache_read_input_tokens="38185" output_tokens="151" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 191, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Wxpxjk2Sc6HytyXRnH22Lq">
+   352→@click.command("launch")
+   353→@click.argument("workflow_name", type=str)
+   354→@click.option(
+   355→    "--pr",
+   356→    "pr_number",
+   357→    type=int,
+   358→    help="PR number (required for pr-rebase and pr-address)",
+   359→)
+   360→@click.option(
+   361→    "--plan",
+   362→    "plan_number",
+   363→    type=int,
+   364→    help="Plan number (required for learn)",
+   365→)
+   366→@click.option(
+   367→    "--no-squash",
+   368→    is_flag=True,
+   369→    help="Skip squashing commits before rebase (pr-rebase only)",
+   370→)
+   371→@click.option(
+   372→    "--model",
+   373→    type=str,
+   374→    help="Claude model to use (for workflows that support it)",
+   375→)
+   376→@click.option(
+   377→    "--prompt",
+   378→    type=str,
+   379→    default=None,
+   380→    help="Prompt text for one-shot workflow",
+   381→)
+
+... [95 lines omitted] ...
+
+   465→    _ = _get_workflow_file(workflow_name)  # Raises UsageError if invalid
+  </tool_result>
+  <thinking>Good! Now I can see the pattern. I can see:
+- Line 391-396: the `--ref` option already exists
+- Line 462: the ref resolution happens here
+
+Now let me create the remaining tasks for the implementation work.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="1543" cache_read_input_tokens="38376" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1543}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01PSWq2pMr7AQqTMGLc88YPX">
+    <param name="subject">Add --ref and --ref-current to doctor_workflow.py smoke-test command</param>
+    <param name="description">Modify `src/erk/cli/commands/doctor_workflow.py` at workflow_smoke_test_cmd (~line 221):
+-...[truncated 123 chars]...both to _handle_smoke_test and run_smoke_test
+- Follow existing pattern from launch_cmd.py</param>
+    <param name="activeForm">Adding --ref flags to smoke-test</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1543" cache_read_input_tokens="38376" output_tokens="271" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1543, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PSWq2pMr7AQqTMGLc88YPX">
+Task #2 created successfully: Add --ref and --ref-current to doctor_workflow.py smoke-test command
+  </tool_result>
+  <thinking>Now let me create a task for modifying workflow_smoke_test.py.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="314" cache_read_input_tokens="39919" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 314}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01BgJvUseEYzTTLa5tgsPqb5">
+    <param name="subject">Modify workflow_smoke_test.py to accept dispatch_ref parameter</param>
+    <param name="description">Update `src/erk/core/workflow_smoke_test.py` run_smoke_test function:
+- Add dispatch_ref: ...[truncated 105 chars]...nch, else use dispatch_ref or config default
+- Pass resolved ref to workflow dispatch call</param>
+    <param name="activeForm">Updating workflow_smoke_test to accept dispatch_ref</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="314" cache_read_input_tokens="39919" output_tokens="214" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 314, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BgJvUseEYzTTLa5tgsPqb5">
+Task #3 created successfully: Modify workflow_smoke_test.py to accept dispatch_ref parameter
+  </tool_result>
+  <thinking>Now for objective plan_cmd.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="255" cache_read_input_tokens="40233" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 255}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01361SrCaqUfoDZFMc8SsYLg">
+    <param name="subject">Add --ref and --ref-current to objective plan_cmd.py</param>
+    <param name="description">Modify `src/erk/cli/commands/objective/plan_cmd.py`:
+- Add @click.option for --ref (dispat...[truncated 169 chars]...one_shot call sites (lines ~289, ~751)
+- Use resolve_dispatch_ref helper at each call site</param>
+    <param name="activeForm">Adding --ref flags to objective plan</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="255" cache_read_input_tokens="40233" output_tokens="233" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 255, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01361SrCaqUfoDZFMc8SsYLg">
+Task #4 created successfully: Add --ref and --ref-current to objective plan_cmd.py
+  </tool_result>
+  <thinking>Now let me create tasks for adding --ref-current to the existing commands that already have --ref.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="274" cache_read_input_tokens="40488" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 274}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01KzhLQdE8m4ZcBTtHLt6NsH">
+    <param name="subject">Add --ref-current flag to launch_cmd.py</param>
+    <param name="description">Modify `src/erk/cli/commands/launch_cmd.py`:
+- Add @click.option for --ref-current (is_fla...[truncated 104 chars]...ll to resolve_dispatch_ref helper
+- Import resolve_dispatch_ref from ref_resolution module</param>
+    <param name="activeForm">Adding --ref-current to launch_cmd</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="274" cache_read_input_tokens="40488" output_tokens="216" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 274, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KzhLQdE8m4ZcBTtHLt6NsH">
+Task #5 created successfully: Add --ref-current flag to launch_cmd.py
+  </tool_result>
+  <thinking>Now for one_shot.py.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="254" cache_read_input_tokens="40762" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 254}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01UDJMuXYaBuUUHRx3P4XJbW">
+    <param name="subject">Add --ref-current flag to one_shot.py</param>
+    <param name="description">Modify `src/erk/cli/commands/one_shot.py`:
+- Add @click.option for --ref-current (is_flag=...[truncated 124 chars]...ll to resolve_dispatch_ref helper
+- Import resolve_dispatch_ref from ref_resolution module</param>
+    <param name="activeForm">Adding --ref-current to one_shot</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="254" cache_read_input_tokens="40762" output_tokens="210" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 254, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UDJMuXYaBuUUHRx3P4XJbW">
+Task #6 created successfully: Add --ref-current flag to one_shot.py
+  </tool_result>
+  <thinking>Now for dispatch_cmd.py.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="248" cache_read_input_tokens="41016" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 248}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01L8fqeaMHKJUBZbK2RSsep8">
+    <param name="subject">Add --ref-current flag to dispatch_cmd.py</param>
+    <param name="description">Modify `src/erk/cli/commands/pr/dispatch_cmd.py`:
+- Add @click.option for --ref-current (i...[truncated 112 chars]...ll to resolve_dispatch_ref helper
+- Import resolve_dispatch_ref from ref_resolution module</param>
+    <param name="activeForm">Adding --ref-current to dispatch_cmd</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="248" cache_read_input_tokens="41016" output_tokens="206" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 248, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01L8fqeaMHKJUBZbK2RSsep8">
+Task #7 created successfully: Add --ref-current flag to dispatch_cmd.py
+  </tool_result>
+  <thinking>Now for testing and CI.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="244" cache_read_input_tokens="41264" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 244}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01GUt7VQgBxuMjBVfPUktMck">
+    <param name="subject">Run tests and verify implementation</param>
+    <param name="description">After implementing all changes:
+- Run `erk workflow smoke-test --help` to verify --ref and...[truncated 204 chars]...duces a usage error
+- Run existing unit tests to ensure no regressions
+- Run full CI suite</param>
+    <param name="activeForm">Running tests and verifying</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="244" cache_read_input_tokens="41264" output_tokens="212" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 244, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GUt7VQgBxuMjBVfPUktMck">
+Task #8 created successfully: Run tests and verify implementation
+  </tool_result>
+  <thinking>Good! Now I've created all the tasks. Let me start implementing the first task - creating the shared ref resolution helper function.
+
+Let me read the existing command files to understand the import patterns and structure better before writing the new helper.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="243" cache_read_input_tokens="41508" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 243}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I'll start implementing. Let me begin with task #1: creating the shared ref resolution helper.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="243" cache_read_input_tokens="41508" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 243}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01DHDCzMk4BHrYstH9DsJYuc">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="243" cache_read_input_tokens="41508" output_tokens="150" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 243, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DHDCzMk4BHrYstH9DsJYuc">
+Updated task #1 status
+  </tool_result>
+  <thinking>Now let me examine one of the existing command files to understand the import style and patterns used in this codebase.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="174" cache_read_input_tokens="41751" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 174}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JCkmrn3VzVFEHjyMbA7S2q">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/one_shot.py</param>
+    <param name="offset">1</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="174" cache_read_input_tokens="41751" output_tokens="159" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 174, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JCkmrn3VzVFEHjyMbA7S2q">
+     1→"""Command to dispatch a task for fully autonomous remote execution.
+     2→
+     3→No local planning — the remote Claude explores the codebase, plans the change,
+     4→implements it, and creates a PR.
+     5→
+     6→Usage:
+     7→    erk one-shot "fix the import in config.py"
+     8→    erk one-shot --file prompt.md
+     9→    erk one-shot "add type hints to utils.py" --model opus
+    10→    erk one-shot "fix the typo in README.md" --dry-run
+    11→    erk one-shot "rename issue_number to plan_number in impl_init.py" --plan-only
+    12→"""
+    13→
+    14→from pathlib import Path
+    15→
+    16→import click
+    17→
+    18→from erk.cli.commands.implement_shared import normalize_model_name
+    19→from erk.cli.commands.one_shot_dispatch import (
+    20→    OneShotDispatchParams,
+    21→    dispatch_one_shot,
+    22→)
+    23→from erk.cli.ensure import Ensure
+    24→from erk.core.context import ErkContext
+    25→from erk_shared.output.output import user_output
+    26→
+    27→
+    28→@click.command("one-shot")
+    29→@click.argument("prompt", required=False, default=None)
+    30→@click.option(
+
+... [15 lines omitted] ...
+  </tool_result>
+  <thinking>Let me continue reading one_shot.py to find the dispatch_ref reference and see the full function signature.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="729" cache_read_input_tokens="41925" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 729}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UnQhGaABnFpFTRHNJr9Xd2">
+    <param name="command">grep -n "dispatch_ref\|def one_shot" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/one_shot.py</param>
+    <param name="description">Find one_shot function and dispatch_ref references</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="729" cache_read_input_tokens="41925" output_tokens="163" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 729, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UnQhGaABnFpFTRHNJr9Xd2">
+63:    "dispatch_ref",
+66:    help="Branch to dispatch workflow from (overrides config dispatch_ref)",
+69:def one_shot(
+78:    dispatch_ref: str | None,
+126:    ref = dispatch_ref if dispatch_ref is not None else ctx.local_config.dispatch_ref
+  </tool_result>
+  <thinking>Perfect! So at line 126 of one_shot.py there's the ref resolution that needs to be replaced. Let me now create the ref_resolution.py helper file.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="255" cache_read_input_tokens="42654" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 255}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01YAZgz5PEPTGBEFcrGauFT3">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/ref_resolution.py</param>
+    <param name="content">"""Shared helper for resolving dispatch ref across multiple commands.
+
+This module provide...[truncated 1297 chars]...h
+
+    return dispatch_ref if dispatch_ref is not None else ctx.local_config.dispatch_ref
+</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="255" cache_read_input_tokens="42654" output_tokens="534" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 255, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YAZgz5PEPTGBEFcrGauFT3">
+File created successfully at: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/ref_resolution.py
+  </tool_result>
+  <thinking>Good! Now I've created the helper. Let me mark task 1 as completed and move to task 2.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="599" cache_read_input_tokens="42909" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 599}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01L9HWDquoYQqstw56ne5nrR">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="599" cache_read_input_tokens="42909" output_tokens="103" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 599, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01L9HWDquoYQqstw56ne5nrR">
+Updated task #1 status
+  </tool_result>
+  <thinking>Now let me work on task 2: adding --ref and --ref-current to doctor_workflow.py. First, let me examine the file to find the right place.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="128" cache_read_input_tokens="43508" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 128}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now moving to task #2: Adding --ref and --ref-current to doctor_workflow.py smoke-test command.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="128" cache_read_input_tokens="43508" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 128}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01NeeaFVGc1bRF7hD5KsPVY5">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="128" cache_read_input_tokens="43508" output_tokens="144" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 128, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NeeaFVGc1bRF7hD5KsPVY5">
+Updated task #2 status
+  </tool_result>
+  <thinking>Let me find the workflow_smoke_test_cmd in doctor_workflow.py.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="169" cache_read_input_tokens="43636" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 169}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01F4TdSBMeaKV3ZsP5DkBGhQ">
+    <param name="command">grep -n "workflow_smoke_test\|def.*smoke" /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/doctor_workflow.py | head -20</param>
+    <param name="description">Find workflow_smoke_test_cmd location</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="169" cache_read_input_tokens="43636" output_tokens="162" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 169, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01F4TdSBMeaKV3ZsP5DkBGhQ">
+24:from erk.core.workflow_smoke_test import SmokeTestError, cleanup_smoke_tests, run_smoke_test
+225:def workflow_smoke_test_cmd(ctx: ErkContext, wait: bool, verbose: bool) -&gt; None:
+283:def _handle_smoke_test(ctx: ErkContext, *, wait: bool) -&gt; None:
+  </tool_result>
+  <thinking>Let me read the area around line 225 to see the decorator section.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="266" cache_read_input_tokens="43805" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 266}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DrqNvzs68pgA3pequgskb5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/doctor_workflow.py</param>
+    <param name="offset">210</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="266" cache_read_input_tokens="43805" output_tokens="151" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 266, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DrqNvzs68pgA3pequgskb5">
+   210→
+   211→
+   212→@workflow_group.command("check")
+   213→@click.option("-v", "--verbose", is_flag=True, help="Show details of static checks")
+   214→@click.pass_obj
+   215→def workflow_check_cmd(ctx: ErkContext, verbose: bool) -&gt; None:
+   216→    """Check workflow setup prerequisites."""
+   217→    results = _run_static_checks(ctx, verbose=verbose)
+   218→    _display_static_checks(results, verbose=verbose)
+   219→
+   220→
+   221→@workflow_group.command("smoke-test")
+   222→@click.option("--wait", is_flag=True, help="Poll workflow run until completion")
+   223→@click.option("-v", "--verbose", is_flag=True, help="Show details of static checks")
+   224→@click.pass_obj
+   225→def workflow_smoke_test_cmd(ctx: ErkContext, wait: bool, verbose: bool) -&gt; None:
+   226→    """Run a live smoke test (creates artifacts).
+   227→
+   228→    Runs static checks first, then dispatches a throwaway branch/PR
+   229→    to verify the full CI pipeline end-to-end.
+   230→    """
+   231→    results = _run_static_checks(ctx, verbose=verbose)
+   232→    _all_passed, critical_failed = _display_static_checks(results, verbose=verbose)
+   233→
+   234→    if critical_failed:
+   235→        click.echo("")
+   236→        click.echo(
+   237→            click.style("Error: Cannot run smoke test — critical checks failed", fg="red"),
+   238→            err=True,
+   239→        )
+
+... [10 lines omitted] ...
+  </tool_result>
+  <thinking>Good! I can see the command definition. I need to:
+1. Add --ref and --ref-current options to the decorators
+2. Add dispatch_ref and ref_current parameters to the function
+3. Pass them to _handle_smoke_test
+4. Then modify _handle_smoke_test and run_smoke_test
+
+Let me also check the _handle_smoke_test function.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="725" cache_read_input_tokens="44071" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 725}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01X8em9DW5XC1e3bogE8WLdh">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/doctor_workflow.py</param>
+    <param name="offset">283</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="725" cache_read_input_tokens="44071" output_tokens="222" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 725, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X8em9DW5XC1e3bogE8WLdh">
+   283→def _handle_smoke_test(ctx: ErkContext, *, wait: bool) -&gt; None:
+   284→    """Run the live smoke test dispatch."""
+   285→    click.echo(click.style("Running smoke test...", bold=True))
+   286→
+   287→    result = run_smoke_test(ctx)
+   288→
+   289→    if isinstance(result, SmokeTestError):
+   290→        click.echo(click.style(f"Error during {result.step}: {result.message}", fg="red"), err=True)
+   291→        raise SystemExit(1)
+   292→
+   293→    click.echo(click.style("Smoke test dispatched!", fg="green", bold=True))
+   294→    click.echo(f"  Branch: {result.branch_name}")
+   295→    click.echo(f"  PR: #{result.pr_number}")
+   296→    click.echo(f"  Run ID: {result.run_id}")
+   297→    if result.run_url is not None:
+   298→        click.echo(f"  Run URL: {click.style(result.run_url, fg='cyan')}")
+   299→
+   300→    if wait:
+   301→        click.echo("")
+   302→        _poll_workflow_run(ctx, result.run_id, result.run_url)
+   303→
+   304→
+   305→def _report_workflow_result(conclusion: str | None, run_url: str | None) -&gt; None:
+   306→    """Report the result of a completed workflow run, exiting on failure."""
+   307→    if conclusion == "success":
+   308→        click.echo(click.style("Workflow completed successfully!", fg="green"))
+   309→        return
+   310→    click.echo(click.style(f"Workflow completed with conclusion: {conclusion}", fg="red"))
+   311→    if run_url is not None:
+   312→        click.echo(f"  Check logs: {run_url}")
+
+... [25 lines omitted] ...
+  </tool_result>
+  <thinking>I see that run_smoke_test is called at line 287 without any ref parameter. I need to:
+1. Modify the decorator to add --ref and --ref-current options
+2. Add the parameters to the function signature
+3. Pass them to _handle_smoke_test
+4. Pass them through to run_smoke_testLet me check the imports at the top of doctor_workflow.py to see what's already imported.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="1108" cache_read_input_tokens="44796" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1108}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SoGsvJo17AUjq4JW7iRYP4">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/doctor_workflow.py</param>
+    <param name="offset">1</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1108" cache_read_input_tokens="44796" output_tokens="232" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1108, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SoGsvJo17AUjq4JW7iRYP4">
+     1→"""Doctor workflow subcommand for workflow-specific diagnostics.
+     2→
+     3→Runs GitHub-focused health checks and optionally dispatches a live
+     4→smoke test to verify the full CI pipeline works end-to-end.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→from erk.artifacts.artifact_health import get_artifact_health, is_erk_managed
+    10→from erk.artifacts.discovery import discover_artifacts
+    11→from erk.artifacts.models import ArtifactFileState
+    12→from erk.artifacts.paths import ErkPackageInfo
+    13→from erk.artifacts.state import load_artifact_state, load_installed_capabilities
+    14→from erk.cli.commands.doctor import _format_check_result
+    15→from erk.cli.commands.run import run_group
+    16→from erk.core.context import ErkContext, NoRepoSentinel
+    17→from erk.core.health_checks import (
+    18→    CheckResult,
+    19→    check_anthropic_api_secret,
+    20→    check_erk_queue_pat_secret,
+    21→    check_github_auth,
+    22→    check_workflow_permissions,
+    23→)
+    24→from erk.core.workflow_smoke_test import SmokeTestError, cleanup_smoke_tests, run_smoke_test
+    25→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    26→
+    27→
+    28→def _get_repo_location(ctx: ErkContext) -&gt; tuple[str, str] | None:
+    29→    """Get (owner, repo) from ErkContext, or None if not a GitHub repo."""
+    30→    if isinstance(ctx.repo, NoRepoSentinel):
+
+... [10 lines omitted] ...
+  </tool_result>
+  <thinking>Good, run_smoke_test is already imported. Now I need to:1. Add import for resolve_dispatch_ref
+2. Modify the decorator to add --ref and --ref-current options
+3. Add parameters to the function signature
+4. Pass them through to _handle_smoke_test and run_smoke_test
+
+Let me now edit the file.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="839" cache_read_input_tokens="45904" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 839}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HS6sQyG87pxYmXEE7HZRPy">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/doctor_workflow.py</param>
+    <param name="old_string">import click
+
+from erk.artifacts.artifact_health import get_artifact_health, is_erk_managed</param>
+    <param name="new_string">import click
+
+from erk.artifacts.artifact_health import get_artifact_health, is_erk_managed
+from erk.cli.commands.ref_resolution import resolve_dispatch_ref</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="839" cache_read_input_tokens="45904" output_tokens="284" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 839, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HS6sQyG87pxYmXEE7HZRPy">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/doctor_workflow.py has been updated successfully.
+  </tool_result>
+  <thinking>Now let me modify the decorator and function signature for workflow_smoke_test_cmd.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="366" cache_read_input_tokens="46743" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 366}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BqPehcdHhJ2RfJT3CEazjA">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/doctor_workflow.py</param>
+    <param name="old_string">@workflow_group.command("smoke-test")
+@click.option("--wait", is_flag=True, help="Poll wor...[truncated 100 chars]....pass_obj
+def workflow_smoke_test_cmd(ctx: ErkContext, wait: bool, verbose: bool) -&gt; None:</param>
+    <param name="new_string">@workflow_group.command("smoke-test")
+@click.option("--wait", is_flag=True, help="Poll wor...[truncated 439 chars]...Context, wait: bool, verbose: bool, dispatch_ref: str | None, ref_current: bool
+) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="366" cache_read_input_tokens="46743" output_tokens="465" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 366, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BqPehcdHhJ2RfJT3CEazjA">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/doctor_workflow.py has been updated successfully.
+  </tool_result>
+  <thinking>Now I need to update the call to _handle_smoke_test to pass dispatch_ref and ref_current.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="531" cache_read_input_tokens="47109" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 531}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019rHRA9hzUuPni64NANZ5kF">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/doctor_workflow.py</param>
+    <param name="old_string">    click.echo("")
+    _handle_smoke_test(ctx, wait=wait)</param>
+    <param name="new_string">    click.echo("")
+    _handle_smoke_test(ctx, wait=wait, dispatch_ref=dispatch_ref, ref_current=ref_current)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="531" cache_read_input_tokens="47109" output_tokens="234" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 531, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019rHRA9hzUuPni64NANZ5kF">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/doctor_workflow.py has been updated successfully.
+  </tool_result>
+  <thinking>Now I need to modify _handle_smoke_test to accept and pass through the new parameters.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="300" cache_read_input_tokens="47640" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 300}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FPGNMfZDovs559BSGfbeNQ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/doctor_workflow.py</param>
+    <param name="old_string">def _handle_smoke_test(ctx: ErkContext, *, wait: bool) -&gt; None:
+    """Run the live smoke ...[truncated 5 chars]...ck.echo(click.style("Running smoke test...", bold=True))
+
+    result = run_smoke_test(ctx)</param>
+    <param name="new_string">def _handle_smoke_test(
+    ctx: ErkContext,
+    *,
+    wait: bool,
+    dispatch_ref: str ...[truncated 179 chars]...=dispatch_ref, ref_current=ref_current)
+    result = run_smoke_test(ctx, dispatch_ref=ref)</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="300" cache_read_input_tokens="47640" output_tokens="362" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 300, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FPGNMfZDovs559BSGfbeNQ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/doctor_workflow.py has been updated successfully.
+  </tool_result>
+  <thinking>Good! Now I need to modify task 3 - updating workflow_smoke_test.py to accept the dispatch_ref parameter.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="428" cache_read_input_tokens="47940" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 428}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01TUwLcVaiuWguiDwRnZEoZJ">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="428" cache_read_input_tokens="47940" output_tokens="106" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 428, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TUwLcVaiuWguiDwRnZEoZJ">
+Updated task #2 status
+  </tool_result>
+  <thinking>Now moving to task 3 - modifying workflow_smoke_test.py to accept dispatch_ref parameter.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="131" cache_read_input_tokens="48368" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 131}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now moving to task #3: Modifying workflow_smoke_test.py.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="131" cache_read_input_tokens="48368" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 131}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_011yiUrTsMuWKHsdWoziZCaZ">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="131" cache_read_input_tokens="48368" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 131, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011yiUrTsMuWKHsdWoziZCaZ">
+Updated task #3 status
+  </tool_result>
+  <thinking>Let me read the workflow_smoke_test.py file to find the run_smoke_test function.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="148" cache_read_input_tokens="48499" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 148}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FYx7ft12afzmveNsxGiobm">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/core/workflow_smoke_test.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="148" cache_read_input_tokens="48499" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 148, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FYx7ft12afzmveNsxGiobm">
+     1→"""Workflow smoke test logic for erk doctor workflow.
+     2→
+     3→Creates throwaway branches and PRs to verify the GitHub Actions
+     4→infrastructure works end-to-end by dispatching through the production
+     5→one-shot code path.
+     6→"""
+     7→
+     8→from dataclasses import dataclass
+     9→from pathlib import Path
+    10→
+    11→import click
+    12→
+    13→from erk.cli.commands.one_shot_dispatch import (
+    14→    OneShotDispatchParams,
+    15→    dispatch_one_shot,
+    16→)
+    17→from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
+    18→from erk_shared.gateway.github.parsing import construct_workflow_run_url
+    19→
+    20→SMOKE_TEST_SLUG = "smoke-test"
+    21→SMOKE_TEST_BRANCH_PREFIX = "plnd/smoke-test-"
+    22→SMOKE_TEST_PROMPT = "Add a code comment to any file."
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class SmokeTestResult:
+    27→    """Result of a successful smoke test dispatch."""
+    28→
+    29→    branch_name: str
+    30→    pr_number: int
+
+... [143 lines omitted] ...
+
+    36→class SmokeTestError:
+    37→    """Error during smoke test dispatch."""
+    53→def run_smoke_test(ctx: ErkContext) -&gt; SmokeTestResult | SmokeTestError:
+    64→        SmokeTestResult on success, SmokeTestError on failure
+    67→        return SmokeTestError(step="validation", message="Not in a git repository")
+    82→        return SmokeTestError(step="dispatch", message=f"Exit code {exc.code}")
+    83→    except (click.ClickException, RuntimeError, ValueError, KeyError) as exc:
+    84→        return SmokeTestError(step="dispatch", message=str(exc))
+    87→        return SmokeTestError(step="dispatch", message="dispatch_one_shot returned None")
+  </tool_result>
+  <thinking>Perfect! I can see that at line 79, there's `ref=ctx.local_config.dispatch_ref`. I need to:
+1. Add a dispatch_ref parameter to run_smoke_test function
+2. Replace the hardcoded `ctx.local_config.dispatch_ref` with the parameter, defaulting to `ctx.local_config.dispatch_ref` if not provided.
+
+Let me modify the function signature and call.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="2217" cache_read_input_tokens="48647" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2217}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CKSgFH5Mtxkk7SuXV66KxF">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/core/workflow_smoke_test.py</param>
+    <param name="old_string">def run_smoke_test(ctx: ErkContext) -&gt; SmokeTestResult | SmokeTestError:
+    """Dispatch a...[truncated 730 chars]...            ctx, params=params, dry_run=False, ref=ctx.local_config.dispatch_ref
+        )</param>
+    <param name="new_string">def run_smoke_test(ctx: ErkContext, dispatch_ref: str | None = None) -&gt; SmokeTestResult | ...[truncated 903 chars]...sult = dispatch_one_shot(
+            ctx, params=params, dry_run=False, ref=ref
+        )</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2217" cache_read_input_tokens="48647" output_tokens="845" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2217, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CKSgFH5Mtxkk7SuXV66KxF">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/core/workflow_smoke_test.py has been updated successfully.
+  </tool_result>
+  <thinking>Good! Now let me mark task 3 as completed and move to task 4 - adding --ref and --ref-current to objective plan_cmd.py.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="908" cache_read_input_tokens="50864" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 908}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01Gk5ApwyrwSfhNiKDJCGDVD">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="908" cache_read_input_tokens="50864" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 908, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Gk5ApwyrwSfhNiKDJCGDVD">
+Updated task #3 status
+  </tool_result>
+  <thinking>Now let me work on task 4 - adding --ref and --ref-current to objective plan_cmd.py. First, let me examine the file.</thinking>
+  <usage input_tokens="7" cache_creation_input_tokens="139" cache_read_input_tokens="51772" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 139}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>
