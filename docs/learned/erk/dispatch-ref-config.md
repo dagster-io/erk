@@ -52,13 +52,9 @@ erk pr dispatch 456 --ref my-feature-branch
 
 **Priority chain:** `--ref` CLI flag > config `dispatch_ref` > repository default branch
 
-Each command resolves the ref once before dispatching:
+<!-- Source: src/erk/cli/commands/launch_cmd.py, one_shot.py, pr/dispatch_cmd.py -->
 
-```python
-ref = dispatch_ref if dispatch_ref is not None else ctx.local_config.dispatch_ref
-```
-
-This enables testing workflow changes on a feature branch without modifying config.
+Each command resolves the ref once before dispatching by checking the CLI flag first, falling back to config. This enables testing workflow changes on a feature branch without modifying config.
 
 ## Call Sites
 
