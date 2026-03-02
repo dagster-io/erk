@@ -94,6 +94,8 @@ Rules triggered by matching actions in code.
 
 **modifying how plan titles are displayed in TUI** → Read [TUI Plan Title Rendering Pipeline](plan-title-rendering-pipeline.md) first. Ensure `[erk-learn]` prefix is added BEFORE any filtering/sorting stages.
 
+**moving @on decorated event handlers to a mixin** → Read [TUI Architecture Overview](architecture.md) first. Textual's \_MessagePumpMeta only scans class.**dict**, not inherited methods. Event handlers on mixins are silently ignored.
+
 **passing --no-wait in worker thread subprocess calls** → Read [Async Action Refresh Pattern](async-action-refresh-pattern.md) first. Never pass --no-wait in worker threads — it defeats the polling purpose. The thread exists to wait for the operation to complete before refreshing.
 
 **passing id= kwarg to PlanDataTable constructor** → Read [Modal Widget Embedding Pattern](modal-widget-embedding.md) first. PlanDataTable does not support the id= keyword argument. Use CSS selectors or widget references instead.

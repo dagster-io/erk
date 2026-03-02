@@ -18,6 +18,10 @@ Rules triggered by matching actions in code.
 
 **accessing FakeGit properties in tests** → Read [Erk Test Reference](testing.md) first. FakeGit has top-level properties (e.g., `git.staged_files`, `git.deleted_branches`, `git.added_worktrees`). Worktree operations delegate to an internal FakeWorktree sub-gateway.
 
+**adding a force-include entry without registering in codex_portable_skills()** → Read [Artifact Distribution Sync Testing](artifact-distribution-sync.md) first. The skill will be distributed but not recognized by the runtime. Add it to codex_portable_skills() in src/erk/core/capabilities/codex_portable.py.
+
+**adding a skill to codex_portable_skills() without a pyproject.toml force-include entry** → Read [Artifact Distribution Sync Testing](artifact-distribution-sync.md) first. The wheel won't contain the skill. Add a force-include entry in pyproject.toml [tool.hatch.build.targets.wheel.force-include]. test_codex_portable_skills_match_force_include will catch this.
+
 **adding a test for a new pipeline step without creating a dedicated test file** → Read [Submit Pipeline Test Organization](submit-pipeline-tests.md) first. Each pipeline step gets its own test file in tests/unit/cli/commands/pr/submit_pipeline/. Follow the one-file-per-step convention.
 
 **adding a tracking list without documenting the tuple field order** → Read [FakeGitHub Mutation Tracking](fake-github-mutation-tracking.md) first. Every tracking list must have a property docstring specifying the tuple format (e.g., 'Returns list of (pr_number, label) tuples'). Without it, test authors guess field positions wrong.

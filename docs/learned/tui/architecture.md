@@ -13,6 +13,8 @@ tripwires:
     warning: "Requires 3-file update: abc.py + real.py + fake.py. Fake must initialize new dict in __init__. Missing init causes AttributeError at test time."
   - action: "adding a DataTable column with add_column(key=...)"
     warning: "Column key is a data binding contract — must match data field name. Silent failure when mismatched."
+  - action: "moving @on decorated event handlers to a mixin"
+    warning: "Textual's _MessagePumpMeta only scans class.__dict__, not inherited methods. Event handlers on mixins are silently ignored."
 last_audited: "2026-02-17 18:30 PT"
 audit_result: clean
 ---
@@ -26,6 +28,15 @@ The erk TUI is built with Textual and follows a layered architecture separating 
 ```
 src/erk/tui/
 ├── app.py              # Main Textual App (ErkDashApp)
+├── actions/            # Action mixins (user-facing operations)
+│   ├── filter_actions.py  # Filter toggle/cycle actions
+│   ├── navigation.py      # URL opening, clipboard, browser actions
+│   └── palette.py         # Command palette actions
+├── operations/         # Background operations (data processing)
+│   ├── types.py        # Operation types
+│   ├── logic.py        # URL building, data transforms
+│   ├── streaming.py    # Streaming output handling
+│   └── workers.py      # Background workers (@work decorators)
 ├── data/               # Data layer
 │   └── types.py        # Data types (PlanRowData, PlanFilters)
 ├── filtering/          # Filter layer
@@ -152,6 +163,32 @@ Individual cell values passed to `add_row()`:
 - Strings are interpreted as Rich markup by default
 - `[bracketed]` text treated as style tags
 - Wrap user data in `Text()` to escape - see [DataTable Markup Escaping](../textual/datatable-markup-escaping.md)
+
+## Mixin Architecture
+
+`ErkDashApp` uses mixins to decompose its large surface area into focused modules:
+
+<!-- Source: src/erk/tui/app.py, ErkDashApp -->
+
+See `ErkDashApp` in `src/erk/tui/app.py` for the class definition and its mixin MRO. The mixins are: `NavigationActionsMixin` (URL/clipboard/browser), `FilterActionsMixin` (filter toggle/cycle), `PaletteActionsMixin` (command palette), `StreamingOperationsMixin` (streaming output), `BackgroundWorkersMixin` (background workers), plus Textual's `App` base.
+
+### Critical Constraint: Event Handlers Must Stay on Concrete Class
+
+Textual's `_MessagePumpMeta` metaclass scans `class.__dict__` (not the MRO) for `@on` decorated event handlers during class creation. This means event handlers placed on mixin classes are silently ignored -- they never fire.
+
+All `@on(...)` decorated methods must remain on `ErkDashApp` itself, not on any mixin.
+
+### TYPE_CHECKING Import Pattern
+
+Mixins need to reference `ErkDashApp` for type safety but cannot import it at runtime (circular import). Use the `TYPE_CHECKING` guard:
+
+```python
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from erk.tui.app import ErkDashApp
+```
 
 ## Design Principles
 

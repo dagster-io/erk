@@ -38,7 +38,7 @@ Rules triggered by matching actions in code.
 
 **adding a new CI job that invokes Claude without checking CLAUDE_ENABLED** → Read [Claude Kill Switch](claude-kill-switch.md) first. All Claude CI jobs must check vars.CLAUDE_ENABLED != 'false' before invoking Claude. See claude-kill-switch.md.
 
-**adding a test job to autofix's needs list** → Read [Autofix Job Needs](autofix-job-needs.md) first. Test jobs (unit-tests, integration-tests) must NEVER block autofix. Only jobs whose failures can be auto-resolved (format, lint, prettier, docs-check, ty) should be dependencies. Adding test jobs creates a deadlock: tests fail → autofix blocked → format/lint issues never fixed → developer must manually fix both.
+**adding a new CI job without including fix-formatting in its needs list** → Read [CI Job Ordering Strategy](job-ordering-strategy.md) first. All validation jobs must depend on both check-submission and fix-formatting. Without fix-formatting, the job may run against unformatted code and fail unnecessarily.
 
 **adding new Claude-dependent exec scripts to workflows** → Read [Exec Script Environment Requirements](exec-script-environment-requirements.md) first. Check workflow environment: ANTHROPIC_API_KEY, GH_TOKEN, CLAUDE_CODE_OAUTH_TOKEN
 
@@ -87,6 +87,10 @@ Rules triggered by matching actions in code.
 **reading statusCheckRollup results immediately after push** → Read [CI Iteration Pattern with devrun Agent](ci-iteration.md) first. After push, results show completed runs only, not in-progress. Wait for new check suite to appear before reading CI status.
 
 **referencing \_enable_secret(), \_disable_secret(), or \_display_auth_status() functions** → Read [GitHub Actions API Key Management](dual-secret-auth-model.md) first. These private functions do not exist. The logic is inline within gh_actions_api_key() in src/erk/cli/commands/admin.py.
+
+**removing test jobs from autofix's needs list** → Read [Autofix Job Needs](autofix-job-needs.md) first. Autofix depends on ALL validation jobs including unit-tests and integration-tests. It needs full failure context to attempt intelligent fixes. See the needs array in ci.yml.
+
+**removing test jobs from autofix's needs list** → Read [CI Job Ordering Strategy](job-ordering-strategy.md) first. Autofix depends on ALL validation jobs including unit-tests and integration-tests. It needs full failure context to attempt fixes. See autofix-job-needs.md.
 
 **resolving git rebase modify/delete conflicts using merge-style terminology** → Read [erk-impl Workflow Patterns](plan-implement-workflow-patterns.md) first. In rebase, 'them' = upstream (opposite to merge). For modify/delete conflicts where the file was deleted upstream, use `git rm <file>` on the conflicted staged files, then `git rebase --continue`. Do not use `git checkout --theirs` which has inverted semantics during rebase.
 

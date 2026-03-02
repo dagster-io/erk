@@ -28,6 +28,8 @@ Rules triggered by matching actions in code.
 
 **deleting a placeholder branch with ctx.branch_manager.delete_branch()** → Read [Placeholder Branches](placeholder-branches.md) first. Placeholder branch deletion must also bypass BranchManager. Use ctx.git.branch.delete_branch() directly.
 
+**deleting stub branches without untracking from Graphite first** → Read [Stub Branch Lifecycle](stub-branch-lifecycle.md) first. Stub branches tracked by Graphite pollute gt log output. Untrack with gt branch untrack before deletion.
+
 **duplicating git pull / uv sync / venv activation in a codespace command** → Read [Codespace Remote Execution Pattern](codespace-remote-execution.md) first. Use build_codespace_ssh_command() — bootstrap logic is centralized there. See composable-remote-commands.md for the five-step pattern.
 
 **editing .claude/ markdown without running prettier** → Read [PR Feedback Classifier Schema](pr-feedback-classifier-schema.md) first. Run `prettier --write <file>` immediately after editing .claude/ markdown. `make fast-ci` fails otherwise.

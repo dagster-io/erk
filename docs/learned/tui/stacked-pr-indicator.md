@@ -14,13 +14,17 @@ The pancake emoji (🥞) indicates a stacked PR in the TUI dashboard lifecycle c
 
 Stacked status is detected from two sources with a fallback strategy:
 
-1. **Primary: `base_ref_name`** — The `base_ref_name` field on `PullRequestInfo` is checked against `("master", "main")`. If the base ref targets a different branch, the PR is stacked.
+1. **Primary: Graphite `get_parent_branch()`** — When the PR head branch is known, the branch manager's `get_parent_branch()` is consulted first. If it returns a parent branch not in `("master", "main")`, the PR is stacked. Graphite is authoritative because it reflects the actual stack topology.
 
-2. **Fallback: Graphite `get_parent_branch()`** — If `base_ref_name` detection doesn't confirm stacking and the PR head branch is known, the branch manager's `get_parent_branch()` is consulted. If it returns a parent, the PR is stacked.
+2. **Fallback: GitHub `base_ref_name`** — Only when Graphite returns `None` (branch not tracked locally). The `base_ref_name` field on `PullRequestInfo` is checked against `("master", "main")`.
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py, RealPlanDataProvider._build_row_data -->
 
 See `RealPlanDataProvider._build_row_data()` in `real.py` for the dual-source detection logic.
+
+## Stale Data Handling
+
+Graphite is authoritative because GitHub's `base_ref_name` can become stale. When a parent PR merges, GitHub does not always update the child PR's target branch immediately — the child may still show the old (now-merged) branch as its base. Graphite's local branch tracking reflects the actual stack state, making it the more reliable source for stacking detection.
 
 ## Indicator Ordering
 
@@ -46,9 +50,13 @@ See `_build_indicators()` in `lifecycle.py` for the blocking indicator logic.
 ## Data Flow
 
 ```
-PullRequestInfo.base_ref_name (from GitHub API)
-    → pr_is_stacked (bool | None, in _build_row_data)
-    → is_stacked parameter (passed to format_lifecycle_with_status / compute_status_indicators)
+Graphite get_parent_branch() (local branch tracking, authoritative)
+    → pr_is_stacked = parent not in ("master", "main")
+    ↓ (if None: Graphite unavailable)
+PullRequestInfo.base_ref_name (from GitHub API, fallback)
+    → pr_is_stacked = base_ref_name not in ("master", "main")
+    ↓
+is_stacked parameter (passed to format_lifecycle_with_status / compute_status_indicators)
     → _build_indicators appends 🥞 when is_stacked is True
 ```
 

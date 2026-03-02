@@ -68,7 +68,7 @@ Seven commands are registered for the Objectives view, spanning all three catego
 | `one_shot_plan`      | Plan (One-Shot)    | ACTION   | `s`      | Objectives view           |
 | `check_objective`    | Check Objective    | ACTION   | `5`      | Objectives view           |
 | `close_objective`    | Close Objective    | ACTION   | —        | Objectives view           |
-| `open_objective`     | Objective          | OPEN     | `i`      | Objectives view + has URL |
+| `open_objective`     | Objective          | OPEN     | `p`      | Objectives view + has URL |
 | `copy_plan`          | erk objective plan | COPY     | `1`      | Objectives view           |
 | `copy_view`          | erk objective view | COPY     | `3`      | Objectives view           |
 | `codespace_run_plan` | Codespace Run Plan | COPY     | —        | Objectives view           |

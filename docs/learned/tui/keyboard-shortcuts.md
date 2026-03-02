@@ -28,7 +28,7 @@ The complete binding inventory is defined in `ErkDashApp.BINDINGS`. The bindings
 
 **Filters:** o (objective), t (stack), / (text filter), s (sort)
 
-**Item Actions:** enter/space (detail), p (open PR), n (open run), c (comments), h (checks), v (view plan body), l (launch menu), i (implement)
+**Item Actions:** enter/space (detail), p (open PR / open objective, view-aware), n (open run), c (comments), h (checks), v (view plan body), l (launch menu), i (implement)
 
 **System:** ctrl+p (command palette), r (refresh), ? (help), q/escape (quit)
 
