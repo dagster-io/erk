@@ -16,7 +16,9 @@ from erk.artifacts.models import (
     InstalledArtifact,
     OrphanCheckResult,
 )
-from erk.artifacts.paths import ErkPackageInfo
+from erk.artifacts.paths import ErkPackageInfo, get_bundled_claude_dir
+from erk.artifacts.state import load_artifact_state
+from erk.artifacts.sync import _key_to_orphaned_path
 from erk.core.capabilities.registry import (
     get_capability,
     get_managed_artifacts,
@@ -428,12 +430,7 @@ def _find_state_based_orphans(
     Detects artifacts that were previously synced (recorded in state.toml) but
     are no longer in the current bundle. This catches entire directories that
     were dropped from the registry, which file-level comparison misses.
-
-    Uses inline import of load_artifact_state to avoid circular deps.
     """
-    from erk.artifacts.state import load_artifact_state
-    from erk.artifacts.sync import _key_to_orphaned_path
-
     state = load_artifact_state(project_dir)
     if state is None:
         return {}
@@ -452,8 +449,6 @@ def _find_state_based_orphans(
         current_keys.add(f"agents/{name}.md")
 
     # Commands: enumerate from bundled source
-    from erk.artifacts.paths import get_bundled_claude_dir
-
     bundled_erk_commands = get_bundled_claude_dir() / "commands" / "erk"
     if bundled_erk_commands.exists():
         for cmd_file in bundled_erk_commands.rglob("*.md"):
