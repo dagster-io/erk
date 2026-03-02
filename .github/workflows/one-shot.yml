@@ -215,7 +215,7 @@ jobs:
           erk exec update-objective-node \
             "$OBJECTIVE_ISSUE" \
             --node "$NODE_ID" \
-            --plan "$PLAN_NUMBER"
+            --pr "$PLAN_NUMBER"
 
       - name: Commit plan to branch (plan-only mode)
         if: >
