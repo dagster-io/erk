@@ -8,8 +8,8 @@ read_when:
 tripwires:
   - action: "adding a new CI job without including fix-formatting in its needs list"
     warning: "All validation jobs must depend on both check-submission and fix-formatting. Without fix-formatting, the job may run against unformatted code and fail unnecessarily."
-  - action: "adding test jobs to autofix's needs list"
-    warning: "Autofix only depends on auto-fixable jobs (format, lint, docs-check, ty). Adding test jobs creates a deadlock. See autofix-job-needs.md."
+  - action: "removing test jobs from autofix's needs list"
+    warning: "Autofix depends on ALL validation jobs including unit-tests and integration-tests. It needs full failure context to attempt fixes. See autofix-job-needs.md."
 ---
 
 # CI Job Ordering Strategy
@@ -65,10 +65,10 @@ The `concurrency` block groups runs by branch ref and cancels in-progress runs w
 
 **`ci-summarize`** depends on all validation jobs and runs only on failure. It uses a lightweight model to summarize CI failures for developers.
 
-**`autofix`** depends on format, lint, fix-formatting, docs-check, and ty (auto-fixable jobs only). It deliberately excludes test jobs to prevent deadlock. Currently disabled via kill-switch (`false &&` guard).
+**`autofix`** depends on all validation jobs: format, lint, fix-formatting, docs-check, ty, unit-tests, and integration-tests. It runs after all checks complete to have full failure context. Currently disabled via kill-switch (`false &&` guard).
 
 ## Related Documentation
 
-- [Autofix Job Dependencies](autofix-job-needs.md) — Why autofix excludes test jobs
+- [Autofix Job Dependencies](autofix-job-needs.md) — Autofix dependency design and kill switch
 - [Formatting Workflow](formatting-workflow.md) — Formatting tool decision tree
 - [Workflow Gating Patterns](workflow-gating-patterns.md) — Gate job patterns

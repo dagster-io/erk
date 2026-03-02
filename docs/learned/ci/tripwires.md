@@ -40,13 +40,9 @@ Rules triggered by matching actions in code.
 
 **adding a new CI job without including fix-formatting in its needs list** → Read [CI Job Ordering Strategy](job-ordering-strategy.md) first. All validation jobs must depend on both check-submission and fix-formatting. Without fix-formatting, the job may run against unformatted code and fail unnecessarily.
 
-**adding a test job to autofix's needs list** → Read [Autofix Job Needs](autofix-job-needs.md) first. Test jobs (unit-tests, integration-tests) must NEVER block autofix. Only jobs whose failures can be auto-resolved (format, lint, prettier, docs-check, ty) should be dependencies. Adding test jobs creates a deadlock: tests fail → autofix blocked → format/lint issues never fixed → developer must manually fix both.
-
 **adding new Claude-dependent exec scripts to workflows** → Read [Exec Script Environment Requirements](exec-script-environment-requirements.md) first. Check workflow environment: ANTHROPIC_API_KEY, GH_TOKEN, CLAUDE_CODE_OAUTH_TOKEN
 
 **adding or modifying exec scripts that use require_prompt_executor()** → Read [Exec Script Environment Requirements](exec-script-environment-requirements.md) first. Ensure workflow step has ANTHROPIC_API_KEY in environment. See exec-script-environment-requirements.md
-
-**adding test jobs to autofix's needs list** → Read [CI Job Ordering Strategy](job-ordering-strategy.md) first. Autofix only depends on auto-fixable jobs (format, lint, docs-check, ty). Adding test jobs creates a deadlock. See autofix-job-needs.md.
 
 **asking devrun agent to fix errors** → Read [CI Iteration Pattern with devrun Agent](ci-iteration.md) first. devrun is READ-ONLY. Never prompt with 'fix errors' or 'make tests pass'. Use pattern: 'Run command and report results', then parent agent fixes based on output.
 
@@ -83,6 +79,10 @@ Rules triggered by matching actions in code.
 **reading statusCheckRollup results immediately after push** → Read [CI Iteration Pattern with devrun Agent](ci-iteration.md) first. After push, results show completed runs only, not in-progress. Wait for new check suite to appear before reading CI status.
 
 **referencing \_enable_secret(), \_disable_secret(), or \_display_auth_status() functions** → Read [GitHub Actions API Key Management](dual-secret-auth-model.md) first. These private functions do not exist. The logic is inline within gh_actions_api_key() in src/erk/cli/commands/admin.py.
+
+**removing test jobs from autofix's needs list** → Read [Autofix Job Needs](autofix-job-needs.md) first. Autofix depends on ALL validation jobs including unit-tests and integration-tests. It needs full failure context to attempt intelligent fixes. See the needs array in ci.yml.
+
+**removing test jobs from autofix's needs list** → Read [CI Job Ordering Strategy](job-ordering-strategy.md) first. Autofix depends on ALL validation jobs including unit-tests and integration-tests. It needs full failure context to attempt fixes. See autofix-job-needs.md.
 
 **resolving git rebase modify/delete conflicts using merge-style terminology** → Read [erk-impl Workflow Patterns](plan-implement-workflow-patterns.md) first. In rebase, 'them' = upstream (opposite to merge). For modify/delete conflicts where the file was deleted upstream, use `git rm <file>` on the conflicted staged files, then `git rebase --continue`. Do not use `git checkout --theirs` which has inverted semantics during rebase.
 

@@ -53,7 +53,8 @@ Plan and objective commands safely reuse the same keyboard shortcuts because the
 | -------- | ----------------- | ----------------------- |
 | `s`      | Dispatch to Queue | Implement (One-Shot)    |
 | `5`      | Rebase Remote     | Check Objective         |
-| `p`      | Open Issue        | Open Objective          |
+| `i`      | Open Issue        | —                       |
+| `p`      | Open PR           | Open Objective          |
 | `1`      | Copy Prepare      | Copy Implement          |
 | `3`      | Copy Dispatch     | Copy View               |
 
