@@ -44,6 +44,11 @@ def bundled_skills() -> dict[str, str]:
     }
 
 
+def is_required_bundled_skill(skill_name: str) -> bool:
+    """Return True if the given skill name is a required bundled skill."""
+    return skill_name in _REQUIRED_BUNDLED_SKILLS
+
+
 class BundledSkillCapability(SkillCapability):
     """Concrete SkillCapability for skills registered via bundled_skills() dict."""
 
