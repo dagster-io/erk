@@ -273,7 +273,7 @@ def _dispatch_planned_pr_plan(
             ref=ctx.local_config.dispatch_ref,
         )
     except RuntimeError as e:
-        error_text = str(e)
+        error_text = e.args[0]
         if "404" in error_text or "Not Found" in error_text:
             raise UserFacingCliError(
                 f"Workflow '{DISPATCH_WORKFLOW_NAME}' not found in this repository.\n\n"

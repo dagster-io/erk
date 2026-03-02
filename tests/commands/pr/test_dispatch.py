@@ -372,3 +372,113 @@ def test_dispatch_no_args_no_context_fails() -> None:
         assert "No plan numbers provided and could not auto-detect" in result.output
         assert "erk pr dispatch <number>" in result.output
         assert "Traceback" not in result.output
+
+
+def test_dispatch_workflow_not_found_shows_install_hint() -> None:
+    """Test that a 404 from trigger_workflow shows workflow install instructions."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        plan_branch = "plnd/workflow-not-found"
+        pr_42 = _make_pr_42(plan_branch=plan_branch)
+
+        fake_gh = FakeGitHub(
+            authenticated=True,
+            pr_details={42: pr_42},
+            prs_by_branch={plan_branch: pr_42},
+            trigger_workflow_error="Failed to trigger workflow 'plan-implement.yml'\nstderr: Not Found (HTTP 404)",
+        )
+        fake_issues = FakeGitHubIssues()
+        fake_time = FakeTime()
+        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+            remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
+            remote_branches={env.cwd: ["origin/main", f"origin/{plan_branch}"]},
+            repository_roots={env.cwd: env.cwd},
+            branch_heads={"main": "abc123", "origin/main": "abc123"},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "main": BranchMetadata(
+                    name="main", parent=None, children=[], is_trunk=True, commit_sha=None
+                ),
+            },
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            graphite=graphite,
+            github=fake_gh,
+            issues=fake_issues,
+            use_graphite=True,
+            plan_store=planned_pr_backend,
+        )
+
+        result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)
+
+        assert result.exit_code != 0
+        assert "not found in this repository" in result.output
+        assert "erk init capability add erk-impl-workflow" in result.output
+        assert "Traceback" not in result.output
+
+
+def test_dispatch_workflow_generic_runtime_error() -> None:
+    """Test that a generic RuntimeError from trigger_workflow shows the error message."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        plan_branch = "plnd/workflow-generic-error"
+        pr_42 = _make_pr_42(plan_branch=plan_branch)
+
+        fake_gh = FakeGitHub(
+            authenticated=True,
+            pr_details={42: pr_42},
+            prs_by_branch={plan_branch: pr_42},
+            trigger_workflow_error="Timed out after 30s trying to trigger workflow 'plan-implement.yml'",
+        )
+        fake_issues = FakeGitHubIssues()
+        fake_time = FakeTime()
+        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+            remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
+            remote_branches={env.cwd: ["origin/main", f"origin/{plan_branch}"]},
+            repository_roots={env.cwd: env.cwd},
+            branch_heads={"main": "abc123", "origin/main": "abc123"},
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "main": BranchMetadata(
+                    name="main", parent=None, children=[], is_trunk=True, commit_sha=None
+                ),
+            },
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            graphite=graphite,
+            github=fake_gh,
+            issues=fake_issues,
+            use_graphite=True,
+            plan_store=planned_pr_backend,
+        )
+
+        result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)
+
+        assert result.exit_code != 0
+        assert "Failed to dispatch workflow" in result.output
+        assert "Timed out after 30s" in result.output
+        assert "Traceback" not in result.output

@@ -71,6 +71,7 @@ class FakeGitHub(GitHub):
         resolve_thread_failures: set[str] | None = None,
         pr_diff_error: str | None = None,
         workflow_runs_error: str | None = None,
+        trigger_workflow_error: str | None = None,
         artifact_download_callback: "Callable[[str, str, Path], bool] | None" = None,
         plan_pr_details: (
             tuple[list[PRDetails], dict[int, list[PullRequestInfo]], int] | None
@@ -112,6 +113,8 @@ class FakeGitHub(GitHub):
                 Use to simulate HTTP 406 "diff too large" errors.
             workflow_runs_error: If set, get_workflow_runs_by_node_ids() raises
                 RuntimeError with this message. Use to simulate API failures.
+            trigger_workflow_error: If set, trigger_workflow() raises RuntimeError
+                with this message. Use to simulate workflow dispatch failures (e.g., 404).
             artifact_download_callback: Optional callback invoked when download_run_artifact()
                 is called. Callback receives (run_id, artifact_name, destination) and can create
                 files in destination to simulate artifact content. Return True for success,
@@ -154,6 +157,7 @@ class FakeGitHub(GitHub):
         self._resolve_thread_failures = resolve_thread_failures or set()
         self._pr_diff_error = pr_diff_error
         self._workflow_runs_error = workflow_runs_error
+        self._trigger_workflow_error = trigger_workflow_error
         self._artifact_download_callback = artifact_download_callback
         self._time = time if time is not None else FakeTime()
         self._downloaded_artifacts: list[tuple[str, str, Path]] = []
@@ -260,7 +264,12 @@ class FakeGitHub(GitHub):
 
         Returns:
             A fake run ID for testing
+
+        Raises:
+            RuntimeError: If trigger_workflow_error is configured.
         """
+        if self._trigger_workflow_error is not None:
+            raise RuntimeError(self._trigger_workflow_error)
         self._triggered_workflows.append((workflow, inputs))
         run_id = "1234567890"
         # Create a WorkflowRun entry so get_workflow_run() can find it
