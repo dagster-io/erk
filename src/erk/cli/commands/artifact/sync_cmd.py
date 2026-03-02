@@ -49,6 +49,11 @@ def sync_cmd(ctx: click.Context, force: bool) -> None:
 
     if result.success:
         click.echo(click.style("✓ ", fg="green") + result.message)
+        if result.artifacts_removed > 0:
+            click.echo(
+                click.style("  ", fg="yellow")
+                + f"Removed {result.artifacts_removed} orphaned artifact(s)"
+            )
     else:
         click.echo(click.style("✗ ", fg="red") + result.message, err=True)
         raise SystemExit(1)

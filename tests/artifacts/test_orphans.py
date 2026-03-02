@@ -3,7 +3,9 @@
 from pathlib import Path
 
 from erk.artifacts.artifact_health import find_orphaned_artifacts
+from erk.artifacts.models import ArtifactFileState, ArtifactState
 from erk.artifacts.paths import ErkPackageInfo
+from erk.artifacts.state import save_artifact_state
 
 
 def test_find_orphaned_artifacts_no_claude_dir(tmp_path: Path) -> None:
@@ -372,3 +374,45 @@ def test_find_orphaned_workflows_ignores_user_workflows(tmp_path: Path) -> None:
     # No orphans - user workflows are not checked
     assert result.skipped_reason is None
     assert result.orphans == {}
+
+
+def test_find_orphaned_artifacts_detects_removed_skill_via_state(tmp_path: Path) -> None:
+    """State-based detection finds entirely-removed skill not in registry."""
+    # Create a mock bundled .claude/ directory (no skills)
+    bundled_dir = tmp_path / "bundled" / ".claude"
+    bundled_dir.mkdir(parents=True)
+
+    bundled_github = tmp_path / "bundled" / ".github"
+    bundled_github.mkdir(parents=True)
+
+    # Create project with .claude/ and the orphaned skill on disk
+    project_dir = tmp_path / "project"
+    project_claude = project_dir / ".claude"
+    project_claude.mkdir(parents=True)
+    orphan_skill = project_claude / "skills" / "removed-skill"
+    orphan_skill.mkdir(parents=True)
+    (orphan_skill / "SKILL.md").write_text("# Removed", encoding="utf-8")
+
+    # Save state.toml recording that this skill was previously synced
+    save_artifact_state(
+        project_dir,
+        ArtifactState(
+            version="1.0.0",
+            files={"skills/removed-skill": ArtifactFileState(version="1.0.0", hash="abc123")},
+        ),
+    )
+
+    result = find_orphaned_artifacts(
+        project_dir,
+        package=ErkPackageInfo(
+            in_erk_repo=False,
+            bundled_claude_dir=bundled_dir,
+            bundled_github_dir=bundled_github,
+            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+            current_version="2.0.0",
+        ),
+    )
+
+    assert result.skipped_reason is None
+    # The removed skill should be detected as orphaned
+    assert "skills/removed-skill" in result.orphans

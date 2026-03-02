@@ -420,6 +420,83 @@ def _find_orphaned_workflows(
     return orphans
 
 
+def _find_state_based_orphans(
+    project_dir: Path,
+) -> dict[str, list[str]]:
+    """Find entirely-removed artifacts via state.toml comparison.
+
+    Detects artifacts that were previously synced (recorded in state.toml) but
+    are no longer in the current bundle. This catches entire directories that
+    were dropped from the registry, which file-level comparison misses.
+
+    Uses inline import of load_artifact_state to avoid circular deps.
+    """
+    from erk.artifacts.state import load_artifact_state
+    from erk.artifacts.sync import _key_to_orphaned_path
+
+    state = load_artifact_state(project_dir)
+    if state is None:
+        return {}
+
+    # Build set of currently-bundled keys from the registry
+    current_keys: set[str] = set()
+
+    # Skills
+    for name in _get_bundled_by_type("skill", installed_capabilities=None):
+        current_keys.add(f"skills/{name}")
+
+    # Agents (both directory and single-file forms)
+    for name in _get_bundled_by_type("agent", installed_capabilities=None):
+        # Check both possible key formats — the state records whichever was synced
+        current_keys.add(f"agents/{name}")
+        current_keys.add(f"agents/{name}.md")
+
+    # Commands: enumerate from bundled source
+    from erk.artifacts.paths import get_bundled_claude_dir
+
+    bundled_erk_commands = get_bundled_claude_dir() / "commands" / "erk"
+    if bundled_erk_commands.exists():
+        for cmd_file in bundled_erk_commands.rglob("*.md"):
+            relative_path = cmd_file.relative_to(bundled_erk_commands)
+            current_keys.add(f"commands/erk/{relative_path}")
+
+    # Workflows
+    for name in _get_bundled_by_type("workflow", installed_capabilities=None):
+        current_keys.add(f"workflows/{name}.yml")
+
+    # Actions
+    for name in _get_bundled_by_type("action", installed_capabilities=None):
+        current_keys.add(f"actions/{name}")
+
+    # Reviews
+    for name in _get_bundled_by_type("review", installed_capabilities=None):
+        current_keys.add(f"reviews/{name}.md")
+
+    # Hooks are always excluded from orphan detection
+    orphaned_keys = set(state.files.keys()) - current_keys
+    orphaned_keys = {k for k in orphaned_keys if not k.startswith("hooks/")}
+
+    orphans: dict[str, list[str]] = {}
+    for key in sorted(orphaned_keys):
+        orphan = _key_to_orphaned_path(key, project_dir)
+        if orphan is None:
+            continue
+        if not orphan.path.exists():
+            continue
+
+        # Group by parent folder key for OrphanCheckResult format
+        if orphan.is_directory:
+            # For directories, the folder key is the key itself
+            folder_key = key
+            orphans.setdefault(folder_key, []).append("(entire directory)")
+        else:
+            # For files, group under parent path relative to project
+            folder_key = str(orphan.path.parent.relative_to(project_dir))
+            orphans.setdefault(folder_key, []).append(orphan.path.name)
+
+    return orphans
+
+
 def find_orphaned_artifacts(
     project_dir: Path,
     *,
@@ -464,6 +541,11 @@ def find_orphaned_artifacts(
     project_workflows_dir = project_dir / ".github" / "workflows"
     bundled_workflows_dir = package.bundled_github_dir / "workflows"
     orphans.update(_find_orphaned_workflows(project_workflows_dir, bundled_workflows_dir))
+
+    # Also detect entirely-removed artifacts via state.toml
+    state_orphans = _find_state_based_orphans(project_dir)
+    for folder_key, files in state_orphans.items():
+        orphans.setdefault(folder_key, []).extend(files)
 
     return OrphanCheckResult(
         orphans=orphans,
