@@ -22,8 +22,8 @@ from erk.cli.commands.one_shot_dispatch import (
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.branch_slug_generator import BRANCH_SLUG_SYSTEM_PROMPT, _postprocess_slug
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
-from erk.core.fast_llm import AnthropicLlmCaller, LlmResponse
 from erk_shared.context.types import InteractiveAgentConfig
+from erk_shared.core.llm_caller import LlmCallFailed, NoApiKey
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import extract_metadata_value
@@ -251,12 +251,13 @@ def _handle_all_unblocked(
 
         user_output(f"Dispatching node {click.style(node.id, bold=True)}: {node.description}")
 
-        result = AnthropicLlmCaller().call(
+        result = ctx.llm_caller.call(
             node.description, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT
         )
-        slug = _postprocess_slug(result.text) if isinstance(result, LlmResponse) else None
-        if slug is None:
+        if isinstance(result, (NoApiKey, LlmCallFailed)):
             slug = sanitize_worktree_name(node.description)[:25].rstrip("-")
+        else:
+            slug = _postprocess_slug(result.text)
 
         params = OneShotDispatchParams(
             prompt=prompt,
@@ -716,12 +717,13 @@ def _handle_one_shot(
     user_output(f"Phase: {phase_name}")
     user_output(f"Prompt: {prompt}")
 
-    result = AnthropicLlmCaller().call(
+    result = ctx.llm_caller.call(
         target_node.description, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT
     )
-    slug = _postprocess_slug(result.text) if isinstance(result, LlmResponse) else None
-    if slug is None:
+    if isinstance(result, (NoApiKey, LlmCallFailed)):
         slug = sanitize_worktree_name(target_node.description)[:25].rstrip("-")
+    else:
+        slug = _postprocess_slug(result.text)
 
     params = OneShotDispatchParams(
         prompt=prompt,

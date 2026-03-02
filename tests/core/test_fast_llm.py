@@ -1,24 +1,10 @@
 """Tests for fast_llm module."""
 
-from dataclasses import dataclass
-
 import pytest
 
-from erk.core.fast_llm import (
-    AnthropicLlmCaller,
-    LlmCaller,
-    LlmCallFailed,
-    LlmResponse,
-    NoApiKey,
-)
-
-
-@dataclass(frozen=True)
-class FakeLlmCaller(LlmCaller):
-    response: LlmResponse | NoApiKey | LlmCallFailed
-
-    def call(self, prompt: str, *, system_prompt: str) -> LlmResponse | NoApiKey | LlmCallFailed:
-        return self.response
+from erk.core.fast_llm import AnthropicLlmCaller
+from erk_shared.core.fakes import FakeLlmCaller
+from erk_shared.core.llm_caller import LlmCallFailed, LlmResponse, NoApiKey
 
 
 def test_fake_returns_configured_response() -> None:

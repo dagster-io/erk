@@ -16,11 +16,13 @@ if TYPE_CHECKING:
     from erk.artifacts.paths import ErkPackageInfo
 from erk_shared.core.fakes import (
     FakeCodespaceRegistry,
+    FakeLlmCaller,
     FakeObjectiveListService,
     FakePlanListService,
     FakePromptExecutor,
     FakeScriptWriter,
 )
+from erk_shared.core.llm_caller import LlmCaller, LlmResponse
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.agent_docs.abc import AgentDocs
 from erk_shared.gateway.agent_launcher.abc import AgentLauncher
@@ -49,6 +51,7 @@ def context_for_test(
     agent_launcher: AgentLauncher | None = None,
     agent_docs: AgentDocs | None = None,
     prompt_executor: PromptExecutor | None = None,
+    llm_caller: LlmCaller | None = None,
     codespace: Codespace | None = None,
     plan_store: PlanBackend | None = None,
     local_config: LoadedConfig | None = None,
@@ -140,6 +143,11 @@ def context_for_test(
     resolved_prompt_executor: PromptExecutor = (
         prompt_executor if prompt_executor is not None else FakePromptExecutor()
     )
+    resolved_llm_caller: LlmCaller = (
+        llm_caller
+        if llm_caller is not None
+        else FakeLlmCaller(response=LlmResponse(text="test-slug"))
+    )
     resolved_agent_launcher: AgentLauncher = (
         agent_launcher if agent_launcher is not None else FakeAgentLauncher()
     )
@@ -186,6 +194,7 @@ def context_for_test(
         github_admin=github_admin if github_admin is not None else FakeGitHubAdmin(),
         claude_installation=resolved_claude_installation,
         prompt_executor=resolved_prompt_executor,
+        llm_caller=resolved_llm_caller,
         graphite=resolved_graphite,
         graphite_branch_ops=resolved_graphite_branch_ops,
         console=fake_console,

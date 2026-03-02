@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, NamedTuple
 
 from erk_shared.context.types import PermissionMode
+from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey
 from erk_shared.core.objective_list_service import ObjectiveListService
 from erk_shared.core.plan_list_service import PlanListData, PlanListService
 from erk_shared.core.prompt_executor import (
@@ -310,6 +311,16 @@ class FakePlanListService(PlanListService):
             workflow_runs=self._data.workflow_runs,
             warnings=self._data.warnings,
         )
+
+
+@dataclass(frozen=True)
+class FakeLlmCaller(LlmCaller):
+    """Fake LlmCaller that returns a pre-configured response."""
+
+    response: LlmResponse | NoApiKey | LlmCallFailed
+
+    def call(self, prompt: str, *, system_prompt: str) -> LlmResponse | NoApiKey | LlmCallFailed:
+        return self.response
 
 
 class FakeObjectiveListService(ObjectiveListService):

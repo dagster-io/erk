@@ -6,42 +6,15 @@ Claude CLI subprocess is too slow.
 
 import logging
 import os
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
 
 from anthropic import Anthropic, APIError
 
+from erk_shared.core.llm_caller import LlmCaller as LlmCaller
+from erk_shared.core.llm_caller import LlmCallFailed as LlmCallFailed
+from erk_shared.core.llm_caller import LlmResponse as LlmResponse
+from erk_shared.core.llm_caller import NoApiKey as NoApiKey
+
 logger = logging.getLogger(__name__)
-
-
-@dataclass(frozen=True)
-class LlmResponse:
-    text: str
-
-
-@dataclass(frozen=True)
-class NoApiKey:
-    message: str
-
-    @property
-    def error_type(self) -> str:
-        return "no-api-key"
-
-
-@dataclass(frozen=True)
-class LlmCallFailed:
-    message: str
-
-    @property
-    def error_type(self) -> str:
-        return "llm-call-failed"
-
-
-class LlmCaller(ABC):
-    @abstractmethod
-    def call(self, prompt: str, *, system_prompt: str) -> LlmResponse | NoApiKey | LlmCallFailed:
-        """Execute an LLM call."""
-        ...
 
 
 class AnthropicLlmCaller(LlmCaller):
