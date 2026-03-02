@@ -79,14 +79,13 @@ Creates a commit directly on a branch using a temporary index file, without modi
 
 ## Pattern 3: Fetch + Force-Create (No-Checkout Sync)
 
-Syncs a local branch to match the remote state by fetching and force-creating:
+Syncs a local branch to match the remote state by fetching and force-creating.
 
-```python
-ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
-ctx.git.branch.create_branch(repo.root, branch_name, f"origin/{branch_name}", force=True)
-```
+<!-- Source: src/erk/cli/commands/pr/dispatch_cmd.py, _dispatch_planned_pr_plan -->
 
-**Usage in dispatch_cmd.py** (`_dispatch_planned_pr_plan()`, lines 219-221):
+See `_dispatch_planned_pr_plan()` in `src/erk/cli/commands/pr/dispatch_cmd.py` for the fetch + force-create sequence: it calls `fetch_branch()` followed by `create_branch(force=True)` to reset the local branch to match the remote.
+
+**Usage in dispatch_cmd.py** (`_dispatch_planned_pr_plan()`):
 
 - Ensures local branch matches remote before committing new files
 - Combined with `commit_files_to_branch()` for a fully checkout-free dispatch workflow

@@ -27,21 +27,9 @@ Learn plan creation skips in two scenarios:
 
 2. **Sessions exist but XML extraction produces no content** — Sessions were tracked in GitHub metadata but preprocessing produced no usable XML (warmup sessions, empty sessions, or sessions that fail to parse).
 
-<!-- Source: src/erk/cli/commands/land_learn.py:373-383 -->
+<!-- Source: src/erk/cli/commands/land_learn.py, _create_learn_pr_impl -->
 
-The guard condition at `land_learn.py:373-383`:
-
-```python
-if not xml_files:
-    if not all_session_ids:
-        detail = " (no sessions were tracked for this plan)"
-    else:
-        detail = " (sessions found but no XML could be extracted)"
-    user_output(...)
-    return
-```
-
-The two-branch message helps distinguish "no sessions at all" from "sessions found but empty" for debugging.
+See `_create_learn_pr_impl()` in `src/erk/cli/commands/land_learn.py` — the guard uses the emptiness of `all_session_ids` to distinguish between the two cases and display different debug messages: "(no sessions were tracked for this plan)" when no sessions exist at all, or "(sessions found but no XML could be extracted)" when sessions were tracked but preprocessing produced nothing.
 
 ## Session Discovery Pipeline
 
@@ -78,14 +66,9 @@ The pipeline flows through several stages:
 
 Plans with the `erk-learn` label skip learn plan creation to prevent infinite loops:
 
-<!-- Source: src/erk/cli/commands/land_learn.py:359-364 -->
+<!-- Source: src/erk/cli/commands/land_learn.py, _maybe_create_learn_pr -->
 
-```python
-if "erk-learn" in plan_result.labels:
-    return
-```
-
-Learn plans themselves are created with labels `["erk-pr", "erk-learn"]`, so landing a learn plan does not trigger another learn plan.
+See `_maybe_create_learn_pr()` in `src/erk/cli/commands/land_learn.py` — it checks whether `"erk-learn"` is in the plan's labels and returns early if so. Learn plans themselves are created with labels `["erk-pr", "erk-learn"]`, so landing a learn plan does not trigger another learn plan.
 
 ## Session Discovery Logging
 

@@ -34,20 +34,7 @@ All definitions are in `src/erk/tui/commands/registry.py`.
 
 The `CommandDefinition` dataclass (in `types.py:36-62`) defines all command properties:
 
-```python
-@dataclass(frozen=True)
-class CommandDefinition:
-    id: str
-    name: str
-    description: str
-    category: CommandCategory
-    shortcut: str | None
-    launch_key: str | None        # line 60 — single-key binding for Launch modal
-    is_available: Callable[[CommandContext], bool]
-    get_display_name: Callable[[CommandContext], str] | None
-```
-
-The `launch_key` field (added in PR #8559) assigns a single-key binding for the Launch modal. Only ACTION category commands should have launch keys.
+See `CommandDefinition` in `src/erk/tui/commands/types.py` for the full field list. Key fields include `id`, `name`, `description`, `category`, `shortcut`, `launch_key`, `is_available`, and `get_display_name`. The `launch_key` field (added in PR #8559) assigns a single-key binding for the Launch modal. Only ACTION category commands should have launch keys.
 
 ## Launch Key Assignments
 

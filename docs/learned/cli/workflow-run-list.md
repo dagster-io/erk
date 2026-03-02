@@ -75,14 +75,9 @@ Iterates `WORKFLOW_COMMAND_MAP` (defined in `src/erk/cli/constants.py`) to tag e
 
 Uses dict-based deduplication keyed by `run_id`:
 
-```python
-seen: dict[str, tuple[WorkflowRun, str]] = {}
-for pair in tagged_runs:
-    if pair[0].run_id not in seen:
-        seen[pair[0].run_id] = pair
-```
+<!-- Source: src/erk/cli/commands/run/list_cmd.py, _deduplicate_runs -->
 
-This is O(n), not O(n^2), and handles the case where a run matches multiple workflows.
+See `_deduplicate_runs()` in `src/erk/cli/commands/run/list_cmd.py` — it uses dict-based deduplication keyed by `run_id`, which is O(n) and handles the case where a run matches multiple workflows.
 
 ## learn.yml Exception
 
