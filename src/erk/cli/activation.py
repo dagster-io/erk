@@ -132,7 +132,7 @@ def render_activation_script(
 
     The script:
       - cds into the worktree (optionally to a subpath within it)
-      - creates .venv with `uv sync` if not present
+      - runs `uv sync --quiet` (creates .venv if missing, syncs deps if lockfile changed)
       - sources `.venv/bin/activate` if present
       - exports variables from `.env` if present
       - runs optional post-activation commands
@@ -200,9 +200,10 @@ if [ "$VIRTUAL_ENV" != "{worktree_path}/.venv" ]; then
   unset VIRTUAL_ENV
   # Create venv if it doesn't exist
   if [ ! -d {venv_dir} ]; then
-    echo 'Creating virtual environment with uv sync...'
-    uv sync
+    __erk_log "->" "Creating virtual environment..."
   fi
+  # Sync dependencies (creates venv if missing, installs new deps if lockfile changed)
+  uv sync --quiet
   # Refresh workspace packages (no-deps = skip external packages)
   uv pip install --no-deps --quiet -e . -e packages/erk-shared -e packages/erk-statusline
   if [ -f {venv_activate} ]; then
