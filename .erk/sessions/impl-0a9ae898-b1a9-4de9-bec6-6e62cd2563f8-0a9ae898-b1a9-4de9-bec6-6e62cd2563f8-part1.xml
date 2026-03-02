@@ -1,0 +1,1080 @@
+<session>
+  <meta branch="plnd/consolidate-learn-docs-03-02-1752" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8623&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 12. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8623` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**CRITICAL**: Never delete the impl directory - leave for user review (no auto-commit).
+
+### Step 12: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 13: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8623.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28142" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28142, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01ExRyGC3vRCyfc5UJu7s7Fs">
+    <param name="command">erk exec setup-impl --issue 8623</param>
+    <param name="description">Set up implementation for plan #8623</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28142" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28142, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ExRyGC3vRCyfc5UJu7s7Fs">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--consolidate-learn-docs-03-02-1752", "plan_number": 8623, "plan_url": "https://github.com/dagster-io/erk/pull/8623", "branch": "plnd/consolidate-learn-docs-03-02-1752", "plan_title": "[erk-plan] Consolidated Plan: Merge 4 Learn-Plan PRs into Single Documentation Update", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8623, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/consolidate-learn-docs-03-02-1752', syncing with remote...
+  </tool_result>
+  <assistant>Implementation environment ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="350" cache_read_input_tokens="28142" cache_creation="{'ephemeral_5m_input_tokens': 350, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01KxR9XkkHjT6g1MWzKb89c1">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--consolidate-learn-docs-03-02-1752/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="350" cache_read_input_tokens="28142" cache_creation="{'ephemeral_5m_input_tokens': 350, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KxR9XkkHjT6g1MWzKb89c1">
+     1→# Consolidated Plan: Merge 4 Learn-Plan PRs into Single Documentation Update
+     2→
+     3→&gt; **Consolidates:** #8592, #8567, #8529, #8513
+     4→
+     5→## Context
+     6→
+     7→Four open learn-plan PRs each consolidate documentation from implementation sessions (Feb 28 - Mar 2). Each was remotely implemented on its own branch but none are merged. They collectively create 14 new docs, update ~16 existing docs, and delete 1 file. Two files (`land-learn-integration.md`, `keyboard-shortcuts.md`) are modified by multiple PRs and require careful merge. All source code references have been verified present on master.
+     8→
+     9→**Strategy:** Pull content from each PR's branch, resolve the 2 overlaps, and land as a single PR. Index and tripwire files are auto-generated by `erk docs sync` -- no manual edits to those files.
+    10→
+    11→## Source PRs
+    12→
+    13→| PR | Title | Branch | New Files | Updates |
+    14→|----|-------|--------|-----------|---------|
+    15→| #8592 | Mar 2 learn sessions | `plnd/consolidate-mar2-learn-doc-03-02-0159` | 2 | 6 |
+    16→| #8567 | Mar 1 learn sessions (batch 2) | `plnd/consolidate-mar1-learn-b2-03-01-2043` | 7 | 8 |
+    17→| #8529 | Mar 1 learn sessions | `plnd/consolidate-mar1-learn-doc-03-01-1131` | 4 | 5 |
+    18→| #8513 | Feb 28 learn sessions (batch 2) | `plnd/consolidate-learn-docs-feb-03-01-0021` | 2 | 3 |
+    19→
+    20→---
+    21→
+    22→## Group A: Architecture (6 steps)
+    23→
+    24→### A1: Replace `plan-save-branch-restoration.md` with `git-plumbing-patterns.md`
+    25→**Source:** #8592 | **Action:** Delete + Create
+    26→
+    27→- Delete `docs/learned/architecture/plan-save-branch-restoration.md`
+    28→- Create `docs/learned/architecture/git-plumbing-patterns.md` with content from branch `origin/plnd/consolidate-mar2-learn-doc-03-02-0159`
+    29→- Content: 3 plumbing patterns (`update_local_ref`, `commit_files_to_branch`, fetch+force-create), comparison table, evolution history
+    30→- Also update `docs/learned/planning/planned-pr-backend.md`: change Related Topics link from `plan-save-branch-restoration.md` to `git-plumbing-patterns.md`
+
+... [213 lines omitted] ...
+
+    42→- Add "Example: Plan Summary Hoisting" section: PlanSummaryGenerator removal, `--summary` flag pattern, affected callers (plan-save, plan-update, create-pr-from-session, pr create), land_learn.py deterministic exception
+    74→Add "Phase 5 Terminology Standardization" section: `--plan-issue` renamed to `--learn-plan`, 4 error codes renamed, YAML schema fields NOT renamed (stability). Source: `track_learn_result.py:76`, `impl_signal.py:191,304,383,408`.
+    84→PR-centric display, run-name format parsing (`extract_pr_number()`), workflow source column, deduplication, `learn.yml` exception. Source: `list_cmd.py`, `shared.py`.
+  </tool_result>
+  <assistant>This is a large documentation consolidation plan. Let me set up the todo list and start executing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4914" cache_read_input_tokens="28492" cache_creation="{'ephemeral_5m_input_tokens': 4914, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01GtPbrxs3w5JJ9LLYX2tUPc">
+    <param name="todos">[{'content': 'Group A: Architecture (A1-A6) - 6 steps', 'status': 'pending', 'activeForm':...[truncated 796 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4914" cache_read_input_tokens="28492" cache_creation="{'ephemeral_5m_input_tokens': 4914, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GtPbrxs3w5JJ9LLYX2tUPc">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PRVcHKJHjGq94KSZrggruA">
+    <param name="command">erk exec impl-signal started --session-id "0a9ae898-b1a9-4de9-bec6-6e62cd2563f8" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="429" cache_read_input_tokens="33406" cache_creation="{'ephemeral_5m_input_tokens': 429, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PRVcHKJHjGq94KSZrggruA">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8623
+}
+  </tool_result>
+  <assistant>Now let me fetch the source branches and start with Group A. Let me first fetch all the remote branches we need.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="33835" cache_creation="{'ephemeral_5m_input_tokens': 156, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01QV2XghDh4F7kfCBnqTiAYz">
+    <param name="todos">[{'content': 'Group A: Architecture (A1-A6) - 6 steps', 'status': 'in_progress', 'activeFo...[truncated 800 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="33835" cache_creation="{'ephemeral_5m_input_tokens': 156, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QV2XghDh4F7kfCBnqTiAYz">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01QfRCZB21gZyiR4adfKM2pA">
+    <param name="command">git fetch origin plnd/consolidate-mar2-learn-doc-03-02-0159 plnd/consolidate-mar1-learn-b2-03-01-2043 plnd/consolidate-mar1-learn-doc-03-01-1131 plnd/consolidate-learn-docs-feb-03-01-0021 2&gt;&amp;1</param>
+    <param name="description">Fetch all source PR branches</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="33991" cache_creation="{'ephemeral_5m_input_tokens': 435, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QfRCZB21gZyiR4adfKM2pA">
+From https://github.com/dagster-io/erk
+ * branch                plnd/consolidate-mar2-learn-doc-03-02-0159 -&gt; FETCH_HEAD
+ * branch                plnd/consolidate-mar1-learn-b2-03-01-2043 -&gt; FETCH_HEAD
+ * branch                plnd/consolidate-mar1-learn-doc-03-01-1131 -&gt; FETCH_HEAD
+ * branch                plnd/consolidate-learn-docs-feb-03-01-0021 -&gt; FETCH_HEAD
+  </tool_result>
+  <assistant>Good. Now let me start Group A. I'll pull multiple files from source branches in parallel.
+
+**Group A: Architecture**
+
+### A1: Delete old file and create git-plumbing-patterns.md</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="34426" cache_creation="{'ephemeral_5m_input_tokens': 323, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01XJ15C9FKMVCbFRvA7gTJkh">
+    <param name="command">git show origin/plnd/consolidate-mar2-learn-doc-03-02-0159:docs/learned/architecture/git-plumbing-patterns.md 2&gt;/dev/null</param>
+    <param name="description">Get git-plumbing-patterns.md from source</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="34426" cache_creation="{'ephemeral_5m_input_tokens': 323, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_011TYdWre2ksjJtwxFPYpv7E">
+    <param name="command">git show origin/plnd/consolidate-mar2-learn-doc-03-02-0159:docs/learned/architecture/gateway-abc-implementation.md 2&gt;/dev/null</param>
+    <param name="description">Get gateway-abc-implementation.md from source</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="34426" cache_creation="{'ephemeral_5m_input_tokens': 323, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0145A8xbRdRgfRztWX42UPdg">
+    <param name="command">git show origin/plnd/consolidate-learn-docs-feb-03-01-0021:docs/learned/architecture/inference-hoisting.md 2&gt;/dev/null</param>
+    <param name="description">Get inference-hoisting.md from source</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="34426" cache_creation="{'ephemeral_5m_input_tokens': 323, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_012AGjGund21ekGv4z3yroJZ">
+    <param name="command">git show origin/plnd/consolidate-mar1-learn-b2-03-01-2043:docs/learned/architecture/worktree-dispatch-detection.md 2&gt;/dev/null</param>
+    <param name="description">Get worktree-dispatch-detection.md from source</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="34426" cache_creation="{'ephemeral_5m_input_tokens': 323, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01EtFdzvDjEZMspKmCfoWVXp">
+    <param name="command">git show origin/plnd/consolidate-mar1-learn-doc-03-01-1131:docs/learned/architecture/monolith-to-subpackage-pattern.md 2&gt;/dev/null</param>
+    <param name="description">Get monolith-to-subpackage-pattern.md from source</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="34426" cache_creation="{'ephemeral_5m_input_tokens': 323, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01SSupem6rSobJLdkVajCcN4">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-abc-implementation.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="34426" cache_creation="{'ephemeral_5m_input_tokens': 323, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01AsLJ1GR9huHQ1a5hy6vVLG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/inference-hoisting.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="34426" cache_creation="{'ephemeral_5m_input_tokens': 323, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Mo7B8pbwfK9T4FndJc8Dmt">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="34426" cache_creation="{'ephemeral_5m_input_tokens': 323, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AsLJ1GR9huHQ1a5hy6vVLG">
+     1→---
+     2→title: Inference Hoisting Pattern
+     3→last_audited: "2026-02-23 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - adding LLM calls to an exec script
+     7→  - calling PromptExecutor from a CLI command or exec script
+     8→  - working with BranchSlugGenerator or generate_branch_slug
+     9→  - adding --branch-slug or similar pre-computed value flags to exec commands
+    10→  - understanding why exec scripts must be deterministic
+    11→  - refactoring nested LLM calls out of exec scripts
+    12→tripwires:
+    13→  - action: "calling PromptExecutor, generate_branch_slug, or BranchSlugGenerator from an exec script"
+    14→    warning: "Exec scripts must be deterministic. LLM calls belong in the skill layer (.claude/commands/*.md). Hoist: generate the value in the skill, pass it via --flag to the exec script. Read inference-hoisting.md."
+    15→    pattern: "PromptExecutor|generate_branch_slug|BranchSlugGenerator"
+    16→    score: 9
+    17→  - action: "adding LLM-dependent logic inside a Click @command function in exec/scripts/"
+    18→    warning: "Inference hoisting violation: exec scripts run as subprocesses; they cannot nest LLM calls within a Claude Code session. Move reasoning to the calling skill."
+    19→---
+    20→
+    21→# Inference Hoisting Pattern
+    22→
+    23→## Why This Pattern Exists
+    24→
+    25→Exec scripts are Python subprocesses that run to completion without Claude Code context. They cannot invoke the Claude CLI via `PromptExecutor.execute_prompt()` — attempting to do so inside a Claude Code session creates a nested LLM call that deadlocks or fails.
+    26→
+    27→The skill layer (`.claude/commands/*.md`) is the orchestration boundary. Skills run inside Claude Code with full reasoning capability. They can generate values through LLM inference before invoking exec scripts.
+    28→
+    29→**The original bug**: `plan_save.py` and `setup_impl_from_pr.py` called `generate_branch_slug(executor, title)`, which invoked `PromptExecutor.execute_prompt()` to ask Claude for a branch slug. When these scripts ran inside a Claude Code session (via `/erk:plan-save`), the nested Claude subprocess locked up. The fix moved slug generation into the skill layer, passing the pre-generated slug via `--branch-slug`.
+    30→
+
+... [96 lines omitted] ...
+
+    45→  5. Uses the pre-computed value; errors with remediation instructions if missing
+    68→Each script accepts a `--branch-slug` Click option. When provided, it uses the pre-generated slug directly. When missing, the script exits with a clear error message and remediation instructions directing the caller to generate a slug in the skill layer.
+    84→## Error Handling
+    86→When `--branch-slug` is not provided, exec scripts exit with a clear error message and remediation instructions. They do **not** silently fall back to a sanitized title. This follows the [agent backpressure gates](agent-backpressure-gates.md) philosophy: silent transformation masks mistakes and prevents the agent from learning.
+    88→The error message directs callers to generate a slug in the skill layer (e.g., plan-save.md Step 1.5) and pass it via `--branch-slug`. For direct CLI invocation, pass `--branch-slug` explicitly.
+    96→3. **Add a `--flag` to the exec script** — add it as a Click option; if missing, emit a clear error message with remediation instructions explaining how to generate the value
+  </tool_result>
+  <tool_result tool="toolu_01Mo7B8pbwfK9T4FndJc8Dmt">
+     1→---
+     2→title: Planned PR Backend
+     3→read_when:
+     4→  - "working with plan storage or plan backends"
+     5→  - "adding plan storage behavior without checking plan backend type"
+     6→  - "understanding how plans are stored as planned pull requests"
+     7→  - "modifying plan-save or land pipeline for plan handling"
+     8→tripwires:
+     9→  - action: "validating plan_id in exec scripts without checking provider type"
+    10→    warning: "Planned PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics. Issue-based plans use issue numbers; planned-PR plans use PR numbers."
+    11→    score: 4
+    12→  - action: "using gh issue view on a plan ID without checking plan backend type"
+    13→    warning: "Planned PR plan IDs are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type."
+    14→    score: 7
+    15→  - action: "checking erk exec plan-save --format json output for empty result"
+    16→    warning: "Empty stdout does not mean failure. The duplicate-detection path writes JSON to stderr, not stdout. Always capture both streams with 2&gt;&amp;1 or check for empty stdout and retry with stderr capture."
+    17→    score: 5
+    18→  - action: "calling update_metadata() on PlannedPRBackend without verifying plan exists"
+    19→    warning: "PlannedPRBackend.update_metadata() raises PlanHeaderNotFoundError if the header block is absent. Read operations (get_plan) return None gracefully. Always check plan existence before writing metadata."
+    20→    score: 6
+    21→---
+    22→
+    23→# Planned PR Backend
+    24→
+    25→PlannedPRBackend stores plans as GitHub draft pull requests. It is the only active plan storage backend.
+    26→
+    27→## Backend Selection
+    28→
+    29→The plan backend is hardcoded to `"planned_pr"`. All plans are stored as GitHub draft pull requests via PlannedPRBackend. The former `get_plan_backend()` function and `PlanBackendType` type alias were deleted in PR #7971 (objective #7911 node 1.1).
+    30→
+
+... [116 lines omitted] ...
+
+    79→PlannedPRBackend metadata operations have asymmetric error behavior:
+    84→| `update_metadata()` | No header found      | Raises `PlanHeaderNotFoundError` |
+   119→**Rebase conflict handling:** After cleanup commits on the plan branch, a `git pull --rebase` may be needed before pushing further implementation commits. Skipping this can cause non-fast-forward push failures when the remote branch has diverged.
+   127→Empty stdout from `plan-save` does not indicate failure. Always capture both streams:
+   133→If stdout is empty, check stderr for the duplicate-detection response before assuming the command failed.
+  </tool_result>
+  <tool_result tool="toolu_01SSupem6rSobJLdkVajCcN4">
+     1→---
+     2→title: Gateway ABC Implementation Checklist
+     3→last_audited: "2026-02-15 18:50 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite)"
+     7→  - "implementing new gateway operations"
+     8→  - "composing one gateway inside another (e.g., GitHub composing GitHubIssues)"
+     9→tripwires:
+    10→  - action: "adding a new method to Git ABC"
+    11→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    12→  - action: "adding a new method to GitHub ABC"
+    13→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    14→  - action: "adding a new method to Graphite ABC"
+    15→    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+    16→  - action: "removing an abstract method from a gateway ABC"
+    17→    warning: "Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages."
+    18→  - action: "adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file"
+    19→    warning: "Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior."
+    20→    pattern: "subprocess\\.run\\(|run_subprocess_with_context\\("
+    21→  - action: "making N sequential gh api calls in a loop when a single GraphQL query could fetch all data"
+    22→    warning: "Each gh subprocess call costs ~200-300ms overhead. Batch into a single GraphQL query with node fragments when fetching multiple items. See http-accelerated-plan-refresh.md for the dual-path pattern."
+    23→  - action: "using subprocess.run with git command outside of a gateway"
+    24→    warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
+    25→    pattern: "subprocess\\.run\\(\\s*\\[.*[\"']git"
+    26→  - action: "changing gateway return type to discriminated union"
+    27→    warning: "Verify all 5 implementations import the new types. Missing imports in abc.py, fake.py, dry_run.py, or printing.py break the gateway pattern."
+    28→  - action: "designing error handling for a new gateway method"
+    29→    warning: "Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section."
+    30→  - action: "adding a new parameter to a gateway ABC method"
+
+... [772 lines omitted] ...
+
+    31→    warning: "All 5 implementations must be updated (ABC, Real, Fake, DryRun, Printing). Fake may accept but not track new parameters when assertion is not needed for tests."
+    42→**Exception: erk-dev** (`packages/erk-dev/`) is developer tooling and is exempt from these rules. Direct `subprocess.run` with git commands is acceptable in erk-dev since it doesn't need gateway abstractions for its own operations.
+   136→When designing error handling for a new gateway method, the key question is: **does the caller continue after the failure?**
+   138→This checklist helps you choose between discriminated unions and exceptions. For full pattern documentation, see [Discriminated Union Error Handling](discriminated-union-error-handling.md).
+   140→### Decision: Discriminated Union or Exception?
+   144→| Does at least one caller branch on the error and continue with different logic? | Discriminated union | Exception           |
+   145→| Does the error carry domain-meaningful fields beyond just `message`?            | Discriminated union | Exception           |
+   146→| Do all callers terminate on failure (extract message and stop)?                 | Exception           | Discriminated union |
+   150→- [ ] At least one caller branches on the error and continues with different logic
+   151→- [ ] Error type carries domain-meaningful fields beyond just `message`
+   152→- [ ] Error type implements the `NonIdealState` protocol (`error_type` + `message` properties) from `erk_shared.non_ideal_state`
+   156→### Checklist: Use Exceptions When
+   158→- [ ] All callers terminate on failure (extract message and stop)
+   159→- [ ] No caller inspects error type or branches on error content
+   160→- [ ] Use `UserFacingCliError` at CLI boundary
+   166→All discriminated union error types must implement the `NonIdealState` protocol from `packages/erk-shared/src/erk_shared/non_ideal_state.py`. The protocol requires two read-only properties: `error_type` (machine-readable classification string) and `message` (human-readable description).
+   181→**Methods using discriminated unions** (callers branch on error):
+   185→| `merge_pr`       | `MergeResult \| MergeError`               | GitHub         |
+   186→| `push_to_remote` | `PushResult \| PushError`                 | Git remote_ops |
+   187→| `pull_rebase`    | `PullRebaseResult \| PullRebaseError`     | Git remote_ops |
+   189→| `submit_branch`  | `SubmitBranchResult \| SubmitBranchError` | BranchManager  |
+   191→**Methods using exceptions** (all callers terminate):
+   193→| Method              | Exception      | Why                                                         |
+   195→| Worktree add/remove | `RuntimeError` | No caller inspects error content; all terminate identically |
+   196→| HTTP operations     | `HttpError`    | Generic transport failure; callers just surface the message |
+   200→When changing an existing gateway method's return type (e.g., converting from exception-based to discriminated union), follow this comprehensive migration pattern:
+   207→   - [ ] `real.py` - Return appropriate error types for failure cases
+   209→   - [ ] `dry_run.py` - Return appropriate success/error based on mode
+   212→5. [ ] Update tests to check `isinstance(result, ErrorType)`
+   217→**PR #6294** (`merge_pr: bool | str` → `MergeResult | MergeError`):
+   221→- Updated tests to use `isinstance(result, MergeError)`
+   243→Some resources benefit from existence-check methods that enable Look Before You Leap validation. This pattern prevents cryptic errors when fetching non-existent resources.
+   251→- When error messages from `get_X()` on missing resources are unclear
+   274→    user_output(f"Error: Issue #{issue_number} not found")
+   353→5. **Unit tests** (`tests/unit/`) - Update any tests that assumed failure on missing resource
+   597→The worktree sub-gateway follows the same 5-file pattern with methods: `list_worktrees()`, `add_worktree()`, `move_worktree()`, `remove_worktree()`, `prune_worktrees()`, `find_worktree_for_branch()`. Note: Worktree operations use exceptions (RuntimeError), not discriminated unions.
+   686→**Partial removal causes type checker errors** - if you remove from abc.py but forget printing.py, the type checker will complain that PrintingGit doesn't implement the abstract method.
+   704→1. Run type checker (`ty`) to verify no abstract method errors
+   761→├── abc.py        # push_to_remote() -&gt; PushResult | PushError
+   763→├── fake.py       # Constructor-injected errors, mutation tracking
+   770→- **Discriminated union returns**: Methods return `Success | Error` instead of raising
+   771→- **Error boundary in real.py**: `try/except RuntimeError` converts to `PushError`
+   772→- **Fake configuration**: `FakeGitRemoteOps(push_to_remote_error=PushError(...))` injects failures
+   795→- [Gateway Error Boundaries](gateway-error-boundaries.md) - Where exceptions become discriminated unions
+  </tool_result>
+  <tool_result tool="toolu_01XJ15C9FKMVCbFRvA7gTJkh">
+---
+title: Git Plumbing Patterns
+read_when:
+  - "modifying plan_save.py branch commit behavior"
+  - "understanding git plumbing patterns in erk"
+  - "working with commit_files_to_branch"
+  - "eliminating git checkouts"
+  - "plumbing operations"
+  - "dispatch without checkout"
+tripwires:
+  - action: "checking out a branch in plan_save to commit files"
+    warning: "Plan save uses git plumbing (commit_files_to_branch) to commit without checkout. Do NOT add checkout_branch calls. See git-plumbing-patterns.md."
+  - action: "adding new git operations that require checking out a branch"
+    warning: "When adding new git operations, prefer plumbing (update-ref, commit-tree) over checkout-based workflows. See git-plumbing-patterns.md."
+---
+
+# Git Plumbing Patterns
+
+Erk uses git plumbing commands to perform branch operations without checking out branches. This eliminates race conditions in multi-session environments and avoids side effects on the working tree.
+
+## When to Use Which Pattern
+
+| Pattern                     | Purpose                                        | Example                                                                                   |
+| --------------------------- | ---------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `update_local_ref()`        | Advance a local branch pointer to match remote | `ensure_trunk_synced()` in dispatch_helpers.py                                            |
+| `commit_files_to_branch()`  | Create a commit on a branch without checkout   | `_save_as_planned_pr()` in plan_save.py, `_dispatch_planned_pr_plan()` in dispatch_cmd.py |
+| `create_branch(force=True)` | Sync local branch to match remote exactly      | Fetch + force-create to reset local to remote state                                       |
+
+## Pattern 1: update_local_ref
+
+
+... [78 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011TYdWre2ksjJtwxFPYpv7E">
+---
+title: Gateway ABC Implementation Checklist
+last_audited: "2026-02-15 18:50 PT"
+audit_result: clean
+read_when:
+  - "adding or modifying methods in any gateway ABC interface (Git, GitHub, Graphite)"
+  - "implementing new gateway operations"
+  - "composing one gateway inside another (e.g., GitHub composing GitHubIssues)"
+tripwires:
+  - action: "adding a new method to Git ABC"
+    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+  - action: "adding a new method to GitHub ABC"
+    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+  - action: "adding a new method to Graphite ABC"
+    warning: "Must implement in 5 places: abc.py, real.py, fake.py, dry_run.py, printing.py."
+  - action: "removing an abstract method from a gateway ABC"
+    warning: "Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages."
+  - action: "adding subprocess.run or run_subprocess_with_context calls to a gateway real.py file"
+    warning: "Must add integration tests in tests/integration/test_real_*.py. Real gateway methods with subprocess calls need tests that verify the actual subprocess behavior."
+    pattern: "subprocess\\.run\\(|run_subprocess_with_context\\("
+  - action: "making N sequential gh api calls in a loop when a single GraphQL query could fetch all data"
+    warning: "Each gh subprocess call costs ~200-300ms overhead. Batch into a single GraphQL query with node fragments when fetching multiple items. See http-accelerated-plan-refresh.md for the dual-path pattern."
+  - action: "using subprocess.run with git command outside of a gateway"
+    warning: "Use the Git gateway instead. Direct subprocess calls bypass testability (fakes) and dry-run support. The Git ABC (erk_shared.gateway.git.abc.Git) likely already has a method for this operation. Only use subprocess directly in real.py gateway implementations."
+    pattern: "subprocess\\.run\\(\\s*\\[.*[\"']git"
+  - action: "changing gateway return type to discriminated union"
+    warning: "Verify all 5 implementations import the new types. Missing imports in abc.py, fake.py, dry_run.py, or printing.py break the gateway pattern."
+  - action: "designing error handling for a new gateway method"
+    warning: "Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section."
+  - action: "adding a new parameter to a gateway ABC method"
+
+... [696 lines omitted] ...
+
+    warning: "All 5 implementations must be updated (ABC, Real, Fake, DryRun, Printing). Fake may accept but not track new parameters when assertion is not needed for tests."
+**Exception: erk-dev** (`packages/erk-dev/`) is developer tooling and is exempt from these rules. Direct `subprocess.run` with git commands is acceptable in erk-dev since it doesn't need gateway abstractions for its own operations.
+When designing error handling for a new gateway method, the key question is: **does the caller continue after the failure?**
+This checklist helps you choose between discriminated unions and exceptions. For full pattern documentation, see [Discriminated Union Error Handling](discriminated-union-error-handling.md).
+### Decision: Discriminated Union or Exception?
+| Does at least one caller branch on the error and continue with different logic? | Discriminated union | Exception           |
+| Does the error carry domain-meaningful fields beyond just `message`?            | Discriminated union | Exception           |
+| Do all callers terminate on failure (extract message and stop)?                 | Exception           | Discriminated union |
+- [ ] At least one caller branches on the error and continues with different logic
+- [ ] Error type carries domain-meaningful fields beyond just `message`
+- [ ] Error type implements the `NonIdealState` protocol (`error_type` + `message` properties) from `erk_shared.non_ideal_state`
+### Checklist: Use Exceptions When
+- [ ] All callers terminate on failure (extract message and stop)
+- [ ] No caller inspects error type or branches on error content
+- [ ] Use `UserFacingCliError` at CLI boundary
+All discriminated union error types must implement the `NonIdealState` protocol from `packages/erk-shared/src/erk_shared/non_ideal_state.py`. The protocol requires two read-only properties: `error_type` (machine-readable classification string) and `message` (human-readable description).
+**Methods using discriminated unions** (callers branch on error):
+| `merge_pr`       | `MergeResult \| MergeError`               | GitHub         |
+| `push_to_remote` | `PushResult \| PushError`                 | Git remote_ops |
+| `pull_rebase`    | `PullRebaseResult \| PullRebaseError`     | Git remote_ops |
+| `submit_branch`  | `SubmitBranchResult \| SubmitBranchError` | BranchManager  |
+**Methods using exceptions** (all callers terminate):
+| Method              | Exception      | Why                                                         |
+| Worktree add/remove | `RuntimeError` | No caller inspects error content; all terminate identically |
+| HTTP operations     | `HttpError`    | Generic transport failure; callers just surface the message |
+When changing an existing gateway method's return type (e.g., converting from exception-based to discriminated union), follow this comprehensive migration pattern:
+   - [ ] `real.py` - Return appropriate error types for failure cases
+   - [ ] `dry_run.py` - Return appropriate success/error based on mode
+5. [ ] Update tests to check `isinstance(result, ErrorType)`
+**PR #6294** (`merge_pr: bool | str` → `MergeResult | MergeError`):
+- Updated tests to use `isinstance(result, MergeError)`
+Some resources benefit from existence-check methods that enable Look Before You Leap validation. This pattern prevents cryptic errors when fetching non-existent resources.
+- When error messages from `get_X()` on missing resources are unclear
+    user_output(f"Error: Issue #{issue_number} not found")
+5. **Unit tests** (`tests/unit/`) - Update any tests that assumed failure on missing resource
+The worktree sub-gateway follows the same 5-file pattern with methods: `list_worktrees()`, `add_worktree()`, `move_worktree()`, `remove_worktree()`, `prune_worktrees()`, `find_worktree_for_branch()`. Note: Worktree operations use exceptions (RuntimeError), not discriminated unions.
+**Partial removal causes type checker errors** - if you remove from abc.py but forget printing.py, the type checker will complain that PrintingGit doesn't implement the abstract method.
+1. Run type checker (`ty`) to verify no abstract method errors
+  </tool_result>
+  <tool_result tool="toolu_01EtFdzvDjEZMspKmCfoWVXp">
+---
+title: Monolith-to-Subpackage Refactoring Pattern
+read_when:
+  - "splitting a large module into a subpackage"
+  - "refactoring monolithic files into focused modules"
+  - "understanding the health_checks subpackage structure"
+tripwires:
+  - action: "re-exporting symbols from __init__.py after splitting a module"
+    warning: "No re-exports. Each submodule has a canonical import path. The __init__.py is an orchestrator, not a facade."
+  - action: "using wildcard imports in the orchestrator __init__.py"
+    warning: "Use explicit imports for every submodule function. The import list doubles as a module index."
+---
+
+# Monolith-to-Subpackage Refactoring Pattern
+
+When a single module exceeds ~500 lines with distinct responsibilities, split it into a subpackage with one module per function. The `__init__.py` becomes an orchestrator that coordinates the focused submodules.
+
+## Exemplar: health_checks
+
+`src/erk/core/health_checks.py` (1640 lines) was split into `src/erk/core/health_checks/` with 25 focused check modules, a shared model, and an orchestrator.
+
+### Structure
+
+```
+health_checks/
+├── __init__.py              # Orchestrator: run_all_checks()
+├── models.py                # Shared types: CheckResult
+├── anthropic_api_secret.py  # One check function each
+├── claude_cli.py
+├── erk_version.py
+
+... [81 lines omitted] ...
+
+The `CheckResult` frozen dataclass holds eight fields: `name`, `passed`, `message`, plus optional `details`, `verbose_details`, `warning`, `info`, and `remediation`. All check functions return this type.
+  </tool_result>
+  <tool_result tool="toolu_0145A8xbRdRgfRztWX42UPdg">
+---
+title: Inference Hoisting Pattern
+last_audited: "2026-02-23 00:00 PT"
+audit_result: clean
+read_when:
+  - adding LLM calls to an exec script
+  - calling PromptExecutor from a CLI command or exec script
+  - working with BranchSlugGenerator or generate_branch_slug
+  - adding --branch-slug or similar pre-computed value flags to exec commands
+  - understanding why exec scripts must be deterministic
+  - refactoring nested LLM calls out of exec scripts
+  - working with plan summary generation or --summary flags
+tripwires:
+  - action: "calling PromptExecutor, generate_branch_slug, or BranchSlugGenerator from an exec script"
+    warning: "Exec scripts must be deterministic. LLM calls belong in the skill layer (.claude/commands/*.md). Hoist: generate the value in the skill, pass it via --flag to the exec script. Read inference-hoisting.md."
+    pattern: "PromptExecutor|generate_branch_slug|BranchSlugGenerator"
+    score: 9
+  - action: "adding LLM-dependent logic inside a Click @command function in exec/scripts/"
+    warning: "Inference hoisting violation: exec scripts run as subprocesses; they cannot nest LLM calls within a Claude Code session. Move reasoning to the calling skill."
+---
+
+# Inference Hoisting Pattern
+
+## Why This Pattern Exists
+
+Exec scripts are Python subprocesses that run to completion without Claude Code context. They cannot invoke the Claude CLI via `PromptExecutor.execute_prompt()` — attempting to do so inside a Claude Code session creates a nested LLM call that deadlocks or fails.
+
+The skill layer (`.claude/commands/*.md`) is the orchestration boundary. Skills run inside Claude Code with full reasoning capability. They can generate values through LLM inference before invoking exec scripts.
+
+**The original bug**: `plan_save.py` and `setup_impl_from_pr.py` called `generate_branch_slug(executor, title)`, which invoked `PromptExecutor.execute_prompt()` to ask Claude for a branch slug. When these scripts ran inside a Claude Code session (via `/erk:plan-save`), the nested Claude subprocess locked up. The fix moved slug generation into the skill layer, passing the pre-generated slug via `--branch-slug`.
+
+... [126 lines omitted] ...
+
+  5. Uses the pre-computed value; errors with remediation instructions if missing
+Each script accepts a `--branch-slug` Click option. When provided, it uses the pre-generated slug directly. When missing, the script exits with a clear error message and remediation instructions directing the caller to generate a slug in the skill layer.
+## Error Handling
+When `--branch-slug` is not provided, exec scripts exit with a clear error message and remediation instructions. They do **not** silently fall back to a sanitized title. This follows the [agent backpressure gates](agent-backpressure-gates.md) philosophy: silent transformation masks mistakes and prevents the agent from learning.
+The error message directs callers to generate a slug in the skill layer (e.g., plan-save.md Step 1.5) and pass it via `--branch-slug`. For direct CLI invocation, pass `--branch-slug` explicitly.
+3. **Add a `--flag` to the exec script** — add it as a Click option; if missing, emit a clear error message with remediation instructions explaining how to generate the value
+### Deterministic Exception: `land_learn.py`
+  </tool_result>
+  <tool_result tool="toolu_012AGjGund21ekGv4z3yroJZ">
+---
+title: Worktree Detection in Dispatch
+read_when:
+  - "modifying dispatch command logic"
+  - "working with worktree branch detection"
+tripwires:
+  - action: "assuming plan branch is always in root worktree"
+    warning: "Branch may already be checked out in a slot worktree. Use find_worktree_for_branch() to detect."
+---
+
+# Worktree Detection in Dispatch
+
+## Problem
+
+`erk pr dispatch` needs to check out a plan branch, commit `.erk/impl-context/`, and push. Previously it assumed the branch could always be checked out in the root worktree, but the branch may already be checked out in a slot worktree (e.g., from a prior `erk implement`).
+
+## Solution
+
+LBYL pattern using `find_worktree_for_branch()` to detect if the branch is already in a worktree before attempting checkout:
+
+```python
+existing_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, branch_name)
+if existing_worktree is not None:
+    work_dir = existing_worktree
+    checked_out_in_root = False
+else:
+    ctx.branch_manager.checkout_branch(repo.root, branch_name)
+    work_dir = repo.root
+    checked_out_in_root = True
+```
+
+... [18 lines omitted] ...
+  </tool_result>
+  <assistant>I have all the source content for Group A. Let me now compare the current `gateway-abc-implementation.md` from master with the source branch version. The source branch version already includes the `download_remote_session.py` migration entry (I can see it at the bottom of the source version). The current file on this branch already has this content too (from the Read). Let me check what needs updating.
+
+Looking at the current file vs. source:
+- The current file already has the "Completed Migrations to Gateway Pattern" section with `download_remote_session.py` — this update (A2) is already present.
+- The `inference-hoisting.md` already has the `--summary` flag content and the `read_when` entry — A3 is already present.
+- `planned-pr-backend.md` already references `git-plumbing-patterns.md` — the link update is already done.
+
+Let me now check what actually differs from master to understand what's needed:</assistant>
+  <usage input_tokens="18472" cache_creation_input_tokens="14117" cache_read_input_tokens="34749" cache_creation="{'ephemeral_5m_input_tokens': 14117, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_019gtVHbbyugwTba7VowVi46">
+    <param name="command">git diff master -- docs/learned/architecture/gateway-abc-implementation.md | head -50</param>
+    <param name="description">Check diff vs master for gateway-abc</param>
+  </tool_use>
+  <usage input_tokens="18472" cache_creation_input_tokens="14117" cache_read_input_tokens="34749" cache_creation="{'ephemeral_5m_input_tokens': 14117, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0124HCPcR5HbNKtPFFJYKwg9">
+    <param name="command">git diff master -- docs/learned/architecture/inference-hoisting.md | head -50</param>
+    <param name="description">Check diff vs master for inference-hoisting</param>
+  </tool_use>
+  <usage input_tokens="18472" cache_creation_input_tokens="14117" cache_read_input_tokens="34749" cache_creation="{'ephemeral_5m_input_tokens': 14117, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01ENoDMtov3PKhsqaAnnt7Py">
+    <param name="command">ls docs/learned/architecture/plan-save-branch-restoration.md 2&gt;/dev/null &amp;&amp; echo "EXISTS" || echo "NOT FOUND"</param>
+    <param name="description">Check if old file exists</param>
+  </tool_use>
+  <usage input_tokens="18472" cache_creation_input_tokens="14117" cache_read_input_tokens="34749" cache_creation="{'ephemeral_5m_input_tokens': 14117, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01RTas4qkXzA8MDiWU1n12Zn">
+    <param name="command">ls docs/learned/architecture/git-plumbing-patterns.md 2&gt;/dev/null &amp;&amp; echo "EXISTS" || echo "NOT FOUND"</param>
+    <param name="description">Check if new file exists</param>
+  </tool_use>
+  <usage input_tokens="18472" cache_creation_input_tokens="14117" cache_read_input_tokens="34749" cache_creation="{'ephemeral_5m_input_tokens': 14117, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_017kdDK2CoQNkVKjqArJcptL">
+    <param name="command">ls docs/learned/architecture/worktree-dispatch-detection.md 2&gt;/dev/null &amp;&amp; echo "EXISTS" || echo "NOT FOUND"</param>
+    <param name="description">Check if worktree-dispatch exists</param>
+  </tool_use>
+  <usage input_tokens="18472" cache_creation_input_tokens="14117" cache_read_input_tokens="34749" cache_creation="{'ephemeral_5m_input_tokens': 14117, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01XYTT5uFVEb34gQKmj3C1kT">
+    <param name="command">ls docs/learned/architecture/monolith-to-subpackage-pattern.md 2&gt;/dev/null &amp;&amp; echo "EXISTS" || echo "NOT FOUND"</param>
+    <param name="description">Check if monolith pattern exists</param>
+  </tool_use>
+  <usage input_tokens="18472" cache_creation_input_tokens="14117" cache_read_input_tokens="34749" cache_creation="{'ephemeral_5m_input_tokens': 14117, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ENoDMtov3PKhsqaAnnt7Py">
+NOT FOUND
+  </tool_result>
+  <tool_result tool="toolu_017kdDK2CoQNkVKjqArJcptL">
+NOT FOUND
+  </tool_result>
+  <tool_result tool="toolu_019gtVHbbyugwTba7VowVi46">
+
+  </tool_result>
+  <tool_result tool="toolu_01RTas4qkXzA8MDiWU1n12Zn">
+docs/learned/architecture/git-plumbing-patterns.md
+EXISTS
+  </tool_result>
+  <tool_result tool="toolu_01XYTT5uFVEb34gQKmj3C1kT">
+NOT FOUND
+  </tool_result>
+  <tool_result tool="toolu_0124HCPcR5HbNKtPFFJYKwg9">
+
+  </tool_result>
+  <assistant>The current branch already has `git-plumbing-patterns.md` and the old file is already deleted. But `worktree-dispatch-detection.md` and `monolith-to-subpackage-pattern.md` are missing. Let me check the overall state more carefully:</assistant>
+  <usage input_tokens="129" cache_creation_input_tokens="19573" cache_read_input_tokens="48866" cache_creation="{'ephemeral_5m_input_tokens': 19573, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0184845M1FRLAWTQKsmgp2ji">
+    <param name="command">git diff master --name-status -- docs/learned/ | head -60</param>
+    <param name="description">Check what's already changed vs master</param>
+  </tool_use>
+  <usage input_tokens="129" cache_creation_input_tokens="19573" cache_read_input_tokens="48866" cache_creation="{'ephemeral_5m_input_tokens': 19573, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0184845M1FRLAWTQKsmgp2ji">
+
+  </tool_result>
+  <assistant>No changes from master yet — this is a fresh branch. Let me check master state:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="309" cache_read_input_tokens="68439" cache_creation="{'ephemeral_5m_input_tokens': 309, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01PMoVQcx5LE7WEmx7mNq4jv">
+    <param name="command">git log --oneline -5 &amp;&amp; echo "---" &amp;&amp; git log master --oneline -5</param>
+    <param name="description">Compare branch and master commits</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="309" cache_read_input_tokens="68439" cache_creation="{'ephemeral_5m_input_tokens': 309, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PMoVQcx5LE7WEmx7mNq4jv">
+11478d8c7 Remove plan staging dirs before implementation
+b9c7db020 Update plan for plan #8623 (rerun)
+b2df559f2 Add plan for PR #8623
+2599b4366 Add plan: Consolidated Plan: Merge 4 Learn-Plan PRs into Single Documentation Update
+db646b84e Deduplicate statusline checks and refactor dispatch ref handling (#8619)
+---
+db646b84e Deduplicate statusline checks and refactor dispatch ref handling (#8619)
+cff33ce55 Add --ref-current and --ref support to all dispatch commands (#8617)
+8b4614605 Release 0.9.3
+724af6ef8 Fix skills not bundled to claude path in wheel installs (#8614)
+2d1a5c716 Release 0.9.2
+  </tool_result>
+  <assistant>OK so the branch has some plan commits but no actual doc changes yet. The `git-plumbing-patterns.md` and other files from earlier reads exist because the branch is based on master where they may have been merged already. Let me check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="608" cache_read_input_tokens="68748" cache_creation="{'ephemeral_5m_input_tokens': 608, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01ANhS15qu5nRRiyuSBu2kpR">
+    <param name="command">git show master:docs/learned/architecture/git-plumbing-patterns.md &gt; /dev/null 2&gt;&amp;1 &amp;&amp; echo "ON MASTER" || echo "NOT ON MASTER"</param>
+    <param name="description">Check if git-plumbing on master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="608" cache_read_input_tokens="68748" cache_creation="{'ephemeral_5m_input_tokens': 608, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01HePUXygWjMGSYbHguCyJkD">
+    <param name="command">git show master:docs/learned/architecture/plan-save-branch-restoration.md &gt; /dev/null 2&gt;&amp;1 &amp;&amp; echo "ON MASTER" || echo "NOT ON MASTER"</param>
+    <param name="description">Check if old file on master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="608" cache_read_input_tokens="68748" cache_creation="{'ephemeral_5m_input_tokens': 608, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HePUXygWjMGSYbHguCyJkD">
+NOT ON MASTER
+  </tool_result>
+  <tool_result tool="toolu_01ANhS15qu5nRRiyuSBu2kpR">
+ON MASTER
+  </tool_result>
+  <assistant>So `git-plumbing-patterns.md` is already on master and `plan-save-branch-restoration.md` is already deleted. Some changes from the source PRs may have already landed. Let me do a comprehensive check to see what's already on master:</assistant>
+  <usage input_tokens="35" cache_creation_input_tokens="590" cache_read_input_tokens="69356" cache_creation="{'ephemeral_5m_input_tokens': 590, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_016Er4M4EWbrgN59YJX1hUn2">
+    <param name="command"># Check each file mentioned in the plan against master
+for f in \
+  "docs/learned/architec...[truncated 727 chars]...  git show "master:$f" &gt; /dev/null 2&gt;&amp;1 &amp;&amp; echo "ON MASTER: $f" || echo "MISSING: $f"
+done</param>
+    <param name="description">Check all new files against master</param>
+  </tool_use>
+  <usage input_tokens="35" cache_creation_input_tokens="590" cache_read_input_tokens="69356" cache_creation="{'ephemeral_5m_input_tokens': 590, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016Er4M4EWbrgN59YJX1hUn2">
+ON MASTER: docs/learned/architecture/git-plumbing-patterns.md
+MISSING: docs/learned/architecture/worktree-dispatch-detection.md
+MISSING: docs/learned/architecture/monolith-to-subpackage-pattern.md
+ON MASTER: docs/learned/cli/workflow-run-list.md
+MISSING: docs/learned/cli/doctor-workflow.md
+MISSING: docs/learned/cli/piped-output-flushing.md
+MISSING: docs/learned/tui/one-shot-prompt-modal.md
+MISSING: docs/learned/ci/job-ordering-strategy.md
+MISSING: docs/learned/testing/artifact-distribution-sync.md
+MISSING: docs/learned/pr-operations/pre-existing-detection.md
+MISSING: docs/learned/planning/learn-session-embedding.md
+MISSING: docs/learned/config/external-docs-path.md
+MISSING: docs/learned/config/index.md
+MISSING: docs/learned/erk/stub-branch-lifecycle.md
+MISSING: docs/learned/sessions/session-accumulation.md
+  </tool_result>
+  <assistant>Good — 2 new files are already on master, 13 are missing. Now let me check the updates too:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="784" cache_read_input_tokens="69946" cache_creation="{'ephemeral_5m_input_tokens': 784, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01KXdRsfqZBzQDw5rYXqjMSZ">
+    <param name="command"># Check if specific updates are already on master by comparing key content
+# A2: gateway-a...[truncated 742 chars]...ter:docs/learned/cli/activation-scripts.md 2&gt;/dev/null | grep -c "VIRTUAL_ENV" || echo "0"</param>
+    <param name="description">Check update status on master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="784" cache_read_input_tokens="69946" cache_creation="{'ephemeral_5m_input_tokens': 784, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KXdRsfqZBzQDw5rYXqjMSZ">
+3
+---
+0
+0
+---
+1
+---
+2
+---
+0
+0
+  </tool_result>
+  <assistant>So:
+- A1: Already on master (delete + create done) ✓
+- A2: Already on master (download_remote_session entry exists) ✓ 
+- A3: `Plan Summary Hoisting` section NOT on master → needs update
+- A4: worktree-dispatch-detection.md NOT on master → needs creation
+- A5: monolith-to-subpackage-pattern.md NOT on master → needs creation
+- B1: `Session Discovery Pipeline` NOT on master → needs merge
+- B2: `Phase 5` already on master ✓
+- B3: `VIRTUAL_ENV` NOT on master → needs update
+
+Let me check remaining updates:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="715" cache_read_input_tokens="70730" cache_creation="{'ephemeral_5m_input_tokens': 715, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01SzuaKn9GEeBqTdqzKJs6k7">
+    <param name="command"># More update checks
+# C1: view-aware-commands shortcut 'p' 
+git show master:docs/learned/...[truncated 1344 chars]...
+git show master:docs/learned/tui/status-indicators.md 2&gt;/dev/null | grep -c '|' | head -1</param>
+    <param name="description">Check remaining updates on master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="715" cache_read_input_tokens="70730" cache_creation="{'ephemeral_5m_input_tokens': 715, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SzuaKn9GEeBqTdqzKJs6k7">
+0
+0
+---
+1
+---
+3
+---
+0
+0
+---
+0
+0
+---
+0
+0
+---
+0
+0
+---
+3
+---
+9
+---
+  </tool_result>
+  <assistant>Let me also check B1 more carefully and a few things that showed non-zero:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="855" cache_read_input_tokens="71445" cache_creation="{'ephemeral_5m_input_tokens': 855, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01Xsr87KrZMHRqEyUsNaq4sx">
+    <param name="command"># C2: keyboard-shortcuts already has 1 "Launch Keys" match - check if it's the full sectio...[truncated 404 chars]...er:docs/learned/testing/erk-package-info-pattern.md 2&gt;/dev/null | grep 'managed_artifacts'</param>
+    <param name="description">Detailed check of partial matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="855" cache_read_input_tokens="71445" cache_creation="{'ephemeral_5m_input_tokens': 855, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Xsr87KrZMHRqEyUsNaq4sx">
+Exit code 1
+## Launch Keys
+
+Launch keys are defined in `CommandDefinition.launch_key` fields in `src/erk/tui/commands/registry.py`, not a separate LAUNCH_KEYS dict. See [TUI Command Registration](tui-command-registration.md) for the full table of current assignments.
+===
+## Single Source of Truth: `launch_key` Field
+The `CommandDefinition` dataclass has a `launch_key: str | None` field (added in PR #8559) that defines the single-key binding for the Launch modal. Launch keys are assigned directly on each `CommandDefinition` in `get_all_commands()` in `registry.py`.
+Only ACTION category commands have launch keys. OPEN (browser) and COPY (clipboard) commands have `launch_key=None`.
+===
+  </tool_result>
+  <assistant>So C2 (keyboard-shortcuts Launch Keys) and C3 (tui-command-registration launch_key) are already on master. Let me now systematically map out exactly what needs to be done:
+
+**Already on master (skip):**
+- A1: git-plumbing-patterns.md (created), plan-save-branch-restoration.md (deleted)
+- A2: gateway-abc-implementation.md (download_remote_session migration)
+- A6: rebase-conflict-patterns.md (no-op)
+- B2: erk-exec-commands.md (Phase 5 section)
+- B4: workflow-run-list.md (already exists)
+- C2: keyboard-shortcuts.md (Launch Keys already present)
+- C3: tui-command-registration.md (launch_key already present)
+
+**Needs implementation:**
+- A3: inference-hoisting.md update (Plan Summary Hoisting section)
+- A4: worktree-dispatch-detection.md (NEW)
+- A5: monolith-to-subpackage-pattern.md (NEW)
+- B1: land-learn-integration.md (OVERLAP MERGE)
+- B3: activation-scripts.md update
+- B5: doctor-workflow.md (NEW)
+- B6: piped-output-flushing.md (NEW)
+- C1: Fix shortcut in 2 TUI docs
+- C4: stacked-pr-indicator.md update
+- C5: tui architecture.md update
+- C6: one-shot-prompt-modal.md (NEW)
+- D1: gitignored-directory-commit-patterns.md update
+- D2: autofix-job-needs.md update
+- D3: job-ordering-strategy.md (NEW)
+- E1: erk-package-info-pattern.md fix paths
+- E2: artifact-distribution-sync.md (NEW)
+- E3: pre-existing-detection.md (NEW)
+- E4: learn-session-embedding.md (NEW)
+- E5: external-docs-path.md (NEW) + config/index.md (NEW)
+- E6: stub-branch-lifecycle.md (NEW)
+- E7: session-accumulation.md (NEW)
+- E8: table formatting fixes
+
+Let me now execute all these changes. I'll work through them systematically, pulling content from source branches and writing/updating files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="778" cache_read_input_tokens="72300" cache_creation="{'ephemeral_5m_input_tokens': 778, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01WM513Gy8nhrEacN5afE6VE">
+    <param name="command"># Get all the NEW files and updated files from source branches in one batch
+# A3 update: i...[truncated 4583 chars]...s/learned/tui/keyboard-shortcuts.md &gt; /tmp/keyboard-8529.md 2&gt;/dev/null
+echo "C2-8529: $?"</param>
+    <param name="description">Pull all source content from branches</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="778" cache_read_input_tokens="72300" cache_creation="{'ephemeral_5m_input_tokens': 778, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WM513Gy8nhrEacN5afE6VE">
+A3: 0
+B1a: 0
+B1b: 0
+B3: 0
+B5: 0
+B6: 0
+C1a: 0
+C1b: 0
+C4: 0
+C5: 0
+C6: 0
+D1: 0
+D2: 0
+D3: 0
+E1: 0
+E2: 0
+E3: 0
+E4: 0
+E5a: 0
+E5b: 0
+E6: 0
+E7: 0
+E8a: 0
+E8b: 0
+C2-8529: 0
+  </tool_result>
+  <assistant>All content pulled successfully. Now let me start writing files. I'll handle each group efficiently using the definitive content from source branches. For updates, I'll diff the source against master to see what was added, then apply those changes.
+
+Let me start with the simple NEW file creates and straightforward updates. I'll process them in parallel where possible.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2783" cache_read_input_tokens="73078" cache_creation="{'ephemeral_5m_input_tokens': 2783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014Nx7fASoMdYP1AQVA7fLEb">
+    <param name="file_path">/tmp/inference-hoisting-8513.md</param>
+    <param name="offset">1</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2783" cache_read_input_tokens="73078" cache_creation="{'ephemeral_5m_input_tokens': 2783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Lj2HpBJj49XrsARj6CDsYA">
+    <param name="file_path">/tmp/land-learn-8592.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2783" cache_read_input_tokens="73078" cache_creation="{'ephemeral_5m_input_tokens': 2783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01WBbHbQ7VF4ChyT3McBWAne">
+    <param name="file_path">/tmp/land-learn-8513.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2783" cache_read_input_tokens="73078" cache_creation="{'ephemeral_5m_input_tokens': 2783, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014Nx7fASoMdYP1AQVA7fLEb">
+     1→---
+     2→title: Inference Hoisting Pattern
+     3→last_audited: "2026-02-23 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - adding LLM calls to an exec script
+     7→  - calling PromptExecutor from a CLI command or exec script
+     8→  - working with BranchSlugGenerator or generate_branch_slug
+     9→  - adding --branch-slug or similar pre-computed value flags to exec commands
+    10→  - understanding why exec scripts must be deterministic
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+</session>

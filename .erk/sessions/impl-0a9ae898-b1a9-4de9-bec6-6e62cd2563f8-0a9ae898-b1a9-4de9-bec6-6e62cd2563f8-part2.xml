@@ -1,0 +1,1052 @@
+<session>
+  <meta branch="plnd/consolidate-learn-docs-03-02-1752" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01Lj2HpBJj49XrsARj6CDsYA">
+     1→---
+     2→title: Land-Learn Integration
+     3→read_when:
+     4→  - "modifying the erk land command's learn workflow"
+     5→  - "debugging session discovery during land"
+     6→  - "working with session reporting in the land pipeline"
+     7→  - "learn plan creation"
+     8→  - "session discovery"
+     9→  - "empty learn plan"
+    10→tripwires:
+    11→  - action: "making session discovery failures block the land command"
+    12→    warning: "Session discovery uses fire-and-forget error resilience. The entire learn workflow is wrapped in try/except to prevent blocking land. Failures are reported as warnings, never errors."
+    13→    score: 6
+    14→  - action: "modifying learn plan skip guards in land_learn.py"
+    15→    warning: "Learn plan creation may skip silently when no sessions exist. Check land-learn-integration.md before modifying skip guards."
+    16→---
+    17→
+    18→# Land-Learn Integration
+    19→
+    20→After landing a PR, `erk land` optionally creates a learn plan to capture implementation insights. The session discovery step reports what sessions are available for the learn workflow.
+    21→
+    22→## Skip Guards
+    23→
+    24→Learn plan creation skips in two scenarios:
+    25→
+    26→1. **No sessions tracked at all** — e.g., manual CHANGELOG PRs or PRs without implementation sessions. The `all_session_ids` list is empty because no planning, implementation, or learn sessions were recorded.
+    27→
+    28→2. **Sessions exist but XML extraction produces no content** — Sessions were tracked in GitHub metadata but preprocessing produced no usable XML (warmup sessions, empty sessions, or sessions that fail to parse).
+    29→
+    30→&lt;!-- Source: src/erk/cli/commands/land_learn.py, _create_learn_pr_impl --&gt;
+
+... [92 lines omitted] ...
+
+    99→## Fire-and-Forget Error Resilience
+   106→except Exception as exc:
+   107→    user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
+   110→This ensures that learn failures never block the primary `erk land` operation. A failed learn plan is a warning, not an error.
+  </tool_result>
+  <tool_result tool="toolu_01WBbHbQ7VF4ChyT3McBWAne">
+     1→---
+     2→title: Land-Learn Integration
+     3→read_when:
+     4→  - "modifying the erk land command's learn workflow"
+     5→  - "debugging session discovery during land"
+     6→  - "working with session reporting in the land pipeline"
+     7→tripwires:
+     8→  - action: "making session discovery failures block the land command"
+     9→    warning: "Session discovery uses fire-and-forget error resilience. The entire learn workflow is wrapped in try/except to prevent blocking land. Failures are reported as warnings, never errors."
+    10→    score: 6
+    11→---
+    12→
+    13→# Land-Learn Integration
+    14→
+    15→After landing a PR, `erk land` optionally creates a learn plan to capture implementation insights. The session discovery step reports what sessions are available for the learn workflow.
+    16→
+    17→## Session Discovery Logging
+    18→
+    19→&lt;!-- Source: src/erk/cli/commands/land_learn.py:209-305, _log_session_discovery --&gt;
+    20→
+    21→See `_log_session_discovery()` in `src/erk/cli/commands/land_learn.py`. This function reports session discovery results and returns a file map of preprocessed session XML.
+    22→
+    23→### Return Value
+    24→
+    25→Returns `dict[str, str]` mapping file paths to XML content. Each key follows the naming convention `.erk/impl-context/sessions/{type}-{session_id}.xml` (with `-part{N}` suffix for multi-chunk sessions). The dict feeds into `create_plan_draft_pr(extra_files=...)` to embed session XML in the learn plan PR diff.
+    26→
+    27→### Output Format
+    28→
+    29→The function produces a structured summary with per-session type badges, turn counts, duration, and compression stats.
+    30→
+
+... [58 lines omitted] ...
+
+    62→## Fire-and-Forget Error Resilience
+    66→See `_create_learn_pr_with_sessions()` in `src/erk/cli/commands/land_learn.py` for the fire-and-forget wrapper. The entire learn workflow is wrapped in a try/except that catches all exceptions and emits a warning instead of raising. This ensures that learn failures never block the primary `erk land` operation. A failed learn plan is a warning, not an error.
+  </tool_result>
+  <assistant>Now I have a clear picture. The plan says for B1 to use #8592 as structural base and layer #8513's additions. The #8592 version has Skip Guards, Session Discovery Pipeline (5-stage flow), Cycle Prevention, and expanded frontmatter. The #8513 version adds return type info, Session XML File Returns, File Inventory Logging, TUI Learn Plan Toast.
+
+The merged version should combine both. The #8592 version is the better structural base. Let me now write all files efficiently. I'll start by writing the merged B1 file and all the new/updated files.
+
+Let me now read the current master versions of files that need updating, then write all changes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4299" cache_read_input_tokens="75861" cache_creation="{'ephemeral_5m_input_tokens': 4299, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01AxbwuoomBYpLXSnUS9cCmb">
+    <param name="file_path">/tmp/activation-8567.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4299" cache_read_input_tokens="75861" cache_creation="{'ephemeral_5m_input_tokens': 4299, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01KWh4jW6BKvAhuiPfQqKW7X">
+    <param name="file_path">/tmp/view-aware-8529.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4299" cache_read_input_tokens="75861" cache_creation="{'ephemeral_5m_input_tokens': 4299, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014Cck8W6s5jGAju884ZArDL">
+    <param name="file_path">/tmp/action-inv-8529.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4299" cache_read_input_tokens="75861" cache_creation="{'ephemeral_5m_input_tokens': 4299, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018Vx7LRLQYFWSNNXuQGZwTA">
+    <param name="file_path">/tmp/stacked-8513.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4299" cache_read_input_tokens="75861" cache_creation="{'ephemeral_5m_input_tokens': 4299, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MFffma9r2AN76bfPbuCpzK">
+    <param name="file_path">/tmp/tui-arch-8567.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4299" cache_read_input_tokens="75861" cache_creation="{'ephemeral_5m_input_tokens': 4299, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016gt98LzPACDGnSGvwwTMCJ">
+    <param name="file_path">/tmp/gitignored-8567.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4299" cache_read_input_tokens="75861" cache_creation="{'ephemeral_5m_input_tokens': 4299, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018sMSCCkPPJpige1uQCTZ6J">
+    <param name="file_path">/tmp/autofix-8529.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4299" cache_read_input_tokens="75861" cache_creation="{'ephemeral_5m_input_tokens': 4299, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014FYHRPdtkE3gw1SYw8GmkD">
+    <param name="file_path">/tmp/erk-pkg-8529.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4299" cache_read_input_tokens="75861" cache_creation="{'ephemeral_5m_input_tokens': 4299, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0181heKUGgcqvEfVVGqrHgef">
+    <param name="file_path">/tmp/gh-review-8567.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4299" cache_read_input_tokens="75861" cache_creation="{'ephemeral_5m_input_tokens': 4299, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016mQgVWKQtfMcCukvQHHapS">
+    <param name="file_path">/tmp/status-ind-8567.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4299" cache_read_input_tokens="75861" cache_creation="{'ephemeral_5m_input_tokens': 4299, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AxbwuoomBYpLXSnUS9cCmb">
+     1→---
+     2→title: Activation Scripts
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "working with worktree environment setup"
+     7→  - "understanding .erk/activate.sh scripts"
+     8→  - "configuring post-create commands"
+     9→tripwires:
+    10→  - action: "removing the VIRTUAL_ENV guard from activation scripts"
+    11→    warning: "Guard prevents double activation when direnv and temp script both source activation. Removing it causes duplicate package installs."
+    12→---
+    13→
+    14→# Activation Scripts
+    15→
+    16→## Overview
+    17→
+    18→Erk generates `.erk/activate.sh` scripts in worktrees to provide a shell-sourceable environment setup. This enables opt-in shell integration where users explicitly source the script rather than relying on automatic shell manipulation.
+    19→
+    20→## What the Script Does
+    21→
+    22→When sourced, `.erk/activate.sh`:
+    23→
+    24→1. CDs to the worktree directory
+    25→2. Creates `.venv` with `uv sync` if not present
+    26→3. Sources `.venv/bin/activate` if present
+    27→4. Loads `.env` file (using `set -a` for allexport)
+    28→5. Runs configured post-create commands
+    29→6. Displays activation confirmation
+    30→
+
+... [87 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01KWh4jW6BKvAhuiPfQqKW7X">
+     1→---
+     2→title: View-Aware Command Filtering
+     3→read_when:
+     4→  - "registering a new TUI command with view-mode filtering"
+     5→  - "understanding how commands are filtered by view mode (plans, learn, objectives)"
+     6→  - "adding objective-specific commands to the command palette"
+     7→  - "implementing streaming commands in the TUI"
+     8→tripwires:
+     9→  - action: "registering a new TUI command without a view-mode predicate"
+    10→    warning: "Every command must use _is_plan_view() or _is_objectives_view() to prevent it from appearing in the wrong view. Commands without view predicates appear in all views."
+    11→  - action: "adding streaming commands without using the streaming operation pattern"
+    12→    warning: "Streaming ACTION commands need the streaming operation wrapper with status bar tracking. See streaming-output.md for the current pattern."
+    13→---
+    14→
+    15→# View-Aware Command Filtering
+    16→
+    17→The TUI command palette filters commands by the active view mode. Plan commands appear only in Plans/Learn views; objective commands appear only in the Objectives view. This filtering is implemented through view-mode predicates in the command registry.
+    18→
+    19→## View Mode Predicates
+    20→
+    21→&lt;!-- Source: src/erk/tui/commands/registry.py:21-28 --&gt;
+    22→
+    23→Two predicates partition the command space by view mode:
+    24→
+    25→&lt;!-- See _is_plan_view and _is_objectives_view in src/erk/tui/commands/registry.py:21-28 --&gt;
+    26→
+    27→- `_is_plan_view(ctx)`: Returns `True` when not in Objectives view (i.e., Plans or Learn) — checks `ctx.view_mode != ViewMode.OBJECTIVES`
+    28→- `_is_objectives_view(ctx)`: Returns `True` when in Objectives view — checks `ctx.view_mode == ViewMode.OBJECTIVES`
+    29→
+    30→The `CommandContext.view_mode` field carries the active `ViewMode` enum value. `MainListCommandProvider` reads this dynamically from `self._app._view_mode`, while `PlanCommandProvider` hardcodes `ViewMode.PLANS` since the detail modal is always in plan context.
+
+... [87 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014Cck8W6s5jGAju884ZArDL">
+     1→---
+     2→title: TUI Command Architecture
+     3→read_when:
+     4→  - "adding a new command to the TUI or desktop dashboard"
+     5→  - "understanding how command availability is determined"
+     6→  - "choosing which execution pattern a new command should use"
+     7→tripwires:
+     8→  - action: "adding a command without an availability predicate"
+     9→    warning: "Every command needs an is_available predicate based on PlanRowData field presence. Commands without predicates appear when they can't execute."
+    10→  - action: "adding an ACTION command that executes instantly"
+    11→    warning: "ACTION category implies mutative operations. Instant operations belong in OPEN or COPY categories."
+    12→last_audited: "2026-02-08 00:00 PT"
+    13→audit_result: edited
+    14→---
+    15→
+    16→# TUI Command Architecture
+    17→
+    18→The TUI command system uses a data-driven registry pattern where commands declare their own availability based on `PlanRowData` field presence. This decouples command definitions from UI rendering, enabling the same registry to serve multiple frontends (TUI command palette, desktop toolbar).
+    19→
+    20→## Why Data-Driven Availability
+    21→
+    22→&lt;!-- Source: src/erk/tui/commands/registry.py, get_all_commands --&gt;
+    23→
+    24→Commands don't check "can I run?" at execution time — they declare upfront what data they need via `is_available` predicates. This design was chosen because:
+    25→
+    26→1. **Multiple consumers need the same logic.** The TUI command palette (`MainListCommandProvider`, `PlanCommandProvider`) and the desktop dashboard toolbar both need to know which actions are valid for a given row. Centralizing predicates in the registry avoids duplicating availability logic across frontends.
+    27→
+    28→2. **Availability depends on `PlanRowData` nullability.** Each `PlanRowData` field is nullable for a reason (no PR yet, no workflow run, etc.). The predicates express which combination of non-null fields a command requires. This makes the availability contract explicit and testable.
+    29→
+    30→3. **Commands that are always available use `lambda _: True`** — these are plan-level operations (close, prepare, dispatch) that only need the issue number, which is always present.
+
+... [67 lines omitted] ...
+
+    58→**Anti-pattern**: Writing `is_available=lambda ctx: True` for a command that uses `ctx.row.pr_number`. The predicate will allow execution when `pr_number` is None, causing a runtime error. This is why the [three-layer null validation](adding-commands.md) pattern exists — the predicate is necessary but not sufficient.
+  </tool_result>
+  <tool_result tool="toolu_018Vx7LRLQYFWSNNXuQGZwTA">
+     1→---
+     2→title: Stacked PR Indicator
+     3→read_when:
+     4→  - "adding or modifying PR indicators in the TUI dashboard"
+     5→  - "understanding blocking vs. informational indicators"
+     6→  - "working with stacked PR detection"
+     7→---
+     8→
+     9→# Stacked PR Indicator
+    10→
+    11→The pancake emoji (🥞) indicates a stacked PR in the TUI dashboard lifecycle column. It appears when a plan's PR targets a branch other than master/main.
+    12→
+    13→## Dual-Source Detection
+    14→
+    15→Stacked status is detected from two sources with a fallback strategy:
+    16→
+    17→1. **Primary: Graphite `get_parent_branch()`** — When the PR head branch is known, the branch manager's `get_parent_branch()` is consulted first. If it returns a parent branch not in `("master", "main")`, the PR is stacked. Graphite is authoritative because it reflects the actual stack topology.
+    18→
+    19→2. **Fallback: GitHub `base_ref_name`** — Only when Graphite returns `None` (branch not tracked locally). The `base_ref_name` field on `PullRequestInfo` is checked against `("master", "main")`.
+    20→
+    21→&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py, RealPlanDataProvider._build_row_data --&gt;
+    22→
+    23→See `RealPlanDataProvider._build_row_data()` in `real.py` for the dual-source detection logic.
+    24→
+    25→## Stale Data Handling
+    26→
+    27→Graphite is authoritative because GitHub's `base_ref_name` can become stale. When a parent PR merges, GitHub does not always update the child PR's target branch immediately — the child may still show the old (now-merged) branch as its base. Graphite's local branch tracking reflects the actual stack state, making it the more reliable source for stacking detection.
+    28→
+    29→## Indicator Ordering
+    30→
+
+... [42 lines omitted] ...
+
+    41→- **Blocking indicators** (CI failures, unresolved reviews, merge conflicts) prevent the rocket emoji (🚀) from appearing in the implemented stage.
+  </tool_result>
+  <tool_result tool="toolu_01MFffma9r2AN76bfPbuCpzK">
+     1→---
+     2→title: TUI Architecture Overview
+     3→read_when:
+     4→  - "understanding TUI structure"
+     5→  - "implementing TUI components"
+     6→  - "working with TUI data providers"
+     7→tripwires:
+     8→  - action: "reusing same DOM element id across loading/empty/content states"
+     9→    warning: "query_one() returns wrong element silently when id is reused across lifecycle phases. Use unique IDs per phase."
+    10→  - action: "calling widget methods directly from @work(thread=True) background threads"
+    11→    warning: "Direct widget calls from background threads cause silent UI corruption. Must use self.app.call_from_thread(callback, ...)."
+    12→  - action: "extending PlanDataProvider ABC"
+    13→    warning: "Requires 3-file update: abc.py + real.py + fake.py. Fake must initialize new dict in __init__. Missing init causes AttributeError at test time."
+    14→  - action: "adding a DataTable column with add_column(key=...)"
+    15→    warning: "Column key is a data binding contract — must match data field name. Silent failure when mismatched."
+    16→  - action: "moving @on decorated event handlers to a mixin"
+    17→    warning: "Textual's _MessagePumpMeta only scans class.__dict__, not inherited methods. Event handlers on mixins are silently ignored."
+    18→last_audited: "2026-02-17 18:30 PT"
+    19→audit_result: clean
+    20→---
+    21→
+    22→# TUI Architecture Overview
+    23→
+    24→The erk TUI is built with Textual and follows a layered architecture separating data fetching, filtering, and rendering.
+    25→
+    26→## Directory Structure
+    27→
+    28→```
+    29→src/erk/tui/
+    30→├── app.py              # Main Textual App (ErkDashApp)
+
+... [190 lines omitted] ...
+
+   126→Use fake providers instead of mocking. `FakePlanDataProvider` lives in `erk_shared.gateway.plan_data_provider.fake` and accepts keyword-only arguments (`plans`, `clipboard`, `browser`, `repo_root`, `fetch_error`). The `make_plan_row()` helper in the same module creates test `PlanRowData` instances with sensible defaults.
+  </tool_result>
+  <tool_result tool="toolu_016gt98LzPACDGnSGvwwTMCJ">
+     1→---
+     2→title: CI Gitignored Directory Commit Patterns
+     3→read_when:
+     4→  - "working with .erk/impl-context/ in CI workflows"
+     5→  - "force-adding gitignored files in GitHub Actions"
+     6→  - "debugging why .erk/impl-context/ appears in PR diffs"
+     7→tripwires:
+     8→  - action: "committing .erk/impl-context/ without git add -f"
+     9→    warning: "The directory is gitignored. Use git add -f .erk/impl-context to force-add it. Without -f, git silently skips the directory."
+    10→    score: 5
+    11→---
+    12→
+    13→# CI Gitignored Directory Commit Patterns
+    14→
+    15→`.erk/impl-context/` is gitignored but needs temporary git tracking during CI workflows. This requires force-add and explicit cleanup.
+    16→
+    17→## Three-Phase Lifecycle
+    18→
+    19→### Phase 1: Force-Add During Setup
+    20→
+    21→&lt;!-- Source: .github/workflows/plan-implement.yml, Phase 1 setup step --&gt;
+    22→
+    23→The setup step creates the implementation context, force-adds it to git tracking, and pushes to the remote branch. `git add -f` overrides `.gitignore` to track the directory. This creates a committed snapshot that the implementation agent reads from.
+    24→
+    25→### Phase 2: Remove Before Implementation
+    26→
+    27→&lt;!-- Source: .github/workflows/plan-implement.yml, cleanup step --&gt;
+    28→
+    29→The cleanup step in `plan-implement.yml` (lines 406-409 and similar patterns) uses `git rm -r --cached` to remove from git tracking while preserving files on disk. The implementation agent still reads the local files, but they no longer appear in the PR diff. This is idempotent — safe to run even if already cleaned up.
+    30→
+
+... [38 lines omitted] ...
+
+    41→| `git ls-files --error-unmatch .erk/impl-context/` | Check if directory is tracked (exit 1 if not) |
+    45→&lt;!-- Source: src/erk/cli/commands/exec/scripts/ci_update_pr_body.py, plan-header error handling --&gt;
+    47→When rewriting PR bodies in CI, the plan-header metadata block must be preserved. The error handling in `ci_update_pr_body.py` (around lines 266-277) validates that the plan-header metadata block exists, using a `UpdateError` discriminated union with a specific `plan-header-not-found` variant to signal metadata loss in previous CI steps.
+  </tool_result>
+  <tool_result tool="toolu_018sMSCCkPPJpige1uQCTZ6J">
+     1→---
+     2→title: Autofix Job Needs
+     3→read_when:
+     4→  - "modifying the autofix job's needs list in ci.yml"
+     5→  - "adding a new CI job that might block autofix"
+     6→  - "understanding autofix dependency design"
+     7→tripwires:
+     8→  - action: "removing test jobs from autofix's needs list"
+     9→    warning: "Autofix depends on ALL validation jobs including unit-tests and integration-tests. It needs full failure context to attempt intelligent fixes. See the needs array in ci.yml."
+    10→---
+    11→
+    12→# Autofix Job Needs
+    13→
+    14→## Current Design
+    15→
+    16→The autofix job depends on **all** validation jobs, including test jobs. This gives the autofix agent full failure context to attempt intelligent fixes.
+    17→
+    18→&lt;!-- Source: .github/workflows/ci.yml, autofix job needs array --&gt;
+    19→
+    20→See the `autofix` job's `needs` array in `.github/workflows/ci.yml` for the authoritative list:
+    21→
+    22→- format, lint, fix-formatting, docs-check, ty, unit-tests, integration-tests
+    23→
+    24→The job uses `always()` in its `if` condition, so it runs even when upstream jobs fail. The dependency list controls **ordering** (autofix waits for all jobs to finish) rather than **gating** (autofix still runs on failure).
+    25→
+    26→## Why All Jobs Are Included
+    27→
+    28→The autofix agent uses Claude Code with failure context from all jobs. Including test jobs in `needs` ensures:
+    29→
+    30→1. All job results are available via `needs.&lt;job&gt;.result`
+
+... [31 lines omitted] ...
+
+    31→2. The agent sees both style failures AND test failures in one pass
+    32→3. Error messages from test jobs are collected and passed to Claude
+    40→| format (ruff format) | Yes       | Failure context for auto-fix          |
+    41→| lint (ruff check)    | Yes       | Failure context for auto-fix          |
+    43→| docs-check           | Yes       | Failure context for docs-sync         |
+    44→| ty (type check)      | Yes       | Failure context for type fixes        |
+    45→| unit-tests           | Yes       | Failure context for intelligent fixes |
+    46→| integration-tests    | Yes       | Failure context for intelligent fixes |
+    54→- [CI Iteration Pattern](ci-iteration.md) - Iterative fixing of CI failures
+  </tool_result>
+  <tool_result tool="toolu_014FYHRPdtkE3gw1SYw8GmkD">
+     1→---
+     2→title: ErkPackageInfo Value Object
+     3→read_when:
+     4→  - "working with ErkPackageInfo or bundled paths"
+     5→  - "understanding is_in_erk_repo detection"
+     6→  - "writing tests that need ErkPackageInfo"
+     7→tripwires:
+     8→  - action: "creating ErkPackageInfo directly in production code"
+     9→    warning: "Use ErkPackageInfo.from_project_dir(). Direct construction is for tests only."
+    10→last_audited: "2026-02-17 00:00 PT"
+    11→audit_result: clean
+    12→---
+    13→
+    14→# ErkPackageInfo Value Object
+    15→
+    16→`ErkPackageInfo` consolidates package-level metadata into a single frozen dataclass, providing two construction paths: one for production and one for tests.
+    17→
+    18→## Class Definition
+    19→
+    20→&lt;!-- Source: src/erk/artifacts/paths.py, ErkPackageInfo --&gt;
+    21→
+    22→See `ErkPackageInfo` in `src/erk/artifacts/paths.py`. Frozen dataclass with fields: `in_erk_repo`, `bundled_claude_dir`, `bundled_github_dir`, `bundled_erk_dir`, `current_version`.
+    23→
+    24→## Two-Constructor Pattern
+    25→
+    26→### Production: from_project_dir()
+    27→
+    28→&lt;!-- Source: src/erk/artifacts/paths.py, ErkPackageInfo.from_project_dir --&gt;
+    29→
+    30→See `ErkPackageInfo.from_project_dir()` in `src/erk/artifacts/paths.py`. Calls `is_in_erk_repo()`, `get_bundled_claude_dir()`, `get_bundled_github_dir()`, `get_bundled_erk_dir()`, and `get_current_version()` to fully populate all fields. Uses inline imports to avoid circular dependencies.
+
+... [36 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_0181heKUGgcqvEfVVGqrHgef">
+     1→---
+     2→title: GitHub Review Decision Display
+     3→read_when:
+     4→  - "implementing review decision indicators in the TUI"
+     5→  - "understanding how PR review status flows from GraphQL to the TUI display"
+     6→  - "debugging missing or incorrect review decision indicators"
+     7→---
+     8→
+     9→# GitHub Review Decision Display
+    10→
+    11→The TUI plan list displays review decision status as emoji indicators on plans in the `review` lifecycle stage. This document describes the complete pipeline from GraphQL to display.
+    12→
+    13→## Pipeline
+    14→
+    15→```
+    16→GraphQL reviewDecision field
+    17→    ↓
+    18→PullRequestInfo.review_decision: str | None
+    19→    ↓
+    20→real.py: selected_pr.review_decision → pr_review_decision
+    21→    ↓
+    22→compute_status_indicators(review_decision=pr_review_decision)
+    23→    ↓
+    24→TUI plan list "sts" column with emoji indicators
+    25→```
+    26→
+    27→## GraphQL Source
+    28→
+    29→The `reviewDecision` field is fetched in three queries in `graphql_queries.py` (search for `reviewDecision` to locate):
+    30→
+
+... [46 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_016mQgVWKQtfMcCukvQHHapS">
+     1→---
+     2→title: TUI Status Indicators
+     3→read_when:
+     4→  - "working with status indicators in TUI dashboard"
+     5→  - "adding new emoji indicators to plan display"
+     6→  - "modifying the sts column"
+     7→tripwires:
+     8→  - action: "adding emoji with Unicode variation selector (\\ufe0f) to status indicators"
+     9→    warning: "Variation selector forces double-wide rendering in terminals, breaking column alignment. Current safe emoji: 🥞 🚧 👀 💥 ✔ ❌ 🚀. Test any new emoji in terminal before adding."
+    10→    score: 5
+    11→  - action: "extracting status indicators from the lifecycle display string"
+    12→    warning: "Indicators are computed from RAW PR state fields (is_draft, has_conflicts, review_decision), NOT extracted from lifecycle display. Use compute_status_indicators() for standalone display, format_lifecycle_with_status() for inline."
+    13→    score: 4
+    14→---
+    15→
+    16→# TUI Status Indicators
+    17→
+    18→Status indicators show PR state as emoji in the TUI dashboard. They are computed from raw PR state fields, not extracted from the lifecycle display string.
+    19→
+    20→## Two Public Functions
+    21→
+    22→**Location:** `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py`
+    23→
+    24→### compute_status_indicators() — Standalone Display
+    25→
+    26→Used for the "sts" column in the dashboard. Returns space-joined emoji string or "-" when empty.
+    27→
+    28→```python
+    29→compute_status_indicators(
+    30→    lifecycle_display="[cyan]impl[/cyan]",
+
+... [63 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have a clear picture. Most source branch files already contain the exact final content we need. The strategy:
+
+1. For files that already match what's on master: skip (A1, A2, A6, B2, B4, C2, C3)
+2. For NEW files: write content from source branches directly 
+3. For UPDATES: the source branch versions already contain the updates applied on top of master — use them directly
+
+The key insight is that each source branch version of an updated file already IS the final version we want (it was the content of that PR). Let me now compare current master versions against the source branch versions to confirm they contain the needed changes, then write them all.
+
+Let me now write all the files that need creating or updating. I'll do this in batches:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="17753" cache_read_input_tokens="80160" cache_creation="{'ephemeral_5m_input_tokens': 17753, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_012iduR4UFgHJgr4Exjg37aQ">
+    <param name="command"># Write A3: inference-hoisting.md - copy from #8513 source (has Plan Summary Hoisting sect...[truncated 227 chars]...erk/erk/docs/learned/architecture/worktree-dispatch-detection.md 2&gt;/dev/null
+echo "A4: $?"</param>
+    <param name="description">Write A3-A4 files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="17753" cache_read_input_tokens="80160" cache_creation="{'ephemeral_5m_input_tokens': 17753, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012iduR4UFgHJgr4Exjg37aQ">
+A3 done
+A4: 1
+  </tool_result>
+  <assistant>The worktree file doesn't exist in /tmp because git show piped to a variable. Let me use the content I already retrieved:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="425" cache_read_input_tokens="97913" cache_creation="{'ephemeral_5m_input_tokens': 425, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01HUavM9GftD7HZ7aXhB98Rp">
+    <param name="command"># The git show commands earlier wrote to /tmp files - check them
+ls -la /tmp/worktree-disp...[truncated 236 chars]...tch-detection.md 2&gt;/dev/null
+echo "Written: $?"
+ls -la /tmp/worktree-dispatch-detection.md</param>
+    <param name="description">Regenerate worktree-dispatch file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="425" cache_read_input_tokens="97913" cache_creation="{'ephemeral_5m_input_tokens': 425, 'ephemeral_1h_input_tokens': 0}" output_tokens="249" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HUavM9GftD7HZ7aXhB98Rp">
+NOT FOUND
+Written: 0
+-rw-r--r-- 1 runner runner 1888 Mar  2 17:59 /tmp/worktree-dispatch-detection.md
+  </tool_result>
+  <assistant>Wait — the earlier batch command with redirects worked fine (all returned 0). The issue is the copy destination was wrong. Let me re-pull the files that had issues and write them all properly:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="589" cache_read_input_tokens="98338" cache_creation="{'ephemeral_5m_input_tokens': 589, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0115qmBe5gKkhuxAsLbM3fNG">
+    <param name="command"># Write all NEW files by copying from /tmp where git show earlier wrote them
+# A4: worktre...[truncated 1922 chars]...md /home/runner/work/erk/erk/docs/learned/sessions/session-accumulation.md &amp;&amp; echo "E7 OK"</param>
+    <param name="description">Write all NEW documentation files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="589" cache_read_input_tokens="98338" cache_creation="{'ephemeral_5m_input_tokens': 589, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0115qmBe5gKkhuxAsLbM3fNG">
+A4 OK
+A5 OK
+B5 OK
+B6 OK
+C6 OK
+D3 OK
+E2 OK
+E3 OK
+E4 OK
+E5a OK
+E5b OK
+E6 OK
+E7 OK
+  </tool_result>
+  <assistant>All new files written. Now let me write the updated files by copying from source branches:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1032" cache_read_input_tokens="98927" cache_creation="{'ephemeral_5m_input_tokens': 1032, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01UG4BKvc7XgsWpMuspHHrUy">
+    <param name="command"># A3: inference-hoisting.md already done above
+
+# B1: land-learn-integration.md - use #859...[truncated 1501 chars]...d-8567.md /home/runner/work/erk/erk/docs/learned/tui/status-indicators.md &amp;&amp; echo "E8b OK"</param>
+    <param name="description">Write all updated documentation files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1032" cache_read_input_tokens="98927" cache_creation="{'ephemeral_5m_input_tokens': 1032, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UG4BKvc7XgsWpMuspHHrUy">
+B1 base OK
+B3 OK
+C1a OK
+C1b OK
+C4 OK
+C5 OK
+D1 OK
+D2 OK
+E1 OK
+E8a OK
+E8b OK
+  </tool_result>
+  <assistant>Now I need to handle B1 (the overlap merge). The #8592 version is the structural base, but it needs the #8513 additions layered in. Let me check what #8513 adds that #8592 doesn't have:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1129" cache_read_input_tokens="99959" cache_creation="{'ephemeral_5m_input_tokens': 1129, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_017sTpQL3u1cxRycpciLesaC">
+    <param name="command"># Check what's in #8513 that's not in #8592
+diff /tmp/land-learn-8592.md /tmp/land-learn-8513.md | head -100</param>
+    <param name="description">Diff B1 overlap files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1129" cache_read_input_tokens="99959" cache_creation="{'ephemeral_5m_input_tokens': 1129, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017sTpQL3u1cxRycpciLesaC">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015wVgHUhSbXRW62pk9rvAkh">
+    <param name="command">diff --unified /tmp/land-learn-8592.md /tmp/land-learn-8513.md</param>
+    <param name="description">Unified diff of B1 files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="200" cache_read_input_tokens="101088" cache_creation="{'ephemeral_5m_input_tokens': 200, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015wVgHUhSbXRW62pk9rvAkh">
+--- /tmp/land-learn-8592.md	2026-03-02 17:58:26.902485419 +0000
++++ /tmp/land-learn-8513.md	2026-03-02 17:58:26.904485433 +0000
+@@ -4,113 +4,79 @@
+   - "modifying the erk land command's learn workflow"
+   - "debugging session discovery during land"
+   - "working with session reporting in the land pipeline"
+-  - "learn plan creation"
+-  - "session discovery"
+-  - "empty learn plan"
+ tripwires:
+   - action: "making session discovery failures block the land command"
+     warning: "Session discovery uses fire-and-forget error resilience. The entire learn workflow is wrapped in try/except to prevent blocking land. Failures are reported as warnings, never errors."
+     score: 6
+-  - action: "modifying learn plan skip guards in land_learn.py"
+-    warning: "Learn plan creation may skip silently when no sessions exist. Check land-learn-integration.md before modifying skip guards."
+ ---
+ 
+ # Land-Learn Integration
+ 
+ After landing a PR, `erk land` optionally creates a learn plan to capture implementation insights. The session discovery step reports what sessions are available for the learn workflow.
+ 
+-## Skip Guards
+-
+-Learn plan creation skips in two scenarios:
+-
+-1. **No sessions tracked at all** — e.g., manual CHANGELOG PRs or PRs without implementation sessions. The `all_session_ids` list is empty because no planning, implementation, or learn sessions were recorded.
+-
+-2. **Sessions exist but XML extraction produces no content** — Sessions were tracked in GitHub metadata but preprocessing produced no usable XML (warmup sessions, empty sessions, or sessions that fail to parse).
+-
+-&lt;!-- Source: src/erk/cli/commands/land_learn.py, _create_learn_pr_impl --&gt;
+
+... [121 lines omitted] ...
+
++## Fire-and-Forget Error Resilience
++See `_create_learn_pr_with_sessions()` in `src/erk/cli/commands/land_learn.py` for the fire-and-forget wrapper. The entire learn workflow is wrapped in a try/except that catches all exceptions and emits a warning instead of raising. This ensures that learn failures never block the primary `erk land` operation. A failed learn plan is a warning, not an error.
+-## Fire-and-Forget Error Resilience
+-except Exception as exc:
+-    user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
+-This ensures that learn failures never block the primary `erk land` operation. A failed learn plan is a warning, not an error.
+  </tool_result>
+  <assistant>I see the diff clearly. The #8592 version has richer structural content (Skip Guards, Session Discovery Pipeline 5-stage flow, Cycle Prevention) while #8513 has unique additions (Return Value, Session XML File Returns, File Inventory Logging, TUI Learn Plan Toast). I need to merge these. Let me create the merged version:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3048" cache_read_input_tokens="101288" cache_creation="{'ephemeral_5m_input_tokens': 3048, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012s2UWLDd51fzeqSid4kMKL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/land-learn-integration.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3048" cache_read_input_tokens="101288" cache_creation="{'ephemeral_5m_input_tokens': 3048, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012s2UWLDd51fzeqSid4kMKL">
+     1→---
+     2→title: Land-Learn Integration
+     3→read_when:
+     4→  - "modifying the erk land command's learn workflow"
+     5→  - "debugging session discovery during land"
+     6→  - "working with session reporting in the land pipeline"
+     7→  - "learn plan creation"
+     8→  - "session discovery"
+     9→  - "empty learn plan"
+    10→tripwires:
+    11→  - action: "making session discovery failures block the land command"
+    12→    warning: "Session discovery uses fire-and-forget error resilience. The entire learn workflow is wrapped in try/except to prevent blocking land. Failures are reported as warnings, never errors."
+    13→    score: 6
+    14→  - action: "modifying learn plan skip guards in land_learn.py"
+    15→    warning: "Learn plan creation may skip silently when no sessions exist. Check land-learn-integration.md before modifying skip guards."
+    16→---
+    17→
+    18→# Land-Learn Integration
+    19→
+    20→After landing a PR, `erk land` optionally creates a learn plan to capture implementation insights. The session discovery step reports what sessions are available for the learn workflow.
+    21→
+    22→## Skip Guards
+    23→
+    24→Learn plan creation skips in two scenarios:
+    25→
+    26→1. **No sessions tracked at all** — e.g., manual CHANGELOG PRs or PRs without implementation sessions. The `all_session_ids` list is empty because no planning, implementation, or learn sessions were recorded.
+    27→
+    28→2. **Sessions exist but XML extraction produces no content** — Sessions were tracked in GitHub metadata but preprocessing produced no usable XML (warmup sessions, empty sessions, or sessions that fail to parse).
+    29→
+    30→&lt;!-- Source: src/erk/cli/commands/land_learn.py, _create_learn_pr_impl --&gt;
+
+... [92 lines omitted] ...
+
+    99→## Fire-and-Forget Error Resilience
+   106→except Exception as exc:
+   107→    user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
+   110→This ensures that learn failures never block the primary `erk land` operation. A failed learn plan is a warning, not an error.
+  </tool_result>
+  <assistant>Good — the #8592 version is already written. Now I need to add the #8513 additions:
+1. Update `_log_session_discovery` return type to `dict[str, str]`
+2. Add Session XML File Returns section
+3. Add File Inventory Logging section
+4. Add TUI Learn Plan Toast section
+5. Update Fire-and-Forget section reference</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2145" cache_read_input_tokens="104336" cache_creation="{'ephemeral_5m_input_tokens': 2145, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_011WG1MRhxX34F1vik1pV8RS">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/land-learn-integration.md</param>
+    <param name="old_string">## Session Discovery Logging
+
+&lt;!-- Source: src/erk/cli/commands/land_learn.py:211-307, _lo...[truncated 1473 chars]...tadata Fields](../planning/learn-plan-metadata-fields.md) — Metadata fields on learn plans</param>
+    <param name="new_string">## Session Discovery Logging
+
+&lt;!-- Source: src/erk/cli/commands/land_learn.py:211-307, _lo...[truncated 3367 chars]...tadata Fields](../planning/learn-plan-metadata-fields.md) — Metadata fields on learn plans</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2145" cache_read_input_tokens="104336" cache_creation="{'ephemeral_5m_input_tokens': 2145, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011WG1MRhxX34F1vik1pV8RS">
+The file /home/runner/work/erk/erk/docs/learned/cli/land-learn-integration.md has been updated successfully.
+  </tool_result>
+  <assistant>B1 merge complete. Now let me also check C2 — the keyboard-shortcuts.md overlap merge. The plan says to merge #8529 (p shortcut update) with #8592 (Launch Keys section). Since #8592 content (Launch Keys) is already on master, I need to check if the #8529 changes (p shortcut for view-aware dispatch) are still needed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1983" cache_read_input_tokens="106481" cache_creation="{'ephemeral_5m_input_tokens': 1983, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01QxiUWTg5X9JGaobJ8aVAyM">
+    <param name="command"># Check what #8529 changed in keyboard-shortcuts vs master
+diff &lt;(git show master:docs/learned/tui/keyboard-shortcuts.md) /tmp/keyboard-8529.md | head -40</param>
+    <param name="description">Check keyboard-shortcuts diff</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1983" cache_read_input_tokens="106481" cache_creation="{'ephemeral_5m_input_tokens': 1983, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QxiUWTg5X9JGaobJ8aVAyM">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015S2vLBteZbv2hw4RjGTDLb">
+    <param name="command">diff --unified &lt;(git show master:docs/learned/tui/keyboard-shortcuts.md) /tmp/keyboard-8529.md</param>
+    <param name="description">Unified diff for keyboard-shortcuts</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="236" cache_read_input_tokens="108464" cache_creation="{'ephemeral_5m_input_tokens': 236, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015S2vLBteZbv2hw4RjGTDLb">
+Exit code 1
+--- /dev/fd/63	2026-03-02 18:00:21.664146925 +0000
++++ /tmp/keyboard-8529.md	2026-03-02 17:58:26.955485769 +0000
+@@ -28,27 +28,17 @@
+ 
+ **Filters:** o (objective), t (stack), / (text filter), s (sort)
+ 
+-**Item Actions:** enter/space (detail), p (open PR), n (open run), c (comments), h (checks), v (view plan body), l (launch menu), i (implement)
++**Item Actions:** enter/space (detail), p (open PR / open objective, view-aware), n (open run), c (comments), h (checks), v (view plan body), l (launch menu), i (implement)
+ 
+ **System:** ctrl+p (command palette), r (refresh), ? (help), q/escape (quit)
+ 
+-## Launch Keys
+-
+-Launch keys are defined in `CommandDefinition.launch_key` fields in `src/erk/tui/commands/registry.py`, not a separate LAUNCH_KEYS dict. See [TUI Command Registration](tui-command-registration.md) for the full table of current assignments.
+-
+-Key highlights:
+-
+-- Plan view: c (close), d (dispatch), l (land), r (rebase), a (address), w (rewrite), m (cmux)
+-- Objective view: c (close), s (one-shot), k (check)
+-- Rebase changed from `f` to `r` in PR #8560 for mnemonic consistency
+-
+ ## Naming Convention
+ 
+ Action methods follow the pattern `action_&lt;verb&gt;_&lt;noun&gt;`:
+ 
+-- `action_open_pr` -- opens the PR in browser
+-- `action_open_run` -- opens the GitHub Actions run URL
+-- `action_view_comments` -- opens the comments modal
++- `action_open_pr` — opens the PR in browser
+
+... [14 lines omitted] ...
+  </tool_result>
+  <assistant>OK so #8529 for keyboard-shortcuts changes:
+1. Updates `p` description to "open PR / open objective, view-aware" 
+2. Removes the Launch Keys section (which #8592 added)
+3. Minor dash style changes
+
+The plan says: "From #8529: Update Item Actions `p` description to include view-aware dispatch" and "From #8592: Add Launch Keys section". So the merged version should keep BOTH the p description update AND the Launch Keys section. Let me apply just the `p` description change to the current master version:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1071" cache_read_input_tokens="108700" cache_creation="{'ephemeral_5m_input_tokens': 1071, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Liun1eBRF29MbYXMQSEUmd">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/keyboard-shortcuts.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1071" cache_read_input_tokens="108700" cache_creation="{'ephemeral_5m_input_tokens': 1071, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Liun1eBRF29MbYXMQSEUmd">
+     1→---
+     2→title: TUI Keyboard Shortcuts Inventory
+     3→read_when:
+     4→  - "adding a new keyboard shortcut to the TUI"
+     5→  - "checking for shortcut conflicts before binding a new key"
+     6→  - "understanding what keys are available in the TUI"
+     7→tripwires:
+     8→  - action: "adding a new key binding without checking existing bindings"
+     9→    warning: "Check this document and ErkDashApp.BINDINGS in app.py for conflicts. Some keys are hidden but still active."
+    10→    score: 4
+    11→---
+    12→
+    13→# TUI Keyboard Shortcuts Inventory
+    14→
+    15→Complete binding inventory from `ErkDashApp.BINDINGS` in `src/erk/tui/app.py`.
+    16→
+    17→## All Bindings
+    18→
+    19→&lt;!-- Source: src/erk/tui/app.py, ErkDashApp.BINDINGS --&gt;
+    20→
+    21→The complete binding inventory is defined in `ErkDashApp.BINDINGS`. The bindings include both visible shortcuts (shown in help) and hidden power-user shortcuts.
+    22→
+    23→## Key Groups
+    24→
+    25→**Navigation:** j/k (vim-style), escape (quit)
+    26→
+    27→**View Switching:** 1/2/3 (direct), left/right (cycle)
+    28→
+    29→**Filters:** o (objective), t (stack), / (text filter), s (sort)
+    30→
+
+... [40 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01SfpaGP5sVad9sX8TptRqkd">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/keyboard-shortcuts.md</param>
+    <param name="old_string">**Item Actions:** enter/space (detail), p (open PR), n (open run), c (comments), h (checks), v (view plan body), l (launch menu), i (implement)</param>
+    <param name="new_string">**Item Actions:** enter/space (detail), p (open PR / open objective, view-aware), n (open run), c (comments), h (checks), v (view plan body), l (launch menu), i (implement)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1227" cache_read_input_tokens="109771" cache_creation="{'ephemeral_5m_input_tokens': 1227, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SfpaGP5sVad9sX8TptRqkd">
+The file /home/runner/work/erk/erk/docs/learned/tui/keyboard-shortcuts.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify the A3 (inference-hoisting) update. I need to check if the current file matches what #8513 had — but wait, the plan says #8513 is the source for inference-hoisting. I already copied the #8513 version, but I need to check it actually has the Plan Summary Hoisting section and the new `read_when` entry. Let me verify:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="530" cache_read_input_tokens="110998" cache_creation="{'ephemeral_5m_input_tokens': 530, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_017jfqocmjeSoy2g659wFnKe">
+    <param name="command">grep "Plan Summary Hoisting" /home/runner/work/erk/erk/docs/learned/architecture/inference...[truncated 49 chars]...ner/work/erk/erk/docs/learned/architecture/inference-hoisting.md &amp;&amp; echo "FOUND read_when"</param>
+    <param name="description">Verify A3 content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="530" cache_read_input_tokens="110998" cache_creation="{'ephemeral_5m_input_tokens': 530, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017jfqocmjeSoy2g659wFnKe">
+## Example: Plan Summary Hoisting
+FOUND
+  - working with plan summary generation or --summary flags
+FOUND read_when
+  </tool_result>
+  <assistant>A3 is correctly updated. Now let me update the todo list and verify all changes are in place:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="285" cache_read_input_tokens="111528" cache_creation="{'ephemeral_5m_input_tokens': 285, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_017JsTfeP77m8CtUAjZuwrZZ">
+    <param name="todos">[{'content': 'Group A: Architecture (A1-A6) - 6 steps', 'status': 'completed', 'activeForm...[truncated 810 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="285" cache_read_input_tokens="111528" cache_creation="{'ephemeral_5m_input_tokens': 285, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017JsTfeP77m8CtUAjZuwrZZ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me do a quick summary check of what we've changed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="433" cache_read_input_tokens="111813" cache_creation="{'ephemeral_5m_input_tokens': 433, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0144x99PYXBgUnyZsWk9gMzW">
+    <param name="command">git diff --stat HEAD</param>
+    <param name="description">Check all changes made</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="433" cache_read_input_tokens="111813" cache_creation="{'ephemeral_5m_input_tokens': 433, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0144x99PYXBgUnyZsWk9gMzW">
+ docs/learned/architecture/inference-hoisting.md    |  36 ++++++
+ docs/learned/ci/autofix-job-needs.md               |  68 ++++------
+ .../ci/gitignored-directory-commit-patterns.md     |  10 ++
+ docs/learned/cli/activation-scripts.md             |  36 ++++++
+ docs/learned/cli/land-learn-integration.md         | 137 ++++++++++++---------
+ .../learned/integrations/github-review-decision.md |   2 +-
+ docs/learned/testing/erk-package-info-pattern.md   |   6 +-
+ docs/learned/tui/action-inventory.md               |   2 +-
+ docs/learned/tui/architecture.md                   |  46 +++++++
+ docs/learned/tui/keyboard-shortcuts.md             |   2 +-
+ docs/learned/tui/stacked-pr-indicator.md           |  18 ++-
+ docs/learned/tui/status-indicators.md              |   2 +-
+ docs/learned/tui/view-aware-commands.md            |  24 ++--
+ 13 files changed, 264 insertions(+), 125 deletions(-)
+  </tool_result>
+  <assistant>That's 13 modified files. Let me also check the untracked new files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="415" cache_read_input_tokens="112246" cache_creation="{'ephemeral_5m_input_tokens': 415, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_018unzrAtPbg8ASKzxYF9Yzb">
+    <param name="command">git status --short</param>
+    <param name="description">Check all file status</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="415" cache_read_input_tokens="112246" cache_creation="{'ephemeral_5m_input_tokens': 415, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018unzrAtPbg8ASKzxYF9Yzb">
+ M docs/learned/architecture/inference-hoisting.md
+ M docs/learned/ci/autofix-job-needs.md
+ M docs/learned/ci/gitignored-directory-commit-patterns.md
+ M docs/learned/cli/activation-scripts.md
+ M docs/learned/cli/land-learn-integration.md
+ M docs/learned/integrations/github-review-decision.md
+ M docs/learned/testing/erk-package-info-pattern.md
+ M docs/learned/tui/action-inventory.md
+ M docs/learned/tui/architecture.md
+ M docs/learned/tui/keyboard-shortcuts.md
+ M docs/learned/tui/stacked-pr-indicator.md
+ M docs/learned/tui/status-indicators.md
+ M docs/learned/tui/view-aware-commands.md
+?? docs/learned/architecture/monolith-to-subpackage-pattern.md
+?? docs/learned/architecture/worktree-dispatch-detection.md
+?? docs/learned/ci/job-ordering-strategy.md
+?? docs/learned/cli/doctor-workflow.md
+?? docs/learned/cli/piped-output-flushing.md
+?? docs/learned/config/external-docs-path.md
+?? docs/learned/config/index.md
+?? docs/learned/erk/stub-branch-lifecycle.md
+?? docs/learned/planning/learn-session-embedding.md
+?? docs/learned/pr-operations/pre-existing-detection.md
+?? docs/learned/sessions/session-accumulation.md
+?? docs/learned/testing/artifact-distribution-sync.md
+?? docs/learned/tui/one-shot-prompt-modal.md
+  </tool_result>
+  <assistant>13 modified, 13 new files (the plan said 15 new + 1 deleted, but some were already on master, so we have 13 new files to add). Let me do the verification checks from Group F before running `erk docs sync`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="534" cache_read_input_tokens="112661" cache_creation="{'ephemeral_5m_input_tokens': 534, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01UnbfuZimsxVTbD65LJeeXq">
+    <param name="command"># Pre-sync verifications
+echo "=== F2: plan-save-branch-restoration references ==="
+grep -...[truncated 91 chars]...checks.py references ==="
+grep -r "health_checks\.py" docs/learned/ 2&gt;/dev/null | head -10</param>
+    <param name="description">Run pre-sync verification checks</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="534" cache_read_input_tokens="112661" cache_creation="{'ephemeral_5m_input_tokens': 534, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UnbfuZimsxVTbD65LJeeXq">
+=== F2: plan-save-branch-restoration references ===
+NONE (good)
+
+=== F3: health_checks.py references ===
+  </tool_result>
+  <assistant>Good. No stale references. Now run `erk docs sync`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="559" cache_read_input_tokens="113195" cache_creation="{'ephemeral_5m_input_tokens': 559, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_016e7Me29puN66wezga5DxSA">
+    <param name="command">erk docs sync 2&gt;&amp;1</param>
+    <param name="description">Run erk docs sync to regenerate index and tripwires</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="559" cache_read_input_tokens="113195" cache_creation="{'ephemeral_5m_input_tokens': 559, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016e7Me29puN66wezga5DxSA">
+Scanning docs...
+Generating root index...
+Generating category indexes...
+Collecting tripwires...
+Generating tripwire files...
+Generating tripwires index...
+Updated 19 file(s):
+  ~ architecture/index.md
+  ~ ci/index.md
+  ~ cli/index.md
+  ~ erk/index.md
+  ~ planning/index.md
+  ~ pr-operations/index.md
+  ~ sessions/index.md
+  ~ testing/index.md
+  ~ tui/index.md
+  ~ architecture/tripwires.md
+  ~ ci/tripwires.md
+  ~ cli/tripwires.md
+  ~ config/tripwires.md
+  ~ erk/tripwires.md
+  ~ pr-operations/tripwires.md
+  ~ sessions/tripwires.md
+  ~ testing/tripwires.md
+  ~ tui/tripwires.md
+  ~ tripwires-index.md
+
+Unchanged: 36 file(s)
+
+Tripwires: 826 collected
+
+... [30 lines omitted] ...
+  </tool_result>
+  <assistant>`erk docs sync` successfully regenerated 19 files. Now run the docs check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="590" cache_read_input_tokens="113754" cache_creation="{'ephemeral_5m_input_tokens': 590, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01Ao3VBVczUH8aUXJfw2R5Wu">
+    <param name="command">erk docs check 2&gt;&amp;1</param>
+    <param name="description">Run erk docs check validation</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="590" cache_read_input_tokens="113754" cache_creation="{'ephemeral_5m_input_tokens': 590, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ao3VBVczUH8aUXJfw2R5Wu">
+Validating frontmatter...
+
+Frontmatter validation passed (538 files)
+
+Checking generated files...
+
+Generated files in sync
+
+============================================================
+Agent docs health check: PASSED
+
+Files validated: 538
+Generated files: 55
+  </tool_result>
+  <assistant>Docs health check: PASSED. Let me verify the new files appear in their category indexes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="467" cache_read_input_tokens="114344" cache_creation="{'ephemeral_5m_input_tokens': 467, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01JHBBLZTyQpkvs4QcDxke6t">
+    <param name="command"># Verify new docs appear in indexes
+echo "=== New docs in architecture ==="
+grep -c "workt...[truncated 846 chars]...== New docs in sessions ==="
+grep -c "session-accumulation" docs/learned/sessions/index.md</param>
+    <param name="description">Verify new docs in category indexes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="467" cache_read_input_tokens="114344" cache_creation="{'ephemeral_5m_input_tokens': 467, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JHBBLZTyQpkvs4QcDxke6t">
+=== New docs in architecture ===
+2
+=== New docs in cli ===
+2
+=== New docs in tui ===
+1
+=== New docs in ci ===
+1
+=== New docs in testing ===
+1
+=== New docs in pr-operations ===
+1
+=== New docs in planning ===
+1
+=== New docs in config ===
+1
+=== New docs in erk ===
+1
+=== New docs in sessions ===
+1
+  </tool_result>
+  <assistant>All 13 new docs appear in their category indexes. Now let me check the tripwire count increase:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="567" cache_read_input_tokens="114811" cache_creation="{'ephemeral_5m_input_tokens': 567, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01UP5oKtNUVUMfsexVdohen8">
+    <param name="command">git diff HEAD -- docs/learned/tripwires-index.md | head -50</param>
+    <param name="description">Check tripwires-index changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="567" cache_read_input_tokens="114811" cache_creation="{'ephemeral_5m_input_tokens': 567, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UP5oKtNUVUMfsexVdohen8">
+diff --git a/docs/learned/tripwires-index.md b/docs/learned/tripwires-index.md
+index 8999c8b69..b96c3b409 100644
+--- a/docs/learned/tripwires-index.md
++++ b/docs/learned/tripwires-index.md
+@@ -13,31 +13,31 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
+ 
+ | Category                                    | Tripwires | Load When Working In                     |
+ | ------------------------------------------- | --------- | ---------------------------------------- |
+-| [architecture](architecture/tripwires.md)   | 178       | `src/erk/gateway/`, gateways, subprocess |
++| [architecture](architecture/tripwires.md)   | 181       | `src/erk/gateway/`, gateways, subprocess |
+ | [capabilities](capabilities/tripwires.md)   | 13        | Claude Code capabilities, tool use       |
+ | [changelog](changelog/tripwires.md)         | 3         | `changelog/` code                        |
+ | [checklists](checklists/tripwires.md)       | 1         | `checklists/` code                       |
+-| [ci](ci/tripwires.md)                       | 54        | `.github/workflows/`, `.github/actions/` |
++| [ci](ci/tripwires.md)                       | 56        | `.github/workflows/`, `.github/actions/` |
+ | [claude-code](claude-code/tripwires.md)     | 3         | Claude Code configuration, settings      |
+-| [cli](cli/tripwires.md)                     | 82        | `src/erk/cli/`                           |
++| [cli](cli/tripwires.md)                     | 86        | `src/erk/cli/`                           |
+ | [commands](commands/tripwires.md)           | 7         | `.claude/commands/`, slash commands      |
+-| [config](config/tripwires.md)               | 2         | `config/` code                           |
++| [config](config/tripwires.md)               | 3         | `config/` code                           |
+ | [configuration](configuration/tripwires.md) | 1         | `configuration/` code                    |
+ | [documentation](documentation/tripwires.md) | 30        | `documentation/` code                    |
+-| [erk](erk/tripwires.md)                     | 22        | `erk/` code                              |
++| [erk](erk/tripwires.md)                     | 23        | `erk/` code                              |
+ | [gateway](gateway/tripwires.md)             | 5         | `gateway/` code                          |
+ | [hooks](hooks/tripwires.md)                 | 4         | `.claude/hooks/`, hook development       |
+ | [integrations](integrations/tripwires.md)   | 26        | `integrations/` code                     |
+ | [objectives](objectives/tripwires.md)       | 45        | `objectives/` code                       |
+ | [planning](planning/tripwires.md)           | 124       | `.erk/impl-context/`, planning workflows |
+
+... [15 lines omitted] ...
+  </tool_result>
+  <assistant>Tripwire counts increased across multiple categories as expected. Group F is complete. Let me now signal completion and run CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1713" cache_read_input_tokens="115378" cache_creation="{'ephemeral_5m_input_tokens': 1713, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01X18Exn4quR8FYsvULAfzG9">
+    <param name="todos">[{'content': 'Group A: Architecture (A1-A6) - 6 steps', 'status': 'completed', 'activeForm...[truncated 812 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1713" cache_read_input_tokens="115378" cache_creation="{'ephemeral_5m_input_tokens': 1713, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01X18Exn4quR8FYsvULAfzG9">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01LREGXB8yXJrup94okTahV8">
+    <param name="command">erk exec impl-signal ended --session-id "0a9ae898-b1a9-4de9-bec6-6e62cd2563f8" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="437" cache_read_input_tokens="117091" cache_creation="{'ephemeral_5m_input_tokens': 437, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_019EaEThxfr75xrZa14oQCT2">
+    <param name="command">erk exec upload-impl-session --session-id "0a9ae898-b1a9-4de9-bec6-6e62cd2563f8" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="437" cache_read_input_tokens="117091" cache_creation="{'ephemeral_5m_input_tokens': 437, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LREGXB8yXJrup94okTahV8">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8623
+}
+  </tool_result>
+</session>
