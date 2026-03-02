@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Make additional capabilities required and hide them from user-facing lists"
+}
