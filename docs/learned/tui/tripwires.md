@@ -44,6 +44,8 @@ Rules triggered by matching actions in code.
 
 **adding labels to ViewConfig.labels expecting OR semantics from GitHub API** → Read [TUI View Switching](view-switching.md) first. GitHub GraphQL uses AND semantics for label arrays. Multiple labels in a single ViewConfig.labels means items must have ALL listed labels. Use separate views for separate label types. See github-graphql-label-semantics.md.
 
+**adding launch keys to TUI commands outside registry.py** → Read [TUI Command Registration](tui-command-registration.md) first. Launch keys are defined in CommandDefinition.launch_key in registry.py. See tui-command-registration.md.
+
 **adding or reordering PlanDataTable columns** → Read [Column Addition Pattern](column-addition-pattern.md) first. TUI column index cascade: adding or reordering columns invalidates ALL test assertions using column indices. Run a systematic grep for column-index assertions (e.g., row[N]) before and after the change. Update every affected test file.
 
 **adding stage column outside planned_pr backend check** → Read [Dashboard Column Inventory](dashboard-columns.md) first. stage column is planned_pr-only. It appears before obj in the column order. Check \_setup_columns() for the backend conditional block.

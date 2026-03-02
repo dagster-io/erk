@@ -66,6 +66,8 @@ Rules triggered by matching actions in code.
 
 **adding new file format support without read-then-fallback** → Read [Erk Architecture Patterns](erk-architecture.md) first. When adding new file formats, implement read-then-fallback: try new format first, fall back to old format transparently. See read_plan_ref() for the canonical pattern.
 
+**adding new git operations that require checking out a branch** → Read [Git Plumbing Patterns](git-plumbing-patterns.md) first. When adding new git operations, prefer plumbing (update-ref, commit-tree) over checkout-based workflows. See git-plumbing-patterns.md.
+
 **adding optional fields to pipeline state without defaults** → Read [State Threading Pattern](state-threading-pattern.md) first. New pipeline state fields must have defaults (usually None) to avoid breaking make_initial_state() factories. See optional-field-propagation.md for the pattern.
 
 **adding re-exports to gateway implementation modules** → Read [Re-Export Pattern](re-export-pattern.md) first. Only re-export types that genuinely improve public API. Add # noqa: F401 - re-exported for <reason> comment.
@@ -142,7 +144,7 @@ Rules triggered by matching actions in code.
 
 **checking isinstance(ctx.graphite, GraphiteDisabled) inline in command code** [pattern: `isinstance\(.*GraphiteDisabled\)`] → Read [Erk Architecture Patterns](erk-architecture.md) first. Use BranchManager abstraction instead. Add a method to BranchManager ABC that handles both Graphite and Git paths. This centralizes the branching logic and enables testing with FakeBranchManager.
 
-**checking out a branch in plan_save to commit files** → Read [Plan Save Branch Restoration](plan-save-branch-restoration.md) first. Plan save uses git plumbing (commit_files_to_branch) to commit without checkout. Do NOT add checkout_branch calls. See plan-save-branch-restoration.md.
+**checking out a branch in plan_save to commit files** → Read [Git Plumbing Patterns](git-plumbing-patterns.md) first. Plan save uses git plumbing (commit_files_to_branch) to commit without checkout. Do NOT add checkout_branch calls. See git-plumbing-patterns.md.
 
 **choosing between exceptions and discriminated unions for operation failures** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section.
 

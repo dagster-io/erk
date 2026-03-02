@@ -4,11 +4,14 @@ read_when:
   - "adding a new TUI command to the registry"
   - "understanding the 3-place coordination pattern for TUI commands"
   - "working with TUI command categories or display formatters"
+  - "adding launch keys to TUI commands"
 tripwires:
   - action: "adding a new TUI command without updating all 3 places"
     warning: "TUI commands require 3-place coordination: registry definition, display formatter, and action inventory. See tui-command-registration.md."
   - action: "adding a CLI flag that affects behavior without checking TUI command palette"
     warning: "TUI command palette generates shell commands via src/erk/tui/commands/registry.py. When adding CLI flags that change behavior, check if TUI-generated commands need the flag too."
+  - action: "adding launch keys to TUI commands outside registry.py"
+    warning: "Launch keys are defined in CommandDefinition.launch_key in registry.py. See tui-command-registration.md."
 ---
 
 # TUI Command Registration
@@ -25,19 +28,56 @@ When adding a command, update all three:
 
 All definitions are in `src/erk/tui/commands/registry.py`.
 
-## Example: `codespace_run_plan`
+## Single Source of Truth: CommandDefinition
 
-**Display formatter** (lines 135-137):
+<!-- Source: src/erk/tui/commands/types.py:36-62 -->
 
-<!-- Source: src/erk/tui/commands/registry.py, _display_codespace_run_plan -->
+The `CommandDefinition` dataclass (in `types.py:36-62`) defines all command properties:
 
-See `_display_codespace_run_plan()` in `src/erk/tui/commands/registry.py` for the display formatter pattern.
+```python
+@dataclass(frozen=True)
+class CommandDefinition:
+    id: str
+    name: str
+    description: str
+    category: CommandCategory
+    shortcut: str | None
+    launch_key: str | None        # line 60 — single-key binding for Launch modal
+    is_available: Callable[[CommandContext], bool]
+    get_display_name: Callable[[CommandContext], str] | None
+```
 
-**CommandDefinition** (lines 364-371):
+The `launch_key` field (added in PR #8559) assigns a single-key binding for the Launch modal. Only ACTION category commands should have launch keys.
+
+## Launch Key Assignments
 
 <!-- Source: src/erk/tui/commands/registry.py, get_all_commands -->
 
-See `codespace_run_plan` CommandDefinition in `get_all_commands()` in `registry.py`.
+Launch keys are assigned directly in `CommandDefinition` entries in `get_all_commands()`:
+
+### Plan View Keys
+
+| Command ID          | Launch Key | Line | Action                             |
+| ------------------- | ---------- | ---- | ---------------------------------- |
+| `close_plan`        | `c`        | 209  | Close the plan                     |
+| `dispatch_to_queue` | `d`        | 219  | Dispatch for remote implementation |
+| `land_pr`           | `l`        | 229  | Land the PR                        |
+| `rebase_remote`     | `r`        | 241  | Rebase remotely                    |
+| `address_remote`    | `a`        | 251  | Address review comments remotely   |
+| `rewrite_remote`    | `w`        | 261  | Rewrite PR description remotely    |
+| `cmux_sync`         | `m`        | 271  | Sync with cmux                     |
+
+### Objective View Keys
+
+| Command ID        | Launch Key | Line | Action                     |
+| ----------------- | ---------- | ---- | -------------------------- |
+| `one_shot_plan`   | `s`        | 287  | Create one-shot plan       |
+| `check_objective` | `k`        | 297  | Check objective validation |
+| `close_objective` | `c`        | 307  | Close the objective        |
+
+**View-mode isolation**: Plan and objective keys are independent namespaces. Both use `c` for "close" without conflict because they are mutually exclusive by availability predicates.
+
+**Key change history**: `rebase_remote` was changed from `f` to `r` (PR #8560) for mnemonic consistency.
 
 ## Command Categories
 
@@ -58,3 +98,4 @@ Commands use `is_available` lambdas to control when they appear. Common predicat
 ## Related Topics
 
 - [TUI Documentation](tui.md) - General TUI architecture
+- [TUI Keyboard Shortcuts](keyboard-shortcuts.md) - Complete keyboard binding inventory

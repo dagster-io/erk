@@ -774,6 +774,21 @@ Key patterns demonstrated:
 
 See PR #6329 for the migration that introduced this pattern.
 
+## Completed Migrations to Gateway
+
+### read_file_from_ref Migration
+
+`download_remote_session.py` (PR #8584) migrated from direct subprocess to the `read_file_from_ref` gateway method:
+
+- **Before**: `subprocess.run(["git", "show", f"{ref}:{path}"], ...)`
+- **After**: `git.commit.read_file_from_ref(repo_root, ref=f"origin/{branch}", file_path=path)`
+
+All callers of `read_file_from_ref` are now gateway-based:
+
+- `fetch_sessions.py` — reads manifest and XML files from remote branches
+- `push_session.py` — reads existing manifest for accumulation
+- `download_remote_session.py` — downloads session JSONL from remote branch
+
 ## Related Documentation
 
 - [Erk Architecture Patterns](erk-architecture.md) - Dependency injection, dry-run patterns

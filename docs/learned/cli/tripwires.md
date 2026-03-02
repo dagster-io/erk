@@ -42,6 +42,8 @@ Rules triggered by matching actions in code.
 
 **adding new CLI flags without validation** → Read [CLI Options Validation](cli-options-validation.md) first. Check if validation logic is needed when adding new flags. Boolean flags rarely need validation, but flags accepting values (paths, names, numbers) should validate constraints.
 
+**adding new exec script parameters with 'issue' in the name** → Read [erk exec Commands](erk-exec-commands.md) first. When adding new exec script parameters, use 'plan' terminology (not 'issue'). See erk-exec-commands.md Phase 5 Terminology Standardization.
+
 **adding or modifying CLI commands without regenerating reference docs** → Read [Auto-Generated Reference Documentation](auto-generated-reference-docs.md) first. After CLI changes, run 'erk-dev gen-exec-reference-docs' to update auto-generated exec reference documentation. Stale docs confuse users and agents.
 
 **adding sequential yes/no prompts for a single decision** → Read [Prompt Consolidation Pattern](prompt-consolidation-pattern.md) first. Consolidate into one binary choice. Multiple prompts for the same decision create unnecessary cognitive load. See the branch reuse example.
@@ -55,6 +57,8 @@ Rules triggered by matching actions in code.
 **calling gh or git directly from a slash command** → Read [Slash Command to Exec Migration](slash-command-exec-migration.md) first. Use an erk exec script instead. Direct CLI calls bypass gateways, making the logic untestable and unreusable.
 
 **calling is_learned_docs_available() in CLI code** → Read [erk docs check Command](erk-docs-check.md) first. Function signature requires repo_ops and cwd kwargs: is_learned_docs_available(repo_ops=..., cwd=...). Omitting either kwarg will cause a TypeError.
+
+**changing run-name format in workflow files** → Read [Workflow Run List](workflow-run-list.md) first. extract_pr_number() in shared.py parses '#NNN' from run-name. Changing the format breaks PR number extraction in the run list display.
 
 **choosing between Ensure and EnsureIdeal** → Read [EnsureIdeal Pattern for Type Narrowing](ensure-ideal-pattern.md) first. Ensure is for invariant checks (preconditions). EnsureIdeal is for type narrowing (handling operations that can return non-ideal states). If the value comes from an operation that returns T | ErrorType, use EnsureIdeal.
 
@@ -101,6 +105,8 @@ Rules triggered by matching actions in code.
 **making session discovery failures block the land command** → Read [Land-Learn Integration](land-learn-integration.md) first. Session discovery uses fire-and-forget error resilience. The entire learn workflow is wrapped in try/except to prevent blocking land. Failures are reported as warnings, never errors.
 
 **making session_id a required parameter for a new command** → Read [Session ID Availability and Propagation](session-management.md) first. Check the fail-hard vs degrade decision table below. Most commands should accept session_id as optional.
+
+**modifying learn plan skip guards in land_learn.py** → Read [Land-Learn Integration](land-learn-integration.md) first. Learn plan creation may skip silently when no sessions exist. Check land-learn-integration.md before modifying skip guards.
 
 **mutating SubmitState fields directly** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. SubmitState is frozen. Use dataclasses.replace(state, field=value) to create new state.
 
