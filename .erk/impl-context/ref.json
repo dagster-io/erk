@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Improve \"Using existing branch\" message for `--for-plan` flows"
+}
