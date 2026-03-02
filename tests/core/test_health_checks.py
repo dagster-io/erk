@@ -819,6 +819,16 @@ def test_check_managed_artifacts_changed_upstream_remediation(tmp_path: Path) ->
     for action_name in ("setup-claude-code", "setup-claude-erk", "erk-remote-setup"):
         (project_actions / action_name).mkdir(parents=True)
 
+    # Create required skill directories so they don't show as not-installed
+    for skill_name in (
+        "erk-diff-analysis",
+        "erk-exec",
+        "objective",
+        "pr-operations",
+        "pr-feedback-classifier",
+    ):
+        (project_claude / "skills" / skill_name).mkdir(parents=True, exist_ok=True)
+
     # Create artifact state with OLD version (triggers changed-upstream)
     # The hash matches the file content, but the version is old
     state_dir = project_dir / ".erk"
@@ -891,6 +901,16 @@ def test_check_managed_artifacts_locally_modified_remediation(tmp_path: Path) ->
     action_names = ("setup-claude-code", "setup-claude-erk", "erk-remote-setup")
     for action_name in action_names:
         (project_actions / action_name).mkdir(parents=True)
+
+    # Create required skill directories so they don't show as not-installed
+    for skill_name in (
+        "erk-diff-analysis",
+        "erk-exec",
+        "objective",
+        "pr-operations",
+        "pr-feedback-classifier",
+    ):
+        (project_claude / "skills" / skill_name).mkdir(parents=True, exist_ok=True)
 
     # Create artifact state with:
     # 1. Command has hash of ORIGINAL content (not the modified file) + current version

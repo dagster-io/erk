@@ -82,6 +82,18 @@ def list_capabilities() -> list[Capability]:
     return sorted(_all_capabilities(), key=lambda c: c.name)
 
 
+def list_optional_capabilities() -> list[Capability]:
+    """Get all optional capabilities (not required, user-facing).
+
+    Returns:
+        List of capabilities where required=False, sorted alphabetically by name
+    """
+    return sorted(
+        [c for c in _all_capabilities() if not c.required],
+        key=lambda c: c.name,
+    )
+
+
 def list_required_capabilities() -> list[Capability]:
     """Get all required capabilities (auto-installed during erk init).
 

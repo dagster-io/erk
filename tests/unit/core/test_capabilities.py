@@ -16,7 +16,7 @@ from erk.capabilities.erk_bash_permissions import ErkBashPermissionsCapability
 from erk.capabilities.hooks import HooksCapability
 from erk.capabilities.learned_docs import LearnedDocsCapability
 from erk.capabilities.ruff_format import RuffFormatCapability
-from erk.capabilities.skills.bundled import bundled_skills
+from erk.capabilities.skills.bundled import _REQUIRED_BUNDLED_SKILLS, bundled_skills
 from erk.capabilities.statusline import StatuslineCapability
 from erk.capabilities.workflows.erk_impl import ErkImplWorkflowCapability
 from erk.capabilities.workflows.learn import LearnWorkflowCapability
@@ -1296,8 +1296,10 @@ def test_default_capabilities_not_required() -> None:
     for cap in optional_caps:
         assert cap.required is False, f"{cap.name} should not be required"
 
-    # All bundled skills should also be optional
+    # Bundled skills not in the required set should be optional
     for skill_name in bundled_skills():
+        if skill_name in _REQUIRED_BUNDLED_SKILLS:
+            continue
         cap = get_capability(skill_name)
         assert cap is not None
         assert cap.required is False, f"{skill_name} should not be required"
