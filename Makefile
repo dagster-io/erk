@@ -83,47 +83,68 @@ exec-reference-check:
 py-fast-ci:
 	@echo "=== Python Fast CI ===" && \
 	exit_code=0; \
-	echo "\n--- Lint ---" && uv run ruff check || exit_code=1; \
-	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
-	echo "\n--- ty ---" && uv run ty check || exit_code=1; \
+	( \
+		lint_exit=0; \
+		echo "--- Lint ---" && uv run ruff check || lint_exit=1; \
+		echo "--- Format Check ---" && uv run ruff format --check || lint_exit=1; \
+		echo "--- ty ---" && uv run ty check || lint_exit=1; \
+		exit $$lint_exit \
+	) > /tmp/erk-ci-lint.out 2>&1 & lint_pid=$$!; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ tests/real/ -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-statusline) ---" && uv run pytest packages/erk-statusline -n auto || exit_code=1; \
 	echo "\n--- Tests (erkbot) ---" && cd packages/erkbot && uv run pytest tests/ -x -q && cd ../.. || exit_code=1; \
+	echo "\n--- Lint/Format Results ---"; \
+	wait $$lint_pid || exit_code=1; \
+	cat /tmp/erk-ci-lint.out; \
 	exit $$exit_code
 
 # Fast CI: Run all checks with unit tests only (fast feedback loop)
 fast-ci:
 	@echo "=== Fast CI ===" && \
 	exit_code=0; \
-	echo "\n--- Lint ---" && uv run ruff check || exit_code=1; \
-	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
-	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
-	echo "\n--- Markdown Check ---" && uv run erk md check || exit_code=1; \
-	echo "\n--- Exec Reference Check ---" && uv run erk-dev gen-exec-reference-docs --check || exit_code=1; \
-	echo "\n--- ty ---" && uv run ty check || exit_code=1; \
+	( \
+		lint_exit=0; \
+		echo "--- Lint ---" && uv run ruff check || lint_exit=1; \
+		echo "--- Format Check ---" && uv run ruff format --check || lint_exit=1; \
+		echo "--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || lint_exit=1; \
+		echo "--- Markdown Check ---" && uv run erk md check || lint_exit=1; \
+		echo "--- Exec Reference Check ---" && uv run erk-dev gen-exec-reference-docs --check || lint_exit=1; \
+		echo "--- ty ---" && uv run ty check || lint_exit=1; \
+		exit $$lint_exit \
+	) > /tmp/erk-ci-lint.out 2>&1 & lint_pid=$$!; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ tests/real/ -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-statusline) ---" && uv run pytest packages/erk-statusline -n auto || exit_code=1; \
 	echo "\n--- Tests (erkbot) ---" && cd packages/erkbot && uv run pytest tests/ -x -q && cd ../.. || exit_code=1; \
+	echo "\n--- Lint/Format Results ---"; \
+	wait $$lint_pid || exit_code=1; \
+	cat /tmp/erk-ci-lint.out; \
 	exit $$exit_code
 
 # CI target: Run all tests (unit + integration) for comprehensive validation
 all-ci:
 	@echo "=== All CI ===" && \
 	exit_code=0; \
-	echo "\n--- Lint ---" && uv run ruff check || exit_code=1; \
-	echo "\n--- Format Check ---" && uv run ruff format --check || exit_code=1; \
-	echo "\n--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || exit_code=1; \
-	echo "\n--- Markdown Check ---" && uv run erk md check || exit_code=1; \
-	echo "\n--- Docs Check ---" && uv run erk docs check || exit_code=1; \
-	echo "\n--- Exec Reference Check ---" && uv run erk-dev gen-exec-reference-docs --check || exit_code=1; \
-	echo "\n--- ty ---" && uv run ty check || exit_code=1; \
+	( \
+		lint_exit=0; \
+		echo "--- Lint ---" && uv run ruff check || lint_exit=1; \
+		echo "--- Format Check ---" && uv run ruff format --check || lint_exit=1; \
+		echo "--- Prettier Check ---" && prettier --check '**/*.md' --ignore-path .gitignore || lint_exit=1; \
+		echo "--- Markdown Check ---" && uv run erk md check || lint_exit=1; \
+		echo "--- Docs Check ---" && uv run erk docs check || lint_exit=1; \
+		echo "--- Exec Reference Check ---" && uv run erk-dev gen-exec-reference-docs --check || lint_exit=1; \
+		echo "--- ty ---" && uv run ty check || lint_exit=1; \
+		exit $$lint_exit \
+	) > /tmp/erk-ci-lint.out 2>&1 & lint_pid=$$!; \
 	echo "\n--- Unit Tests (erk) ---" && uv run pytest tests/unit/ tests/commands/ tests/core/ tests/real/ -n auto || exit_code=1; \
 	echo "\n--- Integration Tests (erk) ---" && uv run pytest tests/integration/ -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-dev) ---" && uv run pytest packages/erk-dev -n auto || exit_code=1; \
 	echo "\n--- Tests (erk-statusline) ---" && uv run pytest packages/erk-statusline -n auto || exit_code=1; \
 	echo "\n--- Tests (erkbot) ---" && cd packages/erkbot && uv run pytest tests/ -x -q && cd ../.. || exit_code=1; \
+	echo "\n--- Lint/Format Results ---"; \
+	wait $$lint_pid || exit_code=1; \
+	cat /tmp/erk-ci-lint.out; \
 	exit $$exit_code
 
 # Clean build artifacts and Python caches
