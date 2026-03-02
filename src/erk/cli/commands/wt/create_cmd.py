@@ -170,7 +170,9 @@ def ensure_worktree_for_branch(
     # Use appropriate naming strategy based on whether worktree is plan-derived
     if is_plan_derived:
         # Plan workflows need date suffixes to create multiple worktrees from same plan
-        name = ensure_unique_worktree_name_with_date(name, repo.worktrees_dir, ctx.git)
+        name = ensure_unique_worktree_name_with_date(
+            name, repo.worktrees_dir, ctx.git, now=ctx.time.now()
+        )
     else:
         # Manual checkouts use simple names for predictability
         name = ensure_simple_worktree_name(name, repo.worktrees_dir, ctx.git)
@@ -731,7 +733,7 @@ def create_wt(
 
     # Apply date prefix and uniqueness for plan-derived names
     if is_plan_derived:
-        name = ensure_unique_worktree_name(name, repo.worktrees_dir, ctx.git)
+        name = ensure_unique_worktree_name(name, repo.worktrees_dir, ctx.git, now=ctx.time.now())
 
     wt_path = worktree_path_for(repo.worktrees_dir, name)
 

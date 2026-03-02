@@ -3,6 +3,7 @@ from pathlib import Path
 
 import pytest
 
+from erk_shared.gateway.time.fake import DEFAULT_FAKE_TIME
 from erk_shared.naming import (
     WORKTREE_DATE_SUFFIX_FORMAT,
     InvalidObjectiveSlug,
@@ -24,10 +25,8 @@ from erk_shared.naming import (
     validate_worktree_name,
 )
 
-
-def _get_current_date_suffix() -> str:
-    """Get the current date suffix for plan-derived worktrees."""
-    return datetime.now().strftime(WORKTREE_DATE_SUFFIX_FORMAT)
+# Deterministic date suffix for tests that call ensure_unique_worktree_name with now=
+_FAKE_DATE_SUFFIX = DEFAULT_FAKE_TIME.strftime(WORKTREE_DATE_SUFFIX_FORMAT)
 
 
 @pytest.mark.parametrize(
@@ -179,11 +178,10 @@ def test_ensure_unique_worktree_name_first_time(tmp_path: Path) -> None:
     repo_dir.mkdir()
 
     git_ops = RealGit()
-    result = ensure_unique_worktree_name("my-feature", repo_dir, git_ops)
+    result = ensure_unique_worktree_name("my-feature", repo_dir, git_ops, now=DEFAULT_FAKE_TIME)
 
     # Should have datetime suffix in format -YY-MM-DD-HHMM
-    date_suffix = _get_current_date_suffix()
-    assert result == f"my-feature-{date_suffix}"
+    assert result == f"my-feature-{_FAKE_DATE_SUFFIX}"
     assert not (repo_dir / result).exists()
 
 
@@ -194,14 +192,13 @@ def test_ensure_unique_worktree_name_duplicate_same_minute(tmp_path: Path) -> No
     repo_dir = tmp_path / "erks"
     repo_dir.mkdir()
 
-    date_suffix = _get_current_date_suffix()
-    existing_name = f"my-feature-{date_suffix}"
+    existing_name = f"my-feature-{_FAKE_DATE_SUFFIX}"
     (repo_dir / existing_name).mkdir()
 
     git_ops = RealGit()
-    result = ensure_unique_worktree_name("my-feature", repo_dir, git_ops)
+    result = ensure_unique_worktree_name("my-feature", repo_dir, git_ops, now=DEFAULT_FAKE_TIME)
 
-    assert result == f"my-feature-{date_suffix}-2"
+    assert result == f"my-feature-{_FAKE_DATE_SUFFIX}-2"
     assert not (repo_dir / result).exists()
     assert (repo_dir / existing_name).exists()
 
@@ -213,15 +210,14 @@ def test_ensure_unique_worktree_name_multiple_duplicates(tmp_path: Path) -> None
     repo_dir = tmp_path / "erks"
     repo_dir.mkdir()
 
-    date_suffix = _get_current_date_suffix()
-    (repo_dir / f"my-feature-{date_suffix}").mkdir()
-    (repo_dir / f"my-feature-{date_suffix}-2").mkdir()
-    (repo_dir / f"my-feature-{date_suffix}-3").mkdir()
+    (repo_dir / f"my-feature-{_FAKE_DATE_SUFFIX}").mkdir()
+    (repo_dir / f"my-feature-{_FAKE_DATE_SUFFIX}-2").mkdir()
+    (repo_dir / f"my-feature-{_FAKE_DATE_SUFFIX}-3").mkdir()
 
     git_ops = RealGit()
-    result = ensure_unique_worktree_name("my-feature", repo_dir, git_ops)
+    result = ensure_unique_worktree_name("my-feature", repo_dir, git_ops, now=DEFAULT_FAKE_TIME)
 
-    assert result == f"my-feature-{date_suffix}-4"
+    assert result == f"my-feature-{_FAKE_DATE_SUFFIX}-4"
 
 
 def test_ensure_unique_worktree_name_with_existing_number(tmp_path: Path) -> None:
@@ -232,17 +228,16 @@ def test_ensure_unique_worktree_name_with_existing_number(tmp_path: Path) -> Non
     repo_dir.mkdir()
 
     git_ops = RealGit()
-    date_suffix = _get_current_date_suffix()
-    result = ensure_unique_worktree_name("fix-v3", repo_dir, git_ops)
+    result = ensure_unique_worktree_name("fix-v3", repo_dir, git_ops, now=DEFAULT_FAKE_TIME)
 
     # Base name has number, should preserve it in datetime-suffixed name
-    assert result == f"fix-v3-{date_suffix}"
+    assert result == f"fix-v3-{_FAKE_DATE_SUFFIX}"
 
     # Create it and try again
     (repo_dir / result).mkdir()
-    result2 = ensure_unique_worktree_name("fix-v3", repo_dir, git_ops)
+    result2 = ensure_unique_worktree_name("fix-v3", repo_dir, git_ops, now=DEFAULT_FAKE_TIME)
 
-    assert result2 == f"fix-v3-{date_suffix}-2"
+    assert result2 == f"fix-v3-{_FAKE_DATE_SUFFIX}-2"
 
 
 def test_sanitize_branch_component_truncates_at_31_chars() -> None:

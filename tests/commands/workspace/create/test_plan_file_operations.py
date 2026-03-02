@@ -6,9 +6,12 @@ from erk.cli.cli import cli
 from erk.cli.config import LoadedConfig
 from erk.core.repo_discovery import RepoContext
 from erk_shared.gateway.git.fake import FakeGit
-from erk_shared.naming import default_branch_for_worktree
-from tests.commands.workspace.create.conftest import get_current_date_suffix
+from erk_shared.gateway.time.fake import DEFAULT_FAKE_TIME
+from erk_shared.naming import WORKTREE_DATE_SUFFIX_FORMAT, default_branch_for_worktree
 from tests.test_utils.env_helpers import erk_isolated_fs_env
+
+# Deterministic date suffix from FakeTime, used by ctx.time.now() in tests
+_FAKE_DATE_SUFFIX = DEFAULT_FAKE_TIME.strftime(WORKTREE_DATE_SUFFIX_FORMAT)
 
 
 def test_create_with_plan_file() -> None:
@@ -47,11 +50,10 @@ def test_create_with_plan_file() -> None:
 
         assert result.exit_code == 0, result.output
         # Should create worktree with "plan" stripped from filename and date suffix added
-        date_suffix = get_current_date_suffix()
-        wt_path = repo_dir / "worktrees" / f"my-feature-{date_suffix}"
+        wt_path = repo_dir / "worktrees" / f"my-feature-{_FAKE_DATE_SUFFIX}"
         assert wt_path.exists()
         # Branch-scoped impl folder should be created with plan.md
-        impl_dir = wt_path / ".erk" / "impl-context" / f"my-feature-{date_suffix}"
+        impl_dir = wt_path / ".erk" / "impl-context" / f"my-feature-{_FAKE_DATE_SUFFIX}"
         assert impl_dir.exists()
         assert (impl_dir / "plan.md").exists()
         assert not plan_file.exists()
@@ -99,9 +101,7 @@ def test_create_with_plan_file_removes_plan_word() -> None:
 
             assert result.exit_code == 0, f"Failed for {plan_filename}: {result.output}"
 
-            # Compute date suffix after invoke to avoid timing issues at minute boundaries
-            date_suffix = get_current_date_suffix()
-            expected_worktree_name = f"{expected_worktree_base}-{date_suffix}"
+            expected_worktree_name = f"{expected_worktree_base}-{_FAKE_DATE_SUFFIX}"
             wt_path = repo_dir / "worktrees" / expected_worktree_name
             assert wt_path.exists(), f"Expected worktree at {wt_path} for {plan_filename}"
             branch_name = default_branch_for_worktree(expected_worktree_name)
@@ -168,11 +168,10 @@ def test_create_with_keep_plan_file_flag() -> None:
 
         assert result.exit_code == 0, result.output
         # Should create worktree with "plan" stripped from filename and date suffix added
-        date_suffix = get_current_date_suffix()
-        wt_path = repo_dir / "worktrees" / f"my-feature-{date_suffix}"
+        wt_path = repo_dir / "worktrees" / f"my-feature-{_FAKE_DATE_SUFFIX}"
         assert wt_path.exists()
         # Branch-scoped impl folder should be created with plan.md
-        impl_dir = wt_path / ".erk" / "impl-context" / f"my-feature-{date_suffix}"
+        impl_dir = wt_path / ".erk" / "impl-context" / f"my-feature-{_FAKE_DATE_SUFFIX}"
         assert (impl_dir / "plan.md").exists()
         # Original plan file should still exist (copied, not moved)
         assert plan_file.exists()
@@ -225,10 +224,8 @@ def test_create_with_plan_file_ensures_uniqueness() -> None:
         )
         assert result1.exit_code == 0, result1.output
 
-        # Check that first worktree has date suffix
-        # Compute date suffix after invoke to avoid timing issues at minute boundaries
-        date_suffix1 = get_current_date_suffix()
-        expected_name1 = f"my-feature-{date_suffix1}"
+        # Check that first worktree has date suffix (deterministic via FakeTime)
+        expected_name1 = f"my-feature-{_FAKE_DATE_SUFFIX}"
         wt_path1 = repo_dir / "worktrees" / expected_name1
         assert wt_path1.exists(), f"Expected first worktree at {wt_path1}"
         assert (wt_path1 / ".erk" / "impl-context" / expected_name1 / "plan.md").exists()
@@ -236,7 +233,7 @@ def test_create_with_plan_file_ensures_uniqueness() -> None:
         # Recreate plan file for second worktree
         plan_file.write_text("# My Feature Plan - Round 2\n", encoding="utf-8")
 
-        # Create second worktree from same plan (same day)
+        # Create second worktree from same plan (same timestamp from FakeTime)
         result2 = runner.invoke(
             cli,
             ["wt", "create", "--from-plan-file", str(plan_file)],
@@ -244,15 +241,8 @@ def test_create_with_plan_file_ensures_uniqueness() -> None:
         )
         assert result2.exit_code == 0, result2.output
 
-        # Check that second worktree has -2 after date suffix (if same minute)
-        # or just date suffix (if minute boundary crossed)
-        date_suffix2 = get_current_date_suffix()
-        if date_suffix1 == date_suffix2:
-            # Same minute: uniqueness versioning adds -2
-            expected_name2 = f"my-feature-{date_suffix2}-2"
-        else:
-            # Minute boundary crossed: different timestamp, no -2 needed
-            expected_name2 = f"my-feature-{date_suffix2}"
+        # FakeTime always returns the same time, so uniqueness versioning adds -2
+        expected_name2 = f"my-feature-{_FAKE_DATE_SUFFIX}-2"
         wt_path2 = repo_dir / "worktrees" / expected_name2
         assert wt_path2.exists(), f"Expected second worktree at {wt_path2}"
         assert (wt_path2 / ".erk" / "impl-context" / expected_name2 / "plan.md").exists()
@@ -336,14 +326,13 @@ def test_create_with_long_plan_name_matches_branch_and_worktree() -> None:
             f"Worktree name: expected >31 chars, got {len(actual_worktree_name)}"
         )
 
-        # Worktree name should end with date suffix (-YY-MM-DD-HHMM)
-        date_suffix = get_current_date_suffix()
-        assert actual_worktree_name.endswith(date_suffix), (
-            f"Worktree name should end with '{date_suffix}', got: {actual_worktree_name}"
+        # Worktree name should end with date suffix (-YY-MM-DD-HHMM, deterministic via FakeTime)
+        assert actual_worktree_name.endswith(_FAKE_DATE_SUFFIX), (
+            f"Worktree name should end with '{_FAKE_DATE_SUFFIX}', got: {actual_worktree_name}"
         )
 
         # Branch name should match worktree base (worktree name without date suffix)
-        worktree_base = actual_worktree_name.removesuffix(f"-{date_suffix}")
+        worktree_base = actual_worktree_name.removesuffix(f"-{_FAKE_DATE_SUFFIX}")
         assert actual_branch_name == worktree_base, (
             f"Branch '{actual_branch_name}' should match worktree base '{worktree_base}'"
         )
