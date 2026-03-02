@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!-- As of: 45ada49e0 -->
+
+### Added
+
+- Add `--skip-learn` option to `erk land` to skip automatic learn plan creation after landing (845e845c4)
+- Show workflow source and switch `erk run list` to PR-centric view with direct PR extraction (018306dcf)
+
+### Changed
+
+- Eliminate master checkout requirement from plan-save and dispatch, allowing these commands to work from any branch (81af72930)
+
+### Fixed
+
+- Fix `erk land` hanging when no sessions discovered for learn plan (e7bd0cbcd)
+- Fix `erk land` creating empty learn plan draft PRs when no session material is found (b6f3d9ea3)
+
 ## [0.9.1] - 2026-03-01 16:06 PT
 
 ### Added
