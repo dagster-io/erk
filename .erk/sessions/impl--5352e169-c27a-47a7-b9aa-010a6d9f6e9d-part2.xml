@@ -1,0 +1,714 @@
+<session>
+  <meta branch="plnd/precheck-duplicate-branch-03-02-0424" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Read" id="toolu_012sakjrJeNZkWLqvwm5x7yJ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="offset">222</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="683" cache_read_input_tokens="76777" cache_creation="{'ephemeral_5m_input_tokens': 683, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012sakjrJeNZkWLqvwm5x7yJ">
+   222→
+   223→        # Create branch from trunk
+   224→        current_step = "Creating branch"
+   225→        user_output("Creating branch...")
+   226→        ctx.git.branch.create_branch(repo.root, branch_name, trunk, force=False)
+   227→        user_output(click.style("  \u2713 Branch created", dim=True))
+   228→
+   229→        # Write prompt to .erk/impl-context/prompt.md directly on the branch (no checkout)
+   230→        current_step = "Committing prompt file"
+   231→        user_output("Committing prompt file...")
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>The checkmark is `\u2713`. Let me use the exact content:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="381" cache_read_input_tokens="77460" cache_creation="{'ephemeral_5m_input_tokens': 381, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01UMXdFsMMwzMQW8pSnRxSNx">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="old_string">        ctx.git.branch.create_branch(repo.root, branch_name, trunk, force=False)
+        user_output(click.style("  \u2713 Branch created", dim=True))</param>
+    <param name="new_string">        branch_result = ctx.git.branch.create_branch(repo.root, branch_name, trunk, force=...[truncated 285 chars]... raise SystemExit(1)
+        user_output(click.style("  \u2713 Branch created", dim=True))</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="381" cache_read_input_tokens="77460" cache_creation="{'ephemeral_5m_input_tokens': 381, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UMXdFsMMwzMQW8pSnRxSNx">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/one_shot_dispatch.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01RWPLPP3MtvQCjJk3aBpRvZ">
+    <param name="todos">[{'content': 'Handle BranchAlreadyExists return from create_branch()', 'status': 'complete...[truncated 503 chars]...s and type checker', 'status': 'pending', 'activeForm': 'Running tests and type checker'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="562" cache_read_input_tokens="77841" cache_creation="{'ephemeral_5m_input_tokens': 562, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RWPLPP3MtvQCjJk3aBpRvZ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now add the pre-check for existing PR before `create_pr`. Let me read the relevant section:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="280" cache_read_input_tokens="78403" cache_creation="{'ephemeral_5m_input_tokens': 280, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016bbLHRU8VbwFz2GG1V594K">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="offset">248</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="280" cache_read_input_tokens="78403" cache_creation="{'ephemeral_5m_input_tokens': 280, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016bbLHRU8VbwFz2GG1V594K">
+   248→        current_step = "Pushing to remote"
+   249→        user_output("Pushing to remote...")
+   250→        push_start = time.monotonic()
+   251→        push_result = ctx.git.remote.push_to_remote(
+   252→            repo.root, "origin", branch_name, set_upstream=True, force=False
+   253→        )
+   254→        if isinstance(push_result, PushError):
+   255→            Ensure.invariant(False, f"Failed to push branch: {push_result.message}")
+   256→        push_elapsed = time.monotonic() - push_start
+   257→        user_output(click.style(f"  \u2713 Pushed ({format_duration(push_elapsed)})", dim=True))
+   258→
+   259→        # --- Create draft PR ---
+   260→        current_step = "Creating draft PR"
+   261→        user_output("Creating draft PR...")
+   262→        # planned_pr: create PR with plan-header metadata block
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01XvP3yMSkFLQvPznPxMxaCm">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="old_string">        # --- Create draft PR ---
+        current_step = "Creating draft PR"
+        user_output("Creating draft PR...")</param>
+    <param name="new_string">        # --- Pre-check for existing PR ---
+        existing_pr = ctx.github.get_pr_for_br...[truncated 382 chars]...---
+        current_step = "Creating draft PR"
+        user_output("Creating draft PR...")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="482" cache_read_input_tokens="78683" cache_creation="{'ephemeral_5m_input_tokens': 482, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XvP3yMSkFLQvPznPxMxaCm">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/one_shot_dispatch.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01R1UcEXpXQj9Z5uFiWY7B2E">
+    <param name="todos">[{'content': 'Handle BranchAlreadyExists return from create_branch()', 'status': 'complete...[truncated 505 chars]...s and type checker', 'status': 'pending', 'activeForm': 'Running tests and type checker'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="79165" cache_creation="{'ephemeral_5m_input_tokens': 348, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01R1UcEXpXQj9Z5uFiWY7B2E">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me add the two tests. I need to know how to construct a `PRDetails` for the fake, and how `FakeGitHub` handles `prs_by_branch`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="280" cache_read_input_tokens="79513" cache_creation="{'ephemeral_5m_input_tokens': 280, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MMY26MESpR7DYh8BMb4qXK">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="offset">133</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="280" cache_read_input_tokens="79513" cache_creation="{'ephemeral_5m_input_tokens': 280, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MMY26MESpR7DYh8BMb4qXK">
+   133→@dataclass(frozen=True)
+   134→class PRDetails(EnsurableResult):
+   135→    """Comprehensive PR information from a single GitHub API call.
+   136→
+   137→    This dataclass contains all commonly-needed PR fields, allowing call sites
+   138→    to fetch everything they need in one API call instead of multiple separate
+   139→    calls for title, body, base branch, etc.
+   140→    """
+   141→
+   142→    # Identity
+   143→    number: int
+   144→    url: str
+   145→
+   146→    # Content
+   147→    title: str
+   148→    body: str
+   149→
+   150→    # State
+   151→    state: str  # "OPEN", "MERGED", "CLOSED"
+   152→    is_draft: bool
+   153→
+   154→    # Structure
+   155→    base_ref_name: str
+   156→    head_ref_name: str
+   157→    is_cross_repository: bool
+   158→
+   159→    # Mergeability
+   160→    mergeable: MergeableStatus
+   161→    merge_state_status: str  # "CLEAN", "BLOCKED", "UNSTABLE", "DIRTY"
+   162→
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01CxKwKqY7CCmdqCYtshg4jH">
+    <param name="pattern">class MergeableStatus</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="769" cache_read_input_tokens="79793" cache_creation="{'ephemeral_5m_input_tokens': 769, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CxKwKqY7CCmdqCYtshg4jH">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01MjQX35RwyUTGzwfAGztuho">
+    <param name="pattern">MergeableStatus</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="159" cache_read_input_tokens="80562" cache_creation="{'ephemeral_5m_input_tokens': 159, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MjQX35RwyUTGzwfAGztuho">
+12:MergeableStatus = Literal["MERGEABLE", "CONFLICTING", "UNKNOWN"]
+160:    mergeable: MergeableStatus
+  </tool_result>
+  <assistant>Good, it's a Literal. Now let me look at how existing tests create `PRDetails` instances to follow the pattern:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="191" cache_read_input_tokens="80721" cache_creation="{'ephemeral_5m_input_tokens': 191, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01C5F9N59u9Y89HAqJXKXMKu">
+    <param name="pattern">PRDetails\("</param>
+    <param name="output_mode">content</param>
+    <param name="-C">10</param>
+    <param name="head_limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="191" cache_read_input_tokens="80721" cache_creation="{'ephemeral_5m_input_tokens': 191, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01C5F9N59u9Y89HAqJXKXMKu">
+No matches found
+
+[Showing results with pagination = limit: 50, offset: 0]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0171e4frpjKMS5iQvdgMyrRL">
+    <param name="pattern">PRDetails\("</param>
+    <param name="output_mode">content</param>
+    <param name="-C">10</param>
+    <param name="head_limit">50</param>
+    <param name="-i">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="366" cache_read_input_tokens="80912" cache_creation="{'ephemeral_5m_input_tokens': 366, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0171e4frpjKMS5iQvdgMyrRL">
+No matches found
+
+[Showing results with pagination = limit: 50, offset: 0]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01HdeqjCW8JC6Upk61mZcWze">
+    <param name="pattern">PRDetails\(</param>
+    <param name="output_mode">content</param>
+    <param name="-C">10</param>
+    <param name="head_limit">80</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="81278" cache_creation="{'ephemeral_5m_input_tokens': 162, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HdeqjCW8JC6Upk61mZcWze">
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-55-        details_section = DETAILS_OPEN + body + DETAILS_CLOSE
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-56-        pr_body = details_section + "\n\n" + metadata_body
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-57-
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-58-    # Include erk-plan label plus any existing labels
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-59-    labels = tuple(plan.labels) if "erk-plan" in plan.labels else ("erk-plan", *plan.labels)
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-60-
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-61-    # Use base_ref_name from plan metadata if provided, otherwise default to "main"
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-62-    raw_base_ref = plan.metadata.get("base_ref_name")
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-63-    base_ref = raw_base_ref if isinstance(raw_base_ref, str) else "main"
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-64-
+tests/test_utils/plan_helpers.py:65:    return PRDetails(
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-66-        number=int(plan.plan_identifier),
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-67-        url=plan.url,
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-68-        title=plan.title,
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-69-        body=pr_body,
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-70-        state=state,
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-71-        is_draft=True,
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-72-        base_ref_name=base_ref,
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-73-        head_ref_name=branch_name,
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-74-        is_cross_repository=False,
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-75-        mergeable="UNKNOWN",
+--
+tests/test_utils/plan_helpers.py-211-        metadata_part = body[: end_marker_idx + len(_PLAN_HEADER_END_MARKER)]
+tests/test_utils/plan_helpers.py-212-        content_part = body[end_marker_idx + len(_PLAN_HEADER_END_MARKER) :].strip()
+tests/test_utils/plan_helpers.py-213-        if content_part:
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-214-            details_section = DETAILS_OPEN + content_part + DETAILS_CLOSE
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-215-            pr_body = details_section + "\n\n" + metadata_part
+tests/test_utils/plan_helpers.py-216-        else:
+/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py-217-            pr_body = metadata_part
+tests/test_utils/plan_helpers.py-218-    else:
+
+... [52 lines omitted] ...
+  </tool_result>
+  <assistant>I can see the pattern. Let me read one complete PRDetails construction to understand all required fields:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2876" cache_read_input_tokens="81440" cache_creation="{'ephemeral_5m_input_tokens': 2876, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Xyo6ytMxuzVZdmnp3P7skq">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="offset">65</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2876" cache_read_input_tokens="81440" cache_creation="{'ephemeral_5m_input_tokens': 2876, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Xyo6ytMxuzVZdmnp3P7skq">
+    65→        pr_details = PRDetails(
+    66→            number=123,
+    67→            url="https://github.com/owner/repo/pull/123",
+    68→            title="Feature PR",
+    69→            body="",
+    70→            state="OPEN",
+    71→            is_draft=False,
+    72→            base_ref_name="main",
+    73→            head_ref_name="feature",
+    74→            is_cross_repository=False,
+    75→            mergeable="MERGEABLE",
+    76→            merge_state_status="CLEAN",
+    77→            owner="owner",
+    78→            repo="repo",
+    79→            labels=(),
+    80→        )
+    81→
+    82→        git = FakeGit(
+    83→            git_common_dirs={env.cwd: env.git_dir},
+    84→            repository_roots={env.cwd: env.git_dir},
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now I have all the context. Let me add both tests to the test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="650" cache_read_input_tokens="84316" cache_creation="{'ephemeral_5m_input_tokens': 650, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01UhFKCwWtzG6TT3KFpQeFvL">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py</param>
+    <param name="offset">260</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="650" cache_read_input_tokens="84316" cache_creation="{'ephemeral_5m_input_tokens': 650, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UhFKCwWtzG6TT3KFpQeFvL">
+   260→        )
+   261→
+   262→        # Verify full prompt was committed directly to branch via branch_commits
+   263→        assert len(git.branch_commits) == 1
+   264→        assert git.branch_commits[0].files == {".erk/impl-context/prompt.md": long_prompt + "\n"}
+   265→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BMyx9TmbhW9igg3zdsrJbv">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py</param>
+    <param name="old_string">from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.git.remote_ops.typ...[truncated 30 chars]....fake import FakeGitHub
+from erk_shared.gateway.github.issues.fake import FakeGitHubIssues</param>
+    <param name="new_string">from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+from erk_shared.ga...[truncated 156 chars]....issues.fake import FakeGitHubIssues
+from erk_shared.gateway.github.types import PRDetails</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="84966" cache_creation="{'ephemeral_5m_input_tokens': 311, 'ephemeral_1h_input_tokens': 0}" output_tokens="313" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BMyx9TmbhW9igg3zdsrJbv">
+The file /home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add both tests at the end of the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="556" cache_read_input_tokens="85277" cache_creation="{'ephemeral_5m_input_tokens': 556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01EfJnuWu9JxwwuVjaPF7kqx">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py</param>
+    <param name="old_string">        # Verify full prompt was committed directly to branch via branch_commits
+        a...[truncated 22 chars]... assert git.branch_commits[0].files == {".erk/impl-context/prompt.md": long_prompt + "\n"}</param>
+    <param name="new_string">        # Verify full prompt was committed directly to branch via branch_commits
+        a...[truncated 6022 chars]... assert len(github2.created_prs) == 0
+        assert len(github2.triggered_workflows) == 0</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="556" cache_read_input_tokens="85277" cache_creation="{'ephemeral_5m_input_tokens': 556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EfJnuWu9JxwwuVjaPF7kqx">
+The file /home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py has been updated successfully.
+  </tool_result>
+  <assistant>Wait, the first test has unreachable code before the CLI runner approach. Let me clean that up — the `dispatch_one_shot` call will raise `SystemExit(1)` which will propagate. I should test via CLI runner only:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2004" cache_read_input_tokens="85833" cache_creation="{'ephemeral_5m_input_tokens': 2004, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01E5xYiX8QVdTWUNA4j5KMr1">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py</param>
+    <param name="offset">267</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2004" cache_read_input_tokens="85833" cache_creation="{'ephemeral_5m_input_tokens': 2004, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01E5xYiX8QVdTWUNA4j5KMr1">
+   267→
+   268→
+   269→def test_dispatch_fails_when_branch_already_exists() -&gt; None:
+   270→    """Test dispatch exits with clear error when branch already exists locally."""
+   271→    runner = CliRunner()
+   272→    with erk_isolated_fs_env(runner) as env:
+   273→        env.setup_repo_structure()
+   274→
+   275→        git = FakeGit(
+   276→            git_common_dirs={env.cwd: env.git_dir},
+   277→            default_branches={env.cwd: "main"},
+   278→            trunk_branches={env.cwd: "main"},
+   279→            current_branches={env.cwd: "main"},
+   280→            create_branch_error=BranchAlreadyExists(
+   281→                branch_name="plnd/duplicate-branch",
+   282→                message="Branch 'plnd/duplicate-branch' already exists",
+   283→            ),
+   284→        )
+   285→        issues = FakeGitHubIssues()
+   286→        github = FakeGitHub(authenticated=True, issues_gateway=issues)
+   287→
+   288→        ctx = build_workspace_test_context(env, git=git, github=github, issues=issues)
+   289→
+   290→        params = OneShotDispatchParams(
+   291→            prompt="fix the import in config.py",
+   292→            model=None,
+   293→            extra_workflow_inputs={},
+   294→            slug=None,
+   295→        )
+   296→
+
+... [35 lines omitted] ...
+
+   303→    # Re-test via CLI to capture the SystemExit and error message
+   313→            create_branch_error=BranchAlreadyExists(
+  </tool_result>
+  <assistant>Let me rewrite the first test to be cleaner — just use the CLI runner approach:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1295" cache_read_input_tokens="87837" cache_creation="{'ephemeral_5m_input_tokens': 1295, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01YMgPqJPS2BA66ArMSbYxSe">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py</param>
+    <param name="old_string">def test_dispatch_fails_when_branch_already_exists() -&gt; None:
+    """Test dispatch exits w...[truncated 2372 chars]...   assert len(github.created_prs) == 0
+        assert len(github.triggered_workflows) == 0</param>
+    <param name="new_string">def test_dispatch_fails_when_branch_already_exists() -&gt; None:
+    """Test dispatch exits w...[truncated 1076 chars]...   assert len(github.created_prs) == 0
+        assert len(github.triggered_workflows) == 0</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1295" cache_read_input_tokens="87837" cache_creation="{'ephemeral_5m_input_tokens': 1295, 'ephemeral_1h_input_tokens': 0}" output_tokens="1223" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YMgPqJPS2BA66ArMSbYxSe">
+The file /home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also clean up the PR-already-exists test. The approach of doing a first dispatch to discover the branch name is overly complex. Since I'm using `slug="fix-config-import"`, the branch name is deterministic (it uses `generate_planned_pr_branch_name` which includes a timestamp from `ctx.time`). But since the FakeGitHub `get_pr_for_branch` checks by exact branch name, I need to know the generated branch name. Let me think about a better approach.
+
+Actually, the simplest approach: I can use `prs_by_branch` with a callback-style approach, but the fake just uses a dict lookup. The challenge is that the branch name includes a timestamp. However, the `FakeGitHub.get_pr_for_branch` iterates `_prs_by_branch`. Since I don't know the exact branch name ahead of time, I should test via the `dispatch_one_shot` function directly with `pytest.raises(SystemExit)`.
+
+Actually, a better approach: I can override `FakeGitHub.get_pr_for_branch` to always return a PRDetails. But that would require subclassing. Let me look at this differently - I can make the test use the CLI runner and check the `--slug` flag. The branch name from `generate_planned_pr_branch_name("fix-config-import", time.now(), ...)` will be deterministic if I control the time. And the context builder uses `FakeTime` by default.
+
+Let me check what time `FakeTime` returns:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1271" cache_read_input_tokens="89132" cache_creation="{'ephemeral_5m_input_tokens': 1271, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_019gnxe2mHStyyGXjsANQQ2j">
+    <param name="pattern">class FakeTime"</param>
+    <param name="output_mode">content</param>
+    <param name="-C">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1271" cache_read_input_tokens="89132" cache_creation="{'ephemeral_5m_input_tokens': 1271, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019gnxe2mHStyyGXjsANQQ2j">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012D3E7enV5sTbRUUbkC7mAi">
+    <param name="pattern">class FakeTime</param>
+    <param name="output_mode">content</param>
+    <param name="-C">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="661" cache_read_input_tokens="90403" cache_creation="{'ephemeral_5m_input_tokens': 661, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012D3E7enV5sTbRUUbkC7mAi">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-2-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-3-FakeTime is an in-memory implementation that tracks sleep() calls without
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-4-actually sleeping, returns a configurable current time, and provides
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-5-deterministic monotonic clock values from a configured sequence.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-6-"""
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-7-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-8-from collections.abc import Sequence
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-9-from datetime import datetime
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-10-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-11-from erk_shared.gateway.time.abc import Time
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-12-
+packages/erk-shared/src/erk_shared/gateway/time/fake.py-13-# Default fixed time for deterministic tests: 2024-01-15 14:30:00
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-14-DEFAULT_FAKE_TIME = datetime(2024, 1, 15, 14, 30, 0)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-15-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-16-
+packages/erk-shared/src/erk_shared/gateway/time/fake.py:17:class FakeTime(Time):
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-18-    """In-memory fake implementation that tracks calls without sleeping.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-19-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-20-    This class has NO public setup methods. All state is provided via constructor
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-21-    or captured during execution.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-22-    """
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-23-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-24-    def __init__(
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-25-        self,
+packages/erk-shared/src/erk_shared/gateway/time/fake.py-26-        current_time: datetime | None = None,
+packages/erk-shared/src/erk_shared/gateway/time/fake.py-27-        monotonic_values: Sequence[float] | None = None,
+packages/erk-shared/src/erk_shared/gateway/time/fake.py-28-    ) -&gt; None:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-29-        """Create FakeTime with empty call tracking and optional fixed time.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py-30-
+packages/erk-shared/src/erk_shared/gateway/time/fake.py-31-        Args:
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>The default fake time is `2024-01-15 14:30:00`. Let me check `format_branch_timestamp_suffix` and `generate_planned_pr_branch_name`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1418" cache_read_input_tokens="91064" cache_creation="{'ephemeral_5m_input_tokens': 1418, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01EuWrjGjH938N7JmSB4abxV">
+    <param name="pattern">def generate_planned_pr_branch_name</param>
+    <param name="output_mode">content</param>
+    <param name="-C">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1418" cache_read_input_tokens="91064" cache_creation="{'ephemeral_5m_input_tokens': 1418, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EuWrjGjH938N7JmSB4abxV">
+packages/erk-shared/src/erk_shared/naming.py-803-    Args:
+packages/erk-shared/src/erk_shared/naming.py-804-        name: Worktree name
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py-805-
+packages/erk-shared/src/erk_shared/naming.py-806-    Returns:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py-807-        Default branch name (sanitized)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py-808-
+packages/erk-shared/src/erk_shared/naming.py-809-    Examples:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py-810-        &gt;&gt;&gt; default_branch_for_worktree("my-feature")
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py-811-        "my-feature"
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py-812-        &gt;&gt;&gt; default_branch_for_worktree("Fix Bug!")
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py-813-        "fix-bug"
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py-814-    """
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py-815-    return sanitize_branch_component(name)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py-816-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py-817-
+packages/erk-shared/src/erk_shared/naming.py:818:def generate_planned_pr_branch_name(
+packages/erk-shared/src/erk_shared/naming.py-819-    title: str,
+packages/erk-shared/src/erk_shared/naming.py-820-    timestamp: datetime,
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py-821-    *,
+packages/erk-shared/src/erk_shared/naming.py-822-    objective_id: int | None,
+packages/erk-shared/src/erk_shared/naming.py-823-) -&gt; str:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py-824-    """Generate branch name for planned-PR-backed plans.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py-825-
+packages/erk-shared/src/erk_shared/naming.py-826-    Format: plnd/{sanitized_title}-{timestamp}
+packages/erk-shared/src/erk_shared/naming.py-827-    Or with objective: plnd/O{objective_id}-{sanitized_title}-{timestamp}
+packages/erk-shared/src/erk_shared/naming.py-828-    Example: plnd/fix-auth-bug-01-15-1430
+packages/erk-shared/src/erk_shared/naming.py-829-    Example with objective: plnd/O456-fix-auth-bug-01-15-1430
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py-830-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py-831-    No P{issue} prefix since the PR number isn't known until after creation.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py-832-
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>So with slug "fix-config-import" and default fake time `2024-01-15 14:30:00`, the branch name would be `plnd/fix-config-import-01-15-1430`. But I shouldn't hardcode that — let me rethink the PR test.
+
+A better approach: Instead of trying to predict the branch name, I can just test the `dispatch_one_shot` function directly using `pytest.raises(SystemExit)`. But actually, the problem is I need to configure `prs_by_branch` with a key matching the generated branch name. Since `FakeGitHub.get_pr_for_branch` does a dict lookup by exact branch name, I need to predict the name.
+
+Given the FakeTime default (`2024-01-15 14:30:00`), and `generate_planned_pr_branch_name("fix-config-import", datetime(2024, 1, 15, 14, 30, 0), objective_id=None)`, the branch should be `plnd/fix-config-import-01-15-1430`.
+
+Let me verify:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1449" cache_read_input_tokens="92482" cache_creation="{'ephemeral_5m_input_tokens': 1449, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013Jy4cnjco8vXkwy9McuTu8">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py</param>
+    <param name="offset">818</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1449" cache_read_input_tokens="92482" cache_creation="{'ephemeral_5m_input_tokens': 1449, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013Jy4cnjco8vXkwy9McuTu8">
+   818→def generate_planned_pr_branch_name(
+   819→    title: str,
+   820→    timestamp: datetime,
+   821→    *,
+   822→    objective_id: int | None,
+   823→) -&gt; str:
+   824→    """Generate branch name for planned-PR-backed plans.
+   825→
+   826→    Format: plnd/{sanitized_title}-{timestamp}
+   827→    Or with objective: plnd/O{objective_id}-{sanitized_title}-{timestamp}
+   828→    Example: plnd/fix-auth-bug-01-15-1430
+   829→    Example with objective: plnd/O456-fix-auth-bug-01-15-1430
+   830→
+   831→    No P{issue} prefix since the PR number isn't known until after creation.
+   832→
+   833→    Args:
+   834→        title: Plan title to sanitize
+   835→        timestamp: Timestamp for the suffix
+   836→        objective_id: Optional objective ID to encode in branch name
+   837→
+   838→    Returns:
+   839→        Branch name in format plnd/{slug}-{timestamp}
+   840→
+   841→    Examples:
+   842→        &gt;&gt;&gt; from datetime import datetime
+   843→        &gt;&gt;&gt; generate_planned_pr_branch_name(
+   844→        ...     "Fix Auth Bug", datetime(2024, 1, 15, 14, 30), objective_id=None
+   845→        ... )
+   846→        "plnd/fix-auth-bug-01-15-1430"
+   847→        &gt;&gt;&gt; generate_planned_pr_branch_name(
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>So with slug `fix-config-import` and timestamp `2024-01-15 14:30:00`, the branch will be `plnd/fix-config-import-01-15-1430`. Let me simplify the test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="864" cache_read_input_tokens="93931" cache_creation="{'ephemeral_5m_input_tokens': 864, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01L81bTMi6oS1QhTqMLPfVPX">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py</param>
+    <param name="old_string">def test_dispatch_fails_when_pr_already_exists_for_branch() -&gt; None:
+    """Test dispatch ...[truncated 3222 chars]... assert len(github2.created_prs) == 0
+        assert len(github2.triggered_workflows) == 0</param>
+    <param name="new_string">def test_dispatch_fails_when_pr_already_exists_for_branch() -&gt; None:
+    """Test dispatch ...[truncated 1762 chars]...   assert len(github.created_prs) == 0
+        assert len(github.triggered_workflows) == 0</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="864" cache_read_input_tokens="93931" cache_creation="{'ephemeral_5m_input_tokens': 864, 'ephemeral_1h_input_tokens': 0}" output_tokens="1719" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01L81bTMi6oS1QhTqMLPfVPX">
+The file /home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check if the `one-shot` CLI command has a `--slug` option:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1962" cache_read_input_tokens="94795" cache_creation="{'ephemeral_5m_input_tokens': 1962, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_012AKiJCuimgfXyqJKXGRGq1">
+    <param name="pattern">"--slug"</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1962" cache_read_input_tokens="94795" cache_creation="{'ephemeral_5m_input_tokens': 1962, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012AKiJCuimgfXyqJKXGRGq1">
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py-99-    help="Session ID for scoped plan lookup",
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py-100-)
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py-101-@click.option(
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:102:    "--slug",
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py-103-    default=None,
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py-104-    help="Short kebab-case identifier for the objective (e.g., 'build-auth-system')",
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py-105-)
+--
+/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py-53-    help="Create a plan remotely without implementing it",
+/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py-54-)
+/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py-55-@click.option(
+src/erk/cli/commands/one_shot.py:56:    "--slug",
+/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py-57-    type=str,
+/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py-58-    default=None,
+/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py-59-    help="Pre-generated branch slug (skips LLM slug generation)",
+  </tool_result>
+  <assistant>`--slug` exists on the `one-shot` command. Now let me update the todos and run the tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="726" cache_read_input_tokens="96757" cache_creation="{'ephemeral_5m_input_tokens': 726, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01QhHd18oNozAXNZmaeNzXRq">
+    <param name="todos">[{'content': 'Handle BranchAlreadyExists return from create_branch()', 'status': 'complete...[truncated 509 chars]...d type checker', 'status': 'in_progress', 'activeForm': 'Running tests and type checker'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="726" cache_read_input_tokens="96757" cache_creation="{'ephemeral_5m_input_tokens': 726, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QhHd18oNozAXNZmaeNzXRq">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me verify the final state of both files before running tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="306" cache_read_input_tokens="97483" cache_creation="{'ephemeral_5m_input_tokens': 306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01GrEMG3BCi5hxBYmB1GqX9a">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="offset">1</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="306" cache_read_input_tokens="97483" cache_creation="{'ephemeral_5m_input_tokens': 306, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GrEMG3BCi5hxBYmB1GqX9a">
+     1→"""Shared dispatch logic for one-shot autonomous execution.
+     2→
+     3→Extracts the branch-create/push/PR/workflow-dispatch sequence into reusable
+     4→pieces so both `erk one-shot` and `erk objective plan --one-shot` can
+     5→dispatch tasks through the same CI workflow.
+     6→"""
+     7→
+     8→import logging
+     9→import time
+    10→from dataclasses import dataclass
+    11→from datetime import UTC
+    12→
+    13→import click
+    14→
+    15→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    16→from erk.cli.ensure import Ensure
+    17→from erk.core.branch_slug_generator import generate_branch_slug
+    18→from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
+    19→from erk_shared.core.prompt_executor import PromptExecutor
+    20→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    21→from erk_shared.gateway.git.remote_ops.types import PushError
+    22→from erk_shared.gateway.github.types import PRDetails
+    23→from erk_shared.gateway.github.metadata.core import (
+    24→    create_submission_queued_block,
+    25→    render_erk_issue_event,
+    26→)
+    27→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    28→from erk_shared.gateway.github.parsing import construct_workflow_run_url
+    29→from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+    30→from erk_shared.gateway.time.abc import Time
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HZRTNDjNVPBtCT2t2PZaSk">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="offset">222</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="802" cache_read_input_tokens="97789" cache_creation="{'ephemeral_5m_input_tokens': 802, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HZRTNDjNVPBtCT2t2PZaSk">
+   222→
+   223→        # Create branch from trunk
+   224→        current_step = "Creating branch"
+   225→        user_output("Creating branch...")
+   226→        branch_result = ctx.git.branch.create_branch(repo.root, branch_name, trunk, force=False)
+   227→        if isinstance(branch_result, BranchAlreadyExists):
+   228→            user_output(
+   229→                click.style("Error: ", fg="red")
+   230→                + f"Branch '{branch_name}' already exists locally. "
+   231→                + "Run 'erk delete &lt;branch&gt;' to clean up, then retry."
+   232→            )
+   233→            raise SystemExit(1)
+   234→        user_output(click.style("  \u2713 Branch created", dim=True))
+   235→
+   236→        # Write prompt to .erk/impl-context/prompt.md directly on the branch (no checkout)
+   237→        current_step = "Committing prompt file"
+   238→        user_output("Committing prompt file...")
+   239→        ctx.git.commit.commit_files_to_branch(
+   240→            repo.root,
+   241→            branch=branch_name,
+   242→            files={".erk/impl-context/prompt.md": params.prompt + "\n"},
+   243→            message=f"One-shot: {params.prompt[:60]}",
+   244→        )
+   245→        user_output(click.style("  \u2713 Committed", dim=True))
+   246→
+   247→        # Push to remote
+   248→        current_step = "Pushing to remote"
+   249→        user_output("Pushing to remote...")
+   250→        push_start = time.monotonic()
+   251→        push_result = ctx.git.remote.push_to_remote(
+
+... [25 lines omitted] ...
+
+   254→        if isinstance(push_result, PushError):
+   255→            Ensure.invariant(False, f"Failed to push branch: {push_result.message}")
+   263→                click.style("Error: ", fg="red")
+  </tool_result>
+  <assistant>Good, the implementation looks correct. Now let me run the tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="998" cache_read_input_tokens="98591" cache_creation="{'ephemeral_5m_input_tokens': 998, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01PZSFDZmjoWNsd2DhXWpdbD">
+    <param name="description">Run one_shot_dispatch tests</param>
+    <param name="prompt">Run the following command and report all results including any errors:
+uv run pytest tests/commands/one_shot/test_one_shot_dispatch.py -v
+
+Report the full output.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="998" cache_read_input_tokens="98591" cache_creation="{'ephemeral_5m_input_tokens': 998, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PZSFDZmjoWNsd2DhXWpdbD">
+pytest passed: 8 passed in 1.51s
+
+All 8 tests in `tests/commands/one_shot/test_one_shot_dispatch.py` passed successfully. The test file executed with verbose output showing all test collection and execution completed without failures or errors.
+agentId: a831b92 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All 8 tests pass. Now let me run the type checker:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="245" cache_read_input_tokens="99589" cache_creation="{'ephemeral_5m_input_tokens': 245, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01Gp4s9wDZoDtwYxUfbvgeHY">
+    <param name="description">Type check one_shot_dispatch</param>
+    <param name="prompt">Run the following command and report the full output:
+uv run ty check src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="245" cache_read_input_tokens="99589" cache_creation="{'ephemeral_5m_input_tokens': 245, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Gp4s9wDZoDtwYxUfbvgeHY">
+ty passed: All checks passed!
+
+The type check for `/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_dispatch.py` completed successfully with no type errors or warnings.
+agentId: af6d5de (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All tests pass and type checking is clean. Let me mark the final task as complete and proceed with the remaining plan steps.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="424" cache_read_input_tokens="99834" cache_creation="{'ephemeral_5m_input_tokens': 424, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Dgqu94XXnwK4cmBG9rvLpE">
+    <param name="todos">[{'content': 'Handle BranchAlreadyExists return from create_branch()', 'status': 'complete...[truncated 753 chars]...Run CI and submit PR', 'status': 'pending', 'activeForm': 'Running CI and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="424" cache_read_input_tokens="99834" cache_creation="{'ephemeral_5m_input_tokens': 424, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Dgqu94XXnwK4cmBG9rvLpE">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01AH8aMzMuBFFPPgQVCezWbU">
+    <param name="command">erk exec impl-signal ended --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub impl ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="370" cache_read_input_tokens="100258" cache_creation="{'ephemeral_5m_input_tokens': 370, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01N23NuYvr8Fw9mTp6eMyHAG">
+    <param name="command">erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="370" cache_read_input_tokens="100258" cache_creation="{'ephemeral_5m_input_tokens': 370, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AH8aMzMuBFFPPgQVCezWbU">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8595
+}
+  </tool_result>
+</session>
