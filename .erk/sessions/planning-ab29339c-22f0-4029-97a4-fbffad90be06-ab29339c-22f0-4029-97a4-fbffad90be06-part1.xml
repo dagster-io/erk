@@ -1,0 +1,990 @@
+<session>
+  <meta branch="plnd/ensure-plan-header-dispatc-03-02-1835" />
+  <meta model="claude-opus-4-6" />
+  <user>A generic abstraction for entities in GitHub and putting metadata on them, correct? </user>
+  <user>[Request interrupted by user]</user>
+  <user>We have A generic abstraction for entities in GitHub and putting metadata on them, correct? </user>
+  <thinking>The user is asking about a generic abstraction for GitHub entities and metadata in the erk codebase. Let me explore the codebase to understand what they're referring to - likely some abstraction layer over GitHub issues, PRs, etc. with metadata handling.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="31518" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31518}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Yes, that's my understanding of the pattern. Let me explore to confirm the specifics.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="31518" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31518}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_0123RuwLAjnsYWJcRaJTHjPv">
+    <param name="description">Explore GitHub entity abstraction</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 618 chars]...tecture/ and docs/learned/planning/ first, then explore src/erk/gateway/ and related code.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="31518" cache_read_input_tokens="0" output_tokens="369" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 31518, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0123RuwLAjnsYWJcRaJTHjPv">
+Perfect! Now I have enough information. Let me compile a comprehensive report of my findings.
+
+## Summary: GitHub Entity Abstraction and Metadata Patterns in Erk
+
+Based on my exploration of the codebase, here's a detailed understanding of the generic abstraction for GitHub entities and metadata:
+
+### 1. **Core Entity Abstractions**
+
+The codebase uses two primary abstract base classes:
+
+#### **A. GitHub (Main Gateway)**
+**Location:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/packages/erk-shared/src/erk_shared/gateway/github/abc.py`
+
+The `GitHub` ABC is the primary abstraction layer for all GitHub operations. It:
+- Provides a unified interface for PR and issue operations
+- Composes a `GitHubIssues` gateway via the `.issues` property
+- Contains ~50 abstract methods covering PR operations, workflow management, issue linking, and metadata updates
+
+#### **B. GitHubIssues (Composite Gateway)**
+**Location:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/packages/erk-shared/src/erk_shared/gateway/github/issues/abc.py`
+
+Specialized interface for issue-specific operations:
+- Issue CRUD (create, read, update, delete)
+- Comment management (add, update, fetch)
+- Label operations
+- PR reference querying
+- Username/authentication queries
+
+### 2. **Entity Type Definitions**
+
+
+... [134 lines omitted] ...
+
+- `MergeResult` / `MergeError` - Discriminated union for merge outcomes
+- `MetadataParseResult` - Parse outcome with blocks, errors, and content blocks
+**A. Discriminated Unions for Error Handling**
+Uses `X | NotFound` pattern instead of exceptions:
+- `MergeResult | MergeError`
+  </tool_result>
+  <thinking>The user is asking about the generic abstraction for GitHub entities and metadata. Based on the exploration, the answer is yes - the codebase has a sophisticated system for this. Let me summarize.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2680" cache_read_input_tokens="31518" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2680}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Yes, exactly. The codebase has a layered abstraction:
+
+**Entity Layer** — Gateway ABCs (`GitHub`, `GitHubIssues`) with frozen dataclasses for PRs (`PRDetails`, `PullRequestInfo`) and issues (`IssueInfo`), using discriminated unions for error handling (`PRDetails | PRNotFound`).
+
+**Metadata Layer** — Structured metadata blocks embedded in GitHub issue/PR bodies using HTML comment delimiters with collapsible YAML content:
+
+```
+&lt;!-- erk:metadata-block:{key} --&gt;
+&lt;details&gt;&lt;summary&gt;{key}&lt;/summary&gt;
+```yaml
+{data}
+```
+&lt;/details&gt;
+&lt;!-- /erk:metadata-block:{key} --&gt;
+```
+
+The metadata system has:
+- **Two-phase parsing**: extract raw blocks by regex, then route to YAML parsing or preserve as raw markdown (content blocks)
+- **A block registry** (`registry.py`) categorizing ~20 block types — `plan-header`, `objective-header`, `impl-started`, `plan-body`, etc.
+- **Specialized extractors** like `extract_plan_header_*()` for typed field access
+
+Key files:
+- `packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py` — parsing/rendering
+- `packages/erk-shared/src/erk_shared/gateway/github/metadata/types.py` — `MetadataBlock`, `RawMetadataBlock`
+- `packages/erk-shared/src/erk_shared/gateway/github/metadata/registry.py` — block type registry
+
+What's your question or what are you looking to do with it?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2680" cache_read_input_tokens="31518" output_tokens="444" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2680, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>seems like this should be a primitive of some kind, converting an existing issue or pr into a managed entity</user>
+  <assistant>
+
+Interesting idea. So you're saying there should be a generic primitive for "take a GitHub issue or PR and start managing it with erk metadata" — essentially an `adopt` or `manage` operation that stamps the initial metadata blocks onto an existing entity.
+
+Let me explore what currently exists to understand the gap.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="24069" cache_read_input_tokens="10748" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 24069}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01G6k737rF6Fn12uXFRrwRBf">
+    <param name="description">Explore entity adoption patterns</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1126 chars]...bjective creation
+- docs/learned/planning/ and docs/learned/objectives/
+
+Be very thorough.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="24069" cache_read_input_tokens="10748" output_tokens="478" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 24069, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01G6k737rF6Fn12uXFRrwRBf">
+Excellent! Now I have a comprehensive understanding. Let me compile a thorough report of my findings:
+
+## Summary of Findings
+
+Based on my exploration of the erk codebase, here is a comprehensive analysis of how erk converts unmanaged GitHub entities into managed ones with metadata blocks:
+
+### 1. Plan Creation: How `plan-header` and `plan-body` are Stamped
+
+**Entry Points:**
+- `/erk:plan-save` (skill command)
+- `erk pr create --file &lt;path&gt;` (CLI)
+- One-shot dispatch via `one_shot_dispatch()`
+- `PlannedPRBackend.create_plan()` (core function)
+
+**Creation Flow (`create_plan_draft_pr.py`):**
+
+1. **Title Extraction**: Extract title from H1 header in plan content
+2. **Branch Creation**: Create git branch from `origin/{trunk}`
+3. **File Commit**: Commit `plan.md` + `ref.json` to the branch (via git plumbing)
+4. **Push**: Push branch to remote
+5. **Metadata Building**: Create metadata dict with `branch_name` and optional fields:
+   - `source_repo` (for cross-repo plans)
+   - `objective_issue` (parent objective number)
+   - `created_from_session` (Claude Code session ID)
+   - `created_from_workflow_run_url` (if from workflow)
+   - `learned_from_issue` (for learn plans)
+6. **Title Prefixing**: Add `[erk-plan]` or `[erk-learn]` prefix based on labels
+7. **Draft PR Creation**: Call `PlannedPRBackend.create_plan()` with metadata
+
+**`PlannedPRBackend.create_plan()` (planned_pr.py, line 246):**
+
+... [182 lines omitted] ...
+  </tool_result>
+  <thinking>The user is suggesting that there should be a generic primitive for "adopting" or "managing" a GitHub entity with erk metadata. Let me synthesize what I found:
+
+1. Plans and objectives both use the same metadata block system (HTML comments + YAML) but have completely separate creation paths
+2. `ensure_plan_header()` was just added (in the current branch!) as a way to retroactively adopt a PR into erk management
+3. There's no equivalent for objectives
+4. There's no generic "adopt this entity" primitive
+
+The user seems to be suggesting we should create a generic abstraction. Let me think about what that would look like and ask clarifying questions.
+
+
+---
+
+I'm re-reading the conversation to make sure I understand what they're proposing. They're pointing toward a design direction rather than asking for immediate implementation—a generic primitive that could convert existing issues or PRs into managed entities. The challenge is that while plans and objectives share the same underlying metadata block system, their header schemas are quite different, so I need to understand what they envision for a unified approach before diving deeper.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="3103" cache_read_input_tokens="34817" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3103}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good observation. Here's the current state:
+
+**What exists:**
+- The metadata block system is already generic (parse/render/registry work for any block type)
+- But creation/adoption is entirely bespoke per entity type:
+  - Plans: `PlannedPRBackend.create_plan()` + the newly-added `ensure_plan_header()` (on this branch)
+  - Objectives: `create_objective_issue()` — no adoption equivalent
+
+**The gap:** `ensure_plan_header()` is exactly the "adopt an existing PR" pattern, but it's plan-specific. There's no generic "stamp metadata onto a GitHub entity to bring it under erk management."
+
+A generic primitive could unify the common parts:
+- Fetch entity (PR or issue)
+- Check if header block already exists (idempotent no-op)
+- Extract creation metadata from the entity itself (created_at, author)
+- Stamp the appropriate header block
+- Apply labels
+
+While keeping the specialized parts pluggable (schema, fields, label set).</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3103" cache_read_input_tokens="34817" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3103}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01QvsjeGD9oBAmHrSX6CRBXg">
+    <param name="questions">[{'question': "What's the scope you're thinking about here? Just refactoring the existing ...[truncated 697 chars]...oves useful, grow toward a ManagedEntity abstraction over time.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3103" cache_read_input_tokens="34817" output_tokens="887" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3103, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QvsjeGD9oBAmHrSX6CRBXg">
+User has answered your questions: "What's the scope you're thinking about here? Just refactoring the existing ensure_plan_header() into a generic primitive that could also serve objectives? Or something broader — like a first-class ManagedEntity abstraction that both plans and objectives inherit from?"="Generic ensure_header()". You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>The user wants a generic `ensure_header()` function that extracts the pattern from `ensure_plan_header()` into a reusable function that works for any entity type. Let me look at the current `ensure_plan_header()` implementation more closely to understand what needs to be generalized.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="975" cache_read_input_tokens="37920" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 975}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, let me look at the current implementation to understand what we're generalizing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="975" cache_read_input_tokens="37920" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 975}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Xq3KHsVmVBuR3XzqevnMBu">
+    <param name="description">Examine ensure_plan_header impl</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1372 chars]...atterns in the metadata layer we could build on
+- The `format_plan_header_body()` function</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="975" cache_read_input_tokens="37920" output_tokens="628" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 975, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xq3KHsVmVBuR3XzqevnMBu">
+Perfect! Now I have enough information. Let me create a comprehensive analysis document.
+
+## Summary
+
+I've completed a thorough analysis of the `ensure_plan_header()` implementation and its ecosystem. Here's what I found:
+
+### Key Files and Locations
+
+1. **Plan Header Implementation**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py` (1200+ lines)
+2. **Backend Interface**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/packages/erk-shared/src/erk_shared/plan_store/backend.py` (line 430)
+3. **Implementation**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py` (lines 599-667)
+4. **Metadata Helpers (Callers)**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/cli/commands/pr/metadata_helpers.py`
+5. **Schemas**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`
+6. **Core Metadata Functions**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py` (lines 692-849)
+7. **Registry**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/packages/erk-shared/src/erk_shared/gateway/github/metadata/registry.py`
+
+---
+
+## What's Plan-Specific vs Generic
+
+### Plan-Specific Aspects:
+
+1. **25+ fields in plan-header** vs **4 fields in objective-header**
+   - Plan has: dispatch tracking, implementation tracking, session branch fields, learn workflow fields, lifecycle stage
+   - Objective has: just created_at, created_by, objective_comment_id (nullable), slug (nullable)
+
+2. **`format_plan_header_body()` function** - accepts 23 keyword arguments, all plan-specific:
+   - dispatch metadata (run_id, node_id, timestamp)
+   - local/remote implementation tracking
+   - learn workflow metadata
+
+... [237 lines omitted] ...
+
+2. **`render_metadata_block(block)`** - Renders any block as `&lt;!-- WARNING --&gt;\n&lt;!-- erk:metadata-block:{key} --&gt;\n&lt;details&gt;\n&lt;summary&gt;{key}&lt;/summary&gt;\n\`\`\`yaml\n{data}\n\`\`\`\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block --&gt;`
+  </tool_result>
+  <thinking>Now I have a thorough understanding. Let me look at the specific files to verify the key details before writing the plan.
+
+The key insight is:
+1. `ensure_plan_header()` in `planned_pr.py` (lines 599-667) is the pattern to generalize
+2. The generic parts: check if block exists, inject before footer separator, render block
+3. The specialized parts: collecting metadata values from the entity (PR created_at/author vs issue created_at/author), schema/fields
+
+Let me read the actual implementation to verify before writing the plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3695" cache_read_input_tokens="38895" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3695}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the key implementation files to verify the details.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3695" cache_read_input_tokens="38895" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3695}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017yHWmhMbgNRFoM7MxnAGq1">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="offset">595</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3695" cache_read_input_tokens="38895" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3695}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017yHWmhMbgNRFoM7MxnAGq1">
+   595→
+   596→        comment_id = self._github.create_pr_comment(repo_root, pr_number, body)
+   597→        return str(comment_id)
+   598→
+   599→    def ensure_plan_header(self, repo_root: Path, plan_id: str) -&gt; None:
+   600→        """Ensure plan has a plan-header metadata block.
+   601→
+   602→        If the plan already has a plan-header, this is a no-op.
+   603→        If missing, creates a minimal plan-header with required fields
+   604→        (schema_version, created_at, created_by) and injects it into the PR body.
+   605→
+   606→        Uses the PR's created_at timestamp and author for the metadata fields.
+   607→
+   608→        Args:
+   609→            repo_root: Repository root directory
+   610→            plan_id: PR number as string
+   611→
+   612→        Raises:
+   613→            RuntimeError: If PR not found
+   614→        """
+   615→        pr_number = int(plan_id)
+   616→        result = self._github.get_pr(repo_root, pr_number)
+   617→        if isinstance(result, PRNotFound):
+   618→            msg = f"PR #{pr_number} not found"
+   619→            raise RuntimeError(msg)
+   620→
+   621→        existing_block = find_metadata_block(result.body, "plan-header")
+   622→        if existing_block is not None:
+   623→            return
+   624→
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01AkVgL5P4uJLrYncCByMbZq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="offset">425</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3695" cache_read_input_tokens="38895" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3695}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AkVgL5P4uJLrYncCByMbZq">
+   425→            RuntimeError: If provider fails or plan not found
+   426→        """
+   427→        ...
+   428→
+   429→    @abstractmethod
+   430→    def ensure_plan_header(self, repo_root: Path, plan_id: str) -&gt; None:
+   431→        """Ensure plan has a plan-header metadata block.
+   432→
+   433→        If the plan already has a plan-header, this is a no-op.
+   434→        If missing, creates a minimal plan-header with required fields
+   435→        (schema_version, created_at, created_by) and injects it.
+   436→
+   437→        Args:
+   438→            repo_root: Repository root directory
+   439→            plan_id: Provider-specific identifier
+   440→
+   441→        Raises:
+   442→            RuntimeError: If plan not found
+   443→        """
+   444→        ...
+   445→
+   446→    @abstractmethod
+   447→    def post_event(
+   448→        self,
+   449→        repo_root: Path,
+   450→        plan_id: str,
+   451→        *,
+   452→        metadata: Mapping[str, object],
+   453→        comment: str | None,
+   454→    ) -&gt; None:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ub9i6QUb4PWsLRteoJn8pn">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/cli/commands/pr/metadata_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3695" cache_read_input_tokens="38895" output_tokens="486" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3695, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ub9i6QUb4PWsLRteoJn8pn">
+     1→"""Helpers for plan dispatch metadata updates.
+     2→
+     3→This module extracts shared logic for updating plan dispatch metadata
+     4→when triggering remote workflows on branches that follow the P{plan}-pattern.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from pathlib import Path
+    10→from typing import TYPE_CHECKING
+    11→
+    12→import click
+    13→
+    14→from erk_shared.output.output import user_output
+    15→from erk_shared.plan_store.backend import PlanBackend
+    16→from erk_shared.plan_store.types import PlanNotFound
+    17→
+    18→if TYPE_CHECKING:
+    19→    from erk.core.context import ErkContext
+    20→    from erk.core.repo_discovery import RepoContext
+    21→    from erk_shared.gateway.github.abc import GitHub
+    22→
+    23→
+    24→def write_dispatch_metadata(
+    25→    *,
+    26→    plan_backend: PlanBackend,
+    27→    github: GitHub,
+    28→    repo_root: Path,
+    29→    plan_number: int,
+    30→    run_id: str,
+
+... [76 lines omitted] ...
+
+    36→        RuntimeError: If plan not found or node_id unavailable.
+    40→        raise RuntimeError(f"Could not get node_id for run {run_id}")
+    46→        raise RuntimeError(f"Plan #{plan_number} not found")
+  </tool_result>
+  <thinking>Now let me also look at the core metadata functions to understand what's already generic there, specifically `inject_metadata_block_before_footer` or equivalent.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3454" cache_read_input_tokens="42590" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3454}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check the objective creation path and the core metadata injection utilities.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3454" cache_read_input_tokens="42590" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3454}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01W4nJNuh3NeeTrt3yS6UDdi">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py</param>
+    <param name="offset">685</param>
+    <param name="limit">85</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3454" cache_read_input_tokens="42590" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3454}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W4nJNuh3NeeTrt3yS6UDdi">
+   685→
+   686→    if not re.search(pattern, body, re.DOTALL):
+   687→        raise ValueError(f"Metadata block '{key}' not found in body")
+   688→
+   689→    return re.sub(pattern, new_block_content, body, flags=re.DOTALL)
+   690→
+   691→
+   692→def create_objective_header_block(
+   693→    *,
+   694→    created_at: str,
+   695→    created_by: str,
+   696→    objective_comment_id: int | None,
+   697→    slug: str | None,
+   698→) -&gt; MetadataBlock:
+   699→    """Create an objective-header metadata block with validation.
+   700→
+   701→    Args:
+   702→        created_at: ISO 8601 timestamp of objective creation
+   703→        created_by: GitHub username of objective creator
+   704→        objective_comment_id: GitHub comment ID containing objective content (nullable)
+   705→        slug: Short kebab-case identifier for the objective (nullable)
+   706→
+   707→    Returns:
+   708→        MetadataBlock with objective-header schema
+   709→    """
+   710→    schema = ObjectiveHeaderSchema()
+   711→    data: dict[str, Any] = {
+   712→        "created_at": created_at,
+   713→        "created_by": created_by,
+   714→        "objective_comment_id": objective_comment_id,
+
+... [55 lines omitted] ...
+
+   729→    &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   739→    return f"""&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0172iFQFQNMkeTt2zfcqcjhA">
+    <param name="pattern">def inject_metadata|def insert_metadata|before_footer|footer_separator</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/packages/erk-shared/src/erk_shared/gateway/github/metadata/</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3454" cache_read_input_tokens="42590" output_tokens="333" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3454, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0172iFQFQNMkeTt2zfcqcjhA">
+No matches found
+  </tool_result>
+  <thinking>So the footer-separator injection logic is only in `planned_pr.py` (lines 657-667), not extracted into a utility. That confirms the plan should extract that.
+
+Now let me also understand the `format_plan_header_body` function to see what it does beyond `render_metadata_block`.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1383" cache_read_input_tokens="46044" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1383}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01W8soPdrApovVwwYEEXxpYw">
+    <param name="pattern">def format_plan_header_body</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1383" cache_read_input_tokens="46044" output_tokens="229" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1383, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01W8soPdrApovVwwYEEXxpYw">
+205:def format_plan_header_body(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01A4DUjA8oB59nPweaFXd1vo">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">205</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="251" cache_read_input_tokens="47427" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 251, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A4DUjA8oB59nPweaFXd1vo">
+   205→def format_plan_header_body(
+   206→    *,
+   207→    created_at: str,
+   208→    created_by: str,
+   209→    worktree_name: str | None,
+   210→    branch_name: str | None,
+   211→    plan_comment_id: int | None,
+   212→    last_dispatched_run_id: str | None,
+   213→    last_dispatched_node_id: str | None,
+   214→    last_dispatched_at: str | None,
+   215→    last_local_impl_at: str | None,
+   216→    last_local_impl_event: str | None,
+   217→    last_local_impl_session: str | None,
+   218→    last_local_impl_user: str | None,
+   219→    last_remote_impl_at: str | None,
+   220→    last_remote_impl_run_id: str | None,
+   221→    last_remote_impl_session_id: str | None,
+   222→    source_repo: str | None,
+   223→    objective_issue: int | None,
+   224→    created_from_session: str | None,
+   225→    created_from_workflow_run_url: str | None,
+   226→    last_learn_session: str | None,
+   227→    last_learn_at: str | None,
+   228→    learn_status: LearnStatusValue | None,
+   229→    learn_plan_issue: int | None,
+   230→    learn_plan_pr: int | None,
+   231→    learned_from_issue: int | None,
+   232→    lifecycle_stage: str | None,
+   233→) -&gt; str:
+   234→    """Format issue body with only metadata (schema version 2).
+
+... [40 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_012uj2VZS9L76JTeNjcrkKgP">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+    <param name="offset">270</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1339" cache_read_input_tokens="47678" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1339, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012uj2VZS9L76JTeNjcrkKgP">
+   270→    block = create_plan_header_block(
+   271→        created_at=created_at,
+   272→        created_by=created_by,
+   273→        worktree_name=worktree_name,
+   274→        branch_name=branch_name,
+   275→        plan_comment_id=plan_comment_id,
+   276→        last_dispatched_run_id=last_dispatched_run_id,
+   277→        last_dispatched_node_id=last_dispatched_node_id,
+   278→        last_dispatched_at=last_dispatched_at,
+   279→        last_local_impl_at=last_local_impl_at,
+   280→        last_local_impl_event=last_local_impl_event,
+   281→        last_local_impl_session=last_local_impl_session,
+   282→        last_local_impl_user=last_local_impl_user,
+   283→        last_remote_impl_at=last_remote_impl_at,
+   284→        last_remote_impl_run_id=last_remote_impl_run_id,
+   285→        last_remote_impl_session_id=last_remote_impl_session_id,
+   286→        source_repo=source_repo,
+   287→        objective_issue=objective_issue,
+   288→        created_from_session=created_from_session,
+   289→        created_from_workflow_run_url=created_from_workflow_run_url,
+   290→        last_learn_session=last_learn_session,
+   291→        last_learn_at=last_learn_at,
+   292→        learn_status=learn_status,
+   293→        learn_plan_issue=learn_plan_issue,
+   294→        learn_plan_pr=learn_plan_pr,
+   295→        learned_from_issue=learned_from_issue,
+   296→        lifecycle_stage=lifecycle_stage,
+   297→    )
+   298→
+   299→    return render_metadata_block(block)
+  </tool_result>
+  <assistant>Good. Now I have the full picture. Let me design the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="659" cache_read_input_tokens="49017" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 659}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01EjNjPf3T3RvpZzToyB671u">
+    <param name="description">Design ensure_header extraction</param>
+    <param name="prompt">I need to design an extraction of the `ensure_plan_header()` pattern into a generic `ensur...[truncated 4314 chars]...n should be useful for both plans and objectives without being an over-abstract framework.</param>
+    <param name="subagent_type">Plan</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="659" cache_read_input_tokens="49017" output_tokens="1387" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 659, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EjNjPf3T3RvpZzToyB671u">
+I now have complete understanding. Here is the full design.
+
+---
+
+## Design Plan: Extract `ensure_plan_header()` into Generic `inject_metadata_block_before_footer` Utility
+
+### Problem Statement
+
+The `PlannedPRBackend.ensure_plan_header()` method contains footer-separator injection logic (lines 657-665 of `planned_pr.py`) that is hardcoded inline. This same injection pattern will be needed for objectives and future entity types. The footer injection is currently the only non-generic piece -- the existence check (`find_metadata_block`) and block creation (`format_plan_header_body`, `create_objective_header_block`) are already modular.
+
+### Design Decision: Pure String Function in `core.py`
+
+The extraction should create a single **pure string-manipulation function** called `inject_metadata_block_before_footer` in `metadata/core.py`. This is the right level of abstraction because:
+
+1. **It matches the existing API surface.** The `core.py` module already provides `find_metadata_block()`, `replace_metadata_block_in_body()`, and `render_metadata_block()` -- all pure functions operating on strings. The new function fits this exact pattern.
+
+2. **It avoids over-abstraction.** A higher-level `ensure_header(body, key, create_fn)` function would provide minimal value because:
+   - The existence check is already a one-liner: `find_metadata_block(body, key) is not None`
+   - Block creation is deeply entity-specific (plan-header has 25+ fields, objective-header has 4)
+   - The caller must fetch the entity anyway (PR vs issue) to get `created_at`/`created_by`
+
+3. **No coupling to GitHub gateways.** The function takes and returns strings, so both plan backends and objective code can use it without cross-package imports.
+
+### Function Signature
+
+```python
+def inject_metadata_block_before_footer(
+    body: str,
+    rendered_block: str,
+) -&gt; str:
+
+... [174 lines omitted] ...
+
+        raise RuntimeError(msg)
+  </tool_result>
+  <thinking>The plan agent's design is clean and well-thought-out. Let me verify a few things:
+
+1. The test directory structure - does `tests/unit/gateways/github/metadata_blocks/` exist?
+2. Is there an existing `test_block_replacement.py` or similar?
+
+Let me check these before writing the final plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4099" cache_read_input_tokens="49676" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4099}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me verify the test directory structure before finalizing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4099" cache_read_input_tokens="49676" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4099}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Mjxfh1Uk8oym8dNPwvQtno">
+    <param name="pattern">tests/unit/gateways/github/metadata_blocks/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4099" cache_read_input_tokens="49676" output_tokens="171" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4099, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Mjxfh1Uk8oym8dNPwvQtno">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/__init__.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/conftest.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_block_creation.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_block_replacement.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_block_type_registry.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_format_plan_body.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_integration.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_objective_content.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_parsing.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_plan_content_comment.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_plan_issue_schema.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_plan_wrapping.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_render_erk_issue_event.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_rendering.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_round_trip.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_schema_validation.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_state_sparkline.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_update_dispatch.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_update_local_impl.py
+  </tool_result>
+  <assistant>Good — the test directory exists with a clear naming convention (`test_block_*.py`). Now let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1322" cache_read_input_tokens="53775" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1322}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01VmPUPy6X8t4prcxkvXFND6">
+    <param name="file_path">/Users/schrockn/.claude/plans/shimmying-sleeping-toucan.md</param>
+    <param name="content"># Extract generic `inject_metadata_block_before_footer` utility
+
+## Context
+
+`ensure_plan_...[truncated 1761 chars]...rs.py` — ensure_plan_header callers still pass
+4. Run `make fast-ci` — full fast CI green
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1322" cache_read_input_tokens="53775" output_tokens="691" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1322, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VmPUPy6X8t4prcxkvXFND6">
+File created successfully at: /Users/schrockn/.claude/plans/shimmying-sleeping-toucan.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_013zAP1KcRTXxc7vYrzNhJ4w">
+    <param name="plan"># Extract generic `inject_metadata_block_before_footer` utility
+
+## Context
+
+`ensure_plan_...[truncated 1761 chars]...rs.py` — ensure_plan_header callers still pass
+4. Run `make fast-ci` — full fast CI green
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="730" cache_read_input_tokens="55097" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 730}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013zAP1KcRTXxc7vYrzNhJ4w">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/shimmying-sleeping-toucan.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Extract generic `inject_metadata_block_before_footer` utility
+Current context: (wt:erk-slot-61) (br:plnd/ensure-plan-header-dispatc-03-02-1835) (pr:#8627)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/ensu"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id ab29339c-22f0-4029-97a4-fbffad90be06 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Extract generic `inject_metadata_block_before_footer` utility
+
+## Context
+
+`ensure_plan_header()` in `planned_pr.py` contains inline footer-separator injection logic that is plan-specific but mechanically generic. The same "inject a metadata block before the `\n---\n` footer" pattern will be needed for objectives and future entity types. This extracts the injection logic into a reusable pure function, then refactors `ensure_plan_header()` to use it.
+
+## Changes
+
+### 1. Add `inject_metadata_block_before_footer()` to `core.py`
+
+**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py`
+**Location:** After `replace_metadata_block_in_body()` (~line 689), before `create_objective_header_block()` (~line 692)
+
+Pure string function — takes `(body: str, rendered_block: str) -&gt; str`. Injects the rendered block before the last `\n---\n` footer separator, or appends if none found. No new imports needed.
+
+### 2. Refactor `ensure_plan_header()` to use it
+
+**File:** `packages/erk-shared/src/erk_shared/plan_store/planned_pr.py`
+
+- Add `inject_metadata_block_before_footer` to imports from `erk_shared.gateway.github.metadata.core`
+- Replace lines 657-665 (inline footer injection) with single call to the new function
+
+### 3. Add unit tests for the new function
+
+**File:** `tests/unit/gateways/github/metadata_blocks/test_block_injection.py` (new)
+
+Test cases: before footer, append when no footer, uses last separator, empty body.
+
+## Verification
+
+1. New tests pass
+2. All existing metadata block tests pass
+3. `test_metadata_helpers.py` still passes (ensure_plan_header callers)
+4. `make fast-ci` green
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="650" cache_read_input_tokens="55827" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 650}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01HB4LJ1haqTx1T2aFaMT6Dz">
+    <param name="questions">[{'question': '📋 Extract generic `inject_metadata_block_before_footer` utility\nCurrent co...[truncated 503 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="650" cache_read_input_tokens="55827" output_tokens="742" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 650, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HB4LJ1haqTx1T2aFaMT6Dz">
+User has answered your questions: "📋 Extract generic `inject_metadata_block_before_footer` utility
+Current context: (wt:erk-slot-61) (br:plnd/ensure-plan-header-dispatc-03-02-1835) (pr:#8627)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01FRiTYfxZjW6KUgPt8rfvWZ">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2053" cache_read_input_tokens="56477" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2053}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FRiTYfxZjW6KUgPt8rfvWZ">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="ab29339c-22f0-4029-97a4-fbffad90be06" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "ab29339c-22f0-4029-97a4-fbffad90be06" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "ab29339c-22f0-4029-97a4-fbffad90be06" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "ab29339c-22f0-4029-97a4-fbffad90be06" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "ab29339c-22f0-4029-97a4-fbffad90be06" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+### Step 2: Branch Slug
+
+From the plan title "Extract generic `inject_metadata_block_before_footer` utility", the slug is:
+
+`extract-metadata-injection`
+
+### Step 3: Plan Summary
+
+Extracts the inline footer-separator injection logic from ensure_plan_header() into a reusable pure function in metadata/core.py. This makes the pattern available for objectives and future entity types that need to inject metadata blocks into GitHub entity bodies.
+
+### Step 4: Save</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2600" cache_read_input_tokens="58530" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2600}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017FdN9BEqmTvuDQNB4w7SNg">
+    <param name="command">erk exec plan-save --format json --session-id="ab29339c-22f0-4029-97a4-fbffad90be06" --bra...[truncated 204 chars]...es and future entity types that need to inject metadata blocks into GitHub entity bodies."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2600" cache_read_input_tokens="58530" output_tokens="306" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2600, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
