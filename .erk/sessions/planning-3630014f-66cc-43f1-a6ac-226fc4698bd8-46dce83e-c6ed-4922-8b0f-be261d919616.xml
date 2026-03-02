@@ -1,0 +1,868 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>Last login: Sun Mar  1 20:05:55 on ttys021
+➜  update-erk-0-9-0 git:(update-erk-0.9.0) code .
+➜  update-erk-0-9-0 git:(update-erk-0.9.0) claude
+
+ ▐▛███▜▌   Claude Code v2.1.63
+▝▜█████▛▘  Opus 4.6 · Claude Max
+  ▘▘ ▝▝    ~/.erk/repos/dagster-compass/worktrees/update-erk-0-9-0
+
+❯ looks like we have orphaned files (e.g. @.claude/commands/erk/objective-next-plan.md ) that no longer should be there
+
+  look at
+
+  /Users/schrockn/code/erk
+  ⎿  Read .claude/commands/erk/objective-next-plan.md (255 lines)
+
+∴ Thinking…
+
+  The user wants me to investigate orphaned files in the .claude/commands/erk/ directory. They want me to compare what's in the current repo's .claude/commands/erk/ with
+  what's in /Users/schrockn/code/erk to understand which files should and shouldn't be there.
+
+  Let me explore both directories to understand the situation.
+
+⏺ Let me explore both the current repo's .claude/commands/erk/ directory and the erk source to understand what's orphaned.
+
+⏺ Explore(Explore erk commands in repo)
+  ⎿  Done (36 tool uses · 29.7k tokens · 36s)
+  (ctrl+o to expand)
+
+⏺ Explore(Explore erk source commands)
+  ⎿  Done (28 tool uses · 55.5k tokens · 51s)
+  (ctrl+o to expand)
+
+∴ Thinking…
+
+  Now I can compare the two lists to identify orphaned files. Let me compare what's in the current repo vs what erk source bundles.
+
+  In erk source (25 commands):
+  1. diag-lock-error.md
+  2. git-pr-push.md
+  3. land.md
+  4. learn.md
+  5. migrate-objective-schema.md
+  6. objective-create.md
+  7. objective-list.md
+  8. objective-plan.md
+  9. objective-update-with-closed-plan.md
+  10. one-shot-plan.md
+  11. one-shot.md
+  12. plan-implement.md
+
+  13. plan-save.md
+  14. pr-address-remote.md
+  15. pr-address.md
+  16. pr-dispatch.md
+  17. pr-list.md
+  18. pr-preview-address.md
+  19. pr-submit.md
+  20. rebase.md
+  21. reconcile-with-remote.md
+  22. replan.md
+  23. system/objective-plan-node.md
+  24. system/objective-update-with-landed-pr.md
+
+  I'm getting 24 items total, not 25 like the agent claimed. Let me verify that count again.
+
+  Now looking at what's actually in the current repo under .claude/commands/erk/, there are 33 files. I'm seeing some files that don't match the source listing—like
+  objective-next-plan.md and a top-level version of objective-update-with-landed-pr.md that weren't in the original erk source.
+
+  Continuing through the inventory: plan-save.md, plan-submit.md, plan-implement.md, replan.md, pr-submit.md, git-pr-push.md, pr-address.md, pr-preview-address.md,
+  pr-address-remote.md, pr-dispatch.md, pr-list.md, rebase.md, reconcile-with-remote.md, fix-conflicts.md, land.md, implement-stacked-plan.md, create-extraction-plan.md,
+  learn.md, diag-lock-error.md, and system/impl-execute.md—several of these also aren't in the erk source, which suggests some customization or divergence in the current
+  setup. I need to be more careful about this comparison—let me directly check the erk source directory to get an accurate picture of what files actually exist there versus
+   what's in the current repo.
+
+⏺ Good data. Let me do a precise comparison by listing the actual files in both directories.
+
+⏺ Search(pattern: "**/*", path: ".claude/commands/erk")
+  ⎿  Found 32 files (ctrl+o to expand)
+
+⏺ Search(pattern: "**/*", path: "~/code/erk/.claude/commands/erk")
+  ⎿  Found 25 files (ctrl+o to expand)
+
+∴ Thinking…
+
+  Now I can do a precise comparison. Let me extract just the filenames (relative to the erk/ directory) from both lists.
+
+  Erk source (25 files):
+  1. init.py
+  2. diag-lock-error.md
+  3. pr-address-remote.md
+  4. migrate-objective-schema.md
+  5. one-shot.md
+  6. reconcile-with-remote.md
+  7. objective-list.md
+  8. land.md
+  9. objective-create.md
+  10. objective-update-with-closed-plan.md
+  11. plan-implement.md
+
+  12. pr-dispatch.md
+  13. system/objective-update-with-landed-pr.md
+  14. pr-list.md
+  15. replan.md
+  16. git-pr-push.md
+  17. objective-plan.md
+  18. one-shot-plan.md
+  19. pr-submit.md
+  20. system/objective-plan-node.md
+  21. pr-preview-address.md
+  22. learn.md
+  23. plan-save.md
+  24. pr-address.md
+  25. rebase.md
+
+  Current repo (32 files):
+  1. init.py
+  2. create-extraction-plan.md
+
+  Now I'm looking at the full file listing and noticing several orphaned files that don't have corresponding entries in the current repo—things like fix-conflicts.md,
+  implement-stacked-plan.md, and objective-next-plan.md are marked as orphans, suggesting they exist but aren't being tracked or referenced properly in the current
+  structure. I've identified 7 orphaned files that exist in the repo but aren't referenced in the erk source—these are likely commands from earlier versions that got
+  removed or renamed. I should also check whether there are orphaned files outside the erk directory and whether to look at the skills directory, though the user
+  specifically asked about commands.
+
+⏺ Now I have a precise comparison. Let me also check if there are orphaned skills.
+
+⏺ Search(pattern: "*", path: ".claude/skills")
+  ⎿  Found 17 files (ctrl+o to expand)
+
+⏺ Search(pattern: "*", path: "~/code/erk/.claude/skills")
+  ⎿  Found 62 files (ctrl+o to expand)
+
+∴ Thinking…
+
+  Now let me also check the agents directory and any other .claude/ subdirectories that erk manages.
+
+  Actually, let me also check if there are orphaned hooks or other erk-managed files. But the user specifically mentioned commands. Let me focus the plan on what I found.
+
+  Let me now compile the orphaned files.
+
+  Orphaned Commands (in compass repo but NOT in erk source):
+  1. create-extraction-plan.md
+  2. fix-conflicts.md
+  3. implement-stacked-plan.md
+  4. objective-next-plan.md
+
+  5. objective-update-with-landed-pr.md (top-level version; erk only has system/objective-update-with-landed-pr.md)
+  6. plan-submit.md
+  7. system/impl-execute.md
+
+  The skills look good—compass has dignified-python, erk-diff-analysis, and learned-docs, which all exist in erk source. Let me quickly check the agents directory as well.
+
+⏺ Let me also check agents and the .claude/commands/ root for completeness.
+
+⏺ Search(pattern: "**/*", path: ".claude/agents")
+  ⎿  Found 1 file (ctrl+o to expand)
+
+⏺ Search(pattern: "*.md", path: ".claude/commands")
+  ⎿  Found 33 files (ctrl+o to expand)
+
+∴ Thinking…
+
+  Now I have a clear picture. Let me also check if ensure-ci.md and gt-split-stack.md come from erk or are compass-specific.
+
+⏺ Now let me check if ensure-ci.md and gt-split-stack.md come from erk.
+
+⏺ Search(pattern: "*.md", path: "~/code/erk/.claude/commands")
+  ⎿  Found 53 files (ctrl+o to expand)
+
+⏺ Search(pattern: "ensure-ci|gt-split-stack", path: "~/code/erk")
+  ⎿  Found 0 files
+
+⏺ Search(pattern: "ensure-ci|gt-split-stack", path: "~/code/erk")
+  ⎿  Found 0 lines
+
+⏺ Search(pattern: "ensure.ci|gt.split.stack", path: "~/code/erk/src")
+  ⎿  Found 0 lines
+
+⏺ Search(pattern: "ensure-ci|gt-split-stack", path: ".gitignore")
+  ⎿  Found 0 lines
+
+∴ Thinking…
+
+  So ensure-ci.md and gt-split-stack.md are NOT in the erk source .claude/commands/ directory either. They are likely compass-specific commands or were previously synced by
+   an older version of erk. Wait, but they could also be synced from the pyproject.toml bundling. Let me check if erk bundles these separately.
+
+  Actually, looking at the explore agent's output earlier, it mentioned that the pyproject.toml bundles certain non-erk commands too. But let me check the erk sync logic
+  more carefully. The earlier agent mentioned these are "not in erk/ subdirectory" — they're separate files. These might be managed by erk's capabilities system.
+
+  I see these commands listed in the system skills, so they're definitely available, but I need to figure out if they're bundled through pyproject.toml or coming from
+  somewhere else in the erk setup.
+
+  Looking at the orphaned files, I've got a clear list of seven command files in the .claude/commands/erk/ directory that exist in the compass repo but aren't in the erk
+  source—these are definitely stranded from an older erk version. For ensure-ci.md and gt-split-stack.md, I should check whether they're actually bundled commands or if
+  they're also orphaned.
+
+∴ Thinking…
+
+  ensure-ci and gt-split-stack are not referenced anywhere in the erk source. They must be compass-specific commands that were either:
+  1. Created directly in the compass repo
+  2. Synced by an older version of erk that no longer bundles them
+
+  Looking at the git history might tell us more, but I have enough to write the plan now. Let me also quickly check if these are in the compass repo's own CLAUDE.md or if
+  they're tracked in gitignore.
+
+  Actually, let me check the .gitignore to see if these are tracked files or ignored files.
+
+⏺ Bash(git ls-files .claude/commands/erk/ .claude/commands/ensure-ci.md .claude/commands/gt-split-stack.md)
+  ⎿  .claude/commands/ensure-ci.md
+     .claude/commands/erk/__init__.py
+     .claude/commands/erk/create-extraction-plan.md
+     .claude/commands/erk/diag-lock-error.md
+     .claude/commands/erk/fix-conflicts.md
+     .claude/commands/erk/git-pr-push.md
+     .claude/commands/erk/implement-stacked-plan.md
+     .claude/commands/erk/land.md
+     .claude/commands/erk/learn.md
+     .claude/commands/erk/migrate-objective-schema.md
+     .claude/commands/erk/objective-create.md
+     .claude/commands/erk/objective-list.md
+     .claude/commands/erk/objective-next-plan.md
+     .claude/commands/erk/objective-plan.md
+     .claude/commands/erk/objective-update-with-closed-plan.md
+     .claude/commands/erk/objective-update-with-landed-pr.md
+     .claude/commands/erk/one-shot-plan.md
+     .claude/commands/erk/one-shot.md
+     .claude/commands/erk/plan-implement.md
+     .claude/commands/erk/plan-save.md
+     .claude/commands/erk/plan-submit.md
+     .claude/commands/erk/pr-address-remote.md
+     .claude/commands/erk/pr-address.md
+     .claude/commands/erk/pr-dispatch.md
+     .claude/commands/erk/pr-list.md
+     .claude/commands/erk/pr-preview-address.md
+     .claude/commands/erk/pr-submit.md
+     .claude/commands/erk/rebase.md
+     .claude/commands/erk/reconcile-with-remote.md
+     .claude/commands/erk/replan.md
+     .claude/commands/erk/system/impl-execute.md
+     .claude/commands/erk/system/objective-plan-node.md
+     .claude/commands/erk/system/objective-update-with-landed-pr.md
+     .claude/commands/gt-split-stack.md
+
+∴ Thinking…
+
+  All files are git-tracked. Now I have a complete picture. Let me write the plan.
+
+  Orphaned files in .claude/commands/erk/ (7 files):
+  These exist in the compass repo but NOT in the erk source:
+  1. create-extraction-plan.md
+  2. fix-conflicts.md
+  3. implement-stacked-plan.md
+  4. objective-next-plan.md
+  5. objective-update-with-landed-pr.md (top-level - erk only has system/ version)
+  6. plan-submit.md
+
+  7. system/impl-execute.md
+
+  Possibly orphaned in .claude/commands/ root (2 files):
+  These are not in the erk source either:
+  1. ensure-ci.md
+  2. gt-split-stack.md
+
+  But wait—both of these are actually listed in the system reminder skills, and they appear twice in the list, which suggests they might be intentionally maintained as
+  compass-specific commands or erk-managed non-namespaced skills.
+
+  Looking at the skills list more carefully, gt-split-stack and ensure-ci are definitely registered as available commands, which means Claude Code found them in
+  .claude/commands/. Since they're not in the erk source, they're either orphaned or compass-specific. I should clarify with the user whether these two are meant to be
+  compass-only or if they're also missing from erk.
+
+⏺ I have a clear picture now. Let me write the plan.
+
+⏺ Updated plan
+  ⎿  Wrote 39 lines to /Users/schrockn/.claude/plans/compiled-hugging-swan.md
+       1 # Remove Orphaned Erk Command Files
+       2
+       3 ## Context
+       4
+       5 The compass repo has `.claude/commands/erk/` files that were synced by older erk versions but no longer exist in the current erk source (`/Users/schrockn/co
+         de/erk/.claude/commands/erk/`). These orphaned files add noise to the skills list and could cause confusion if invoked.
+       6
+       7 ## Orphaned Files to Delete (7 files)
+       8
+       9 All of these exist in the compass repo but **not** in the current erk source:
+      10
+      11 | File | Likely replaced by |
+      12 |---|---|
+      13 | `.claude/commands/erk/objective-next-plan.md` | `objective-plan.md` (uses node-based dependency graph now) |
+      14 | `.claude/commands/erk/objective-update-with-landed-pr.md` | `system/objective-update-with-landed-pr.md` (moved to system/) |
+      15 | `.claude/commands/erk/plan-submit.md` | Functionality merged into other commands |
+      16 | `.claude/commands/erk/fix-conflicts.md` | `rebase.md` (handles conflicts during rebase) |
+      17 | `.claude/commands/erk/implement-stacked-plan.md` | `plan-implement.md` |
+      18 | `.claude/commands/erk/create-extraction-plan.md` | `learn.md` |
+      19 | `.claude/commands/erk/system/impl-execute.md` | `plan-implement.md` |
+      20
+      21 ## Also Possibly Orphaned (2 files)
+      22
+      23 These are in `.claude/commands/` (not erk namespace) and don't exist in erk source either:
+      24
+      25 - `.claude/commands/ensure-ci.md`
+      26 - `.claude/commands/gt-split-stack.md`
+      27
+      28 **Question:** Are these compass-specific commands or also orphaned from erk?
+      29
+      30 ## Steps
+      31
+      32 1. `git rm` the 7 orphaned erk command files
+      33 2. If user confirms, also `git rm` the 2 non-namespace files
+      34 3. Commit the deletion
+      35
+      36 ## Verification
+      37
+      38 - Run `erk sync` after deletion to confirm erk re-syncs only the current commands
+      39 - Verify the skills list no longer shows the removed commands
+
+⏺ User answered Claude's questions:
+  ⎿  · Are ensure-ci.md and gt-split-stack.md (in .claude/commands/ root, not erk/) also orphaned files to remove, or are they compass-specific commands you want to
+     keep? → Keep them
+
+⏺ Updated plan
+  ⎿  Added 4 lines, removed 12 lines
+      18  | `.claude/commands/erk/create-extraction-plan.md` | `learn.md` |
+      19  | `.claude/commands/erk/system/impl-execute.md` | `plan-implement.md` |
+      20
+      21 -## Also Possibly Orphaned (2 files)
+      22 -
+      23 -These are in `.claude/commands/` (not erk namespace) and don't exist in erk source either:
+      24 -
+      25 -- `.claude/commands/ensure-ci.md`
+      26 -- `.claude/commands/gt-split-stack.md`
+      27 -
+      28 -**Question:** Are these compass-specific commands or also orphaned from erk?
+      29 -
+      21  ## Steps
+      22
+      32 -1. `git rm` the 7 orphaned erk command files
+      33 -2. If user confirms, also `git rm` the 2 non-namespace files
+      34 -3. Commit the deletion
+      23 +1. `git rm` the 7 orphaned erk command files listed above
+      24 +2. Commit the deletion
+      25
+      26 +Note: `ensure-ci.md` and `gt-split-stack.md` in `.claude/commands/` root are compass-specific and will be kept.
+      27 +
+      28  ## Verification
+      29
+      30  - Run `erk sync` after deletion to confirm erk re-syncs only the current commands
+
+· Noodling… (2m 46s · ↓ 8.3k tokens)
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ➜  (git:dagster-compass) (wt:update-erk-0-9-0) (br:update-erk-0.9.0) | (gh:#2789 st:👀 chks:[✅:3]) │ (O)                                                   47976 tokens
+  ⏸ plan mode on (shift+tab to cycle) · PR #2789                                                                                          current: 2.1.63 · latest: 2.1.63
+
+
+we have a general problem of not handling deleted files bundled with erk well in version upgrades. do  you have a suggestion of how to manage?</user>
+  <thinking>The user is asking about a general solution for handling deleted files during erk version upgrades. When erk syncs its bundled files (commands, skills, etc.) to a target repo's `.claude/` directory, it adds/updates files but doesn't clean up files that were removed from erk in newer versions. This leaves orphaned files behind.
+
+Let me think about the approaches:
+
+1. **Manifest-based cleanup**: erk could maintain a manifest file listing all files it manages. During sync, it compares the manifest against what's on disk and removes files that are no longer in the manifest.
+
+2. **Prefix/marker approach**: Files managed by erk could have a marker comment or be listed in a tracking file, so sync knows what it owns and can delete stale ones.
+
+
+3. **Full directory replacement**: Instead of incremental sync, erk could delete the entire `.claude/commands/erk/` directory and re-create it from scratch during sync. This is clean but could lose any local modifications.
+
+4. **Version-tagged sync**: Track which erk version last synced and have migration scripts for each version transition.
+
+The cleanest approach is probably option 3 since the `erk/` namespace already separates erk-managed files from repo-specific ones, and since commands and skills are generated from erk source rather than locally modified, a full directory replacement would be simple and deterministic.
+
+Now I need to understand how erk's sync mechanism actually works. Let me check the erk codebase to see what currently exists, and I notice I'm already in the `/workspaces/erk` directory based on the git status showing the master branch.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="14552" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14552}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good question. The core issue is that erk's sync is additive — it copies new/updated files but never removes files that were deleted from erk's bundle. Let me look at how sync currently works before suggesting a fix.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="14552" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14552}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Ashe5P7hfgQfTV5JN8uNnn">
+    <param name="description">Explore erk sync mechanism</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 616 chars]...ugh — check the CLI entry points, any setup/init commands, and the bundling configuration.</param>
+    <param name="model">sonnet</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14552" cache_read_input_tokens="19113" output_tokens="956" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 14552, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ashe5P7hfgQfTV5JN8uNnn">
+I now have a comprehensive understanding of the entire system. Here is a thorough report of how erk syncs its bundled `.claude/` files to target repos.
+
+---
+
+## How Erk Syncs Bundled `.claude/` Files to Target Repos
+
+---
+
+### 1. The Sync/Install Mechanism
+
+The sync system is split across these key files:
+
+**Entry points:**
+- `erk init` — `/workspaces/erk/src/erk/cli/commands/init/main.py`, `run_init()`
+- `erk artifact sync` — `/workspaces/erk/src/erk/cli/commands/artifact/sync_cmd.py`
+- `erk artifact check` — `/workspaces/erk/src/erk/cli/commands/artifact/check.py`
+
+**Core sync logic:**
+- `/workspaces/erk/src/erk/artifacts/sync.py`, `sync_artifacts()` — the main entry point
+- `/workspaces/erk/src/erk/artifacts/paths.py` — resolves where the bundled files live
+
+**How files get copied:**
+
+`sync_artifacts()` calls a series of type-specific helpers:
+
+| Helper | Source | Destination |
+|---|---|---|
+| `_sync_directory_artifacts()` | `bundled/.claude/skills/&lt;name&gt;/` | `project/.claude/skills/&lt;name&gt;/` |
+| `_sync_agent_artifacts()` | `bundled/.claude/agents/&lt;name&gt;[.md]` | `project/.claude/agents/` |
+| `_sync_commands()` | `bundled/.claude/commands/erk/**/*.md` | `project/.claude/commands/erk/` |
+
+... [185 lines omitted] ...
+  </tool_result>
+  <thinking>Excellent — so erk already has orphan detection via `find_orphaned_artifacts()` and `erk artifact check` displays the orphans with `rm` commands. The issue is that sync doesn't auto-clean. Let me look at the specific code to understand the current state and then suggest the right fix.
+
+The options are:
+
+1. **Add `--clean` flag to `erk artifact sync`** that auto-removes orphans
+2. **Make sync always clean orphans** (since they're definitively known to be stale)
+3. **Add cleanup to `erk init`** so version upgrades automatically clean
+
+Given that erk already has the orphan detection logic, the simplest improvement would be to have `sync_artifacts()` call `find_orphaned_artifacts()` and remove the results automatically (or with a flag). 
+
+Since the user mentioned the broader issue with deleted files during version upgrades, I should integrate cleanup directly into the sync flow rather than making it optional.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4184" cache_read_input_tokens="33665" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4184}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good news — erk already has the detection logic. The gap is just in the action. Here's the current state:
+
+- **`find_orphaned_artifacts()`** in `src/erk/artifacts/artifact_health.py` already walks erk-managed directories and identifies files that exist locally but aren't in the current bundle
+- **`erk artifact check`** displays orphans with suggested `rm` commands
+- **`erk artifact sync`** only copies — it never deletes
+
+The simplest fix: **have `sync_artifacts()` call `find_orphaned_artifacts()` and auto-remove the results.** Since these files are definitively erk-owned (they're in `erk/` namespaced directories or declared by capabilities), there's no risk of deleting user files.
+
+Two approaches:
+
+| Approach | Behavior | Tradeoff |
+|---|---|---|
+| **Always clean on sync** | `erk artifact sync` removes orphans automatically | Simplest, zero friction. Safe because erk only owns namespaced paths. |
+| **`--clean` flag** | `erk artifact sync --clean` opts into removal | More conservative, but adds yet another step users will forget. |
+
+I'd recommend **always clean on sync** since:
+1. The `erk/` namespace already isolates erk-managed from repo-specific files
+2. Orphans are definitively stale — they're files that no longer exist in the installed erk version
+3. The state.toml already tracks what erk synced, so orphans are unambiguous
+4. The whole point of a version upgrade is to converge to the new version's file set
+
+The implementation would be ~10 lines in `sync_artifacts()`: call `find_orphaned_artifacts()`, iterate the results, `os.remove()` each, and remove their entries from state.toml.
+
+Want me to implement this?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4184" cache_read_input_tokens="33665" output_tokens="694" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4184, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>what about dealing with skillls that don't have namespacing</user>
+  <assistant>
+
+Good point. Skills don't have an `erk/` namespace — they're synced directly to `.claude/skills/&lt;name&gt;/`. So erk-managed skills like `dignified-python` live alongside repo-specific skills, and the only way to distinguish them is the capability registry.
+
+Let me explore how skills are currently tracked to understand the full scope.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1363" cache_read_input_tokens="38539" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1363}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01XJ8YZufzYCTFARE4tHxUD2">
+    <param name="description">Explore skill orphan detection</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 889 chars]...s?
+
+Be thorough about the skill-specific paths through the orphan detection and sync code.</param>
+    <param name="model">sonnet</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1363" cache_read_input_tokens="38539" output_tokens="468" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1363, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XJ8YZufzYCTFARE4tHxUD2">
+I now have a thorough understanding of all five areas. Here is the complete analysis:
+
+---
+
+## How Erk Handles Skill Ownership and Orphan Detection
+
+### 1. `find_orphaned_artifacts()` and Skills
+
+**File:** `/workspaces/erk/src/erk/artifacts/artifact_health.py`
+
+Skills ARE checked in orphan detection. The call chain is:
+
+```
+find_orphaned_artifacts()
+  → _find_orphaned_claude_artifacts()
+    → for prefix, artifact_type in [("skills", "skill"), ("agents", "agent")]:
+        for name in _get_bundled_by_type(artifact_type, installed_capabilities=None):
+            _find_orphaned_in_directory(
+                project_claude_dir / prefix / name,
+                bundled_claude_dir / prefix / name,
+                folder_key,
+            )
+```
+
+Key behavior details:
+
+- **`installed_capabilities=None` is always used for orphan detection.** This is intentional — it checks ALL managed skills, not just those currently installed, so that removed capabilities also get their orphaned files flagged.
+- **Skills are directory-based.** `_find_orphaned_in_directory()` walks the skill subdirectory (e.g., `.claude/skills/dignified-python/`) comparing local files to bundled files via `rglob("*")`. Any file present locally but absent from the bundle is an orphan.
+- **Commands use a different mechanism.** They use prefix matching (`artifact.name.startswith("erk:")`), not the capability registry. This is the special case handled in `is_erk_managed()`.
+- **The erk repo itself is skipped.** The first guard in `find_orphaned_artifacts()` returns early with `skipped_reason="erk-repo"` when `package.in_erk_repo` is true, because artifacts in the erk repo are the source of truth, not synced copies.
+
+... [167 lines omitted] ...
+
+**`LearnedDocsCapability`** is the exception — it's a full `Capability` subclass (not `SkillCapability`) that declares three managed artifacts:
+4. **Commands are the exception** — they use `erk:` prefix matching rather than the capability registry for `is_erk_managed()`.
+  </tool_result>
+  <thinking>Now I have a complete picture. The key insight is:
+
+1. **Commands**: Already namespaced under `erk/` — orphan detection works via prefix matching (`erk:`) and directory walking.
+2. **Skills**: NOT namespaced — they sit directly in `.claude/skills/&lt;name&gt;/`. Ownership is determined by the capability registry.
+3. **Orphan detection already exists** for both commands AND skills via `find_orphaned_artifacts()`.
+4. **The gap**: `sync_artifacts()` never calls the orphan detection/removal code. It only adds/updates.
+
+So the fix is the same for both commands and skills: integrate cleanup into `sync_artifacts()`. The orphan detection already handles the non-namespaced skill case correctly by checking the capability registry.
+ 
+Actually, I'm realizing the orphan detection has a blind spot — it only checks for orphaned files within skill directories that are already in the bundled set, not for entire skill directories that have been removed from the bundle. If erk renames or removes a skill like `dignified-python`, that orphaned directory wouldn't be caught. entire skill directories that no longer exist in the bundle.
+
+Let me re-read the code more carefully... Actually, looking at the agent's analysis, the function iterates over skills that ARE in the bundle and checks for orphaned files within them, but it never detects entire skill directories that were removed from the bundle. If a skill like `foo-skill` used to be bundled but no longer is, the code would never check `.claude/skills/foo-skill/` because it's not in the current results.
+
+So there are really two gaps here: the current code catches orphaned files within skills that are still managed, but it misses entire skill directories that are no longer managed. Commands have better coverage because the `erk/` namespace lets the orphan finder walk that directory and catch anything not in the bundle, but skills each live in their own directory, so you'd need to compare all skill directories against what's actually bundled.
+
+The fix would need to walk `.claude/skills/` to find all existing skill directories, then check which ones aren't in the bundle anymore.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3452" cache_read_input_tokens="39902" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3452}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <assistant>This is the key insight. Let me read the actual orphan detection code to confirm the gap I suspect.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3452" cache_read_input_tokens="39902" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3452}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017DWMZPGjNK4LcrmY81jLdQ">
+    <param name="file_path">/workspaces/erk/src/erk/artifacts/artifact_health.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3452" cache_read_input_tokens="39902" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3452}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017DWMZPGjNK4LcrmY81jLdQ">
+     1→"""Orphaned artifact detection for erk-managed .claude/ directories."""
+     2→
+     3→import json
+     4→from dataclasses import dataclass
+     5→from pathlib import Path
+     6→from typing import Literal
+     7→
+     8→from erk.artifacts.discovery import (
+     9→    _compute_directory_hash,
+    10→    _compute_file_hash,
+    11→    _compute_hook_hash,
+    12→)
+    13→from erk.artifacts.models import (
+    14→    ArtifactFileState,
+    15→    CompletenessCheckResult,
+    16→    InstalledArtifact,
+    17→    OrphanCheckResult,
+    18→)
+    19→from erk.artifacts.paths import ErkPackageInfo
+    20→from erk.core.capabilities.registry import (
+    21→    get_capability,
+    22→    get_managed_artifacts,
+    23→    is_capability_managed,
+    24→)
+    25→from erk.core.claude_settings import (
+    26→    ERK_EXIT_PLAN_HOOK_COMMAND,
+    27→    ERK_USER_PROMPT_HOOK_COMMAND,
+    28→    has_exit_plan_hook,
+    29→    has_user_prompt_hook,
+    30→)
+
+... [693 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_014dY4EusqUYcayd8ug8FGZM">
+    <param name="file_path">/workspaces/erk/src/erk/artifacts/sync.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3452" cache_read_input_tokens="39902" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3452}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014dY4EusqUYcayd8ug8FGZM">
+     1→"""Sync artifacts from erk package to project's .claude/ directory."""
+     2→
+     3→import json
+     4→import shutil
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→
+     8→from erk.artifacts.discovery import _compute_directory_hash, _compute_file_hash, _compute_hook_hash
+     9→from erk.artifacts.models import ArtifactFileState, ArtifactState
+    10→from erk.artifacts.paths import ErkPackageInfo, get_bundled_claude_dir, get_bundled_github_dir
+    11→from erk.artifacts.state import load_installed_capabilities, save_artifact_state
+    12→from erk.core.claude_settings import (
+    13→    ERK_EXIT_PLAN_HOOK_COMMAND,
+    14→    ERK_USER_PROMPT_HOOK_COMMAND,
+    15→    add_erk_hooks,
+    16→    get_repo_claude_settings_path,
+    17→    has_exit_plan_hook,
+    18→    has_user_prompt_hook,
+    19→)
+    20→from erk.core.init_utils import REQUIRED_GITIGNORE_ENTRIES, add_gitignore_entry
+    21→from erk_shared.context.types import AgentBackend
+    22→
+    23→
+    24→@dataclass(frozen=True)
+    25→class SyncResult:
+    26→    """Result of artifact sync operation."""
+    27→
+    28→    success: bool
+    29→    artifacts_installed: int
+    30→    message: str
+
+... [755 lines omitted] ...
+
+   515→        SyncResult indicating success/failure and count of files installed.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BcDPJcdtezFABfDjxNJtbn">
+    <param name="file_path">/workspaces/erk/src/erk/artifacts/state.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3452" cache_read_input_tokens="39902" output_tokens="1100" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3452, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BcDPJcdtezFABfDjxNJtbn">
+     1→"""Load and save artifact state from .erk/state.toml."""
+     2→
+     3→from pathlib import Path
+     4→from typing import Any
+     5→
+     6→import tomli
+     7→import tomli_w
+     8→
+     9→from erk.artifacts.models import ArtifactFileState, ArtifactState
+    10→
+    11→
+    12→def _state_file_path(project_dir: Path) -&gt; Path:
+    13→    """Return path to state file."""
+    14→    return project_dir / ".erk" / "state.toml"
+    15→
+    16→
+    17→def load_artifact_state(project_dir: Path) -&gt; ArtifactState | None:
+    18→    """Load artifact state from .erk/state.toml.
+    19→
+    20→    Returns None if the state file doesn't exist, has no artifacts section,
+    21→    or is missing the required files section.
+    22→
+    23→    Format:
+    24→        [artifacts]
+    25→        version = "0.3.1"
+    26→
+    27→        [artifacts.files."skills/dignified-python"]
+    28→        version = "0.3.0"
+    29→        hash = "a1b2c3d4e5f6g7h8"
+    30→    """
+
+... [163 lines omitted] ...
+  </tool_result>
+  <thinking>Now I can see the full picture clearly. Let me trace the gap:
+
+**Current orphan detection for skills** (`_find_orphaned_claude_artifacts`, lines 366-378):
+```python
+for prefix, artifact_type in [("skills", "skill"), ("agents", "agent")]:
+    for name in _get_bundled_by_type(artifact_type, installed_capabilities=None):
+        folder_key = f"{prefix}/{name}"
+        dir_orphans = _find_orphaned_in_directory(
+            project_claude_dir / prefix / name,
+            bundled_claude_dir / prefix / name,
+            folder_key,
+        )
+```
+
+This only checks for orphaned files within skill directories that still exist in the current bundle. If a skill like `foo-skill` was removed entirely between versions, `_get_bundled_by_type` won't include it, so the code never even examines `.claude/skills/foo-skill/` and the whole directory gets left behind silently. The same blind spot applies to agents and other artifact types.
+
+Commands use a different strategy by comparing the entire `.claude/commands/erk/` directory structure against the bundled version, which should catch orphaned files since both sides get walked. But I'm realizing this might still miss entire subdirectories that have no bundled counterpart.
+
+Examining the orphan detection logic more closely...
+
+Comparing all local files under `commands/erk/` against bundled files works correctly for commands since the `erk/` namespace means everything there is erk-owned, so something like `objective-next-plan.md` would be properly flagged if it exists locally but not in the bundle. Skills take a different approach though — iterating only over bundled skills and checking for orphans within each one.
+
+The problem is that when a skill like `foo-skill` gets removed from the bundle, its entire directory stays behind locally because we never check for skill directories that exist and are tracked in `state.toml` but aren't in the current bundle. The fix is to add a second pass that identifies these orphaned skill and agent directories by checking `state.toml` as the source of truth — if an entry exists there, it was synced by erk and should be cleaned up if it's no longer in the bundle.
+
+I need to implement a `_remove_orphaned_artifacts()` function in sync.py that handles this for both commands and skills... For commands, Type B orphans are already handled since the entire `erk/` directory gets compared, but for skills and agents I need to cross-reference `state.toml` against the current bundle to catch directories that are no longer managed. The real concern is that skills lack namespacing, so if a user creates a skill called `my-tool` and erk later adds a bundled skill with the same name, there's a collision risk.
+
+However, the `state.toml` approach actually protects against this — if the user's skill was never synced by erk, it won't be in the state file and cleanup won't touch it, but if erk did overwrite it during sync, the state file tracks it and cleanup would correctly remove it when erk drops the skill. The overwrite itself is a separate issue from the orphan cleanup the user asked about, so I should focus on writing out the cleanup plan now.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="23958" cache_read_input_tokens="43354" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 23958}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I see the exact gap. Let me also check what tests exist for this area.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="23958" cache_read_input_tokens="43354" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 23958}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Q8rjn1KzGkYB2jmceb75ET">
+    <param name="pattern">find_orphaned|orphan|_remove_orphan</param>
+    <param name="path">/workspaces/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="23958" cache_read_input_tokens="43354" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 23958}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q8rjn1KzGkYB2jmceb75ET">
+Found 11 files
+tests/unit/cli/commands/exec/scripts/test_get_learn_sessions.py
+tests/unit/artifacts/test_codex_compatibility.py
+tests/commands/branch/test_checkout_cmd.py
+tests/artifacts/test_cli.py
+tests/unit/gateways/gt/fake_ops.py
+tests/unit/gateways/github/metadata_blocks/test_block_replacement.py
+tests/unit/cli/commands/slot/test_common.py
+tests/unit/cli/commands/slot/test_repair_cmd.py
+tests/artifacts/test_orphans.py
+tests/commands/cc/test_session_show_agent_types.py
+tests/unit/status/test_graphite_stack_collector.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_015PbpuD9etevcw9hLTY9FJm">
+    <param name="file_path">/workspaces/erk/src/erk/artifacts/models.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="23958" cache_read_input_tokens="43354" output_tokens="1672" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 23958, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015PbpuD9etevcw9hLTY9FJm">
+     1→"""Data models for artifact management."""
+     2→
+     3→from collections.abc import Mapping
+     4→from dataclasses import dataclass
+     5→from pathlib import Path
+     6→from typing import Literal
+     7→
+     8→# Type of artifact based on directory structure in .claude/ or .github/
+     9→# Note: "hook" is not file-based like others; it's a config entry in settings.json
+    10→ArtifactType = Literal["skill", "command", "agent", "workflow", "action", "hook", "prompt"]
+    11→
+    12→
+    13→@dataclass(frozen=True)
+    14→class InstalledArtifact:
+    15→    """An artifact installed in a project's .claude/ directory."""
+    16→
+    17→    name: str
+    18→    artifact_type: ArtifactType
+    19→    path: Path
+    20→    # Content hash for staleness detection (optional)
+    21→    content_hash: str | None
+    22→
+    23→
+    24→@dataclass(frozen=True)
+    25→class ArtifactFileState:
+    26→    """Per-artifact state tracking version and hash at sync time."""
+    27→
+    28→    version: str  # erk version when this artifact was synced
+    29→    hash: str  # content hash at sync time
+    30→
+
+... [34 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01R9etykupR4knNeBM5R4DAM">
+    <param name="file_path">/workspaces/erk/tests/artifacts/test_orphans.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2788" cache_read_input_tokens="67312" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2788}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R9etykupR4knNeBM5R4DAM">
+     1→"""Tests for orphaned artifact detection."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.artifacts.artifact_health import find_orphaned_artifacts
+     6→from erk.artifacts.paths import ErkPackageInfo
+     7→
+     8→
+     9→def test_find_orphaned_artifacts_no_claude_dir(tmp_path: Path) -&gt; None:
+    10→    """Test orphan detection when no .claude/ directory exists."""
+    11→    bundled_claude = tmp_path / "bundled" / ".claude"
+    12→    bundled_claude.mkdir(parents=True)
+    13→
+    14→    result = find_orphaned_artifacts(
+    15→        tmp_path,
+    16→        package=ErkPackageInfo(
+    17→            in_erk_repo=False,
+    18→            bundled_claude_dir=bundled_claude,
+    19→            bundled_github_dir=tmp_path / "bundled" / ".github",
+    20→            bundled_erk_dir=tmp_path / "bundled" / ".erk",
+    21→            current_version="1.0.0",
+    22→        ),
+    23→    )
+    24→
+    25→    assert result.skipped_reason == "no-claude-dir"
+    26→    assert result.orphans == {}
+    27→
+    28→
+    29→def test_find_orphaned_artifacts_in_erk_repo(tmp_path: Path) -&gt; None:
+    30→    """Test orphan detection in erk repo -&gt; skipped."""
+
+... [345 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_016dzaSZr4AZFWDjSFqcHA6p">
+    <param name="file_path">/workspaces/erk/src/erk/cli/commands/artifact/sync_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2788" cache_read_input_tokens="67312" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2788, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016dzaSZr4AZFWDjSFqcHA6p">
+     1→"""Sync artifacts from erk package to project."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import click
+     6→
+     7→from erk.artifacts.state import load_installed_capabilities
+     8→from erk.artifacts.sync import (
+     9→    ArtifactSyncConfig,
+    10→    add_missing_gitignore_entries,
+    11→    find_missing_gitignore_entries,
+    12→    sync_artifacts,
+    13→)
+    14→
+    15→
+    16→@click.command("sync")
+    17→@click.option("-f", "--force", is_flag=True, help="Force sync even if up to date")
+    18→@click.pass_context
+    19→def sync_cmd(ctx: click.Context, force: bool) -&gt; None:
+    20→    """Sync artifacts from erk package to .claude/ directory.
+    21→
+    22→    Copies bundled artifacts (commands, skills, agents, docs) from the
+    23→    installed erk package to the current project's .claude/ directory.
+    24→    Also checks for missing .gitignore entries and offers to add them.
+    25→
+    26→    When running in the erk repo itself, this is a no-op since artifacts
+    27→    are read directly from source.
+    28→
+    29→    Examples:
+    30→
+
+... [33 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a complete understanding. Let me trace the exact gaps:
+
+**Gap 1: Entire skill/agent directories removed from bundle are not detected as orphans.**
+
+The current `_find_orphaned_claude_artifacts` (line 369-378) iterates over `_get_bundled_by_type(artifact_type, installed_capabilities=None)` and checks for orphaned **files within** each skill/agent directory. But if a skill was removed entirely from erk (no longer in the capability registry), `_get_bundled_by_type` won't return it, so the code never looks at that directory.
+
+Example: If erk 0.8 bundled `foo-skill` but erk 0.9 removed it from the capability registry, the directory `.claude/skills/foo-skill/` is silently left behind.
+ 
+**Gap 2: `sync_artifacts()` doesn't remove orphans — it's additive only.**
+
+Even when orphans are detected by `find_orphaned_artifacts()`, `sync_artifacts()` never actually invokes the detection or removal logic. The detection only feeds into `erk artifact check` for display purposes, so orphaned artifacts persist after syncing.
+
+**Solution for Gap 1: Use state.toml as the source of truth for what was previously synced.**
+
+`state.toml` records every artifact that was synced, with keys like `skills/dignified-python`, `commands/erk/plan-save.md`, etc. After sync completes, any key in the old state.toml that doesn't exist in the new state represents an orphan that should be cleaned up.
+
+**Solution for Gap 2: Add cleanup to `sync_artifacts()`.**
+
+After syncing all artifacts and before saving state, I'll compare the old state.toml keys against the new synced artifact keys. For any key that existed before but not after, I'll remove the corresponding artifact—using directory removal for skills/agents, file removal for commands and workflows, and cleaning up empty parent directories as needed. This is safe because the state.toml definitively tracks what erk owns.
+
+Actually, I realize there's an important detail: `save_artifact_state()` replaces the entire `[artifacts]` section, so old entries for removed artifacts are already gone from state.toml. They just linger on the filesystem. So the approach is to load the old state before syncing, run the sync to compute the new state, compare the two, delete any filesystem artifacts that were in the old state but not the new one, then save the updated state.
+
+Now I'm thinking through edge cases like what happens with locally modified artifacts or partial deletions. modified skills**: If the user modified a synced skill, the hash changes but the key stays in state.toml. On upgrade, if that skill is still bundled, it gets overwritten. If the skill was removed from bundle, it should still be cleaned up (it was erk-owned).
+- **Partial sync failures**: If sync crashes midway, state.toml may not be updated. Next sync should still work because the state from the last successful sync is the baseline.
+- **First sync (no old state)**: No old state means no orphans to clean — correct behavior.
+
+I think the plan is solid. Let me write it up.
+
+Actually, I need to think about the implementation more carefully. Now I'm mapping out the filesystem structure for each resource type — skills, agents, commands, workflows, actions, reviews, and hooks — so I can figure out how to translate the state keys back to actual file paths for cleanup.
+
+For the first pass, I'll focus on file and directory artifacts and skip hook cleanup since modifying settings.json during downgrade feels risky. The key distinction is that some keys like `skills/dignified-python` map to entire directories that need recursive deletion, while others like `commands/erk/plan-save` map to individual files.
+
+I can determine the artifact type by checking prefixes and file extensions—`skills/` and `actions/` are directories, while `commands/erk/`, `workflows/`, and `reviews/` are files. I'll create a new `_remove_orphaned_artifacts()` function in sync.py that takes the project directory and old artifact state, then systematically removes each artifact based on its type and location.
+
+The tricky part is that commands are all tracked in state.toml since the sync process captures every `.md` file from the bundled directory, but skills only get tracked if they come from an installed capability—so if a capability is removed, its skills remain on disk even though they're no longer in state.
+
+toml, which means they'll correctly get flagged for cleanup on the next sync.
+
+I should also enhance `find_orphaned_artifacts()` to use state.toml for detecting removed skill and agent directories, since it could check for previously-synced items that are no longer bundled. But that's separate from the sync cleanup logic—for now I just need to focus on comparing old versus new state in `sync_artifacts()`.
+
+My plan is to add a removal function in `sync.py` that runs after syncing but before saving state, update the orphan detection to cross-reference state.toml, add a `removed` count to `SyncResult`, and write tests to cover it all.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="9539" cache_read_input_tokens="70100" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9539}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a complete understanding. Let me design the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9539" cache_read_input_tokens="70100" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9539}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_014dy7hsuVAtKYTRdqfUhYUn">
+    <param name="description">Design orphan cleanup plan</param>
+    <param name="subagent_type">Plan</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+
+## Context
+
+E...[truncated 3923 chars]...ailed implementation plan with specific code changes, function signatures, and test cases.</param>
+    <param name="model">sonnet</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9539" cache_read_input_tokens="70100" output_tokens="3469" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9539, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
