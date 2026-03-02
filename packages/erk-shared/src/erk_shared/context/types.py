@@ -288,6 +288,9 @@ class LoadedConfig:
     prompt_learn_on_land: bool | None  # None = not set at this level, use global
     dispatch_ref: str | None  # None = use default branch for workflow dispatch
     docs_path: str | None  # None = use repo root for docs operations
+    # Per-repo codespace configuration
+    codespace_name: str | None  # None = not set, fall through to global default
+    codespace_working_directory: str | None  # None = no directory change on remote
 
     @staticmethod
     def test(
@@ -302,6 +305,8 @@ class LoadedConfig:
         prompt_learn_on_land: bool | None = None,
         dispatch_ref: str | None = None,
         docs_path: str | None = None,
+        codespace_name: str | None = None,
+        codespace_working_directory: str | None = None,
     ) -> LoadedConfig:
         """Create a LoadedConfig with sensible test defaults."""
         return LoadedConfig(
@@ -317,4 +322,6 @@ class LoadedConfig:
             prompt_learn_on_land=prompt_learn_on_land,
             dispatch_ref=dispatch_ref,
             docs_path=docs_path,
+            codespace_name=codespace_name,
+            codespace_working_directory=codespace_working_directory,
         )

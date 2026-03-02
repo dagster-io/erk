@@ -92,6 +92,15 @@ def _parse_config_file(cfg_path: Path) -> LoadedConfig:
     if docs_path is not None:
         docs_path = str(docs_path)
 
+    # Parse [codespace] section
+    codespace = data.get("codespace", {})
+    codespace_name: str | None = codespace.get("name")
+    if codespace_name is not None:
+        codespace_name = str(codespace_name)
+    codespace_working_directory: str | None = codespace.get("working_directory")
+    if codespace_working_directory is not None:
+        codespace_working_directory = str(codespace_working_directory)
+
     return LoadedConfig(
         env=env,
         post_create_commands=commands,
@@ -103,6 +112,8 @@ def _parse_config_file(cfg_path: Path) -> LoadedConfig:
         prompt_learn_on_land=prompt_learn_on_land,
         dispatch_ref=dispatch_ref,
         docs_path=docs_path,
+        codespace_name=codespace_name,
+        codespace_working_directory=codespace_working_directory,
     )
 
 
@@ -189,6 +200,8 @@ def load_config(repo_root: Path) -> LoadedConfig:
         prompt_learn_on_land=None,
         dispatch_ref=None,
         docs_path=None,
+        codespace_name=None,
+        codespace_working_directory=None,
     )
 
 
@@ -221,6 +234,8 @@ def load_local_config(repo_root: Path) -> LoadedConfig:
         prompt_learn_on_land=None,
         dispatch_ref=None,
         docs_path=None,
+        codespace_name=None,
+        codespace_working_directory=None,
     )
 
 
@@ -297,6 +312,8 @@ def merge_configs(repo_config: LoadedConfig, project_config: ProjectConfig) -> L
         prompt_learn_on_land=repo_config.prompt_learn_on_land,
         dispatch_ref=repo_config.dispatch_ref,
         docs_path=repo_config.docs_path,
+        codespace_name=repo_config.codespace_name,
+        codespace_working_directory=repo_config.codespace_working_directory,
     )
 
 
@@ -360,5 +377,15 @@ def merge_configs_with_local(
         ),
         docs_path=(
             local_config.docs_path if local_config.docs_path is not None else base_config.docs_path
+        ),
+        codespace_name=(
+            local_config.codespace_name
+            if local_config.codespace_name is not None
+            else base_config.codespace_name
+        ),
+        codespace_working_directory=(
+            local_config.codespace_working_directory
+            if local_config.codespace_working_directory is not None
+            else base_config.codespace_working_directory
         ),
     )
