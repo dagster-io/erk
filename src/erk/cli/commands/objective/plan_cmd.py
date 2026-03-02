@@ -23,7 +23,7 @@ from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.branch_slug_generator import BRANCH_SLUG_SYSTEM_PROMPT, _postprocess_slug
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
 from erk_shared.context.types import InteractiveAgentConfig
-from erk_shared.core.llm_caller import LlmCallFailed, NoApiKey
+from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, NoApiKey
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import extract_metadata_value
@@ -40,6 +40,25 @@ from erk_shared.gateway.github.metadata.roadmap import (
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.naming import sanitize_worktree_name
 from erk_shared.output.output import user_output
+
+
+def _generate_slug(llm_caller: LlmCaller, description: str) -> str:
+    """Generate a branch slug from a description, falling back to sanitization.
+
+    Uses the LLM caller to generate a concise slug. On failure (no API key
+    or LLM error), falls back to sanitizing the description directly.
+
+    Args:
+        llm_caller: LLM caller for slug generation
+        description: Text to generate a slug from
+
+    Returns:
+        A slug string suitable for branch names
+    """
+    result = llm_caller.call(description, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT)
+    if isinstance(result, (NoApiKey, LlmCallFailed)):
+        return sanitize_worktree_name(description)[:25].rstrip("-")
+    return _postprocess_slug(result.text)
 
 
 def _find_node_in_phases(
@@ -251,13 +270,7 @@ def _handle_all_unblocked(
 
         user_output(f"Dispatching node {click.style(node.id, bold=True)}: {node.description}")
 
-        result = ctx.llm_caller.call(
-            node.description, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT
-        )
-        if isinstance(result, (NoApiKey, LlmCallFailed)):
-            slug = sanitize_worktree_name(node.description)[:25].rstrip("-")
-        else:
-            slug = _postprocess_slug(result.text)
+        slug = _generate_slug(ctx.llm_caller, node.description)
 
         params = OneShotDispatchParams(
             prompt=prompt,
@@ -717,13 +730,7 @@ def _handle_one_shot(
     user_output(f"Phase: {phase_name}")
     user_output(f"Prompt: {prompt}")
 
-    result = ctx.llm_caller.call(
-        target_node.description, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT
-    )
-    if isinstance(result, (NoApiKey, LlmCallFailed)):
-        slug = sanitize_worktree_name(target_node.description)[:25].rstrip("-")
-    else:
-        slug = _postprocess_slug(result.text)
+    slug = _generate_slug(ctx.llm_caller, target_node.description)
 
     params = OneShotDispatchParams(
         prompt=prompt,
