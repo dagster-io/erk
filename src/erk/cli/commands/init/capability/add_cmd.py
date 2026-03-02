@@ -5,7 +5,7 @@ from pathlib import Path
 import click
 
 from erk.cli.commands.init.capability.backend_utils import resolve_backend
-from erk.core.capabilities.registry import get_capability, list_capabilities
+from erk.core.capabilities.registry import get_capability, list_optional_capabilities
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, discover_repo_or_sentinel
 from erk_shared.output.output import user_output
@@ -42,7 +42,7 @@ def add_cmd(ctx: ErkContext, names: tuple[str, ...]) -> None:
         if cap is None:
             user_output(click.style("✗ ", fg="red") + f"Unknown capability: {cap_name}")
             user_output("  Available capabilities:")
-            for c in list_capabilities():
+            for c in list_optional_capabilities():
                 user_output(f"    {c.name}")
             any_failed = True
             continue

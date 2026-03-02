@@ -14,7 +14,7 @@ from erk.artifacts.sync import (
     sync_artifacts,
 )
 from erk.cli.core import discover_repo_context
-from erk.core.capabilities.registry import list_capabilities, list_required_capabilities
+from erk.core.capabilities.registry import list_optional_capabilities, list_required_capabilities
 from erk.core.claude_settings import (
     ERK_PERMISSION,
     NoBackupCreated,
@@ -678,8 +678,8 @@ def run_init(
     # =========================================================================
     user_output("\nStep 3: Optional enhancements...")
 
-    # Show capability status
-    all_caps = list_capabilities()
+    # Show capability status (optional only — required capabilities are auto-installed silently)
+    all_caps = list_optional_capabilities()
     if all_caps:
         user_output("\nCapabilities:")
         for cap in sorted(all_caps, key=lambda c: c.name):

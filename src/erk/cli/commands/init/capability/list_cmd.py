@@ -6,7 +6,7 @@ import click
 
 from erk.cli.commands.init.capability.backend_utils import resolve_backend
 from erk.core.capabilities.base import Capability, CapabilityArtifact
-from erk.core.capabilities.registry import get_capability, list_capabilities
+from erk.core.capabilities.registry import get_capability, list_optional_capabilities
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, discover_repo_or_sentinel
 from erk_shared.context.types import AgentBackend
@@ -48,7 +48,7 @@ def _check_capability(name: str, repo_root: Path | None, *, backend: AgentBacken
     if cap is None:
         user_output(click.style("Error: ", fg="red") + f"Unknown capability: {name}")
         user_output("\nAvailable capabilities:")
-        for c in list_capabilities():
+        for c in list_optional_capabilities():
             user_output(f"  {c.name}")
         raise SystemExit(1)
 
@@ -111,7 +111,7 @@ def _show_artifact_status(
 
 def _check_all(repo_root: Path | None, *, backend: AgentBackend) -> None:
     """Check all capabilities."""
-    caps = list_capabilities()
+    caps = list_optional_capabilities()
 
     if not caps:
         user_output("No capabilities registered.")

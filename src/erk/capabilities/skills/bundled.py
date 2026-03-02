@@ -14,6 +14,16 @@ from erk.core.capabilities.codex_portable import codex_portable_skills
 from erk.core.capabilities.skill_capability import SkillCapability
 from erk_shared.context.types import AgentBackend
 
+_REQUIRED_BUNDLED_SKILLS: frozenset[str] = frozenset(
+    {
+        "erk-diff-analysis",
+        "erk-exec",
+        "objective",
+        "pr-operations",
+        "pr-feedback-classifier",
+    }
+)
+
 
 @cache
 def bundled_skills() -> dict[str, str]:
@@ -34,6 +44,11 @@ def bundled_skills() -> dict[str, str]:
     }
 
 
+def is_required_bundled_skill(skill_name: str) -> bool:
+    """Return True if the given skill name is a required bundled skill."""
+    return skill_name in _REQUIRED_BUNDLED_SKILLS
+
+
 class BundledSkillCapability(SkillCapability):
     """Concrete SkillCapability for skills registered via bundled_skills() dict."""
 
@@ -48,6 +63,10 @@ class BundledSkillCapability(SkillCapability):
     @property
     def description(self) -> str:
         return self._description
+
+    @property
+    def required(self) -> bool:
+        return self._skill_name in _REQUIRED_BUNDLED_SKILLS
 
     @property
     def supported_backends(self) -> tuple[AgentBackend, ...]:
