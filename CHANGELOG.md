@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.3] - 2026-03-02 07:16 PT
+
+### Fixed
+
+- Fix skills not being installed during wheel-based `erk artifact sync`
+
 ## [0.9.2] - 2026-03-02 06:11 PT
 
 ### Added
