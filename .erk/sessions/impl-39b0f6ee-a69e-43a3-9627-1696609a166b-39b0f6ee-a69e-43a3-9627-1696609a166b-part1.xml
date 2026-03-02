@@ -1,0 +1,1287 @@
+<session>
+  <meta branch="plnd/auto-install-workflows-03-02-0150" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8591&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 12. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8591` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**CRITICAL**: Never delete the impl directory - leave for user review (no auto-commit).
+
+### Step 12: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 13: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8591.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11196" cache_read_input_tokens="16934" cache_creation="{'ephemeral_5m_input_tokens': 11196, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01CYFDD7RoNXqRZiyMJcviGr">
+    <param name="command">erk exec setup-impl --issue 8591</param>
+    <param name="description">Set up implementation for plan #8591</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11196" cache_read_input_tokens="16934" cache_creation="{'ephemeral_5m_input_tokens': 11196, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CYFDD7RoNXqRZiyMJcviGr">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--auto-install-workflows-03-02-0150", "plan_number": 8591, "plan_url": "https://github.com/dagster-io/erk/pull/8591", "branch": "plnd/auto-install-workflows-03-02-0150", "plan_title": "[erk-plan] Make All Workflow Capabilities Auto-Install", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8591, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/auto-install-workflows-03-02-0150', syncing with remote...
+  </tool_result>
+  <assistant>Implementation environment ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="338" cache_read_input_tokens="28130" cache_creation="{'ephemeral_5m_input_tokens': 338, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01JHM3NbEA7kwoeLqJdV3gHD">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--auto-install-workflows-03-02-0150/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="338" cache_read_input_tokens="28130" cache_creation="{'ephemeral_5m_input_tokens': 338, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JHM3NbEA7kwoeLqJdV3gHD">
+     1→# Make All Workflow Capabilities Auto-Install
+     2→
+     3→## Context
+     4→
+     5→The `erk workflow smoke-test` command in dagster-compass fails with a 404 because `one-shot.yml` was never installed — workflow capabilities are optional and must be explicitly added via `erk init capability add`. This is a footgun: the smoke test assumes the workflow exists but doesn't verify it. Rather than adding a check, we should make all workflows auto-install since they're core to erk's GitHub integration.
+     6→
+     7→## Changes
+     8→
+     9→Add `required = True` property override to all 5 workflow capability classes:
+    10→
+    11→1. `src/erk/capabilities/workflows/learn.py` — `LearnWorkflowCapability`
+    12→2. `src/erk/capabilities/workflows/one_shot.py` — `OneShotWorkflowCapability`
+    13→3. `src/erk/capabilities/workflows/pr_address.py` — `PrAddressWorkflowCapability`
+    14→4. `src/erk/capabilities/workflows/pr_rebase.py` — `PrRebaseWorkflowCapability`
+    15→5. `src/erk/capabilities/workflows/erk_impl.py` — `ErkImplWorkflowCapability`
+    16→
+    17→Each gets:
+    18→```python
+    19→@property
+    20→def required(self) -&gt; bool:
+    21→    return True
+    22→```
+    23→
+    24→No other code changes needed. The existing system already handles `required=True`:
+    25→- `erk init` auto-installs required capabilities
+    26→- `_get_bundled_by_type()` always includes required capabilities for syncing/health checks
+    27→- `erk init --upgrade` reinstalls all required capabilities
+    28→
+    29→## Verification
+    30→
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>Clear plan. Let me understand the codebase structure before implementing. Let me read the relevant files in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="713" cache_read_input_tokens="28468" cache_creation="{'ephemeral_5m_input_tokens': 713, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01UvhYKmwsbyUVedxng12emP">
+    <param name="todos">[{'content': 'Add required=True property to all 5 workflow capability classes', 'status': ...[truncated 181 chars]...ests pass'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="713" cache_read_input_tokens="28468" cache_creation="{'ephemeral_5m_input_tokens': 713, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HrGffzdP65fcsdtr2c7Ahu">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/workflows/learn.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="713" cache_read_input_tokens="28468" cache_creation="{'ephemeral_5m_input_tokens': 713, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017rjRL42kb5LVQyBdp7LnBr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/workflows/one_shot.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="713" cache_read_input_tokens="28468" cache_creation="{'ephemeral_5m_input_tokens': 713, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01GMQgqZo6KCHtueSwem2833">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/workflows/pr_address.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="713" cache_read_input_tokens="28468" cache_creation="{'ephemeral_5m_input_tokens': 713, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01DPZUTagGjLiQGCdg6EY9Ht">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/workflows/pr_rebase.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="713" cache_read_input_tokens="28468" cache_creation="{'ephemeral_5m_input_tokens': 713, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Ub8R2B4QJPykSvztkffrjo">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/workflows/erk_impl.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="713" cache_read_input_tokens="28468" cache_creation="{'ephemeral_5m_input_tokens': 713, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UvhYKmwsbyUVedxng12emP">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_result tool="toolu_01HrGffzdP65fcsdtr2c7Ahu">
+     1→"""LearnWorkflowCapability - GitHub Action for learn workflow."""
+     2→
+     3→import shutil
+     4→from pathlib import Path
+     5→
+     6→from erk.artifacts.paths import get_bundled_github_dir
+     7→from erk.artifacts.state import add_installed_capability, remove_installed_capability
+     8→from erk.core.capabilities.base import (
+     9→    Capability,
+    10→    CapabilityArtifact,
+    11→    CapabilityResult,
+    12→    CapabilityScope,
+    13→    ManagedArtifact,
+    14→)
+    15→from erk_shared.context.types import AgentBackend
+    16→
+    17→
+    18→class LearnWorkflowCapability(Capability):
+    19→    """GitHub Action for learn documentation workflow.
+    20→
+    21→    Installs:
+    22→    - .github/workflows/learn.yml
+    23→    """
+    24→
+    25→    @property
+    26→    def name(self) -&gt; str:
+    27→        return "learn-workflow"
+    28→
+    29→    @property
+    30→    def description(self) -&gt; str:
+
+... [83 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_017rjRL42kb5LVQyBdp7LnBr">
+     1→"""OneShotWorkflowCapability - GitHub Action for one-shot workflow."""
+     2→
+     3→import shutil
+     4→from pathlib import Path
+     5→
+     6→from erk.artifacts.paths import get_bundled_github_dir
+     7→from erk.artifacts.state import add_installed_capability, remove_installed_capability
+     8→from erk.core.capabilities.base import (
+     9→    Capability,
+    10→    CapabilityArtifact,
+    11→    CapabilityResult,
+    12→    CapabilityScope,
+    13→    ManagedArtifact,
+    14→)
+    15→from erk_shared.context.types import AgentBackend
+    16→
+    17→
+    18→class OneShotWorkflowCapability(Capability):
+    19→    """GitHub Action for one-shot workflow.
+    20→
+    21→    Installs:
+    22→    - .github/workflows/one-shot.yml
+    23→    """
+    24→
+    25→    @property
+    26→    def name(self) -&gt; str:
+    27→        return "one-shot-workflow"
+    28→
+    29→    @property
+    30→    def description(self) -&gt; str:
+
+... [86 lines omitted] ...
+
+    57→            raise ValueError("OneShotWorkflowCapability requires repo_root")
+    62→            raise ValueError("OneShotWorkflowCapability requires repo_root")
+    93→            raise ValueError("OneShotWorkflowCapability requires repo_root")
+  </tool_result>
+  <tool_result tool="toolu_01GMQgqZo6KCHtueSwem2833">
+     1→"""PrAddressWorkflowCapability - GitHub Action for PR address workflow."""
+     2→
+     3→import shutil
+     4→from pathlib import Path
+     5→
+     6→from erk.artifacts.paths import get_bundled_github_dir
+     7→from erk.artifacts.state import add_installed_capability, remove_installed_capability
+     8→from erk.core.capabilities.base import (
+     9→    Capability,
+    10→    CapabilityArtifact,
+    11→    CapabilityResult,
+    12→    CapabilityScope,
+    13→    ManagedArtifact,
+    14→)
+    15→from erk_shared.context.types import AgentBackend
+    16→
+    17→
+    18→class PrAddressWorkflowCapability(Capability):
+    19→    """GitHub Action for PR address workflow.
+    20→
+    21→    Installs:
+    22→    - .github/workflows/pr-address.yml
+    23→    """
+    24→
+    25→    @property
+    26→    def name(self) -&gt; str:
+    27→        return "pr-address-workflow"
+    28→
+    29→    @property
+    30→    def description(self) -&gt; str:
+
+... [86 lines omitted] ...
+
+    57→            raise ValueError("PrAddressWorkflowCapability requires repo_root")
+    62→            raise ValueError("PrAddressWorkflowCapability requires repo_root")
+    93→            raise ValueError("PrAddressWorkflowCapability requires repo_root")
+  </tool_result>
+  <tool_result tool="toolu_01DPZUTagGjLiQGCdg6EY9Ht">
+     1→"""PrRebaseWorkflowCapability - GitHub Action for PR rebase workflow."""
+     2→
+     3→import shutil
+     4→from pathlib import Path
+     5→
+     6→from erk.artifacts.paths import get_bundled_github_dir
+     7→from erk.artifacts.state import add_installed_capability, remove_installed_capability
+     8→from erk.core.capabilities.base import (
+     9→    Capability,
+    10→    CapabilityArtifact,
+    11→    CapabilityResult,
+    12→    CapabilityScope,
+    13→    ManagedArtifact,
+    14→)
+    15→from erk_shared.context.types import AgentBackend
+    16→
+    17→
+    18→class PrRebaseWorkflowCapability(Capability):
+    19→    """GitHub Action for PR rebase workflow.
+    20→
+    21→    Installs:
+    22→    - .github/workflows/pr-rebase.yml
+    23→    """
+    24→
+    25→    @property
+    26→    def name(self) -&gt; str:
+    27→        return "pr-rebase-workflow"
+    28→
+    29→    @property
+    30→    def description(self) -&gt; str:
+
+... [86 lines omitted] ...
+
+    57→            raise ValueError("PrRebaseWorkflowCapability requires repo_root")
+    62→            raise ValueError("PrRebaseWorkflowCapability requires repo_root")
+    93→            raise ValueError("PrRebaseWorkflowCapability requires repo_root")
+  </tool_result>
+  <tool_result tool="toolu_01Ub8R2B4QJPykSvztkffrjo">
+     1→"""ErkImplWorkflowCapability - GitHub Action for automated implementation."""
+     2→
+     3→import shutil
+     4→from pathlib import Path
+     5→
+     6→from erk.artifacts.paths import get_bundled_github_dir
+     7→from erk.artifacts.state import add_installed_capability, remove_installed_capability
+     8→from erk.core.capabilities.base import (
+     9→    Capability,
+    10→    CapabilityArtifact,
+    11→    CapabilityResult,
+    12→    CapabilityScope,
+    13→    ManagedArtifact,
+    14→)
+    15→from erk_shared.context.types import AgentBackend
+    16→
+    17→
+    18→class ErkImplWorkflowCapability(Capability):
+    19→    """GitHub Action for automated implementation workflow.
+    20→
+    21→    Installs:
+    22→    - .github/workflows/plan-implement.yml
+    23→    - .github/actions/setup-claude-code/
+    24→    - .github/actions/setup-claude-erk/
+    25→    - .github/actions/erk-remote-setup/
+    26→    """
+    27→
+    28→    @property
+    29→    def name(self) -&gt; str:
+    30→        return "erk-impl-workflow"
+
+... [142 lines omitted] ...
+  </tool_result>
+  <assistant>I've read all 5 files. Now let me check the base `Capability` class to confirm where the `required` property is defined and what its default is.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8691" cache_read_input_tokens="29181" cache_creation="{'ephemeral_5m_input_tokens': 8691, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_014pXERNVjazMXtPAjL5XhQk">
+    <param name="pattern">def required</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/core/capabilities/base.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8691" cache_read_input_tokens="29181" cache_creation="{'ephemeral_5m_input_tokens': 8691, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014pXERNVjazMXtPAjL5XhQk">
+115-        ...
+116-
+117-    @property
+118:    def required(self) -&gt; bool:
+119-        """If True, auto-install during erk init without prompting.
+120-
+121-        Default is False. Override to return True for capabilities that should
+  </tool_result>
+  <assistant>The base class defaults `required` to `False`. Now I'll add the `required` property override to all 5 workflow capability classes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="400" cache_read_input_tokens="37872" cache_creation="{'ephemeral_5m_input_tokens': 400, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_016ZC8T9zQ3VP6hewztv4ahj">
+    <param name="todos">[{'content': 'Add required=True property to all 5 workflow capability classes', 'status': ...[truncated 185 chars]...ests pass'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="400" cache_read_input_tokens="37872" cache_creation="{'ephemeral_5m_input_tokens': 400, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Mz18XpBwDZKNm8DY3V4uWz">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/workflows/learn.py</param>
+    <param name="old_string">    @property
+    def scope(self) -&gt; CapabilityScope:
+        return "project"
+
+    @property
+    def installation_check_description(self) -&gt; str:</param>
+    <param name="new_string">    @property
+    def required(self) -&gt; bool:
+        return True
+
+    @property
+    def s...[truncated 13 chars]...      return "project"
+
+    @property
+    def installation_check_description(self) -&gt; str:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="400" cache_read_input_tokens="37872" cache_creation="{'ephemeral_5m_input_tokens': 400, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01BbspByFj13GYvvRTsGs5bA">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/workflows/one_shot.py</param>
+    <param name="old_string">    @property
+    def scope(self) -&gt; CapabilityScope:
+        return "project"
+
+    @property
+    def installation_check_description(self) -&gt; str:</param>
+    <param name="new_string">    @property
+    def required(self) -&gt; bool:
+        return True
+
+    @property
+    def s...[truncated 13 chars]...      return "project"
+
+    @property
+    def installation_check_description(self) -&gt; str:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="400" cache_read_input_tokens="37872" cache_creation="{'ephemeral_5m_input_tokens': 400, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01RnFuyJyreoUELrrW8csi2E">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/workflows/pr_address.py</param>
+    <param name="old_string">    @property
+    def scope(self) -&gt; CapabilityScope:
+        return "project"
+
+    @property
+    def installation_check_description(self) -&gt; str:</param>
+    <param name="new_string">    @property
+    def required(self) -&gt; bool:
+        return True
+
+    @property
+    def s...[truncated 13 chars]...      return "project"
+
+    @property
+    def installation_check_description(self) -&gt; str:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="400" cache_read_input_tokens="37872" cache_creation="{'ephemeral_5m_input_tokens': 400, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01TvSQXCZfKg16yjM27h2CqY">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/workflows/pr_rebase.py</param>
+    <param name="old_string">    @property
+    def scope(self) -&gt; CapabilityScope:
+        return "project"
+
+    @property
+    def installation_check_description(self) -&gt; str:</param>
+    <param name="new_string">    @property
+    def required(self) -&gt; bool:
+        return True
+
+    @property
+    def s...[truncated 13 chars]...      return "project"
+
+    @property
+    def installation_check_description(self) -&gt; str:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="400" cache_read_input_tokens="37872" cache_creation="{'ephemeral_5m_input_tokens': 400, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01WPTw3fMcXGrvaihoot68aZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/workflows/erk_impl.py</param>
+    <param name="old_string">    @property
+    def scope(self) -&gt; CapabilityScope:
+        return "project"
+
+    @property
+    def installation_check_description(self) -&gt; str:</param>
+    <param name="new_string">    @property
+    def required(self) -&gt; bool:
+        return True
+
+    @property
+    def s...[truncated 13 chars]...      return "project"
+
+    @property
+    def installation_check_description(self) -&gt; str:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="400" cache_read_input_tokens="37872" cache_creation="{'ephemeral_5m_input_tokens': 400, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016ZC8T9zQ3VP6hewztv4ahj">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_result tool="toolu_01Mz18XpBwDZKNm8DY3V4uWz">
+The file /home/runner/work/erk/erk/src/erk/capabilities/workflows/learn.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01BbspByFj13GYvvRTsGs5bA">
+The file /home/runner/work/erk/erk/src/erk/capabilities/workflows/one_shot.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01RnFuyJyreoUELrrW8csi2E">
+The file /home/runner/work/erk/erk/src/erk/capabilities/workflows/pr_address.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01TvSQXCZfKg16yjM27h2CqY">
+The file /home/runner/work/erk/erk/src/erk/capabilities/workflows/pr_rebase.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01WPTw3fMcXGrvaihoot68aZ">
+The file /home/runner/work/erk/erk/src/erk/capabilities/workflows/erk_impl.py has been updated successfully.
+  </tool_result>
+  <assistant>All 5 files updated. Now let me signal started and run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1510" cache_read_input_tokens="38272" cache_creation="{'ephemeral_5m_input_tokens': 1510, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01LDxPAmU7vqn6FzzpVNektp">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1510" cache_read_input_tokens="38272" cache_creation="{'ephemeral_5m_input_tokens': 1510, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01FFA5z638EDgChGnpQG4gLW">
+    <param name="todos">[{'content': 'Add required=True property to all 5 workflow capability classes', 'status': ...[truncated 187 chars]...ests pass'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1510" cache_read_input_tokens="38272" cache_creation="{'ephemeral_5m_input_tokens': 1510, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LDxPAmU7vqn6FzzpVNektp">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_result tool="toolu_01FFA5z638EDgChGnpQG4gLW">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>The session signal is non-critical. Let me run fast-ci now.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="39782" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01Bs6CLeDQiFPA3mNY97bctY">
+    <param name="description">Run fast-ci checks</param>
+    <param name="prompt">Run `make fast-ci` and report all results. Do NOT fix any errors - just report them. Working directory: /home/runner/work/erk/erk</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="39782" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Bs6CLeDQiFPA3mNY97bctY">
+make fast-ci failed. Here are the results:
+
+## Summary
+
+- Exit code: 2 (failure)
+- Total test results: 5,747 tests across all packages
+  - **3 tests failed** in `erk` package
+  - **5,484 tests passed** in `erk` package
+  - **136 tests passed** in `erk-dev` package
+  - **112 tests passed** in `erk-statusline` package
+  - **114 tests passed** in `erkbot` package
+
+## Code Style Issues
+
+**Prettier found 2 files with formatting issues:**
+- `/home/runner/work/erk/erk/docs/learned/integrations/github-review-decision.md`
+- `/home/runner/work/erk/erk/docs/learned/tui/status-indicators.md`
+
+All other checks (ruff, ty, markdown) passed.
+
+## Failed Tests
+
+**File: `/home/runner/work/erk/erk/tests/unit/core/test_capabilities.py`**
+- Line: test_default_capabilities_not_required
+- Error: `AssertionError: erk-impl-workflow should not be required`
+- Issue: `ErkImplWorkflowCapability.required` is `True` but should be `False`
+
+**File: `/home/runner/work/erk/erk/tests/core/test_health_checks.py`**
+- Line 916: `test_check_managed_artifacts_locally_modified_remediation`
+- Error: `assert False is True` - Expected check to pass for locally-modified artifacts (should be warning, not failure)
+
+... [7 lines omitted] ...
+
+- Error: `assert False is True` - Similar issue with managed artifacts health check
+All three failures are in the core capability and health check systems.
+  </tool_result>
+  <assistant>There are 3 test failures. The first is directly related to our change — a test that explicitly asserts workflow capabilities are NOT required. The other two health check failures may also be related. Let me examine these tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="40184" cache_creation="{'ephemeral_5m_input_tokens': 651, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01G6Sb22GLgxCb1VXs6aDp3S">
+    <param name="pattern">test_default_capabilities_not_required</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/core/test_capabilities.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="40184" cache_creation="{'ephemeral_5m_input_tokens': 651, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_016kxTcmavLxPiTjiwSfJQy8">
+    <param name="pattern">test_check_managed_artifacts_locally_modified_remediation</param>
+    <param name="path">/home/runner/work/erk/erk/tests/core/test_health_checks.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="40184" cache_creation="{'ephemeral_5m_input_tokens': 651, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_013HNWMRpzd8RBtLxA8Q33v2">
+    <param name="pattern">test_check_managed_artifacts_changed_upstream_remediation</param>
+    <param name="path">/home/runner/work/erk/erk/tests/core/test_health_checks.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="40184" cache_creation="{'ephemeral_5m_input_tokens': 651, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013HNWMRpzd8RBtLxA8Q33v2">
+757-    # Install workflow (but not action)
+758-    project_workflows = project_dir / ".github" / "workflows"
+759-    project_workflows.mkdir(parents=True)
+760-    (project_workflows / "plan-implement.yml").write_text("name: plan-implement", encoding="utf-8")
+761-
+762-    package = ErkPackageInfo.test_package(
+763-        bundled_claude_dir=bundled_claude,
+764-        bundled_github_dir=bundled_github,
+765-    )
+766-
+767-    result = check_managed_artifacts(
+768-        project_dir,
+769-        package=package,
+770-        installed_capabilities=frozenset({"erk-impl-workflow"}),
+771-    )
+772-
+773-    assert result.name == "managed-artifacts"
+774-    # Should FAIL because actions are required when workflows are installed
+775-    assert result.passed is False
+776-    assert "have issues" in result.message
+777-    assert result.details is not None
+778-    assert "actions" in result.details
+779-    # Should show error icon (❌) not info icon
+780-    assert "❌" in result.details
+781-    # Should NOT have the "install workflows first" message
+782-    assert "install workflows first" not in result.details
+783-    assert result.remediation is not None
+784-    assert "erk artifact sync" in result.remediation
+785-
+786-
+
+... [31 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_016kxTcmavLxPiTjiwSfJQy8">
+812-
+813-    # Create artifact state with OLD version (triggers changed-upstream)
+814-    # The hash matches the file content, but the version is old
+815-    state_dir = project_dir / ".erk"
+816-    state_dir.mkdir(parents=True)
+817-    content_hash = hashlib.sha256(b"# Command - bundled content").hexdigest()[:16]
+818-    state_toml = f'''[artifacts]
+819-version = "0.0.1"
+820-
+821-[artifacts.files."commands/erk/plan-save.md"]
+822-version = "0.0.1"
+823-hash = "{content_hash}"
+824-'''
+825-    (state_dir / "state.toml").write_text(state_toml, encoding="utf-8")
+826-
+827-    package = ErkPackageInfo.test_package(bundled_claude_dir=bundled_dir)
+828-
+829-    result = check_managed_artifacts(
+830-        project_dir, package=package, installed_capabilities=frozenset()
+831-    )
+832-
+833-    assert result.name == "managed-artifacts"
+834-    assert result.passed is True  # changed-upstream is a warning, not failure
+835-    assert result.warning is True
+836-    assert "have issues" in result.message
+837-    assert result.remediation is not None
+838-    assert "erk artifact sync" in result.remediation
+839-    assert "update to latest erk version" in result.remediation
+840-
+841-
+
+... [31 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01G6Sb22GLgxCb1VXs6aDp3S">
+1266-# =============================================================================
+1267-
+1268-
+1269-def test_list_required_capabilities_returns_only_required() -&gt; None:
+1270-    """Test that list_required_capabilities returns only capabilities with required=True."""
+1271-    required_caps = list_required_capabilities()
+1272-
+1273-    # All returned capabilities should have required=True
+1274-    for cap in required_caps:
+1275-        assert cap.required is True, f"{cap.name} has required=False but was returned"
+1276-
+1277-
+1278-def test_list_required_capabilities_includes_hooks() -&gt; None:
+1279-    """Test that HooksCapability is in the list of required capabilities."""
+1280-    required_caps = list_required_capabilities()
+1281-    names = [cap.name for cap in required_caps]
+1282-
+1283-    assert "erk-hooks" in names
+1284-
+1285-
+1286:def test_default_capabilities_not_required() -&gt; None:
+1287-    """Test that default capabilities are NOT required."""
+1288-    # Most capabilities should be optional
+1289-    optional_caps = [
+1290-        LearnedDocsCapability(),
+1291-        ErkImplWorkflowCapability(),
+1292-        LearnWorkflowCapability(),
+1293-        DevrunAgentCapability(),
+1294-        ErkBashPermissionsCapability(),
+1295-        StatuslineCapability(claude_installation=None),
+
+... [11 lines omitted] ...
+  </tool_result>
+  <assistant>Let me see more of the health check test failures to understand their full context:</assistant>
+  <usage input_tokens="1760" cache_creation_input_tokens="1127" cache_read_input_tokens="40835" cache_creation="{'ephemeral_5m_input_tokens': 1127, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01W8jQReBgbhCi8dNcEuYtZ4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_health_checks.py</param>
+    <param name="offset">842</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1760" cache_creation_input_tokens="1127" cache_read_input_tokens="40835" cache_creation="{'ephemeral_5m_input_tokens': 1127, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01W8jQReBgbhCi8dNcEuYtZ4">
+   842→def test_check_managed_artifacts_locally_modified_remediation(tmp_path: Path) -&gt; None:
+   843→    """Test remediation message for locally-modified artifacts.
+   844→
+   845→    Scenario: User has manually edited an installed artifact. The artifact state
+   846→    shows it was synced with the current erk version, but the file hash differs
+   847→    from what was originally synced.
+   848→    """
+   849→    import hashlib
+   850→
+   851→    from erk.core.claude_settings import (
+   852→        ERK_EXIT_PLAN_HOOK_COMMAND,
+   853→        ERK_USER_PROMPT_HOOK_COMMAND,
+   854→        add_erk_hooks,
+   855→    )
+   856→    from erk.core.release_notes import get_current_version
+   857→
+   858→    erk_version = get_current_version()
+   859→
+   860→    # Create bundled dir with original command content
+   861→    bundled_dir = tmp_path / "bundled" / ".claude"
+   862→    bundled_commands = bundled_dir / "commands" / "erk"
+   863→    bundled_commands.mkdir(parents=True)
+   864→    original_content = "# Command - original"
+   865→    (bundled_commands / "plan-save.md").write_text(original_content, encoding="utf-8")
+   866→
+   867→    # Create project dir with modified command content (user edited it)
+   868→    project_dir = tmp_path / "project"
+   869→    project_claude = project_dir / ".claude"
+   870→    project_commands = project_claude / "commands" / "erk"
+   871→    project_commands.mkdir(parents=True)
+
+... [75 lines omitted] ...
+
+   916→    assert result.passed is True  # locally-modified is a warning, not failure
+   917→    assert result.warning is True
+  </tool_result>
+  <assistant>I see the issue. The health check tests pass `installed_capabilities=frozenset()` — with no workflow capabilities marked as installed. But now that workflow capabilities are `required=True`, the `check_managed_artifacts` function likely includes them in checks regardless, and since their workflow files aren't present in the test's `tmp_path`, it fails.
+
+Let me check how `check_managed_artifacts` uses installed capabilities and required capabilities:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3567" cache_read_input_tokens="41962" cache_creation="{'ephemeral_5m_input_tokens': 3567, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01QgFjtft1dy9ibcCMQdUZg3">
+    <param name="pattern">installed_capabilities|_get_bundled_by_type|list_required_capabilities</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/core</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3567" cache_read_input_tokens="41962" cache_creation="{'ephemeral_5m_input_tokens': 3567, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QgFjtft1dy9ibcCMQdUZg3">
+Found 3 files
+src/erk/core/health_checks/managed_artifacts.py
+src/erk/core/capabilities/registry.py
+src/erk/core/health_checks/__init__.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CVMabptBkfAFq4NiHZ94xC">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/health_checks/managed_artifacts.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="445" cache_read_input_tokens="45529" cache_creation="{'ephemeral_5m_input_tokens': 445, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CVMabptBkfAFq4NiHZ94xC">
+     1→"""Check status of erk-managed artifacts."""
+     2→
+     3→from dataclasses import dataclass
+     4→from pathlib import Path
+     5→
+     6→from erk.artifacts.artifact_health import (
+     7→    ArtifactHealthResult,
+     8→    ArtifactStatusType,
+     9→    get_artifact_health,
+    10→)
+    11→from erk.artifacts.models import ArtifactFileState
+    12→from erk.artifacts.paths import ErkPackageInfo
+    13→from erk.artifacts.state import load_artifact_state
+    14→from erk.core.health_checks.models import CheckResult
+    15→
+    16→
+    17→def _worst_status(statuses: list[ArtifactStatusType]) -&gt; ArtifactStatusType:
+    18→    """Determine worst status from a list of statuses.
+    19→
+    20→    Priority: not-installed &gt; locally-modified &gt; changed-upstream &gt; up-to-date
+    21→    """
+    22→    if "not-installed" in statuses:
+    23→        return "not-installed"
+    24→    if "locally-modified" in statuses:
+    25→        return "locally-modified"
+    26→    if "changed-upstream" in statuses:
+    27→        return "changed-upstream"
+    28→    return "up-to-date"
+    29→
+    30→
+
+... [300 lines omitted] ...
+
+   148→        # Special case: actions not-installed is informational (not error) when workflows
+   241→            warning=True,
+  </tool_result>
+  <assistant>Now let me check `get_artifact_health` to understand how `installed_capabilities` filters workflow artifacts:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4308" cache_read_input_tokens="45974" cache_creation="{'ephemeral_5m_input_tokens': 4308, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01LHmuKgJetC4e2J3QAwcXyn">
+    <param name="pattern">def get_artifact_health|installed_capabilities|list_required_capabilities</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/artifacts/artifact_health.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4308" cache_read_input_tokens="45974" cache_creation="{'ephemeral_5m_input_tokens': 4308, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LHmuKgJetC4e2J3QAwcXyn">
+36:    installed_capabilities: frozenset[str] | None,
+41:    - If installed_capabilities is None: return all managed artifacts (erk repo case)
+47:        installed_capabilities: Set of capability names installed in the repo,
+61:        if installed_capabilities is None:
+73:        elif capability_name in installed_capabilities:
+193:def get_artifact_health(
+197:    installed_capabilities: frozenset[str] | None,
+205:        installed_capabilities: Set of capability names installed in the repo,
+227:    for name in _get_bundled_by_type("skill", installed_capabilities=installed_capabilities):
+237:    for name in _get_bundled_by_type("agent", installed_capabilities=installed_capabilities):
+280:    for name in _get_bundled_by_type("workflow", installed_capabilities=installed_capabilities):
+288:    for name in _get_bundled_by_type("action", installed_capabilities=installed_capabilities):
+295:    for name in _get_bundled_by_type("review", installed_capabilities=installed_capabilities):
+367:    # Note: use installed_capabilities=None to check ALL managed artifacts
+370:        for name in _get_bundled_by_type(artifact_type, installed_capabilities=None):
+407:    # Note: use installed_capabilities=None to check ALL managed workflows
+408:    for name in _get_bundled_by_type("workflow", installed_capabilities=None):
+512:    # Note: use installed_capabilities=None to check ALL managed artifacts
+514:        for name in _get_bundled_by_type(artifact_type, installed_capabilities=None):
+545:    # Note: use installed_capabilities=None to check ALL managed workflows
+546:    for name in _get_bundled_by_type("workflow", installed_capabilities=None):
+579:    # Note: use installed_capabilities=None to check ALL managed actions
+580:    for action_name in _get_bundled_by_type("action", installed_capabilities=None):
+612:    # Note: use installed_capabilities=None to check ALL managed reviews
+613:    for review_name in _get_bundled_by_type("review", installed_capabilities=None):
+639:    # Note: hooks are always required, so installed_capabilities=None is fine
+640:    bundled_hooks = _get_bundled_by_type("hook", installed_capabilities=None)
+  </tool_result>
+  <tool_use name="Read" id="toolu_0159xs9VFy2JmRH7PmvEuS89">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/artifacts/artifact_health.py</param>
+    <param name="offset">25</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="911" cache_read_input_tokens="50282" cache_creation="{'ephemeral_5m_input_tokens': 911, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0159xs9VFy2JmRH7PmvEuS89">
+    25→from erk.core.claude_settings import (
+    26→    ERK_EXIT_PLAN_HOOK_COMMAND,
+    27→    ERK_USER_PROMPT_HOOK_COMMAND,
+    28→    has_exit_plan_hook,
+    29→    has_user_prompt_hook,
+    30→)
+    31→
+    32→
+    33→def _get_bundled_by_type(
+    34→    artifact_type: str,
+    35→    *,
+    36→    installed_capabilities: frozenset[str] | None,
+    37→) -&gt; frozenset[str]:
+    38→    """Get all artifact names of a given type that should be checked.
+    39→
+    40→    Filtering logic:
+    41→    - If installed_capabilities is None: return all managed artifacts (erk repo case)
+    42→    - Otherwise: return only artifacts from required capabilities OR from
+    43→      explicitly installed capabilities
+    44→
+    45→    Args:
+    46→        artifact_type: The artifact type (e.g., "skill", "hook", "workflow")
+    47→        installed_capabilities: Set of capability names installed in the repo,
+    48→            or None to skip filtering (check all)
+    49→
+    50→    Returns:
+    51→        Frozenset of artifact names to check
+    52→    """
+    53→    managed = get_managed_artifacts()
+    54→    result: set[str] = set()
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>Now I understand the issue clearly. The `_get_bundled_by_type` function at line 70-72 includes artifacts from `required` capabilities even when `installed_capabilities` doesn't contain them. Since workflows are now `required=True`, the health check tests that pass `installed_capabilities=frozenset()` (empty set) will now also check workflow artifacts. Since the test fixtures don't set up the `.github/workflows/` files, they show as "not-installed" — making the overall result fail.
+
+The fix for the test `test_default_capabilities_not_required` is straightforward: remove `ErkImplWorkflowCapability()` and `LearnWorkflowCapability()` from the `optional_caps` list (and add them to a required assertion, or add a new test for required workflow capabilities).
+
+For the health check tests, they need to either include the workflow files in their fixtures or pass the workflow capabilities in `installed_capabilities` — but actually the simpler approach is that the test fixtures just need to also set up the bundled workflow files and project workflow files.
+
+Let me look more carefully at the health check test failures and what the tests actually check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="870" cache_read_input_tokens="51193" cache_creation="{'ephemeral_5m_input_tokens': 870, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_011jo1MXoG2BNmk6DiCw11Cg">
+    <param name="todos">[{'content': 'Add required=True property to all 5 workflow capability classes', 'status': ...[truncated 459 chars]...ests pass'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="870" cache_read_input_tokens="51193" cache_creation="{'ephemeral_5m_input_tokens': 870, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011jo1MXoG2BNmk6DiCw11Cg">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me read the full test to understand the imports and structure:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="527" cache_read_input_tokens="52063" cache_creation="{'ephemeral_5m_input_tokens': 527, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01A4kdoT79fvHDsoiFQ4G4Vb">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/test_capabilities.py</param>
+    <param name="offset">1280</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="527" cache_read_input_tokens="52063" cache_creation="{'ephemeral_5m_input_tokens': 527, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01A4kdoT79fvHDsoiFQ4G4Vb">
+  1280→    required_caps = list_required_capabilities()
+  1281→    names = [cap.name for cap in required_caps]
+  1282→
+  1283→    assert "erk-hooks" in names
+  1284→
+  1285→
+  1286→def test_default_capabilities_not_required() -&gt; None:
+  1287→    """Test that default capabilities are NOT required."""
+  1288→    # Most capabilities should be optional
+  1289→    optional_caps = [
+  1290→        LearnedDocsCapability(),
+  1291→        ErkImplWorkflowCapability(),
+  1292→        LearnWorkflowCapability(),
+  1293→        DevrunAgentCapability(),
+  1294→        ErkBashPermissionsCapability(),
+  1295→        StatuslineCapability(claude_installation=None),
+  1296→    ]
+  1297→
+  1298→    for cap in optional_caps:
+  1299→        assert cap.required is False, f"{cap.name} should not be required"
+  1300→
+  1301→    # All bundled skills should also be optional
+  1302→    for skill_name in bundled_skills():
+  1303→        cap = get_capability(skill_name)
+  1304→        assert cap is not None
+  1305→        assert cap.required is False, f"{skill_name} should not be required"
+  1306→
+  1307→
+  1308→def test_capability_base_required_default_is_false() -&gt; None:
+  1309→    """Test that Capability ABC has required=False by default."""
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Now fix the capabilities test — remove the two workflow capabilities from the optional list, and add an assertion that all workflow capabilities are required:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="616" cache_read_input_tokens="52590" cache_creation="{'ephemeral_5m_input_tokens': 616, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01TEPu4LhrcJw6UD1q977iST">
+    <param name="pattern">from erk.capabilities.workflows</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/core/test_capabilities.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="616" cache_read_input_tokens="52590" cache_creation="{'ephemeral_5m_input_tokens': 616, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TEPu4LhrcJw6UD1q977iST">
+21:from erk.capabilities.workflows.erk_impl import ErkImplWorkflowCapability
+22:from erk.capabilities.workflows.learn import LearnWorkflowCapability
+23:from erk.capabilities.workflows.one_shot import OneShotWorkflowCapability
+24:from erk.capabilities.workflows.pr_address import PrAddressWorkflowCapability
+25:from erk.capabilities.workflows.pr_rebase import PrRebaseWorkflowCapability
+  </tool_result>
+  <assistant>Good, all 5 are imported. Now fix the test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="291" cache_read_input_tokens="53206" cache_creation="{'ephemeral_5m_input_tokens': 291, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01C671BKAYKgBNVSaaGuAJ6X">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/test_capabilities.py</param>
+    <param name="old_string">def test_default_capabilities_not_required() -&gt; None:
+    """Test that default capabilitie...[truncated 562 chars]...p is not None
+        assert cap.required is False, f"{skill_name} should not be required"</param>
+    <param name="new_string">def test_default_capabilities_not_required() -&gt; None:
+    """Test that default capabilitie...[truncated 922 chars]...ap in workflow_caps:
+        assert cap.required is True, f"{cap.name} should be required"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="291" cache_read_input_tokens="53206" cache_creation="{'ephemeral_5m_input_tokens': 291, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01C671BKAYKgBNVSaaGuAJ6X">
+The file /home/runner/work/erk/erk/tests/unit/core/test_capabilities.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also check the `test_list_required_capabilities_includes_hooks` test to see if there should be a similar check for workflows:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="856" cache_read_input_tokens="53497" cache_creation="{'ephemeral_5m_input_tokens': 856, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01NAKNwwqY1sNdANyvtceGLW">
+    <param name="todos">[{'content': 'Add required=True property to all 5 workflow capability classes', 'status': ...[truncated 461 chars]...ests pass'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="856" cache_read_input_tokens="53497" cache_creation="{'ephemeral_5m_input_tokens': 856, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NAKNwwqY1sNdANyvtceGLW">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now for the health check tests. The issue is that `check_managed_artifacts` now includes workflow artifacts (because they're required), but the test fixtures don't set up the bundled `.github/` directory with workflow files. The tests pass `installed_capabilities=frozenset()` which previously excluded workflows, but now `required=True` causes them to be included.
+
+The tests need to either:
+1. Set up bundled workflow files in their fixtures, OR
+2. Include workflow capabilities in `installed_capabilities` (but this doesn't help since `required=True` already includes them)
+
+The cleanest fix is to set up bundled `.github/` directory with the workflow files in the test fixtures so the health check doesn't complain about missing workflows. Let me look at what the tests are actually testing — they're about command/hook artifacts, not workflows. The simplest approach would be to set up the workflow files so they show as "up-to-date" and don't affect the test assertions.
+
+Let me look at the full test fixtures more carefully:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="54353" cache_creation="{'ephemeral_5m_input_tokens': 297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01RubejXvSCR3Z4yhAkJJF2K">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_health_checks.py</param>
+    <param name="offset">787</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="54353" cache_creation="{'ephemeral_5m_input_tokens': 297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RubejXvSCR3Z4yhAkJJF2K">
+   787→def test_check_managed_artifacts_changed_upstream_remediation(tmp_path: Path) -&gt; None:
+   788→    """Test remediation message for changed-upstream artifacts.
+   789→
+   790→    Scenario: A newer version of erk has updated the bundled artifact content.
+   791→    The user hasn't modified the file locally, but it's out of date with bundled.
+   792→    This is detected when the artifact state version is older than current erk version.
+   793→    """
+   794→    import hashlib
+   795→
+   796→    from erk.core.claude_settings import add_erk_hooks
+   797→
+   798→    # Create bundled dir with command content
+   799→    bundled_dir = tmp_path / "bundled" / ".claude"
+   800→    bundled_commands = bundled_dir / "commands" / "erk"
+   801→    bundled_commands.mkdir(parents=True)
+   802→    (bundled_commands / "plan-save.md").write_text("# Command - bundled content", encoding="utf-8")
+   803→
+   804→    # Create project dir with SAME content (not locally modified)
+   805→    project_dir = tmp_path / "project"
+   806→    project_claude = project_dir / ".claude"
+   807→    project_commands = project_claude / "commands" / "erk"
+   808→    project_commands.mkdir(parents=True)
+   809→    (project_commands / "plan-save.md").write_text("# Command - bundled content", encoding="utf-8")
+   810→    settings = add_erk_hooks({})
+   811→    (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+   812→
+   813→    # Create artifact state with OLD version (triggers changed-upstream)
+   814→    # The hash matches the file content, but the version is old
+   815→    state_dir = project_dir / ".erk"
+   816→    state_dir.mkdir(parents=True)
+
+... [35 lines omitted] ...
+
+   834→    assert result.passed is True  # changed-upstream is a warning, not failure
+   835→    assert result.warning is True
+  </tool_result>
+  <assistant>I see — the `ErkPackageInfo.test_package` is constructed with only `bundled_claude_dir` but no `bundled_github_dir`. So when the health check tries to find workflow files (now required), they won't exist in the bundled dir, making them show as "not-installed" which is a hard failure (not a warning).
+
+Let me check how `ErkPackageInfo.test_package` works:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1374" cache_read_input_tokens="54650" cache_creation="{'ephemeral_5m_input_tokens': 1374, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01PApaKTk7UdG7hikBJ4f8AG">
+    <param name="pattern">def test_package</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/artifacts/paths.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1374" cache_read_input_tokens="54650" cache_creation="{'ephemeral_5m_input_tokens': 1374, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PApaKTk7UdG7hikBJ4f8AG">
+115-class ErkPackageInfo:
+116-    """Consolidated erk package installation info.
+117-
+118-    Bundles is_in_erk_repo detection, bundled directory paths, and current
+119-    version into a single injectable value object. Tests construct directly;
+120-    production code uses the from_project_dir factory.
+121-    """
+122-
+123-    in_erk_repo: bool
+124-    bundled_claude_dir: Path
+125-    bundled_github_dir: Path
+126-    bundled_erk_dir: Path
+127-    current_version: str
+128-
+129-    @staticmethod
+130:    def test_package(
+131-        *,
+132-        bundled_claude_dir: Path,
+133-        in_erk_repo: bool = False,
+134-        bundled_github_dir: Path | None = None,
+135-        bundled_erk_dir: Path | None = None,
+136-        current_version: str = "1.0.0",
+137-    ) -&gt; ErkPackageInfo:
+138-        """Create an ErkPackageInfo for tests with sensible defaults.
+139-
+140-        Derives bundled_github_dir and bundled_erk_dir from bundled_claude_dir's
+141-        parent if not provided (assumes bundled/.claude, bundled/.github, bundled/.erk
+142-        sibling layout).
+143-        """
+144-        parent = bundled_claude_dir.parent
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_018khUjMDH4K4e9t6YDM6K8Z">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/artifacts/paths.py</param>
+    <param name="offset">144</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="618" cache_read_input_tokens="56024" cache_creation="{'ephemeral_5m_input_tokens': 618, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018khUjMDH4K4e9t6YDM6K8Z">
+   144→        parent = bundled_claude_dir.parent
+   145→        return ErkPackageInfo(
+   146→            in_erk_repo=in_erk_repo,
+   147→            bundled_claude_dir=bundled_claude_dir,
+   148→            bundled_github_dir=(
+   149→                bundled_github_dir if bundled_github_dir is not None else parent / ".github"
+   150→            ),
+   151→            bundled_erk_dir=bundled_erk_dir if bundled_erk_dir is not None else parent / ".erk",
+   152→            current_version=current_version,
+   153→        )
+   154→
+   155→    @classmethod
+   156→    def from_project_dir(cls, project_dir: Path) -&gt; ErkPackageInfo:
+   157→        """Create from live package state.
+   158→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>So `bundled_github_dir` defaults to `parent / ".github"`. Since `bundled_claude_dir` is `tmp_path / "bundled" / ".claude"`, the github dir would be `tmp_path / "bundled" / ".github"` — which doesn't exist. So workflows won't be found in the bundled dir, meaning they'll just not appear in the artifact list (the health check function probably skips them if the bundled source doesn't exist).
+
+Let me trace more carefully how workflow artifacts get included. Let me check `get_artifact_health` to see how it handles missing bundled workflow files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="422" cache_read_input_tokens="56642" cache_creation="{'ephemeral_5m_input_tokens': 422, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01CL124qgDZXzLriD6KCqPXM">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/artifacts/artifact_health.py</param>
+    <param name="offset">270</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="422" cache_read_input_tokens="56642" cache_creation="{'ephemeral_5m_input_tokens': 422, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CL124qgDZXzLriD6KCqPXM">
+   270→            # Compute relative path (e.g., "system/impl-execute.md" or "plan-save.md")
+   271→            relative_path = cmd_file.relative_to(bundled_erk_commands)
+   272→            key = f"commands/erk/{relative_path}"
+   273→            path = project_claude_dir / "commands" / "erk" / relative_path
+   274→            installed_hash = _compute_path_hash(path, is_directory=False)
+   275→            artifacts.append(
+   276→                _build_artifact_status(key, installed_hash, saved_files, current_version)
+   277→            )
+   278→
+   279→    # Check workflows
+   280→    for name in _get_bundled_by_type("workflow", installed_capabilities=installed_capabilities):
+   281→        workflow_name = f"{name}.yml"
+   282→        key = f"workflows/{workflow_name}"
+   283→        path = project_workflows_dir / workflow_name
+   284→        installed_hash = _compute_path_hash(path, is_directory=False)
+   285→        artifacts.append(_build_artifact_status(key, installed_hash, saved_files, current_version))
+   286→
+   287→    # Check actions (always directory-based)
+   288→    for name in _get_bundled_by_type("action", installed_capabilities=installed_capabilities):
+   289→        key = f"actions/{name}"
+   290→        path = project_actions_dir / name
+   291→        installed_hash = _compute_path_hash(path, is_directory=True)
+   292→        artifacts.append(_build_artifact_status(key, installed_hash, saved_files, current_version))
+   293→
+   294→    # Check reviews (always file-based, in .erk/reviews/)
+   295→    for name in _get_bundled_by_type("review", installed_capabilities=installed_capabilities):
+   296→        key = f"reviews/{name}.md"
+   297→        path = project_dir / ".erk" / "reviews" / f"{name}.md"
+   298→        installed_hash = _compute_path_hash(path, is_directory=False)
+   299→        artifacts.append(_build_artifact_status(key, installed_hash, saved_files, current_version))
+
+... [15 lines omitted] ...
+  </tool_result>
+  <assistant>So `_get_bundled_by_type("workflow", ...)` returns workflow names (like "learn", "one-shot", etc.) based on the capability registry. Since workflows are now `required=True`, they'll be included even with `installed_capabilities=frozenset()`. Then it checks if the file exists in the project dir — if not, it'll be "not-installed".
+
+The key insight: even without a bundled `.github/` dir, the `_get_bundled_by_type` function returns names from the capability registry (not from the filesystem). So the tests will now try to check all 5 workflow files + their associated actions.
+
+Let me check how `get_managed_artifacts` works:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1271" cache_read_input_tokens="57064" cache_creation="{'ephemeral_5m_input_tokens': 1271, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_015RZG9NCyzkLjrYJPW1cYeJ">
+    <param name="pattern">def get_managed_artifacts</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-C">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1271" cache_read_input_tokens="57064" cache_creation="{'ephemeral_5m_input_tokens': 1271, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+</session>
