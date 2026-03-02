@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Pre-check for duplicate branch/PR in dispatch_one_shot"
+  "plan_id": "8595",
+  "url": "https://github.com/dagster-io/erk/pull/8595",
+  "created_at": "2026-03-02T04:25:34.079869",
+  "synced_at": "2026-03-02T04:25:34.079869",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
