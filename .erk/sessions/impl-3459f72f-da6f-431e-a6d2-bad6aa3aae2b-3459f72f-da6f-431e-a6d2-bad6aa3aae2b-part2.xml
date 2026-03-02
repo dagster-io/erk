@@ -848,4 +848,91 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
   "plan_number": 8627
 }
   </tool_result>
+  <tool_result tool="toolu_01BLeHearcuucbFiQrGkgF1d">
+{"uploaded": true, "plan_id": 8627}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01D7bnZj1X8jhKuZXPswKTXj">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk pipeline</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="328" cache_read_input_tokens="118093" cache_creation="{'ephemeral_5m_input_tokens': 328, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01D7bnZj1X8jhKuZXPswKTXj">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #8627 found (already exists)
+
+Phase 2: Getting diff
+
+Phase 3: Fetching plan context
+   Incorporating plan #8627
+
+Phase 4: Generating PR description
+   Reading diff file...
+   Diff loaded (15,571 chars)
+   Analyzing changes with Claude...
+   PR description generated
+
+Phase 5: Graphite enhancement
+
+Phase 6: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+  Action:      Updated PR #8627
+  Branch:      plnd/ensure-plan-header-dispatc-03-02-1835 → master
+  Title:       Ensure plan-header exists before writing dispatch metadata
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018m5YyX9qAEzhEUxF7UdZ5S">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="373" cache_read_input_tokens="118421" cache_creation="{'ephemeral_5m_input_tokens': 373, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_013xSqhZqtnem3aBdE52YUrY">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="373" cache_read_input_tokens="118421" cache_creation="{'ephemeral_5m_input_tokens': 373, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018m5YyX9qAEzhEUxF7UdZ5S">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8627
+}
+  </tool_result>
+  <tool_result tool="toolu_013xSqhZqtnem3aBdE52YUrY">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01CtZhY4EqKdDFBBrke9heD3">
+    <param name="todos">[{'content': 'Add ensure_plan_header() abstract method to PlanBackend ABC', 'status': 'com...[truncated 689 chars]...ication'}, {'content': 'Submit PR', 'status': 'completed', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="464" cache_read_input_tokens="118794" cache_creation="{'ephemeral_5m_input_tokens': 464, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CtZhY4EqKdDFBBrke9heD3">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan #8627 implementation complete. PR submitted: https://github.com/dagster-io/erk/pull/8627
+
+## Summary
+
+**Problem:** Plans created through non-standard paths (like `/local:replan-learn-plans`) lacked a plan-header metadata block. When `erk pr dispatch` ran, `write_dispatch_metadata()` tried to update the header, but `update_metadata()` raised `PlanHeaderNotFoundError` — caught silently, leaving `erk dash` unable to find run-id associations.
+
+**Solution:** Added `ensure_plan_header()` to the `PlanBackend` ABC and `PlannedPRBackend`, which auto-creates a minimal plan-header from PR metadata when one is missing. Both `write_dispatch_metadata()` and `maybe_update_plan_dispatch_metadata()` now call it before updating metadata.
+
+**Files changed:**
+| File | Change |
+|------|--------|
+| `packages/erk-shared/.../plan_store/backend.py` | Added `ensure_plan_header()` abstract method |
+| `packages/erk-shared/.../plan_store/planned_pr.py` | Implemented `ensure_plan_header()` — fetches PR, checks for existing header, creates minimal one from PR's `created_at`/`author` if missing |
+| `src/erk/cli/commands/pr/metadata_helpers.py` | Both dispatch functions call `ensure_plan_header()` before `update_metadata()`, replacing manual LBYL guards |
+| `tests/.../test_metadata_helpers.py` | 4 new tests: ensure no-op when exists, creates when missing, write_dispatch succeeds without header, maybe_update creates header |
+| `tests/.../test_register_one_shot_plan.py` | Updated test to expect success (was expecting failure for missing header) |</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="343" cache_read_input_tokens="119258" cache_creation="{'ephemeral_5m_input_tokens': 343, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>
