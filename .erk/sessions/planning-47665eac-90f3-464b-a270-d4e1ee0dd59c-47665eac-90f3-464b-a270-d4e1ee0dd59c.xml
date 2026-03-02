@@ -1,0 +1,582 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>is there an outstanding pr to fix the issue in 
+
+https://github.com/dagster-io/erk/actions/runs/22558526475/job/65340371372#step:14:20
+
+0s
+Run erk exec update-objective-node \
+Usage: erk exec update-objective-node [OPTIONS] ISSUE_NUMBER
+Try 'erk exec update-objective-node -h' for help.
+
+Error: No such option: --plan Did you mean --pr?
+
+. 
+
+if so report back, if not plan a fix</user>
+  <thinking>The user is asking about a CI failure where `erk exec update-objective-node` is being called with `--plan` option but the command expects `--pr` instead. Let me first check if there's an outstanding PR that fixes this, and also understand the issue better.
+
+Let me search for this in parallel - check open PRs and look at the relevant code.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="9446" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9446}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me investigate the CI failure and check for existing PRs.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="9446" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9446}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_013BzUMqRqGByUmB7zeeuJfN">
+    <param name="description">Check open PRs for fix</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="prompt">Check if there's an outstanding PR in the dagster-io/erk repo that fixes the CI issue wher...[truncated 373 chars]...--search "update-objective-node OR objective-node OR --plan"` 
+
+Report back what you find.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9446" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9446}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01GsKwKiuS3SwkfL3W7ru5Mg">
+    <param name="description">Find failing CI code</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 540 chars]...`--plan` to `--pr`
+
+Search thoroughly - check both workflow files and the Python CLI code.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9446" cache_read_input_tokens="19113" output_tokens="621" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9446, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GsKwKiuS3SwkfL3W7ru5Mg">
+Excellent! Now I have the full picture. Let me create a comprehensive summary of the findings:
+
+## Summary
+
+I found the CI failure and traced its root cause. Here are the key findings:
+
+### **1. CI Workflow Location**
+**File:** `/workspaces/erk/.github/workflows/one-shot.yml` (lines 214-218)
+
+```yaml
+- name: Update objective roadmap node
+  ...
+  run: |
+    erk exec update-objective-node \
+      "$OBJECTIVE_ISSUE" \
+      --node "$NODE_ID" \
+      --plan "$PLAN_NUMBER"
+```
+
+### **2. Command Definition**
+**File:** `/workspaces/erk/src/erk/cli/commands/exec/scripts/update_objective_node.py` (lines 188-212)
+
+The current command definition accepts:
+- `--node` (multiple, required) — Node ID(s) to update
+- `--pr` (optional) — PR reference to set
+- `--status` (optional) — Explicit status
+- `--include-body` (flag) — Include updated body in JSON
+
+**It does NOT accept `--plan` anymore.**
+
+
+... [32 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_013BzUMqRqGByUmB7zeeuJfN">
+Here is my full report:
+
+---
+
+## Findings
+
+**There is no outstanding PR that fixes the `--plan` vs `--pr` bug in `one-shot.yml`.** The bug exists on `master` and is unfixed.
+
+### The Bug
+
+In `/workspaces/erk/.github/workflows/one-shot.yml`, line 218:
+
+```yaml
+      run: |
+        erk exec update-objective-node \
+          "$OBJECTIVE_ISSUE" \
+          --node "$NODE_ID" \
+          --plan "$PLAN_NUMBER"
+```
+
+The `update-objective-node` command (defined in `/workspaces/erk/src/erk/cli/commands/exec/scripts/update_objective_node.py`, lines 191-197) accepts `--pr`, not `--plan`:
+
+```python
+@click.option(
+    "--pr",
+    "pr_ref",
+    required=False,
+    default=None,
+    help="PR reference (e.g., '#456', or '' to clear). Omit to preserve existing.",
+)
+
+... [35 lines omitted] ...
+  </tool_result>
+  <thinking>Both agents confirmed: there's no outstanding PR fixing this, and the issue is clear. The `--plan` flag was removed in commit 3be1ad48e when the objective roadmap was simplified to a PR-only model, but the `one-shot.yml` workflow wasn't updated to match.
+
+The user asked me to report back if there's a PR, or plan a fix if not. Since there's no PR, I should plan a fix.</thinking>
+  <usage input_tokens="752" cache_creation_input_tokens="1455" cache_read_input_tokens="28559" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1455}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>**No outstanding PR fixes this.** The bug is on `master` and unfixed.
+
+## Root Cause
+
+Commit `3be1ad48e` ("Simplify objective roadmap to single-reference PR-only model", #8128) removed the `--plan` flag from `update-objective-node` and kept only `--pr`, but the `one-shot.yml` workflow was **not updated** to match.
+
+The fix is a one-line change. Let me plan it.</assistant>
+  <usage input_tokens="752" cache_creation_input_tokens="1455" cache_read_input_tokens="28559" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1455}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="EnterPlanMode" id="toolu_01HFkn98aG43P2tSxWtbggzY">
+  </tool_use>
+  <usage input_tokens="752" cache_creation_input_tokens="1455" cache_read_input_tokens="28559" output_tokens="262" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1455, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HFkn98aG43P2tSxWtbggzY">
+Entered plan mode. You should now focus on exploring the codebase and designing an implementation approach.
+
+In plan mode, you should:
+1. Thoroughly explore the codebase to understand existing patterns
+2. Identify similar features and architectural approaches
+3. Consider multiple approaches and their trade-offs
+4. Use AskUserQuestion if you need to clarify the approach
+5. Design a concrete implementation strategy
+6. When ready, use ExitPlanMode to present your plan for approval
+
+Remember: DO NOT write or edit any files yet. This is a read-only exploration and planning phase.
+  </tool_result>
+  <assistant>This is a trivial one-line fix, so I'll skip the exploration agents and go straight to writing the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2347" cache_read_input_tokens="30014" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2347}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WrvPfouEnxS7kKVyGoWi5v">
+    <param name="file_path">/workspaces/erk/.github/workflows/one-shot.yml</param>
+    <param name="offset">210</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2347" cache_read_input_tokens="30014" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2347, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WrvPfouEnxS7kKVyGoWi5v">
+   210→          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+   211→          OBJECTIVE_ISSUE: ${{ inputs.objective_issue }}
+   212→          NODE_ID: ${{ inputs.node_id }}
+   213→          PLAN_NUMBER: ${{ steps.read_result.outputs.plan_id }}
+   214→        run: |
+   215→          erk exec update-objective-node \
+   216→            "$OBJECTIVE_ISSUE" \
+   217→            --node "$NODE_ID" \
+   218→            --plan "$PLAN_NUMBER"
+   219→
+   220→      - name: Commit plan to branch (plan-only mode)
+   221→        if: &gt;
+   222→          inputs.plan_only
+   223→          &amp;&amp; steps.plan.outputs.plan_success == 'true'
+   224→          &amp;&amp; steps.read_result.outputs.plan_id != ''
+   225→        env:
+   226→          PLAN_ID: ${{ steps.read_result.outputs.plan_id }}
+   227→          PLAN_TITLE: ${{ steps.read_result.outputs.plan_title }}
+   228→        run: |
+   229→          # Plan is already in .erk/impl-context/plan.md (written directly by Claude)
+  </tool_result>
+  <tool_use name="Write" id="toolu_0143ptn7ZD7WhsDq2tq8AM9Z">
+    <param name="file_path">/home/vscode/.claude/plans/tranquil-wandering-hickey.md</param>
+    <param name="content"># Fix `--plan` → `--pr` in one-shot.yml
+
+## Context
+
+Commit `3be1ad48e` (#8128) simplified...[truncated 413 chars]...plan`)
+- Confirm no other references to `--plan` exist in workflow files for this command
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="457" cache_read_input_tokens="32361" output_tokens="278" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 457, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0143ptn7ZD7WhsDq2tq8AM9Z">
+File created successfully at: /home/vscode/.claude/plans/tranquil-wandering-hickey.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01EDjSAaDzntsk88Ei7JG5Nd">
+    <param name="plan"># Fix `--plan` → `--pr` in one-shot.yml
+
+## Context
+
+Commit `3be1ad48e` (#8128) simplified...[truncated 413 chars]...plan`)
+- Confirm no other references to `--plan` exist in workflow files for this command
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="316" cache_read_input_tokens="32818" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 316, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EDjSAaDzntsk88Ei7JG5Nd">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /home/vscode/.claude/plans/tranquil-wandering-hickey.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix `--plan` → `--pr` in one-shot.yml
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 47665eac-90f3-464b-a270-d4e1ee0dd59c \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Fix `--plan` → `--pr` in one-shot.yml
+
+## Context
+
+Commit `3be1ad48e` (#8128) simplified `update-objective-node` to a PR-only reference model, removing the `--plan` flag and keeping only `--pr`. The `one-shot.yml` workflow was not updated, so the "Update objective roadmap node" step fails every time it runs.
+
+## Change
+
+**File:** `.github/workflows/one-shot.yml`, line 218
+
+Replace `--plan "$PLAN_NUMBER"` with `--pr "$PLAN_NUMBER"`.
+
+## Verification
+
+- Confirm `erk exec update-objective-node -h` shows `--pr` (not `--plan`)
+- Confirm no other references to `--plan` exist in workflow files for this command
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="660" cache_read_input_tokens="33134" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 660}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01UhJ6VGJEep1dWA3UKravot">
+    <param name="questions">[{'question': 'Fix `--plan` → `--pr` in one-shot.yml\nCurrent context: (wt:erk) (br:master...[truncated 419 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="660" cache_read_input_tokens="33134" output_tokens="428" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 660, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UhJ6VGJEep1dWA3UKravot">
+User has answered your questions: "Fix `--plan` → `--pr` in one-shot.yml
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01WTJX1FwSLFDkZEV3gnybJF">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="719" cache_read_input_tokens="33794" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 719, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WTJX1FwSLFDkZEV3gnybJF">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="47665eac-90f3-464b-a270-d4e1ee0dd59c" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "47665eac-90f3-464b-a270-d4e1ee0dd59c" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "47665eac-90f3-464b-a270-d4e1ee0dd59c" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "47665eac-90f3-464b-a270-d4e1ee0dd59c" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "47665eac-90f3-464b-a270-d4e1ee0dd59c" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>Let me follow the plan-save skill instructions. I need to:
+
+1. Parse arguments - no special flags
+2. Generate a branch slug from the plan title
+3. Generate a plan summary
+4. Run the save command
+
+The plan title is "Fix `--plan` → `--pr` in one-shot.yml"
+
+Branch slug: "fix-plan-pr-oneshot" (concise, action verb, distinctive)
+
+Plan summary: "The one-shot.yml workflow passes --plan to update-objective-node, but commit 3be1ad48e removed that flag in favor of --pr. This one-line fix changes --plan to --pr on line 218."</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2610" cache_read_input_tokens="34513" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2610}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll save this plan to GitHub as a draft PR.
+
+**Branch slug:** `fix-plan-pr-oneshot`
+
+**Summary:** The one-shot.yml workflow passes --plan to update-objective-node, but that flag was removed in favor of --pr when the command was simplified to a PR-only reference model. This one-line fix corrects the flag name.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2610" cache_read_input_tokens="34513" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2610}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0176YVe5B7Duunx4W1tu3Rid">
+    <param name="command">erk exec plan-save --format json --session-id="47665eac-90f3-464b-a270-d4e1ee0dd59c" --bra...[truncated 145 chars]...nd was simplified to a PR-only reference model. This one-line fix corrects the flag name."</param>
+    <param name="description">Save plan as draft PR on GitHub</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2610" cache_read_input_tokens="34513" output_tokens="448" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2610, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0176YVe5B7Duunx4W1tu3Rid">
+{"success": true, "plan_number": 8602, "plan_url": "https://github.com/dagster-io/erk/pull/8602", "title": "[erk-plan] Fix `--plan` \u2192 `--pr` in one-shot.yml", "branch_name": "plnd/fix-plan-pr-oneshot-03-02-0950", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/workspaces/erk/.erk/scratch/sessions/47665eac-90f3-464b-a270-d4e1ee0dd59c/plan_snapshots/000001-8f0bd5e7"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01MB1ciFcca37BwFYZVtpmYM">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null | head -5</param>
+    <param name="description">Get session file path for push</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="629" cache_read_input_tokens="37123" output_tokens="109" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 629, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MB1ciFcca37BwFYZVtpmYM">
+SESSION_ID=47665eac-90f3-464b-a270-d4e1ee0dd59c
+SESSION_FILE=/home/vscode/.claude/projects/-workspaces-erk/47665eac-90f3-464b-a270-d4e1ee0dd59c.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Us9yiZRzPdQLNebV7kGopJ">
+    <param name="command">erk exec push-session \
+    --session-file "/home/vscode/.claude/projects/-workspaces-erk/...[truncated 82 chars]...\
+    --stage planning \
+    --source local \
+    --plan-id 8602 \
+    2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="197" cache_read_input_tokens="37752" output_tokens="217" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 197, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>
