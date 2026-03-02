@@ -167,7 +167,7 @@ def branch_create(
     if setup is not None:
         # Plan branch was created by plan-save, so it's expected to exist
         if branch_exists_locally:
-            user_output(f"Using existing branch: {branch_name}")
+            user_output(f"Checking out plan branch: {branch_name}")
         else:
             # Branch only on remote — fetch and create local tracking branch
             ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)

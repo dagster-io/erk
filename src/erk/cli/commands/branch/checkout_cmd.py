@@ -516,7 +516,7 @@ def _branch_checkout_impl(
 
         # Plan branch was created by plan-save
         if branch_exists_locally:
-            user_output(f"Using existing branch: {branch}")
+            user_output(f"Checking out plan branch: {branch}")
         else:
             ctx.git.remote.fetch_branch(repo.root, "origin", branch)
             ctx.branch_manager.create_tracking_branch(repo.root, branch, f"origin/{branch}")
