@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Make Python version configurable in erk-remote-setup action"
-}
