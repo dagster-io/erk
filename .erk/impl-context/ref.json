@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Loosen Pydantic Version Constraint to >=2.0"
-}
