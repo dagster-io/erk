@@ -26,12 +26,20 @@ from erk_shared.context.types import AgentBackend
 
 
 @dataclass(frozen=True)
+class OrphanedPath:
+    """Filesystem path for an orphaned state.toml key."""
+
+    path: Path
+    is_directory: bool
+
+
+@dataclass(frozen=True)
 class SyncResult:
     """Result of artifact sync operation."""
 
     success: bool
     artifacts_installed: int
-    artifacts_removed: int
+    orphans: tuple[OrphanedPath, ...]
     message: str
 
 
@@ -84,15 +92,7 @@ class SyncedArtifact:
     file_count: int
 
 
-@dataclass(frozen=True)
-class _OrphanedPath:
-    """Filesystem path for an orphaned state.toml key."""
-
-    path: Path
-    is_directory: bool
-
-
-def _key_to_orphaned_path(key: str, project_dir: Path) -> _OrphanedPath | None:
+def _key_to_orphaned_path(key: str, project_dir: Path) -> OrphanedPath | None:
     """Map a state.toml key to the filesystem path it represents.
 
     Returns None for keys that should never be auto-removed (hooks).
@@ -106,62 +106,78 @@ def _key_to_orphaned_path(key: str, project_dir: Path) -> _OrphanedPath | None:
     # skills/X -> .claude/skills/X/ (directory)
     if key.startswith("skills/"):
         name = key.removeprefix("skills/")
-        return _OrphanedPath(path=claude_dir / "skills" / name, is_directory=True)
+        return OrphanedPath(path=claude_dir / "skills" / name, is_directory=True)
 
     # agents/X.md -> .claude/agents/X.md (file)
     # agents/X -> .claude/agents/X/ (directory)
     if key.startswith("agents/"):
         suffix = key.removeprefix("agents/")
         if suffix.endswith(".md"):
-            return _OrphanedPath(path=claude_dir / "agents" / suffix, is_directory=False)
-        return _OrphanedPath(path=claude_dir / "agents" / suffix, is_directory=True)
+            return OrphanedPath(path=claude_dir / "agents" / suffix, is_directory=False)
+        return OrphanedPath(path=claude_dir / "agents" / suffix, is_directory=True)
 
     # commands/erk/X -> .claude/commands/erk/X (file)
     if key.startswith("commands/erk/"):
         relative = key.removeprefix("commands/erk/")
         path = claude_dir / "commands" / "erk" / relative
-        return _OrphanedPath(path=path, is_directory=False)
+        return OrphanedPath(path=path, is_directory=False)
 
     # workflows/X -> .github/workflows/X (file)
     if key.startswith("workflows/"):
         filename = key.removeprefix("workflows/")
         path = project_dir / ".github" / "workflows" / filename
-        return _OrphanedPath(path=path, is_directory=False)
+        return OrphanedPath(path=path, is_directory=False)
 
     # actions/X -> .github/actions/X/ (directory)
     if key.startswith("actions/"):
         name = key.removeprefix("actions/")
-        return _OrphanedPath(path=project_dir / ".github" / "actions" / name, is_directory=True)
+        return OrphanedPath(path=project_dir / ".github" / "actions" / name, is_directory=True)
 
     # reviews/X -> .erk/reviews/X (file)
     if key.startswith("reviews/"):
         filename = key.removeprefix("reviews/")
-        return _OrphanedPath(path=project_dir / ".erk" / "reviews" / filename, is_directory=False)
+        return OrphanedPath(path=project_dir / ".erk" / "reviews" / filename, is_directory=False)
 
     return None
 
 
-def _remove_orphaned_artifacts(
+def find_orphaned_artifact_paths(
     project_dir: Path,
     *,
     old_keys: frozenset[str],
     new_keys: frozenset[str],
-) -> int:
-    """Remove artifacts that were in old state but not in new state.
+) -> list[OrphanedPath]:
+    """Find artifacts that were in old state but not in new state.
 
     Uses state.toml as the ownership ledger: keys present in old state but
     absent from new synced state are orphaned erk artifacts safe to remove.
 
-    Returns count of artifacts actually removed from disk.
+    Returns list of orphaned paths that exist on disk (read-only, no deletion).
     """
     orphaned_keys = old_keys - new_keys
-    removed = 0
+    result: list[OrphanedPath] = []
 
     for key in sorted(orphaned_keys):
         orphan = _key_to_orphaned_path(key, project_dir)
         if orphan is None:
             continue
 
+        if not orphan.path.exists():
+            continue
+
+        result.append(orphan)
+
+    return result
+
+
+def delete_orphaned_artifacts(orphans: list[OrphanedPath]) -> int:
+    """Delete orphaned artifacts from disk.
+
+    Returns count of artifacts actually removed.
+    """
+    removed = 0
+
+    for orphan in orphans:
         if not orphan.path.exists():
             continue
 
@@ -648,7 +664,7 @@ def sync_dignified_review(project_dir: Path) -> SyncResult:
     return SyncResult(
         success=True,
         artifacts_installed=total_copied,
-        artifacts_removed=0,
+        orphans=(),
         message=f"Installed dignified-review ({total_copied} files)",
     )
 
@@ -774,7 +790,7 @@ def sync_artifacts(
         return SyncResult(
             success=True,
             artifacts_installed=0,
-            artifacts_removed=0,
+            orphans=(),
             message="Development mode: state.toml updated (artifacts read from source)",
         )
 
@@ -782,7 +798,7 @@ def sync_artifacts(
         return SyncResult(
             success=False,
             artifacts_installed=0,
-            artifacts_removed=0,
+            orphans=(),
             message=f"Bundled .claude/ not found at {config.package.bundled_claude_dir}",
         )
 
@@ -879,24 +895,18 @@ def sync_artifacts(
             hash=artifact.hash,
         )
 
-    # Remove orphaned artifacts: keys in old state but not in new synced state
+    # Find orphaned artifacts: keys in old state but not in new synced state
     new_keys = frozenset(files.keys())
-    artifacts_removed = _remove_orphaned_artifacts(
-        project_dir, old_keys=old_keys, new_keys=new_keys
-    )
+    orphans = find_orphaned_artifact_paths(project_dir, old_keys=old_keys, new_keys=new_keys)
 
     # Save state with current version and per-artifact state
     save_artifact_state(
         project_dir, ArtifactState(version=config.package.current_version, files=files)
     )
 
-    message = f"Synced {total_copied} artifact files"
-    if artifacts_removed > 0:
-        message += f", removed {artifacts_removed} orphaned"
-
     return SyncResult(
         success=True,
         artifacts_installed=total_copied,
-        artifacts_removed=artifacts_removed,
-        message=message,
+        orphans=tuple(orphans),
+        message=f"Synced {total_copied} artifact files",
     )

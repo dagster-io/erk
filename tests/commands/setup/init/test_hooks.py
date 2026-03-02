@@ -180,7 +180,7 @@ def test_init_syncs_artifacts_successfully() -> None:
             mock_sync.return_value = SyncResult(
                 success=True,
                 artifacts_installed=5,
-                artifacts_removed=0,
+                orphans=(),
                 message="Synced 5 artifact files",
             )
 
@@ -219,7 +219,7 @@ def test_init_shows_warning_on_artifact_sync_failure() -> None:
             mock_sync.return_value = SyncResult(
                 success=False,
                 artifacts_installed=0,
-                artifacts_removed=0,
+                orphans=(),
                 message="Bundled .claude/ not found",
             )
 

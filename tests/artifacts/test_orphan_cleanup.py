@@ -5,7 +5,7 @@ from pathlib import Path
 from erk.artifacts.models import ArtifactFileState, ArtifactState
 from erk.artifacts.paths import ErkPackageInfo
 from erk.artifacts.state import save_artifact_state
-from erk.artifacts.sync import ArtifactSyncConfig, sync_artifacts
+from erk.artifacts.sync import ArtifactSyncConfig, delete_orphaned_artifacts, sync_artifacts
 
 
 def _make_config(
@@ -42,40 +42,38 @@ def _save_old_state(project_dir: Path, keys: list[str]) -> None:
     save_artifact_state(project_dir, ArtifactState(version="1.0.0", files=files))
 
 
-def test_removed_skill_directory_cleaned_up(tmp_path: Path) -> None:
-    """Skill directory in old state but not in bundle is removed during sync."""
+def test_orphaned_skill_returned_but_not_deleted(tmp_path: Path) -> None:
+    """Orphaned skill is returned in SyncResult but not deleted from disk."""
     project_dir = tmp_path / "project"
     project_dir.mkdir()
 
-    # Create bundled dir (empty - no skills)
     bundled_dir = tmp_path / "bundled"
     bundled_dir.mkdir()
 
-    # Create the orphaned skill on disk
     orphan_skill = project_dir / ".claude" / "skills" / "old-skill"
     orphan_skill.mkdir(parents=True)
     (orphan_skill / "SKILL.md").write_text("# Old", encoding="utf-8")
 
-    # Save old state with the skill key
     _save_old_state(project_dir, ["skills/old-skill"])
 
     config = _make_config(tmp_path, bundled_claude_dir=bundled_dir)
     result = sync_artifacts(project_dir, force=False, config=config)
 
     assert result.success is True
-    assert result.artifacts_removed == 1
-    assert not orphan_skill.exists()
+    assert len(result.orphans) == 1
+    assert result.orphans[0].path == orphan_skill
+    # File still exists — sync no longer auto-removes
+    assert orphan_skill.exists()
 
 
-def test_removed_command_file_cleaned_up(tmp_path: Path) -> None:
-    """Command file in old state but not in bundle is removed during sync."""
+def test_orphaned_command_returned_but_not_deleted(tmp_path: Path) -> None:
+    """Orphaned command is returned in SyncResult but not deleted from disk."""
     project_dir = tmp_path / "project"
     project_dir.mkdir()
 
     bundled_dir = tmp_path / "bundled"
     bundled_dir.mkdir()
 
-    # Create the orphaned command on disk
     cmd_dir = project_dir / ".claude" / "commands" / "erk"
     cmd_dir.mkdir(parents=True)
     orphan_cmd = cmd_dir / "old-cmd.md"
@@ -87,7 +85,43 @@ def test_removed_command_file_cleaned_up(tmp_path: Path) -> None:
     result = sync_artifacts(project_dir, force=False, config=config)
 
     assert result.success is True
-    assert result.artifacts_removed == 1
+    assert len(result.orphans) == 1
+    assert result.orphans[0].path == orphan_cmd
+    assert orphan_cmd.exists()
+
+
+def test_delete_orphaned_artifacts_removes_files(tmp_path: Path) -> None:
+    """delete_orphaned_artifacts removes orphaned files and directories."""
+    project_dir = tmp_path / "project"
+    project_dir.mkdir()
+
+    bundled_dir = tmp_path / "bundled"
+    bundled_dir.mkdir()
+
+    # Create orphaned skill directory
+    orphan_skill = project_dir / ".claude" / "skills" / "old-skill"
+    orphan_skill.mkdir(parents=True)
+    (orphan_skill / "SKILL.md").write_text("# Old", encoding="utf-8")
+
+    # Create orphaned command file
+    cmd_dir = project_dir / ".claude" / "commands" / "erk"
+    cmd_dir.mkdir(parents=True)
+    orphan_cmd = cmd_dir / "old-cmd.md"
+    orphan_cmd.write_text("# Old", encoding="utf-8")
+
+    _save_old_state(project_dir, ["skills/old-skill", "commands/erk/old-cmd.md"])
+
+    config = _make_config(tmp_path, bundled_claude_dir=bundled_dir)
+    result = sync_artifacts(project_dir, force=False, config=config)
+
+    assert len(result.orphans) == 2
+    assert orphan_skill.exists()
+    assert orphan_cmd.exists()
+
+    # Now delete them
+    removed = delete_orphaned_artifacts(list(result.orphans))
+    assert removed == 2
+    assert not orphan_skill.exists()
     assert not orphan_cmd.exists()
 
 
@@ -99,7 +133,6 @@ def test_empty_parent_dir_removed_after_file_deletion(tmp_path: Path) -> None:
     bundled_dir = tmp_path / "bundled"
     bundled_dir.mkdir()
 
-    # Create orphaned command in a subdirectory
     system_dir = project_dir / ".claude" / "commands" / "erk" / "system"
     system_dir.mkdir(parents=True)
     orphan_cmd = system_dir / "old.md"
@@ -110,32 +143,33 @@ def test_empty_parent_dir_removed_after_file_deletion(tmp_path: Path) -> None:
     config = _make_config(tmp_path, bundled_claude_dir=bundled_dir)
     result = sync_artifacts(project_dir, force=False, config=config)
 
-    assert result.success is True
-    assert result.artifacts_removed == 1
+    assert len(result.orphans) == 1
+    assert orphan_cmd.exists()
+
+    removed = delete_orphaned_artifacts(list(result.orphans))
+    assert removed == 1
     assert not orphan_cmd.exists()
     # Parent "system/" dir should also be gone since it's empty
     assert not system_dir.exists()
 
 
-def test_first_sync_no_old_state_removes_nothing(tmp_path: Path) -> None:
-    """First sync with no state.toml removes zero artifacts."""
+def test_first_sync_no_old_state_returns_no_orphans(tmp_path: Path) -> None:
+    """First sync with no state.toml returns zero orphans."""
     project_dir = tmp_path / "project"
     project_dir.mkdir()
 
     bundled_dir = tmp_path / "bundled"
     bundled_dir.mkdir()
 
-    # No state.toml exists
-
     config = _make_config(tmp_path, bundled_claude_dir=bundled_dir)
     result = sync_artifacts(project_dir, force=False, config=config)
 
     assert result.success is True
-    assert result.artifacts_removed == 0
+    assert len(result.orphans) == 0
 
 
-def test_hooks_never_auto_removed(tmp_path: Path) -> None:
-    """Hook keys in old state but not in new keys are not removed."""
+def test_hooks_never_returned_as_orphans(tmp_path: Path) -> None:
+    """Hook keys in old state but not in new keys are not returned as orphans."""
     project_dir = tmp_path / "project"
     project_dir.mkdir()
 
@@ -148,11 +182,11 @@ def test_hooks_never_auto_removed(tmp_path: Path) -> None:
     result = sync_artifacts(project_dir, force=False, config=config)
 
     assert result.success is True
-    assert result.artifacts_removed == 0
+    assert len(result.orphans) == 0
 
 
-def test_removed_agent_directory_cleaned_up(tmp_path: Path) -> None:
-    """Agent directory in old state but not in bundle is removed during sync."""
+def test_orphaned_agent_returned_but_not_deleted(tmp_path: Path) -> None:
+    """Orphaned agent directory is returned in SyncResult but not deleted."""
     project_dir = tmp_path / "project"
     project_dir.mkdir()
 
@@ -169,37 +203,36 @@ def test_removed_agent_directory_cleaned_up(tmp_path: Path) -> None:
     result = sync_artifacts(project_dir, force=False, config=config)
 
     assert result.success is True
-    assert result.artifacts_removed == 1
-    assert not orphan_agent.exists()
+    assert len(result.orphans) == 1
+    assert result.orphans[0].path == orphan_agent
+    assert orphan_agent.exists()
 
 
-def test_already_deleted_orphan_not_counted(tmp_path: Path) -> None:
-    """Orphan in state but already deleted from disk is not counted as removed."""
+def test_already_deleted_orphan_not_returned(tmp_path: Path) -> None:
+    """Orphan in state but already deleted from disk is not returned."""
     project_dir = tmp_path / "project"
     project_dir.mkdir()
 
     bundled_dir = tmp_path / "bundled"
     bundled_dir.mkdir()
 
-    # State says skills/gone exists, but it's not on disk
     _save_old_state(project_dir, ["skills/gone"])
 
     config = _make_config(tmp_path, bundled_claude_dir=bundled_dir)
     result = sync_artifacts(project_dir, force=False, config=config)
 
     assert result.success is True
-    assert result.artifacts_removed == 0
+    assert len(result.orphans) == 0
 
 
-def test_removed_workflow_cleaned_up(tmp_path: Path) -> None:
-    """Workflow file in old state but not in bundle is removed during sync."""
+def test_orphaned_workflow_returned_but_not_deleted(tmp_path: Path) -> None:
+    """Orphaned workflow file is returned in SyncResult but not deleted."""
     project_dir = tmp_path / "project"
     project_dir.mkdir()
 
     bundled_dir = tmp_path / "bundled"
     bundled_dir.mkdir()
 
-    # Create orphaned workflow on disk
     workflows_dir = project_dir / ".github" / "workflows"
     workflows_dir.mkdir(parents=True)
     orphan_wf = workflows_dir / "old.yml"
@@ -211,5 +244,6 @@ def test_removed_workflow_cleaned_up(tmp_path: Path) -> None:
     result = sync_artifacts(project_dir, force=False, config=config)
 
     assert result.success is True
-    assert result.artifacts_removed == 1
-    assert not orphan_wf.exists()
+    assert len(result.orphans) == 1
+    assert result.orphans[0].path == orphan_wf
+    assert orphan_wf.exists()
