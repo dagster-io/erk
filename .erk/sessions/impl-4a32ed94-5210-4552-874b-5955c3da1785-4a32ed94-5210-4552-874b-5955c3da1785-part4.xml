@@ -1,0 +1,537 @@
+<session>
+  <meta source="agent-a5450f3" />
+  <meta branch="plnd/consolidate-mar2-learn-doc-03-02-0159" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Read these source files and report back their key patterns:
+
+1. `src/erk/cli/commands/run/list_cmd.py` - Report:
+   - PR-centric display pattern
+   - `extract_pr_number()` pattern (if here or in shared.py)
+   - WORKFLOW_COMMAND_MAP usage
+   - Constants: `_MAX_DISPLAY_RUNS`, `_PER_WORKFLOW_LIMIT`, `_MAX_TITLE_LENGTH`
+   - Deduplication pattern
+   - learn.yml exception handling
+2. `src/erk/cli/commands/run/shared.py` - Report full contents and patterns
+3. `src/erk/cli/commands/doctor_workflow.py` around line 253 - Find the registration point
+
+Report exact line numbers, function signatures, constants, and key patterns.
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.</user>
+  <assistant>I'll help you find and analyze these patterns. Let me start by checking the documentation index for relevant information, then explore the codebase.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15184" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15184, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XnHfBJPQRDg31LE1mdDtKb">
+    <param name="pattern">run.*list|workflow.*command|extract_pr_number</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15184" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15184, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CLD72G53Tjq5aLHHFGBH9v">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/run/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15184" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15184, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01G25JGhmd78UNVmMbCvWdx2">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/run/shared.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15184" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15184, 'ephemeral_1h_input_tokens': 0}" output_tokens="293" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CLD72G53Tjq5aLHHFGBH9v">
+     1→"""List workflow runs command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→import click
+     6→from rich.console import Console
+     7→from rich.markup import escape as escape_markup
+     8→from rich.table import Table
+     9→
+    10→from erk.cli.commands.pr.list_cmd import format_pr_cell
+    11→from erk.cli.commands.run.shared import extract_plan_number, extract_pr_number
+    12→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+    13→from erk.cli.core import discover_repo_context
+    14→from erk.cli.ensure import Ensure
+    15→from erk.core.context import ErkContext
+    16→from erk.core.display_utils import (
+    17→    format_submission_time,
+    18→    format_workflow_outcome,
+    19→    format_workflow_run_id,
+    20→)
+    21→from erk.core.pr_utils import select_display_pr
+    22→from erk_shared.gateway.github.emoji import format_checks_cell
+    23→from erk_shared.gateway.github.parsing import github_repo_location_from_url
+    24→from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo, WorkflowRun
+    25→from erk_shared.output.output import user_output
+    26→
+    27→_MAX_DISPLAY_RUNS = 50
+    28→_PER_WORKFLOW_LIMIT = 20
+    29→_MAX_TITLE_LENGTH = 50
+    30→
+
+... [167 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01G25JGhmd78UNVmMbCvWdx2">
+     1→"""Shared utilities for run commands."""
+     2→
+     3→import re
+     4→
+     5→
+     6→def extract_pr_number(display_title: str | None) -&gt; int | None:
+     7→    """Extract PR number from display_title containing '#NNN'.
+     8→
+     9→    Handles:
+    10→    - "pr-address:#456:abc123" → 456
+    11→    - "8559:#460:abc123" → 460
+    12→    - "one-shot:#458:abc123" → 458
+    13→    - "rebase:#456:abc123" → 456
+    14→    - "8559:abc123" (old format, no #) → None
+    15→    - "Some title [abc123]" (legacy) → None
+    16→    - None or empty → None
+    17→    """
+    18→    if not display_title:
+    19→        return None
+    20→    match = re.search(r"#(\d+)", display_title)
+    21→    if match is None:
+    22→        return None
+    23→    return int(match.group(1))
+    24→
+    25→
+    26→def extract_plan_number(display_title: str | None) -&gt; int | None:
+    27→    """Extract plan number from display_title format '123:abc456'.
+    28→
+    29→    Handles:
+    30→    - New format: "123:abc456" → 123
+
+... [17 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01XnHfBJPQRDg31LE1mdDtKb">
+Found 67 files
+docs/learned/workflows/index.md
+docs/learned/tui/index.md
+docs/learned/tui/multi-operation-tracking.md
+docs/learned/testing/tripwires.md
+docs/learned/tui/action-inventory.md
+docs/learned/tui/architecture.md
+docs/learned/testing/exec-script-testing.md
+docs/learned/testing/admin-command-testing.md
+docs/learned/testing/devrun-agent.md
+docs/learned/sessions/index.md
+docs/learned/reference/github-actions-api.md
+docs/learned/reference/interactive-claude-config.md
+docs/learned/pr-operations/tripwires.md
+docs/learned/refactoring/feature-removal-checklist.md
+docs/learned/refactoring/post-refactor-documentation-audit.md
+docs/learned/refactoring/tripwires.md
+docs/learned/reference/changelog-standards.md
+docs/learned/planning/workflow.md
+docs/learned/planning/worktree-cleanup.md
+docs/learned/pr-operations/index.md
+docs/learned/planning/planning-patterns.md
+docs/learned/planning/lifecycle.md
+docs/learned/planning/one-shot-workflow.md
+docs/learned/planning/plan-execution-patterns.md
+docs/learned/planning/index.md
+docs/learned/objectives/tripwires.md
+docs/learned/planning/agent-delegation.md
+docs/learned/planning/agent-orchestration-safety.md
+docs/learned/planning/agent-orchestration.md
+
+... [38 lines omitted] ...
+
+docs/learned/architecture/gateway-error-boundaries.md
+  </tool_result>
+  <assistant>Now let me search for the doctor_workflow.py registration point around line 253:</assistant>
+  <usage input_tokens="3613" cache_creation_input_tokens="1264" cache_read_input_tokens="15184" cache_creation="{'ephemeral_5m_input_tokens': 1264, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HyZUppEa1ftebfXbLnbu5F">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/doctor_workflow.py</param>
+    <param name="offset">240</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="3613" cache_creation_input_tokens="1264" cache_read_input_tokens="15184" cache_creation="{'ephemeral_5m_input_tokens': 1264, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LfMQvfUgLTXETrtipur3gi">
+    <param name="pattern">WORKFLOW_COMMAND_MAP</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3613" cache_creation_input_tokens="1264" cache_read_input_tokens="15184" cache_creation="{'ephemeral_5m_input_tokens': 1264, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HyZUppEa1ftebfXbLnbu5F">
+   240→        raise SystemExit(1)
+   241→
+   242→    click.echo("")
+   243→    _handle_smoke_test(ctx, wait=wait)
+   244→
+   245→
+   246→@workflow_group.command("cleanup")
+   247→@click.pass_obj
+   248→def workflow_cleanup_cmd(ctx: ErkContext) -&gt; None:
+   249→    """Clean up old smoke test branches and PRs."""
+   250→    _handle_cleanup(ctx)
+   251→
+   252→
+   253→workflow_group.add_command(run_group)
+   254→
+   255→
+   256→@workflow_group.command("list")
+   257→@click.pass_obj
+   258→def workflow_list_cmd(ctx: ErkContext) -&gt; None:
+   259→    """List installed workflow files."""
+   260→    project_dir = ctx.repo_root
+   261→    workflows_dir = project_dir / ".github" / "workflows"
+   262→
+   263→    if not workflows_dir.exists():
+   264→        click.echo("No .github/workflows/ directory found")
+   265→        return
+   266→
+   267→    artifacts = discover_artifacts(project_dir)
+   268→    workflow_artifacts = [a for a in artifacts if a.artifact_type == "workflow"]
+   269→
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01LfMQvfUgLTXETrtipur3gi">
+Found 3 files
+src/erk/cli/constants.py
+src/erk/cli/commands/run/list_cmd.py
+src/erk/cli/commands/launch_cmd.py
+  </tool_result>
+  <assistant>Now let me read the constants file to see the WORKFLOW_COMMAND_MAP:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4631" cache_read_input_tokens="16448" cache_creation="{'ephemeral_5m_input_tokens': 4631, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018g8PWt2EzAnjQgjcRc2wLd">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/constants.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4631" cache_read_input_tokens="16448" cache_creation="{'ephemeral_5m_input_tokens': 4631, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UMnsDhvGzLvQpfK4Mo52xV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/doctor_workflow.py</param>
+    <param name="offset">1</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4631" cache_read_input_tokens="16448" cache_creation="{'ephemeral_5m_input_tokens': 4631, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018g8PWt2EzAnjQgjcRc2wLd">
+     1→"""Shared constants for erk CLI commands."""
+     2→
+     3→# GitHub issue label for erk plans
+     4→ERK_PLAN_LABEL = "erk-plan"
+     5→
+     6→# Title prefix for erk-plan issues (with trailing space for easy stripping)
+     7→ERK_PLAN_TITLE_PREFIX = "[erk-plan] "
+     8→
+     9→# Plan markdown heading prefix (with trailing space for easy stripping)
+    10→PLAN_HEADING_PREFIX = "Plan: "
+    11→
+    12→# PR title prefix for plan-originated PRs
+    13→PLANNED_PR_TITLE_PREFIX = "plnd/"
+    14→
+    15→# GitHub Actions workflow for remote implementation dispatch
+    16→DISPATCH_WORKFLOW_NAME = "plan-implement.yml"
+    17→DISPATCH_WORKFLOW_METADATA_NAME = "plan-implement"
+    18→
+    19→# GitHub Actions workflow for remote rebase with conflict resolution
+    20→REBASE_WORKFLOW_NAME = "pr-rebase.yml"
+    21→
+    22→# GitHub Actions workflow for remote PR comment addressing
+    23→PR_ADDRESS_WORKFLOW_NAME = "pr-address.yml"
+    24→
+    25→# GitHub Actions workflow for remote PR rewrite (rebase + AI PR summary)
+    26→PR_REWRITE_WORKFLOW_NAME = "pr-rewrite.yml"
+    27→
+    28→# GitHub Actions workflow for one-shot autonomous execution
+    29→ONE_SHOT_WORKFLOW_NAME = "one-shot.yml"
+    30→
+
+... [36 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01UMnsDhvGzLvQpfK4Mo52xV">
+     1→"""Doctor workflow subcommand for workflow-specific diagnostics.
+     2→
+     3→Runs GitHub-focused health checks and optionally dispatches a live
+     4→smoke test to verify the full CI pipeline works end-to-end.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→from erk.artifacts.artifact_health import get_artifact_health, is_erk_managed
+    10→from erk.artifacts.discovery import discover_artifacts
+    11→from erk.artifacts.models import ArtifactFileState
+    12→from erk.artifacts.paths import ErkPackageInfo
+    13→from erk.artifacts.state import load_artifact_state, load_installed_capabilities
+    14→from erk.cli.commands.doctor import _format_check_result
+    15→from erk.cli.commands.run import run_group
+    16→from erk.core.context import ErkContext, NoRepoSentinel
+    17→from erk.core.health_checks import (
+    18→    CheckResult,
+    19→    check_anthropic_api_secret,
+    20→    check_erk_queue_pat_secret,
+    21→    check_github_auth,
+    22→    check_workflow_permissions,
+    23→)
+    24→from erk.core.workflow_smoke_test import SmokeTestError, cleanup_smoke_tests, run_smoke_test
+    25→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    26→
+    27→
+    28→def _get_repo_location(ctx: ErkContext) -&gt; tuple[str, str] | None:
+    29→    """Get (owner, repo) from ErkContext, or None if not a GitHub repo."""
+    30→    if isinstance(ctx.repo, NoRepoSentinel):
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check for the learn.yml exception handling in list_cmd.py more carefully and look at how run_group is defined:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2238" cache_read_input_tokens="21079" cache_creation="{'ephemeral_5m_input_tokens': 2238, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Nmh5EhjbJdDhQ1nV6DFkVr">
+    <param name="pattern">learn\.yml|learn_exception|learn.*error|exception.*learn</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/run</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2238" cache_read_input_tokens="21079" cache_creation="{'ephemeral_5m_input_tokens': 2238, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013Rc6jAQfSCZkLr8uHVgYfp">
+    <param name="command">grep -n "run_group\|@click.group" /home/runner/work/erk/erk/src/erk/cli/commands/run/__init__.py</param>
+    <param name="description">Find run_group definition and Click group decorator</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2238" cache_read_input_tokens="21079" cache_creation="{'ephemeral_5m_input_tokens': 2238, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013Rc6jAQfSCZkLr8uHVgYfp">
+9:@click.group("run")
+10:def run_group() -&gt; None:
+16:run_group.add_command(list_runs)
+17:run_group.add_command(logs_run)
+  </tool_result>
+  <tool_result tool="toolu_01Nmh5EhjbJdDhQ1nV6DFkVr">
+No matches found
+  </tool_result>
+  <assistant>Now let me read the run/__init__.py to see the full structure:</assistant>
+  <usage input_tokens="80" cache_creation_input_tokens="451" cache_read_input_tokens="23317" cache_creation="{'ephemeral_5m_input_tokens': 451, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VfPcXnCazmmRRpDkByCXnk">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/run/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="80" cache_creation_input_tokens="451" cache_read_input_tokens="23317" cache_creation="{'ephemeral_5m_input_tokens': 451, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VfPcXnCazmmRRpDkByCXnk">
+     1→"""Run management commands."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.commands.run.list_cmd import list_runs
+     6→from erk.cli.commands.run.logs_cmd import logs_run
+     7→
+     8→
+     9→@click.group("run")
+    10→def run_group() -&gt; None:
+    11→    """View GitHub Actions workflow runs for plan implementations."""
+    12→    pass
+    13→
+    14→
+    15→# Register subcommands
+    16→run_group.add_command(list_runs)
+    17→run_group.add_command(logs_run)
+    18→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! Now let me verify the format_pr_cell import and check if there's any learn.yml specific handling:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="465" cache_read_input_tokens="23768" cache_creation="{'ephemeral_5m_input_tokens': 465, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013u26Jp3d4qxJwi1GEkyZj5">
+    <param name="pattern">def format_pr_cell</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="465" cache_read_input_tokens="23768" cache_creation="{'ephemeral_5m_input_tokens': 465, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013u26Jp3d4qxJwi1GEkyZj5">
+src/erk/cli/commands/pr/list_cmd.py:37:def format_pr_cell(pr: PullRequestInfo, *, use_graphite: bool, graphite_url: str | None) -&gt; str:
+
+[Showing results with pagination = limit: 20, offset: 0]
+  </tool_result>
+  <assistant>Excellent! Now let me compile my findings into a comprehensive report. Let me double-check the doctor_workflow.py registration point around line 253:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="402" cache_read_input_tokens="24233" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VkMTFRyFidxcrEs8GDq1Bo">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/doctor_workflow.py</param>
+    <param name="offset">250</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="402" cache_read_input_tokens="24233" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VkMTFRyFidxcrEs8GDq1Bo">
+   250→    _handle_cleanup(ctx)
+   251→
+   252→
+   253→workflow_group.add_command(run_group)
+   254→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! Now I have all the information I need. Here's my comprehensive report:
+
+## Source Code Analysis Report
+
+### 1. `src/erk/cli/commands/run/list_cmd.py` - Key Patterns
+
+#### Constants (lines 27-29)
+```python
+_MAX_DISPLAY_RUNS = 50
+_PER_WORKFLOW_LIMIT = 20
+_MAX_TITLE_LENGTH = 50
+```
+
+#### PR-Centric Display Pattern
+The file implements a **PR-centric table view** that:
+- Fetches workflow runs from multiple workflows (line 42-45)
+- Deduplicates runs by `run_id` (lines 47-52)
+- Sorts by `created_at` descending with None timestamps last (lines 54-58)
+- Limits displayed runs to `_MAX_DISPLAY_RUNS` (line 61)
+- Builds a Rich table with columns: `run-id`, `status`, `submitted`, `workflow`, `pr`, `title`, `chks` (lines 114-121)
+
+#### Extract Functions Usage (lines 11, 73-79)
+- **`extract_pr_number(run.display_title)`** - Returns `int | None` (line 73)
+- **`extract_plan_number(run.display_title)`** - Returns `int | None` (line 77)
+- PR numbers are preferred; plan numbers are used as fallback for plan→PR linkage (lines 72-79)
+
+#### WORKFLOW_COMMAND_MAP Usage (line 42)
+```python
+for command_name, workflow_file in WORKFLOW_COMMAND_MAP.items():
+    workflow_runs = ctx.github.list_workflow_runs(repo.root, workflow_file, _PER_WORKFLOW_LIMIT)
+    for run in workflow_runs:
+        tagged_runs.append((run, command_name))
+```
+Maps each workflow file to a human-readable command name for display (line 169: `workflow_cell = f"[dim]{workflow_name}[/dim]"`)
+
+#### Deduplication Pattern (lines 47-52)
+```python
+seen: dict[str, tuple[WorkflowRun, str]] = {}
+for pair in tagged_runs:
+    if pair[0].run_id not in seen:
+        seen[pair[0].run_id] = pair
+tagged_runs = list(seen.values())
+```
+Deduplicates by `run_id` because a run belongs to exactly one workflow.
+
+#### learn.yml Exception Handling
+**No special exception handling for learn.yml** — it's included in `WORKFLOW_COMMAND_MAP` (line 38: `"learn": "learn.yml"`) and handled like any other workflow.
+
+---
+
+### 2. `src/erk/cli/commands/run/shared.py` - Full Contents and Patterns
+
+#### Complete File (lines 1-42)
+```python
+"""Shared utilities for run commands."""
+
+import re
+
+
+def extract_pr_number(display_title: str | None) -&gt; int | None:
+    """Extract PR number from display_title containing '#NNN'.
+
+    Handles:
+    - "pr-address:#456:abc123" → 456
+    - "8559:#460:abc123" → 460
+    - "one-shot:#458:abc123" → 458
+    - "rebase:#456:abc123" → 456
+    - "8559:abc123" (old format, no #) → None
+    - "Some title [abc123]" (legacy) → None
+    - None or empty → None
+    """
+    if not display_title:
+        return None
+    match = re.search(r"#(\d+)", display_title)
+    if match is None:
+        return None
+    return int(match.group(1))
+
+
+def extract_plan_number(display_title: str | None) -&gt; int | None:
+    """Extract plan number from display_title format '123:abc456'.
+
+    Handles:
+    - New format: "123:abc456" → 123
+    - Old format: "Issue title [abc123]" → None (no colon at start)
+    - None or empty → None
+    """
+    if not display_title or ":" not in display_title:
+        return None
+    parts = display_title.split(":", 1)
+    # Validate that the first part is a number
+    first_part = parts[0].strip()
+    if not first_part.isdigit():
+        return None
+    return int(first_part)
+```
+
+#### Key Patterns
+- **LBYL guard checks** (lines 18, 34) — validates conditions before processing
+- **Regex pattern matching** for `#NNN` extraction (line 20: `r"#(\d+)"`)
+- **Colon-based format detection** (line 34) for backward compatibility
+- **Type hints** use `str | None` → `int | None` signature pattern
+- **Docstring examples** show old/new format handling with edge cases
+
+---
+
+### 3. `src/erk/cli/commands/doctor_workflow.py` - Registration Point
+
+#### Line 253 - Registration Point
+```python
+workflow_group.add_command(run_group)
+```
+
+This registers the entire `run_group` (which contains `list_runs` and `logs_run` subcommands) as a nested command under `workflow_group`.
+
+#### Import Structure (line 15)
+```python
+from erk.cli.commands.run import run_group
+```
+
+The `run_group` is defined in `/home/runner/work/erk/erk/src/erk/cli/commands/run/__init__.py` (lines 9-12):
+```python
+@click.group("run")
+def run_group() -&gt; None:
+    """View GitHub Actions workflow runs for plan implementations."""
+    pass
+```
+
+---
+
+### 4. Additional Key Findings
+
+#### WORKFLOW_COMMAND_MAP Definition
+**File**: `/home/runner/work/erk/erk/src/erk/cli/constants.py` (lines 33-40)
+
+```python
+WORKFLOW_COMMAND_MAP: dict[str, str] = {
+    "plan-implement": DISPATCH_WORKFLOW_NAME,  # plan-implement.yml
+    "pr-rebase": REBASE_WORKFLOW_NAME,  # pr-rebase.yml
+    "pr-address": PR_ADDRESS_WORKFLOW_NAME,  # pr-address.yml
+    "pr-rewrite": PR_REWRITE_WORKFLOW_NAME,  # pr-rewrite.yml
+    "learn": "learn.yml",
+    "one-shot": ONE_SHOT_WORKFLOW_NAME,  # one-shot.yml
+}
+```
+
+#### Format Helper Import (line 10)
+```python
+from erk.cli.commands.pr.list_cmd import format_pr_cell
+```
+
+Function signature at `src/erk/cli/commands/pr/list_cmd.py:37`:
+```python
+def format_pr_cell(pr: PullRequestInfo, *, use_graphite: bool, graphite_url: str | None) -&gt; str:
+```
+
+---
+
+### Summary Table
+
+| Item | Location | Details |
+|------|----------|---------|
+| `_MAX_DISPLAY_RUNS` | Line 27 | Constant = 50 |
+| `_PER_WORKFLOW_LIMIT` | Line 28 | Constant = 20 |
+| `_MAX_TITLE_LENGTH` | Line 29 | Constant = 50 |
+| `extract_pr_number()` | shared.py, line 6 | Returns `int \| None`, uses regex `r"#(\d+)"` |
+| `extract_plan_number()` | shared.py, line 26 | Returns `int \| None`, parses colon-based format |
+| Deduplication | list_cmd.py, lines 47-52 | Uses dict keyed by `run_id` |
+| Registration Point | doctor_workflow.py, line 253 | `workflow_group.add_command(run_group)` |
+| learn.yml | constants.py, line 38 | No special handling, treated like other workflows |</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="311" cache_read_input_tokens="24635" cache_creation="{'ephemeral_5m_input_tokens': 311, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,758 @@
+<session>
+  <meta source="agent-a422605" />
+  <meta branch="plnd/consolidate-mar2-learn-doc-03-02-0159" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Read these source files and report back their key patterns:
+
+1. `src/erk/cli/commands/land_learn.py` - Focus on:
+   - Lines 345-434: The learn plan creation workflow
+   - Lines 373-375: The `if not all_session_ids:` guard condition
+   - The `_create_learn_pr_with_sessions()` function and its error handling
+   - The `SessionsForPlan` → `get_readable_sessions()` → `_compute_session_stats()` pipeline
+   - Type prefixing for XML filenames
+   - Multi-chunk naming patterns
+   - Cycle prevention (erk-learn label)
+   - The session discovery pipeline
+
+Report exact line numbers, function signatures, and key patterns for each item.
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.</user>
+  <assistant>I'll start by checking the documentation index for existing patterns on this topic, then explore the source files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15166" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15166, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0188hiJQwKsxVcACmjtLoxhK">
+    <param name="pattern">learn|session|plan creation</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="glob">**/*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15166" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15166, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01J8dUbHZVbCxzS58oELcpnf">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15166" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15166, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01J8dUbHZVbCxzS58oELcpnf">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_0188hiJQwKsxVcACmjtLoxhK">
+Found 273 files
+docs/learned/universal-tripwires.md
+docs/learned/workflows/commit-messages.md
+docs/learned/workflows/one-shot-workflow.md
+docs/learned/workflows/pr-validation.md
+docs/learned/workflows/tripwires.md
+docs/learned/tui/plan-title-rendering-pipeline.md
+docs/learned/tui/title-truncation-edge-cases.md
+docs/learned/tui/tripwires.md
+docs/learned/tui/view-aware-commands.md
+docs/learned/tui/view-switching.md
+docs/learned/uncategorized/tripwires.md
+docs/learned/tui/data-contract.md
+docs/learned/tui/frozen-dataclass-field-management.md
+docs/learned/tui/index.md
+docs/learned/tui/plan-row-data.md
+docs/learned/testing/tripwires.md
+docs/learned/textual/datatable-markup-escaping.md
+docs/learned/tripwires-index.md
+docs/learned/tui/architecture.md
+docs/learned/testing/mock-elimination.md
+docs/learned/testing/session-log-fixtures.md
+docs/learned/testing/session-store-testing.md
+docs/learned/testing/exec-script-testing.md
+docs/learned/testing/hook-testing.md
+docs/learned/testing/index.md
+docs/learned/sessions/multi-part-sessions.md
+docs/learned/sessions/parallel-session-awareness.md
+docs/learned/sessions/preprocessing.md
+docs/learned/sessions/raw-session-processing.md
+
+... [244 lines omitted] ...
+
+docs/learned/cli/error-handling-antipatterns.md
+docs/learned/architecture/error-handling-patterns.md
+  </tool_result>
+  <assistant>Now let me check relevant documentation files on learn workflows and session discovery patterns:</assistant>
+  <usage input_tokens="1083" cache_creation_input_tokens="4049" cache_read_input_tokens="15166" cache_creation="{'ephemeral_5m_input_tokens': 4049, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SSGPFZVGiVvi9BFpCwvMLL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/land-learn-integration.md</param>
+  </tool_use>
+  <usage input_tokens="1083" cache_creation_input_tokens="4049" cache_read_input_tokens="15166" cache_creation="{'ephemeral_5m_input_tokens': 4049, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HwCPU99hiJpitd4VHz35J9">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md</param>
+  </tool_use>
+  <usage input_tokens="1083" cache_creation_input_tokens="4049" cache_read_input_tokens="15166" cache_creation="{'ephemeral_5m_input_tokens': 4049, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019892a9y57MN7S7JJbTrMSi">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/sessions/discovery-fallback.md</param>
+  </tool_use>
+  <usage input_tokens="1083" cache_creation_input_tokens="4049" cache_read_input_tokens="15166" cache_creation="{'ephemeral_5m_input_tokens': 4049, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SSGPFZVGiVvi9BFpCwvMLL">
+     1→---
+     2→title: Land-Learn Integration
+     3→read_when:
+     4→  - "modifying the erk land command's learn workflow"
+     5→  - "debugging session discovery during land"
+     6→  - "working with session reporting in the land pipeline"
+     7→tripwires:
+     8→  - action: "making session discovery failures block the land command"
+     9→    warning: "Session discovery uses fire-and-forget error resilience. The entire learn workflow is wrapped in try/except to prevent blocking land. Failures are reported as warnings, never errors."
+    10→    score: 6
+    11→---
+    12→
+    13→# Land-Learn Integration
+    14→
+    15→After landing a PR, `erk land` optionally creates a learn plan to capture implementation insights. The session discovery step reports what sessions are available for the learn workflow.
+    16→
+    17→## Session Discovery Logging
+    18→
+    19→&lt;!-- Source: src/erk/cli/commands/land_learn.py:58-87, _log_session_discovery --&gt;
+    20→
+    21→`_log_session_discovery()` in `src/erk/cli/commands/land_learn.py:58-87` reports session discovery results to the user:
+    22→
+    23→```python
+    24→def _log_session_discovery(
+    25→    ctx: ErkContext,
+    26→    *,
+    27→    sessions: SessionsForPlan,
+    28→    all_session_ids: list[str],
+    29→) -&gt; None:
+    30→```
+
+... [48 lines omitted] ...
+
+    56→## Fire-and-Forget Error Resilience
+    63→except Exception as exc:
+    64→    user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
+    67→This ensures that learn failures never block the primary `erk land` operation. A failed learn plan is a warning, not an error.
+  </tool_result>
+  <tool_result tool="toolu_01HwCPU99hiJpitd4VHz35J9">
+     1→---
+     2→title: Learn Pipeline Workflow
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - debugging why learn materials are missing or malformed
+     7→  - understanding data flow from sessions to documentation plan
+     8→  - choosing between local learn and async learn modes
+     9→  - adding a new stage to the learn pipeline
+    10→tripwires:
+    11→  - action: "adding a new pipeline stage to the async learn pipeline"
+    12→    warning: "New stages must be direct Python function calls, not subprocess invocations. The orchestrator uses tight coupling for performance. See the Direct-Call Architecture section in async-learn-local-preprocessing.md."
+    13→  - action: "changing how sessions are classified as planning vs impl"
+    14→    warning: "Classification uses planning_session_id from GitHub metadata. The resulting prefix (planning- vs impl-) propagates into XML filenames and is used by downstream learn agents to weight insights differently."
+    15→  - action: "modifying how learn materials are committed to a branch"
+    16→    warning: "The CI workflow checks out the learn branch and reads materials from .erk/impl-context/. File names and directory structure must match what learn.yml expects."
+    17→---
+    18→
+    19→# Learn Pipeline Workflow
+    20→
+    21→## Purpose
+    22→
+    23→This document covers the **data pipeline** that moves session logs from local disk to a GitHub Actions agent. For the agent orchestration, status tracking, and `/erk:learn` skill details, see [Learn Workflow](learn-workflow.md). For the preprocessing internals, see [Async Learn Local Preprocessing](async-learn-local-preprocessing.md).
+    24→
+    25→## Pipeline Architecture
+    26→
+    27→The learn pipeline has 7 stages that transform raw session JSONL into a documentation plan issue. The key architectural decision is **where processing happens**: stages 1-5 run locally (fast, free), while stages 6-7 run in GitHub Actions (background, billed).
+    28→
+    29→```
+    30→Local machine                              GitHub Actions
+
+... [131 lines omitted] ...
+
+    82→Tool result pruning (30 line limit, error lines preserved) occurs during XML generation, not as a preprocessing filter step.
+   120→## Failure Modes
+   122→| Stage                | Failure              | Behavior                                                                 |
+   124→| 1 (Discovery)        | No sessions found    | Warning, continues with empty list; local fallback scans recent sessions |
+   128→| 4 (Branch Commit)    | Push failure         | **Pipeline fails** — learn branch is required for async path             |
+   129→| 5 (Workflow Trigger) | Workflow not found   | Fails with error about missing `learn.yml`                               |
+  </tool_result>
+  <tool_result tool="toolu_019892a9y57MN7S7JJbTrMSi">
+     1→---
+     2→title: Session Discovery and Fallback Patterns
+     3→read_when:
+     4→  - "implementing session analysis or learn workflows"
+     5→  - "handling missing or unavailable session files"
+     6→  - "choosing between session discovery commands"
+     7→tripwires:
+     8→  - action: "using get-session-metadata or get-session-for-issue exec commands"
+     9→    warning: "These commands do not exist. Use 'erk exec list-sessions' for general enumeration or 'erk exec get-learn-sessions' for plan-specific discovery."
+    10→  - action: "assuming a session ID from metadata corresponds to a file on disk"
+    11→    warning: "Claude Code manages session lifecycle; old sessions may be cleaned up. Always use LBYL discovery before reading."
+    12→last_audited: "2026-02-16 14:20 PT"
+    13→audit_result: clean
+    14→---
+    15→
+    16→# Session Discovery and Fallback Patterns
+    17→
+    18→## Core Principle
+    19→
+    20→**Always discover what's available before assuming availability.** Session files are session-scoped — Claude Code may clean them up at any time, so a session ID from GitHub metadata may not correspond to a file on disk. Discovery commands exist specifically to bridge this gap.
+    21→
+    22→## Two Discovery Paths
+    23→
+    24→Erk has two distinct session discovery commands that serve different purposes. Choosing the wrong one wastes tokens or misses available sessions.
+    25→
+    26→| Command                               | Purpose                                             | Output                                        | When to use                                                |
+    27→| ------------------------------------- | --------------------------------------------------- | --------------------------------------------- | ---------------------------------------------------------- |
+    28→| `erk exec list-sessions`              | Enumerate all sessions for the current project      | JSON with branch context and session metadata | General session browsing, selecting sessions interactively |
+    29→| `erk exec get-learn-sessions &lt;issue&gt;` | Find sessions associated with a specific plan issue | JSON with categorized session IDs and paths   | Learn workflows, plan-specific analysis                    |
+    30→
+
+... [83 lines omitted] ...
+
+    90→### Anti-pattern: Hard failure on missing session
+    92→Never `exit 1` or raise when a session file is unavailable. The entire fallback hierarchy exists because session availability is inherently unreliable. Log a warning and degrade to the next level.
+  </tool_result>
+  <assistant>Now let me read the actual source file to get the specific line numbers and patterns:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="7822" cache_read_input_tokens="19215" cache_creation="{'ephemeral_5m_input_tokens': 7822, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UMYLeraKMdBFqE7zWdK8Um">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="limit">450</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="7822" cache_read_input_tokens="19215" cache_creation="{'ephemeral_5m_input_tokens': 7822, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UMYLeraKMdBFqE7zWdK8Um">
+     1→"""Learn plan creation for the land command.
+     2→
+     3→Handles creating erk-learn plans when a PR is landed.
+     4→Extracted to avoid circular imports between land_cmd and land_pipeline.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from dataclasses import dataclass
+    10→from typing import TYPE_CHECKING
+    11→
+    12→import click
+    13→from rich.console import Console
+    14→from rich.table import Table
+    15→
+    16→from erk.cli.commands.exec.scripts.preprocess_session import (
+    17→    deduplicate_assistant_messages,
+    18→    deduplicate_documentation_blocks,
+    19→    discover_agent_logs,
+    20→    is_empty_session,
+    21→    is_warmup_session,
+    22→    process_log_file,
+    23→    split_entries_to_chunks,
+    24→    truncate_tool_parameters,
+    25→)
+    26→from erk.core.branch_slug_generator import generate_branch_slug
+    27→from erk.core.context import ErkContext
+    28→from erk_shared.learn.extraction.session_schema import (
+    29→    iter_jsonl_entries,
+    30→    parse_session_timestamp,
+
+... [417 lines omitted] ...
+
+   190→    except Exception as exc:
+   191→        user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
+   350→    """Inner implementation for learn plan creation (raises on error)."""
+   438→    elif result.error:
+   440→            click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {result.error}"
+  </tool_result>
+  <assistant>Perfect! Now let me check for the guard condition around line 373-375 more carefully and any additional context about the SessionsForPlan and get_readable_sessions:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="6200" cache_read_input_tokens="27037" cache_creation="{'ephemeral_5m_input_tokens': 6200, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01UnB1BFZHAkPF3AhJK6jUPD">
+    <param name="pattern">class SessionsForPlan|def get_readable_sessions|def all_session_ids</param>
+    <param name="type">python</param>
+    <param name="output_mode">content</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="6200" cache_read_input_tokens="27037" cache_creation="{'ephemeral_5m_input_tokens': 6200, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UnB1BFZHAkPF3AhJK6jUPD">
+packages/erk-shared/src/erk_shared/sessions/discovery.py:19:class SessionsForPlan:
+packages/erk-shared/src/erk_shared/sessions/discovery.py:45:    def all_session_ids(self) -&gt; list[str]:
+packages/erk-shared/src/erk_shared/sessions/discovery.py:74:def get_readable_sessions(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GxRtvc6dApEbKRiiPEGVe3">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/sessions/discovery.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="422" cache_read_input_tokens="33237" cache_creation="{'ephemeral_5m_input_tokens': 422, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GxRtvc6dApEbKRiiPEGVe3">
+     1→"""Session discovery for plans.
+     2→
+     3→This module provides functions to discover Claude Code sessions
+     4→associated with a plan issue.
+     5→"""
+     6→
+     7→import sys
+     8→from dataclasses import dataclass
+     9→from pathlib import Path
+    10→
+    11→from erk_shared.gateway.claude_installation.abc import (
+    12→    ClaudeInstallation,
+    13→    FoundSession,
+    14→)
+    15→from erk_shared.learn.extraction.session_schema import extract_git_branch
+    16→
+    17→
+    18→@dataclass(frozen=True)
+    19→class SessionsForPlan:
+    20→    """Sessions associated with a plan issue.
+    21→
+    22→    Attributes:
+    23→        planning_session_id: Session that created the plan (from created_from_session)
+    24→        implementation_session_ids: Sessions where plan was implemented
+    25→        learn_session_ids: Sessions where learn was previously invoked
+    26→        last_remote_impl_at: Timestamp of remote implementation (if implemented via GitHub Actions)
+    27→        last_remote_impl_run_id: GitHub Actions run ID for remote implementation
+    28→        last_remote_impl_session_id: Claude Code session ID for remote implementation
+    29→        last_session_branch: Branch containing latest session JSONL
+    30→        last_session_id: Session ID of latest uploaded session
+
+... [125 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check the `_session_type_prefix` function more carefully and the XML file naming patterns:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2031" cache_read_input_tokens="33659" cache_creation="{'ephemeral_5m_input_tokens': 2031, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01EgntQjKRkajmoXUwZ3ZzZ7">
+    <param name="pattern">IMPL_CONTEXT_DIR|sessions/</param>
+    <param name="type">python</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2031" cache_read_input_tokens="33659" cache_creation="{'ephemeral_5m_input_tokens': 2031, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EgntQjKRkajmoXUwZ3ZzZ7">
+35:from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+220:    Paths follow the convention: {IMPL_CONTEXT_DIR}/sessions/{type}-{session_id}.xml
+290:                        path = f"{IMPL_CONTEXT_DIR}/sessions/{prefix}-{sid}.xml"
+294:                            path = f"{IMPL_CONTEXT_DIR}/sessions/{prefix}-{sid}-part{n}.xml"
+327:    files.append((f"{IMPL_CONTEXT_DIR}/plan.md", plan_bytes))
+331:    files.append((f"{IMPL_CONTEXT_DIR}/ref.json", 60))
+
+[Showing results with pagination = limit: 20, offset: 0]
+  </tool_result>
+  <assistant>Now let me check the cycle prevention label:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="514" cache_read_input_tokens="35690" cache_creation="{'ephemeral_5m_input_tokens': 514, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011y12K3XRiHzgkPPp3YRnNs">
+    <param name="pattern">erk-learn|cycle prevention|cycle|learn label</param>
+    <param name="type">python</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="514" cache_read_input_tokens="35690" cache_creation="{'ephemeral_5m_input_tokens': 514, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011y12K3XRiHzgkPPp3YRnNs">
+3:Handles creating erk-learn plans when a PR is landed.
+35:from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
+179:    Creates a draft PR with erk-learn label so the replan flow can pick it up.
+359:    # Fetch plan to check labels — skip learn plans (cycle prevention)
+363:    if "erk-learn" in plan_result.labels:
+418:        labels=["erk-pr", "erk-learn"],
+  </tool_result>
+  <assistant>Excellent! Now let me check the related documentation on learn plan metadata to get more context:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="321" cache_read_input_tokens="36204" cache_creation="{'ephemeral_5m_input_tokens': 321, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014LhBRCnqGbS9VNE7zpxH58">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="321" cache_read_input_tokens="36204" cache_creation="{'ephemeral_5m_input_tokens': 321, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014LhBRCnqGbS9VNE7zpxH58">
+     1→---
+     2→title: Learn Plan Metadata Preservation
+     3→last_audited: "2026-02-17 16:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "working with learn plan metadata"
+     7→  - "troubleshooting null learn_status or learn_plan_issue"
+     8→  - "transforming Plan objects in pipelines"
+     9→  - "understanding created_from_workflow_run_url field"
+    10→  - "adding workflow run backlinks to plans"
+    11→tripwires:
+    12→  - action: "reading learn_plan_issue or learn_status"
+    13→    warning: "Verify field came through full pipeline. If null, check if filtered out earlier. Use gateway abstractions; never hand-construct Plan objects."
+    14→---
+    15→
+    16→# Learn Plan Metadata Preservation
+    17→
+    18→Learn plans have metadata fields that must survive all pipeline transformations. When these fields become null unexpectedly, data was lost during a transformation stage.
+    19→
+    20→## Critical Metadata Fields
+    21→
+    22→### `learn_status`
+    23→
+    24→Tracks the status of learn plan processing:
+    25→
+    26→- `"pending"` - Learn plan not yet processed
+    27→- `"completed"` - Learn plan has been reviewed and documentation created
+    28→- `None` - Not a learn plan, or status unknown
+    29→
+    30→### `learn_plan_issue`
+
+... [138 lines omitted] ...
+
+    59→- Debugging failed plan creations by linking to the workflow run
+  </tool_result>
+  <assistant>Perfect! Now let me verify the split_entries_to_chunks function to understand the multi-chunk naming:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="2311" cache_read_input_tokens="36525" cache_creation="{'ephemeral_5m_input_tokens': 2311, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LMc6FkooiqFWycjZxQmMpT">
+    <param name="pattern">def split_entries_to_chunks|part\{N\}|max_tokens</param>
+    <param name="type">python</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/preprocess_session.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="2311" cache_read_input_tokens="36525" cache_creation="{'ephemeral_5m_input_tokens': 2311, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LMc6FkooiqFWycjZxQmMpT">
+729:def split_entries_to_chunks(
+732:    max_tokens: int,
+743:        max_tokens: Maximum tokens per chunk
+775:        if current_tokens + entry_tokens + wrapper_overhead &gt; max_tokens and current_entries:
+845:    max_tokens: int | None,
+872:        max_tokens: Optional maximum tokens per output file (splits if exceeded)
+960:    if max_tokens is not None:
+966:                max_tokens=max_tokens,
+997:        if max_tokens is not None and len(xml_sections) &gt; 1:
+1010:            # Multiple chunks: {prefix}-{session_id}-part{N}.xml
+1026:        if max_tokens is not None and len(xml_sections) &gt; 1:
+
+[Showing results with pagination = limit: 30, offset: 0]
+  </tool_result>
+  <assistant>Perfect! Now let me get the complete report together. Let me verify one more time the exact line numbers for the key items:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="442" cache_read_input_tokens="38836" cache_creation="{'ephemeral_5m_input_tokens': 442, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016EX7Kbq9tqN1NEDD8xuSoA">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="offset">373</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="442" cache_read_input_tokens="38836" cache_creation="{'ephemeral_5m_input_tokens': 442, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016EX7Kbq9tqN1NEDD8xuSoA">
+   373→    if not xml_files:
+   374→        if not all_session_ids:
+   375→            detail = " (no sessions were tracked for this plan)"
+   376→        else:
+   377→            detail = " (sessions found but no XML could be extracted)"
+   378→        user_output(
+   379→            click.style("ℹ", fg="blue")
+   380→            + f" Skipping learn plan for #{plan_id}: no session material found"
+   381→            + detail
+   382→        )
+   383→        return
+   384→
+   385→    # Build learn plan body
+   386→    session_lines = [f"- `{sid}`" for sid in all_session_ids]
+   387→    session_section = "\n".join(session_lines)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! Now I have all the information I need. Let me compile the comprehensive report.
+
+## Report: Learn Plan Creation Patterns in `land_learn.py`
+
+Based on my analysis of the source code and existing documentation, here are the key patterns in the learn plan creation workflow:
+
+---
+
+### 1. **Learn Plan Creation Workflow (Lines 345-434)**
+
+**Function**: `_create_learn_pr_impl()` (lines 345-442)
+
+**Signature**:
+```python
+def _create_learn_pr_impl(
+    ctx: ErkContext,
+    *,
+    state: LandState,
+) -&gt; None:
+```
+
+**Key responsibilities**:
+1. Check configuration (`_should_create_learn_pr()` at line 356)
+2. Fetch plan and verify it doesn't have the `erk-learn` label (cycle prevention, line 363)
+3. Discover sessions via `ctx.plan_backend.find_sessions_for_plan()` (line 367)
+4. Log session discovery and collect XML (line 371)
+5. Guard check: skip if no XML files extracted (line 373-383)
+6. Build plan content with session metadata (lines 385-393)
+7. Generate branch slug and create draft PR (lines 395-426)
+
+---
+
+### 2. **Guard Condition: The `if not xml_files:` Gate (Lines 373-375)**
+
+**Location**: Lines 373-383
+
+**Guard Logic**:
+```python
+if not xml_files:
+    if not all_session_ids:
+        detail = " (no sessions were tracked for this plan)"
+    else:
+        detail = " (sessions found but no XML could be extracted)"
+    user_output(
+        click.style("ℹ", fg="blue")
+        + f" Skipping learn plan for #{plan_id}: no session material found"
+        + detail
+    )
+    return
+```
+
+**Decision Path**:
+- **Line 373**: Checks if `xml_files` dict is empty (no processed sessions)
+- **Line 374**: Further distinguishes between "no sessions at all" vs "sessions found but preprocessing failed"
+- **Line 375**: Uses `all_session_ids` to provide targeted feedback
+
+This is the **primary defensive gate** preventing creation of learn plans with no extractable content.
+
+---
+
+### 3. **SessionsForPlan → get_readable_sessions() → _compute_session_stats() Pipeline**
+
+**Data Flow**:
+
+1. **SessionsForPlan** (packages/erk-shared/src/erk_shared/sessions/discovery.py:19-71)
+   - Frozen dataclass with three session ID collections:
+     - `planning_session_id: str | None` - single session that created the plan
+     - `implementation_session_ids: list[str]` - sessions where plan was implemented
+     - `learn_session_ids: list[str]` - sessions where learn was previously invoked
+   - **Critical method**: `all_session_ids()` (lines 45-71) - returns deduplicated list in order: planning → impl → learn
+
+2. **get_readable_sessions()** (packages/erk-shared/src/erk_shared/sessions/discovery.py:74-95)
+   - **Signature**:
+     ```python
+     def get_readable_sessions(
+         sessions_for_plan: SessionsForPlan,
+         claude_installation: ClaudeInstallation,
+     ) -&gt; list[tuple[str, Path]]:
+     ```
+   - Iterates through `all_session_ids()` and filters to only **readable** sessions (existence check on disk)
+   - Returns `list[tuple[str, Path]]` - session ID to file path mapping
+   - Called at **line 237** in land_learn.py:
+     ```python
+     readable_map: dict[str, Path] = dict(get_readable_sessions(sessions, ctx.claude_installation))
+     ```
+
+3. **_compute_session_stats()** (lines 70-156)
+   - **Signature**:
+     ```python
+     def _compute_session_stats(session_path: Path, *, session_id: str) -&gt; SessionStats | None:
+     ```
+   - Reads JSONL and extracts:
+     - User turns count (lines 84-92)
+     - Duration in minutes (lines 94-97)
+     - Raw size including agent logs (lines 99-103)
+   - Runs preprocessing pipeline:
+     - `process_log_file()` (lines 106-108)
+     - Filters empty/warmup sessions (lines 110-118)
+     - Deduplicates documentation blocks (line 120)
+     - Truncates tool parameters (line 121)
+     - Deduplicates assistant messages (line 122)
+     - Processes agent logs through same pipeline (lines 124-136)
+     - Chunks XML with 200,000 token limit (lines 138-146)
+   - Returns **None** if session file missing or preprocessing fails (line 79, 76)
+   - Returns **SessionStats** with `xml_chunks: tuple[str, ...]` (line 150-156)
+
+---
+
+### 4. **Type Prefixing for XML Filenames (Lines 194-208)**
+
+**Function**: `_session_type_prefix()` (lines 194-208)
+
+**Signature**:
+```python
+def _session_type_prefix(
+    sid: str,
+    *,
+    planning_ids: set[str],
+    impl_ids: set[str],
+    learn_ids: set[str],
+) -&gt; str:
+```
+
+**Returns**:
+- `"planning"` if session ID in `planning_ids`
+- `"impl"` if session ID in `impl_ids`
+- `"learn"` if session ID in `learn_ids`
+- `"unknown"` as fallback
+
+**Used at**: Lines 283-288 to classify sessions and generate filename prefixes
+
+---
+
+### 5. **Multi-Chunk Naming Patterns (Lines 289-295)**
+
+**Single Chunk**:
+```python
+if len(stats.xml_chunks) == 1:
+    path = f"{IMPL_CONTEXT_DIR}/sessions/{prefix}-{sid}.xml"
+    xml_files[path] = stats.xml_chunks[0]
+```
+**Pattern**: `sessions/{type}-{session_id}.xml`
+
+**Multiple Chunks** (lines 292-295):
+```python
+else:
+    for n, chunk in enumerate(stats.xml_chunks, start=1):
+        path = f"{IMPL_CONTEXT_DIR}/sessions/{prefix}-{sid}-part{n}.xml"
+        xml_files[path] = chunk
+```
+**Pattern**: `sessions/{type}-{session_id}-part{N}.xml` where N starts at 1
+
+- Token limit per chunk: **200,000** (line 142 in `split_entries_to_chunks()`)
+- Typical multi-chunk trigger: Large sessions &gt; 200k tokens
+- Files stored in `.erk/impl-context/sessions/` directory
+
+---
+
+### 6. **Cycle Prevention: erk-learn Label (Lines 359-364)**
+
+**Check**:
+```python
+# Fetch plan to check labels — skip learn plans (cycle prevention)
+plan_result = ctx.plan_store.get_plan(state.main_repo_root, plan_id)
+if isinstance(plan_result, PlanNotFound):
+    return
+if "erk-learn" in plan_result.labels:
+    return
+```
+
+**Mechanism**:
+- Line 363: Reads plan's GitHub labels
+- Skips if `"erk-learn"` label already present
+- **Why**: Prevents infinite learn-plan loops where a learn plan would create another learn plan
+
+**Applied at creation** (line 418):
+```python
+labels=["erk-pr", "erk-learn"],
+```
+Learn plans get the `"erk-learn"` label to flag them for skipping in subsequent `land` operations.
+
+---
+
+### 7. **Session Discovery Pipeline**
+
+**Session Sources** (per documentation):
+
+1. **GitHub-tracked sessions** via `ctx.plan_backend.find_sessions_for_plan()` (line 367)
+   - Extracts session IDs from GitHub issue metadata
+   - Three categories: planning, implementation, learn
+
+2. **Local fallback** (documented in discovery-fallback.md)
+   - Scans 10 most recent local sessions when no GitHub sessions are readable
+   - Filters by current git branch to prevent worktree contamination
+
+3. **Remote sessions** (branch-based and artifact-based)
+   - Not directly used in land_learn.py, but supported by discovery system
+   - Used in async learn pipeline (`.erk/impl-context/` materials)
+
+**Key filter**: `get_readable_sessions()` validates file existence on disk (LBYL pattern)
+
+---
+
+### 8. **Error Handling: Fire-and-Forget Resilience**
+
+**Wrapping function**: `_create_learn_pr_with_sessions()` (lines 171-191)
+
+**Pattern**:
+```python
+try:
+    _create_learn_pr_impl(ctx, state=state)
+except Exception as exc:
+    user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
+```
+
+**Design Decision**:
+- Learn plan creation never blocks `erk land`
+- All failures are warnings, never errors
+- Continues if plan creation fails at any stage
+- Documented in land-learn-integration.md as "fire-and-forget error resilience"
+
+---
+
+### 9. **Learn Plan Metadata Fields**
+
+**Created fields** (lines 407-426):
+
+- `plan_content` - Markdown with source plan number, merged PR number, session list
+- `branch_name` - Generated with LLM slug + timestamp
+- `title` - "Learn: {original_plan_title}"
+- `labels` - Always `["erk-pr", "erk-learn"]`
+- `learned_from_issue` - Linked to parent plan ID (line 423): `learned_from_issue=int(plan_id)`
+- `summary` - Deterministic text (no LLM call) with session count
+
+**Metadata persists through**: plan-header fields in GitHub issue/PR body (documented in learn-plan-metadata-fields.md)
+
+---
+
+### 10. **Session Discovery Logging** (Lines 211-307)
+
+**Function**: `_log_session_discovery()` (lines 211-307)
+
+**Output Format** (documented in land-learn-integration.md):
+```
+  📋 Discovered 3 session(s): 1 planning, 2 impl
+     - abc12345...
+     - def67890...
+     - ghi24680...
+  📂 2/3 session(s) available locally (1,234 KB JSONL)
+```
+
+**For each session**, emits:
+- Type emoji + label (planning, impl, learn, unknown)
+- Session ID (first 8 chars + "...")
+- Detail line with:
+  - User turns count
+  - Duration in minutes (if available)
+  - Raw size → compressed XML size in KB
+
+**Returns**: `dict[str, str]` mapping file paths to XML content for all readable sessions
+
+---
+
+## Key Patterns Summary
+
+| Pattern | Location | Purpose |
+|---------|----------|---------|
+| **Guard gate** | Lines 373-375 | Skip if no XML extracted (defensive) |
+| **Session classification** | Lines 283-288 | Distinguish planning/impl/learn in filenames |
+| **Multi-chunk naming** | Lines 289-295 | Split large sessions with `-part{N}` suffix |
+| **Cycle prevention** | Lines 359-364 | Skip plans already tagged `erk-learn` |
+| **Session discovery** | Line 367 | Query GitHub metadata for tracked sessions |
+| **Readable filtering** | Line 237 | Check disk availability (LBYL) |
+| **Stats pipeline** | Lines 70-156 | Preprocess &amp; chunk sessions, compute metrics |
+| **Error resilience** | Lines 188-191 | Never block land, only warn on failures |
+| **Metadata linking** | Line 423 | Connect learn plan to parent via `learned_from_issue` |
+
+---
+
+**File Path**: `/home/runner/work/erk/erk/src/erk/cli/commands/land_learn.py`
+
+**Related Documentation**:
+- `/home/runner/work/erk/erk/docs/learned/cli/land-learn-integration.md`
+- `/home/runner/work/erk/erk/docs/learned/planning/learn-pipeline-workflow.md`
+- `/home/runner/work/erk/erk/docs/learned/sessions/discovery-fallback.md`
+- `/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md`
+- `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/sessions/discovery.py`</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="563" cache_read_input_tokens="39278" cache_creation="{'ephemeral_5m_input_tokens': 563, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
