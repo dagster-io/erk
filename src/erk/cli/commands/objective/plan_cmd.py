@@ -19,6 +19,7 @@ from erk.cli.commands.one_shot_dispatch import (
     OneShotDispatchParams,
     dispatch_one_shot,
 )
+from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.branch_slug_generator import BRANCH_SLUG_SYSTEM_PROMPT, _postprocess_slug
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
@@ -246,6 +247,8 @@ def _handle_all_unblocked(
     issue_ref: str | None,
     model: str | None,
     dry_run: bool,
+    dispatch_ref: str | None,
+    ref_current: bool,
 ) -> None:
     """Dispatch one-shot workflows for all unblocked pending nodes."""
     resolved = _resolve_all_unblocked(ctx, issue_ref=issue_ref)
@@ -263,6 +266,8 @@ def _handle_all_unblocked(
 
     dispatched_count = 0
     successful_dispatches: list[tuple[str, int]] = []
+
+    ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
 
     for node, phase_name in resolved.nodes:
         prompt = (
@@ -285,9 +290,7 @@ def _handle_all_unblocked(
             slug=slug,
         )
 
-        dispatch_result = dispatch_one_shot(
-            ctx, params=params, dry_run=dry_run, ref=ctx.local_config.dispatch_ref
-        )
+        dispatch_result = dispatch_one_shot(ctx, params=params, dry_run=dry_run, ref=ref)
 
         if dispatch_result is not None:
             successful_dispatches.append((node.id, dispatch_result.pr_number))
@@ -509,6 +512,19 @@ def _mark_node_planning(
     default=False,
     help="Dispatch all unblocked pending nodes via one-shot (one workflow per node)",
 )
+@click.option(
+    "--ref",
+    "dispatch_ref",
+    type=str,
+    default=None,
+    help="Branch to dispatch workflow from (overrides config dispatch_ref)",
+)
+@click.option(
+    "--ref-current",
+    is_flag=True,
+    default=False,
+    help="Dispatch workflow from the current branch",
+)
 @click.pass_obj
 def plan_objective(
     ctx: ErkContext,
@@ -521,6 +537,8 @@ def plan_objective(
     node_id: str | None,
     use_next: bool,
     all_unblocked: bool,
+    dispatch_ref: str | None,
+    ref_current: bool,
 ) -> None:
     """Create a plan from an objective node.
 
@@ -579,6 +597,8 @@ def plan_objective(
             issue_ref=issue_ref,
             model=model,
             dry_run=dry_run,
+            dispatch_ref=dispatch_ref,
+            ref_current=ref_current,
         )
     elif one_shot_mode:
         _handle_one_shot(
@@ -588,6 +608,8 @@ def plan_objective(
             dry_run=dry_run,
             node_id=node_id,
             use_next=use_next,
+            dispatch_ref=dispatch_ref,
+            ref_current=ref_current,
         )
     else:
         _handle_interactive(
@@ -665,6 +687,8 @@ def _handle_one_shot(
     dry_run: bool,
     node_id: str | None,
     use_next: bool,
+    dispatch_ref: str | None,
+    ref_current: bool,
 ) -> None:
     """Dispatch objective node via one-shot workflow."""
     if use_next:
@@ -722,6 +746,9 @@ def _handle_one_shot(
     # Normalize model name
     model = normalize_model_name(model)
 
+    # Resolve dispatch ref
+    ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
+
     # Build prompt
     prompt = (
         f"/erk:objective-plan {issue_number}\n"
@@ -747,9 +774,7 @@ def _handle_one_shot(
         slug=slug,
     )
 
-    dispatch_result = dispatch_one_shot(
-        ctx, params=params, dry_run=dry_run, ref=ctx.local_config.dispatch_ref
-    )
+    dispatch_result = dispatch_one_shot(ctx, params=params, dry_run=dry_run, ref=ref)
 
     # After successful dispatch, immediately mark node as "planning" with draft PR
     if dispatch_result is not None:

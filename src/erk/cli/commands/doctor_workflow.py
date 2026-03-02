@@ -12,6 +12,7 @@ from erk.artifacts.models import ArtifactFileState
 from erk.artifacts.paths import ErkPackageInfo
 from erk.artifacts.state import load_artifact_state, load_installed_capabilities
 from erk.cli.commands.doctor import _format_check_result
+from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.commands.run import run_group
 from erk.core.context import ErkContext, NoRepoSentinel
 from erk.core.health_checks import (
@@ -221,8 +222,23 @@ def workflow_check_cmd(ctx: ErkContext, verbose: bool) -> None:
 @workflow_group.command("smoke-test")
 @click.option("--wait", is_flag=True, help="Poll workflow run until completion")
 @click.option("-v", "--verbose", is_flag=True, help="Show details of static checks")
+@click.option(
+    "--ref",
+    "dispatch_ref",
+    type=str,
+    default=None,
+    help="Branch to dispatch workflow from (overrides config dispatch_ref)",
+)
+@click.option(
+    "--ref-current",
+    is_flag=True,
+    default=False,
+    help="Dispatch workflow from the current branch",
+)
 @click.pass_obj
-def workflow_smoke_test_cmd(ctx: ErkContext, wait: bool, verbose: bool) -> None:
+def workflow_smoke_test_cmd(
+    ctx: ErkContext, wait: bool, verbose: bool, dispatch_ref: str | None, ref_current: bool
+) -> None:
     """Run a live smoke test (creates artifacts).
 
     Runs static checks first, then dispatches a throwaway branch/PR
@@ -240,7 +256,7 @@ def workflow_smoke_test_cmd(ctx: ErkContext, wait: bool, verbose: bool) -> None:
         raise SystemExit(1)
 
     click.echo("")
-    _handle_smoke_test(ctx, wait=wait)
+    _handle_smoke_test(ctx, wait=wait, dispatch_ref=dispatch_ref, ref_current=ref_current)
 
 
 @workflow_group.command("cleanup")
@@ -280,11 +296,18 @@ def workflow_list_cmd(ctx: ErkContext) -> None:
         click.echo(f"  {artifact.name}{badge}")
 
 
-def _handle_smoke_test(ctx: ErkContext, *, wait: bool) -> None:
+def _handle_smoke_test(
+    ctx: ErkContext,
+    *,
+    wait: bool,
+    dispatch_ref: str | None,
+    ref_current: bool,
+) -> None:
     """Run the live smoke test dispatch."""
     click.echo(click.style("Running smoke test...", bold=True))
 
-    result = run_smoke_test(ctx)
+    ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
+    result = run_smoke_test(ctx, dispatch_ref=ref)
 
     if isinstance(result, SmokeTestError):
         click.echo(click.style(f"Error during {result.step}: {result.message}", fg="red"), err=True)

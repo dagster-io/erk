@@ -10,6 +10,7 @@ import click
 
 from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
 from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+from erk.cli.commands.ref_resolution import resolve_dispatch_ref
 from erk.cli.commands.slot.common import is_placeholder_branch
 from erk.cli.constants import (
     DISPATCH_WORKFLOW_METADATA_NAME,
@@ -392,9 +393,19 @@ def _detect_plan_number_from_context(
     default=None,
     help="Branch to dispatch workflow from (overrides config dispatch_ref)",
 )
+@click.option(
+    "--ref-current",
+    is_flag=True,
+    default=False,
+    help="Dispatch workflow from the current branch",
+)
 @click.pass_obj
 def pr_dispatch(
-    ctx: ErkContext, plan_numbers: tuple[int, ...], base: str | None, dispatch_ref: str | None
+    ctx: ErkContext,
+    plan_numbers: tuple[int, ...],
+    base: str | None,
+    dispatch_ref: str | None,
+    ref_current: bool,
 ) -> None:
     """Dispatch plans for remote AI implementation via GitHub Actions.
 
@@ -417,7 +428,7 @@ def pr_dispatch(
         - All issues must be OPEN
         - Working directory must be clean (no uncommitted changes)
     """
-    ref = dispatch_ref if dispatch_ref is not None else ctx.local_config.dispatch_ref
+    ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
 
     # Validate GitHub CLI prerequisites upfront (LBYL)
     user_output("Checking GitHub authentication...")
