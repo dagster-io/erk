@@ -1,0 +1,970 @@
+<session>
+  <meta branch="plnd/hide-required-capabilities-03-02-0512" />
+  <meta model="claude-sonnet-4-6" />
+  <tool_result tool="toolu_01SQo8Mh4niCLzGt5gWaj5bp">
+**Result: Both checks passed**
+
+- **ruff check**: All checks passed! (no linting violations)
+- **ty check**: All checks passed! (no type errors)
+
+The codebase is clean with no style violations or type issues.
+agentId: a73f4abf1f1cac897 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13484
+tool_uses: 1
+duration_ms: 3123&lt;/usage&gt;
+  </tool_result>
+  <assistant>Phase 1 passes. Now running the full fast CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="265" cache_read_input_tokens="51920" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 265}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01DHJqr3DHaEFKTTxymTwjrU">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run full fast CI pipeline</param>
+    <param name="prompt">Run `make fast-ci` from the repository root at /Users/schrockn/.erk/repos/erk/worktrees/er...[truncated 5 chars]...output, especially any test failures or errors. Show all test names that fail if any fail.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="265" cache_read_input_tokens="51920" output_tokens="167" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 265, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DHJqr3DHaEFKTTxymTwjrU">
+## Summary
+
+The `make fast-ci` command failed with **3 test failures** out of 5726 tests run. Here are the details:
+
+### Test Failures
+
+1. **`tests/unit/core/test_capabilities.py::test_default_capabilities_not_required`**
+   - Assertion error indicating a capability that should not be required is somehow marked as required
+
+2. **`tests/core/test_health_checks.py::test_check_managed_artifacts_changed_upstream_remediation`**
+   - Related to artifact health checks when artifacts have been changed upstream
+
+3. **`tests/core/test_health_checks.py::test_check_managed_artifacts_locally_modified_remediation`**
+   - Related to artifact health checks when artifacts have been locally modified
+   - Assertion: `assert result.passed is True` failed (got `False`)
+   - The check result shows: "Managed artifacts have issues" with details about "skills (5) ... missing from the project"
+   - Remediation suggested: "Run 'erk artifact sync' to restore missing artifacts"
+
+### Other Results
+
+- **Lint**: All checks passed
+- **Format Check**: 1 file would be reformatted (`src/erk/capabilities/skills/bundled.py`)
+- **Prettier Check**: All matched files use Prettier code style
+- **Markdown Check**: Passed
+- **Exec Reference Check**: Up to date
+- **Type Check (ty)**: All checks passed
+- **Other test suites**: All passed
+  - erk-dev: 136 passed
+  - erk-statusline: 112 passed
+  - erkbot: 114 passed
+
+... [6 lines omitted] ...
+
+The failures appear to be related to capabilities management and artifact health checks, specifically around default capabilities that should not be required and missing skills artifacts.
+  </tool_result>
+  <thinking>I need to fix three issues:
+
+1. Format check: `src/erk/capabilities/skills/bundled.py` needs formatting - the frozenset syntax needs to be formatted by ruff.
+
+2. Test failures:
+   - `test_default_capabilities_not_required` - something that should not be required is now required
+   - `test_check_managed_artifacts_*` - these are about health checks with missing skills
+
+Let me read the test files to understand what's expected:</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="52185" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 651}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at the failing tests to understand what's expected:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="52185" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 651}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011JRaSfKdiKgTwWU585f8Ts">
+    <param name="pattern">test_default_capabilities_not_required</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="52185" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 651}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011JRaSfKdiKgTwWU585f8Ts">
+tests/unit/core/test_capabilities.py:1286:def test_default_capabilities_not_required() -&gt; None:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_014hp9drdAcNNWFzrAGku2ux">
+    <param name="pattern">test_check_managed_artifacts_changed_upstream|test_check_managed_artifacts_locally_modified</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="52185" output_tokens="382" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 651, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014hp9drdAcNNWFzrAGku2ux">
+tests/core/test_health_checks.py:787:def test_check_managed_artifacts_changed_upstream_remediation(tmp_path: Path) -&gt; None:
+tests/core/test_health_checks.py:850:def test_check_managed_artifacts_locally_modified_remediation(tmp_path: Path) -&gt; None:
+  </tool_result>
+  <tool_use name="Read" id="toolu_018UM7Tn6BjfABfY9N2SNADp">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/core/test_capabilities.py</param>
+    <param name="offset">1280</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="658" cache_read_input_tokens="52836" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 658}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018UM7Tn6BjfABfY9N2SNADp">
+  1280→    required_caps = list_required_capabilities()
+  1281→    names = [cap.name for cap in required_caps]
+  1282→
+  1283→    assert "erk-hooks" in names
+  1284→
+  1285→
+  1286→def test_default_capabilities_not_required() -&gt; None:
+  1287→    """Test that default capabilities are NOT required."""
+  1288→    # Most capabilities should be optional
+  1289→    optional_caps = [
+  1290→        LearnedDocsCapability(),
+  1291→        DevrunAgentCapability(),
+  1292→        ErkBashPermissionsCapability(),
+  1293→        StatuslineCapability(claude_installation=None),
+  1294→    ]
+  1295→
+  1296→    for cap in optional_caps:
+  1297→        assert cap.required is False, f"{cap.name} should not be required"
+  1298→
+  1299→    # All bundled skills should also be optional
+  1300→    for skill_name in bundled_skills():
+  1301→        cap = get_capability(skill_name)
+  1302→        assert cap is not None
+  1303→        assert cap.required is False, f"{skill_name} should not be required"
+  1304→
+  1305→
+  1306→def test_workflow_capabilities_are_required() -&gt; None:
+  1307→    """Test that all workflow capabilities are required."""
+  1308→    workflow_caps = [
+  1309→        ErkImplWorkflowCapability(),
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ciz3S4cxygaAtVC9dD6PPY">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/core/test_health_checks.py</param>
+    <param name="offset">780</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="658" cache_read_input_tokens="52836" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 658}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ciz3S4cxygaAtVC9dD6PPY">
+   780→    assert "❌" in result.details
+   781→    # Should NOT have the "install workflows first" message
+   782→    assert "install workflows first" not in result.details
+   783→    assert result.remediation is not None
+   784→    assert "erk artifact sync" in result.remediation
+   785→
+   786→
+   787→def test_check_managed_artifacts_changed_upstream_remediation(tmp_path: Path) -&gt; None:
+   788→    """Test remediation message for changed-upstream artifacts.
+   789→
+   790→    Scenario: A newer version of erk has updated the bundled artifact content.
+   791→    The user hasn't modified the file locally, but it's out of date with bundled.
+   792→    This is detected when the artifact state version is older than current erk version.
+   793→    """
+   794→    import hashlib
+   795→
+   796→    from erk.core.claude_settings import add_erk_hooks
+   797→
+   798→    # Create bundled dir with command content
+   799→    bundled_dir = tmp_path / "bundled" / ".claude"
+   800→    bundled_commands = bundled_dir / "commands" / "erk"
+   801→    bundled_commands.mkdir(parents=True)
+   802→    (bundled_commands / "plan-save.md").write_text("# Command - bundled content", encoding="utf-8")
+   803→
+   804→    # Create project dir with SAME content (not locally modified)
+   805→    project_dir = tmp_path / "project"
+   806→    project_claude = project_dir / ".claude"
+   807→    project_commands = project_claude / "commands" / "erk"
+   808→    project_commands.mkdir(parents=True)
+   809→    (project_commands / "plan-save.md").write_text("# Command - bundled content", encoding="utf-8")
+
+... [75 lines omitted] ...
+
+   843→    assert result.passed is True  # changed-upstream is a warning, not failure
+   844→    assert result.warning is True
+  </tool_result>
+  <thinking>Now I understand the issues:
+
+1. **`test_default_capabilities_not_required`** - This test asserts that all bundled skills should have `required is False`. But I've now made 5 of them required. I need to update this test to reflect the new reality — the 5 newly-required skills should no longer be in the "all bundled skills should be optional" check.
+
+2. **Health check failures** - The test failures appear to be related to capabilities with missing skills (5 skills are now required and installed by default, but in the test environment they're not "installed"). Let me read the health check test more carefully.
+
+
+I need to examine the health check test logic to understand why it's failing when these required skills aren't present in the test environment.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="8453" cache_read_input_tokens="53494" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8453}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the full health check tests and the test_capabilities file more:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8453" cache_read_input_tokens="53494" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8453}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01A7cKt4mLLwVp5kkWuM6gcA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/core/test_health_checks.py</param>
+    <param name="offset">878</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8453" cache_read_input_tokens="53494" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8453}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A7cKt4mLLwVp5kkWuM6gcA">
+   878→    project_commands = project_claude / "commands" / "erk"
+   879→    project_commands.mkdir(parents=True)
+   880→    (project_commands / "plan-save.md").write_text("# Command - user modified", encoding="utf-8")
+   881→    settings = add_erk_hooks({})
+   882→    (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+   883→
+   884→    # Create workflow/action files so required workflow capabilities are up-to-date
+   885→    project_workflows = project_dir / ".github" / "workflows"
+   886→    project_workflows.mkdir(parents=True)
+   887→    workflow_names = ("learn", "one-shot", "plan-implement", "pr-address", "pr-rebase")
+   888→    for wf_name in workflow_names:
+   889→        (project_workflows / f"{wf_name}.yml").write_text(f"name: {wf_name}", encoding="utf-8")
+   890→    project_actions = project_dir / ".github" / "actions"
+   891→    action_names = ("setup-claude-code", "setup-claude-erk", "erk-remote-setup")
+   892→    for action_name in action_names:
+   893→        (project_actions / action_name).mkdir(parents=True)
+   894→
+   895→    # Create artifact state with:
+   896→    # 1. Command has hash of ORIGINAL content (not the modified file) + current version
+   897→    #    → This means file was synced but then modified locally = locally-modified
+   898→    # 2. Hooks have correct hashes + current version
+   899→    #    → This means hooks are up-to-date (won't affect overall_worst)
+   900→    # 3. Workflows/actions have matching hashes + current version
+   901→    #    → This means they are up-to-date (won't affect overall_worst)
+   902→    state_dir = project_dir / ".erk"
+   903→    state_dir.mkdir(parents=True)
+   904→    bundled_file = bundled_commands / "plan-save.md"
+   905→    original_hash = hashlib.sha256(bundled_file.read_bytes()).hexdigest()[:16]
+   906→
+   907→    # Compute hook hashes the same way artifact_health does
+
+... [55 lines omitted] ...
+
+   956→    assert result.passed is True  # locally-modified is a warning, not failure
+   957→    assert result.warning is True
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MNEAJxdHw8oqHuRYUYTWcD">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/core/test_capabilities.py</param>
+    <param name="offset">1295</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8453" cache_read_input_tokens="53494" output_tokens="418" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8453, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MNEAJxdHw8oqHuRYUYTWcD">
+  1295→
+  1296→    for cap in optional_caps:
+  1297→        assert cap.required is False, f"{cap.name} should not be required"
+  1298→
+  1299→    # All bundled skills should also be optional
+  1300→    for skill_name in bundled_skills():
+  1301→        cap = get_capability(skill_name)
+  1302→        assert cap is not None
+  1303→        assert cap.required is False, f"{skill_name} should not be required"
+  1304→
+  1305→
+  1306→def test_workflow_capabilities_are_required() -&gt; None:
+  1307→    """Test that all workflow capabilities are required."""
+  1308→    workflow_caps = [
+  1309→        ErkImplWorkflowCapability(),
+  1310→        LearnWorkflowCapability(),
+  1311→        OneShotWorkflowCapability(),
+  1312→        PrAddressWorkflowCapability(),
+  1313→        PrRebaseWorkflowCapability(),
+  1314→    ]
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <thinking>I need to understand the health check failure better. The health check tests are failing with:
+"skills (5) ... missing from the project"
+
+This suggests that the health check is checking whether required capabilities' skills are installed, and they're not because the test doesn't have them set up in the test directories. Let me understand the `check_managed_artifacts` function and how it handles required capabilities.
+
+Actually, looking at the test setup for the health checks, it calls `check_managed_artifacts(project_dir, package=package, installed_capabilities=frozenset())`. With `installed_capabilities=frozenset()`, no capabilities are installed. 
+
+
+The 5 skills I marked as required have artifact files that the health check is looking for, but since the test doesn't set up those skill files, they're being flagged as missing. I need to trace through the `check_managed_artifacts` function to see exactly how it validates required capabilities.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2220" cache_read_input_tokens="61947" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2220}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at `check_managed_artifacts` to understand the health check failure:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2220" cache_read_input_tokens="61947" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2220}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01BKYmjYgdyQTAK1KLnreFsn">
+    <param name="pattern">def check_managed_artifacts</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2220" cache_read_input_tokens="61947" output_tokens="377" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2220, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BKYmjYgdyQTAK1KLnreFsn">
+src/erk/core/health_checks/managed_artifacts.py:257:def check_managed_artifacts(
+  </tool_result>
+  <tool_use name="Read" id="toolu_012z1ovUhuy82rwwZyvtbFH7">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/core/health_checks/managed_artifacts.py</param>
+    <param name="offset">257</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="64167" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 413, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012z1ovUhuy82rwwZyvtbFH7">
+   257→def check_managed_artifacts(
+   258→    repo_root: Path,
+   259→    *,
+   260→    package: ErkPackageInfo,
+   261→    installed_capabilities: frozenset[str] | None,
+   262→) -&gt; CheckResult:
+   263→    """Check status of erk-managed artifacts.
+   264→
+   265→    Shows a summary of artifact status by type (skills, commands, agents, etc.)
+   266→    with per-type counts and status indicators.
+   267→
+   268→    Args:
+   269→        repo_root: Path to the repository root
+   270→        package: Package info for the repository
+   271→        installed_capabilities: Installed capabilities for filtering, or None for erk repo
+   272→
+   273→    Returns:
+   274→        CheckResult with artifact health status
+   275→    """
+   276→    # Check for .claude/ directory
+   277→    claude_dir = repo_root / ".claude"
+   278→    if not claude_dir.exists():
+   279→        return CheckResult(
+   280→            name="managed-artifacts",
+   281→            passed=True,
+   282→            message="No .claude/ directory (nothing to check)",
+   283→        )
+   284→
+   285→    # Load saved artifact state
+   286→    state = load_artifact_state(repo_root)
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Czd3RcUr5bg429YP5ZwwGJ">
+    <param name="pattern">def get_artifact_health|missing|installed_capabilities</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/core/health_checks/managed_artifacts.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="883" cache_read_input_tokens="64580" output_tokens="160" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 883, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Czd3RcUr5bg429YP5ZwwGJ">
+209:            "   (not-installed): these artifacts are missing from the project"
+221:        remediation = "Run 'erk artifact sync' to restore missing artifacts"
+261:    installed_capabilities: frozenset[str] | None,
+271:        installed_capabilities: Installed capabilities for filtering, or None for erk repo
+293:        installed_capabilities=installed_capabilities,
+
+[Showing results with pagination = limit: 60, offset: 0]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Dx3ZFpazFFXK6r6UDM81Tx">
+    <param name="pattern">def get_artifact_health</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="278" cache_read_input_tokens="65463" output_tokens="120" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 278, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Dx3ZFpazFFXK6r6UDM81Tx">
+src/erk/artifacts/artifact_health.py:193:def get_artifact_health(
+  </tool_result>
+  <tool_use name="Read" id="toolu_012zXLQ6URaB3jxn6JVJDVec">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/artifacts/artifact_health.py</param>
+    <param name="offset">193</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="264" cache_read_input_tokens="65741" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 264, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012zXLQ6URaB3jxn6JVJDVec">
+   193→def get_artifact_health(
+   194→    project_dir: Path,
+   195→    saved_files: dict[str, ArtifactFileState],
+   196→    *,
+   197→    installed_capabilities: frozenset[str] | None,
+   198→    package: ErkPackageInfo,
+   199→) -&gt; ArtifactHealthResult:
+   200→    """Get per-artifact health status comparing installed vs bundled state.
+   201→
+   202→    Args:
+   203→        project_dir: Path to the project root
+   204→        saved_files: Per-artifact state from .erk/state.toml (artifact key -&gt; ArtifactFileState)
+   205→        installed_capabilities: Set of capability names installed in the repo,
+   206→            or None to skip filtering and check all artifacts (erk repo case)
+   207→        package: Erk package installation info
+   208→
+   209→    Returns:
+   210→        ArtifactHealthResult with status for each bundled artifact
+   211→    """
+   212→    # Skip if no .claude/ directory
+   213→    project_claude_dir = project_dir / ".claude"
+   214→    if not project_claude_dir.exists():
+   215→        return ArtifactHealthResult(artifacts=[], skipped_reason="no-claude-dir")
+   216→
+   217→    if not package.bundled_claude_dir.exists():
+   218→        return ArtifactHealthResult(artifacts=[], skipped_reason="no-bundled-dir")
+   219→
+   220→    project_workflows_dir = project_dir / ".github" / "workflows"
+   221→    project_actions_dir = project_dir / ".github" / "actions"
+   222→    current_version = package.current_version
+
+... [55 lines omitted] ...
+  </tool_result>
+  <thinking>Now let me find the `_get_bundled_by_type` function to understand how it filters capabilities:</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1569" cache_read_input_tokens="66005" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1569}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018FheaW1z7yawtFG4mdngWA">
+    <param name="pattern">def _get_bundled_by_type</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/artifacts/artifact_health.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1569" cache_read_input_tokens="66005" output_tokens="174" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1569, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018FheaW1z7yawtFG4mdngWA">
+33:def _get_bundled_by_type(
+  </tool_result>
+  <tool_use name="Read" id="toolu_014EfYmwvUUVwBnFArNAv5hS">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/artifacts/artifact_health.py</param>
+    <param name="offset">33</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="199" cache_read_input_tokens="67574" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 199, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014EfYmwvUUVwBnFArNAv5hS">
+    33→def _get_bundled_by_type(
+    34→    artifact_type: str,
+    35→    *,
+    36→    installed_capabilities: frozenset[str] | None,
+    37→) -&gt; frozenset[str]:
+    38→    """Get all artifact names of a given type that should be checked.
+    39→
+    40→    Filtering logic:
+    41→    - If installed_capabilities is None: return all managed artifacts (erk repo case)
+    42→    - Otherwise: return only artifacts from required capabilities OR from
+    43→      explicitly installed capabilities
+    44→
+    45→    Args:
+    46→        artifact_type: The artifact type (e.g., "skill", "hook", "workflow")
+    47→        installed_capabilities: Set of capability names installed in the repo,
+    48→            or None to skip filtering (check all)
+    49→
+    50→    Returns:
+    51→        Frozenset of artifact names to check
+    52→    """
+    53→    managed = get_managed_artifacts()
+    54→    result: set[str] = set()
+    55→
+    56→    for (name, atype), capability_name in managed.items():
+    57→        if atype != artifact_type:
+    58→            continue
+    59→
+    60→        # No filtering - include all (erk repo case)
+    61→        if installed_capabilities is None:
+    62→            result.add(name)
+
+... [35 lines omitted] ...
+  </tool_result>
+  <thinking>I understand the issue now. The `_get_bundled_by_type` function checks `capability.required` to decide which artifacts to always check. Now that I've made 5 bundled skills required, when `installed_capabilities=frozenset()` is passed (as in the tests), these 5 skills will be included in the artifact check even though they're not installed in the test directories.
+
+The health check tests pass `installed_capabilities=frozenset()` and then verify:
+- `test_check_managed_artifacts_changed_upstream_remediation`: The test expects `result.passed is True` (warning only)
+
+
+- `test_check_managed_artifacts_locally_modified_remediation`: Same expectation
+
+Both tests were passing before because no skills were required, but now that 5 skills are marked as required, the health check detects them and flags them as "not-installed" since they're missing from the test directory's `.claude/skills/` folder, causing the tests to fail. I need to check whether "not-installed" status triggers a failure or just a warning.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="883" cache_read_input_tokens="67773" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 883}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FpdapatWRy13QtbK6HykT7">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/core/health_checks/managed_artifacts.py</param>
+    <param name="offset">150</param>
+    <param name="limit">110</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="883" cache_read_input_tokens="67773" output_tokens="388" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 883, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FpdapatWRy13QtbK6HykT7">
+   150→        actions_optional = (
+   151→            artifact_type == "actions" and worst == "not-installed" and not workflows_installed
+   152→        )
+   153→
+   154→        # Track overall worst for header (skip actions if optional)
+   155→        if not actions_optional:
+   156→            if overall_worst == "up-to-date":
+   157→                overall_worst = worst
+   158→            elif worst == "not-installed":
+   159→                overall_worst = "not-installed"
+   160→            elif worst in ("locally-modified", "changed-upstream") and overall_worst not in (
+   161→                "not-installed",
+   162→            ):
+   163→                overall_worst = worst
+   164→
+   165→        # Use info icon for optional actions, otherwise status icon
+   166→        if actions_optional:
+   167→            icon = "\u2139\ufe0f"
+   168→        else:
+   169→            icon = _status_icon(worst)
+   170→        line = f"   {icon} {artifact_type} ({count})"
+   171→
+   172→        # Add issue description if not up-to-date
+   173→        if worst != "up-to-date":
+   174→            # Only mark has_issues if this isn't an optional actions case
+   175→            if not actions_optional:
+   176→                has_issues = True
+   177→            issue_count = sum(1 for s in statuses if s == worst)
+   178→            desc = _status_description(worst, issue_count)
+   179→            # Add clarifying note for optional actions
+
+... [85 lines omitted] ...
+
+   241→            warning=True,
+  </tool_result>
+  <thinking>I now understand the full picture:
+
+1. When `overall_worst == "not-installed"`, the check returns `passed=False`.
+2. The tests set `installed_capabilities=frozenset()` (no installed capabilities).
+3. Now that 5 bundled skills are required (`capability.required = True`), they get included in the artifact check.
+4. Since the test directories don't have these skills installed, they show up as `not-installed`.
+5. This sets `overall_worst = "not-installed"`, making `passed=False`.
+6. The tests expect `passed=True`.
+
+The fix for the health check tests is to ensure the required skills are present in the test directories. 
+
+Looking at how the test sets up the bundled directory, I see it's creating a specific skill artifact structure. I need to either populate the test directories with all the required skill files, or mock the bundled directory setup to include those artifacts so the health check can find them. I see how `_get_bundled_by_type` works now—it pulls from the full registry of managed artifacts and filters based on artifact type, then includes required capabilities regardless of installation status. So the five newly required skills will be picked up in the health check. Now I'm tracing through `get_artifact_health` to see how it uses this filtered set...
+
+For each skill returned, it computes a hash of the skill directory, but since these paths don't exist in the test project, the hash comes back as None. I need to understand what `_build_artifact_status` does when it receives a None hash with no saved state to compare against.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1851" cache_read_input_tokens="68656" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1851}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01QEi8eb4RyioLyMep522c5F">
+    <param name="pattern">def _build_artifact_status</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/artifacts/artifact_health.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1851" cache_read_input_tokens="68656" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1851}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QEi8eb4RyioLyMep522c5F">
+170:def _build_artifact_status(
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01FMmMvZNLWWMt3BHjjuASvk">
+    <param name="pattern">def _compute_path_hash</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/artifacts/artifact_health.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1851" cache_read_input_tokens="68656" output_tokens="1134" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1851, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FMmMvZNLWWMt3BHjjuASvk">
+121:def _compute_path_hash(path: Path, is_directory: bool) -&gt; str | None:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LNMwCYKGNMVa21ej2WQTGJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/artifacts/artifact_health.py</param>
+    <param name="offset">121</param>
+    <param name="limit">55</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1207" cache_read_input_tokens="70507" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1207, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LNMwCYKGNMVa21ej2WQTGJ">
+   121→def _compute_path_hash(path: Path, is_directory: bool) -&gt; str | None:
+   122→    """Compute hash of a path, returning None if it doesn't exist.
+   123→
+   124→    Args:
+   125→        path: Path to the file or directory
+   126→        is_directory: True for directory hash, False for file hash
+   127→    """
+   128→    if not path.exists():
+   129→        return None
+   130→    if is_directory:
+   131→        return _compute_directory_hash(path)
+   132→    return _compute_file_hash(path)
+   133→
+   134→
+   135→def _determine_status(
+   136→    installed_version: str | None,
+   137→    current_version: str,
+   138→    installed_hash: str | None,
+   139→    current_hash: str | None,
+   140→) -&gt; ArtifactStatusType:
+   141→    """Determine artifact status from version/hash comparison.
+   142→
+   143→    Logic:
+   144→    - current_hash is None → not installed
+   145→    - installed_hash != current_hash AND installed_version == current_version → locally modified
+   146→    - installed_version != current_version → changed upstream
+   147→    - Both match → up-to-date
+   148→    """
+   149→    if current_hash is None:
+   150→        return "not-installed"
+
+... [30 lines omitted] ...
+  </tool_result>
+  <thinking>I see. The `_determine_status` function:
+- If `current_hash is None` → "not-installed" (the file doesn't exist in the project)
+- If `installed_hash is None or installed_version is None` → "changed-upstream" (no prior state recorded)
+
+Wait, let me re-read `_compute_path_hash`:
+```python
+def _compute_path_hash(path: Path, is_directory: bool) -&gt; str | None:    if not path.exists():        return None
+```
+
+And in `get_artifact_health`:
+```python
+for name in _get_bundled_by_type("skill", installed_capabilities=installed_capabilities):
+
+
+```
+
+So for each skill, I'm computing the hash of its directory in the project, then passing that to `_build_artifact_status` along with the saved files and current version to determine the artifact's health status.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="853" cache_read_input_tokens="71714" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 853}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011e9ceK1AKyjA9dJUdMWtYL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/artifacts/artifact_health.py</param>
+    <param name="offset">170</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="853" cache_read_input_tokens="71714" output_tokens="527" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 853, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011e9ceK1AKyjA9dJUdMWtYL">
+   170→def _build_artifact_status(
+   171→    key: str,
+   172→    current_hash: str | None,
+   173→    saved_files: dict[str, ArtifactFileState],
+   174→    current_version: str,
+   175→) -&gt; ArtifactStatus:
+   176→    """Build ArtifactStatus from key, hash, and saved state."""
+   177→    saved = saved_files.get(key)
+   178→    return ArtifactStatus(
+   179→        name=key,
+   180→        installed_version=saved.version if saved else None,
+   181→        current_version=current_version,
+   182→        installed_hash=saved.hash if saved else None,
+   183→        current_hash=current_hash,
+   184→        status=_determine_status(
+   185→            saved.version if saved else None,
+   186→            current_version,
+   187→            saved.hash if saved else None,
+   188→            current_hash,
+   189→        ),
+   190→    )
+   191→
+   192→
+   193→def get_artifact_health(
+   194→    project_dir: Path,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <thinking>Wait, I see the naming is a bit confusing. In `_build_artifact_status`, `current_hash` is the hash of the currently-installed file (not the bundled file). And `installed_hash` / `installed_version` come from the saved state (`.erk/state.toml`).
+
+In `_determine_status`:
+- `current_hash is None` → "not-installed" (skill file doesn't exist in project)
+
+But what matters is: in the tests, the project directory doesn't have the skill files at all (for the required skills), so `_compute_path_hash(path, is_directory=True)` returns `None`. 
+
+So when `current_hash` is `None`, the status becomes "not-installed" because the skill file doesn't actually exist in the project directory. The health check then evaluates this: "not-installed" fails the check, "changed-upstream" passes with a warning, and "locally-modified" would also pass but gets cut off in the logic.
+
+My change caused 5 required skills to always be checked, and since the test project directories don't have those skill files, they all show as "not-installed" and fail. The tests were set up with `installed_capabilities=frozenset()`, so before my change, only skills with `required=True` from other capabilities would be checked. Now those 5 required skills are always included in the check.
+
+To fix the tests, I'd need to add those required skill files to the test directories, but the test setup only creates a minimal bundled directory with a single file. I'm wondering how `_get_bundled_by_type` factors into this...
+
+Actually, looking at the code that checks skill health, it iterates through bundled skills and checks if each one exists in the project's skills directory. If the path doesn't exist, the installed hash is `None`, which means the status comes back as "not-installed".
+
+The real issue is that these tests pass an empty `installed_capabilities` set, but the health check still validates all required skills regardless. So either the tests need to create those skill directories to avoid false "not-installed" statuses, or we need to reconsider whether the health check logic should be validating skills that weren't explicitly installed in the first place.
+
+Looking at the five required skills—erk-diff-analysis, erk-exec, objective, pr-operations, and pr-feedback-classifier—I need to understand how `get_managed_artifacts()` discovers and tracks them, since it's cached and built from the capabilities system. The `BundledSkillCapability` class should tell me what artifacts each skill declares and where they're located in the `.claude/skills/` directory structure.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="901" cache_read_input_tokens="72567" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 901}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check what artifacts a SkillCapability declares:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="901" cache_read_input_tokens="72567" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 901}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Tm9eLpRmy4tooXyooL26CW">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/core/capabilities/skill_capability.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="901" cache_read_input_tokens="72567" output_tokens="1223" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 901, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Tm9eLpRmy4tooXyooL26CW">
+     1→"""Base class for skill-based capabilities.
+     2→
+     3→SkillCapability wraps the existing artifact sync system to install Claude skills
+     4→to external repositories via the capability system.
+     5→"""
+     6→
+     7→import shutil
+     8→from abc import abstractmethod
+     9→from pathlib import Path
+    10→
+    11→from erk.artifacts.paths import get_bundled_claude_dir
+    12→from erk.artifacts.state import add_installed_capability, remove_installed_capability
+    13→from erk.core.capabilities.base import (
+    14→    Capability,
+    15→    CapabilityArtifact,
+    16→    CapabilityResult,
+    17→    CapabilityScope,
+    18→    ManagedArtifact,
+    19→    backend_agent_dir,
+    20→)
+    21→from erk_shared.context.types import AgentBackend
+    22→
+    23→
+    24→class SkillCapability(Capability):
+    25→    """Base class for capabilities that install a single skill.
+    26→
+    27→    Subclasses only need to implement skill_name and description.
+    28→    The base class handles artifact tracking and installation via artifact sync.
+    29→    """
+    30→
+
+... [118 lines omitted] ...
+  </tool_result>
+  <thinking>Now I understand the full picture.
+
+Issues to fix:1. **Format check**: `src/erk/capabilities/skills/bundled.py` needs formatting (the frozenset)2. **`test_default_capabilities_not_required`**: This test asserts ALL bundled skills should not be required. I need to update it to reflect that 5 specific skills are now required.3. **Health check tests**: These tests set `installed_capabilities=frozenset()`. Now that 5 skills are required, they get included in the health check. Since the test project directories don't have these skill directories, they show as "not-installed" → `passed=False`. 
+
+For the health check tests, I need to create the required skill directories in the test project directories. The 5 required skills are erk-diff-analysis, erk-exec, objective, pr-operations, and pr-feedback-classifier. I can either create non-empty `.claude/skills/&lt;name&gt;/` directories in the test `project_dir` or add them to the state.toml so they're marked as up-to-date.
+
+If a skill directory exists but has no entry in state.toml, the status check would see a non-None hash for the directory but None for the installed hash, triggering a "changed-upstream" status with a warning rather than a failure. This should satisfy the test expectations of `passed=True` and `warning=True`, though I need to verify this doesn't conflict with other test assertions about what "changed-upstream" means.
+
+For both the changed-upstream and locally-modified remediation tests, if the required skills lack state.toml entries, they'd still report as "changed-upstream" with the same warning status, so the fix is simply to create the required skill directories under the project's `.claude/skills/` path without necessarily needing state.toml entries for them. Looking at the precedence logic for determining `overall_worst`, I need to trace through what happens when a command is locally-modified. The status hierarchy checks if "not-installed" exists first (which would fail the test), then evaluates locally-modified and changed-upstream statuses. Since locally-modified takes precedence over changed-upstream in the comparison logic, the test's expectation of `passed=True, warning=True` with the sync remediation should hold even if some skills are changed-upstream.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3277" cache_read_input_tokens="73468" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3277}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011dJATW3sXFxd4JdQV2CycD">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/core/test_health_checks.py</param>
+    <param name="offset">954</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3277" cache_read_input_tokens="73468" output_tokens="1370" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3277, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011dJATW3sXFxd4JdQV2CycD">
+   954→
+   955→    assert result.name == "managed-artifacts"
+   956→    assert result.passed is True  # locally-modified is a warning, not failure
+   957→    assert result.warning is True
+   958→    assert "have issues" in result.message
+   959→    assert result.remediation is not None
+   960→    assert "erk artifact sync --force" in result.remediation
+   961→    assert "restore erk defaults" in result.remediation
+   962→
+   963→
+   964→def test_check_managed_artifacts_verbose_status_explanations(tmp_path: Path) -&gt; None:
+   965→    """Test verbose output includes status explanations."""
+   966→    from erk.core.claude_settings import add_erk_hooks
+   967→
+   968→    # Create bundled dir with command
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <thinking>The test checks:
+- `result.passed is True`
+- `result.warning is True`
+- `"have issues" in result.message`
+- `"erk artifact sync --force" in result.remediation` (for locally-modified)
+- `"restore erk defaults" in result.remediation`
+
+If skills are "changed-upstream" and command is "locally-modified", `overall_worst` = "locally-modified" (takes precedence over "changed-upstream"). So remediation = "Run 'erk artifact sync --force' to restore erk defaults". This matches the test assertion!
+
+For `test_check_managed_artifacts_changed_upstream_remediation`:
+
+
+When both skills and command are "changed-upstream", `overall_worst` stays "changed-upstream" and the remediation becomes "Run 'erk artifact sync' to update to latest erk version", which satisfies the assertion that `"erk artifact sync" in result.remediation`. Now I need to set up the test by creating the five required skill directories.
+
+Since these dummy skill directories won't have state.toml entries, they'll register as "changed-upstream" which maintains the `warning=True, passed=True` scenario the test expects. I should add `.claude/skills/&lt;name&gt;/` directories for all five required skills to both test setups.
+
+But first I need to verify whether `_determine_status` with a current hash but no saved state produces "changed-upstream"...
+
+Checking the status determination logic...</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1652" cache_read_input_tokens="76745" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1652}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check what `_compute_directory_hash` returns for an empty directory:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1652" cache_read_input_tokens="76745" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1652}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01C8vh12vHYB7iccuJ6wyw63">
+    <param name="pattern">def _compute_directory_hash</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/artifacts/artifact_health.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1652" cache_read_input_tokens="76745" output_tokens="794" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1652, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C8vh12vHYB7iccuJ6wyw63">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01UockZHMSsZ6YFos9CQ9CpC">
+    <param name="pattern">def _compute_directory_hash</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="802" cache_read_input_tokens="78397" output_tokens="121" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 802, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UockZHMSsZ6YFos9CQ9CpC">
+src/erk/artifacts/discovery.py:20:def _compute_directory_hash(path: Path) -&gt; str:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NLAFpHGX5EwkYZc34exaVw">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/artifacts/discovery.py</param>
+    <param name="offset">20</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="160" cache_read_input_tokens="79199" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 160, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NLAFpHGX5EwkYZc34exaVw">
+    20→def _compute_directory_hash(path: Path) -&gt; str:
+    21→    """Compute combined hash of all files in directory.
+    22→
+    23→    Includes relative path in hash to detect structural changes (renames, moves).
+    24→    Files are processed in sorted order for deterministic hashing.
+    25→    """
+    26→    hasher = hashlib.sha256()
+    27→    for file_path in sorted(path.rglob("*")):
+    28→        if file_path.is_file():
+    29→            # Include relative path in hash for structural changes
+    30→            hasher.update(file_path.relative_to(path).as_posix().encode())
+    31→            hasher.update(file_path.read_bytes())
+    32→    return hasher.hexdigest()[:16]
+    33→
+    34→
+    35→def _compute_hook_hash(command: str) -&gt; str:
+    36→    """Compute hash of hook command string."""
+    37→    return hashlib.sha256(command.encode()).hexdigest()[:16]
+    38→
+    39→
+    40→def _compute_content_hash(path: Path) -&gt; str:
+    41→    """Compute SHA256 hash of file or directory content.
+    42→
+    43→    For files: hashes the file content directly.
+    44→    For directories: hashes all files with their relative paths.
+    45→    """
+    46→    if path.is_dir():
+    47→        return _compute_directory_hash(path)
+    48→    return _compute_file_hash(path)
+    49→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <thinking>Wait, `_compute_directory_hash` for an empty directory returns `hasher.hexdigest()[:16]` of an empty hasher. Let me think - for an empty directory (no files), `sorted(path.rglob("*"))` would yield no `file_path.is_file()` entries, so `hasher` is never updated. It would return the sha256 of an empty message, which is `e3b0c44298fc1c14...` truncated to 16 chars: `e3b0c44298fc1c14`.Wait, that's still a non-None string! So even an empty directory would produce a non-None hash. That means "changed-upstream" would be returned (since there's no state.toml entry for the skills).
+
+
+Actually, I need to trace through the call chain more carefully - `_compute_path_hash` is what gets called, and it delegates to `_compute_directory_hash`, so let me check how the imports are set up in artifact_health.py to make sure I'm following the right code path.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="618" cache_read_input_tokens="79359" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 618}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BuE6uvAxoJ6Dwb6Nhk1XUP">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/artifacts/artifact_health.py</param>
+    <param name="offset">1</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="618" cache_read_input_tokens="79359" output_tokens="353" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 618, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BuE6uvAxoJ6Dwb6Nhk1XUP">
+     1→"""Orphaned artifact detection for erk-managed .claude/ directories."""
+     2→
+     3→import json
+     4→from dataclasses import dataclass
+     5→from pathlib import Path
+     6→from typing import Literal
+     7→
+     8→from erk.artifacts.discovery import (
+     9→    _compute_directory_hash,
+    10→    _compute_file_hash,
+    11→    _compute_hook_hash,
+    12→)
+    13→from erk.artifacts.models import (
+    14→    ArtifactFileState,
+    15→    CompletenessCheckResult,
+    16→    InstalledArtifact,
+    17→    OrphanCheckResult,
+    18→)
+    19→from erk.artifacts.paths import ErkPackageInfo
+    20→from erk.core.capabilities.registry import (
+    21→    get_capability,
+    22→    get_managed_artifacts,
+    23→    is_capability_managed,
+    24→)
+    25→from erk.core.claude_settings import (
+    26→    ERK_EXIT_PLAN_HOOK_COMMAND,
+    27→    ERK_USER_PROMPT_HOOK_COMMAND,
+    28→    has_exit_plan_hook,
+    29→    has_user_prompt_hook,
+    30→)
+
+... [10 lines omitted] ...
+  </tool_result>
+  <thinking>Good. Now I understand the full flow. The fix for the health check tests is to create `.claude/skills/&lt;name&gt;/` directories for the 5 required skills in the test project directories. Even if empty, they'll produce a non-None hash, and since no state.toml entries exist for them, they'll be "changed-upstream" which is still `warning=True, passed=True`.
+
+Now let me look at both test setups and add the required skill directories.
+
+For `test_check_managed_artifacts_changed_upstream_remediation` and `test_check_managed_artifacts_locally_modified_remediation`, I need to add:
+
+
+I'm creating the skill directories for erk-diff-analysis, erk-exec, objective, pr-operations, and pr-feedback-classifier so they register as installed but changed-upstream. But I should verify this won't cause the overall_worst status to shift in a way that breaks the test assertions.
+
+For the locally-modified test, the precedence means locally-modified takes priority over changed-upstream, so overall_worst stays as locally-modified and the remediation correctly suggests running the force sync command. For the changed-upstream test, when only that status is present, overall_worst becomes changed-upstream and the remediation should suggest the regular sync command to update to the latest version.
+
+Now I'm checking the `_determine_status` logic for when there's an empty directory—if current_hash exists but installed_hash is None, it should return changed-upstream since there's no prior state recorded.
+
+I need to add the skill directories to both remediation tests: one for the changed-upstream case and one for the locally-modified case. Let me locate exactly where in each test to insert the `.claude/skills/&lt;name&gt;/` directories and verify the test setup is complete.
+
+Now looking at the capabilities test, I see it's checking that most capabilities and bundled skills are optional, but I need to update this to exclude the five newly-required skills from that assertion since they should now have `required = True`. Still writing test logic... I'm weighing two approaches: either skip the required skills in the loop with a hardcoded set, or import the constant from bundled.py to avoid duplication. The second option is cleaner since it avoids maintaining the list in two places, but I need to check if importing a private symbol is acceptable here.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="820" cache_read_input_tokens="79977" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 820}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at the test file's imports for test_capabilities.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="820" cache_read_input_tokens="79977" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 820}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PZmjPD6uM9gTLvyoRj12rF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/core/test_capabilities.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="820" cache_read_input_tokens="79977" output_tokens="2277" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 820, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PZmjPD6uM9gTLvyoRj12rF">
+     1→"""Tests for the capability system.
+     2→
+     3→These tests verify:
+     4→1. The Capability ABC contract
+     5→2. The registry functions (get, list)
+     6→3. The LearnedDocsCapability implementation
+     7→4. Skill-based capabilities
+     8→5. StatuslineCapability (user-level capability)
+     9→6. Capability scope behavior
+    10→"""
+    11→
+    12→from pathlib import Path
+    13→
+    14→from erk.capabilities.agents.devrun import DevrunAgentCapability
+    15→from erk.capabilities.erk_bash_permissions import ErkBashPermissionsCapability
+    16→from erk.capabilities.hooks import HooksCapability
+    17→from erk.capabilities.learned_docs import LearnedDocsCapability
+    18→from erk.capabilities.ruff_format import RuffFormatCapability
+    19→from erk.capabilities.skills.bundled import bundled_skills
+    20→from erk.capabilities.statusline import StatuslineCapability
+    21→from erk.capabilities.workflows.erk_impl import ErkImplWorkflowCapability
+    22→from erk.capabilities.workflows.learn import LearnWorkflowCapability
+    23→from erk.capabilities.workflows.one_shot import OneShotWorkflowCapability
+    24→from erk.capabilities.workflows.pr_address import PrAddressWorkflowCapability
+    25→from erk.capabilities.workflows.pr_rebase import PrRebaseWorkflowCapability
+    26→from erk.core.capabilities.base import (
+    27→    Capability,
+    28→    CapabilityArtifact,
+    29→    CapabilityResult,
+    30→    CapabilityScope,
+
+... [25 lines omitted] ...
+  </tool_result>
+  <thinking>I can import `_REQUIRED_BUNDLED_SKILLS` from `erk.capabilities.skills.bundled` since it's already imported in the test. Let me update the test to:
+1. Import `_REQUIRED_BUNDLED_SKILLS` from `erk.capabilities.skills.bundled`
+2. Update `test_default_capabilities_not_required` to handle the new required skills
+
+Also, I should add a new test `test_required_bundled_skills` that verifies the 5 skills ARE required. But wait, plan says to only make changes that are necessary. The failing test is `test_default_capabilities_not_required`, and I need to fix it.
+
+
+I need to refactor the test to distinguish between required and non-required bundled skills, using the `_REQUIRED_BUNDLED_SKILLS` constant to verify that required skills are indeed required while non-required ones aren't. Let me search for any existing tests that already cover the required bundled skills scenario.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3028" cache_read_input_tokens="80797" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3028}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I'll fix all three issues. Let me start with the test fixes:
+
+**Fix 1: test_capabilities.py — update `test_default_capabilities_not_required`**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3028" cache_read_input_tokens="80797" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3028}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01YZHxGJW4wcx98Hr9EWBTEE">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/core/test_capabilities.py</param>
+    <param name="old_string">from erk.capabilities.skills.bundled import bundled_skills</param>
+    <param name="new_string">from erk.capabilities.skills.bundled import _REQUIRED_BUNDLED_SKILLS, bundled_skills</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3028" cache_read_input_tokens="80797" output_tokens="500" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3028, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YZHxGJW4wcx98Hr9EWBTEE">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/core/test_capabilities.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Rp8tVRZ8SKNtCP58rTDe48">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/core/test_capabilities.py</param>
+    <param name="old_string">    # All bundled skills should also be optional
+    for skill_name in bundled_skills():
+ ...[truncated 37 chars]...p is not None
+        assert cap.required is False, f"{skill_name} should not be required"</param>
+    <param name="new_string">    # Bundled skills not in the required set should be optional
+    for skill_name in bund...[truncated 124 chars]...p is not None
+        assert cap.required is False, f"{skill_name} should not be required"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="683" cache_read_input_tokens="83825" output_tokens="292" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 683, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Rp8tVRZ8SKNtCP58rTDe48">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/core/test_capabilities.py has been updated successfully.
+  </tool_result>
+  <assistant>**Fix 2: health check tests — add required skill directories**
+
+Now let me look at the exact line where I need to insert the skill directories in each test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="84508" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 348}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JuTGcopCjb7caDt5RJqdwe">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/core/test_health_checks.py</param>
+    <param name="offset">808</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="84508" output_tokens="160" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 348, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JuTGcopCjb7caDt5RJqdwe">
+   808→    project_commands.mkdir(parents=True)
+   809→    (project_commands / "plan-save.md").write_text("# Command - bundled content", encoding="utf-8")
+   810→    settings = add_erk_hooks({})
+   811→    (project_claude / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
+   812→
+   813→    # Create workflow/action files so required workflow capabilities don't show as not-installed
+   814→    project_workflows = project_dir / ".github" / "workflows"
+   815→    project_workflows.mkdir(parents=True)
+   816→    for wf_name in ("learn", "one-shot", "plan-implement", "pr-address", "pr-rebase"):
+   817→        (project_workflows / f"{wf_name}.yml").write_text(f"name: {wf_name}", encoding="utf-8")
+   818→    project_actions = project_dir / ".github" / "actions"
+   819→    for action_name in ("setup-claude-code", "setup-claude-erk", "erk-remote-setup"):
+   820→        (project_actions / action_name).mkdir(parents=True)
+   821→
+   822→    # Create artifact state with OLD version (triggers changed-upstream)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+</session>
