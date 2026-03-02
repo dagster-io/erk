@@ -74,7 +74,7 @@
 - **[impl-context-api.md](impl-context-api.md)** — working with .erk/impl-context/ folder, understanding plan submission staging, creating or removing impl-context directories
 - **[impl-folder-discovery.md](impl-folder-discovery.md)** — working with .erk/impl-context/ directory resolution, debugging why a plan wasn't found during implementation setup, writing tests that use branch-scoped impl-context paths, understanding the difference between impl_folder.py and impl_context.py
 - **[impl-folder-lifecycle.md](impl-folder-lifecycle.md)** — working with .erk/impl-context/ folders, understanding remote implementation workflow, debugging plan visibility in PRs
-- **[inference-hoisting.md](inference-hoisting.md)** — adding LLM calls to an exec script, calling PromptExecutor from a CLI command or exec script, working with BranchSlugGenerator or generate_branch_slug, adding --branch-slug or similar pre-computed value flags to exec commands, understanding why exec scripts must be deterministic, refactoring nested LLM calls out of exec scripts
+- **[inference-hoisting.md](inference-hoisting.md)** — adding LLM calls to an exec script, calling PromptExecutor from a CLI command or exec script, working with BranchSlugGenerator or generate_branch_slug, adding --branch-slug or similar pre-computed value flags to exec commands, understanding why exec scripts must be deterministic, refactoring nested LLM calls out of exec scripts, working with plan summary generation or --summary flags
 - **[interactive-agent-config.md](interactive-agent-config.md)** — Working with global config loading (GlobalConfig), Implementing interactive agent launch behavior, Adding new agent configuration options
 - **[issue-reference-flow.md](issue-reference-flow.md)** — issue references not appearing in PRs, debugging 'Closes #N' in PR body, working with plan-ref.json, closing reference lost after erk pr submit
 - **[json-parsing-patterns.md](json-parsing-patterns.md)** — parsing JSON from files or API responses, validating JSON field presence, implementing LBYL JSON parsing
@@ -86,6 +86,7 @@
 - **[markers.md](markers.md)** — creating worktree state tracking, adding friction before destructive operations, implementing pending learn workflow
 - **[metadata-archival-pattern.md](metadata-archival-pattern.md)** — clearing a metadata field that should be auditable, adding companion fields for historical tracking, extending plan-header schema with lifecycle transitions
 - **[metadata-blocks.md](metadata-blocks.md)** — working with erk metadata in GitHub issues, parsing or extracting data from issue comments, creating new event types for issue tracking
+- **[monolith-to-subpackage-pattern.md](monolith-to-subpackage-pattern.md)** — splitting a large module into a subpackage, refactoring monolithic files into focused modules, understanding the health_checks subpackage structure
 - **[multi-worktree-state.md](multi-worktree-state.md)** — checkout operations in multi-worktree repositories, landing PRs with worktree cleanup, understanding git single-checkout constraint, debugging checkout failures across worktrees
 - **[not-found-sentinel.md](not-found-sentinel.md)** — designing return types for lookup operations, handling missing resource cases without exceptions, checking if get_pr_for_branch() returned a PR, working with GitHub PR lookup results
 - **[optional-field-propagation.md](optional-field-propagation.md)** — transforming dataclass instances in pipelines, debugging null metadata fields, adding optional fields to dataclasses
@@ -125,4 +126,5 @@
 - **[type-safety-patterns.md](type-safety-patterns.md)** — designing flexible collection types, working with union types in Python, handling mixed-type lists
 - **[validation-patterns.md](validation-patterns.md)** — adding regex validation to a field or input, implementing input validation with error messages, understanding module-level regex compilation
 - **[workflow-capability-pattern.md](workflow-capability-pattern.md)** — creating GitHub workflow capabilities, adding CI review workflows
+- **[worktree-dispatch-detection.md](worktree-dispatch-detection.md)** — modifying dispatch command logic, working with worktree branch detection
 - **[worktree-metadata.md](worktree-metadata.md)** — storing per-worktree data, working with worktrees.toml, associating metadata with worktrees, implementing subdirectory navigation, preserving relative path on worktree switch

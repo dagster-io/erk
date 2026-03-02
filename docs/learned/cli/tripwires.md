@@ -36,7 +36,11 @@ Rules triggered by matching actions in code.
 
 **adding bulleted lists to CLI command help text** → Read [Click Help Text Formatting](help-text-formatting.md) first. Place  before bulleted/numbered lists to prevent Click from merging items into single line.
 
+**adding click.echo() without sys.stdout.flush() in pipeline commands** → Read [Piped Output Flushing Pattern](piped-output-flushing.md) first. Python buffers stdout when piped. Without explicit flush, users see no output until command completes or buffer fills.
+
 **adding discovery logic outside prepare_state()** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. All discovery (branch name, issue number, parent branch, etc.) must happen in prepare_state() to prevent duplication. Later steps assume these fields are populated.
+
+**adding doctor subcommand without invoke_without_command=True** → Read [Doctor Workflow Subcommand](doctor-workflow.md) first. Doctor uses Click group with invoke_without_command=True so bare 'erk doctor' preserves original behavior.
 
 **adding inline shell logic to a slash command instead of using erk exec** → Read [Slash Command to Exec Migration](slash-command-exec-migration.md) first. Extract reusable logic to an erk exec command. Slash commands should orchestrate exec calls, not contain business logic.
 
@@ -104,6 +108,8 @@ Rules triggered by matching actions in code.
 
 **making session_id a required parameter for a new command** → Read [Session ID Availability and Propagation](session-management.md) first. Check the fail-hard vs degrade decision table below. Most commands should accept session_id as optional.
 
+**modifying learn plan skip guards in land_learn.py** → Read [Land-Learn Integration](land-learn-integration.md) first. Learn plan creation may skip silently when no sessions exist. Check land-learn-integration.md before modifying skip guards.
+
 **mutating SubmitState fields directly** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. SubmitState is frozen. Use dataclasses.replace(state, field=value) to create new state.
 
 **parsing roadmap tables to update PR cells** → Read [Update Objective Node Command](commands/update-objective-node.md) first. Use the update-objective-node command instead of manual parsing. The command encodes table structure knowledge once rather than duplicating it across callers.
@@ -121,6 +127,8 @@ Rules triggered by matching actions in code.
 **removing a command without checking docs/learned/ for references** → Read [Command Deletion Patterns](command-deletion-patterns.md) first. Run the post-refactoring documentation audit (post-refactor-documentation-audit.md) after any command deletion.
 
 **removing a workflow command or CLI entry** → Read [Incomplete Command Removal Pattern](incomplete-command-removal.md) first. Read incomplete-command-removal.md first. Search all string references before removing. String-based dispatch maps like WORKFLOW_COMMAND_MAP aren't caught by type checkers.
+
+**removing the VIRTUAL_ENV guard from activation scripts** → Read [Activation Scripts](activation-scripts.md) first. Guard prevents double activation when direnv and temp script both source activation. Removing it causes duplicate package installs.
 
 **renaming CLI commands without checking workflow files** → Read [Command Rename Checklist](command-rename-checklist.md) first. After renaming CLI commands, grep .github/workflows/\*.yml for stale references.
 

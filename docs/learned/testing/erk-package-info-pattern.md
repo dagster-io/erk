@@ -43,16 +43,16 @@ See `is_in_erk_repo()` in `src/erk/artifacts/detection.py`. Checks for `pyprojec
 
 ## None Sentinel in installed_capabilities
 
-The `check_managed_artifacts()` function (in `src/erk/core/health_checks.py`) uses `installed_capabilities: frozenset[str] | None` with sentinel semantics:
+The `check_managed_artifacts()` function (in `src/erk/core/health_checks/managed_artifacts.py`) uses `installed_capabilities: frozenset[str] | None` with sentinel semantics:
 
 | Value            | Meaning                          | Context                                                                        |
 | ---------------- | -------------------------------- | ------------------------------------------------------------------------------ |
 | `None`           | Skip capability filtering        | Running in erk repo (`in_erk_repo=True`) - all artifacts available from source |
 | `frozenset[str]` | Filter by installed capabilities | External repo - only check artifacts for installed capabilities                |
 
-<!-- Source: src/erk/core/health_checks.py, check_managed_artifacts -->
+<!-- Source: src/erk/core/health_checks/managed_artifacts.py, check_managed_artifacts -->
 
-See `check_managed_artifacts()` in `src/erk/core/health_checks.py` for the sentinel pattern — `None` when `in_erk_repo` is `True`, otherwise `load_installed_capabilities(repo_root)`.
+See `check_managed_artifacts()` in `src/erk/core/health_checks/managed_artifacts.py` for the sentinel pattern — `None` when `in_erk_repo` is `True`, otherwise `load_installed_capabilities(repo_root)`.
 
 ## Related Topics
 

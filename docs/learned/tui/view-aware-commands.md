@@ -53,7 +53,8 @@ Plan and objective commands safely reuse the same keyboard shortcuts because the
 | -------- | ----------------- | ----------------------- |
 | `s`      | Dispatch to Queue | Implement (One-Shot)    |
 | `5`      | Rebase Remote     | Check Objective         |
-| `i`      | Open Issue        | Open Objective          |
+| `i`      | Open Issue        | —                       |
+| `p`      | Open PR           | Open Objective          |
 | `1`      | Copy Prepare      | Copy Implement          |
 | `3`      | Copy Dispatch     | Copy View               |
 
@@ -63,18 +64,19 @@ A shortcut collision would only occur if both a plan and objective command with 
 
 <!-- Source: src/erk/tui/commands/registry.py:218-357 -->
 
-Six objective commands are registered, spanning all three categories:
+Seven objective commands are registered, spanning all three categories:
 
-| ID                | Category | Shortcut | Display Name Generator            |
-| ----------------- | -------- | -------- | --------------------------------- |
-| `one_shot_plan`   | ACTION   | `s`      | `erk objective plan N --one-shot` |
-| `check_objective` | ACTION   | `5`      | `erk objective check N`           |
-| `close_objective` | ACTION   | —        | `erk objective close N --force`   |
-| `open_objective`  | OPEN     | `i`      | Issue URL or "Objective"          |
-| `copy_plan`       | COPY     | `1`      | `erk objective plan N`            |
-| `copy_view`       | COPY     | `3`      | `erk objective view N`            |
+| ID                   | Category | Shortcut | Display Name Generator            |
+| -------------------- | -------- | -------- | --------------------------------- |
+| `one_shot_plan`      | ACTION   | `s`      | `erk objective plan N --one-shot` |
+| `check_objective`    | ACTION   | `5`      | `erk objective check N`           |
+| `close_objective`    | ACTION   | —        | `erk objective close N --force`   |
+| `open_objective`     | OPEN     | `p`      | Issue URL or "Objective"          |
+| `copy_plan`          | COPY     | `1`      | `erk objective plan N`            |
+| `copy_view`          | COPY     | `3`      | `erk objective view N`            |
+| `codespace_run_plan` | COPY     | —        | Codespace run plan                |
 
-All six use `_is_objectives_view(ctx)` as their sole view predicate. Objective commands don't have compound availability conditions (unlike plan commands which check for PR, issue URL, etc.) because objective rows always have an issue number.
+All seven use `_is_objectives_view(ctx)` as their sole view predicate. Objective commands don't have compound availability conditions (unlike plan commands which check for PR, issue URL, etc.) because objective rows always have an issue number.
 
 ## Provider Context Building
 

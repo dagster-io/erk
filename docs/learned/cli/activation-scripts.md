@@ -6,6 +6,9 @@ read_when:
   - "working with worktree environment setup"
   - "understanding .erk/activate.sh scripts"
   - "configuring post-create commands"
+tripwires:
+  - action: "removing the VIRTUAL_ENV guard from activation scripts"
+    warning: "Guard prevents double activation when direnv and temp script both source activation. Removing it causes duplicate package installs."
 ---
 
 # Activation Scripts
@@ -68,6 +71,39 @@ Activation scripts support dynamic post-CD commands via the `post_cd_commands` p
 **Example:** PR checkout with `--sync` flag passes `["gt submit --no-interactive"]` as `post_cd_commands`, causing the branch to be submitted to Graphite after navigation.
 
 **Implementation:** `src/erk/cli/commands/pr/checkout_cmd.py` uses the `post_cd_commands` parameter when `should_track_with_graphite and sync` evaluates to True.
+
+## VIRTUAL_ENV Idempotency Guard
+
+When `erk pr checkout --script` generates an activation script and direnv is active, the script can be sourced twice: once by direnv (which triggers on the `cd` inside the script) and once by the temp script execution itself. This causes duplicate `uv sync`, `uv pip install`, `.env` loading, and shell completion setup.
+
+### Solution
+
+The activation script wraps all expensive operations in a `VIRTUAL_ENV` guard:
+
+```bash
+if [ "$VIRTUAL_ENV" != "{worktree_path}/.venv" ]; then
+  # venv creation, uv sync, uv pip install, .env loading, shell completion
+fi
+```
+
+### Guard Scope
+
+**INSIDE guard** (skipped on re-entry):
+
+- venv creation (`uv sync`)
+- Package refresh (`uv pip install --no-deps`)
+- venv activation (`. .venv/bin/activate`)
+- `.env` loading (`set -a`)
+- Shell completion setup (`eval "$(erk completion ...)"`)
+
+**OUTSIDE guard** (always run):
+
+- Post-activation commands (e.g., `gt submit --no-interactive`)
+- Final status message
+
+### Implementation
+
+`render_activation_script()` at `src/erk/cli/activation.py:198` generates the guard. The guard checks if `$VIRTUAL_ENV` already points to this worktree's `.venv` directory, and if so, skips activation entirely.
 
 ## Related Topics
 

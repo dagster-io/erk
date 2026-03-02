@@ -23,6 +23,7 @@
 - **[commands/pr-summarize.md](commands/pr-summarize.md)** — historical reference for pr summarize command, understanding pr summarize replacement by pr rewrite
 - **[commands/update-objective-node.md](commands/update-objective-node.md)** — working with objective roadmap tables, updating step PR references
 - **[dependency-injection-patterns.md](dependency-injection-patterns.md)** — writing erk exec scripts, testing exec scripts that use gateways, understanding exec script architecture, migrating exec scripts from subprocess to gateways
+- **[doctor-workflow.md](doctor-workflow.md)** — modifying doctor command or workflow diagnostics, adding health checks to doctor
 - **[ensure-ideal-pattern.md](ensure-ideal-pattern.md)** — handling discriminated union returns in CLI commands, narrowing types from T | NonIdealState or T | ErrorType, working with PR lookups, branch detection, or API calls that return union types, seeing EnsureIdeal in code and wondering when to use it vs Ensure
 - **[erk-docs-check.md](erk-docs-check.md)** — validating documentation frontmatter and structure, debugging CI failures in documentation checks, understanding how erk docs check works
 - **[erk-exec-commands.md](erk-exec-commands.md)** — running erk exec subcommands, looking up erk exec syntax
@@ -47,6 +48,7 @@
 - **[output-styling.md](output-styling.md)** — styling CLI output, using colors in CLI, formatting terminal output
 - **[parameter-addition-checklist.md](parameter-addition-checklist.md)** — adding a parameter to a multi-layer command, working with skills that call erk exec scripts, debugging parameter not found errors
 - **[parameter-removal-checklist.md](parameter-removal-checklist.md)** — removing a CLI parameter or option, deprecating a CLI flag, cleaning up unused CLI options
+- **[piped-output-flushing.md](piped-output-flushing.md)** — debugging silent CLI commands in piped environments, adding progress messages to long-running commands
 - **[plan-implement.md](plan-implement.md)** — understanding the /erk:plan-implement command, implementing plans from GitHub issues, working with .erk/impl-context/ folders, debugging plan execution failures
 - **[plan-list-provider-pattern.md](plan-list-provider-pattern.md)** — modifying erk pr list output, understanding how plan list and TUI share data providers, adding columns to plan list display
 - **[pr-operations.md](pr-operations.md)** — creating PRs programmatically, implementing PR submission workflows, preventing duplicate PR creation
