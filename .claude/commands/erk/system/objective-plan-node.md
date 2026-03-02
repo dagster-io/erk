@@ -145,9 +145,9 @@ Enter plan mode to create the implementation plan:
 - Files to modify
 - Test requirements
 
-### Step 8: Save Plan with Objective Link
+### Step 8: Save Plan as PR (Always Save)
 
-After the plan is approved in plan mode, the `exit-plan-mode-hook` will prompt to save or implement.
+After the plan is approved in plan mode, **always save as a PR** — do not offer direct implementation. When the `exit-plan-mode-hook` fires, proceed directly with `/erk:plan-save`. Objective node plans require PR tracking for the objective's roadmap status to work correctly.
 
 The objective-context marker created in Step 2 is automatically read by `/erk:plan-save`. Simply run `/erk:plan-save` and it will link the plan to the objective.
 
@@ -179,7 +179,7 @@ Check that `value` matches the expected objective number.
 - **Start:** "Planning node <node-id> of objective #<number>..."
 - **After context:** Display node description and gathered context
 - **In plan mode:** Show plan content
-- **End:** Guide to `/erk:plan-save`
+- **End:** Always proceed with `/erk:plan-save` — do not offer direct implementation
 
 ---
 
