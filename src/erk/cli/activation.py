@@ -205,7 +205,20 @@ if [ "$VIRTUAL_ENV" != "{worktree_path}/.venv" ]; then
   # Sync dependencies (creates venv if missing, installs new deps if lockfile changed)
   uv sync --quiet
   # Refresh workspace packages (no-deps = skip external packages)
-  uv pip install --no-deps --quiet -e . -e packages/erk-shared -e packages/erk-statusline
+  # Discover workspace members from pyproject.toml (falls back to just -e . if no workspace)
+  __erk_editable=$(python3 -c "
+import tomllib, pathlib, glob
+parts = ['-e .']
+p = pathlib.Path('pyproject.toml')
+if p.exists():
+    cfg = tomllib.loads(p.read_text())
+    for pat in cfg.get('tool', {{}}).get('uv', {{}}).get('workspace', {{}}).get('members', []):
+        for m in sorted(glob.glob(pat)):
+            if (pathlib.Path(m) / 'pyproject.toml').exists():
+                parts.append(f'-e {{m}}')
+print(' '.join(parts))
+" 2>/dev/null || echo "-e .")
+  uv pip install --no-deps --quiet $__erk_editable
   if [ -f {venv_activate} ]; then
     . {venv_activate}
     __py_ver=$(python -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')

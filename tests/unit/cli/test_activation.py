@@ -176,7 +176,7 @@ def test_render_activation_script_without_subpath() -> None:
 
 
 def test_render_activation_script_refreshes_workspace_packages() -> None:
-    """Activation script includes unconditional workspace package refresh."""
+    """Activation script includes dynamic workspace package refresh."""
     script = render_activation_script(
         worktree_path=Path("/path/to/worktree"),
         target_subpath=None,
@@ -185,9 +185,13 @@ def test_render_activation_script_refreshes_workspace_packages() -> None:
         comment="work activate-script",
     )
     assert "uv pip install --no-deps --quiet" in script
-    assert "-e packages/erk-shared" in script
-    assert "-e packages/erk-statusline" in script
-    # Refresh line should come after the venv creation conditional
+    # Dynamic discovery via inline Python (not hardcoded package names)
+    assert "tomllib" in script
+    assert "workspace" in script
+    assert "members" in script
+    # Fallback if parsing fails
+    assert '|| echo "-e ."' in script
+    # Refresh should come after the venv creation conditional
     venv_creation_index = script.find("uv sync")
     refresh_index = script.find("uv pip install --no-deps")
     assert venv_creation_index != -1

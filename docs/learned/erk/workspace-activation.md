@@ -7,7 +7,7 @@ read_when:
   - "changing activation script generation"
 tripwires:
   - action: "removing the uv pip install --no-deps line from activation"
-    warning: "This line refreshes workspace editable packages on every activation. Without it, worktrees may use stale versions of erk, erk-shared, or erk-statusline after switching branches."
+    warning: "This line refreshes workspace editable packages on every activation. Without it, worktrees may use stale versions of workspace packages after switching branches."
 ---
 
 # Workspace Activation and Package Refresh
@@ -18,11 +18,9 @@ Every erk worktree runs an activation script on entry. The script refreshes work
 
 <!-- Source: src/erk/cli/activation.py, render_activation_script -->
 
-The activation script includes this line:
+The activation script dynamically discovers workspace member directories from `pyproject.toml` at shell execution time and installs them as editable installs with `--no-deps --quiet` on every worktree activation.
 
-<!-- See the uv pip install command in src/erk/cli/activation.py, render_activation_script -->
-
-The activation script reinstalls the three workspace packages (`erk`, `erk-shared`, `erk-statusline`) as editable installs with `--no-deps --quiet` on every worktree activation.
+**Why dynamic discovery (not hardcoded package names):** Consumer repos (e.g., dagster-compass) don't have the same workspace layout as the erk monorepo. Hardcoding `packages/erk-shared` and `packages/erk-statusline` caused `Distribution not found` errors in non-erk repos. The script uses an inline Python snippet to parse `[tool.uv.workspace].members` from `pyproject.toml` and only installs packages that actually exist on disk. It falls back to just `-e .` if parsing fails or no workspace is configured.
 
 ### Why `--no-deps`
 
