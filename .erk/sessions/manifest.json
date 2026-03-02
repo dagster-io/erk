@@ -14,11 +14,13 @@
     {
       "session_id": "0a9ae898-b1a9-4de9-bec6-6e62cd2563f8",
       "stage": "impl",
-      "source": "local",
-      "uploaded_at": "2026-03-02T18:02:24.158776+00:00",
+      "source": "remote",
+      "uploaded_at": "2026-03-02T18:05:33.235228+00:00",
       "files": [
         "impl-0a9ae898-b1a9-4de9-bec6-6e62cd2563f8-0a9ae898-b1a9-4de9-bec6-6e62cd2563f8-part1.xml",
-        "impl-0a9ae898-b1a9-4de9-bec6-6e62cd2563f8-0a9ae898-b1a9-4de9-bec6-6e62cd2563f8-part2.xml"
+        "impl-0a9ae898-b1a9-4de9-bec6-6e62cd2563f8-0a9ae898-b1a9-4de9-bec6-6e62cd2563f8-part2.xml",
+        "impl-0a9ae898-b1a9-4de9-bec6-6e62cd2563f8-0a9ae898-b1a9-4de9-bec6-6e62cd2563f8-part3.xml",
+        "impl-0a9ae898-b1a9-4de9-bec6-6e62cd2563f8-0a9ae898-b1a9-4de9-bec6-6e62cd2563f8-part4.xml"
       ]
     }
   ]
