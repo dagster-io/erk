@@ -17,6 +17,7 @@ from erk.cli.ensure import Ensure
 from erk.core.branch_slug_generator import generate_branch_slug
 from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
 from erk_shared.core.prompt_executor import PromptExecutor
+from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.metadata.core import (
     create_submission_queued_block,
@@ -221,7 +222,14 @@ def dispatch_one_shot(
         # Create branch from trunk
         current_step = "Creating branch"
         user_output("Creating branch...")
-        ctx.git.branch.create_branch(repo.root, branch_name, trunk, force=False)
+        branch_result = ctx.git.branch.create_branch(repo.root, branch_name, trunk, force=False)
+        if isinstance(branch_result, BranchAlreadyExists):
+            user_output(
+                click.style("Error: ", fg="red")
+                + f"Branch '{branch_name}' already exists locally. "
+                + "Run 'erk delete <branch>' to clean up, then retry."
+            )
+            raise SystemExit(1)
         user_output(click.style("  \u2713 Branch created", dim=True))
 
         # Write prompt to .erk/impl-context/prompt.md directly on the branch (no checkout)
