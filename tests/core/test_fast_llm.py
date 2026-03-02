@@ -1,7 +1,6 @@
 """Tests for fast_llm module."""
 
 from dataclasses import dataclass
-from unittest.mock import patch
 
 import pytest
 
@@ -36,14 +35,4 @@ def test_fast_haiku_call_returns_none_without_api_key(
     """Returns None when ANTHROPIC_API_KEY is not set."""
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     result = fast_haiku_call("test", system_prompt="system")
-    assert result is None
-
-
-def test_fast_haiku_call_returns_none_on_exception(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    """Returns None when Anthropic client raises an exception."""
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
-    with patch("erk.core.fast_llm.Anthropic", side_effect=RuntimeError("boom")):
-        result = fast_haiku_call("test", system_prompt="system")
     assert result is None

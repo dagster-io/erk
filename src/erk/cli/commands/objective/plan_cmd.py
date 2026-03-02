@@ -252,7 +252,7 @@ def _handle_all_unblocked(
         user_output(f"Dispatching node {click.style(node.id, bold=True)}: {node.description}")
 
         raw = fast_haiku_call(node.description, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT)
-        slug = _postprocess_slug(raw) if raw is not None else None
+        slug = _postprocess_slug(raw) if raw else None
         if slug is None:
             slug = sanitize_worktree_name(node.description)[:25].rstrip("-")
 

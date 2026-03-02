@@ -201,7 +201,7 @@ def dispatch_one_shot(
             user_output(click.style(f"  \u2713 Slug: {slug} (pre-generated)", dim=True))
         else:
             raw = fast_haiku_call(params.prompt, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT)
-            slug = _postprocess_slug(raw) if raw is not None else None
+            slug = _postprocess_slug(raw) if raw else None
             if slug is None:
                 slug = sanitize_worktree_name(params.prompt)[:25].rstrip("-")
                 user_output(click.style(f"  \u2713 Slug: {slug} (sanitized)", dim=True))
