@@ -1,0 +1,397 @@
+<session>
+  <meta source="agent-a8f47e0" />
+  <meta branch="plnd/consolidate-mar2-learn-doc-03-02-0159" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Read these source files and report back their key patterns:
+
+1. `src/erk/tui/commands/types.py` - Find the `CommandDefinition` class, especially the `launch_key` field (line ~60)
+2. `src/erk/tui/commands/registry.py` - Find:
+   - All `launch_key` assignments in `get_all_commands()` (report which commands have which launch keys)
+   - The `_key_to_command_id` dict construction
+   - Line numbers for all launch key assignments (lines ~230-260)
+
+Report exact line numbers, field definitions, and all launch key assignments.
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.</user>
+  <assistant>I'll help you find and analyze these patterns. Let me start by checking the documentation index for any existing information on this topic.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15137" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15137, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Cb8bMWTUvtX6yFriwW1t6L">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15137" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15137, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_019WbBmp2xXe19kzmZBszhK2">
+    <param name="pattern">docs/learned/**/tui*.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15137" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15137, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_0169znEcDmxEzJKrUQFomAJm">
+    <param name="pattern">docs/learned/**/command*.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15137" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15137, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Cb8bMWTUvtX6yFriwW1t6L">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_0169znEcDmxEzJKrUQFomAJm">
+/home/runner/work/erk/erk/docs/learned/architecture/command-boundaries.md
+/home/runner/work/erk/erk/docs/learned/architecture/command-composition.md
+/home/runner/work/erk/erk/docs/learned/architecture/commandresult-extension-pattern.md
+/home/runner/work/erk/erk/docs/learned/cli/command-deletion-patterns.md
+/home/runner/work/erk/erk/docs/learned/cli/command-group-structure.md
+/home/runner/work/erk/erk/docs/learned/cli/command-organization.md
+/home/runner/work/erk/erk/docs/learned/cli/command-rename-checklist.md
+/home/runner/work/erk/erk/docs/learned/commands/command-rename-pattern.md
+/home/runner/work/erk/erk/docs/learned/testing/command-group-testing.md
+/home/runner/work/erk/erk/docs/learned/tui/command-execution.md
+/home/runner/work/erk/erk/docs/learned/tui/command-palette.md
+  </tool_result>
+  <tool_result tool="toolu_019WbBmp2xXe19kzmZBszhK2">
+/home/runner/work/erk/erk/docs/learned/testing/tui-subprocess-testing.md
+/home/runner/work/erk/erk/docs/learned/tui/tui-command-registration.md
+  </tool_result>
+  <assistant>Good! I found relevant documentation. Let me read the TUI-specific docs that are most relevant:</assistant>
+  <usage input_tokens="321" cache_creation_input_tokens="1383" cache_read_input_tokens="15137" cache_creation="{'ephemeral_5m_input_tokens': 1383, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TYMVUfqTbR9jeqV9zVetq3">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/tui-command-registration.md</param>
+  </tool_use>
+  <usage input_tokens="321" cache_creation_input_tokens="1383" cache_read_input_tokens="15137" cache_creation="{'ephemeral_5m_input_tokens': 1383, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011p2rMcips3n7hQ22RaqUAV">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/command-execution.md</param>
+  </tool_use>
+  <usage input_tokens="321" cache_creation_input_tokens="1383" cache_read_input_tokens="15137" cache_creation="{'ephemeral_5m_input_tokens': 1383, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PDWdtAVWqRBh8Zie9nW7gG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/command-palette.md</param>
+  </tool_use>
+  <usage input_tokens="321" cache_creation_input_tokens="1383" cache_read_input_tokens="15137" cache_creation="{'ephemeral_5m_input_tokens': 1383, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TYMVUfqTbR9jeqV9zVetq3">
+     1→---
+     2→title: TUI Command Registration
+     3→read_when:
+     4→  - "adding a new TUI command to the registry"
+     5→  - "understanding the 3-place coordination pattern for TUI commands"
+     6→  - "working with TUI command categories or display formatters"
+     7→tripwires:
+     8→  - action: "adding a new TUI command without updating all 3 places"
+     9→    warning: "TUI commands require 3-place coordination: registry definition, display formatter, and action inventory. See tui-command-registration.md."
+    10→  - action: "adding a CLI flag that affects behavior without checking TUI command palette"
+    11→    warning: "TUI command palette generates shell commands via src/erk/tui/commands/registry.py. When adding CLI flags that change behavior, check if TUI-generated commands need the flag too."
+    12→---
+    13→
+    14→# TUI Command Registration
+    15→
+    16→Adding a TUI command requires coordinating three places in the codebase.
+    17→
+    18→## 3-Place Coordination Pattern
+    19→
+    20→When adding a command, update all three:
+    21→
+    22→1. **Display formatter**: A `_display_*()` function that generates the display name
+    23→2. **CommandDefinition**: Entry in `get_all_commands()` with id, name, category, availability, and display getter
+    24→3. **Action inventory**: Command appears in the correct category
+    25→
+    26→All definitions are in `src/erk/tui/commands/registry.py`.
+    27→
+    28→## Example: `codespace_run_plan`
+    29→
+    30→**Display formatter** (lines 135-137):
+
+... [36 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011p2rMcips3n7hQ22RaqUAV">
+     1→---
+     2→title: Command Execution Strategies
+     3→read_when:
+     4→  - "executing commands in TUI"
+     5→  - "choosing between sync and streaming execution"
+     6→  - "implementing command runners"
+     7→tripwires:
+     8→  - action: "using subprocess.Popen in TUI code without stdin=subprocess.DEVNULL"
+     9→    warning: "Child processes inherit stdin from parent; in TUI context this creates deadlocks when child prompts for user input. Always set `stdin=subprocess.DEVNULL` for TUI subprocess calls."
+    10→last_audited: "2026-02-16 08:00 PT"
+    11→audit_result: clean
+    12→---
+    13→
+    14→# Command Execution Strategies
+    15→
+    16→This guide covers the different strategies for executing commands in erk and when to use each approach.
+    17→
+    18→## Two Strategies
+    19→
+    20→### 1. Streaming Subprocess (Preferred)
+    21→
+    22→**Pattern:** Execute command in subprocess, stream output back to UI in real-time
+    23→
+    24→**Characteristics:**
+    25→
+    26→- Real-time output visibility
+    27→- Non-blocking UI
+    28→- Requires repository context (`repo_root`)
+    29→- Uses background thread for I/O
+    30→- Cross-thread communication with `app.call_from_thread()`
+
+... [165 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01PDWdtAVWqRBh8Zie9nW7gG">
+     1→---
+     2→title: Textual CommandPalette Guide
+     3→read_when:
+     4→  - "implementing command palette in Textual TUI"
+     5→  - "hiding system commands from command palette"
+     6→  - "get_system_commands method"
+     7→  - "removing Keys Quit Screenshot Theme from palette"
+     8→  - "adding emoji prefixes to command palette entries"
+     9→  - "using CommandCategory for command categorization"
+    10→last_audited: "2026-02-05 00:00 PT"
+    11→audit_result: edited
+    12→---
+    13→
+    14→# Textual CommandPalette Guide
+    15→
+    16→For standard Textual CommandPalette patterns (Providers, Hit/DiscoveryHit, Matcher, async generators, Screen.COMMANDS), consult the [Textual documentation](https://textual.textualize.io/). This doc focuses on erk-specific patterns and a critical Textual pitfall.
+    17→
+    18→## System Commands Pitfall
+    19→
+    20→**CRITICAL:** `get_system_commands` must be overridden on the **App class**, not the Screen class. Textual calls `app.get_system_commands(screen)` when opening the palette — it never calls this method on screens.
+    21→
+    22→```python
+    23→# WRONG — This method is never called by Textual
+    24→class MyModalScreen(ModalScreen):
+    25→    def get_system_commands(self, screen: Screen) -&gt; Iterator[SystemCommand]:
+    26→        return iter(())  # Has no effect!
+    27→
+    28→# CORRECT — Override on App class
+    29→class MyApp(App):
+    30→    def get_system_commands(self, screen: Screen) -&gt; Iterator[SystemCommand]:
+
+... [39 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now I have the documentation context. Let me read the actual source files to get the specific line numbers and patterns:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4912" cache_read_input_tokens="16520" cache_creation="{'ephemeral_5m_input_tokens': 4912, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RN7t5nzvqKWR3wnw4XpTzE">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/commands/types.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4912" cache_read_input_tokens="16520" cache_creation="{'ephemeral_5m_input_tokens': 4912, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CcAnYnshR7kMhxAEBNVf43">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/commands/registry.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4912" cache_read_input_tokens="16520" cache_creation="{'ephemeral_5m_input_tokens': 4912, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RN7t5nzvqKWR3wnw4XpTzE">
+     1→"""Data types for command palette."""
+     2→
+     3→from collections.abc import Callable
+     4→from dataclasses import dataclass
+     5→from enum import Enum, auto
+     6→
+     7→from erk.tui.data.types import PlanRowData
+     8→from erk.tui.views.types import ViewMode
+     9→
+    10→
+    11→class CommandCategory(Enum):
+    12→    """Category of a command in the command palette.
+    13→
+    14→    Used to determine the emoji prefix displayed in the palette.
+    15→    """
+    16→
+    17→    ACTION = auto()  # ⚡ Mutative operations
+    18→    OPEN = auto()  # 🔗 Browser navigation
+    19→    COPY = auto()  # 📋 Clipboard operations
+    20→
+    21→
+    22→@dataclass(frozen=True)
+    23→class CommandContext:
+    24→    """Context available to commands.
+    25→
+    26→    Attributes:
+    27→        row: The plan row data for the selected plan
+    28→        view_mode: The active view mode (plans, learn, objectives)
+    29→    """
+    30→
+
+... [38 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01CcAnYnshR7kMhxAEBNVf43">
+     1→"""Command registry for command palette.
+     2→
+     3→This module defines all available commands and their availability predicates.
+     4→Commands are organized by category: Actions, Opens, Copies.
+     5→Plan commands appear only in Plans/Learn views; objective commands appear only in Objectives view.
+     6→"""
+     7→
+     8→from erk.tui.commands.types import CommandCategory, CommandContext, CommandDefinition
+     9→from erk.tui.views.types import ViewMode
+    10→
+    11→CATEGORY_EMOJI: dict[CommandCategory, str] = {
+    12→    CommandCategory.ACTION: "⚡",
+    13→    CommandCategory.OPEN: "🔗",
+    14→    CommandCategory.COPY: "📋",
+    15→}
+    16→
+    17→
+    18→# === View Mode Predicates ===
+    19→
+    20→
+    21→def _is_plan_view(ctx: CommandContext) -&gt; bool:
+    22→    """True when not in Objectives view (i.e., Plans or Learn)."""
+    23→    return ctx.view_mode != ViewMode.OBJECTIVES
+    24→
+    25→
+    26→def _is_objectives_view(ctx: CommandContext) -&gt; bool:
+    27→    """True when in Objectives view."""
+    28→    return ctx.view_mode == ViewMode.OBJECTIVES
+    29→
+    30→
+
+... [526 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now I have all the information needed. Let me create a comprehensive report with the exact patterns and line numbers.
+
+## Report: TUI Command Definition and Launch Key Patterns
+
+Based on my analysis of the documentation and source files, here are the key patterns:
+
+### 1. CommandDefinition Class Structure
+**File**: `/home/runner/work/erk/erk/src/erk/tui/commands/types.py` (lines 36-62)
+
+The `CommandDefinition` dataclass includes the `launch_key` field at **line 60**:
+
+```python
+@dataclass(frozen=True)
+class CommandDefinition:
+    """Definition of a command in the command palette."""
+    
+    id: str                                                    # line 55
+    name: str                                                  # line 56
+    description: str                                           # line 57
+    category: CommandCategory                                  # line 58
+    shortcut: str | None                                       # line 59
+    launch_key: str | None                                     # line 60 ← LAUNCH_KEY FIELD
+    is_available: Callable[[CommandContext], bool]             # line 61
+    get_display_name: Callable[[CommandContext], str] | None   # line 62
+```
+
+**Key Pattern**: The `launch_key` field (line 60) is documented as "Optional single-key binding for the Launch modal" and should only be used for ACTION category commands.
+
+---
+
+### 2. All launch_key Assignments in get_all_commands()
+**File**: `/home/runner/work/erk/erk/src/erk/tui/commands/registry.py` (lines 201-500)
+
+**PLAN ACTION COMMANDS** (with launch_keys):
+
+| Command ID | launch_key | Line | Category |
+|---|---|---|---|
+| `close_plan` | `"c"` | 209 | ACTION |
+| `dispatch_to_queue` | `"d"` | 219 | ACTION |
+| `land_pr` | `"l"` | 229 | ACTION |
+| `rebase_remote` | `"r"` | 241 | ACTION |
+| `address_remote` | `"a"` | 251 | ACTION |
+| `rewrite_remote` | `"w"` | 261 | ACTION |
+| `cmux_sync` | `"m"` | 271 | ACTION |
+
+**OBJECTIVE ACTION COMMANDS** (with launch_keys):
+
+| Command ID | launch_key | Line | Category |
+|---|---|---|---|
+| `one_shot_plan` | `"s"` | 287 | ACTION |
+| `check_objective` | `"k"` | 297 | ACTION |
+| `close_objective` | `"c"` | 307 | ACTION |
+
+**PLAN OPEN COMMANDS** (all have `launch_key=None`):
+
+| Command ID | Line | Category |
+|---|---|---|
+| `open_issue` | 318 | OPEN |
+| `open_pr` | 328 | OPEN |
+| `open_run` | 338 | OPEN |
+
+**OBJECTIVE OPEN COMMANDS** (all have `launch_key=None`):
+
+| Command ID | Line | Category |
+|---|---|---|
+| `open_objective` | 349 | OPEN |
+
+**PLAN COPY COMMANDS** (all have `launch_key=None`):
+
+| Command ID | Line | Category |
+|---|---|---|
+| `copy_checkout` | 360 | COPY |
+| `copy_pr_checkout` | 370 | COPY |
+| `copy_cmux_sync` | 380 | COPY |
+| `copy_implement_local` | 395 | COPY |
+| `copy_dispatch` | 406 | COPY |
+| `copy_replan` | 416 | COPY |
+| `copy_land` | 425 | COPY |
+| `copy_close_plan` | 435 | COPY |
+| `copy_rebase_remote` | 445 | COPY |
+| `copy_address_remote` | 455 | COPY |
+| `copy_rewrite_remote` | 465 | COPY |
+
+**OBJECTIVE COPY COMMANDS** (all have `launch_key=None`):
+
+| Command ID | Line | Category |
+|---|---|---|
+| `copy_plan` | 476 | COPY |
+| `copy_view` | 486 | COPY |
+| `codespace_run_plan` | 496 | COPY |
+
+---
+
+### 3. Key Pattern Observations
+
+1. **Launch Keys Assigned Only to ACTION Commands**: All 10 commands with non-None `launch_key` values are in the ACTION category (7 plan actions + 3 objective actions).
+
+2. **No Duplicate Launch Keys Within Context**: 
+   - Plan commands use: `c, d, l, r, a, w, m`
+   - Objective commands use: `s, k, c`
+   - Note: Both contexts reuse `"c"` (close_plan vs close_objective), but they are mutually exclusive by availability predicates
+
+3. **Launch Key Assignment Pattern** (lines ~209-307):
+   ```python
+   launch_key="X",  # Direct string assignment in CommandDefinition
+   ```
+
+4. **No _key_to_command_id Dictionary**: The source shows that `get_all_commands()` returns a flat list without a separate key-to-command mapping. The actual command lookup happens via the `get_available_commands()` filter (line 512) and then by ID matching.
+
+---
+
+### 4. Related Documentation
+
+The codebase includes comprehensive documentation about this pattern:
+
+- **`/home/runner/work/erk/erk/docs/learned/tui/tui-command-registration.md`**: Describes the 3-place coordination pattern for TUI commands
+- **`/home/runner/work/erk/erk/docs/learned/tui/command-palette.md`**: Documents the CommandCategory enum and launch_key usage patterns
+- **Key reference**: Line 46-47 in `types.py` documents that launch_key should only be used for ACTION commands
+
+This completes the analysis. The patterns show a clean separation between display names (generated via `_display_*()` functions), command definitions with availability predicates, and launch key assignments exclusive to ACTION category commands.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="10095" cache_read_input_tokens="21432" cache_creation="{'ephemeral_5m_input_tokens': 10095, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

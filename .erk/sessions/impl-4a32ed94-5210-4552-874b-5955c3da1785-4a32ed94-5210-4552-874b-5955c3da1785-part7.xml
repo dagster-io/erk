@@ -1,30 +1,29 @@
 <session>
-  <meta source="agent-abf7256" />
+  <meta source="agent-a6c32e7" />
   <meta branch="plnd/consolidate-mar2-learn-doc-03-02-0159" />
   <meta model="claude-haiku-4-5-20251001" />
-  <user>Read these source files and report back their key patterns:
+  <user>Read this source file and report back its key patterns:
 
-1. `src/erk/cli/commands/exec/scripts/track_learn_result.py` - Find the flag at line ~76 (the `--learn-plan` flag, formerly `--plan-issue`)
-2. `src/erk/cli/commands/exec/scripts/impl_signal.py` - Find error codes at lines ~191, ~304, ~383, ~408 (error codes like `missing-learn-plan`, `unexpected-learn-plan`, `no-plan-reference`, `plan-not-found`)
+1. `src/erk/cli/commands/exec/scripts/download_remote_session.py` - Focus on lines 77-86 where the gateway call for `read_file_from_ref` is used
 
-Report exact line numbers, flag names, error code strings, and any comments about the terminology change.
+Report exact line numbers, the gateway call used, and the pattern (replacing subprocess with gateway).
+
+Also check if there are other callers of `read_file_from_ref` and list them.
 
 FIRST check docs/learned/index.md for existing documentation on this topic.
 Read relevant docs before exploring raw files. Then explore codebase as necessary.</user>
-  <assistant>I'll help you find these patterns. Let me start by checking the documentation index to see if there's existing documentation on this topic.</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="15144" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15144, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01URyNH1fwH6G5tYnA9n9buX">
+  <assistant>I'll start by checking the documentation index to understand relevant patterns, then examine the source file.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15092" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15092, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012KCEPQrfp6ZtAiHxzyrLzt">
+    <param name="pattern">read_file_from_ref</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15092" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15092, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UcStWxvr8GUSYJc26f6TJK">
     <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
   </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="15144" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15144, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Grep" id="toolu_01GBMsWiAJ8wmdzn9cbSzXkZ">
-    <param name="pattern">learn.*plan|plan.*learn</param>
-    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
-    <param name="glob">*.md</param>
-    <param name="output_mode">files_with_matches</param>
-  </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="15144" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15144, 'ephemeral_1h_input_tokens': 0}" output_tokens="214" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01URyNH1fwH6G5tYnA9n9buX">
+  <usage input_tokens="3" cache_creation_input_tokens="15092" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15092, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UcStWxvr8GUSYJc26f6TJK">
      1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
      2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
      3→
@@ -58,379 +57,612 @@ Read relevant docs before exploring raw files. Then explore codebase as necessar
 
 ... [22 lines omitted] ...
   </tool_result>
-  <tool_result tool="toolu_01GBMsWiAJ8wmdzn9cbSzXkZ">
-Found 81 files
-docs/learned/tui/plan-title-rendering-pipeline.md
-docs/learned/tui/tripwires.md
-docs/learned/tui/view-aware-commands.md
-docs/learned/tui/view-switching.md
-docs/learned/tui/data-contract.md
-docs/learned/tui/frozen-dataclass-field-management.md
-docs/learned/tui/index.md
-docs/learned/tui/plan-row-data.md
-docs/learned/textual/datatable-markup-escaping.md
-docs/learned/tui/architecture.md
-docs/learned/sessions/multi-part-sessions.md
-docs/learned/sessions/tripwires.md
-docs/learned/sessions/discovery-fallback.md
-docs/learned/sessions/index.md
-docs/learned/sessions/lifecycle.md
-docs/learned/refactoring/libcst-systematic-imports.md
-docs/learned/planning/session-preprocessing.md
-docs/learned/planning/token-optimization-patterns.md
-docs/learned/planning/tripwire-promotion-workflow.md
-docs/learned/planning/tripwires.md
-docs/learned/planning/plan-title-prefix-system.md
-docs/learned/planning/planned-pr-backend.md
-docs/learned/planning/planned-pr-learn-pipeline.md
-docs/learned/planning/pr-discovery.md
-docs/learned/planning/reliability-patterns.md
-docs/learned/planning/remote-branch-learn.md
-docs/learned/planning/lifecycle.md
-docs/learned/planning/metadata-field-workflow.md
-docs/learned/planning/plan-execution-patterns.md
-
-... [52 lines omitted] ...
+  <tool_result tool="toolu_012KCEPQrfp6ZtAiHxzyrLzt">
+No files found
   </tool_result>
-  <assistant>Great! I can see there's substantial documentation about learn-plan workflows. Let me check the most relevant documents first:</assistant>
-  <usage input_tokens="7" cache_creation_input_tokens="2476" cache_read_input_tokens="15144" cache_creation="{'ephemeral_5m_input_tokens': 2476, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01Krdx1dWZYv1PdQRVHGJhBC">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-metadata-fields.md</param>
+  <assistant>Now let me check the architecture documentation for gateway patterns:</assistant>
+  <usage input_tokens="1083" cache_creation_input_tokens="236" cache_read_input_tokens="15092" cache_creation="{'ephemeral_5m_input_tokens': 236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01PaSZubT1dtUgNMRbJjfNfK">
+    <param name="pattern">docs/learned/architecture/*.md</param>
   </tool_use>
-  <usage input_tokens="7" cache_creation_input_tokens="2476" cache_read_input_tokens="15144" cache_creation="{'ephemeral_5m_input_tokens': 2476, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_012CUvrywGwvH4CsG24xHsFg">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-plan-validation.md</param>
+  <usage input_tokens="1083" cache_creation_input_tokens="236" cache_read_input_tokens="15092" cache_creation="{'ephemeral_5m_input_tokens': 236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PaSZubT1dtUgNMRbJjfNfK">
+/home/runner/work/erk/erk/docs/learned/architecture/abc-convenience-methods.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-execution-modes.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-error-reporting.md
+/home/runner/work/erk/erk/docs/learned/architecture/bash-python-integration.md
+/home/runner/work/erk/erk/docs/learned/architecture/at-reference-resolution.md
+/home/runner/work/erk/erk/docs/learned/architecture/agent-schema-enforcement.md
+/home/runner/work/erk/erk/docs/learned/architecture/bundled-artifacts.md
+/home/runner/work/erk/erk/docs/learned/architecture/agent-backpressure-gates.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-integration.md
+/home/runner/work/erk/erk/docs/learned/architecture/capability-system.md
+/home/runner/work/erk/erk/docs/learned/architecture/callback-progress-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-abstraction.md
+/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-decision-tree.md
+/home/runner/work/erk/erk/docs/learned/architecture/defense-in-depth-enforcement.md
+/home/runner/work/erk/erk/docs/learned/architecture/cli-binary-ops-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/click-context-di-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-installation-gateway.md
+/home/runner/work/erk/erk/docs/learned/architecture/derived-flags.md
+/home/runner/work/erk/erk/docs/learned/architecture/composable-remote-commands.md
+/home/runner/work/erk/erk/docs/learned/architecture/command-boundaries.md
+/home/runner/work/erk/erk/docs/learned/architecture/convergence-points.md
+/home/runner/work/erk/erk/docs/learned/architecture/direct-condition-vs-derived-output.md
+/home/runner/work/erk/erk/docs/learned/architecture/context-injection-tiers.md
+/home/runner/work/erk/erk/docs/learned/architecture/command-composition.md
+/home/runner/work/erk/erk/docs/learned/architecture/context-efficiency.md
+/home/runner/work/erk/erk/docs/learned/architecture/commandresult-extension-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/cli-to-pipeline-boundary.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-progress.md
+/home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md
+/home/runner/work/erk/erk/docs/learned/architecture/fake-mutation-tracking.md
+
+... [71 lines omitted] ...
+
+/home/runner/work/erk/erk/docs/learned/architecture/exception-logging-patterns.md
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md
+/home/runner/work/erk/erk/docs/learned/architecture/error-handling-patterns.md
+  </tool_result>
+  <assistant>Let me check the gateway-specific patterns and subprocess wrappers documentation:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="3940" cache_read_input_tokens="15328" cache_creation="{'ephemeral_5m_input_tokens': 3940, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01N43o8JenvxX8vpsteNtBfg">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/gateway-specific-patterns.md</param>
   </tool_use>
-  <usage input_tokens="7" cache_creation_input_tokens="2476" cache_read_input_tokens="15144" cache_creation="{'ephemeral_5m_input_tokens': 2476, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01N7QXqgAsk6HU8k7XhYKFdq">
-    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/learn-plan-land-flow.md</param>
+  <usage input_tokens="5" cache_creation_input_tokens="3940" cache_read_input_tokens="15328" cache_creation="{'ephemeral_5m_input_tokens': 3940, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Lmaxn3zg4jZhreK5jXGGhr">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/subprocess-wrappers.md</param>
   </tool_use>
-  <usage input_tokens="7" cache_creation_input_tokens="2476" cache_read_input_tokens="15144" cache_creation="{'ephemeral_5m_input_tokens': 2476, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01Krdx1dWZYv1PdQRVHGJhBC">
+  <usage input_tokens="5" cache_creation_input_tokens="3940" cache_read_input_tokens="15328" cache_creation="{'ephemeral_5m_input_tokens': 3940, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N43o8JenvxX8vpsteNtBfg">
      1→---
-     2→title: Learn Plan Metadata Preservation
-     3→last_audited: "2026-02-17 16:00 PT"
-     4→audit_result: clean
+     2→title: Mixed Exception/Union Pattern (Deprecated)
+     3→last_audited: "2026-02-07 21:45 PT"
+     4→audit_result: edited
      5→read_when:
-     6→  - "working with learn plan metadata"
-     7→  - "troubleshooting null learn_status or learn_plan_issue"
-     8→  - "transforming Plan objects in pipelines"
-     9→  - "understanding created_from_workflow_run_url field"
-    10→  - "adding workflow run backlinks to plans"
-    11→tripwires:
-    12→  - action: "reading learn_plan_issue or learn_status"
-    13→    warning: "Verify field came through full pipeline. If null, check if filtered out earlier. Use gateway abstractions; never hand-construct Plan objects."
-    14→---
-    15→
-    16→# Learn Plan Metadata Preservation
-    17→
-    18→Learn plans have metadata fields that must survive all pipeline transformations. When these fields become null unexpectedly, data was lost during a transformation stage.
-    19→
-    20→## Critical Metadata Fields
-    21→
-    22→### `learn_status`
-    23→
-    24→Tracks the status of learn plan processing:
-    25→
-    26→- `"pending"` - Learn plan not yet processed
-    27→- `"completed"` - Learn plan has been reviewed and documentation created
-    28→- `None` - Not a learn plan, or status unknown
-    29→
-    30→### `learn_plan_issue`
-
-... [138 lines omitted] ...
-
-    59→- Debugging failed plan creations by linking to the workflow run
-  </tool_result>
-  <tool_result tool="toolu_012CUvrywGwvH4CsG24xHsFg">
-     1→---
-     2→title: Learn Plan Validation
-     3→read_when:
-     4→  - "creating or modifying erk-learn plans"
-     5→  - "working on the learn workflow pipeline"
-     6→  - "debugging learn-on-learn cycle errors"
-     7→tripwires:
-     8→  - action: "creating erk-learn plan for an issue that already has erk-learn label"
-     9→    warning: "Validate target issue has erk-plan label, NOT erk-learn. Learn plans analyze implementation plans, not other learn plans (cycle prevention)."
-    10→last_audited: "2026-02-16 14:20 PT"
-    11→audit_result: clean
+     6→  - "considering mixing discriminated unions with exceptions in gateway methods"
+     7→  - "designing operations with both expected failures and cleanup steps"
+     8→  - "reviewing historical gateway error handling experiments"
+     9→tripwires:
+    10→  - action: "mixing discriminated unions with exception-based cleanup in a single method"
+    11→    warning: "This pattern was tried in PR #6347 and reverted in PR #6375. Message-only discriminated unions with no domain-meaningful variants add complexity without value. Use exceptions for all error cases, or use discriminated unions with meaningful variants throughout. Document why in the PR."
     12→---
     13→
-    14→# Learn Plan Validation
+    14→# Mixed Exception/Union Pattern (Deprecated)
     15→
-    16→## Core Rule: No Learn-on-Learn
+    16→**Status**: This pattern was implemented and then reverted. It is **not currently used** in erk.
     17→
-    18→Learn plans exist to extract insights from **implementation work** (erk-plan issues). A learn plan must never target another learn plan — this would create documentation cycles where plans endlessly analyze each other instead of analyzing real code changes.
+    18→This document explains WHY the mixed exception/union pattern was tried and WHY it was abandoned, to prevent future attempts at the same failed approach.
     19→
-    20→The cycle risk is real because the learn pipeline is automated: after a PR lands, the system can automatically create a learn plan. If learn plans could target other learn plans, the pipeline would generate infinite chains (learn A analyzes learn B which analyzes learn A).
+    20→## The Attempted Pattern
     21→
-    22→## Where Validation Lives
+    22→In January 2026, we experimented with mixing error handling strategies in a single gateway method:
     23→
-    24→Cycle prevention is enforced at multiple points because learn plans flow through several different code paths. Each enforcement point serves a different workflow entry:
-    25→
-    26→| Enforcement Point                 | What It Checks                                   | Why There                                                             |
-    27→| --------------------------------- | ------------------------------------------------ | --------------------------------------------------------------------- |
-    28→| `/erk:learn` skill (Step 1)       | Target issue labels include `erk-learn` → reject | Primary entry: agent-driven learn invocation                          |
-    29→| `erk land` pre-flight             | Issue has `erk-learn` label → skip learn prompt  | Prevents "did you learn from this?" prompt for learn plans themselves |
-    30→| `is_issue_learn_plan()` in submit | Label check helper                               | Shared utility for branch/submit workflows                            |
+    24→- **Main operation** returns discriminated union (`WorktreeRemoved | WorktreeRemoveError`)
+    25→- **Cleanup operation** raises exception (`RuntimeError`)
+    26→
+    27→The hypothesis was that this distinguished between "expected failures" (main operation) and "corrupted state" (cleanup failures).
+    28→
+    29→## Why It Was Tried
+    30→
 
-... [35 lines omitted] ...
+... [92 lines omitted] ...
 
-    34→The `/erk:learn` skill performs the authoritative check in its Step 1 by fetching the issue via `erk exec get-issue-body` and inspecting the `labels` array. If `erk-learn` is present, the skill halts with a cycle prevention error.
+    33→The `remove_worktree` method had two distinct failure modes:
+    35→1. **Expected failures**: Worktree doesn't exist, is in use, permission denied → could be handled gracefully
+    36→2. **Cleanup failures**: `git worktree prune` fails → indicates repository corruption
+    38→The discriminated union conversion aimed to make expected failures explicit while keeping cleanup failures exceptional.
+    44→&lt;!-- Source: PR #6375 - Convert Worktree add/remove back to exceptions --&gt;
+    50→The discriminated union types (`WorktreeRemoved`, `WorktreeRemoveError`) were **structureless message wrappers**:
+    54→- Callers couldn't distinguish between error types anyway
+    59→### 2. Exception Boundaries Already Exist
+    61→The CLI commands already catch exceptions at natural boundaries (Click command handlers). Moving the try/except from CLI to gateway didn't eliminate exception handling - it just moved it.
+    63→**The lesson**: Exception-based error handling works fine when exceptions are caught at architectural boundaries (CLI layer). Don't convert to discriminated unions just to avoid exceptions.
+    67→Having one method return a union for some errors and raise exceptions for others creates cognitive load:
+    69→- Callers must remember which errors are in the return type and which are exceptions
+    80→Gateway methods use **exceptions for all failures**. See `remove_worktree` in `packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py` — it returns `None` and raises `RuntimeError` on failure. No discriminated union types involved.
+    82→CLI commands catch these exceptions at their natural boundaries (Click command handlers), converting them to `click.ClickException` for user-facing output. See callers in `src/erk/cli/commands/wt/delete_cmd.py` and `src/erk/cli/commands/navigation_helpers.py`.
+    84→This is simpler, less code, and works well when all callers terminate identically on failure — no caller branches on error content or inspects error structure.
+    97→See `docs/learned/architecture/discriminated-union-error-handling.md` for current discriminated union patterns.
+   101→When designing gateway error handling:
+   105→| Single failure mode with message                  | Exception              | No variants to distinguish           |
+   106→| Multiple failure modes, callers don't distinguish | Exception              | Type system overhead without benefit |
+   107→| Multiple failure modes, callers DO distinguish    | Discriminated union    | Type narrowing adds value            |
+   110→**Never mix exceptions and discriminated unions in a single method signature.** Choose one strategy for all error cases.
+   114→- [Discriminated Union Error Handling](discriminated-union-error-handling.md) - When and how to use discriminated unions
   </tool_result>
-  <tool_result tool="toolu_01N7QXqgAsk6HU8k7XhYKFdq">
+  <tool_result tool="toolu_01Lmaxn3zg4jZhreK5jXGGhr">
      1→---
-     2→title: Learn Plan Land Flow
-     3→read_when:
-     4→  - "landing PRs associated with learn plans"
-     5→  - "understanding how learn plan metadata updates parent issues"
-     6→tripwires:
-     7→  - action: "landing a PR without updating associated learn plan status"
-     8→    warning: "Learn plan PRs trigger special execution pipeline steps that update parent plan metadata. Ensure check_learn_status and update_learn_plan steps execute after merge."
-     9→last_audited: "2026-02-17 16:00 PT"
-    10→audit_result: clean
-    11→---
-    12→
-    13→# Learn Plan Land Flow
-    14→
-    15→When landing a PR from a learn plan branch, the land execution pipeline runs additional steps that update the parent plan's metadata. This document explains **why** learn plans need special handling and how the pipeline orchestrates these post-merge operations.
-    16→
-    17→## Why Learn Plans Need Special Pipeline Steps
-    18→
-    19→**The core problem**: Learn plans document insights from implementation sessions. The parent plan (the feature that was implemented) needs to track when its documentation has landed.
-    20→
-    21→**Without special handling**, these metadata updates would be manual:
-    22→
-    23→- Engineers would manually update parent issue status after landing docs
-    24→- No visibility into which plans have completed their learning cycle
+     2→title: Subprocess Wrappers
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: edited
+     5→read_when:
+     6→  - "using subprocess wrappers"
+     7→  - "executing shell commands"
+     8→  - "understanding subprocess patterns"
+     9→tripwires:
+    10→  - action: "using bare subprocess.run with check=True"
+    11→    warning: "Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations."
+    12→    pattern: "subprocess\\.run\\("
+    13→  - action: "adding a Claude subprocess call with --print mode"
+    14→    warning: "Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section."
+    15→  - action: "using sed -i in scripts that run on both macOS and Linux"
+    16→    warning: "macOS sed requires `sed -i ''` (empty string argument) while Linux sed uses `sed -i` (no argument). Scripts that use sed -i without handling this difference will fail silently on one platform."
+    17→    score: 4
+    18→---
+    19→
+    20→# Subprocess Execution Wrappers
+    21→
+    22→**NEVER use bare `subprocess.run(..., check=True)`. ALWAYS use wrapper functions.**
+    23→
+    24→This guide explains the two-layer pattern for subprocess execution in erk: gateway layer and CLI layer wrappers.
     25→
-    26→**The solution**: The execution pipeline detects learn plan branches and runs additional steps after merge:
+    26→## Scope
     27→
-    28→1. **Update parent plan metadata**: Set `learn_status = plan_completed` and record the PR number
+    28→**These rules apply to production erk code** in `src/erk/` and `packages/erk-shared/`.
     29→
-    30→## How Learn Plan Detection Works
+    30→**Exception: erk-dev** (`packages/erk-dev/`) is developer tooling and is exempt from these rules. Direct `subprocess.run` is acceptable in erk-dev commands since they don't need the testability/dry-run benefits of wrapper functions.
 
-... [104 lines omitted] ...
+... [348 lines omitted] ...
 
-    74→**Fail-open pattern**: If the parent issue doesn't exist or the `learned_from_issue` field is missing, the step silently returns. This prevents land failures when metadata is malformed or deleted.
+    34→Erk uses a two-layer design for subprocess execution to provide consistent error handling across different boundaries:
+    36→- **Gateway layer**: `run_subprocess_with_context()` - Raises RuntimeError for business logic
+    37→- **CLI layer**: `run_with_error_reporting()` - Prints user-friendly message and raises SystemExit
+    47→**Behavior**: Raises `RuntimeError` with rich context on failure
+    49→**Usage**: Pass `cmd` (the command list), `operation_context` (human-readable description), and `cwd` (working directory). On failure, raises `RuntimeError` with the operation context, command, exit code, and stderr.
+    57→- **Rich error messages**: Includes operation context, command, exit code, stderr
+    58→- **Exception chaining**: Preserves original CalledProcessError for debugging
+    61→### run_with_error_reporting (CLI Layer)
+    63→**When to use**: In CLI command handlers where you want to immediately exit on failure with a user-friendly message.
+    65→**Import**: `from erk.cli.subprocess_utils import run_with_error_reporting`
+    67→**Behavior**: Prints error message to stderr and raises `SystemExit` on failure
+    72→from erk.cli.subprocess_utils import run_with_error_reporting
+    74→# ✅ CORRECT: User-friendly error messages + SystemExit
+    75→run_with_error_reporting(
+    84→- **User-friendly**: Error messages are clear and actionable
+    86→- **No exception handling needed**: Wrapper handles everything
+    90→- **Rich error messages**: Both wrappers include operation context, command, exit code, and stderr
+    91→- **Exception chaining**: Preserves original CalledProcessError for debugging
+    92→- **Consistent patterns**: Two clear boundaries with appropriate error handling
+    93→- **Debugging support**: Full context available in error messages and logs
+   110→Not all subprocess calls should use `run_with_error_reporting()`. Use explicit exception handling when:
+   112→1. **The operation is optional** - Failure should not stop the main workflow
+   114→3. **Warning vs Error** - You want to show a warning and continue, not exit
+   119→# Pattern: check=True with explicit CalledProcessError handling
+   123→except subprocess.CalledProcessError as e:
+   124→    # Show warning, continue execution
+   125→    user_output(click.style("⚠ ", fg="yellow") + f"Optional operation failed: {e}")
+   126→except FileNotFoundError:
+   135→| CLI command that must succeed  | `run_with_error_reporting()`    | SystemExit on failure is correct |
+   136→| Optional background operation  | Explicit exception handling     | Main operation should continue   |
+   137→| Gateway real.py implementation | `run_subprocess_with_context()` | Consistent error wrapping        |
+   141→For GitHub API commands that may fail due to transient network errors, use `execute_gh_command_with_retry()`:
+   151→- Automatic retry on transient errors (network timeouts, connection failures)
+   157→## Error Accumulation Pattern
+   183→# Use accumulated stderr in error msg
+   190→- Stderr is accumulated as list, joined only when needed for error message
+   259→| **Error handling**        | Returns `None` on any failure          | Raises exception or returns error type |
+   262→| **Caller responsibility** | Check for `None`, decide how to handle | Catch exception or check error type    |
+   270→See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`. Returns `dict[str, object] | None` — `None` on any failure (missing issue, metadata, branch, or PR).
+   274→- **No exceptions** - Never raises, always returns `None` on failure
+   275→- **No error messages** - Caller decides what to log
+   276→- **Uniform failure** - All failure modes return `None` consistently
+   286→Use when the operation is **critical** and failure should be explicit:
+   288→See `get_pr_for_plan()` in `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py` for the full implementation. It is a Click command that raises `SystemExit(1)` with JSON error output on any failure, and attempts branch_name recovery via pattern matching.
+   292→- **Explicit errors** - Each failure mode has specific error message
+   294→- **Clear contract** - Caller knows exceptions mean critical failure
+   298→- User-facing commands where failure needs explanation
+   300→- CLI commands that should exit with error message
+   331→The same PR lookup in `get_pr_for_plan.py` is **strict** because it's a user-facing command where the user explicitly asked for the PR and expects either the answer or a clear error message.
+   367→- **CLI layer**: Use `run_with_error_reporting()` for command handlers
   </tool_result>
-  <assistant>Now let me look at the specific source files to find the exact line numbers and flag/error code names:</assistant>
-  <usage input_tokens="7" cache_creation_input_tokens="5895" cache_read_input_tokens="17620" cache_creation="{'ephemeral_5m_input_tokens': 5895, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01B31ncPk6G7H9FemHQ9XLjX">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/track_learn_result.py</param>
+  <assistant>Now let me read the specific file mentioned:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="7771" cache_read_input_tokens="19268" cache_creation="{'ephemeral_5m_input_tokens': 7771, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QwJMc3L69JpsxZMGVf9oj6">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/download_remote_session.py</param>
   </tool_use>
-  <usage input_tokens="7" cache_creation_input_tokens="5895" cache_read_input_tokens="17620" cache_creation="{'ephemeral_5m_input_tokens': 5895, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01LcY3cUFM9m3TVTawfQwpXW">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/impl_signal.py</param>
-  </tool_use>
-  <usage input_tokens="7" cache_creation_input_tokens="5895" cache_read_input_tokens="17620" cache_creation="{'ephemeral_5m_input_tokens': 5895, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01B31ncPk6G7H9FemHQ9XLjX">
-     1→"""Track learn workflow result on a plan.
+  <usage input_tokens="6" cache_creation_input_tokens="7771" cache_read_input_tokens="19268" cache_creation="{'ephemeral_5m_input_tokens': 7771, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QwJMc3L69JpsxZMGVf9oj6">
+     1→"""Download a Claude Code session from a git branch.
      2→
-     3→This exec script updates the plan-header metadata block to record the result
-     4→of a learn workflow. It sets the learn_status field and optionally records
-     5→the learn_plan_issue if a plan was created.
+     3→This exec command downloads a session and stores it in the
+     4→.erk/scratch/remote-sessions/ directory for learn workflow processing.
+     5→
+     6→Usage:
+     7→    erk exec download-remote-session --session-branch async-learn/123 --session-id abc-123
+     8→
+     9→Output:
+    10→    Structured JSON output with success status and session file path
+    11→
+    12→Exit Codes:
+    13→    0: Success (session file downloaded and located)
+    14→    1: Error (download failed)
+    15→
+    16→Examples:
+    17→    $ erk exec download-remote-session --session-branch async-learn/123 --session-id abc-123
+    18→    {
+    19→      "success": true,
+    20→      "session_id": "abc-123",
+    21→      "path": "...",
+    22→      "source": "branch"
+    23→    }
+    24→"""
+    25→
+    26→import json
+    27→import shutil
+    28→from pathlib import Path
+    29→
+    30→import click
+
+... [149 lines omitted] ...
+
+    72→        Path to the downloaded session file on success, error message string on failure.
+    83→        return "Failed to extract session from branch: file not found at ref"
+   125→        return 1, {"success": False, "error": result}
+  </tool_result>
+  <assistant>Perfect! I found the exact location. Now let me search for all other callers of `read_file_from_ref`:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="2938" cache_read_input_tokens="27039" cache_creation="{'ephemeral_5m_input_tokens': 2938, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Vrq1og446DBqNk7Ux5kVaX">
+    <param name="pattern">read_file_from_ref</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="2938" cache_read_input_tokens="27039" cache_creation="{'ephemeral_5m_input_tokens': 2938, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01K4uZnDZxBmpTPqYqEAT2K1">
+    <param name="pattern">read_file_from_ref</param>
+    <param name="path">/home/runner/work/erk/erk/packages</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="2938" cache_read_input_tokens="27039" cache_creation="{'ephemeral_5m_input_tokens': 2938, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01NrgYEcXqsysiQeJsC7CwoZ">
+    <param name="pattern">read_file_from_ref</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="2938" cache_read_input_tokens="27039" cache_creation="{'ephemeral_5m_input_tokens': 2938, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01K4uZnDZxBmpTPqYqEAT2K1">
+Found 6 files
+packages/erk-shared/src/erk_shared/gateway/git/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/printing.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py
+  </tool_result>
+  <tool_result tool="toolu_01NrgYEcXqsysiQeJsC7CwoZ">
+Found 1 file
+tests/unit/fakes/test_fake_git_commit_ops.py
+  </tool_result>
+  <tool_result tool="toolu_01Vrq1og446DBqNk7Ux5kVaX">
+Found 3 files
+src/erk/cli/commands/exec/scripts/push_session.py
+src/erk/cli/commands/exec/scripts/download_remote_session.py
+src/erk/cli/commands/exec/scripts/fetch_sessions.py
+  </tool_result>
+  <assistant>Now let me get the specific usage context for each file:</assistant>
+  <usage input_tokens="236" cache_creation_input_tokens="566" cache_read_input_tokens="29977" cache_creation="{'ephemeral_5m_input_tokens': 566, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016HVTyGcq8NoSnG2FKmAxZ6">
+    <param name="pattern">read_file_from_ref</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">2</param>
+  </tool_use>
+  <usage input_tokens="236" cache_creation_input_tokens="566" cache_read_input_tokens="29977" cache_creation="{'ephemeral_5m_input_tokens': 566, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012neEf2iXrBuRAMZtKGXcgA">
+    <param name="pattern">read_file_from_ref</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">2</param>
+  </tool_use>
+  <usage input_tokens="236" cache_creation_input_tokens="566" cache_read_input_tokens="29977" cache_creation="{'ephemeral_5m_input_tokens': 566, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BbKUYWrxMt2iGyvNE9wWgM">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="236" cache_creation_input_tokens="566" cache_read_input_tokens="29977" cache_creation="{'ephemeral_5m_input_tokens': 566, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BbKUYWrxMt2iGyvNE9wWgM">
+     1→"""Abstract base class for Git commit operations.
+     2→
+     3→This sub-gateway extracts commit operations from the main Git gateway,
+     4→including staging, committing, amending, and commit message queries.
+     5→"""
      6→
-     7→Usage:
-     8→    erk exec track-learn-result --plan-id 123 --status completed_no_plan
-     9→    erk exec track-learn-result --plan-id 123 --status completed_with_plan --learn-plan 456
-    10→
-    11→Output:
-    12→    JSON object with tracking result:
-    13→    {
-    14→        "success": true,
-    15→        "plan_id": "123",
-    16→        "learn_status": "completed_no_plan"
-    17→    }
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from pathlib import Path
+    11→
+    12→
+    13→class GitCommitOps(ABC):
+    14→    """Abstract interface for Git commit operations.
+    15→
+    16→    This interface contains both mutation and query operations for commits.
+    17→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    18→    """
+    19→
+    20→    # ============================================================================
+    21→    # Mutation Operations
+    22→    # ============================================================================
+    23→
+    24→    @abstractmethod
+    25→    def stage_files(self, cwd: Path, paths: list[str], *, force: bool) -&gt; None:
+    26→        """Stage specific files for commit.
+    27→
+    28→        Args:
+    29→            cwd: Working directory
+    30→            paths: List of file paths to stage (relative to cwd)
+
+... [155 lines omitted] ...
+
+    34→            subprocess.CalledProcessError: If git command fails
+    49→            subprocess.CalledProcessError: If git command fails
+    61→            subprocess.CalledProcessError: If git command fails
+    74→            subprocess.CalledProcessError: If git command fails
+  </tool_result>
+  <tool_result tool="toolu_016HVTyGcq8NoSnG2FKmAxZ6">
+114-        Parsed manifest dict if found, None otherwise.
+115-    """
+116:    raw = git.commit.read_file_from_ref(
+117-        repo_root,
+118-        ref=f"origin/{session_branch}",
+  </tool_result>
+  <tool_result tool="toolu_012neEf2iXrBuRAMZtKGXcgA">
+42-        Parsed manifest dict if found, None otherwise.
+43-    """
+44:    raw = git.commit.read_file_from_ref(
+45-        repo_root,
+46-        ref=f"origin/{session_branch}",
+--
+75-        Path to the written file, or None on failure.
+76-    """
+77:    raw = git.commit.read_file_from_ref(
+78-        repo_root,
+79-        ref=f"origin/{session_branch}",
+  </tool_result>
+  <assistant>Now let me look at the real implementation to understand the pattern:</assistant>
+  <usage input_tokens="1961" cache_creation_input_tokens="1001" cache_read_input_tokens="30543" cache_creation="{'ephemeral_5m_input_tokens': 1001, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Rzfxxbj6K2pr4Uw5LG8Rem">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1961" cache_creation_input_tokens="1001" cache_read_input_tokens="30543" cache_creation="{'ephemeral_5m_input_tokens': 1001, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Rzfxxbj6K2pr4Uw5LG8Rem">
+     1→"""Production implementation of Git commit operations using subprocess."""
+     2→
+     3→import os
+     4→import subprocess
+     5→import tempfile
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+     9→from erk_shared.gateway.git.lock import wait_for_index_lock
+    10→from erk_shared.gateway.time.abc import Time
+    11→from erk_shared.subprocess_utils import run_subprocess_with_context
+    12→
+    13→
+    14→class RealGitCommitOps(GitCommitOps):
+    15→    """Real implementation of Git commit operations using subprocess."""
+    16→
+    17→    def __init__(self, time: Time) -&gt; None:
+    18→        """Initialize RealGitCommitOps with Time provider.
+    19→
+    20→        Args:
+    21→            time: Time provider for lock waiting
+    22→        """
+    23→        self._time = time
+    24→
+    25→    # ============================================================================
+    26→    # Mutation Operations
+    27→    # ============================================================================
+    28→
+    29→    def stage_files(self, cwd: Path, paths: list[str], *, force: bool) -&gt; None:
+    30→        """Stage specific files for commit."""
+
+... [55 lines omitted] ...
+  </tool_result>
+  <assistant>Let me get the read_file_from_ref implementation:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3157" cache_read_input_tokens="31544" cache_creation="{'ephemeral_5m_input_tokens': 3157, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01A5eHuzzQMGN2oSA939PwhV">
+    <param name="pattern">def read_file_from_ref</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3157" cache_read_input_tokens="31544" cache_creation="{'ephemeral_5m_input_tokens': 3157, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A5eHuzzQMGN2oSA939PwhV">
+147:    def read_file_from_ref(self, cwd: Path, *, ref: str, file_path: str) -&gt; bytes | None:
+148-        """Read file content from a git reference without checkout."""
+149-        result = subprocess.run(
+150-            ["git", "show", f"{ref}:{file_path}"],
+151-            cwd=cwd,
+152-            capture_output=True,
+153-            check=False,
+154-        )
+155-        if result.returncode != 0:
+156-            return None
+157-        return result.stdout
+158-
+159-    def get_commit_message(self, repo_root: Path, commit_sha: str) -&gt; str | None:
+160-        """Get the first line of commit message for a given commit SHA."""
+161-        result = subprocess.run(
+162-            ["git", "log", "-1", "--format=%s", commit_sha],
+  </tool_result>
+  <assistant>Perfect! Now let me get a bit more context on the other files to create a comprehensive report:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="540" cache_read_input_tokens="34701" cache_creation="{'ephemeral_5m_input_tokens': 540, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013gEsGxD9gahN4bM5FRwocZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py</param>
+    <param name="limit">130</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="540" cache_read_input_tokens="34701" cache_creation="{'ephemeral_5m_input_tokens': 540, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015ivikwAN2WZzw1r6aiKSQE">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py</param>
+    <param name="limit">90</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="540" cache_read_input_tokens="34701" cache_creation="{'ephemeral_5m_input_tokens': 540, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013gEsGxD9gahN4bM5FRwocZ">
+     1→"""Push a preprocessed session to the async-learn branch with accumulation.
+     2→
+     3→Preprocesses session JSONL to compressed XML and accumulates multiple sessions
+     4→on the same branch across lifecycle stages.
+     5→
+     6→Usage:
+     7→    erk exec push-session \\
+     8→        --session-file /path/to/session.jsonl \\
+     9→        --session-id abc-123 \\
+    10→        --stage planning \\
+    11→        --source local \\
+    12→        --plan-id 2521
+    13→
+    14→Output:
+    15→    Structured JSON output with upload status:
+    16→    {"uploaded": true, "plan_id": 2521, "session_branch": "async-learn/2521", "files": [...]}
+    17→    {"uploaded": false, "reason": "preprocessing_failed"}
     18→
     19→Exit Codes:
-    20→    0: Success
-    21→    1: Error (invalid issue, GitHub failure, validation error, etc.)
-    22→"""
-    23→
-    24→import json
-    25→from dataclasses import asdict, dataclass
-    26→
-    27→import click
-    28→
-    29→from erk_shared.context.helpers import require_plan_backend, require_repo_root
-    30→from erk_shared.gateway.github.metadata.schemas import LearnStatusValue
-
-... [171 lines omitted] ...
-
-    31→from erk_shared.plan_store.types import PlanHeaderNotFoundError
-    46→class TrackLearnResultError:
-    47→    """Error result when tracking fails."""
-    50→    error: str
-   102→        error = TrackLearnResultError(
-   104→            error="missing-learn-plan",
-   107→        click.echo(json.dumps(asdict(error)))
-   112→        error = TrackLearnResultError(
-   114→            error="unexpected-learn-plan",
-   117→        click.echo(json.dumps(asdict(error)))
-   122→        error = TrackLearnResultError(
-   124→            error="missing-plan-pr",
-   127→        click.echo(json.dumps(asdict(error)))
-   132→        error = TrackLearnResultError(
-   134→            error="unexpected-learn-plan",
-   137→        click.echo(json.dumps(asdict(error)))
-   142→        error = TrackLearnResultError(
-   144→            error="unexpected-plan-pr",
-   147→        click.echo(json.dumps(asdict(error)))
-   168→    except PlanHeaderNotFoundError:
-   169→        error = TrackLearnResultError(
-   171→            error="no-metadata-block",
-   176→        click.echo(json.dumps(asdict(error)), err=True)
-   178→    except RuntimeError as e:
-   179→        error = TrackLearnResultError(
-   181→            error="github-api-failed",
-   182→            message=f"Failed to update learn status on plan {plan_id}: {e}",
-   184→        click.echo(json.dumps(asdict(error)), err=True)
-  </tool_result>
-  <tool_result tool="toolu_01LcY3cUFM9m3TVTawfQwpXW">
-     1→"""Signal implementation events (started/ended/submitted) to GitHub.
-     2→
-     3→This exec command wraps the start/end/submit signaling operations:
-     4→- "started": Posts start comment and marks implementation as started
-     5→- "ended": Marks implementation as ended
-     6→- "submitted": Sets lifecycle_stage to "impl" after PR submission
-     7→
-     8→Provides a single entry point for /erk:plan-implement to signal events
-     9→with graceful failure (always exits 0 for || true pattern).
-    10→
-    11→Usage:
-    12→    erk exec impl-signal started
-    13→    erk exec impl-signal ended
-    14→    erk exec impl-signal submitted
-    15→
-    16→Output:
-    17→    JSON with success status or error information
-    18→    Always exits with code 0 (graceful degradation for || true pattern)
-    19→
-    20→Exit Codes:
-    21→    0: Always (even on error, to support || true pattern)
+    20→    0: Always (non-critical operation, graceful degradation)
+    21→"""
     22→
-    23→Examples:
-    24→    $ erk exec impl-signal started
-    25→    {"success": true, "event": "started", "plan_number": 123}
-    26→
-    27→    $ erk exec impl-signal ended
-    28→    {"success": true, "event": "ended", "plan_number": 123}
+    23→import json
+    24→import subprocess
+    25→import tempfile
+    26→from datetime import UTC
+    27→from pathlib import Path
+    28→from typing import Literal
     29→
-    30→    $ erk exec impl-signal submitted
+    30→import click
 
-... [430 lines omitted] ...
+... [105 lines omitted] ...
 
-    70→class SignalError:
-    71→    """Error response for signal command."""
-    75→    error_type: str
-    79→def _output_error(event: str, error_type: str, message: str) -&gt; None:
-    80→    """Output error JSON and exit gracefully."""
-    81→    result = SignalError(
-    84→        error_type=error_type,
-   103→        True if file was deleted, False if not found or error.
-   141→    except subprocess.CalledProcessError:
-   158→    except subprocess.CalledProcessError:
-   168→        _output_error(
-   181→        _output_error(event, "context-not-initialized", "Context not initialized")
-   191→        _output_error(event, "no-plan-reference", "No plan reference found")
-   202→        _output_error(event, "context-not-initialized", "Context not initialized")
-   208→        _output_error(event, "worktree-detection-failed", "Could not determine worktree name")
-   213→        _output_error(event, "branch-detection-failed", "Could not determine branch name")
-   229→    except (FileNotFoundError, ValueError) as e:
-   230→        _output_error(event, "local-state-write-failed", f"Failed to write local state: {e}")
-   237→        _output_error(event, "context-not-initialized", "Context not initialized")
-   272→    except RuntimeError as e:
-   273→        _output_error(event, "github-api-failed", f"Failed to post event: {e}")
-   294→        _output_error(event, "context-not-initialized", "Context not initialized")
-   304→        _output_error(event, "no-plan-reference", "No plan reference found")
-   311→        _output_error(event, "context-not-initialized", "Context not initialized")
-   327→    except (FileNotFoundError, ValueError) as e:
-   328→        _output_error(event, "local-state-write-failed", f"Failed to write local state: {e}")
-   335→        _output_error(event, "context-not-initialized", "Context not initialized")
-   351→    except RuntimeError as e:
-   352→        _output_error(event, "github-api-failed", f"Failed to update metadata: {e}")
-   373→        _output_error(event, "context-not-initialized", "Context not initialized")
-   383→        _output_error(event, "no-plan-reference", "No plan reference found")
-   390→        _output_error(event, "context-not-initialized", "Context not initialized")
-   397→        _output_error(event, "context-not-initialized", "Context not initialized")
-   408→        _output_error(event, "plan-not-found", f"Plan #{plan_ref.plan_id} not found")
-   414→    except RuntimeError as e:
-   415→        _output_error(event, "github-api-failed", f"Failed to update metadata: {e}")
+    58→        List of XML file paths on success, None on failure.
   </tool_result>
-  <assistant>Perfect! I have found all the information you requested. Let me compile a comprehensive report with exact line numbers and patterns.
+  <tool_result tool="toolu_015ivikwAN2WZzw1r6aiKSQE">
+     1→"""Fetch preprocessed sessions from an async-learn branch.
+     2→
+     3→Downloads the manifest and XML files from the async-learn/{plan_id} branch
+     4→for use by the learn pipeline. Returns JSON with file list and manifest metadata.
+     5→
+     6→Usage:
+     7→    erk exec fetch-sessions --plan-id 2521 --output-dir ./learn
+     8→
+     9→Output:
+    10→    Structured JSON output:
+    11→    {"success": true, "plan_id": 2521, "manifest": {...}, "files": [...]}
+    12→    {"success": false, "error": "branch_not_found"}
+    13→
+    14→Exit Codes:
+    15→    0: Success
+    16→    1: Error (branch not found, fetch failed)
+    17→"""
+    18→
+    19→import json
+    20→from pathlib import Path
+    21→
+    22→import click
+    23→
+    24→from erk_shared.context.helpers import require_git, require_repo_root
+    25→from erk_shared.gateway.git.abc import Git
+    26→
+    27→
+    28→def _fetch_manifest(
+    29→    *,
+    30→    repo_root: Path,
 
-## Report: Learn Plan Flag and Error Code Patterns
+... [65 lines omitted] ...
 
-### Documentation Context
+    75→        Path to the written file, or None on failure.
+  </tool_result>
+  <assistant>Excellent! Now I have all the information I need. Let me create a comprehensive report:
 
-Before analyzing the code, I found extensive documentation about learn plan workflows:
-- **learn-plan-metadata-fields.md**: Explains the distinction between `learned_from_issue` (storage-layer field in GitHub) and `learn_plan_issue` (application-layer field on Plan dataclass)
-- **learn-plan-validation.md**: Documents cycle prevention and the two-label system (`erk-plan` vs `erk-learn`)
-- **learn-plan-land-flow.md**: Details how learn plans update parent plan metadata after PR merge
+## Report: `read_file_from_ref` Gateway Pattern Analysis
 
-### File 1: track_learn_result.py
+### Key Location in download_remote_session.py
 
-**Flag Location: Line 76**
+**File**: `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/download_remote_session.py`
+
+**Lines 77-81** - Gateway call pattern:
 
 ```python
-@click.option(
-    "--learn-plan",  # Line 76
-    type=int,
-    help="Learn plan number (required if status is completed_with_plan)",
+content = git.commit.read_file_from_ref(
+    repo_root,
+    ref=f"origin/{session_branch}",
+    file_path=f".erk/session/{session_id}.jsonl",
 )
 ```
 
-**Notes on Flag:**
-- The flag is `--learn-plan` (not `--plan-issue`)
-- Terminology: This was formerly `--plan-issue` but has been renamed to `--learn-plan`
-- The parameter name in the function signature is `learn_plan` (line 91)
+**Pattern**: This replaces direct subprocess with a gateway abstraction. The gateway method encapsulates the `git show` operation.
 
-**Error Codes in track_learn_result.py:**
+### Gateway Implementation
 
-| Line | Error Code | Context | Message |
-|------|-----------|---------|---------|
-| 104 | `missing-learn-plan` | Line 104 | Raised when status is `completed_with_plan` but `--learn-plan` is not provided |
-| 114 | `unexpected-learn-plan` | Line 114 | Raised when status is `completed_no_plan` but `--learn-plan` IS provided |
-| 134 | `unexpected-learn-plan` | Line 134 | Raised when status is `pending_review` but `--learn-plan` IS provided |
-| 124 | `missing-plan-pr` | Line 124 | Raised when status is `pending_review` but `--plan-pr` is not provided |
-| 144 | `unexpected-plan-pr` | Line 144 | Raised when status is `completed_with_plan` but `--plan-pr` IS provided |
-| 171 | `no-metadata-block` | Line 171 | Raised when Plan has no plan-header metadata block |
-| 181 | `github-api-failed` | Line 181 | Raised when GitHub API fails during metadata update |
+**Abstract definition**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py` (lines 152-163)
 
-### File 2: impl_signal.py
+```python
+@abstractmethod
+def read_file_from_ref(self, cwd: Path, *, ref: str, file_path: str) -&gt; bytes | None:
+    """Read file content from a git reference without checkout.
 
-**Error Codes in impl_signal.py:**
+    Args:
+        cwd: Repository root directory.
+        ref: Git reference (branch, tag, SHA, e.g. "origin/async-learn/42").
+        file_path: Path relative to repository root.
 
-| Line | Error Code | Event | Context |
-|------|-----------|-------|---------|
-| 170 | `session-id-required` | `started` | Line 170: Session ID is required for `impl-signal started` |
-| 181 | `context-not-initialized` | `started` | Line 181: Context (cwd/git) not initialized |
-| 191 | `no-plan-reference` | `started` | Line 191: No plan reference found in `.erk/impl-context/` |
-| 208 | `worktree-detection-failed` | `started` | Line 208: Could not determine worktree name |
-| 213 | `branch-detection-failed` | `started` | Line 213: Could not determine branch name |
-| 230 | `local-state-write-failed` | `started` | Line 230: Failed to write local state file |
-| 273 | `github-api-failed` | `started` | Line 273: Failed to post event to GitHub |
-| 294 | `context-not-initialized` | `ended` | Line 294: Context (cwd/git) not initialized |
-| 304 | `no-plan-reference` | `ended` | Line 304: No plan reference found |
-| 328 | `local-state-write-failed` | `ended` | Line 328: Failed to write local state file |
-| 352 | `github-api-failed` | `ended` | Line 352: Failed to update metadata |
-| 373 | `context-not-initialized` | `submitted` | Line 373: Context not initialized |
-| 383 | `no-plan-reference` | `submitted` | Line 383: No plan reference found |
-| 390 | `context-not-initialized` | `submitted` | Line 390: Context not initialized |
-| 408 | `plan-not-found` | `submitted` | Line 408: Plan not found on GitHub (PlanNotFound result) |
-| 415 | `github-api-failed` | `submitted` | Line 415: Failed to update metadata |
+    Returns:
+        File content as bytes, or None if ref or file doesn't exist.
+    """
+    ...
+```
 
-### Key Patterns Identified
+**Real implementation**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py` (lines 147-157)
 
-1. **Terminology Consistency**: The codebase has migrated from `--plan-issue` to `--learn-plan`. The flag name (line 76) and variable name (`learn_plan`) now align with the domain language.
+```python
+def read_file_from_ref(self, cwd: Path, *, ref: str, file_path: str) -&gt; bytes | None:
+    """Read file content from a git reference without checkout."""
+    result = subprocess.run(
+        ["git", "show", f"{ref}:{file_path}"],
+        cwd=cwd,
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        return None
+    return result.stdout
+```
 
-2. **Error Code Naming Convention**: Error codes use kebab-case (e.g., `missing-learn-plan`, `no-plan-reference`) and describe the specific failure condition.
+**Pattern note**: This implementation uses `subprocess.run()` with `check=False` and explicit return code checking. This is an intentional LBYL (Look Before You Leap) pattern for graceful degradation - when the file doesn't exist at the ref, it returns `None` rather than raising an exception.
 
-3. **Validation Strategy**: The track_learn_result script uses LBYL (Look Before You Leap) pattern - validating flag combinations early before attempting metadata updates.
+### All Callers of read_file_from_ref
 
-4. **Signal Event Error Codes**: impl_signal uses generic error codes (`context-not-initialized`, `github-api-failed`) shared across event types, with specific codes for event-critical failures (`no-plan-reference`, `plan-not-found`).
+**1. download_remote_session.py** (lines 77-81)
+- Location: `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/download_remote_session.py`
+- Usage: Downloads a session JSONL from a remote branch
+- File path: `.erk/session/{session_id}.jsonl`
 
-5. **Documentation in Code**: Both scripts document their usage and exit codes in docstrings at the top (lines 1-22 in track_learn_result.py and lines 1-32 in impl_signal.py).</assistant>
-  <usage input_tokens="7" cache_creation_input_tokens="9143" cache_read_input_tokens="23515" cache_creation="{'ephemeral_5m_input_tokens': 9143, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+**2. push_session.py** (lines 116-120)
+- Location: `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_session.py`
+- Usage: Reads existing manifest from remote branch for accumulation
+- File path: `.erk/sessions/manifest.json`
+- Function: `_read_manifest_from_branch()` (lines 100-126)
+
+**3. fetch_sessions.py** (two calls)
+- Location: `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/fetch_sessions.py`
+
+  a) Lines 44-48 in `_fetch_manifest()` (lines 28-54)
+  - Reads manifest: `.erk/sessions/manifest.json`
+  
+  b) Lines 77-81 in `_fetch_file_from_branch()` (lines 57-87)
+  - Reads XML files: `.erk/sessions/{filename}`
+
+### Pattern Characteristics
+
+- **Gateway abstraction**: Direct subprocess calls wrapped in a gateway method
+- **Error handling**: Returns `None` on failure (graceful degradation)
+- **Usage pattern**: All callers check for `None` and handle absence gracefully
+- **Operation**: Uses `git show ref:file_path` to read file content without checkout
+- **Return type**: `bytes | None` - raw bytes when successful, None when file not found
+
+### Related Documentation
+
+The subprocess wrapper pattern is documented in:
+- `/home/runner/work/erk/erk/docs/learned/architecture/subprocess-wrappers.md` - Explains the two-layer pattern (gateway vs CLI layer) and LBYL patterns for graceful degradation</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2909" cache_read_input_tokens="35241" cache_creation="{'ephemeral_5m_input_tokens': 2909, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
 </session>

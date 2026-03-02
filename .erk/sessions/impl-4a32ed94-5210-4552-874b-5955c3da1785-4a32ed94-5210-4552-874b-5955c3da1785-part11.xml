@@ -1,0 +1,777 @@
+<session>
+  <meta source="agent-afc0772" />
+  <meta branch="plnd/consolidate-mar2-learn-doc-03-02-0159" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Read these source files and report back their key patterns:
+
+1. `src/erk/cli/commands/pr/dispatch_helpers.py` - Find the `ensure_trunk_synced()` function and the `update_local_ref` pattern
+2. `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py` - Find the `update_local_ref()` method  
+3. `src/erk/cli/commands/pr/dispatch_cmd.py` - Find the `_dispatch_planned_pr_plan()` function and the `commit_files_to_branch` pattern
+
+For each file, report:
+- The relevant function/method signatures
+- Key patterns used (especially related to git plumbing operations that avoid checkout)
+- Line numbers for key sections
+
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.</user>
+  <assistant>I'll help you find and analyze these patterns. Let me start by checking the documentation index for any existing coverage of these topics.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15174" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15174, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01SAVJrowLZ4BuBdYyU4nLhd">
+    <param name="pattern">dispatch|branch|git.*plumbing|update.*ref</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15174" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15174, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01KCZ94qRh8b1wWnmRHhoVvb">
+    <param name="pattern">docs/learned/**/*.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15174" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15174, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KCZ94qRh8b1wWnmRHhoVvb">
+/home/runner/work/erk/erk/docs/learned/architecture/abc-convenience-methods.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-execution-modes.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-error-reporting.md
+/home/runner/work/erk/erk/docs/learned/architecture/bash-python-integration.md
+/home/runner/work/erk/erk/docs/learned/architecture/at-reference-resolution.md
+/home/runner/work/erk/erk/docs/learned/architecture/agent-schema-enforcement.md
+/home/runner/work/erk/erk/docs/learned/architecture/bundled-artifacts.md
+/home/runner/work/erk/erk/docs/learned/architecture/agent-backpressure-gates.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-integration.md
+/home/runner/work/erk/erk/docs/learned/architecture/capability-system.md
+/home/runner/work/erk/erk/docs/learned/architecture/callback-progress-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-abstraction.md
+/home/runner/work/erk/erk/docs/learned/architecture/branch-manager-decision-tree.md
+/home/runner/work/erk/erk/docs/learned/architecture/defense-in-depth-enforcement.md
+/home/runner/work/erk/erk/docs/learned/architecture/cli-binary-ops-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/click-context-di-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-installation-gateway.md
+/home/runner/work/erk/erk/docs/learned/architecture/derived-flags.md
+/home/runner/work/erk/erk/docs/learned/architecture/composable-remote-commands.md
+/home/runner/work/erk/erk/docs/learned/architecture/command-boundaries.md
+/home/runner/work/erk/erk/docs/learned/architecture/convergence-points.md
+/home/runner/work/erk/erk/docs/learned/architecture/direct-condition-vs-derived-output.md
+/home/runner/work/erk/erk/docs/learned/architecture/context-injection-tiers.md
+/home/runner/work/erk/erk/docs/learned/architecture/command-composition.md
+/home/runner/work/erk/erk/docs/learned/architecture/context-efficiency.md
+/home/runner/work/erk/erk/docs/learned/architecture/commandresult-extension-pattern.md
+/home/runner/work/erk/erk/docs/learned/architecture/cli-to-pipeline-boundary.md
+/home/runner/work/erk/erk/docs/learned/architecture/claude-cli-progress.md
+/home/runner/work/erk/erk/docs/learned/architecture/discriminated-union-error-handling.md
+/home/runner/work/erk/erk/docs/learned/architecture/fake-mutation-tracking.md
+
+... [71 lines omitted] ...
+
+/home/runner/work/erk/erk/docs/learned/architecture/exception-logging-patterns.md
+/home/runner/work/erk/erk/docs/learned/architecture/gateway-error-boundaries.md
+/home/runner/work/erk/erk/docs/learned/architecture/error-handling-patterns.md
+  </tool_result>
+  <tool_result tool="toolu_01SAVJrowLZ4BuBdYyU4nLhd">
+Found 277 files
+docs/learned/workflows/git-sync-state-preservation.md
+docs/learned/workflows/one-shot-workflow.md
+docs/learned/workflows/tripwires.md
+docs/learned/tui/stacked-pr-indicator.md
+docs/learned/tui/status-indicators.md
+docs/learned/tui/streaming-output.md
+docs/learned/tui/subprocess-feedback.md
+docs/learned/tui/tripwires.md
+docs/learned/uncategorized/tripwires.md
+docs/learned/tui/column-addition-pattern.md
+docs/learned/tui/dashboard-columns.md
+docs/learned/tui/data-contract.md
+docs/learned/tui/derived-display-columns.md
+docs/learned/tui/dual-handler-pattern.md
+docs/learned/tui/filter-pipeline.md
+docs/learned/tui/lifecycle-display.md
+docs/learned/tui/modal-screen-pattern.md
+docs/learned/tui/multi-operation-tracking.md
+docs/learned/tui/plan-row-data.md
+docs/learned/testing/tripwires.md
+docs/learned/tui/action-inventory.md
+docs/learned/tui/adding-commands.md
+docs/learned/tui/architecture.md
+docs/learned/tui/async-action-refresh-pattern.md
+docs/learned/testing/monkeypatch-elimination-checklist.md
+docs/learned/testing/rebase-conflicts.md
+docs/learned/testing/session-store-testing.md
+docs/learned/testing/submit-pipeline-tests.md
+docs/learned/testing/testing.md
+
+... [248 lines omitted] ...
+
+docs/learned/testing/cli-test-error-assertions.md
+docs/learned/cli/error-detection-patterns.md
+docs/learned/cli/error-handling-antipatterns.md
+docs/learned/ci/ci-failure-summarization.md
+docs/learned/architecture/gateway-error-boundaries.md
+docs/learned/architecture/discriminated-union-error-handling.md
+  </tool_result>
+  <assistant>Now let me check for documentation specifically about dispatch, branch operations, and git plumbing patterns:</assistant>
+  <usage input_tokens="2776" cache_creation_input_tokens="4192" cache_read_input_tokens="15174" cache_creation="{'ephemeral_5m_input_tokens': 4192, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013u4ByN595cqvVKnKkWdkxt">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/dispatch-ref-config.md</param>
+  </tool_use>
+  <usage input_tokens="2776" cache_creation_input_tokens="4192" cache_read_input_tokens="15174" cache_creation="{'ephemeral_5m_input_tokens': 4192, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EtJi1fEuEWqMU4szWS9bFF">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/git-operation-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="2776" cache_creation_input_tokens="4192" cache_read_input_tokens="15174" cache_creation="{'ephemeral_5m_input_tokens': 4192, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AZSj1fbBpcCgfVhLCwYC79">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/planned-pr-branch-sync.md</param>
+  </tool_use>
+  <usage input_tokens="2776" cache_creation_input_tokens="4192" cache_read_input_tokens="15174" cache_creation="{'ephemeral_5m_input_tokens': 4192, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013u4ByN595cqvVKnKkWdkxt">
+     1→---
+     2→title: dispatch_ref Configuration
+     3→read_when:
+     4→  - "configuring which branch workflow_dispatch targets"
+     5→  - "working with .erk/config.toml dispatch settings"
+     6→  - "debugging workflow dispatch targeting the wrong branch"
+     7→tripwires:
+     8→  - action: "assuming dispatch_ref is project-level config"
+     9→    warning: "dispatch_ref is repo-level config (.erk/config.toml), overridable at local level (.erk/config.local.toml). It is not project-level."
+    10→---
+    11→
+    12→# dispatch_ref Configuration
+    13→
+    14→Override the default branch used for GitHub Actions `workflow_dispatch` events. By default, erk dispatches workflows against the repository's default branch (usually `master`). The `dispatch_ref` config allows targeting a different branch.
+    15→
+    16→## Configuration
+    17→
+    18→Top-level key in `.erk/config.toml`:
+    19→
+    20→```toml
+    21→dispatch_ref = "my-custom-branch"
+    22→```
+    23→
+    24→Can be overridden per-user in `.erk/config.local.toml`:
+    25→
+    26→```toml
+    27→dispatch_ref = "my-dev-branch"
+    28→```
+    29→
+    30→## Type Definition
+
+... [37 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01EtJi1fEuEWqMU4szWS9bFF">
+     1→---
+     2→title: Git Operation Patterns
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "implementing git operations in gateways"
+     7→  - "checking if git branches or refs exist"
+     8→  - "deciding between LBYL and EAFP for git commands"
+     9→tripwires:
+    10→  - score: 7
+    11→    action: "parsing CalledProcessError messages for git operations"
+    12→    warning: "Avoid parsing git error messages to determine failure modes. Use LBYL with git show-ref --verify to check existence before operations, or design discriminated unions that handle all returncode cases explicitly."
+    13→    context: "Git error message parsing is fragile (messages can change across versions, localization issues). LBYL with git show-ref is more reliable. For operations with multiple failure modes, use discriminated unions based on returncode patterns."
+    14→  - action: "using git stash in scripts that have running processes dependent on working tree state"
+    15→    warning: "git stash changes working tree state which affects running processes. If code is executing from the working tree (e.g., Python scripts), stashing can cause import errors or missing file errors in the running process."
+    16→    score: 4
+    17→  - action: "using two-dot syntax (branch..HEAD) in git diff"
+    18→    warning: "git diff comparisons MUST use three-dot (branch...HEAD) to diff from merge-base. Two-dot is correct for git rev-list but WRONG for git diff."
+    19→---
+    20→
+    21→# Git Operation Patterns
+    22→
+    23→## The LBYL Principle for Git Operations
+    24→
+    25→Erk's LBYL-first philosophy extends to git operations: **check existence before acting** rather than catching and parsing error messages. This pattern leverages git's stable exit code contracts instead of brittle string matching.
+    26→
+    27→## Why git show-ref --verify Is the Right Check
+    28→
+    29→`git show-ref --verify` has a clear, version-stable returncode contract:
+    30→
+
+... [125 lines omitted] ...
+
+    34→This is superior to parsing error messages from `git branch` or `git checkout` because:
+    36→1. **Immune to localization** — error messages translate, returncodes don't
+    45→## Decision Framework: LBYL vs Exception Handling
+    50→| Atomic operations (merge, rebase, fetch) | try/except in real.py only        | No meaningful pre-check, multiple failure modes, subprocess risks |
+    52→| Multiple expected failure modes          | Discriminated unions              | Enable caller branching logic on specific error types             |
+    56→## Why Not Parse Error Messages
+    58→**WRONG — Error message parsing:**
+    64→except CalledProcessError as e:
+    73→- Git error messages change across versions (2.30 vs 2.40+ have different phrasing)
+    76→- Violates LBYL: you're catching the operation failure instead of checking first
+    86→## When Exception Handling IS Appropriate
+    88→Gateway methods use try/except **only in real.py** to catch subprocess and system-level failures that cannot be pre-checked. This converts unpredictable runtime errors into structured discriminated unions.
+    92→See `BranchCreated` and `BranchAlreadyExists` in `packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py` for the discriminated union pattern: empty success marker + error type with message field.
+    97→2. **Multiple subprocess-level failure modes** — distinguish between "command not found", "permission denied", "merge conflict"
+    98→3. **Unpredictable system errors** — disk full, network timeout, process killed
+   102→- `CalledProcessError` from subprocess commands
+   103→- `FileNotFoundError` for missing executables (gh, git)
+   104→- `OSError` for system-level failures (permissions, disk space)
+   108→- Programming errors (`AttributeError`, `TypeError`) — these should crash
+   109→- Validation failures that caller should check via LBYL
+   111→## The Gateway Error Boundary Pattern
+   113→Error handling responsibilities differ by implementation file:
+   115→| File          | Error Handling Mechanism                                               | Uses try/except? |
+   117→| `real.py`     | Catches subprocess/system exceptions, converts to discriminated unions | **Yes**          |
+   118→| `fake.py`     | Returns error discriminants based on constructor params                | No               |
+   123→**Why this split?** Real implementations interact with unpredictable external systems. Fake implementations simulate pre-configured failure scenarios for tests. The error boundary belongs at the subprocess interface, not in test infrastructure.
+   125→See [Gateway Error Boundaries](gateway-error-boundaries.md) for the complete rationale and implementation patterns.
+   129→The LBYL pattern with `git show-ref` complements discriminated union error handling:
+   131→1. **Pre-check detects expected failures** (branch exists, ref doesn't exist)
+   133→3. **try/except catches unexpected failures** (subprocess crash, git not installed)
+   143→- Unexpected failure (process crash) → try/except converts to `RuntimeError`
+   147→- [Discriminated Union Error Handling](discriminated-union-error-handling.md) — When to use unions vs exceptions, pattern structure
+   148→- [Gateway Error Boundaries](gateway-error-boundaries.md) — Where try/except belongs in the 5-file gateway pattern
+  </tool_result>
+  <tool_result tool="toolu_01AZSj1fbBpcCgfVhLCwYC79">
+     1→---
+     2→title: Planned PR Branch Sync
+     3→read_when:
+     4→  - "implementing or debugging planned-PR plan setup"
+     5→  - "understanding branch sync during plan implementation"
+     6→  - "working with setup_impl_from_pr for planned PR plans"
+     7→  - "debugging divergence between local and remote plan branches"
+     8→tripwires:
+     9→  - action: "implementing planned-PR plan without syncing with remote"
+    10→    warning: "Before implementing a planned-PR plan, always sync with remote: fetch_branch -&gt; checkout/create_tracking -&gt; pull_rebase"
+    11→  - action: "detecting plan backend by checking backend type directly"
+    12→    warning: "Use github.get_pr() + pr_result.head_ref_name to discover the plan branch. There is only one backend (planned-PR)."
+    13→  - action: "creating a new branch for a planned-PR plan"
+    14→    warning: "Planned PR plans already have a branch created during plan-save. Reuse the existing branch, don't create a new one."
+    15→  - action: "committing to planned-PR plan branches after checkout without pulling remote"
+    16→    warning: "Both setup_impl_from_pr.py and submit.py use the same three-step sync: fetch_branch -&gt; checkout/create_tracking -&gt; pull_rebase. Skipping pull_rebase causes non-fast-forward push failures."
+    17→---
+    18→
+    19→# Planned PR Branch Sync
+    20→
+    21→When implementing a planned-PR plan, the local branch must be synced with remote because plan-save creates the branch and pushes it, then checks out the original branch. Remote may receive additional commits before implementation runs.
+    22→
+    23→## The Problem
+    24→
+    25→1. `plan_save` creates a branch, pushes it to remote, creates draft PR
+    26→2. `plan_save` checks out the original branch (user continues working)
+    27→3. Time passes (remote CI may add commits, user may re-plan)
+    28→4. `plan-implement` runs and needs the latest branch state
+    29→
+    30→## Three-Step Sync Sequence
+
+... [90 lines omitted] ...
+
+    87→PR #7697 added the missing `pull_rebase()` call to the submit path. Without it, the submit path would attempt to push commits onto a branch that had diverged from remote, causing non-fast-forward push failures.
+  </tool_result>
+  <assistant>Now let me read the actual source files you requested:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="9052" cache_read_input_tokens="19366" cache_creation="{'ephemeral_5m_input_tokens': 9052, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CMY5CPj7u2fZro5qLVWyho">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9052" cache_read_input_tokens="19366" cache_creation="{'ephemeral_5m_input_tokens': 9052, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TbwnAD8vw8VTpUnZpavteA">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9052" cache_read_input_tokens="19366" cache_creation="{'ephemeral_5m_input_tokens': 9052, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PeHUM99QZSWZPtenDQvmE6">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9052" cache_read_input_tokens="19366" cache_creation="{'ephemeral_5m_input_tokens': 9052, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CMY5CPj7u2fZro5qLVWyho">
+     1→"""Helper functions for dispatch command."""
+     2→
+     3→import click
+     4→
+     5→from erk.core.context import ErkContext
+     6→from erk.core.repo_discovery import RepoContext
+     7→from erk_shared.output.output import user_output
+     8→
+     9→
+    10→def _check_trunk_worktree_clean(ctx: ErkContext, repo: RepoContext, *, trunk: str) -&gt; None:
+    11→    """Raise SystemExit(1) if trunk is checked out in a dirty worktree."""
+    12→    trunk_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, trunk)
+    13→    if trunk_worktree is None:
+    14→        return
+    15→    if not ctx.git.status.has_uncommitted_changes(trunk_worktree):
+    16→        return
+    17→    user_output(
+    18→        click.style("Error: ", fg="red")
+    19→        + f"Worktree at {trunk_worktree} has {trunk} checked out with "
+    20→        f"uncommitted changes.\n\n"
+    21→        f"Please commit or stash changes before running erk pr dispatch."
+    22→    )
+    23→    raise SystemExit(1)
+    24→
+    25→
+    26→def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -&gt; None:
+    27→    """Ensure local trunk ref is synced with remote, without requiring checkout.
+    28→
+    29→    Uses fetch + update_local_ref to advance the local trunk branch pointer
+    30→    without needing trunk to be checked out. If trunk IS checked out in a
+
+... [57 lines omitted] ...
+
+    33→    Raises SystemExit(1) on sync failure with clear error message.
+    45→            click.style("Error: ", fg="red")
+    66→            click.style("Error: ", fg="red")
+    75→            click.style("Error: ", fg="red")
+    79→            f"Warning: This will discard any local commits on {trunk}."
+  </tool_result>
+  <tool_result tool="toolu_01TbwnAD8vw8VTpUnZpavteA">
+     1→"""Abstract base class for Git branch operations.
+     2→
+     3→This sub-gateway extracts branch operations from the main Git gateway,
+     4→including both mutation and query operations.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from pathlib import Path
+    11→from typing import TYPE_CHECKING
+    12→
+    13→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    14→
+    15→if TYPE_CHECKING:
+    16→    from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
+    17→
+    18→
+    19→class GitBranchOps(ABC):
+    20→    """Abstract interface for Git branch operations.
+    21→
+    22→    This interface contains both mutation and query operations for branches.
+    23→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    24→    """
+    25→
+    26→    @abstractmethod
+    27→    def create_branch(
+    28→        self, cwd: Path, branch_name: str, start_point: str, *, force: bool
+    29→    ) -&gt; BranchCreated | BranchAlreadyExists:
+    30→        """Create a new branch without checking it out.
+
+... [293 lines omitted] ...
+
+    84→            subprocess.CalledProcessError: If git command fails
+   184→            RuntimeError: If the specified branch doesn't exist
+  </tool_result>
+  <tool_result tool="toolu_01PeHUM99QZSWZPtenDQvmE6">
+     1→"""Dispatch plans for remote AI implementation via GitHub Actions."""
+     2→
+     3→import logging
+     4→import tomllib
+     5→from dataclasses import dataclass
+     6→from datetime import UTC, datetime
+     7→from pathlib import Path
+     8→
+     9→import click
+    10→
+    11→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+    12→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    13→from erk.cli.commands.slot.common import is_placeholder_branch
+    14→from erk.cli.constants import (
+    15→    DISPATCH_WORKFLOW_METADATA_NAME,
+    16→    DISPATCH_WORKFLOW_NAME,
+    17→    ERK_PLAN_LABEL,
+    18→)
+    19→from erk.cli.core import discover_repo_context
+    20→from erk.cli.ensure import Ensure, UserFacingCliError
+    21→from erk.core.context import ErkContext
+    22→from erk.core.repo_discovery import RepoContext
+    23→from erk_shared.gateway.git.remote_ops.types import PushError
+    24→from erk_shared.gateway.github.metadata.core import (
+    25→    create_submission_queued_block,
+    26→    render_erk_issue_event,
+    27→)
+    28→from erk_shared.gateway.github.parsing import (
+    29→    construct_pr_url,
+    30→    construct_workflow_run_url,
+
+... [495 lines omitted] ...
+
+   154→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number} not found")
+   160→            click.style("Error: ", fg="red")
+   169→            click.style("Error: ", fg="red") + f"PR #{plan_number} is {pr_result.state}\n\n"
+   214→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number}: plan content not found")
+   243→    if isinstance(push_result, PushError):
+   244→        raise UserFacingCliError(push_result.message)
+   290→    except Exception as e:
+   292→            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+   302→    except Exception as e:
+   303→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+   334→    except Exception as e:
+   336→            click.style("Warning: ", fg="yellow")
+   337→            + f"Failed to post queued comment: {e}\n"
+   428→            click.style("Error: ", fg="red")
+   438→                click.style("Error: ", fg="red")
+   451→                click.style("Error: ", fg="red") + f"Base branch '{base}' does not exist on remote"
+  </tool_result>
+  <assistant>Now let me search for the `commit_files_to_branch` pattern and the real implementation of `update_local_ref`:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="12385" cache_read_input_tokens="28418" cache_creation="{'ephemeral_5m_input_tokens': 12385, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HSqbqnd6hJzSV7GriuZhRt">
+    <param name="pattern">def commit_files_to_branch</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="12385" cache_read_input_tokens="28418" cache_creation="{'ephemeral_5m_input_tokens': 12385, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012GgB1mgw56LKjdAhx5xrD9">
+    <param name="pattern">def update_local_ref</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="12385" cache_read_input_tokens="28418" cache_creation="{'ephemeral_5m_input_tokens': 12385, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012GgB1mgw56LKjdAhx5xrD9">
+Found 5 files
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py
+  </tool_result>
+  <tool_result tool="toolu_01HSqbqnd6hJzSV7GriuZhRt">
+Found 5 files
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/printing.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py
+  </tool_result>
+  <assistant>Let me read the real implementations:</assistant>
+  <usage input_tokens="168" cache_creation_input_tokens="543" cache_read_input_tokens="40803" cache_creation="{'ephemeral_5m_input_tokens': 543, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DBQ54M8tgPtSTq7bM2UaZT">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py</param>
+  </tool_use>
+  <usage input_tokens="168" cache_creation_input_tokens="543" cache_read_input_tokens="40803" cache_creation="{'ephemeral_5m_input_tokens': 543, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012ZpxQ5uqA7sWZ7FUwiduBH">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py</param>
+  </tool_use>
+  <usage input_tokens="168" cache_creation_input_tokens="543" cache_read_input_tokens="40803" cache_creation="{'ephemeral_5m_input_tokens': 543, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DBQ54M8tgPtSTq7bM2UaZT">
+     1→"""Production implementation of Git branch operations using subprocess."""
+     2→
+     3→import re
+     4→import subprocess
+     5→from pathlib import Path
+     6→
+     7→from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
+     8→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+     9→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    10→from erk_shared.gateway.git.lock import wait_for_index_lock
+    11→from erk_shared.gateway.time.abc import Time
+    12→from erk_shared.gateway.time.real import RealTime
+    13→from erk_shared.subprocess_utils import run_subprocess_with_context
+    14→
+    15→
+    16→class RealGitBranchOps(GitBranchOps):
+    17→    """Production implementation of branch operations using subprocess.
+    18→
+    19→    All git operations execute actual git commands via subprocess.
+    20→    """
+    21→
+    22→    def __init__(self, time: Time | None = None) -&gt; None:
+    23→        """Initialize RealGitBranchOps with optional Time provider.
+    24→
+    25→        Args:
+    26→            time: Time provider for lock waiting. Defaults to RealTime().
+    27→        """
+    28→        self._time = time if time is not None else RealTime()
+    29→
+    30→    def create_branch(
+
+... [440 lines omitted] ...
+
+   228→            RuntimeError: If the specified branch doesn't exist
+   239→        error_msg = (
+   240→            f"Error: Configured trunk branch '{name}' does not exist in repository.\n"
+   243→        raise RuntimeError(error_msg)
+  </tool_result>
+  <tool_result tool="toolu_012ZpxQ5uqA7sWZ7FUwiduBH">
+     1→"""Production implementation of Git commit operations using subprocess."""
+     2→
+     3→import os
+     4→import subprocess
+     5→import tempfile
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+     9→from erk_shared.gateway.git.lock import wait_for_index_lock
+    10→from erk_shared.gateway.time.abc import Time
+    11→from erk_shared.subprocess_utils import run_subprocess_with_context
+    12→
+    13→
+    14→class RealGitCommitOps(GitCommitOps):
+    15→    """Real implementation of Git commit operations using subprocess."""
+    16→
+    17→    def __init__(self, time: Time) -&gt; None:
+    18→        """Initialize RealGitCommitOps with Time provider.
+    19→
+    20→        Args:
+    21→            time: Time provider for lock waiting
+    22→        """
+    23→        self._time = time
+    24→
+    25→    # ============================================================================
+    26→    # Mutation Operations
+    27→    # ============================================================================
+    28→
+    29→    def stage_files(self, cwd: Path, paths: list[str], *, force: bool) -&gt; None:
+    30→        """Stage specific files for commit."""
+
+... [209 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me get the ABC for commit operations as well:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="9500" cache_read_input_tokens="41346" cache_creation="{'ephemeral_5m_input_tokens': 9500, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Qj4JT5ZQyxdBf9D5DKTebi">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9500" cache_read_input_tokens="41346" cache_creation="{'ephemeral_5m_input_tokens': 9500, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qj4JT5ZQyxdBf9D5DKTebi">
+     1→"""Abstract base class for Git commit operations.
+     2→
+     3→This sub-gateway extracts commit operations from the main Git gateway,
+     4→including staging, committing, amending, and commit message queries.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from pathlib import Path
+    11→
+    12→
+    13→class GitCommitOps(ABC):
+    14→    """Abstract interface for Git commit operations.
+    15→
+    16→    This interface contains both mutation and query operations for commits.
+    17→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    18→    """
+    19→
+    20→    # ============================================================================
+    21→    # Mutation Operations
+    22→    # ============================================================================
+    23→
+    24→    @abstractmethod
+    25→    def stage_files(self, cwd: Path, paths: list[str], *, force: bool) -&gt; None:
+    26→        """Stage specific files for commit.
+    27→
+    28→        Args:
+    29→            cwd: Working directory
+    30→            paths: List of file paths to stage (relative to cwd)
+
+... [155 lines omitted] ...
+
+    34→            subprocess.CalledProcessError: If git command fails
+    49→            subprocess.CalledProcessError: If git command fails
+    61→            subprocess.CalledProcessError: If git command fails
+    74→            subprocess.CalledProcessError: If git command fails
+  </tool_result>
+  <assistant>Excellent! Now let me create a comprehensive report with all the findings:
+
+## Summary Report: Git Plumbing Patterns for No-Checkout Operations
+
+I've located and analyzed the three source files you requested, along with supporting documentation. Here's what I found:
+
+### 1. **ensure_trunk_synced() Function**
+**File:** `/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_helpers.py` (lines 26-82)
+
+**Signature:**
+```python
+def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -&gt; None:
+```
+
+**Key Pattern: Git Plumbing without Checkout**
+- Uses `fetch_branch()` to get latest remote state (line 38)
+- Retrieves local and remote SHAs using `get_branch_head()` (lines 40-41)
+- Performs merge-base analysis to determine sync state (line 54)
+- **Critical:** Uses `update_local_ref()` to advance local branch pointer WITHOUT checkout (line 61)
+- Falls back to requiring worktree clean if branch IS checked out (line 58)
+
+**Error Handling Pattern:**
+- Detects three divergence scenarios: local behind, local ahead, true divergence
+- Provides user-facing error messages for each case with recovery instructions (lines 63-81)
+
+---
+
+### 2. **update_local_ref() Method**
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py` (lines 282-294)
+
+**Signature (ABC):**
+```python
+@abstractmethod
+def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+```
+
+**Real Implementation:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py` (lines 419-425)
+
+```python
+def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+    """Update a local branch ref to point at a new commit without checkout."""
+    run_subprocess_with_context(
+        cmd=["git", "update-ref", f"refs/heads/{branch}", target_sha],
+        operation_context=f"update local ref '{branch}' to '{target_sha[:8]}'",
+        cwd=repo_root,
+    )
+```
+
+**Key Pattern:**
+- Uses `git update-ref` (plumbing command) instead of porcelain `git checkout`
+- Updates the ref pointer directly without touching working tree
+- Safe to use when branch is NOT checked out in any worktree
+- Includes short SHA for logging (first 8 chars)
+
+---
+
+### 3. **_dispatch_planned_pr_plan() Function**
+**File:** `/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py` (lines 182-351)
+
+**Signature:**
+```python
+def _dispatch_planned_pr_plan(
+    ctx: ErkContext,
+    *,
+    repo: RepoContext,
+    validated: ValidatedPlannedPR,
+    submitted_by: str,
+    base_branch: str,
+) -&gt; DispatchResult:
+```
+
+**Key Pattern: No-Checkout Branch Operations (lines 218-245)**
+
+1. **Sync branch ref without checkout** (lines 219-221):
+   ```python
+   ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+   ctx.git.branch.create_branch(repo.root, branch_name, f"origin/{branch_name}", force=True)
+   ```
+
+2. **Commit directly to branch** (lines 224-239):
+   ```python
+   files = build_impl_context_files(...)
+   ctx.git.commit.commit_files_to_branch(
+       repo.root,
+       branch=branch_name,
+       files=files,
+       message=f"Add plan for PR #{plan_number}",
+   )
+   ```
+
+3. **Push without leaving checkout side effects** (lines 240-245):
+   - Clean separation: no working tree modifications between fetch and push
+   - Enables workflow_dispatch to run immediately
+
+---
+
+### 4. **commit_files_to_branch() Pattern**
+**File:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py` (lines 83-103)
+
+**Real Implementation:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py` (lines 71-141)
+
+**Complete Workflow:**
+
+```python
+def commit_files_to_branch(
+    self,
+    cwd: Path,
+    *,
+    branch: str,
+    files: dict[str, str],
+    message: str,
+) -&gt; None:
+    """Create a commit on a branch using git plumbing (no checkout)."""
+    # 1. Get parent commit SHA (line 81-85)
+    parent_sha = run_subprocess_with_context(
+        cmd=["git", "rev-parse", branch],
+        operation_context=f"resolve branch {branch}",
+        cwd=cwd,
+    ).stdout.strip()
+
+    # 2. Create temporary index file (line 87-89)
+    tmp_fd, tmp_index = tempfile.mkstemp(suffix=".idx", prefix="erk-plan-")
+    os.close(tmp_fd)
+    try:
+        env = os.environ.copy()
+        env["GIT_INDEX_FILE"] = tmp_index
+
+        # 3. Read parent tree into temp index (line 94-100)
+        run_subprocess_with_context(
+            cmd=["git", "read-tree", parent_sha],
+            operation_context="read parent tree into temp index",
+            cwd=cwd,
+            env=env,
+        )
+
+        # 4. For each file: hash content and add to index (line 102-117)
+        for path, content in files.items():
+            blob_sha = run_subprocess_with_context(
+                cmd=["git", "hash-object", "-w", "--stdin"],
+                operation_context=f"hash content for {path}",
+                cwd=cwd,
+                input=content,
+            ).stdout.strip()
+
+            cacheinfo = f"100644,{blob_sha},{path}"
+            run_subprocess_with_context(
+                cmd=["git", "update-index", "--add", "--cacheinfo", cacheinfo],
+                operation_context=f"add {path} to temp index",
+                cwd=cwd,
+                env=env,
+            )
+
+        # 5. Write tree from temp index (line 119-125)
+        tree_sha = run_subprocess_with_context(
+            cmd=["git", "write-tree"],
+            operation_context="write tree from temp index",
+            cwd=cwd,
+            env=env,
+        ).stdout.strip()
+
+        # 6. Create commit object (line 127-132)
+        commit_sha = run_subprocess_with_context(
+            cmd=["git", "commit-tree", tree_sha, "-p", parent_sha, "-m", message],
+            operation_context="create commit on branch",
+            cwd=cwd,
+        ).stdout.strip()
+
+        # 7. Update branch ref (line 134-139)
+        run_subprocess_with_context(
+            cmd=["git", "update-ref", f"refs/heads/{branch}", commit_sha],
+            operation_context=f"update ref for {branch}",
+            cwd=cwd,
+        )
+    finally:
+        Path(tmp_index).unlink(missing_ok=True)  # Cleanup temp index
+```
+
+**Key Pattern Insights:**
+
+- **Temp Index Isolation:** Uses `GIT_INDEX_FILE` environment variable to work with a temporary index, never touching the real working tree index
+- **Plumbing-Only Approach:** All operations use low-level git commands:
+  - `git hash-object -w --stdin` — create blob objects
+  - `git read-tree` — load parent tree
+  - `git update-index` — manipulate staging area
+  - `git write-tree` — create tree object from index
+  - `git commit-tree` — create commit object directly
+  - `git update-ref` — move branch pointer
+
+- **No Checkout Required:** Entire operation happens in repository objects, never modifies working tree or current HEAD
+- **Safe for Race Conditions:** Perfect for multi-session scenarios where different processes share the same worktree
+
+---
+
+### Supporting Documentation
+
+Key related docs already exist in the codebase:
+
+1. **`/home/runner/work/erk/erk/docs/learned/architecture/git-operation-patterns.md`** — Explains LBYL pattern for git checks, why `git show-ref` is preferred over error parsing
+2. **`/home/runner/work/erk/erk/docs/learned/planning/planned-pr-branch-sync.md`** — Documents the three-step sync pattern (fetch → checkout/create → pull_rebase)
+3. **`/home/runner/work/erk/erk/docs/learned/erk/dispatch-ref-config.md`** — Dispatch workflow targeting configuration
+
+---
+
+### Summary Table
+
+| Function | File | Lines | Pattern | Purpose |
+|----------|------|-------|---------|---------|
+| `ensure_trunk_synced()` | dispatch_helpers.py | 26-82 | LBYL merge-base checks, `update_local_ref` | Sync trunk without requiring checkout |
+| `update_local_ref()` | branch_ops/real.py | 419-425 | `git update-ref refs/heads/{branch}` | Move branch pointer without working tree changes |
+| `_dispatch_planned_pr_plan()` | dispatch_cmd.py | 182-351 | Orchestrates fetch → create_branch → commit_files_to_branch → push | Dispatch PR for remote implementation |
+| `commit_files_to_branch()` | commit_ops/real.py | 71-141 | Temp index + plumbing commands | Create commits on arbitrary branches without checkout |
+
+---
+
+All three files demonstrate the core principle: **git plumbing operations enable safe, concurrent modifications to git state without requiring working tree checkouts**, critical for multi-session dispatch workflows.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="2085" cache_read_input_tokens="50846" cache_creation="{'ephemeral_5m_input_tokens': 2085, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+</session>
