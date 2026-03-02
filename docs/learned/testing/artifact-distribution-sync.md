@@ -54,8 +54,8 @@ A separate `claude_only_skills()` function lists skills that use Claude-specific
 The `[tool.hatch.build.targets.wheel.force-include]` section maps source paths to wheel paths:
 
 ```toml
-".claude/skills/dignified-python" = "erk/data/codex/skills/dignified-python"
-".claude/skills/fake-driven-testing" = "erk/data/codex/skills/fake-driven-testing"
+".claude/skills/dignified-python" = "erk/data/claude/skills/dignified-python"
+".claude/skills/fake-driven-testing" = "erk/data/claude/skills/fake-driven-testing"
 ```
 
 ### TOML Parsing: \_get_force_included_skill_names()

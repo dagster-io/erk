@@ -18,18 +18,9 @@ tripwires:
 
 LBYL pattern using `find_worktree_for_branch()` to detect if the branch is already in a worktree before attempting checkout:
 
-```python
-existing_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, branch_name)
-if existing_worktree is not None:
-    work_dir = existing_worktree
-    checked_out_in_root = False
-else:
-    ctx.branch_manager.checkout_branch(repo.root, branch_name)
-    work_dir = repo.root
-    checked_out_in_root = True
-```
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py, find_worktree_for_branch -->
 
-**Source:** `src/erk/cli/commands/pr/dispatch_cmd.py:229-247`
+See `find_worktree_for_branch()` in `packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py` for the ABC method. The pattern is: call `find_worktree_for_branch(repo_root, branch_name)`, then branch on `None` (needs checkout) vs a `Path` (already checked out). This LBYL pattern is used in `checkout_helpers.py`, `checkout_cmd.py`, `dispatch_helpers.py`, and `land_cmd.py`.
 
 ## Key Details
 

@@ -57,7 +57,7 @@ Seven jobs run in parallel, all depending on both `check-submission` AND `fix-fo
 
 The workflow uses branch-level concurrency grouping with `cancel-in-progress: true`:
 
-<!-- Source: .github/workflows/ci.yml:15-17 -->
+<!-- Source: .github/workflows/ci.yml, concurrency block -->
 
 The `concurrency` block groups runs by branch ref and cancels in-progress runs when a new push arrives. When `fix-formatting` pushes a commit, a new workflow run starts and the in-progress run is cancelled. This means validation jobs always run against formatted code, at the cost of ~2 minutes for the restart cycle.
 

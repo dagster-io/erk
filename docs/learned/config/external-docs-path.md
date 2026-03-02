@@ -30,17 +30,9 @@ path = "/path/to/external/docs-repo"
 
 ## Resolver
 
-`resolve_docs_project_root()` in `src/erk/agent_docs/operations.py:31-42` resolves the effective docs root:
+<!-- Source: src/erk/agent_docs/operations.py, resolve_docs_project_root -->
 
-```python
-def resolve_docs_project_root(*, repo_root: Path, docs_path: str | None) -> Path:
-    if docs_path is None:
-        return repo_root
-    path = Path(docs_path)
-    if not path.exists():
-        raise click.ClickException(f"Configured docs.path does not exist: {docs_path}")
-    return path
-```
+`resolve_docs_project_root()` in `src/erk/agent_docs/operations.py` resolves the effective docs root. It returns `repo_root` when `docs_path` is `None`, validates that the configured path exists (raising `ClickException` if not), and returns the resolved `Path`.
 
 ## Integration
 

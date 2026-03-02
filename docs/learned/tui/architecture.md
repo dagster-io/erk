@@ -168,18 +168,9 @@ Individual cell values passed to `add_row()`:
 
 `ErkDashApp` uses mixins to decompose its large surface area into focused modules:
 
-```python
-class ErkDashApp(
-    NavigationActionsMixin,    # URL opening, clipboard, browser actions
-    FilterActionsMixin,        # Filter toggle/cycle actions
-    PaletteActionsMixin,       # Command palette actions
-    StreamingOperationsMixin,  # Streaming output handling
-    BackgroundWorkersMixin,    # Background workers (@work decorators)
-    App,                       # Textual base
-):
-```
+<!-- Source: src/erk/tui/app.py, ErkDashApp -->
 
-**Source:** `src/erk/tui/app.py:43-50`
+See `ErkDashApp` in `src/erk/tui/app.py` for the class definition and its mixin MRO. The mixins are: `NavigationActionsMixin` (URL/clipboard/browser), `FilterActionsMixin` (filter toggle/cycle), `PaletteActionsMixin` (command palette), `StreamingOperationsMixin` (streaming output), `BackgroundWorkersMixin` (background workers), plus Textual's `App` base.
 
 ### Critical Constraint: Event Handlers Must Stay on Concrete Class
 
