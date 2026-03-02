@@ -1,0 +1,738 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>(dagster-compass-workspace) ➜  erk-slot-08 git:(plnd/fix-dispatch-ref-03-02-0425) erk -h
+Usage: erk [OPTIONS] COMMAND [ARGS]...
+
+  Manage git worktrees in a global worktrees directory.
+
+Options:
+  --version   Show the version and exit.
+  --debug     Enable debug logging
+  -h, --help  Show this message and exit.
+
+Top-Level Commands:
+  dash              Interactive plan dashboard (TUI).
+  doctor            Run diagnostic checks on erk setup.
+  down              Move to parent branch in worktree stack.
+  implement (impl)  Create impl folder from plan and execute implementation.
+  land              Merge PR and clean up branch.
+  up                Move to child branch in worktree stack.
+
+Command Groups:
+  admin        Administrative commands for repository configuration.
+  artifact     Manage erk-managed artifacts.
+  branch (br)  Manage branches.
+  cc           Claude Code session tools.
+  completion   Generate shell completion scripts.
+  config       Manage erk configuration.
+  info         View information about erk.
+  md           Manage and validate markdown context files.
+  objective    Manage objectives (multi-PR coordination issues).
+  pr           Manage pull requests.
+  project      Manage project or projects (within a monorepo).
+  slot         Manage worktree pool slots.
+  stack        Manage worktree stack operations.
+  wt           Manage git worktrees.
+
+Initialization:
+  init  Initialize erk for this repo and scaffold config.toml.
+
+Other:
+  launch    Trigger a GitHub Actions workflow.
+  workflow  Workflow diagnostics and management.
+
+Hidden:
+  __prepare_cwd_recovery  Emit a recovery script if we are inside a managed
+                          repository.
+  codespace               Manage codespaces for remote Claude execution.
+  exec                    Execute erk workflow scripts.
+  one-shot                Submit a task for fully autonomous remote execution.
+
+  workflow  Workflow diagnostics and management. --&gt; command group
+
+launch and one-shot --&gt; top-level commands. unhide one-shot</user>
+  <thinking>The user wants me to make two changes:
+
+1. Move `workflow` from "Other" to "Command Groups" (it's a command group, not a standalone command)
+2. Move `one-shot` from "Hidden" to "Top-Level Commands" (unhide it)
+3. `launch` should also be moved to "Top-Level Commands" (it's currently in "Other")
+
+Let me explore the codebase to understand how the CLI help grouping works.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="11576" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11576}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Tb6XCPrNyKi39U6jvgHpHu">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore CLI help grouping</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 540 chars]... main CLI setup, help group definitions, and where these specific commands are registered.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11576" cache_read_input_tokens="19113" output_tokens="400" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11576, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Tb6XCPrNyKi39U6jvgHpHu">
+Perfect! Now I have all the information I need. Let me create a comprehensive summary document.
+
+## Summary
+
+I've thoroughly explored erk's CLI command group organization system. Here's what I found:
+
+### 1. How Commands Are Assigned to Help Groups
+
+Commands are organized into help groups by the **`ErkCommandGroup`** class in `/Users/schrockn/code/erk/src/erk/cli/help_formatter.py`. This is a custom Click Group that provides organized help output with these sections:
+
+- **Top-Level Commands** (lines 244-255)
+- **Command Groups** (lines 256-275)
+- **Initialization** (line 276)
+- **Other** (fallback for unclassified commands)
+- **Hidden** (commands with `hidden=True` attribute)
+
+**The categorization logic (lines 279-318):**
+1. Commands are explicitly listed in hardcoded category lists
+2. Each command name is checked against these lists
+3. Commands matching a list are placed in that section
+4. Commands not in any list fall into "Other"
+5. Commands with `hidden=True` are placed in "Hidden" section
+
+### 2. Current Location of `workflow`, `launch`, and `one-shot` Commands
+
+**`launch` command:**
+- **File**: `/Users/schrockn/code/erk/src/erk/cli/commands/launch_cmd.py`
+- **Registration**: Line 208 in `/Users/schrockn/code/erk/src/erk/cli/cli.py`
+- **Current group**: **"Other"** (not in any of the three category lists, and `hidden=False`)
+- **Status**: Top-level command (not part of a command group)
+
+... [78 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the specific files I need to modify.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1785" cache_read_input_tokens="30689" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1785}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01H4YHu78EdWrjsh4j61SXcn">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/help_formatter.py</param>
+    <param name="offset">240</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1785" cache_read_input_tokens="30689" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1785}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H4YHu78EdWrjsh4j61SXcn">
+   240→            return
+   241→
+   242→        # Grouped output mode - organize into sections
+   243→        # Define command organization (aliases now derived from decorator, not hardcoded)
+   244→        top_level_commands = [
+   245→            "checkout",
+   246→            "dash",
+   247→            "delete",
+   248→            "doctor",
+   249→            "down",
+   250→            "implement",
+   251→            "land",
+   252→            "list",
+   253→            "up",
+   254→            "upgrade",
+   255→        ]
+   256→        command_groups = [
+   257→            "admin",
+   258→            "artifact",
+   259→            "branch",
+   260→            "cc",
+   261→            "completion",
+   262→            "config",
+   263→            "docs",
+   264→            "hook",
+   265→            "info",
+   266→            "md",
+   267→            "objective",
+   268→            "plan",
+   269→            "pr",
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_013Nue3eAN35Muxp8DWSLrew">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/one_shot.py</param>
+    <param name="offset">20</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1785" cache_read_input_tokens="30689" output_tokens="220" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1785, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013Nue3eAN35Muxp8DWSLrew">
+    20→    OneShotDispatchParams,
+    21→    dispatch_one_shot,
+    22→)
+    23→from erk.cli.ensure import Ensure
+    24→from erk.core.context import ErkContext
+    25→from erk_shared.output.output import user_output
+    26→
+    27→
+    28→@click.command("one-shot", hidden=True)
+    29→@click.argument("prompt", required=False, default=None)
+    30→@click.option(
+    31→    "-f",
+    32→    "--file",
+    33→    "file_path",
+    34→    type=click.Path(exists=True, dir_okay=False),
+    35→    default=None,
+    36→    help="Read prompt from a file instead of a CLI argument",
+    37→)
+    38→@click.option(
+    39→    "-m",
+  </tool_result>
+  <thinking>Now I have a clear picture. Three changes needed:
+
+1. Add `"launch"` and `"one-shot"` to `top_level_commands` list in help_formatter.py
+2. Add `"workflow"` to `command_groups` list in help_formatter.py
+3. Remove `hidden=True` from `one-shot` command in one_shot.py
+
+Let me write the plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1311" cache_read_input_tokens="32474" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1311}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have all the information I need. The changes are straightforward — let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1311" cache_read_input_tokens="32474" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1311}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01CycDuGrukA9u8srMX2mCMv">
+    <param name="file_path">/Users/schrockn/.claude/plans/twinkly-whistling-starfish.md</param>
+    <param name="content"># Reclassify CLI help groups for `workflow`, `launch`, and `one-shot`
+
+## Context
+
+The `er...[truncated 710 chars]..."
+- `workflow` appears under "Command Groups"
+- Neither appears under "Other" or "Hidden"
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1311" cache_read_input_tokens="32474" output_tokens="522" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1311, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CycDuGrukA9u8srMX2mCMv">
+File created successfully at: /Users/schrockn/.claude/plans/twinkly-whistling-starfish.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01SNH6DA7yZaqtsQPngF9kyt">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run erk -h to verify help output'}]</param>
+    <param name="plan"># Reclassify CLI help groups for `workflow`, `launch`, and `one-shot`
+
+## Context
+
+The `er...[truncated 710 chars]..."
+- `workflow` appears under "Command Groups"
+- Neither appears under "Other" or "Hidden"
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="901" cache_read_input_tokens="33785" output_tokens="80" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 901, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SNH6DA7yZaqtsQPngF9kyt">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/twinkly-whistling-starfish.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Reclassify CLI help groups for `workflow`, `launch`, and `one-shot`
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 501e5f50-5ba0-4709-b7d9-2ad447f3250b \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+## Reclassify CLI help groups for `workflow`, `launch`, and `one-shot`
+
+### Context
+
+The `erk -h` output has three commands in the wrong sections:
+- `workflow` is in "Other" but it's a command group (has subcommands)
+- `launch` is in "Other" but should be a top-level command
+- `one-shot` is in "Hidden" but should be a visible top-level command
+
+### Changes
+
+#### 1. Update help group lists — `src/erk/cli/help_formatter.py`
+
+- Add `"launch"` and `"one-shot"` to the `top_level_commands` list (line 244)
+- Add `"workflow"` to the `command_groups` list (line 256)
+
+#### 2. Unhide `one-shot` — `src/erk/cli/commands/one_shot.py`
+
+- Remove `hidden=True` from the `@click.command("one-shot", hidden=True)` decorator (line 28)
+
+### Verification
+
+Run `erk -h` and confirm:
+- `launch` and `one-shot` appear under "Top-Level Commands"
+- `workflow` appears under "Command Groups"
+- Neither appears under "Other" or "Hidden"
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="712" cache_read_input_tokens="34686" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 712}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_017b378HPDjPnWpiYEWeQWh4">
+    <param name="questions">[{'question': '📋 Reclassify CLI help groups for `workflow`, `launch`, and `one-shot`\nCurr...[truncated 451 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="712" cache_read_input_tokens="34686" output_tokens="548" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 712, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017b378HPDjPnWpiYEWeQWh4">
+User has answered your questions: "📋 Reclassify CLI help groups for `workflow`, `launch`, and `one-shot`
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01GzRLzDLWky7VuatyfiqK3K">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="639" cache_read_input_tokens="35398" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 639, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GzRLzDLWky7VuatyfiqK3K">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="501e5f50-5ba0-4709-b7d9-2ad447f3250b" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "501e5f50-5ba0-4709-b7d9-2ad447f3250b" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "501e5f50-5ba0-4709-b7d9-2ad447f3250b" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "501e5f50-5ba0-4709-b7d9-2ad447f3250b" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "501e5f50-5ba0-4709-b7d9-2ad447f3250b" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>The user chose "Create a plan PR" so I need to follow the plan-save skill instructions. Let me execute the steps:
+
+1. Parse arguments - no special flags
+2. Generate branch slug from plan title
+3. Generate plan summary
+4. Run the save command
+5-7. Handle results
+
+The plan title is "Reclassify CLI help groups for `workflow`, `launch`, and `one-shot`"
+
+Branch slug: "reclassify-help-groups"
+
+Plan summary: "Moves three CLI commands to their correct help sections: workflow to Command Groups (it has subcommands), and launch and one-shot to Top-Level Commands (unhiding one-shot in the process)."
+
+
+Now I'm executing the save command to create the plan.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2725" cache_read_input_tokens="36037" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2725}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Branch slug:** `reclassify-help-groups`
+
+**Plan summary:** Moves three CLI commands to their correct help sections: workflow to Command Groups since it has subcommands, and launch and one-shot to Top-Level Commands, unhiding one-shot in the process.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2725" cache_read_input_tokens="36037" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2725}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01J2KZqhYgittCVndfQzBAjW">
+    <param name="command">erk exec plan-save --format json --session-id="501e5f50-5ba0-4709-b7d9-2ad447f3250b" --bra...[truncated 126 chars]...ommands, and launch and one-shot to Top-Level Commands, unhiding one-shot in the process."</param>
+    <param name="description">Save plan as draft PR via erk</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2725" cache_read_input_tokens="36037" output_tokens="436" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2725, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01J2KZqhYgittCVndfQzBAjW">
+{"success": true, "plan_number": 8600, "plan_url": "https://github.com/dagster-io/erk/pull/8600", "title": "[erk-plan] Reclassify CLI help groups for `workflow`, `launch`, and `one-shot`", "branch_name": "plnd/reclassify-help-groups-03-02-0442", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/501e5f50-5ba0-4709-b7d9-2ad447f3250b/plan_snapshots/000001-da759fb1"}
+  </tool_result>
+  <assistant>Now pushing the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="719" cache_read_input_tokens="38762" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 719}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DNK75UvVk3VpVFDdrJnyV8">
+    <param name="command">erk exec upload-impl-session --session-id "501e5f50-5ba0-4709-b7d9-2ad447f3250b" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="719" cache_read_input_tokens="38762" output_tokens="147" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 719, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DNK75UvVk3VpVFDdrJnyV8">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan **"Reclassify CLI help groups for `workflow`, `launch`, and `one-shot`"** saved as draft PR **#8600**
+URL: https://github.com/dagster-io/erk/pull/8600
+
+**Next steps:**
+
+View PR: https://github.com/dagster-io/erk/pull/8600
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: `erk br co --new-slot --for-plan 8600`
+    Implement: `source "$(erk br co --new-slot --for-plan 8600 --script)" &amp;&amp; erk implement --dangerous`
+
+  Same slot:
+    Local: `erk br co --for-plan 8600`
+    Implement: `source "$(erk br co --for-plan 8600 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8600`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="174" cache_read_input_tokens="39481" output_tokens="263" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 174, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "501e5f50-5ba0-4709-b7d9-2ad447f3250b" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>
+
+The most recent plan is **#8600**. Dispatching it now.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="831" cache_read_input_tokens="39655" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 831}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PxN2rgjttsNcWTUyvmrCLy">
+    <param name="command">erk pr dispatch 8600</param>
+    <param name="description">Dispatch plan #8600 for remote implementation</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="831" cache_read_input_tokens="39655" output_tokens="121" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 831, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PxN2rgjttsNcWTUyvmrCLy">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8600...
+
+✓ All 1 plan(s) validated
+
+  #8600: [erk-plan] Reclassify CLI help groups for `workflow`, `launch`, and `one-shot`
+
+Dispatching PR #8600...
+
+Fetching plan content...
+Syncing branch: plnd/reclassify-help-groups-03-02-0442
+Committing plan to branch...
+✓ Branch pushed to remote
+
+Dispatching workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow dispatched.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+Dispatched plans:
+
+... [4 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01A4wYuU26hrZc4PD3tJcGhk">
+    <param name="command">erk exec marker delete --session-id "501e5f50-5ba0-4709-b7d9-2ad447f3250b" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker for this session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="580" cache_read_input_tokens="40486" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 580, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A4wYuU26hrZc4PD3tJcGhk">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Plan **#8600** dispatched for remote implementation.
+
+- **Plan**: https://github.com/dagster-io/erk/pull/8600
+- **Workflow**: https://github.com/dagster-io/erk/actions/runs/22570211045
+
+The remote agent will pick it up and implement the changes automatically.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="147" cache_read_input_tokens="41066" output_tokens="80" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 147, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>
