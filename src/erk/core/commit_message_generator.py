@@ -1,7 +1,7 @@
-"""Commit message generation via Claude CLI.
+"""Commit message generation via direct Anthropic API.
 
 This module provides commit message generation for PR submissions,
-using Claude CLI to analyze diffs and generate descriptive messages.
+using the AnthropicLlmCaller to analyze diffs and generate descriptive messages.
 
 The commit message prompt is loaded from the shared prompt file at:
 packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md
@@ -16,7 +16,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from erk.core.prompt_executor import PromptExecutor, PromptResult
+from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt
 from erk_shared.gateway.time.abc import Time
@@ -27,11 +27,7 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 
 _PROGRESS_INTERVAL_SECONDS = 3.0
-
-# Feature flag: Use --system-prompt to replace Claude Code's default system prompt
-# When True: More deterministic, no Claude Code behaviors (passes system prompt separately)
-# When False: Legacy behavior (system prompt concatenated with user prompt)
-USE_SYSTEM_PROMPT_REPLACEMENT = True
+_DESCRIPTION_MAX_TOKENS = 4096
 
 
 @dataclass(frozen=True)
@@ -73,23 +69,21 @@ class CommitMessageResult:
 
 
 class CommitMessageGenerator:
-    """Generates commit messages via Claude CLI.
+    """Generates commit messages via direct Anthropic API.
 
-    This is a concrete class (not ABC) that uses PromptExecutor for
-    testability. In tests, inject FakePromptExecutor with simulated_prompt_output.
+    This is a concrete class (not ABC) that uses LlmCaller for
+    testability. In tests, inject FakeLlmCaller with a pre-configured response.
     """
 
-    def __init__(self, executor: PromptExecutor, *, time: Time, model: str) -> None:
-        """Initialize generator with executor.
+    def __init__(self, llm_caller: LlmCaller, *, time: Time) -> None:
+        """Initialize generator with LLM caller.
 
         Args:
-            executor: Prompt executor for prompt execution
+            llm_caller: LLM caller for direct API calls
             time: Time abstraction for monotonic clock
-            model: Model to use for generation (e.g. "haiku", "sonnet")
         """
-        self._executor = executor
+        self._llm_caller = llm_caller
         self._time = time
-        self._model = model
 
     def generate(
         self, request: CommitMessageRequest
@@ -138,55 +132,34 @@ class CommitMessageGenerator:
         # Build prompt with context
         yield ProgressEvent("Analyzing changes with Claude...")
 
-        # Execute prompt via Claude CLI in a background thread so we can
-        # yield progress events while waiting.
-        result_holder: list[PromptResult] = []
+        user_prompt = self._build_user_prompt(
+            diff_content=diff_content,
+            current_branch=request.current_branch,
+            parent_branch=request.parent_branch,
+            commit_messages=request.commit_messages,
+            plan_context=request.plan_context,
+        )
+        system_prompt = get_commit_message_prompt(request.repo_root)
+
+        # Execute LLM call in a background thread so we can yield progress events
+        # while waiting.
+        result_holder: list[LlmResponse | NoApiKey | LlmCallFailed] = []
         error_holder: list[Exception] = []
 
-        def _run_prompt() -> None:
+        def _run_call() -> None:
             try:
-                if USE_SYSTEM_PROMPT_REPLACEMENT:
-                    user_prompt = self._build_user_prompt(
-                        diff_content=diff_content,
-                        current_branch=request.current_branch,
-                        parent_branch=request.parent_branch,
-                        commit_messages=request.commit_messages,
-                        plan_context=request.plan_context,
+                result_holder.append(
+                    self._llm_caller.call(
+                        user_prompt,
+                        system_prompt=system_prompt,
+                        max_tokens=_DESCRIPTION_MAX_TOKENS,
                     )
-                    result_holder.append(
-                        self._executor.execute_prompt(
-                            user_prompt,
-                            model=self._model,
-                            tools=None,
-                            cwd=request.repo_root,
-                            system_prompt=get_commit_message_prompt(request.repo_root),
-                            dangerous=False,
-                        )
-                    )
-                else:
-                    legacy_prompt = self._build_prompt(
-                        diff_content=diff_content,
-                        current_branch=request.current_branch,
-                        parent_branch=request.parent_branch,
-                        repo_root=request.repo_root,
-                        commit_messages=request.commit_messages,
-                        plan_context=request.plan_context,
-                    )
-                    result_holder.append(
-                        self._executor.execute_prompt(
-                            legacy_prompt,
-                            model=self._model,
-                            tools=None,
-                            cwd=request.repo_root,
-                            system_prompt=None,
-                            dangerous=False,
-                        )
-                    )
+                )
             except Exception as exc:  # noqa: BLE001
-                logger.debug("Prompt execution failed", exc_info=True)
+                logger.debug("LLM call failed", exc_info=True)
                 error_holder.append(exc)
 
-        thread = threading.Thread(target=_run_prompt, daemon=True)
+        thread = threading.Thread(target=_run_call, daemon=True)
         start_time = self._time.monotonic()
         thread.start()
 
@@ -202,7 +175,7 @@ class CommitMessageGenerator:
                     success=False,
                     title=None,
                     body=None,
-                    error_message=f"Prompt execution error: {error_holder[0]}",
+                    error_message=f"LLM call error: {error_holder[0]}",
                 )
             )
             return
@@ -213,26 +186,37 @@ class CommitMessageGenerator:
                     success=False,
                     title=None,
                     body=None,
-                    error_message="Prompt execution returned no result",
+                    error_message="LLM call returned no result",
                 )
             )
             return
 
-        result = result_holder[0]
+        llm_result = result_holder[0]
 
-        if not result.success:
+        if isinstance(llm_result, NoApiKey):
             yield CompletionEvent(
                 CommitMessageResult(
                     success=False,
                     title=None,
                     body=None,
-                    error_message=result.error or "Claude CLI execution failed",
+                    error_message=llm_result.message,
+                )
+            )
+            return
+
+        if isinstance(llm_result, LlmCallFailed):
+            yield CompletionEvent(
+                CommitMessageResult(
+                    success=False,
+                    title=None,
+                    body=None,
+                    error_message=f"LLM call failed: {llm_result.message}",
                 )
             )
             return
 
         # Parse output into title and body
-        title, body = self._parse_output(result.output)
+        title, body = self._parse_output(llm_result.text)
 
         yield ProgressEvent("PR description generated", style="success")
         yield CompletionEvent(
@@ -304,10 +288,7 @@ and may contain details not visible in the diff alone."""
         commit_messages: list[str] | None,
         plan_context: PlanContext | None,
     ) -> str:
-        """Build user prompt with context and diff only (no system prompt).
-
-        Used when system prompt is passed separately via --system-prompt flag.
-        """
+        """Build user prompt with context and diff."""
         context_section = self._build_context_section(
             current_branch=current_branch,
             parent_branch=parent_branch,
@@ -316,40 +297,6 @@ and may contain details not visible in the diff alone."""
         )
 
         return f"""{context_section}
-
-## Diff
-
-```diff
-{diff_content}
-```
-
-Generate a commit message for this diff:"""
-
-    def _build_prompt(
-        self,
-        *,
-        diff_content: str,
-        current_branch: str,
-        parent_branch: str,
-        repo_root: Path,
-        commit_messages: list[str] | None,
-        plan_context: PlanContext | None,
-    ) -> str:
-        """Build the full prompt with system prompt, diff and context.
-
-        Legacy mode: Used when system prompt is concatenated with user prompt.
-        """
-        context_section = self._build_context_section(
-            current_branch=current_branch,
-            parent_branch=parent_branch,
-            commit_messages=commit_messages,
-            plan_context=plan_context,
-        )
-
-        system_prompt = get_commit_message_prompt(repo_root)
-        return f"""{system_prompt}
-
-{context_section}
 
 ## Diff
 

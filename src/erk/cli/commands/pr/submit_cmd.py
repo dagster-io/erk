@@ -16,7 +16,7 @@ from pathlib import Path
 
 import click
 
-from erk.cli.commands.pr.shared import require_claude_available
+from erk.cli.commands.pr.shared import require_llm_available
 from erk.cli.commands.pr.submit_pipeline import (
     SubmitError,
     SubmitState,
@@ -164,9 +164,9 @@ def pr_submit(
       # Push and create PR only (no AI description)
       erk pr submit --skip-description
     """
-    # Verify Claude is available (needed for commit message generation)
+    # Verify LLM is configured (needed for commit message generation)
     if not skip_description:
-        require_claude_available(ctx)
+        require_llm_available(ctx.llm_caller)
 
     click.echo(click.style("🚀 Submitting PR...", bold=True))
     click.echo("")

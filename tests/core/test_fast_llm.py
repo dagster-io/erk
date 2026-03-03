@@ -33,6 +33,26 @@ def test_fake_returns_llm_call_failed() -> None:
     assert result.error_type == "llm-call-failed"
 
 
+def test_fake_is_configured_default_true() -> None:
+    """FakeLlmCaller.is_configured() returns True by default."""
+    caller = FakeLlmCaller(response=LlmResponse(text="slug"))
+    assert caller.is_configured() is True
+
+
+def test_fake_is_configured_can_be_false() -> None:
+    """FakeLlmCaller.is_configured() returns False when configured=False."""
+    caller = FakeLlmCaller(response=LlmResponse(text="slug"), configured=False)
+    assert caller.is_configured() is False
+
+
+def test_fake_accepts_max_tokens_parameter() -> None:
+    """FakeLlmCaller accepts max_tokens parameter (ignored)."""
+    caller = FakeLlmCaller(response=LlmResponse(text="result"))
+    result = caller.call("prompt", system_prompt="system", max_tokens=4096)
+    assert isinstance(result, LlmResponse)
+    assert result.text == "result"
+
+
 def test_anthropic_llm_caller_returns_no_api_key_without_env(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -40,3 +60,19 @@ def test_anthropic_llm_caller_returns_no_api_key_without_env(
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     result = AnthropicLlmCaller().call("test", system_prompt="system")
     assert isinstance(result, NoApiKey)
+
+
+def test_anthropic_llm_caller_is_configured_without_env(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """AnthropicLlmCaller.is_configured() returns False without API key."""
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    assert AnthropicLlmCaller().is_configured() is False
+
+
+def test_anthropic_llm_caller_is_configured_with_env(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """AnthropicLlmCaller.is_configured() returns True with API key set."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-test-key")
+    assert AnthropicLlmCaller().is_configured() is True

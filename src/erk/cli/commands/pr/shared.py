@@ -18,6 +18,7 @@ from erk.core.commit_message_generator import (
 )
 from erk.core.context import ErkContext
 from erk.core.plan_context_provider import PlanContext
+from erk_shared.core.llm_caller import LlmCaller
 from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
 from erk_shared.gateway.github.metadata.schemas import (
     CREATED_AT,
@@ -334,6 +335,24 @@ def require_claude_available(ctx: ErkContext) -> None:
     if not ctx.prompt_executor.is_available():
         raise click.ClickException(
             "Claude CLI not found\n\nInstall from: https://claude.com/download"
+        )
+
+
+def require_llm_available(llm_caller: LlmCaller) -> None:
+    """Verify LLM caller is configured, raising ClickException if not.
+
+    Args:
+        llm_caller: LlmCaller to check
+
+    Raises:
+        click.ClickException: If the LLM caller is not configured (e.g., missing API key)
+    """
+    if not llm_caller.is_configured():
+        raise click.ClickException(
+            "ANTHROPIC_API_KEY environment variable not set\n\n"
+            "Required for PR description generation.\n"
+            "Set it with: export ANTHROPIC_API_KEY=sk-ant-...\n"
+            "Or use --skip-description to skip AI description generation."
         )
 
 

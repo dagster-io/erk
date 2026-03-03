@@ -318,9 +318,15 @@ class FakeLlmCaller(LlmCaller):
     """Fake LlmCaller that returns a pre-configured response."""
 
     response: LlmResponse | NoApiKey | LlmCallFailed
+    configured: bool = True
 
-    def call(self, prompt: str, *, system_prompt: str) -> LlmResponse | NoApiKey | LlmCallFailed:
+    def call(
+        self, prompt: str, *, system_prompt: str, max_tokens: int = 50
+    ) -> LlmResponse | NoApiKey | LlmCallFailed:
         return self.response
+
+    def is_configured(self) -> bool:
+        return self.configured
 
 
 class FakeObjectiveListService(ObjectiveListService):

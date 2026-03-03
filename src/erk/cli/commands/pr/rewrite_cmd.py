@@ -17,7 +17,7 @@ from erk.cli.commands.pr.shared import (
     echo_plan_context_status,
     maybe_advance_lifecycle_to_impl,
     render_progress,
-    require_claude_available,
+    require_llm_available,
     run_commit_message_generation,
     run_diff_extraction,
 )
@@ -68,7 +68,7 @@ def pr_rewrite(ctx: ErkContext, debug: bool) -> None:
 def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
     """Execute PR rewrite with positively-named parameters."""
     # Phase 1: Validate preconditions
-    require_claude_available(ctx)
+    require_llm_available(ctx.llm_caller)
 
     cwd = Path.cwd()
     session_id = get_or_generate_session_id(cwd)
@@ -121,7 +121,7 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
 
     echo_plan_context_status(plan_context)
 
-    msg_gen = CommitMessageGenerator(ctx.prompt_executor, time=ctx.time, model="haiku")
+    msg_gen = CommitMessageGenerator(ctx.llm_caller, time=ctx.time)
     msg_result = run_commit_message_generation(
         generator=msg_gen,
         diff_file=diff_file,

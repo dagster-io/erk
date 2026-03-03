@@ -33,6 +33,12 @@ class LlmCallFailed:
 
 class LlmCaller(ABC):
     @abstractmethod
-    def call(self, prompt: str, *, system_prompt: str) -> LlmResponse | NoApiKey | LlmCallFailed:
+    def call(
+        self, prompt: str, *, system_prompt: str, max_tokens: int = 50
+    ) -> LlmResponse | NoApiKey | LlmCallFailed:
         """Execute an LLM call."""
         ...
+
+    def is_configured(self) -> bool:
+        """Check if the caller has necessary configuration (e.g., API key)."""
+        return True

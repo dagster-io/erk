@@ -22,8 +22,23 @@ from erk_shared.gateway.time.fake import FakeTime
 from erk_shared.impl_folder import get_impl_dir
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
-from tests.fakes.prompt_executor import FakePromptExecutor
+from erk_shared.core.fakes import FakeLlmCaller
+from erk_shared.core.llm_caller import LlmCallFailed, LlmCaller, LlmResponse, NoApiKey
 from tests.test_utils.context_builders import build_workspace_test_context
+
+
+class RecordingLlmCaller(LlmCaller):
+    """Test-local LLM caller that records calls for prompt content verification."""
+
+    def __init__(self, response: LlmResponse | NoApiKey | LlmCallFailed) -> None:
+        self._response = response
+        self.calls: list[tuple[str, str, int]] = []
+
+    def call(
+        self, prompt: str, *, system_prompt: str, max_tokens: int = 50
+    ) -> LlmResponse | NoApiKey | LlmCallFailed:
+        self.calls.append((prompt, system_prompt, max_tokens))
+        return self._response
 from tests.test_utils.env_helpers import ErkIsolatedFsEnv, erk_isolated_fs_env
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
@@ -86,7 +101,7 @@ def _make_standard_fakes(
     prompt_output: str = "Add awesome feature\n\nThis PR adds an awesome new feature.",
     prompt_error: str | None = None,
     available: bool = True,
-) -> tuple[FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor]:
+) -> tuple[FakeGit, FakeGraphite, FakeGitHub, FakeLlmCaller]:
     """Create standard fakes for update-pr-description tests."""
     git = FakeGit(
         git_common_dirs={env.cwd: env.git_dir},
@@ -130,17 +145,18 @@ def _make_standard_fakes(
         issues_gateway=fake_github_issues,
     )
 
-    executor = FakePromptExecutor(
-        available=available,
-        simulated_prompt_output=prompt_output if prompt_error is None else None,
-        simulated_prompt_error=prompt_error,
-    )
+    if prompt_error is not None:
+        caller = FakeLlmCaller(response=LlmCallFailed(message=prompt_error))
+    elif not available:
+        caller = FakeLlmCaller(response=LlmResponse(text=""), configured=False)
+    else:
+        caller = FakeLlmCaller(response=LlmResponse(text=prompt_output))
 
-    return git, graphite, github, executor
+    return git, graphite, github, caller
 
 
 def test_fails_when_claude_not_available() -> None:
-    """Test that command fails when Claude CLI is not available."""
+    """Test that command fails when ANTHROPIC_API_KEY is not configured."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
@@ -149,14 +165,14 @@ def test_fails_when_claude_not_available() -> None:
             default_branches={env.cwd: "main"},
         )
 
-        executor = FakePromptExecutor(available=False)
+        caller = FakeLlmCaller(response=LlmResponse(text=""), configured=False)
 
-        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, llm_caller=caller)
 
         result = runner.invoke(update_pr_description, [], obj=ctx)
 
         assert result.exit_code != 0
-        assert "Claude CLI not found" in result.output
+        assert "ANTHROPIC_API_KEY" in result.output
 
 
 def test_fails_when_not_on_branch() -> None:
@@ -172,9 +188,9 @@ def test_fails_when_not_on_branch() -> None:
             current_branches={env.cwd: None},
         )
 
-        executor = FakePromptExecutor(available=True)
+        caller = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
 
-        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, llm_caller=caller)
 
         result = runner.invoke(update_pr_description, [], obj=ctx)
 
@@ -217,10 +233,10 @@ def test_fails_when_no_pr() -> None:
 
         # No PRs configured
         github = FakeGitHub(authenticated=True)
-        executor = FakePromptExecutor(available=True)
+        caller = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
 
         ctx = build_workspace_test_context(
-            env, git=git, graphite=graphite, github=github, prompt_executor=executor
+            env, git=git, graphite=graphite, github=github, llm_caller=caller
         )
 
         result = runner.invoke(update_pr_description, [], obj=ctx)
@@ -233,10 +249,10 @@ def test_success_updates_pr() -> None:
     """Test successful update-pr-description generates title/body and updates PR."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git, graphite, github, executor = _make_standard_fakes(env)
+        git, graphite, github, caller = _make_standard_fakes(env)
 
         ctx = build_workspace_test_context(
-            env, git=git, graphite=graphite, github=github, prompt_executor=executor
+            env, git=git, graphite=graphite, github=github, llm_caller=caller
         )
 
         result = runner.invoke(update_pr_description, [], obj=ctx)
@@ -259,10 +275,10 @@ def test_generates_footer_with_checkout_command() -> None:
     """Test that updated body includes footer with checkout command."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git, graphite, github, executor = _make_standard_fakes(env, pr_body="Old content")
+        git, graphite, github, caller = _make_standard_fakes(env, pr_body="Old content")
 
         ctx = build_workspace_test_context(
-            env, git=git, graphite=graphite, github=github, prompt_executor=executor
+            env, git=git, graphite=graphite, github=github, llm_caller=caller
         )
 
         result = runner.invoke(update_pr_description, [], obj=ctx)
@@ -327,13 +343,12 @@ def test_uses_graphite_parent() -> None:
             authenticated=True,
             prs_by_branch={"branch-2": pr_details},
         )
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_prompt_output="Add feature 2\n\nThis adds feature 2.",
+        recording_caller = RecordingLlmCaller(
+            response=LlmResponse(text="Add feature 2\n\nThis adds feature 2.")
         )
 
         ctx = build_workspace_test_context(
-            env, git=git, graphite=graphite, github=github, prompt_executor=executor
+            env, git=git, graphite=graphite, github=github, llm_caller=recording_caller
         )
 
         result = runner.invoke(update_pr_description, [], obj=ctx)
@@ -341,8 +356,8 @@ def test_uses_graphite_parent() -> None:
         assert result.exit_code == 0
 
         # Verify the prompt was called with correct branches
-        assert len(executor.prompt_calls) == 1
-        prompt, _system_prompt, _dangerous = executor.prompt_calls[0]
+        assert len(recording_caller.calls) == 1
+        prompt, _system_prompt, _max_tokens = recording_caller.calls[0]
         # Should contain branch-1 as parent (Graphite parent)
         assert "branch-1" in prompt
         assert "branch-2" in prompt
@@ -373,7 +388,7 @@ def test_no_plan_context_after_pxxxx_removal() -> None:
             comments_with_urls={123: [comment]},
         )
 
-        git, graphite, github, executor = _make_standard_fakes(
+        git, graphite, github, caller = _make_standard_fakes(
             env,
             branch_name="plnd/fix-bug-123-01-01-1200",
             fake_github_issues=fake_github_issues,
@@ -400,7 +415,7 @@ def test_no_plan_context_after_pxxxx_removal() -> None:
             git=git,
             graphite=graphite,
             github=github,
-            prompt_executor=executor,
+            llm_caller=caller,
             plan_store=PlannedPRBackend(github, fake_github_issues, time=FakeTime()),
         )
 
@@ -423,7 +438,7 @@ def test_update_pr_description_planned_pr_backend_preserves_metadata() -> None:
         plan_content = "# My Plan\n\nImplement the thing."
         pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)
 
-        git, graphite, github, executor = _make_standard_fakes(
+        git, graphite, github, caller = _make_standard_fakes(
             env,
             branch_name="feature",
             pr_body=pr_body,
@@ -434,7 +449,7 @@ def test_update_pr_description_planned_pr_backend_preserves_metadata() -> None:
             git=git,
             graphite=graphite,
             github=github,
-            prompt_executor=executor,
+            llm_caller=caller,
             plan_store=PlannedPRBackend(github, github.issues, time=FakeTime()),
         )
 

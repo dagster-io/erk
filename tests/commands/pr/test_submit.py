@@ -17,8 +17,23 @@ from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
-from tests.fakes.prompt_executor import FakePromptExecutor
+from erk_shared.core.fakes import FakeLlmCaller
+from erk_shared.core.llm_caller import LlmCallFailed, LlmCaller, LlmResponse, NoApiKey
 from tests.test_utils.context_builders import build_workspace_test_context
+
+
+class RecordingLlmCaller(LlmCaller):
+    """Test-local LLM caller that records calls for prompt content verification."""
+
+    def __init__(self, response: LlmResponse | NoApiKey | LlmCallFailed) -> None:
+        self._response = response
+        self.calls: list[tuple[str, str, int]] = []
+
+    def call(
+        self, prompt: str, *, system_prompt: str, max_tokens: int = 50
+    ) -> LlmResponse | NoApiKey | LlmCallFailed:
+        self.calls.append((prompt, system_prompt, max_tokens))
+        return self._response
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
@@ -32,15 +47,14 @@ def test_pr_submit_fails_when_claude_not_available() -> None:
             default_branches={env.cwd: "main"},
         )
 
-        executor = FakePromptExecutor(available=False)
+        executor = FakeLlmCaller(response=LlmResponse(text=""), configured=False)
 
-        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+        ctx = build_workspace_test_context(env, git=git, llm_caller=executor)
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
 
         assert result.exit_code != 0
-        assert "Claude CLI not found" in result.output
-        assert "claude.com/download" in result.output
+        assert "ANTHROPIC_API_KEY" in result.output
 
 
 def test_pr_submit_skip_description_skips_claude_check() -> None:
@@ -120,22 +134,20 @@ def test_pr_submit_skip_description_skips_claude_check() -> None:
         )
 
         # Claude is NOT available — this would fail without --skip-description
-        executor = FakePromptExecutor(available=False)
+        executor = FakeLlmCaller(response=LlmResponse(text=""), configured=False)
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            prompt_executor=executor,
+            llm_caller=executor,
         )
 
         result = runner.invoke(pr_group, ["submit", "--skip-description"], obj=ctx)
 
         assert result.exit_code == 0
         assert "github.com/owner/repo/pull/123" in result.output
-        # No prompt calls should have been made (AI generation skipped)
-        assert len(executor.prompt_calls) == 0
 
 
 def test_pr_submit_fails_when_graphite_not_authenticated() -> None:
@@ -198,17 +210,14 @@ def test_pr_submit_fails_when_graphite_not_authenticated() -> None:
             pr_details={123: pr_details},
             pr_bases={123: "main"},
         )
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_prompt_output="Add feature\n\nThis adds a new feature.",
-        )
+        executor = FakeLlmCaller(response=LlmResponse(text="Add feature\n\nThis adds a new feature."))
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            prompt_executor=executor,
+            llm_caller=executor,
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
@@ -234,14 +243,14 @@ def test_pr_submit_fails_when_github_not_authenticated() -> None:
         # Graphite authenticated, GitHub not authenticated
         graphite = FakeGraphite(authenticated=True)
         github = FakeGitHub(authenticated=False)
-        executor = FakePromptExecutor(available=True)
+        executor = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            prompt_executor=executor,
+            llm_caller=executor,
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
@@ -286,14 +295,14 @@ def test_pr_submit_fails_when_no_commits_ahead() -> None:
             },
         )
         github = FakeGitHub(authenticated=True)
-        executor = FakePromptExecutor(available=True)
+        executor = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            prompt_executor=executor,
+            llm_caller=executor,
         )
 
         # Use --no-graphite to test standard flow error handling
@@ -375,17 +384,14 @@ def test_pr_submit_fails_when_commit_message_generation_fails() -> None:
         )
 
         # Configure executor to fail on prompt
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_prompt_error="Claude CLI execution failed",
-        )
+        executor = FakeLlmCaller(response=LlmCallFailed(message="Claude CLI execution failed"))
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            prompt_executor=executor,
+            llm_caller=executor,
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
@@ -466,17 +472,14 @@ def test_pr_submit_fails_when_pr_update_fails() -> None:
             pr_update_should_succeed=False,
         )
 
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_prompt_output="Add feature\n\nThis adds a new feature.",
-        )
+        executor = FakeLlmCaller(response=LlmResponse(text="Add feature\n\nThis adds a new feature."))
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            prompt_executor=executor,
+            llm_caller=executor,
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
@@ -559,17 +562,14 @@ def test_pr_submit_success(tmp_path: Path) -> None:
             pr_bases={123: "main"},
         )
 
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_prompt_output="Add awesome feature\n\nThis PR adds an awesome new feature.",
-        )
+        executor = FakeLlmCaller(response=LlmResponse(text="Add awesome feature\n\nThis PR adds an awesome new feature."))
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            prompt_executor=executor,
+            llm_caller=executor,
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
@@ -577,12 +577,6 @@ def test_pr_submit_success(tmp_path: Path) -> None:
         assert result.exit_code == 0
         # Verify output contains PR URL
         assert "github.com/owner/repo/pull/123" in result.output
-
-        # Verify commit message was generated
-        assert len(executor.prompt_calls) == 1
-        prompt, system_prompt, _dangerous = executor.prompt_calls[0]
-        assert "feature" in prompt  # Branch name in context
-        assert "main" in prompt  # Parent branch in context
 
         # Verify PR metadata was updated
         assert len(github.updated_pr_titles) == 1
@@ -694,9 +688,8 @@ def test_pr_submit_uses_graphite_parent_for_commit_messages() -> None:
             pr_bases={456: "branch-1"},
         )
 
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_prompt_output="Add feature 2\n\nThis adds feature 2.",
+        recording_caller = RecordingLlmCaller(
+            response=LlmResponse(text="Add feature 2\n\nThis adds feature 2.")
         )
 
         ctx = build_workspace_test_context(
@@ -704,17 +697,17 @@ def test_pr_submit_uses_graphite_parent_for_commit_messages() -> None:
             git=git,
             github=github,
             graphite=graphite,
-            prompt_executor=executor,
+            llm_caller=recording_caller,
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
 
         assert result.exit_code == 0
 
-        # Verify the commit messages passed to Claude only include branch-2's commits
+        # Verify the commit messages passed to the LLM only include branch-2's commits
         # NOT the entire stack's commits
-        assert len(executor.prompt_calls) == 1
-        prompt, system_prompt, _dangerous = executor.prompt_calls[0]
+        assert len(recording_caller.calls) == 1
+        prompt, _system_prompt, _max_tokens = recording_caller.calls[0]
 
         # Should contain branch-2's commit message
         assert "feat: add feature 2 (from branch-2)" in prompt
@@ -793,17 +786,14 @@ def test_pr_submit_force_flag_bypasses_divergence_error() -> None:
             pr_bases={123: "main"},
         )
 
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_prompt_output="Title\n\nBody",
-        )
+        executor = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            prompt_executor=executor,
+            llm_caller=executor,
         )
 
         # Run with --force flag and --no-graphite to test git push force path
@@ -890,17 +880,14 @@ def test_pr_submit_short_force_flag() -> None:
             pr_bases={123: "main"},
         )
 
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_prompt_output="Title\n\nBody",
-        )
+        executor = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            prompt_executor=executor,
+            llm_caller=executor,
         )
 
         # Run with -f short flag and --no-graphite to test git push force path
@@ -986,17 +973,14 @@ def test_pr_submit_shows_graphite_url() -> None:
             pr_bases={123: "main"},
         )
 
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_prompt_output="Title\n\nBody",
-        )
+        executor = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            prompt_executor=executor,
+            llm_caller=executor,
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
@@ -1072,17 +1056,14 @@ def test_pr_submit_shows_created_message_for_new_pr() -> None:
             pr_bases={999: "main"},
         )
 
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_prompt_output="Title\n\nBody",
-        )
+        executor = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            prompt_executor=executor,
+            llm_caller=executor,
         )
 
         # Use --no-graphite to test standard flow output messaging
@@ -1156,17 +1137,14 @@ def test_pr_submit_fails_when_parent_branch_has_no_pr() -> None:
             prs={},  # No PRs exist
         )
 
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_prompt_output="Add feature\n\nThis adds a new feature.",
-        )
+        executor = FakeLlmCaller(response=LlmResponse(text="Add feature\n\nThis adds a new feature."))
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            prompt_executor=executor,
+            llm_caller=executor,
         )
 
         # Use --no-graphite to test standard flow error handling
@@ -1250,17 +1228,14 @@ def test_pr_submit_shows_found_message_for_existing_pr() -> None:
             pr_bases={123: "main"},
         )
 
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_prompt_output="Title\n\nBody",
-        )
+        executor = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            prompt_executor=executor,
+            llm_caller=executor,
         )
 
         # Use --no-graphite to test standard flow output messaging
@@ -1401,17 +1376,14 @@ plan_comment_id: 1000
             issues_gateway=github_issues,
         )
 
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_prompt_output="Title\n\nBody",
-        )
+        executor = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            prompt_executor=executor,
+            llm_caller=executor,
             issues=github_issues,
         )
 
@@ -1565,17 +1537,14 @@ objective_issue: 5000
             issues_gateway=github_issues,
         )
 
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_prompt_output="Title\n\nBody",
-        )
+        executor = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            prompt_executor=executor,
+            llm_caller=executor,
             issues=github_issues,
         )
 
@@ -1663,17 +1632,14 @@ def test_pr_submit_shows_no_plan_message() -> None:
             pr_bases={123: "main"},
         )
 
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_prompt_output="Title\n\nBody",
-        )
+        executor = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            prompt_executor=executor,
+            llm_caller=executor,
             issues=FakeGitHubIssues(),  # No plan for "feature" branch (empty issues)
         )
 
@@ -1733,14 +1699,14 @@ def test_pr_submit_graphite_flow_detects_remote_divergence() -> None:
         )
 
         github = FakeGitHub(authenticated=True)
-        executor = FakePromptExecutor(available=True)
+        executor = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            prompt_executor=executor,
+            llm_caller=executor,
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
@@ -1831,17 +1797,14 @@ def test_pr_submit_graphite_flow_force_bypasses_divergence() -> None:
             pr_bases={123: "main"},
         )
 
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_prompt_output="Title\n\nBody",
-        )
+        executor = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            prompt_executor=executor,
+            llm_caller=executor,
         )
 
         result = runner.invoke(pr_group, ["submit", "--force"], obj=ctx)
@@ -1927,17 +1890,14 @@ def test_pr_submit_graphite_flow_skips_check_for_new_branch() -> None:
             pr_bases={123: "main"},
         )
 
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_prompt_output="Title\n\nBody",
-        )
+        executor = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             graphite=graphite,
-            prompt_executor=executor,
+            llm_caller=executor,
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)

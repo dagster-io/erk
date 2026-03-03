@@ -26,7 +26,7 @@ from erk.cli.commands.pr.shared import (
     cleanup_diff_file,
     discover_branch_context,
     echo_plan_context_status,
-    require_claude_available,
+    require_llm_available,
     run_commit_message_generation,
     run_diff_extraction,
 )
@@ -54,8 +54,8 @@ def update_pr_description(ctx: click.Context, *, debug: bool, session_id: str | 
 
 def _execute_update_description(ctx: ErkContext, *, debug: bool, session_id: str | None) -> None:
     """Execute the update-description pipeline."""
-    # Verify Claude is available
-    require_claude_available(ctx)
+    # Verify LLM is configured
+    require_llm_available(ctx.llm_caller)
 
     cwd = Path.cwd()
     if session_id is not None:
@@ -117,7 +117,7 @@ def _execute_update_description(ctx: ErkContext, *, debug: bool, session_id: str
 
     commit_messages = ctx.git.commit.get_commit_messages_since(cwd, discovery.parent_branch)
 
-    msg_gen = CommitMessageGenerator(ctx.prompt_executor, time=ctx.time, model="haiku")
+    msg_gen = CommitMessageGenerator(ctx.llm_caller, time=ctx.time)
     msg_result = run_commit_message_generation(
         generator=msg_gen,
         diff_file=diff_file,

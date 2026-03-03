@@ -10,7 +10,8 @@ from erk.cli.commands.pr import pr_group
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
-from tests.fakes.prompt_executor import FakePromptExecutor
+from erk_shared.core.fakes import FakeLlmCaller
+from erk_shared.core.llm_caller import LlmResponse
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
@@ -74,24 +75,20 @@ def test_pr_submit_core_path_succeeds_without_graphite() -> None:
             pr_bases={123: "main"},
         )
 
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_prompt_output="fix: test change\n\nTest body",
-        )
+        caller = FakeLlmCaller(response=LlmResponse(text="fix: test change\n\nTest body"))
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
-            prompt_executor=executor,
+            llm_caller=caller,
             use_graphite=False,
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
 
-        # Should complete (may have warnings about Graphite but not fail)
-        # The core path should work even when Graphite is disabled
-        assert result.exit_code == 0 or "Claude CLI" in result.output, result.output
+        # Should complete - the core path should work even when Graphite is disabled
+        assert result.exit_code == 0, result.output
 
 
 def test_pr_submit_no_graphite_flag_works_without_graphite() -> None:
@@ -119,16 +116,13 @@ def test_pr_submit_no_graphite_flag_works_without_graphite() -> None:
             pr_bases={123: "main"},
         )
 
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_prompt_output="fix: test change\n\nTest body",
-        )
+        caller = FakeLlmCaller(response=LlmResponse(text="fix: test change\n\nTest body"))
 
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
-            prompt_executor=executor,
+            llm_caller=caller,
             use_graphite=False,
         )
 
@@ -150,18 +144,18 @@ def test_pr_submit_without_claude_shows_proper_error() -> None:
             default_branches={env.cwd: "main"},
         )
 
-        executor = FakePromptExecutor(available=False)
+        caller = FakeLlmCaller(response=LlmResponse(text=""), configured=False)
 
         ctx = build_workspace_test_context(
             env,
             git=git,
-            prompt_executor=executor,
+            llm_caller=caller,
             use_graphite=False,
         )
 
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
 
-        # Should fail with Claude error, not Graphite error
+        # Should fail with LLM API key error, not Graphite error
         assert result.exit_code != 0
-        assert "Claude CLI not found" in result.output
+        assert "ANTHROPIC_API_KEY" in result.output
         assert "requires Graphite" not in result.output
