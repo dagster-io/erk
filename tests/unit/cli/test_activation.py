@@ -491,10 +491,14 @@ def test_render_activation_script_contains_virtual_env_guard() -> None:
     )
     # Should contain the VIRTUAL_ENV guard check
     assert 'if [ "$VIRTUAL_ENV" != "/path/to/worktree/.venv" ]' in script
-    # Guard should wrap activation code
+    # Guard should wrap activation code (venv source, .env, completion)
     assert "unset VIRTUAL_ENV" in script
-    assert "uv sync" in script
-    assert "uv pip install" in script
+    # uv sync and uv pip install should be OUTSIDE the guard (before it)
+    guard_index = script.find('if [ "$VIRTUAL_ENV"')
+    uv_sync_index = script.find("uv sync")
+    uv_pip_index = script.find("uv pip install")
+    assert uv_sync_index < guard_index
+    assert uv_pip_index < guard_index
     # Post-activation section should be outside guard
     assert "# Optional: show where we are" in script
 
