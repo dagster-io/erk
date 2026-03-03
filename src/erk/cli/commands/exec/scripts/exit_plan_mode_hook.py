@@ -372,8 +372,8 @@ def build_blocking_message(
             "",
             "If user chooses 'Save plan as draft PR':",
             f"  1. Run {save_cmd}",
-            "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
-            "     Stay in plan mode and let the user exit manually if desired.",
+            "  2. Call ExitPlanMode to end the planning session.",
+            "     The hook will allow exit and turn plan mode off.",
         ]
     )
 
@@ -400,7 +400,8 @@ def build_blocking_message(
                 "",
                 "If user chooses 'Save plan on current branch':",
                 f"  1. Run {save_cmd} --current-branch",
-                "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
+                "  2. Call ExitPlanMode to end the planning session.",
+                "     The hook will allow exit and turn plan mode off.",
                 "     This converts the current branch into the plan PR branch",
                 "     instead of creating a new branch.",
             ]
@@ -467,14 +468,16 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
         )
 
     # Plan-saved marker present (user chose "Save to GitHub" / "Create a plan PR")
-    # IMPORTANT: Do NOT delete the marker - keep it so subsequent ExitPlanMode calls
-    # continue to block with "session complete" instead of prompting again
+    # Allow exit and clean up the marker - planning session is complete
     if hook_input.plan_saved_marker_exists:
-        saved_msg = "✅ Plan PR already created. Session complete - no further action needed."
+        saved_msg = (
+            "✅ Plan PR saved. Planning session complete. "
+            "Plan mode is now off - implement from a dedicated worktree."
+        )
         return HookOutput(
-            ExitAction.BLOCK,
+            ExitAction.ALLOW,
             saved_msg,
-            delete_plan_saved_marker=False,
+            delete_plan_saved_marker=True,
             delete_objective_context_marker=hook_input.objective_context_marker_exists,
         )
 
