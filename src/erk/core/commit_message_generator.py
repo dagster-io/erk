@@ -79,13 +79,13 @@ class CommitMessageGenerator:
     testability. In tests, inject FakePromptExecutor with simulated_prompt_output.
     """
 
-    def __init__(self, executor: PromptExecutor, *, time: Time, model: str = "haiku") -> None:
+    def __init__(self, executor: PromptExecutor, *, time: Time, model: str) -> None:
         """Initialize generator with executor.
 
         Args:
             executor: Prompt executor for prompt execution
             time: Time abstraction for monotonic clock
-            model: Model to use for generation (default "haiku" for speed/cost)
+            model: Model to use for generation (e.g. "haiku", "sonnet")
         """
         self._executor = executor
         self._time = time
