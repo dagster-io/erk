@@ -743,6 +743,7 @@ def test_render_deferred_deletion_commands_slot_graphite(tmp_path: Path) -> None
         slot_name="erk-slot-01",
         is_graphite_managed=True,
         main_repo_root=main_repo_root,
+        is_root_worktree=False,
     )
 
     assert len(commands) == 2
@@ -765,6 +766,7 @@ def test_render_deferred_deletion_commands_slot_git(tmp_path: Path) -> None:
         slot_name="erk-slot-01",
         is_graphite_managed=False,
         main_repo_root=main_repo_root,
+        is_root_worktree=False,
     )
 
     assert len(commands) == 2
@@ -787,6 +789,7 @@ def test_render_deferred_deletion_commands_regular_graphite(tmp_path: Path) -> N
         slot_name=None,
         is_graphite_managed=True,
         main_repo_root=main_repo_root,
+        is_root_worktree=False,
     )
 
     assert len(commands) == 2
@@ -809,6 +812,7 @@ def test_render_deferred_deletion_commands_regular_git(tmp_path: Path) -> None:
         slot_name=None,
         is_graphite_managed=False,
         main_repo_root=main_repo_root,
+        is_root_worktree=False,
     )
 
     assert len(commands) == 2
@@ -831,6 +835,7 @@ def test_render_deferred_deletion_commands_special_characters(tmp_path: Path) ->
         slot_name=None,
         is_graphite_managed=True,
         main_repo_root=main_repo_root,
+        is_root_worktree=False,
     )
 
     assert len(commands) == 2
