@@ -15,6 +15,7 @@ from erk.cli.activation import (
 )
 from erk.cli.commands.slot.unassign_cmd import execute_unassign
 from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
+from erk.cli.core import worktree_path_for
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import RepoContext
@@ -23,6 +24,7 @@ from erk.core.worktree_utils import compute_relative_path_in_worktree
 from erk_shared.debug import debug_log
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.github.types import PRNotFound
+from erk_shared.naming import sanitize_worktree_name
 from erk_shared.output.output import machine_output, user_output
 from erk_shared.scratch.markers import PENDING_LEARN_MARKER, marker_exists
 
@@ -532,14 +534,15 @@ def resolve_up_navigation(
     # Use the single child
     target_branch = children[0]
 
-    # Check if target branch has a worktree, create if necessary
-    target_wt_path = ctx.git.worktree.find_worktree_for_branch(repo.root, target_branch)
-    if target_wt_path is None:
-        # Auto-create worktree for target branch
-        _worktree_path, was_created = ensure_worktree_for_branch(ctx, repo, target_branch)
-        return target_branch, was_created
+    # Check if target branch has a worktree (or a worktree at expected path)
+    lookup = find_worktree_for_branch_or_path(ctx, repo, target_branch, worktrees)
+    if lookup.path is not None:
+        # Worktree exists (checkout will be handled by orchestrator if needed)
+        return target_branch, False
 
-    return target_branch, False
+    # No worktree found - auto-create
+    _worktree_path, was_created = ensure_worktree_for_branch(ctx, repo, target_branch)
+    return target_branch, was_created
 
 
 def resolve_down_navigation(
@@ -589,13 +592,15 @@ def resolve_down_navigation(
         # Trunk always belongs in the root worktree
         return "root", False
     else:
-        # Parent is not trunk, check if it has a worktree
-        target_wt_path = ctx.git.worktree.find_worktree_for_branch(repo.root, parent_branch)
-        if target_wt_path is None:
-            # Auto-create worktree for parent branch
-            _worktree_path, was_created = ensure_worktree_for_branch(ctx, repo, parent_branch)
-            return parent_branch, was_created
-        return parent_branch, False
+        # Parent is not trunk, check if it has a worktree (or one at expected path)
+        lookup = find_worktree_for_branch_or_path(ctx, repo, parent_branch, worktrees)
+        if lookup.path is not None:
+            # Worktree exists (checkout will be handled by orchestrator if needed)
+            return parent_branch, False
+
+        # No worktree found - auto-create
+        _worktree_path, was_created = ensure_worktree_for_branch(ctx, repo, parent_branch)
+        return parent_branch, was_created
 
 
 @dataclass(frozen=True)
@@ -606,6 +611,55 @@ class NavigationResult:
     target_name: str
     was_created: bool
     is_root: bool
+
+
+@dataclass(frozen=True)
+class WorktreeLookupResult:
+    """Result of looking up a worktree by branch or expected path."""
+
+    path: Path | None
+    needs_checkout: bool
+
+
+def find_worktree_for_branch_or_path(
+    ctx: ErkContext,
+    repo: RepoContext,
+    branch: str,
+    worktrees: list[WorktreeInfo],
+) -> WorktreeLookupResult:
+    """Find a worktree for a branch, falling back to path-based lookup.
+
+    First tries exact branch match via find_worktree_for_branch(). If no match,
+    computes the expected worktree path from the branch name and checks if any
+    worktree exists at that path (regardless of what branch it has checked out).
+
+    Args:
+        ctx: Erk context
+        repo: Repository context (for worktrees_dir)
+        branch: Branch name to find
+        worktrees: List of worktrees from list_worktrees()
+
+    Returns:
+        WorktreeLookupResult with path and needs_checkout flag.
+        - path=None means no worktree found at all
+        - needs_checkout=False means branch is already checked out
+        - needs_checkout=True means worktree exists at expected path but has different branch
+    """
+    # First try exact branch match
+    exact_path = ctx.git.worktree.find_worktree_for_branch(repo.root, branch)
+    if exact_path is not None:
+        return WorktreeLookupResult(path=exact_path, needs_checkout=False)
+
+    # No exact match - compute expected path and check if worktree exists there
+    expected_name = sanitize_worktree_name(branch)
+    expected_path = worktree_path_for(repo.worktrees_dir, expected_name)
+
+    for wt in worktrees:
+        # wt.path is from list_worktrees() (exists); expected_path is already resolved
+        if wt.path.resolve() == expected_path:
+            return WorktreeLookupResult(path=wt.path, needs_checkout=True)
+
+    return WorktreeLookupResult(path=None, needs_checkout=False)
 
 
 def execute_stack_navigation(
@@ -745,22 +799,23 @@ def execute_stack_navigation(
             is_root_worktree=is_current_root_wt,
         )
 
-    # Resolve target path
-    if is_root:
-        target_path = repo.main_repo_root if repo.main_repo_root else repo.root
-    else:
-        target_path = Ensure.not_none(
-            ctx.git.worktree.find_worktree_for_branch(repo.root, target_name),
-            f"Branch '{target_name}' has no worktree. This should not happen.",
-        )
-
-    # Build checkout command when navigating to root with non-trunk branch
+    # Resolve target path and checkout commands
     checkout_commands: list[str] | None = None
     if is_root:
+        target_path = repo.main_repo_root if repo.main_repo_root else repo.root
+        # Build checkout command when navigating to root with non-trunk branch
         detected_trunk = ctx.git.branch.detect_trunk_branch(repo.root)
         root_wt = next((wt for wt in worktrees if wt.is_root), None)
         if root_wt is not None and root_wt.branch != detected_trunk:
             checkout_commands = [f"git checkout {shlex.quote(detected_trunk)}"]
+    else:
+        lookup = find_worktree_for_branch_or_path(ctx, repo, target_name, worktrees)
+        target_path = Ensure.not_none(
+            lookup.path,
+            f"Branch '{target_name}' has no worktree. This should not happen.",
+        )
+        if lookup.needs_checkout:
+            checkout_commands = [f"git checkout {shlex.quote(target_name)}"]
 
     # Handle activation
     if delete_current and current_worktree_path is not None:
