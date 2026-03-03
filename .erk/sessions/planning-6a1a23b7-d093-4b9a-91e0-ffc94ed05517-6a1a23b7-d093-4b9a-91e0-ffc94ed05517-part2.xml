@@ -1,0 +1,28 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <assistant>Plan saved successfully.
+
+**Step 5: Push Planning Session**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1819" cache_read_input_tokens="68050" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1819}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MKbodffwcVb9TEFGEcuvgw">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null | head -5</param>
+    <param name="description">Get session file path for push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1819" cache_read_input_tokens="68050" output_tokens="106" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1819, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MKbodffwcVb9TEFGEcuvgw">
+SESSION_ID=6a1a23b7-d093-4b9a-91e0-ffc94ed05517
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/6a1a23b7-d093-4b9a-91e0-ffc94ed05517.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FHc7LW2TgisUBmiqPnzSqH">
+    <param name="command">erk exec push-session \
+    --session-file "/Users/schrockn/.claude/projects/-Users-schroc...[truncated 94 chars]...\
+    --stage planning \
+    --source local \
+    --plan-id 8641 \
+    2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="205" cache_read_input_tokens="69869" output_tokens="228" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 205, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>

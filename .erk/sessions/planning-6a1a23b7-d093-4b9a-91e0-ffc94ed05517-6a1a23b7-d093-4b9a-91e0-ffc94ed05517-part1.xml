@@ -1,0 +1,1248 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>source "$(erk pr checkout 8633 --script --sync)"
+Last login: Mon Mar  2 15:39:07 on ttys028
+direnv: loading ~/code/erk/.envrc
+direnv: loading ~/code/erk/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/code/erk
+-&gt; Activating venv: /Users/schrockn/code/erk/.venv (3.13.1)
+Activated: /Users/schrockn/code/erk
+direnv: export +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT ~PATH
+➜  erk source "$(erk pr checkout 8633 --script --sync)"
+Fetching PR #8633...
+✓ Assigned plnd/fix-resubmit-graphite-pr-03-02-1228 to erk-slot-62
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-62/.envrc
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-62/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62
+-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.venv (3.13.1)
+Activated: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62
+direnv: export +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT ~PATH
+Running in non-interactive mode. Inline prompts to fill PR fields will be skipped and new PRs will be created in draft mode.
+
+🥞 Validating that this Graphite stack is ready to submit...
+WARNING: This branch does not introduce any changes:
+▸ plnd/fix-resubmit-graphite-pr-03-02-1228
+WARNING: This branch and any dependent branches will not be submitted, as GitHub does not allow empty PRs.
+WARNING: In order to submit, commit some changes to it or delete it and try again.
+Nothing to submit!
+Checked out PR #8633 at /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62
+➜  erk-slot-62 git:(plnd/fix-resubmit-graphite-pr-03-02-1228) gt pr
+https://app.graphite.dev/github/pr/dagster-io/erk/8633
+➜  erk-slot-62 git:(plnd/fix-resubmit-graphite-pr-03-02-1228) git log
+➜  erk-slot-62 git:(plnd/fix-resubmit-graphite-pr-03-02-1228) git revert dabcdfc4708a9ac0743f5befd7de40e4a962f136
+[plnd/fix-resubmit-graphite-pr-03-02-1228 03ce734be] Revert "Remove plan staging dirs before implementation"
+ 2 files changed, 22 insertions(+)
+ create mode 100644 .erk/impl-context/plan.md
+ create mode 100644 .erk/impl-context/ref.json
+➜  erk-slot-62 git:(plnd/fix-resubmit-graphite-pr-03-02-1228) git push
+Enumerating objects: 8, done.
+Counting objects: 100% (8/8), done.
+Delta compression using up to 8 threads
+Compressing objects: 100% (6/6), done.
+Writing objects: 100% (6/6), 964 bytes | 964.00 KiB/s, done.
+Total 6 (delta 2), reused 0 (delta 0), pack-reused 0 (from 0)
+remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
+remote:
+remote: GitHub found 8 vulnerabilities on dagster-io/erk's default branch (7 high, 1 low). To find out more, visit:
+remote:      https://github.com/dagster-io/erk/security/dependabot
+remote:
+To https://github.com/dagster-io/erk.git
+   dabcdfc47..03ce734be  plnd/fix-resubmit-graphite-pr-03-02-1228 -&gt; plnd/fix-resubmit-graphite-pr-03-02-1228
+➜  erk-slot-62 git:(plnd/fix-resubmit-graphite-pr-03-02-1228) claude
+
+ ▐▛███▜▌   Claude Code v2.1.63
+▝▜█████▛▘  Opus 4.6 · Claude Max
+  ▘▘ ▝▝    ~/.erk/repos/erk/worktrees/erk-slot-62
+
+❯ /erk:pr-address
+
+∴ Thinking…
+
+  The user invoked /erk:pr-address which is a skill for addressing PR review comments. Let me follow the instructions in the command.
+
+  First, I need to load the pr-operations skill as a prerequisite, then run the classifier in Phase 1.
+
+  Let me start by loading the pr-operations skill and figuring out which PR we're on.
+
+⏺ Let me start by loading the prerequisite skill and identifying the current PR.
+
+⏺ Agent(Classify PR feedback) Haiku 4.5
+  ⎿  Done (5 tool uses · 24.6k tokens · 17s)
+  (ctrl+o to expand)
+
+⏺ Read(.claude/skills/pr-operations/SKILL.md)
+  ⎿  Read 123 lines
+
+∴ Thinking…
+
+  Good. I have the classifier results and the pr-operations skill loaded. Let me display the execution plan.
+
+  The classifier found:
+  - 1 actionable review thread: Update plan language to make RELEASING.md documentation more emphatic
+  - 0 discussion actions
+  - 2 informational discussion comments (system metadata, bot notifications) - skipped
+
+  Only 1 batch with content: Batch "Local Fixes" with 1 item (auto-proceed).
+
+  Let me display the plan and then read the file to understand the context. Since we're in plan mode, I need to create a plan file. Let me think about
+  this...
+
+  Wait, we're in plan mode. I can't make edits or run non-readonly tools.
+
+  I need to read the file first to understand what changes are needed, then create a plan that addresses the PR comments within these constraints.
+
+⏺ Execution Plan
+
+  PR #8633: [no-changes] #8633 Impl Attempt: [erk-plan] Fix: Re-submit release PR via Graphite
+
+  Batch 1: Local Fixes (1 comment)
+
+  ┌─────┬──────────────────────────────┬───────────────────────────────────────────────────────────────────────┐
+  │  #  │           Location           │                                Summary                                │
+  ├─────┼──────────────────────────────┼───────────────────────────────────────────────────────────────────────┤
+  │ 1   │ .erk/impl-context/plan.md:12 │ Update plan language to make RELEASING.md documentation more emphatic │
+  └─────┴──────────────────────────────┴───────────────────────────────────────────────────────────────────────┘
+
+  Thread: PRRT_kwDOPxC3hc5xrRsw — @schrockn: "let;s change the plan to make the language in RELEASING.md more emphatic then"
+
+  This is a simple local fix (auto-proceed batch). Let me read the file to understand what needs to change.
+
+⏺ Read(.erk/impl-context/plan.md)
+  ⎿  Read 13 lines
+
+⏺ Read(RELEASING.md)
+  ⎿  Read 165 lines
+
+∴ Thinking…
+
+  Now I understand the context. The reviewer (schrockn) commented on line 12 of .erk/impl-context/plan.md which says "No changes to RELEASING.md needed —
+  Step 7 already says erk pr submit." The reviewer wants to change the plan to make the language in RELEASING.md more emphatic about using erk pr submit (or
+  Graphite).
+
+  Looking at RELEASING.md Step 7 (line 79-85), it says:
+  ### 7. Push Branch and Create PR for GitHub CI
+
+  ```bash
+  erk pr submit
+
+  This pushes the release branch and creates a PR for GitHub CI.
+
+  The reviewer wants to make this language more emphatic - i.e., stress that you MUST use erk pr submit (not git push + gh pr create) because otherwise
+  Graphite won't track the PR.
+
+  So I need to update the plan to reflect that we ARE changing RELEASING.md, and then revise Step 7 to be more forceful about requiring erk pr submit and
+  explicitly warning against using git and gh commands directly.
+
+⏺ Now I understand the full picture. The reviewer wants the plan updated so that instead of "No changes to RELEASING.md needed," we actually make
+  RELEASING.md's Step 7 more emphatic about using erk pr submit (to prevent the Graphite tracking issue that prompted this plan in the first place).
+
+  Let me write the plan.
+
+⏺ Updated plan
+  ⎿  Wrote 47 lines to /Users/schrockn/.claude/plans/linked-wandering-cocoa.md
+       1 # Plan: Address PR #8633 Review — Make RELEASING.md More Emphatic
+       2
+       3 ## Context
+       4
+       5 PR #8633 is a plan-only PR for fixing re-submitting a release PR via Graphite. The reviewer commented on `.erk/impl-context/plan.md:12` which
+          says "No changes to RELEASING.md needed." The reviewer wants us to update the plan AND make RELEASING.md Step 7 more emphatic about using `e
+         rk pr submit` instead of `git push` + `gh pr create`, to prevent the Graphite tracking issue from recurring.
+       6
+       7 ## Review Thread
+       8
+       9 - **Thread ID**: `PRRT_kwDOPxC3hc5xrRsw`
+      10 - **Comment**: "let;s change the plan to make the language in RELEASING.md more emphatic then"
+      11 - **File**: `.erk/impl-context/plan.md:12`
+      12
+      13 ## Changes
+      14
+      15 ### 1. Update `.erk/impl-context/plan.md`
+      16
+      17 Replace line 12:
+      18 ```
+      19 No changes to RELEASING.md needed — Step 7 already says `erk pr submit`.
+      20 ```
+      21
+      22 With a new step that describes updating RELEASING.md Step 7 to add an emphatic warning about always using `erk pr submit` (never `git push` +
+          `gh pr create`), explaining the consequence (Graphite won't track the PR, `gt pr` will fail).
+      23
+      24 ### 2. Update `RELEASING.md` — Step 7 (lines 79-85)
+      25
+      26 Current text is matter-of-fact:
+      27 ```
+      28 This pushes the release branch and creates a PR for GitHub CI. Review the GitHub Actions results to catch any environment-specific issues.
+      29 ```
+      30
+      31 Add a prominent warning after the code block, something like:
+      32
+      33 ```markdown
+      34 &gt; **CRITICAL: Always use `erk pr submit` — never `git push` + `gh pr create`.**
+      35 &gt; Using raw git/gh commands bypasses Graphite tracking. Without Graphite, `gt pr` won't find the PR and stack-aware operations will fail. If
+         you accidentally used `git push` + `gh pr create`, run `gt submit --no-interactive` to re-register the branch with Graphite.
+      36 ```
+      37
+      38 Keep the existing description line about reviewing GitHub Actions results.
+      39
+      40 ## Verification
+      41
+      42 1. Read both files after edits to confirm correctness
+      43 2. Run `make fast-ci` (via devrun) to ensure no issues
+      44 3. Commit with `git add -f .erk/impl-context/plan.md &amp;&amp; git add RELEASING.md`
+      45 4. Resolve thread `PRRT_kwDOPxC3hc5xrRsw` via `erk exec resolve-review-threads`
+      46 5. Re-run classifier to verify no remaining unresolved threads
+      47 6. Update PR description via `erk exec update-pr-description`
+
+∴ Thinking…
+
+  The hook intercepted my ExitPlanMode call. I need to display the plan and ask the user what they want to do.
+
+⏺ Here's the plan:
+
+  ---
+  Plan: Address PR #8633 Review — Make RELEASING.md More Emphatic
+
+  Context
+
+  PR #8633 is a plan-only PR for fixing re-submitting a release PR via Graphite. The reviewer commented on .erk/impl-context/plan.md:12 which says "No
+  changes to RELEASING.md needed." The reviewer wants us to update the plan AND make RELEASING.md Step 7 more emphatic about using erk pr submit instead of
+  git push + gh pr create, to prevent the Graphite tracking issue from recurring.
+
+  Review Thread
+
+  - Thread ID: PRRT_kwDOPxC3hc5xrRsw
+  - Comment: "let;s change the plan to make the language in RELEASING.md more emphatic then"
+  - File: .erk/impl-context/plan.md:12
+
+  Changes
+
+  1. Update .erk/impl-context/plan.md
+
+  Replace line 12 ("No changes to RELEASING.md needed") with a new step describing the RELEASING.md update.
+
+  2. Update RELEASING.md — Step 7 (lines 79-85)
+
+  Add a prominent warning after the code block:
+
+  &gt; **CRITICAL: Always use `erk pr submit` — never `git push` + `gh pr create`.**
+  &gt; Using raw git/gh commands bypasses Graphite tracking. Without Graphite, `gt pr` won't find the PR and stack-aware operations will fail. If you
+  accidentally used `git push` + `gh pr create`, run `gt submit --no-interactive` to re-register the branch with Graphite.
+
+  Verification
+
+  1. Read both files after edits to confirm correctness
+  2. Run make fast-ci via devrun
+  3. Commit with git add -f .erk/impl-context/plan.md &amp;&amp; git add RELEASING.md
+  4. Resolve thread via erk exec resolve-review-threads
+  5. Re-run classifier to verify no remaining unresolved threads
+  6. Update PR description
+
+  ---
+
+⏺ User declined to answer questions
+
+❯ /erk:pr-address
+
+⏺ I already have the classifier results and pr-operations skill loaded from the previous attempt. Let me proceed directly with the execution.
+
+  Execution Plan — PR #8633
+
+  Batch 1: Local Fixes (1 comment)
+
+  ┌─────┬──────────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │  #  │           Location           │                                                    Summary                                                    │
+  ├─────┼──────────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ 1   │ .erk/impl-context/plan.md:12 │ Update plan to include RELEASING.md changes; make RELEASING.md Step 7 more emphatic about using erk pr submit │
+  └─────┴──────────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  Thread: PRRT_kwDOPxC3hc5xrRsw — @schrockn: "let;s change the plan to make the language in RELEASING.md more emphatic then"
+
+  This is a simple batch — auto-proceeding.
+
+  Step 1: Make the fixes
+
+  I already read both files. Let me make the edits.
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.erk/impl-context/plan.md)
+  ⎿  Added 1 line, removed 1 line
+       9  1. Run `gt submit --no-interactive` to register the branch with Graphite and sync the existing PR
+      10  2. Verify `gt pr` opens the PR afterward
+      11
+      12 -No changes to RELEASING.md needed — Step 7 already says `erk pr submit`.
+      12 +3. Update RELEASING.md Step 7 to add an emphatic warning against using `git push` + `gh pr create` instead of `erk pr submit`, explaining th
+         +at raw git/gh commands bypass Graphite tracking
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/RELEASING.md)
+  ⎿  Added 3 lines, removed 1 line
+      82  erk pr submit
+      83  ```
+      84
+      85 -This pushes the release branch and creates a PR for GitHub CI. Review the GitHub Actions results to catch any environment-specific issues.
+      85 +**CRITICAL: Always use `erk pr submit` — never `git push` + `gh pr create`.** Using raw git/gh commands bypasses Graphite tracking. Without
+         +Graphite, `gt pr` won't find the PR and stack-aware operations will fail. If you accidentally used `git push` + `gh pr create`, run `gt subm
+         +it --no-interactive` to re-register the branch with Graphite.
+      86
+      87 +Review the GitHub Actions results to catch any environment-specific issues.
+      88 +
+      89  ### 8. Confirmation Checkpoint
+      90
+      91  **STOP and verify before publishing:**
+
+⏺ Let me verify both edits look correct.
+
+⏺ Read(.erk/impl-context/plan.md)
+  ⎿  Read 13 lines
+
+⏺ Read(RELEASING.md)
+  ⎿  Read 12 lines
+
+⏺ Both edits look good.
+
+  Step 2: Run CI
+
+⏺ devrun(Run fast-ci checks)
+  ⎿  Done (1 tool use · 14.5k tokens · 28s)
+  (ctrl+o to expand)
+
+❯ i only want you to update the plan not the actual RELEASING.md
+
+⏺ Got it — you only want the plan updated, not RELEASING.md itself. Let me revert the RELEASING.md change.
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/RELEASING.md)
+  ⎿  Added 1 line, removed 3 lines
+      82  erk pr submit
+      83  ```
+      84
+      85 -**CRITICAL: Always use `erk pr submit` — never `git push` + `gh pr create`.** Using raw git/gh commands bypasses Graphite tracking. Without
+         -Graphite, `gt pr` won't find the PR and stack-aware operations will fail. If you accidentally used `git push` + `gh pr create`, run `gt subm
+         -it --no-interactive` to re-register the branch with Graphite.
+      85 +This pushes the release branch and creates a PR for GitHub CI. Review the GitHub Actions results to catch any environment-specific issues.
+      86
+      87 -Review the GitHub Actions results to catch any environment-specific issues.
+      88 -
+      87  ### 8. Confirmation Checkpoint
+      88
+      89  **STOP and verify before publishing:**
+
+∴ Thinking…
+
+  Good, RELEASING.md is reverted. Now I need to also update the plan.md to reflect that the plan should describe making RELEASING.md more emphatic (as a
+  future implementation step), but we're not actually changing RELEASING.md in this PR. Let me re-read the plan.md to see what it currently says and make
+  sure it's right.
+
+  The plan.md currently has:
+  3. Update RELEASING.md Step 7 to add an emphatic warning against using `git push` + `gh pr create` instead of `erk pr submit`, explaining that raw git/gh
+  commands bypass Graphite tracking
+
+  That looks correct for a plan — it describes what should be done during implementation. The reviewer wanted the plan to say this instead of "No changes to
+  RELEASING.md needed." So the plan.md edit is correct, and I just needed to revert RELEASING.md.
+
+  Now I'll commit the plan.md change and resolve the thread.
+
+⏺ The .erk/impl-context/plan.md edit is correct — it now says the plan includes updating RELEASING.md (step 3), which is what the reviewer asked for. Only
+  the plan is changed, not RELEASING.md itself.
+
+  Step 3: Commit the batch
+
+⏺ Bash(git add -f .erk/impl-context/plan.md &amp;&amp; git commit -m "$(cat &lt;&lt;'EOF'
+      Update plan to include RELEASING.md emphatic language step
+
+      Address reviewer feedback: change plan from "No changes to RELEASING.md
+      needed" to include a step for making RELEASING.md Step 7 more emphatic
+      about using `erk pr submit` instead of raw git/gh commands.
+
+      Co-Authored-By: Claude Opus 4.6 &lt;noreply@anthropic.com&gt;
+      EOF
+      )")
+  ⎿  [plnd/fix-resubmit-graphite-pr-03-02-1228 40b4b4f85] Update plan to include RELEASING.md emphatic language step
+      1 file changed, 1 insertion(+), 1 deletion(-)
+
+⏺ Step 4: Resolve the thread
+
+✻ Coalescing… (1m 20s · ↓ 1.3k tokens · thought for 5s)
+
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ➜  (git:erk) (wt:erk-slot-62) (br:plnd/fix-resubmit-graphite-pr-03-02-1228) | (gh:#8633 st:🚧 chks:[✅:13] cmts:0/1) │ (O)…                 49848 tokens
+                                                                                                                           current: 2.1.63 · latest: 2.1.…
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · PR #8633
+
+
+You can see in this session I'm struggling a bit to get PR address to work properly on a plan PR branch. Meaning that when there exists a PR but there's only the plan.md file in Impl context and I've given feedback on that plan and invoked PR address. In plan mode it creates a plan to edit the plan, which is confusing. Then in non-plan mode it actually executed the plan, which is also not the intent. The only objective here is to edit the plan.md file and then resubmit it.
+
+What suggestions do you have? It might just be additional prompting or maybe we have to re-examine something in order to enable this use case </user>
+  <thinking>The user is describing a problem with the `/erk:pr-address` workflow when used on a "plan PR" — a PR that only contains a plan file (`.erk/impl-context/plan.md`). The issue is:
+
+1. In plan mode, `/erk:pr-address` creates a plan to edit the plan (meta-planning, confusing)
+2. In non-plan mode, it executes both the plan edit AND the actual changes described in the plan (e.g., editing RELEASING.md), which isn't the intent
+3. The actual intent is simple: edit the plan.md file based on review feedback, then resubmit
+
+
+4. I need to dig into the codebase to see how `/erk:pr-address` is implemented and what skills or hooks are driving this behavior so I can suggest a proper fix.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="16045" cache_read_input_tokens="19954" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16045}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good question. Let me explore how `pr-address` works and what hooks/context it has about plan PRs to understand the problem space.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16045" cache_read_input_tokens="19954" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16045}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01EEzkQwW6RG6hBRdErUwtY3">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore pr-address skill/command</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 551 chars]... `docs/learned/` for anything related to pr-address, pr-operations, and plan PR detection.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16045" cache_read_input_tokens="19954" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16045}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01FPXPkwjDQRKde9cg85qs7n">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore plan mode hooks/detection</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 657 chars]...activates and how should the system behave differently for plan PRs vs implementation PRs?</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16045" cache_read_input_tokens="19954" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16045}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01R6TEqBb6qj2yKkhDW1XfuL">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore pr-submit and plan resubmit</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 670 chars]...o just edit the plan.md and resubmit — not create a meta-plan or execute the plan's steps.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16045" cache_read_input_tokens="19954" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16045}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R6TEqBb6qj2yKkhDW1XfuL">
+Excellent! Now I have a comprehensive understanding. Let me create a summary document for the user.
+
+## Plan Resubmission Workflow Analysis
+
+Based on my investigation of the erk codebase, I can provide you with a comprehensive understanding of the plan resubmission workflow:
+
+### Key Finding: Two Distinct Workflows
+
+The codebase distinguishes between **plan addressing** (editing the plan itself) and **code addressing** (addressing feedback in implementation). When review feedback comes on a plan PR's `plan.md` file, there IS a dedicated path:
+
+#### 1. **Plan Review Mode** (`erk-plan-review` label)
+Location: `/Users/schrockn/code/erk/docs/learned/erk/pr-address-workflows.md` (lines 57-102)
+
+When a plan PR has the `erk-plan-review` label, `/erk:pr-address` automatically switches to **Plan Review Mode**:
+
+```
+File modified:     PLAN-REVIEW-{issue}.md (not source code)
+Sync mechanism:    Git push + plan sync to issue
+Thread resolution: Plan-specific messages
+Target audience:   Plan reviewers
+```
+
+**Workflow:**
+1. Fetch feedback from PR review comments
+2. Edit `PLAN-REVIEW-{issue}.md` based on feedback
+3. Commit the edited plan file
+4. Sync changes back to GitHub issue via `erk exec plan-update`
+5. Resolve threads with plan-specific messages
+
+**Trigger:** Applied automatically by `erk exec plan-create-review-pr`
+
+... [76 lines omitted] ...
+
+def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+  </tool_result>
+  <tool_result tool="toolu_01FPXPkwjDQRKde9cg85qs7n">
+Excellent! Now I have comprehensive knowledge. Let me compile my findings into a clear response.
+
+---
+
+## Summary: Plan Mode and PR-Address Workflow Interaction
+
+I've thoroughly explored the plan mode hooks, pr-address workflow, and plan PR detection mechanisms. Here are the key findings:
+
+### 1. Plan Mode Hook System
+
+**Hook Registration** (`.claude/settings.json`):
+- The `ExitPlanMode` hook is configured via PreToolUse matcher
+- Command: `erk exec exit-plan-mode-hook`
+- Runs before Claude exits plan mode
+
+**Hook Logic** (`src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py`):
+- The hook intercepts all ExitPlanMode calls and asks users to choose between:
+  1. **Create a plan PR** - Saves plan to GitHub and stops (no implementation)
+  2. **Skip PR and implement here** - Implements directly in current worktree
+  3. **View/Edit the plan** - Opens plan for review before deciding
+
+**Marker-Based State Machine** (within hook):
+The hook uses four marker files to track plan mode state:
+- `exit-plan-mode-hook.implement-now.marker` - User chose "implement now" (allows exit)
+- `exit-plan-mode-hook.plan-saved.marker` - Created by `/erk:plan-save`, blocks exit with "session complete"
+- `incremental-plan.marker` - Created by `/local:incremental-plan-mode`, skips save prompt entirely
+- `objective-context.marker` - Stores objective issue number for linking plans to objectives
+
+**Hook Decision Logic**:
+```
+
+... [125 lines omitted] ...
+
+if git ls-files --error-unmatch .erk/impl-context/plan.md &gt;/dev/null 2&gt;&amp;1; then
+  </tool_result>
+  <tool_result tool="toolu_01EEzkQwW6RG6hBRdErUwtY3">
+Perfect! Now I have a comprehensive understanding. Let me create a comprehensive summary report of how the `/erk:pr-address` skill works end-to-end.
+
+## Comprehensive End-to-End Analysis of `/erk:pr-address` Skill
+
+Based on my exploration of the erk codebase, here's the complete end-to-end workflow for the `/erk:pr-address` skill:
+
+### **1. Skill Files Overview**
+
+#### **Primary Skill: pr-address** 
+**Location:** `/Users/schrockn/code/erk/.claude/commands/erk/pr-address.md`
+
+This is the main command that addresses PR review comments. It has two operational modes detected in Phase 0:
+- **Code Review Mode** - Addresses code comments with code changes
+- **Plan Review Mode** - Addresses feedback on plan-only PRs
+
+#### **Supporting Skill: pr-feedback-classifier**
+**Location:** `/Users/schrockn/code/erk/.claude/skills/pr-feedback-classifier/SKILL.md`
+
+This skill classifies all PR review feedback (both review threads and discussion comments) into structured JSON with:
+- Thread IDs for deterministic resolution
+- Complexity classification (local, single_file, cross_cutting, complex, pre_existing)
+- Batch ordering for intelligent execution
+- `pre_existing` field for distinguishing bot comments on moved code
+
+#### **Supporting Skill: pr-operations**
+**Location:** `/Users/schrockn/code/erk/.claude/skills/pr-operations/SKILL.md`
+
+Reference material for PR thread operations, including:
+- Core command reference (`erk exec` commands only)
+- Thread resolution vs discussion comment handling
+
+... [380 lines omitted] ...
+
+  "error": null | string
+This is non-critical — failures don't block the workflow.
+   This LBYL pattern prevents stale `.erk/impl-context/` from a prior failed submission.
+**Prevention:** If `.erk/impl-context/` leaks into the final PR diff (appears in real PR changes), it's a tooling error. The deferred cleanup pattern should have caught it. Comment on the PR: `git rm -rf .erk/impl-context/ &amp;&amp; git commit -m 'Remove leaked impl-context'`.
+  </tool_result>
+  <thinking>Now let me read the actual pr-address command to understand the exact flow and where the problem lies.</thinking>
+  <usage input_tokens="3795" cache_creation_input_tokens="5614" cache_read_input_tokens="35999" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5614}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the actual pr-address command file to see the exact instructions.</assistant>
+  <usage input_tokens="3795" cache_creation_input_tokens="5614" cache_read_input_tokens="35999" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5614}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011zJzjgA5hYyJJSBJkMzgVD">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/pr-address.md</param>
+  </tool_use>
+  <usage input_tokens="3795" cache_creation_input_tokens="5614" cache_read_input_tokens="35999" output_tokens="130" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5614, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011zJzjgA5hYyJJSBJkMzgVD">
+     1→---
+     2→description: Address PR review comments on current branch
+     3→---
+     4→
+     5→# /erk:pr-address
+     6→
+     7→## Description
+     8→
+     9→Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+    10→
+    11→## Usage
+    12→
+    13→```bash
+    14→/erk:pr-address
+    15→/erk:pr-address --all               # Include resolved threads (for reference)
+    16→/erk:pr-address --pr 6631           # Target specific PR
+    17→/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+    18→```
+    19→
+    20→## Prerequisite
+    21→
+    22→**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+    23→
+    24→## Agent Instructions
+    25→
+    26→&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+    27→
+    28→&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+    29→&gt;
+    30→&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+... [299 lines omitted] ...
+
+    56→- `error`: Error message if `success` is false
+    58→**Handle errors**: If `success` is false, display the error and exit.
+   322→### Error Handling
+   324→**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+   326→**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+   328→**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+  </tool_result>
+  <thinking>Now I have a clear picture of the problem. Let me read the Phase 0 detection pattern docs and the plan review mode section to understand the full picture.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="8379" cache_read_input_tokens="41613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8379}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check the Phase 0 detection pattern and the `erk-plan-review` label handling.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8379" cache_read_input_tokens="41613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8379}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QtYLL6awnGReqofBqDujt8">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/architecture/phase-zero-detection-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8379" cache_read_input_tokens="41613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8379}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QtYLL6awnGReqofBqDujt8">
+     1→---
+     2→title: Phase 0 Detection Pattern
+     3→read_when:
+     4→  - implementing mode variants in multi-phase commands
+     5→  - designing conditional execution workflows
+     6→  - debugging scattered mode detection logic
+     7→tripwires:
+     8→  - action: "detecting mode after Phase 0 has already executed"
+     9→    warning: "Late detection wastes work and creates scattered conditionals across all phases"
+    10→    score: 5
+    11→last_audited: "2026-02-16 14:10 PT"
+    12→audit_result: clean
+    13→---
+    14→
+    15→# Phase 0 Detection Pattern
+    16→
+    17→## Why Phase 0 Exists
+    18→
+    19→Multi-phase commands often support fundamentally different operational modes (code review vs plan review, interactive vs batch, local vs remote). **The timing of mode detection determines code clarity**: detect early and branch cleanly, or detect late and scatter `if mode == X` checks across every phase.
+    20→
+    21→Phase 0 detection solves this by **deciding the execution path before any work begins**, preventing wasted effort and keeping mode-specific logic consolidated.
+    22→
+    23→## The Core Problem
+    24→
+    25→Without upfront detection, commands suffer from:
+    26→
+    27→1. **Starting in the wrong mode** — begin Phase 1 work, discover incorrect mode in Phase 2, backtrack
+    28→2. **Scattered conditionals** — every phase checks `if mode == X`, duplicating logic
+    29→3. **Unclear execution flow** — difficult to understand which code runs in which mode
+    30→4. **Wasted computation** — execute phases irrelevant to the current mode
+
+... [184 lines omitted] ...
+
+   140→4. ERROR: Should have checked this before Phase 1 started
+   167→### WRONG: No Detection Until Failure
+   174→3. Abort with error
+  </tool_result>
+  <tool_use name="Read" id="toolu_014BhchF5jy3hbmDX3HpW2p4">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/erk/pr-address-workflows.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8379" cache_read_input_tokens="41613" output_tokens="215" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8379, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014BhchF5jy3hbmDX3HpW2p4">
+     1→---
+     2→title: PR Address Workflows
+     3→read_when:
+     4→  - "addressing PR review comments"
+     5→  - "choosing between local and remote PR addressing"
+     6→  - "understanding erk launch pr-address"
+     7→  - "understanding /erk:pr-address command"
+     8→tripwires:
+     9→  - action: "resolving a review thread when the comment is a discussion comment (not a review thread)"
+    10→    warning: "Review threads and discussion comments use different GitHub APIs. resolve-review-threads only handles review threads. Discussion comments are resolved differently (or not at all)."
+    11→last_audited: "2026-02-16 14:20 PT"
+    12→audit_result: clean
+    13→---
+    14→
+    15→# PR Address Workflows
+    16→
+    17→Erk provides two workflows for addressing PR review comments using Claude:
+    18→
+    19→1. **Local** (`/erk:pr-address`) - Claude Code slash command, runs in your terminal
+    20→2. **Remote** (`erk launch pr-address --pr &lt;number&gt;`) - GitHub Actions workflow, runs in CI
+    21→
+    22→## Decision Matrix
+    23→
+    24→| Factor                       | Local                        | Remote                          |
+    25→| ---------------------------- | ---------------------------- | ------------------------------- |
+    26→| **Branch checkout**          | Required (must be on branch) | Not required                    |
+    27→| **Interactive confirmation** | Yes (via Claude Code)        | No                              |
+    28→| **Error recovery**           | Immediate (fix and retry)    | Check workflow logs             |
+    29→| **Plan metadata tracking**   | Manual                       | Automatic for P{issue} branches |
+    30→| **Best for**                 | Active development           | Queued/async work               |
+
+... [168 lines omitted] ...
+
+   154→- Job status (success/failure)
+  </tool_result>
+  <thinking>Now I have a clear picture. Let me analyze the problem:
+
+**The Problem:**
+When a user checks out a plan PR branch (one where `.erk/impl-context/plan.md` is the only content) and runs `/erk:pr-address`, there's a mismatch:
+
+1. **Plan mode active**: If plan mode is active, pr-address creates a "plan to edit the plan" — which is absurd meta-planning. The plan mode hook forces plan mode behavior, but the intent is just to edit `plan.md`.
+
+2. **Non-plan mode**: When plan mode is off, pr-address treats this like a code review and executes the feedback literally. 
+
+In the session shown, it edited both `plan.md` AND `RELEASING.md` — but the reviewer only wanted the plan text updated, not the actual code changes.
+
+**Root Cause Analysis:**
+
+The pr-address command has two modes: code review mode (default) that edits source code, and plan review mode that edits `PLAN-REVIEW-{issue}.md` files triggered by the `erk-plan-review` label. But there's a third case not covered: when a PR contains `.erk/impl-context/plan.md` as a committed file with review comments on that file, the system doesn't recognize this as a plan-specific feedback scenario.
+
+The current Phase 0 detection only checks for the `erk-plan-review` label and misses plan-only PRs where only `.erk/impl-context/` files have changed. When pr-address detects that either the PR diff contains only `.erk/impl-context/` files or review comments are on `.erk/impl-context/plan.md`, it should enter plan editing mode where it only modifies the plan file itself and skips executing the plan's instructions like editing other files.
+
+I'm considering a few approaches: detecting plan-only PRs in Phase 0 and switching to a constrained editing mode, adding explicit instructions to treat feedback on plan files as text edits rather than plan execution, applying the existing plan review label automatically, or potentially handling plan-only PRs through direct instructions instead of pr-address altogether.
+
+Looking at the existing workflow, it already has detection logic for plan-only PRs by checking if the plan file is git-tracked, and the pr-address command acknowledges this scenario. The cleanest solution seems to be combining Phase 0 detection with explicit instructions for this mode, since the infrastructure is partially there.
+
+The real issue is that when review comments target the plan file, the agent needs to recognize this is about editing the plan itself, not implementing its steps—this is fundamentally a prompting problem rather than a workflow one. I should add a Phase 0 branch that detects plan-only PRs and routes them appropriately, rather than jumping straight into code review mode. I'm realizing the core issue: plan mode shouldn't be active during pr-address at all, because when it is, pr-address creates a plan describing how to edit the files rather than just editing them directly. The real problem is that pr-address needs to work in two distinct modes — when plan mode is on, it should only update the plan document itself, but when it's off, it executes the changes directly to the actual files. The real issue is that plan mode was already active when the session started, probably from the checkout process, so pr-address needs to either exit plan mode first or the instructions need to explicitly constrain it to only modifying plan files without executing their described changes. The cleanest approach is adding Phase 0 detection in pr-address that makes it clear the agent should only edit the plan file itself, not implement what the plan describes. the real question is: **why was plan mode active?**
+
+Looking at the session transcript more carefully:
+- User ran `source "$(erk pr checkout 8633 --script --sync)"`
+- Then `claude` to start Claude Code
+- Then `/erk:pr-address`
+- Plan mode was active from the start
+
+This suggests that the `erk pr checkout` or some hook activated plan mode. This makes sense — when you checkout a plan PR, plan mode might activate because the branch has a plan to implement.
+
+So the plan mode activation is correct in general (for implementation), but wrong for the pr-address use case. When pr-address is invoked, it should probably disable or bypass plan mode if the PR is a plan-only PR.
+
+The core fix would be to detect plan-only PRs before processing feedback: check if the plan file exists in git and the diff only touches `.erk/impl-context/` files, then enter a special mode where I only edit the plan document itself and treat all feedback as requests to refine the plan text rather than implement changes. For handling the interaction with plan mode, either the pr-address command should explicitly bypass plan mode, or the exit hook should detect when pr-address is running and handle it accordingly. Looking back at the session transcript, I see the user was already in plan mode when they started, and they ran pr-address twice—the first time it got blocked by the plan mode constraint, but the second invocation actually succeeded because plan mode was no longer active. So the real issue is understanding when and why plan mode gets activated in the first place.
+
+The core problem breaks down into two failure modes: running pr-address in plan mode creates a meta-plan instead of making direct edits, while running it outside plan mode executes changes too broadly and modifies files beyond what was intended. Both outcomes miss the mark—the user just wanted to update the plan.md file based on the review feedback.
+
+The root issue is that pr-address doesn't recognize plan-only PRs as a distinct case. It has code review and plan review modes, but plan-only PRs backed by `.erk/impl-context/plan.md` lack the `erk-plan-review` label, so they default to code review mode and treat everything as source code to modify.
+
+My suggestions focus on adding detection for plan-only PRs: check if `.erk/impl-context/plan.md` appears in the PR diff, and if so, activate a dedicated "Plan File Mode" that constrains the command to only edit that file with explicit safeguards against executing the plan's described changes.
+
+Alternatively, I could reuse the existing `erk-plan-review` label by applying it automatically during plan-save, which would let the current Plan Review Mode handle these PRs without additional logic.
+
+However, that approach has a problem: plan-only PRs and plan-review PRs use different file structures, so the label wouldn't quite fit. A simpler fallback would be to just add a behavioral note in pr-address Phase 3 that tells Claude to treat feedback on `.erk/impl-context/plan.md` as edits to the plan itself rather than instructions to execute changes.
+
+I think combining suggestions 1 and 2 makes the most sense, with suggestion 4 as a lightweight backup if needed.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5502" cache_read_input_tokens="49992" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5502}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture. Let me also quickly check how plan mode gets activated when checking out a plan PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5502" cache_read_input_tokens="49992" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5502}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01J1siVUpQQWnsfv88UcrAma">
+    <param name="pattern">plan.*mode|enter.*plan</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5502" cache_read_input_tokens="49992" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5502}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01J1siVUpQQWnsfv88UcrAma">
+Found 2 files
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_015iZJUBcqrtjhvc8PB8U1vH">
+    <param name="pattern">plan.mode|EnterPlanMode</param>
+    <param name="path">/Users/schrockn/code/erk/.claude</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5502" cache_read_input_tokens="49992" output_tokens="3747" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5502, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015iZJUBcqrtjhvc8PB8U1vH">
+Found 12 files
+.claude/commands/erk/objective-plan.md
+.claude/commands/erk/system/objective-plan-node.md
+.claude/skills/erk-exec/reference.md
+.claude/commands/erk/plan-save.md
+.claude/commands/local/plan-update.md
+.claude/commands/erk/replan.md
+.claude/skills/erk-planning/references/workflow.md
+.claude/skills/erk-planning/SKILL.md
+.claude/commands/local/incremental-plan-mode.md
+.claude/commands/erk/plan-implement.md
+.claude/settings.json
+.claude/commands/local/interview.md
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0111i4R7vbb8rjbLupBCcbxg">
+    <param name="pattern">plan.mode|plan_mode</param>
+    <param name="path">/Users/schrockn/code/erk/.claude/settings.json</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4179" cache_read_input_tokens="55494" output_tokens="111" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4179, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0111i4R7vbb8rjbLupBCcbxg">
+34:            "command": "command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
+  </tool_result>
+  <assistant>Good. Now I have the full picture. Let me write up my analysis.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="176" cache_read_input_tokens="59673" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 176}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01YK5A821dnqFQKwdQKL4tLy">
+    <param name="file_path">/Users/schrockn/.claude/plans/harmonic-frolicking-fox.md</param>
+    <param name="content"># Analysis: pr-address on Plan-Only PRs
+
+## The Problem
+
+Two distinct failure modes when u...[truncated 3966 chars]...`docs/learned/architecture/phase-zero-detection-pattern.md` — Add plan-only as an example
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="176" cache_read_input_tokens="59673" output_tokens="1251" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 176, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YK5A821dnqFQKwdQKL4tLy">
+File created successfully at: /Users/schrockn/.claude/plans/harmonic-frolicking-fox.md
+  </tool_result>
+  <assistant>Here's the core analysis:
+
+**The problem** has two layers:
+1. pr-address has no concept of "plan-only PR" — it only distinguishes Code Review Mode (default) vs Plan Review Mode (`erk-plan-review` label). Plan-only PRs fall through to Code Review Mode.
+2. When plan mode is active, pr-address creates a meta-plan instead of just editing the file.
+
+**Three options**, ranging from most to least robust:
+
+- **Option A (Recommended)**: Add Phase 0 detection for plan-only PRs — check `git ls-files --error-unmatch .erk/impl-context/plan.md`, and if tracked, enter a constrained "Plan File Mode" that ONLY edits plan files and never executes described changes. Follows the existing Phase 0 pattern.
+
+- **Option B**: Just add a behavioral note in Phase 3 saying "when the file is `plan.md`, only edit the plan text, don't execute it." Lighter weight but relies on Claude's judgment.
+
+- **Option C**: Reuse the `erk-plan-review` label by auto-applying it during plan-save. But the file targets don't match (`plan.md` vs `PLAN-REVIEW-{issue}.md`), so it'd need generalization.
+
+For the plan mode interaction, the simplest fix is a documentation note at the top of pr-address: "Exit plan mode before running this command."</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1290" cache_read_input_tokens="59849" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1290}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01MH4Pq9xXaRfXvZrmS7sZxB">
+    <param name="questions">[{'question': 'Which approach do you want to pursue for handling pr-address on plan-only P...[truncated 518 chars]...e and generalize Plan Review Mode to handle both file patterns.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1290" cache_read_input_tokens="59849" output_tokens="574" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1290, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MH4Pq9xXaRfXvZrmS7sZxB">
+User has answered your questions: "Which approach do you want to pursue for handling pr-address on plan-only PRs?"="Option A: Phase 0 detection (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <assistant>Good, Option A it is. Let me now draft the concrete Phase 0 detection and Plan File Mode section by reading the existing Plan Review Mode section more closely to follow the same structure.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="735" cache_read_input_tokens="61139" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 735}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Bk1j6Tno2AhCX1WaLf91zC">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/pr-address.md</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="735" cache_read_input_tokens="61139" output_tokens="134" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 735, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Bk1j6Tno2AhCX1WaLf91zC">
+     1→---
+     2→description: Address PR review comments on current branch
+     3→---
+     4→
+     5→# /erk:pr-address
+     6→
+     7→## Description
+     8→
+     9→Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+    10→
+    11→## Usage
+    12→
+    13→```bash
+    14→/erk:pr-address
+    15→/erk:pr-address --all               # Include resolved threads (for reference)
+    16→/erk:pr-address --pr 6631           # Target specific PR
+    17→/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+    18→```
+    19→
+    20→## Prerequisite
+    21→
+    22→**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+    23→
+    24→## Agent Instructions
+    25→
+    26→&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+    27→
+    28→&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+    29→&gt;
+    30→&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me finalize the plan with concrete implementation details.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="592" cache_read_input_tokens="61874" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 592}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_017MuXTv3XuaVZk3YcGPLPnS">
+    <param name="file_path">/Users/schrockn/.claude/plans/harmonic-frolicking-fox.md</param>
+    <param name="content"># Plan: Add Phase 0 Plan-Only PR Detection to pr-address
+
+## Context
+
+When `/erk:pr-addres...[truncated 3458 chars]...t enters Plan File Mode
+4. Confirm it only edits plan.md, not files described in the plan
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="592" cache_read_input_tokens="61874" output_tokens="1126" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 592, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017MuXTv3XuaVZk3YcGPLPnS">
+The file /Users/schrockn/.claude/plans/harmonic-frolicking-fox.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_017uVWXUSkGqRP85i9VBLPZp">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run git commands to inspect branch state and file tracking'}]</param>
+    <param name="plan"># Plan: Add Phase 0 Plan-Only PR Detection to pr-address
+
+## Context
+
+When `/erk:pr-addres...[truncated 3458 chars]...t enters Plan File Mode
+4. Confirm it only edits plan.md, not files described in the plan
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1166" cache_read_input_tokens="62466" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1166, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017uVWXUSkGqRP85i9VBLPZp">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/harmonic-frolicking-fox.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Add Phase 0 Plan-Only PR Detection to pr-address
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 6a1a23b7-d093-4b9a-91e0-ffc94ed05517 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Add Phase 0 Plan-Only PR Detection to pr-address
+
+## Context
+
+When `/erk:pr-address` is invoked on a plan-only PR (where the diff is just `.erk/impl-context/plan.md`), two failure modes occur:
+
+1. **In plan mode**: Creates a "plan to edit the plan" (meta-planning) — confusing and useless
+2. **Not in plan mode**: Edits the plan AND tries to execute the plan's described changes — too broad
+
+The root cause is that pr-address has no detection for plan-only PRs. It only distinguishes Code Review Mode (default) vs Plan Review Mode (`erk-plan-review` label). Plan-only PRs fall through to Code Review Mode.
+
+## Changes
+
+### 1. Add Phase 0 to `.claude/commands/erk/pr-address.md`
+
+Insert a new **Phase 0: Mode Detection** section before the current Phase 1. This section:
+
+1. Checks for `erk-plan-review` label → existing Plan Review Mode (unchanged)
+2. **NEW**: Checks if `.erk/impl-context/plan.md` is git-tracked → Plan File Mode
+3. Neither → Code Review Mode (existing behavior, Phases 1-6)
+
+Detection command: `git ls-files --error-unmatch .erk/impl-context/plan.md`
+
+Also add a note: if plan mode is active, exit it first — this command needs to make edits directly.
+
+### 2. Add Plan File Mode section to `.claude/commands/erk/pr-address.md`
+
+A **complete alternative flow** — when active, Phases 1-6 are skipped entirely.
+
+Workflow: same classify → display → execute → resolve structure, but with key constraints:
+- **ONLY edit `.erk/impl-context/plan.md`**
+- **Interpret all feedback as "modify the plan text"** — NEVER execute changes the plan describes
+- Use `git add -f` for commits (directory is gitignored)
+- Push directly (no graphite submit)
+- Skip update-pr-description and upload-impl-session
+
+### 3. Update `docs/learned/erk/pr-address-workflows.md`
+
+Document Plan File Mode alongside existing Plan Review Mode.
+
+### 4. Update `docs/learned/architecture/phase-zero-detection-pattern.md`
+
+Add plan-only PR as a second detection example.
+
+## Verification
+
+1. Read modified files for coherence
+2. Checkout a plan-only PR, confirm plan.md is git-tracked
+3. Run `/erk:pr-address` and verify it enters Plan File Mode
+4. Confirm it only edits plan.md, not files described in the plan
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="915" cache_read_input_tokens="63632" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 915}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_018VWuRXMjLgeuSyQ4rGugnf">
+    <param name="questions">[{'question': 'What would you like to do with this plan?', 'header': 'br:master', 'options...[truncated 339 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="915" cache_read_input_tokens="63632" output_tokens="833" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 915, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018VWuRXMjLgeuSyQ4rGugnf">
+User has answered your questions: "What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_012X6SQBQ4vVs7zj5swnP3Ac">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="883" cache_read_input_tokens="64547" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 883, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012X6SQBQ4vVs7zj5swnP3Ac">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="6a1a23b7-d093-4b9a-91e0-ffc94ed05517" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "6a1a23b7-d093-4b9a-91e0-ffc94ed05517" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "6a1a23b7-d093-4b9a-91e0-ffc94ed05517" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "6a1a23b7-d093-4b9a-91e0-ffc94ed05517" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "6a1a23b7-d093-4b9a-91e0-ffc94ed05517" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me execute the plan-save workflow.
+
+**Step 1: Parse Arguments** — No flags provided, standalone plan.
+
+**Step 2: Generate Branch Slug**
+
+The plan title is "Add Phase 0 Plan-Only PR Detection to pr-address" → `add-plan-only-pr-detection`
+
+**Step 3: Generate Plan Summary**
+
+Plan-only PRs (where the diff is just `.erk/impl-context/plan.md`) currently fall through to Code Review Mode in pr-address, causing the agent to either meta-plan or execute changes described in the plan rather than editing the plan text. This adds Phase 0 file-based detection to route plan-only PRs to a dedicated Plan File Mode that constrains edits to the plan document itself.
+
+**Step 4: Run Save Command**</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2620" cache_read_input_tokens="65430" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2620}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Fd5rYJuQkku9j2cXdL5CPu">
+    <param name="command">erk exec plan-save --format json --session-id="6a1a23b7-d093-4b9a-91e0-ffc94ed05517" --bra...[truncated 319 chars]...only PRs to a dedicated Plan File Mode that constrains edits to the plan document itself."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2620" cache_read_input_tokens="65430" output_tokens="445" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2620, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Fd5rYJuQkku9j2cXdL5CPu">
+{"success": true, "plan_number": 8641, "plan_url": "https://github.com/dagster-io/erk/pull/8641", "title": "[erk-plan] Plan: Add Phase 0 Plan-Only PR Detection to pr-address", "branch_name": "plnd/add-plan-only-pr-detection-03-02-1608", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/6a1a23b7-d093-4b9a-91e0-ffc94ed05517/plan_snapshots/000001-6f32ae8d"}
+  </tool_result>
+</session>
