@@ -339,7 +339,7 @@ def build_blocking_message(
         "draft PR, and stop. Does NOT proceed to implementation."
     )
     option_num += 1
-    if not branch_has_commits:
+    if not branch_has_commits and current_branch not in ("master", "main"):
         lines.append(
             f'  {option_num}. "Create a plan PR on the current branch" - Save plan as a PR on the '
             "current branch and stop. Does NOT proceed to implementation."
@@ -378,7 +378,7 @@ def build_blocking_message(
         ]
     )
 
-    if not branch_has_commits:
+    if not branch_has_commits and current_branch not in ("master", "main"):
         lines.extend(
             [
                 "",
