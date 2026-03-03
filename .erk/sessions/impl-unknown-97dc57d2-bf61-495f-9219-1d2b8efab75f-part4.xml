@@ -1,0 +1,693 @@
+<session>
+  <meta source="agent-a62ece5" />
+  <meta branch="plnd/centralize-plan-phase-03-03-0250" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Search for a FakePlanBackend or fake plan backend class in the erk codebase. I need to understand how it implements get_plan() for test usage. Look in packages/erk-shared/ and tests/ directories. Return the file path and key method signatures.</user>
+  <assistant>I'll search for the FakePlanBackend class in the erk codebase, focusing on the packages/erk-shared/ and tests/ directories.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18478" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18478, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01EhJDddrjCJACpEzsXqZYYL">
+    <param name="pattern">FakePlanBackend|fake.*plan.*backend</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18478" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18478, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01N8MD2fk3EfHFipzrUci7v1">
+    <param name="pattern">packages/erk-shared/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18478" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18478, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01V3haBa7TrjvLS7kaFMfCys">
+    <param name="pattern">tests/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18478" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18478, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N8MD2fk3EfHFipzrUci7v1">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/config/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/config/schema.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/testing.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/factories.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/types.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/debug.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/entity_store/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/debug_timing.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/plan_list_service.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/typing_utils.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/llm_caller.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/frontmatter.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/fakes.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/script_writer.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/prompt_executor.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/objective_list_service.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/entity_store/log.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/entity_store/entity.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/entity_store/state.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/entity_store/types.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/env.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_docs/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_launcher/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_docs/printing.py
+
+... [71 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01V3haBa7TrjvLS7kaFMfCys">
+/home/runner/work/erk/erk/tests/__init__.py
+/home/runner/work/erk/erk/tests/artifacts/__init__.py
+/home/runner/work/erk/erk/tests/cli/__init__.py
+/home/runner/work/erk/erk/tests/artifacts/test_build_config.py
+/home/runner/work/erk/erk/tests/artifacts/test_orphan_cleanup.py
+/home/runner/work/erk/erk/tests/artifacts/test_artifact_health.py
+/home/runner/work/erk/erk/tests/artifacts/test_staleness.py
+/home/runner/work/erk/erk/tests/artifacts/test_orphans.py
+/home/runner/work/erk/erk/tests/artifacts/test_state.py
+/home/runner/work/erk/erk/tests/artifacts/test_cli.py
+/home/runner/work/erk/erk/tests/artifacts/test_missing.py
+/home/runner/work/erk/erk/tests/artifacts/test_detection.py
+/home/runner/work/erk/erk/tests/artifacts/test_discovery.py
+/home/runner/work/erk/erk/tests/artifacts/test_sync.py
+/home/runner/work/erk/erk/tests/cli/commands/__init__.py
+/home/runner/work/erk/erk/tests/cli/commands/split/__init__.py
+/home/runner/work/erk/erk/tests/cli/commands/split/test_plan.py
+/home/runner/work/erk/erk/tests/commands/__init__.py
+/home/runner/work/erk/erk/tests/commands/admin/__init__.py
+/home/runner/work/erk/erk/tests/commands/admin/test_test_workflow.py
+/home/runner/work/erk/erk/tests/commands/admin/test_plan_implement_workflow.py
+/home/runner/work/erk/erk/tests/commands/admin/test_github_pr_setting.py
+/home/runner/work/erk/erk/tests/commands/branch/__init__.py
+/home/runner/work/erk/erk/tests/commands/cc/__init__.py
+/home/runner/work/erk/erk/tests/commands/branch/test_delete_cmd.py
+/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py
+/home/runner/work/erk/erk/tests/commands/cc/test_session_list.py
+/home/runner/work/erk/erk/tests/commands/cc/test_session_show.py
+/home/runner/work/erk/erk/tests/commands/cc/test_session_show_agent_types.py
+/home/runner/work/erk/erk/tests/commands/dash/__init__.py
+
+... [71 lines omitted] ...
+
+/home/runner/work/erk/erk/tests/commands/land/test_branch_errors.py
+  </tool_result>
+  <tool_result tool="toolu_01EhJDddrjCJACpEzsXqZYYL">
+Found 3 files
+tests/unit/cli/commands/pr/test_lifecycle_update.py
+tests/unit/cli/commands/exec/scripts/test_get_plan_info.py
+tests/unit/cli/commands/exec/scripts/test_get_pr_for_plan.py
+  </tool_result>
+  <assistant>Let me search more specifically for "FakePlanBackend" and look at the test files that mention plan:</assistant>
+  <usage input_tokens="6348" cache_creation_input_tokens="387" cache_read_input_tokens="18478" cache_creation="{'ephemeral_5m_input_tokens': 387, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01NP3vFWiftQGVBvA2ZRJCTL">
+    <param name="pattern">class FakePlanBackend</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">20</param>
+  </tool_use>
+  <usage input_tokens="6348" cache_creation_input_tokens="387" cache_read_input_tokens="18478" cache_creation="{'ephemeral_5m_input_tokens': 387, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VLYrpHPqvTVHcQfkojS6DZ">
+    <param name="pattern">PlanBackend|plan.*backend</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="6348" cache_creation_input_tokens="387" cache_read_input_tokens="18478" cache_creation="{'ephemeral_5m_input_tokens': 387, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VLYrpHPqvTVHcQfkojS6DZ">
+Found 11 files
+packages/erk-shared/tests/unit/learn/test_tracking.py
+packages/erk-shared/tests/unit/github/test_plan_issues.py
+packages/erk-shared/src/erk_shared/scratch/session_markers.py
+packages/erk-shared/src/erk_shared/plan_store/__init__.py
+packages/erk-shared/src/erk_shared/plan_store/backend.py
+packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+packages/erk-shared/src/erk_shared/learn/tracking.py
+packages/erk-shared/src/erk_shared/context/context.py
+packages/erk-shared/src/erk_shared/context/helpers.py
+packages/erk-shared/src/erk_shared/context/testing.py
+  </tool_result>
+  <tool_result tool="toolu_01NP3vFWiftQGVBvA2ZRJCTL">
+No matches found
+
+[Showing results with pagination = limit: 20, offset: 0]
+  </tool_result>
+  <assistant>Great! I found the plan_store backend. Let me examine it more closely:</assistant>
+  <usage input_tokens="272" cache_creation_input_tokens="6825" cache_read_input_tokens="18865" cache_creation="{'ephemeral_5m_input_tokens': 6825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WuWHjHiFQkCsswTJQcDpqe">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+  </tool_use>
+  <usage input_tokens="272" cache_creation_input_tokens="6825" cache_read_input_tokens="18865" cache_creation="{'ephemeral_5m_input_tokens': 6825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ETUYErdC1LoRQEUohRq2CT">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/testing.py</param>
+  </tool_use>
+  <usage input_tokens="272" cache_creation_input_tokens="6825" cache_read_input_tokens="18865" cache_creation="{'ephemeral_5m_input_tokens': 6825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01R7MibaPKRHJmhJwa5U4Ht4">
+    <param name="pattern">get_plan|FakePlan</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="272" cache_creation_input_tokens="6825" cache_read_input_tokens="18865" cache_creation="{'ephemeral_5m_input_tokens': 6825, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WuWHjHiFQkCsswTJQcDpqe">
+     1→"""Abstract interface for plan storage backends.
+     2→
+     3→PlanBackend is a BACKEND, not a gateway. Backends compose gateways (like GitHubIssues)
+     4→and should NOT have fake implementations. To test code that uses a PlanBackend,
+     5→inject fake gateways into the real backend implementation.
+     6→
+     7→Example:
+     8→    # Testing with fake gateway
+     9→    fake_issues = FakeGitHubIssues()
+    10→    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    11→    backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+    12→    result = backend.create_plan(...)
+    13→
+    14→    # Assert on gateway mutations
+    15→    assert fake_issues.created_issues[0][0] == "expected title"
+    16→
+    17→See: .claude/skills/fake-driven-testing/references/gateway-architecture.md
+    18→for the full gateway vs backend architecture.
+    19→"""
+    20→
+    21→from __future__ import annotations
+    22→
+    23→from abc import ABC, abstractmethod
+    24→from collections.abc import Mapping
+    25→from pathlib import Path
+    26→
+    27→from erk_shared.gateway.github.metadata.schemas import (
+    28→    CREATED_FROM_SESSION,
+    29→    LAST_LEARN_SESSION,
+    30→    LAST_LOCAL_IMPL_SESSION,
+
+... [442 lines omitted] ...
+
+    99→            RuntimeError: If provider fails
+   165→            RuntimeError: If provider fails or plan not found
+   196→            RuntimeError: If plan not found
+   201→            raise RuntimeError(msg)
+   310→            RuntimeError: If provider fails
+   329→            PlanHeaderNotFoundError: If plan has no plan-header metadata block
+   330→            RuntimeError: If provider fails or plan not found
+   352→            RuntimeError: If plan not found or update fails
+   365→            RuntimeError: If provider fails, plan not found, or invalid identifier
+   384→            RuntimeError: If plan not found or update fails
+   406→            RuntimeError: If provider fails or plan not found
+   425→            RuntimeError: If provider fails or plan not found
+   442→            RuntimeError: If plan not found
+   464→            RuntimeError: If provider fails or plan not found
+  </tool_result>
+  <tool_result tool="toolu_01ETUYErdC1LoRQEUohRq2CT">
+     1→"""Test factories for creating ErkContext instances.
+     2→
+     3→This module provides factory functions for creating test contexts with
+     4→fake implementations. These are used by both erk and erk-kits tests.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from pathlib import Path
+    10→from typing import TYPE_CHECKING
+    11→
+    12→from erk_shared.context.context import ErkContext
+    13→from erk_shared.context.types import GlobalConfig, LoadedConfig, RepoContext
+    14→
+    15→if TYPE_CHECKING:
+    16→    from erk.artifacts.paths import ErkPackageInfo
+    17→from erk_shared.core.fakes import (
+    18→    FakeCodespaceRegistry,
+    19→    FakeLlmCaller,
+    20→    FakeObjectiveListService,
+    21→    FakePlanListService,
+    22→    FakePromptExecutor,
+    23→    FakeScriptWriter,
+    24→)
+    25→from erk_shared.core.llm_caller import LlmCaller, LlmResponse
+    26→from erk_shared.core.prompt_executor import PromptExecutor
+    27→from erk_shared.gateway.agent_docs.abc import AgentDocs
+    28→from erk_shared.gateway.agent_launcher.abc import AgentLauncher
+    29→from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+    30→from erk_shared.gateway.codespace.abc import Codespace
+
+... [200 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01R7MibaPKRHJmhJwa5U4Ht4">
+Found 3 files
+packages/erk-shared/src/erk_shared/core/__init__.py
+packages/erk-shared/src/erk_shared/core/fakes.py
+packages/erk-shared/src/erk_shared/core/plan_list_service.py
+  </tool_result>
+  <assistant>Let me check the fakes.py file and also look at PlannedPRBackend:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="9918" cache_read_input_tokens="25690" cache_creation="{'ephemeral_5m_input_tokens': 9918, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NjgtKstb6eubdkBQ8DPwDE">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/fakes.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9918" cache_read_input_tokens="25690" cache_creation="{'ephemeral_5m_input_tokens': 9918, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GBjbavyiKNkd5Uu9xJufbU">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9918" cache_read_input_tokens="25690" cache_creation="{'ephemeral_5m_input_tokens': 9918, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NjgtKstb6eubdkBQ8DPwDE">
+     1→"""Fake implementations for erk-specific ABCs.
+     2→
+     3→These fakes are used in tests and in contexts (like erk-kits) that
+     4→don't need the real erk implementations.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from collections.abc import Iterator
+    10→from dataclasses import dataclass, field
+    11→from pathlib import Path
+    12→from typing import TYPE_CHECKING, NamedTuple
+    13→
+    14→from erk_shared.context.types import PermissionMode
+    15→from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey
+    16→from erk_shared.core.objective_list_service import ObjectiveListService
+    17→from erk_shared.core.plan_list_service import PlanListData, PlanListService
+    18→from erk_shared.core.prompt_executor import (
+    19→    ExecutorEvent,
+    20→    PromptExecutor,
+    21→    PromptResult,
+    22→)
+    23→from erk_shared.core.script_writer import ScriptResult, ScriptWriter
+    24→from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry, RegisteredCodespace
+    25→from erk_shared.gateway.github.types import GitHubRepoLocation, IssueFilterState
+    26→from erk_shared.plan_store.types import PlanState
+    27→
+    28→if TYPE_CHECKING:
+    29→    from erk_shared.gateway.http.abc import HttpClient
+    30→
+
+... [322 lines omitted] ...
+
+   156→        return PromptResult(success=True, output="", error=None)
+   250→            raise ValueError(f"No codespace with name '{name}' exists")
+   255→            raise ValueError(f"Codespace with name '{codespace.name}' already exists")
+   260→            raise ValueError(f"No codespace with name '{name}' exists")
+   312→            warnings=self._data.warnings,
+   320→    response: LlmResponse | NoApiKey | LlmCallFailed
+   322→    def call(self, prompt: str, *, system_prompt: str) -&gt; LlmResponse | NoApiKey | LlmCallFailed:
+  </tool_result>
+  <tool_result tool="toolu_01GBjbavyiKNkd5Uu9xJufbU">
+     1→"""Draft PR implementation of plan storage.
+     2→
+     3→Uses GitHub draft pull requests as the backing store for plans.
+     4→PR body contains the plan-header metadata block followed by plan content.
+     5→The "erk-plan" label identifies plan PRs vs regular draft PRs.
+     6→"""
+     7→
+     8→from collections.abc import Mapping
+     9→from datetime import UTC
+    10→from pathlib import Path
+    11→
+    12→from erk_shared.gateway.github.abc import GitHub
+    13→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    14→from erk_shared.gateway.github.metadata.core import (
+    15→    add_metadata_block,
+    16→    find_metadata_block,
+    17→    has_metadata_block,
+    18→    render_metadata_block,
+    19→    replace_metadata_block_in_body,
+    20→)
+    21→from erk_shared.gateway.github.metadata.plan_header import (
+    22→    format_plan_header_body,
+    23→)
+    24→from erk_shared.gateway.github.metadata.schemas import (
+    25→    CREATED_FROM_SESSION,
+    26→    CREATED_FROM_WORKFLOW_RUN_URL,
+    27→    LEARNED_FROM_ISSUE,
+    28→    OBJECTIVE_ISSUE,
+    29→    SOURCE_REPO,
+    30→    PlanHeaderSchema,
+
+... [125 lines omitted] ...
+
+    45→    PlanHeaderNotFoundError,
+    64→        ValueError: If value cannot be converted to int
+    72→    raise ValueError(f"objective_issue must be str or int, got {type(value).__name__}")
+  </tool_result>
+  <assistant>Let me continue reading the PlannedPRBackend.get_plan() method and check for any fake implementations:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="6476" cache_read_input_tokens="35608" cache_creation="{'ephemeral_5m_input_tokens': 6476, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TEhZ7nrVCt7B1WhCtUCfgU">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="offset">150</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6476" cache_read_input_tokens="35608" cache_creation="{'ephemeral_5m_input_tokens': 6476, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015bvaQEjqxzyiVoqJhURye7">
+    <param name="pattern">class Fake.*Backend|PlannedPRBackend.*fake</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="glob">**/*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6476" cache_read_input_tokens="35608" cache_creation="{'ephemeral_5m_input_tokens': 6476, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TEhZ7nrVCt7B1WhCtUCfgU">
+   150→        """Fetch plan from a draft PR by PR number.
+   151→
+   152→        Args:
+   153→            repo_root: Repository root directory
+   154→            plan_id: PR number as string (e.g., "42")
+   155→
+   156→        Returns:
+   157→            Plan with converted data, or PlanNotFound if PR does not exist
+   158→        """
+   159→        pr_number = int(plan_id)
+   160→        result = self._github.get_pr(repo_root, pr_number)
+   161→        if isinstance(result, PRNotFound):
+   162→            return PlanNotFound(plan_id=plan_id)
+   163→        return self._convert_to_plan(result)
+   164→
+   165→    def get_comments(self, repo_root: Path, plan_id: str) -&gt; list[str]:
+   166→        """Get all comments on a plan's draft PR.
+   167→
+   168→        On GitHub, PR discussion comments share the same API as issue comments,
+   169→        so we delegate to GitHubIssues.get_issue_comments() with the PR number.
+   170→
+   171→        Args:
+   172→            repo_root: Repository root directory
+   173→            plan_id: PR number as string
+   174→
+   175→        Returns:
+   176→            List of comment body strings, ordered oldest to newest
+   177→        """
+   178→        pr_number = int(plan_id)
+   179→        return self._github_issues.get_issue_comments(repo_root, pr_number)
+
+... [125 lines omitted] ...
+
+   237→            RuntimeError: If PR not found
+   243→            raise RuntimeError(msg)
+   280→            RuntimeError: If branch_name not in metadata or creation fails
+   284→            raise RuntimeError("branch_name is required in metadata for PlannedPRBackend")
+  </tool_result>
+  <tool_result tool="toolu_015bvaQEjqxzyiVoqJhURye7">
+Found 38 files
+tests/unit/plan_store/test_plan_backend_interface.py
+tests/unit/plan_store/test_planned_pr_backend.py
+tests/unit/cli/commands/test_implement_shared.py
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+tests/unit/cli/commands/pr/test_metadata_helpers.py
+tests/unit/cli/commands/pr/test_shared.py
+tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py
+tests/unit/cli/commands/land/pipeline/test_resolve_plan_id.py
+tests/unit/cli/commands/land/test_land_learn.py
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py
+tests/unit/cli/commands/exec/scripts/test_setup_impl.py
+tests/unit/cli/commands/exec/scripts/test_track_learn_evaluation.py
+tests/unit/cli/commands/exec/scripts/test_track_learn_result.py
+tests/unit/cli/commands/exec/scripts/test_update_plan_header.py
+tests/unit/cli/commands/exec/scripts/test_update_pr_description.py
+tests/unit/cli/commands/exec/scripts/test_plan_update.py
+tests/unit/cli/commands/exec/scripts/test_post_workflow_started_comment.py
+tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py
+tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py
+tests/unit/cli/commands/exec/scripts/test_get_plan_info.py
+tests/unit/cli/commands/exec/scripts/test_get_plan_metadata.py
+tests/unit/cli/commands/exec/scripts/test_get_pr_for_plan.py
+tests/unit/cli/commands/exec/scripts/test_handle_no_changes.py
+tests/unit/cli/commands/exec/scripts/test_impl_signal.py
+tests/unit/cli/commands/exec/scripts/test_add_plan_label.py
+tests/unit/cli/commands/exec/scripts/test_add_plan_labels.py
+tests/unit/cli/commands/exec/scripts/test_close_pr.py
+tests/unit/cli/commands/exec/scripts/test_close_prs.py
+tests/unit/cli/commands/exec/scripts/test_create_impl_context_from_plan.py
+
+... [9 lines omitted] ...
+  </tool_result>
+  <assistant>Let me check the test utils to see if there's a test helper or fake backend:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3155" cache_read_input_tokens="42084" cache_creation="{'ephemeral_5m_input_tokens': 3155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Czf6X4FPasHcXQrYEK76HB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3155" cache_read_input_tokens="42084" cache_creation="{'ephemeral_5m_input_tokens': 3155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012WyUaBN6BsRxqLmda852xG">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/plan_store/test_planned_pr_backend.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3155" cache_read_input_tokens="42084" cache_creation="{'ephemeral_5m_input_tokens': 3155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Czf6X4FPasHcXQrYEK76HB">
+     1→"""Helpers for creating plan stores with Plan objects in tests.
+     2→
+     3→This module provides utilities for tests that need to set up plan state.
+     4→It converts Plan objects to PlannedPRBackend backed by FakeGitHub.
+     5→"""
+     6→
+     7→from erk_shared.gateway.github.fake import FakeGitHub
+     8→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.metadata.plan_header import format_plan_header_body
+    11→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    12→from erk_shared.gateway.time.fake import FakeTime
+    13→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    14→from erk_shared.plan_store.planned_pr_lifecycle import (
+    15→    DETAILS_CLOSE,
+    16→    DETAILS_OPEN,
+    17→)
+    18→from erk_shared.plan_store.types import Plan, PlanState
+    19→
+    20→_PLAN_HEADER_END_MARKER = "&lt;!-- /erk:metadata-block:plan-header --&gt;"
+    21→
+    22→
+    23→def _plan_to_pr_details(plan: Plan) -&gt; PRDetails:
+    24→    """Convert a Plan to PRDetails for FakeGitHub.
+    25→
+    26→    Handles two body formats:
+    27→    1. Body with plan-header metadata block: reformats into PR body format
+    28→       (metadata block + separator + plan content)
+    29→    2. Plain body without metadata: uses body directly as PR body
+    30→
+
+... [240 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_012WyUaBN6BsRxqLmda852xG">
+     1→"""PlannedPRBackend-specific tests.
+     2→
+     3→Tests for behaviors unique to the draft PR backend that aren't covered
+     4→by the parameterized interface tests in test_plan_backend_interface.py.
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→
+     9→import pytest
+    10→
+    11→from erk_shared.gateway.github.fake import FakeGitHub
+    12→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    13→from erk_shared.gateway.github.types import PRNotFound
+    14→from erk_shared.gateway.time.fake import FakeTime
+    15→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    16→from erk_shared.plan_store.planned_pr_lifecycle import (
+    17→    DETAILS_OPEN,
+    18→    build_plan_stage_body,
+    19→    extract_plan_content,
+    20→)
+    21→from erk_shared.plan_store.types import PlanNotFound, PlanQuery, PlanState
+    22→
+    23→# =============================================================================
+    24→# Provider name
+    25→# =============================================================================
+    26→
+    27→
+    28→def test_provider_name() -&gt; None:
+    29→    """PlannedPRBackend identifies itself correctly."""
+    30→    backend = PlannedPRBackend(FakeGitHub(), FakeGitHubIssues(), time=FakeTime())
+
+... [75 lines omitted] ...
+
+    40→    """create_plan raises RuntimeError when branch_name is missing from metadata."""
+    43→    with pytest.raises(RuntimeError, match="branch_name is required"):
+  </tool_result>
+  <assistant>Perfect! Now let me look at the PlannedPRBackend's _convert_to_plan method to complete the picture:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="9965" cache_read_input_tokens="45239" cache_creation="{'ephemeral_5m_input_tokens': 9965, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013gATaryy2S1nxUVxTSwJWy">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="offset">300</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9965" cache_read_input_tokens="45239" cache_creation="{'ephemeral_5m_input_tokens': 9965, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01E4TRoqbZmHkfbU2xm4QTBH">
+    <param name="pattern">def _convert_to_plan|def get_metadata_field|def get_all_metadata_fields</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="9965" cache_read_input_tokens="45239" cache_creation="{'ephemeral_5m_input_tokens': 9965, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013gATaryy2S1nxUVxTSwJWy">
+   300→        created_from_session_str: str | None = (
+   301→            str(created_from_session_raw) if created_from_session_raw is not None else None
+   302→        )
+   303→
+   304→        learned_from_issue_raw = metadata.get(LEARNED_FROM_ISSUE)
+   305→        learned_from_issue_val: int | None = (
+   306→            int(learned_from_issue_raw)
+   307→            if learned_from_issue_raw is not None and isinstance(learned_from_issue_raw, (int, str))
+   308→            else None
+   309→        )
+   310→
+   311→        created_from_workflow_run_url_raw = metadata.get(CREATED_FROM_WORKFLOW_RUN_URL)
+   312→        created_from_workflow_run_url_val: str | None = (
+   313→            str(created_from_workflow_run_url_raw)
+   314→            if created_from_workflow_run_url_raw is not None
+   315→            else None
+   316→        )
+   317→
+   318→        created_at = self._time.now().replace(tzinfo=UTC).isoformat()
+   319→        metadata_body = format_plan_header_body(
+   320→            created_at=created_at,
+   321→            created_by=username,
+   322→            worktree_name=None,
+   323→            branch_name=branch_name,
+   324→            plan_comment_id=None,
+   325→            last_dispatched_run_id=None,
+   326→            last_dispatched_node_id=None,
+   327→            last_dispatched_at=None,
+   328→            last_local_impl_at=None,
+   329→            last_local_impl_event=None,
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01E4TRoqbZmHkfbU2xm4QTBH">
+379:    def get_metadata_field(
+406:    def get_all_metadata_fields(
+686:    def _convert_to_plan(self, pr: PRDetails) -&gt; Plan:
+  </tool_result>
+  <assistant>Let me get the _convert_to_plan method:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1977" cache_read_input_tokens="55204" cache_creation="{'ephemeral_5m_input_tokens': 1977, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XMk7QoYpK3hCGv4Rbho52E">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="offset">686</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1977" cache_read_input_tokens="55204" cache_creation="{'ephemeral_5m_input_tokens': 1977, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XMk7QoYpK3hCGv4Rbho52E">
+   686→    def _convert_to_plan(self, pr: PRDetails) -&gt; Plan:
+   687→        """Convert PRDetails to Plan, extracting plan content from body.
+   688→
+   689→        Args:
+   690→            pr: PRDetails from GitHub API
+   691→
+   692→        Returns:
+   693→            Plan with plan content extracted from body
+   694→        """
+   695→        plan_body = extract_plan_content(pr.body)
+   696→        plan = pr_details_to_plan(pr, plan_body=plan_body)
+   697→
+   698→        # If labels weren't in PRDetails, check via has_pr_label
+   699→        return plan
+   700→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! Now I have a comprehensive understanding. Let me create a summary of my findings:
+
+## Search Results Summary
+
+I found that there is **no FakePlanBackend class** in the erk codebase. Instead, the project follows an architectural pattern where:
+
+### Key Findings:
+
+1. **Architecture Pattern**: `PlanBackend` is intentionally designed as a **BACKEND (not a gateway)** and explicitly should NOT have fake implementations. This is documented in the header comment of the backend file.
+
+2. **File Location**: 
+   - **Abstract Interface**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py`
+   - **Concrete Implementation**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py`
+
+3. **Test Strategy Instead**: To test code that uses a PlanBackend, the pattern is:
+   - **Inject fake gateways** (not fake backends) into the **real backend implementation**
+   - Example: `PlannedPRBackend(FakeGitHub(...), FakeGitHubIssues(...), time=FakeTime())`
+
+### Key Method Signatures:
+
+**PlanBackend Abstract Interface** (`backend.py`, lines 51-467):
+
+```python
+class PlanBackend(ABC):
+    @abstractmethod
+    def get_plan(self, repo_root: Path, plan_id: str) -&gt; Plan | PlanNotFound:
+        """Fetch a plan by identifier."""
+        ...
+    
+    @abstractmethod
+    def list_plans(self, repo_root: Path, query: PlanQuery) -&gt; list[Plan]:
+        """Query plans by criteria."""
+        ...
+    
+    @abstractmethod
+    def get_metadata_field(self, repo_root: Path, plan_id: str, field_name: str) -&gt; object | PlanNotFound:
+        """Get a single metadata field from a plan."""
+        ...
+    
+    @abstractmethod
+    def get_all_metadata_fields(self, repo_root: Path, plan_id: str) -&gt; dict[str, object] | PlanNotFound:
+        """Get all metadata fields from the plan-header block."""
+        ...
+    
+    def find_sessions_for_plan(self, repo_root: Path, plan_id: str) -&gt; SessionsForPlan:
+        """Find all Claude Code sessions associated with a plan (concrete method)."""
+        ...
+```
+
+**PlannedPRBackend Implementation** (`planned_pr.py`, lines 75-700):
+
+```python
+class PlannedPRBackend(PlanBackend):
+    def __init__(self, github: GitHub, github_issues: GitHubIssues, *, time: Time) -&gt; None:
+        """Initialize with GitHub and issues gateways."""
+        ...
+    
+    def get_plan(self, repo_root: Path, plan_id: str) -&gt; Plan | PlanNotFound:
+        """Fetch plan from a draft PR by PR number."""
+        # Lines 149-163: Parses plan_id as int, calls github.get_pr(), converts to Plan
+        ...
+    
+    def get_metadata_field(self, repo_root: Path, plan_id: str, field_name: str) -&gt; object | PlanNotFound:
+        """Get a single metadata field from the plan-header block in PR body."""
+        # Lines 379-405
+        ...
+    
+    def get_all_metadata_fields(self, repo_root: Path, plan_id: str) -&gt; dict[str, object] | PlanNotFound:
+        """Get all metadata fields from plan-header."""
+        # Lines 406+
+        ...
+    
+    def _convert_to_plan(self, pr: PRDetails) -&gt; Plan:
+        """Convert PRDetails to Plan, extracting plan content from body."""
+        # Lines 686-699: Uses extract_plan_content() and pr_details_to_plan()
+        ...
+```
+
+### Test Usage Pattern:
+
+**File**: `/home/runner/work/erk/erk/tests/test_utils/plan_helpers.py`
+
+The recommended test pattern for using PlanBackend:
+
+```python
+def create_plan_store_with_plans(plans: dict[str, Plan]) -&gt; tuple[PlannedPRBackend, FakeGitHub]:
+    """Create PlannedPRBackend backed by FakeGitHub.
+    
+    Tests inject fake gateways into the real backend implementation.
+    """
+    # Convert Plan objects to PRDetails
+    pr_details: dict[int, PRDetails] = {}
+    for plan_id, plan in plans.items():
+        details = _plan_to_pr_details(plan)
+        pr_details[int(plan_id)] = details
+    
+    # Create PlannedPRBackend with FakeGitHub (NOT a FakePlanBackend)
+    fake_github = FakeGitHub(pr_details=pr_details)
+    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    return backend, fake_github
+```
+
+### Context Factory:
+
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/testing.py` (lines 43-224)
+
+The `context_for_test()` factory function defaults to creating a `PlannedPRBackend` when `plan_store` parameter is None (lines 184-189).</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="435" cache_read_input_tokens="57181" cache_creation="{'ephemeral_5m_input_tokens': 435, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
