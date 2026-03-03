@@ -11,6 +11,15 @@
         "planning-6a1a23b7-d093-4b9a-91e0-ffc94ed05517-6a1a23b7-d093-4b9a-91e0-ffc94ed05517-part1.xml",
         "planning-6a1a23b7-d093-4b9a-91e0-ffc94ed05517-6a1a23b7-d093-4b9a-91e0-ffc94ed05517-part2.xml"
       ]
+    },
+    {
+      "session_id": "d9bde9aa-1cf3-457e-b188-4a95663d2327",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-02T16:11:14.364971+00:00",
+      "files": [
+        "impl-d9bde9aa-1cf3-457e-b188-4a95663d2327-d9bde9aa-1cf3-457e-b188-4a95663d2327.xml"
+      ]
     }
   ]
 }
