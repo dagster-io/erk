@@ -13,6 +13,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
     ExitAction,
     HookInput,
+    _gather_inputs,
     abbreviate_for_header,
     build_blocking_message,
     determine_exit_action,
@@ -22,6 +23,7 @@ from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.context.testing import context_for_test
+from erk_shared.gateway.branch_manager.fake import FakeBranchManager
 from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
 from erk_shared.gateway.git.fake import FakeGit
 
@@ -1175,3 +1177,101 @@ class TestHookIntegration:
         assert "PLAN SAVE PROMPT" in result.output
         # Verify the branch context is included in the output
         assert "(br:feature-branch)" in result.output
+
+
+class TestGatherInputsParentBranch:
+    """Tests that _gather_inputs uses Graphite stack parent for commit detection."""
+
+    def test_uses_graphite_parent_for_commit_counting(self, tmp_path: Path) -> None:
+        """When Graphite parent exists, count commits ahead of parent, not trunk.
+
+        In a Graphite stack, a branch may have 0 commits ahead of its stack parent
+        but many commits ahead of trunk (because the parent itself has commits).
+        The hook should use the stack parent to determine branch_has_commits.
+        """
+        session_id = "session-abc123"
+        plan_slug = "test-plan"
+
+        # Create .erk/ to mark as managed project
+        (tmp_path / ".erk").mkdir()
+
+        # Create plan file so needs_blocking_message is True
+        plans_dir = tmp_path / ".claude" / "plans"
+        plans_dir.mkdir(parents=True)
+        plan_file = plans_dir / f"{plan_slug}.md"
+        plan_file.write_text("# Test Plan\n\nContent", encoding="utf-8")
+
+        claude_installation = FakeClaudeInstallation.for_test(
+            plans_dir_path=plans_dir,
+            session_slugs={session_id: [plan_slug]},
+            plans={plan_slug: "# Test Plan\n\nContent"},
+        )
+
+        # FakeGit: 0 commits ahead of parent-branch, 5 ahead of main
+        git = FakeGit(
+            current_branches={tmp_path: "feature-branch"},
+            commits_ahead={
+                (tmp_path, "parent-branch"): 0,
+                (tmp_path, "main"): 5,
+            },
+        )
+
+        # FakeBranchManager with parent configured
+        branch_manager = FakeBranchManager(
+            parent_branches={"feature-branch": "parent-branch"},
+        )
+
+        hook_input = _gather_inputs(
+            session_id=session_id,
+            repo_root=tmp_path,
+            github_planning_enabled=True,
+            claude_installation=claude_installation,
+            git=git,
+            branch_manager=branch_manager,
+            global_config=None,
+        )
+
+        # Should use parent-branch (0 commits ahead), not main (5 commits ahead)
+        assert hook_input.branch_has_commits is False
+
+    def test_falls_back_to_trunk_when_no_parent(self, tmp_path: Path) -> None:
+        """When no Graphite parent exists, fall back to trunk for commit counting."""
+        session_id = "session-abc123"
+        plan_slug = "test-plan"
+
+        # Create .erk/ to mark as managed project
+        (tmp_path / ".erk").mkdir()
+
+        # Create plan file so needs_blocking_message is True
+        plans_dir = tmp_path / ".claude" / "plans"
+        plans_dir.mkdir(parents=True)
+        plan_file = plans_dir / f"{plan_slug}.md"
+        plan_file.write_text("# Test Plan\n\nContent", encoding="utf-8")
+
+        claude_installation = FakeClaudeInstallation.for_test(
+            plans_dir_path=plans_dir,
+            session_slugs={session_id: [plan_slug]},
+            plans={plan_slug: "# Test Plan\n\nContent"},
+        )
+
+        # FakeGit: 3 commits ahead of main (trunk)
+        git = FakeGit(
+            current_branches={tmp_path: "feature-branch"},
+            commits_ahead={(tmp_path, "main"): 3},
+        )
+
+        # FakeBranchManager with NO parent configured (plain Git mode)
+        branch_manager = FakeBranchManager()
+
+        hook_input = _gather_inputs(
+            session_id=session_id,
+            repo_root=tmp_path,
+            github_planning_enabled=True,
+            claude_installation=claude_installation,
+            git=git,
+            branch_manager=branch_manager,
+            global_config=None,
+        )
+
+        # Should fall back to trunk (main, 3 commits ahead)
+        assert hook_input.branch_has_commits is True
