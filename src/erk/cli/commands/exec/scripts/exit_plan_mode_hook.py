@@ -372,8 +372,10 @@ def build_blocking_message(
             "",
             "If user chooses 'Save plan as draft PR':",
             f"  1. Run {save_cmd}",
-            "  2. Call ExitPlanMode to end the planning session.",
-            "     The hook will allow exit and turn plan mode off.",
+            "  2. Tell the user: 'Plan saved! I\\'ll exit plan mode now —",
+            "     click **Approve** on the next dialog to confirm.",
+            "     This will NOT start implementation.'",
+            "  3. Call ExitPlanMode to end the planning session.",
         ]
     )
 
@@ -400,8 +402,10 @@ def build_blocking_message(
                 "",
                 "If user chooses 'Save plan on current branch':",
                 f"  1. Run {save_cmd} --current-branch",
-                "  2. Call ExitPlanMode to end the planning session.",
-                "     The hook will allow exit and turn plan mode off.",
+                "  2. Tell the user: 'Plan saved on current branch! I\\'ll exit plan mode now —",
+                "     click **Approve** on the next dialog to confirm.",
+                "     This will NOT start implementation.'",
+                "  3. Call ExitPlanMode to end the planning session.",
                 "     This converts the current branch into the plan PR branch",
                 "     instead of creating a new branch.",
             ]
@@ -472,7 +476,8 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
     if hook_input.plan_saved_marker_exists:
         saved_msg = (
             "✅ Plan PR saved. Planning session complete. "
-            "Plan mode is now off - implement from a dedicated worktree."
+            "Plan mode is now off. Do NOT implement — "
+            "use a dedicated worktree for implementation."
         )
         return HookOutput(
             ExitAction.ALLOW,
