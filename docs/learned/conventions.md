@@ -200,9 +200,9 @@ Property names should match user-facing output labels. When the CLI displays a l
 
 **Example:** Property naming in `next_steps.py`:
 
-<!-- Source: packages/erk-shared/src/erk_shared/output/next_steps.py, IssueNextSteps -->
+<!-- Source: packages/erk-shared/src/erk_shared/output/next_steps.py, PlanNextSteps -->
 
-See `IssueNextSteps` and `PlannedPRNextSteps` in `packages/erk-shared/src/erk_shared/output/next_steps.py` — property names like `checkout`, `implement_new_br` match their output labels "Checkout plan:", "Implement plan:".
+See `PlanNextSteps` in `packages/erk-shared/src/erk_shared/output/next_steps.py` — property names like `checkout`, `implement_new_br` match their output labels "Checkout plan:", "Implement plan:".
 
 ## String Method Preferences
 
