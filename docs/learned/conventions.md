@@ -200,11 +200,9 @@ Property names should match user-facing output labels. When the CLI displays a l
 
 **Example:** Property naming in `next_steps.py`:
 
-- Properties use descriptive names: `checkout`, `checkout_new_slot`, `implement_new_br`, `implement_new_wt`, `implement_new_br_dangerous`, `implement_new_wt_dangerous`
-- The output labels "Checkout plan:", "Implement plan:" match the property name prefixes
-- The constant `CHECKOUT_SLASH_COMMAND` value intentionally remains `"/erk:prepare"` because the slash command `/erk:prepare` still exists
+<!-- Source: packages/erk-shared/src/erk_shared/output/next_steps.py, IssueNextSteps -->
 
-**Source:** `packages/erk-shared/src/erk_shared/output/next_steps.py`
+See `IssueNextSteps` and `PlannedPRNextSteps` in `packages/erk-shared/src/erk_shared/output/next_steps.py` — property names like `checkout`, `implement_new_br` match their output labels "Checkout plan:", "Implement plan:".
 
 ## String Method Preferences
 

@@ -21,51 +21,21 @@ After saving a plan, erk displays next-steps commands to the user. The formattin
 
 ### `IssueNextSteps`
 
-For issue-based plans. Takes `plan_number: int` and `url: str`.
+<!-- Source: packages/erk-shared/src/erk_shared/output/next_steps.py, IssueNextSteps -->
 
-| Property                     | Returns                                                                        |
-| ---------------------------- | ------------------------------------------------------------------------------ |
-| `view`                       | URL string                                                                     |
-| `checkout`                   | `erk br co --for-plan {N}`                                                     |
-| `dispatch`                   | `erk pr dispatch {N}`                                                          |
-| `checkout_new_slot`          | `erk br co --new-slot --for-plan {N}`                                          |
-| `implement_new_br`           | `source "$(erk br co --for-plan {N} --script)" && erk implement`               |
-| `implement_new_br_dangerous` | `source "$(erk br co --for-plan {N} --script)" && erk implement -d`            |
-| `implement_new_wt`           | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement`    |
-| `implement_new_wt_dangerous` | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement -d` |
+For issue-based plans. Takes `plan_number: int` and `url: str`. See `IssueNextSteps` in `packages/erk-shared/src/erk_shared/output/next_steps.py` for the full list of properties (view, checkout, dispatch, implement variants).
 
 ### `PlannedPRNextSteps`
 
-For draft-PR plans. Takes `pr_number: int`, `branch_name: str`, and `url: str`.
+<!-- Source: packages/erk-shared/src/erk_shared/output/next_steps.py, PlannedPRNextSteps -->
 
-| Property                     | Returns                                                                        |
-| ---------------------------- | ------------------------------------------------------------------------------ |
-| `view`                       | URL string                                                                     |
-| `checkout`                   | `erk br co --for-plan {N}`                                                     |
-| `dispatch`                   | `erk pr dispatch {N}`                                                          |
-| `checkout_new_slot`          | `erk br co --new-slot --for-plan {N}`                                          |
-| `implement_new_br`           | `source "$(erk br co --for-plan {N} --script)" && erk implement`               |
-| `implement_new_br_dangerous` | `source "$(erk br co --for-plan {N} --script)" && erk implement -d`            |
-| `implement_new_wt`           | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement`    |
-| `implement_new_wt_dangerous` | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement -d` |
+For draft-PR plans. Takes `pr_number: int`, `branch_name: str`, and `url: str`. See `PlannedPRNextSteps` in `packages/erk-shared/src/erk_shared/output/next_steps.py` for the full list of properties (identical to `IssueNextSteps`).
 
 ## Hierarchical Output Format
 
-The plain-text formatters produce a hierarchical format:
+<!-- Source: packages/erk-shared/src/erk_shared/output/next_steps.py, format_next_steps_plain -->
 
-```
-Implement plan #<N>:
-  In new br:        source "$(erk br co --for-plan <N> --script)" && erk implement
-    (dangerously):  source "$(erk br co --for-plan <N> --script)" && erk implement -d
-  In new wt:        source "$(erk br co --new-slot --for-plan <N> --script)" && erk implement
-    (dangerously):  source "$(erk br co --new-slot --for-plan <N> --script)" && erk implement -d
-
-Checkout plan #<N>:
-  In new br:  erk br co --for-plan <N>
-  In new wt:  erk br co --new-slot --for-plan <N>
-
-Dispatch to queue: erk pr dispatch <N>
-```
+The plain-text formatters produce a hierarchical format with three sections: "Implement plan" (with branch/worktree and dangerous variants), "Checkout plan" (branch/worktree), and "Dispatch to queue". See `format_next_steps_plain()` and `format_planned_pr_next_steps_plain()` in `packages/erk-shared/src/erk_shared/output/next_steps.py` for the exact output templates.
 
 ## Shell Activation Pattern
 
