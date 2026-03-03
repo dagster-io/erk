@@ -1,0 +1,1219 @@
+<session>
+  <meta branch="plnd/create-erk-mcp-server-03-03-0534" />
+  <meta model="claude-opus-4-6" />
+  <user>do we test mcp in ci right now</user>
+  <thinking>The user is asking whether MCP (Model Context Protocol) is tested in CI currently. Let me explore the codebase to find out.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="11249" cache_read_input_tokens="20661" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11249}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the CI configuration and test files for MCP-related testing.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="11249" cache_read_input_tokens="20661" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11249}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01QvMn4vfMP8E35UM87Yaxag">
+    <param name="pattern">mcp</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.github</param>
+    <param name="-i">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11249" cache_read_input_tokens="20661" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11249}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QvMn4vfMP8E35UM87Yaxag">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01K4Jcck7WP1H9C7hXU5Nnkb">
+    <param name="pattern">mcp</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/tests</param>
+    <param name="-i">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11249" cache_read_input_tokens="20661" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11249}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01K4Jcck7WP1H9C7hXU5Nnkb">
+Found 1 file
+tests/unit/core/test_codex_output_parser.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_015cYZ1Vg8jPLpq6URhurMJx">
+    <param name="pattern">mcp</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/src</param>
+    <param name="-i">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11249" cache_read_input_tokens="20661" output_tokens="373" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11249, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015cYZ1Vg8jPLpq6URhurMJx">
+Found 1 file
+src/erk/core/codex_output_parser.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012uLvEjVZvbMyZ1sTkVJjd5">
+    <param name="pattern">mcp</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/src/erk/core/codex_output_parser.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="505" cache_read_input_tokens="31910" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 505}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012uLvEjVZvbMyZ1sTkVJjd5">
+137:    if item_type == "mcp_tool_call":
+170:    if item_type == "mcp_tool_call":
+171:        return _handle_mcp_tool_call(item)
+274:def _handle_mcp_tool_call(item: dict) -&gt; list[ExecutorEvent]:
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01XVs5n2qE4iwTwBwTWQLafg">
+    <param name="pattern">**/mcp*</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="505" cache_read_input_tokens="31910" output_tokens="211" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 505, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XVs5n2qE4iwTwBwTWQLafg">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.venv/lib/python3.13/site-packages/material/templates/.icons/octicons/mcp-16.svg
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.venv/lib/python3.13/site-packages/material/templates/.icons/octicons/mcp-24.svg
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.venv/lib/python3.13/site-packages/anthropic/lib/tools/mcp.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.venv/lib/python3.13/site-packages/fastmcp/mcp_config.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.venv/lib/python3.13/site-packages/fastmcp/cli/install/mcp_json.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.venv/lib/python3.13/site-packages/fastmcp/contrib/mcp_mixin/mcp_mixin.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.venv/lib/python3.13/site-packages/fastmcp/server/mixins/mcp_operations.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.venv/lib/python3.13/site-packages/fastmcp/utilities/mcp_server_config/v1/mcp_server_config.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.venv/bin/mcp
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.venv/lib/python3.13/site-packages/fastmcp/__pycache__/mcp_config.cpython-313.pyc
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.venv/lib/python3.13/site-packages/fastmcp/server/mixins/__pycache__/mcp_operations.cpython-313.pyc
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.venv/lib/python3.13/site-packages/fastmcp/utilities/mcp_server_config/v1/__pycache__/mcp_server_config.cpython-313.pyc
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01T7PQojUy5HTK8xqbFniFvK">
+    <param name="pattern">src/**/mcp*/**</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1141" cache_read_input_tokens="32415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1141}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01T7PQojUy5HTK8xqbFniFvK">
+No files found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01CsJ39f4r9AAGP1pFvWdkXU">
+    <param name="pattern">src/**/*mcp*</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1141" cache_read_input_tokens="32415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1141}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CsJ39f4r9AAGP1pFvWdkXU">
+No files found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_0152ZYw1SfhDAzuMKTRgssEH">
+    <param name="pattern">tests/**/*mcp*</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1141" cache_read_input_tokens="32415" output_tokens="264" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1141, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0152ZYw1SfhDAzuMKTRgssEH">
+No files found
+  </tool_result>
+  <assistant>No. There are no MCP-specific tests or CI coverage right now. The only MCP references in the erk source are in `src/erk/core/codex_output_parser.py` (handling `mcp_tool_call` items from Codex output), which is tested in `tests/unit/core/test_codex_output_parser.py` — but that's just the Codex parser, not testing the MCP server itself.
+
+The MCP server code that was just added on this branch (`b94011ac4`) has no corresponding test files and no CI workflow entries.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="33556" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 358, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>add ci step to test the mcp server</user>
+  <thinking>The user wants to add a CI step to test the MCP server. Let me explore the codebase to understand:
+
+1. The current MCP server implementation
+2. The current CI setup
+3. How to test an MCP server
+
+Let me launch explore agents to understand these areas.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="412" cache_read_input_tokens="33914" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 412}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the MCP server implementation and CI setup to plan this properly.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="412" cache_read_input_tokens="33914" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 412}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01DwgYQL8bQmsZDyR9gaQm6c">
+    <param name="description">Explore MCP server implementation</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 495 chars]... the files changed in those commits.
+
+Be thorough - read the full MCP server source files.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="412" cache_read_input_tokens="33914" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 412}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01LRmFC967ZnnzH1LQsVjiob">
+    <param name="description">Explore CI configuration</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 612 chars]...s that test actual server processes
+
+Also check docs/learned/ci/ for any CI documentation.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="412" cache_read_input_tokens="33914" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 412}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01PMgL5Ny91o8SZNoYYuQtkb">
+    <param name="description">Explore FastMCP testing patterns</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 675 chars]...ols without network calls?
+- How does the project's fake-driven testing architecture work?</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="412" cache_read_input_tokens="33914" output_tokens="911" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 412, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DwgYQL8bQmsZDyR9gaQm6c">
+Perfect! Now I have a comprehensive understanding of the MCP server implementation. Let me provide you with a detailed summary.
+
+## MCP Server Implementation Summary
+
+I've thoroughly explored the MCP server implementation in this project. Here's what I found:
+
+### 1. **MCP Server Location &amp; Structure**
+
+The MCP server is located in a new workspace package at:
+- **Package**: `/packages/erk-mcp/`
+- **Source files**:
+  - `/packages/erk-mcp/src/erk_mcp/server.py` - FastMCP server with 3 tools
+  - `/packages/erk-mcp/src/erk_mcp/__main__.py` - CLI entry point
+  - `/packages/erk-mcp/src/erk_mcp/__init__.py` - Package init (empty)
+  - `/packages/erk-mcp/pyproject.toml` - Package metadata
+  - `/packages/erk-mcp/tests/test_server.py` - Unit tests
+
+### 2. **FastMCP Dependency**
+
+- **Dependency**: `fastmcp&gt;=2.0` (in `pyproject.toml`)
+- **Framework**: FastMCP is a Python framework for building Model Context Protocol servers
+- **No direct erk dependencies**: The MCP server communicates with erk exclusively via subprocess calls to the `erk` CLI
+
+### 3. **Exposed Tools (MCP Protocol)**
+
+The server exposes **three MCP tools**:
+
+#### **Tool 1: `plan_list`**
+- **Function**: Lists erk plans with their status, labels, and metadata
+- **Implementation**: Calls `erk exec dash-data [--state open|closed]`
+
+... [99 lines omitted] ...
+
+- Handles error cases with detailed error messages
+- Raises `RuntimeError` on non-zero exit codes with stderr output
+- Tests for `_run_erk` error handling and success cases
+- Validates argument passing and error propagation
+- **Error handling**: Propagates erk CLI errors as RuntimeError with full context
+  </tool_result>
+  <tool_result tool="toolu_01PMgL5Ny91o8SZNoYYuQtkb">
+Perfect! Now let me compile a comprehensive report with all the information found:
+
+## FastMCP Server Testing Guide
+
+Based on my exploration of the FastMCP package and the existing erk-mcp server implementation, here's a comprehensive guide to testing FastMCP servers:
+
+### 1. **FastMCP Testing Utilities Available**
+
+FastMCP provides excellent testing utilities in `fastmcp.utilities.tests`:
+
+#### **`run_server_async()` - Recommended Async Testing Method**
+
+This is the **best practice** for testing FastMCP servers:
+
+```python
+from fastmcp import FastMCP, Client
+from fastmcp.client.transports import StreamableHttpTransport
+from fastmcp.utilities.tests import run_server_async
+
+# Usage in tests
+async with run_server_async(mcp_server_instance) as url:
+    async with Client(StreamableHttpTransport(url)) as client:
+        result = await client.call_tool("tool_name", {"param": "value"})
+```
+
+**Key advantages:**
+- Runs server as an async task in the same process
+- No subprocess coordination or sleeps needed
+- Eliminates timing issues
+- Fast and reliable cleanup
+
+... [211 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01LRmFC967ZnnzH1LQsVjiob">
+Excellent! Now let me create a comprehensive summary document of my findings:
+
+## CI Setup Analysis - Complete Report
+
+I've thoroughly explored the CI infrastructure for the erk project. Here's a comprehensive breakdown of your CI setup:
+
+### 1. **GitHub Actions Workflows**
+
+The project uses **containerless CI** (no Docker containers) with several key workflows:
+
+**Main CI Workflow** (`.github/workflows/ci.yml`):
+- **Check-submission**: Validates .erk/impl-context folder presence (skips draft PRs and plan-review labeled PRs)
+- **Style/Lint checks** (parallel):
+  - `format` - Python formatting via ruff
+  - `lint` - Python linting via ruff  
+  - `fix-formatting` - Auto-fixes markdown (prettier) and Python formatting with auto-commit
+  - `docs-check` - AGENTS.md compliance + agent documentation checks
+  - `prettier-check` - Markdown formatting
+  
+- **Type/Test checks** (parallel):
+  - `ty` - Type checking with py type checker
+  - `unit-tests` - Unit tests across Python 3.11, 3.12, 3.13, 3.14 (matrix)
+  - `integration-tests` - Integration tests with real I/O
+  - `erkbot-tests` - Erkbot package tests
+  
+- **Autofix** (runs after all checks) - Claude-powered repair of formatting/type/linting failures
+- **CI-summarize** - Haiku model summarizes CI failures for PR authors
+
+**Other Workflows:**
+- `code-reviews.yml`, `plan-implement.yml`, `pr-address.yml`, `pr-rebase.yml`, `learn.yml`, `one-shot.yml`, `docs.yml`, `pr-rewrite.yml`
+
+... [207 lines omitted] ...
+
+- `ci-failure-summarization.md` - Haiku failure summary generation
+  </tool_result>
+  <thinking>Now I have a good understanding of the MCP server implementation, CI setup, and FastMCP testing capabilities. Let me read the critical files to understand the details before designing the plan.
+
+Let me read:
+1. The existing MCP server test file
+2. The CI workflow to understand where to add the step
+3. The Makefile to see existing test targets
+4. The MCP server source code</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="21615" cache_read_input_tokens="20675" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21615}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the critical files before designing the plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="21615" cache_read_input_tokens="20675" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21615}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LX6hig5NoDd9rwSZzC47LJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/packages/erk-mcp/tests/test_server.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="21615" cache_read_input_tokens="20675" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21615}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LX6hig5NoDd9rwSZzC47LJ">
+     1→"""Tests for erk_mcp.server MCP tools and _run_erk wrapper."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import subprocess
+     6→from unittest.mock import patch
+     7→
+     8→import pytest
+     9→
+    10→from erk_mcp.server import _run_erk, one_shot, plan_list, plan_view
+    11→
+    12→
+    13→class TestRunErk:
+    14→    """Tests for _run_erk subprocess wrapper."""
+    15→
+    16→    @patch("erk_mcp.server.subprocess.run")
+    17→    def test_success_returns_completed_process(self, mock_run: patch) -&gt; None:
+    18→        mock_run.return_value = subprocess.CompletedProcess(
+    19→            args=["erk", "exec", "dash-data"],
+    20→            returncode=0,
+    21→            stdout="output",
+    22→            stderr="",
+    23→        )
+    24→
+    25→        result = _run_erk(["exec", "dash-data"])
+    26→
+    27→        assert result.stdout == "output"
+    28→        mock_run.assert_called_once_with(
+    29→            ["erk", "exec", "dash-data"],
+    30→            capture_output=True,
+
+... [120 lines omitted] ...
+
+    36→    def test_nonzero_exit_raises_runtime_error(self, mock_run: patch) -&gt; None:
+    45→            RuntimeError,
+    46→            match="erk bad-cmd failed \\(exit 1\\): command not found",
+    51→    def test_error_message_includes_all_args(self, mock_run: patch) -&gt; None:
+    56→            stderr="  some error  ",
+    60→            RuntimeError,
+    61→            match=r"erk exec dash-data --state open failed \(exit 2\): some error",
+   145→    def test_propagates_runtime_error(self, mock_run_erk: patch) -&gt; None:
+   146→        mock_run_erk.side_effect = RuntimeError("erk one-shot failed (exit 1): timeout")
+   148→        with pytest.raises(RuntimeError, match="timeout"):
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YYBz1JpigeeqpR7r2d5TSr">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/packages/erk-mcp/src/erk_mcp/server.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="21615" cache_read_input_tokens="20675" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21615}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YYBz1JpigeeqpR7r2d5TSr">
+     1→"""FastMCP server exposing erk capabilities as MCP tools."""
+     2→
+     3→import subprocess
+     4→
+     5→from fastmcp import FastMCP
+     6→
+     7→mcp = FastMCP("erk")
+     8→
+     9→
+    10→def _run_erk(args: list[str]) -&gt; subprocess.CompletedProcess[str]:
+    11→    """Run an erk CLI command and return the result."""
+    12→    result = subprocess.run(
+    13→        ["erk", *args],
+    14→        capture_output=True,
+    15→        text=True,
+    16→        check=False,
+    17→    )
+    18→    if result.returncode != 0:
+    19→        stderr = result.stderr.strip()
+    20→        raise RuntimeError(f"erk {' '.join(args)} failed (exit {result.returncode}): {stderr}")
+    21→    return result
+    22→
+    23→
+    24→@mcp.tool()
+    25→def plan_list(state: str | None = None) -&gt; str:
+    26→    """List erk plans with their status, labels, and metadata.
+    27→
+    28→    Returns structured JSON from the erk dashboard.
+    29→    Use the state parameter to filter by 'open' or 'closed'.
+    30→    """
+
+... [29 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BjgUNtHvrLY2guKXQVPqBf">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/packages/erk-mcp/pyproject.toml</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="21615" cache_read_input_tokens="20675" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21615}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BjgUNtHvrLY2guKXQVPqBf">
+     1→[project]
+     2→name = "erk-mcp"
+     3→version = "0.1.0"
+     4→description = "FastMCP server exposing erk capabilities as MCP tools"
+     5→requires-python = "&gt;=3.11"
+     6→dependencies = [
+     7→    "fastmcp&gt;=2.0",
+     8→]
+     9→
+    10→[project.scripts]
+    11→erk-mcp = "erk_mcp.__main__:main"
+    12→
+    13→[build-system]
+    14→requires = ["hatchling"]
+    15→build-backend = "hatchling.build"
+    16→
+    17→[tool.hatch.build.targets.wheel]
+    18→packages = ["src/erk_mcp"]
+    19→
+  </tool_result>
+  <tool_use name="Read" id="toolu_015qgYi7DbKshUdktLwWj5tf">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/Makefile</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="21615" cache_read_input_tokens="20675" output_tokens="430" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 21615, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015qgYi7DbKshUdktLwWj5tf">
+     1→.PHONY: format-check lint prettier prettier-check ty upgrade-ty test test-erkbot py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check slackbot mcp mcp-dev
+     2→
+     3→prettier:
+     4→	prettier --write '**/*.md' --ignore-path .gitignore
+     5→
+     6→prettier-check:
+     7→	prettier --check '**/*.md' --ignore-path .gitignore
+     8→
+     9→format-check:
+    10→	uv run ruff format --check
+    11→
+    12→lint:
+    13→	uv run ruff check
+    14→
+    15→fix:
+    16→	uv run ruff check --fix --unsafe-fixes
+    17→	uv run ruff format
+    18→	prettier --write '**/*.md' --ignore-path .gitignore
+    19→
+    20→ty:
+    21→	uv run ty check
+    22→
+    23→upgrade-ty:
+    24→	uv remove ty --group dev &amp;&amp; uv add --dev ty
+    25→
+    26→# === Package-specific test targets ===
+    27→
+    28→test-erkbot:
+    29→	cd packages/erkbot &amp;&amp; uv run pytest tests/ -x -q
+    30→
+
+... [157 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check the CI workflow to see the existing test jobs and how erkbot tests are structured as a reference for adding a package test.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6606" cache_read_input_tokens="42290" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6606}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013FYdDYs8MCGNo8DUD5sg7N">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.github/workflows/ci.yml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6606" cache_read_input_tokens="42290" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6606, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013FYdDYs8MCGNo8DUD5sg7N">
+     1→name: ci
+     2→
+     3→on:
+     4→  push:
+     5→    branches: [master]
+     6→  pull_request:
+     7→    types: [opened, synchronize, reopened, ready_for_review]
+     8→  workflow_dispatch:
+     9→
+    10→permissions:
+    11→  contents: write # Needed for autofix to push
+    12→  actions: write # Needed to re-trigger workflow after autofix push
+    13→  statuses: write # Needed for autofix to update commit status
+    14→
+    15→concurrency:
+    16→  group: ci-${{ github.head_ref || github.ref }}
+    17→  cancel-in-progress: true
+    18→
+    19→jobs:
+    20→  check-submission:
+    21→    if: github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    22→    runs-on: ubuntu-latest
+    23→    timeout-minutes: 5
+    24→    outputs:
+    25→      skip: ${{ steps.check.outputs.skip }}
+    26→    steps:
+    27→      - uses: actions/checkout@v4
+    28→      - name: Check for submission folder
+    29→        id: check
+    30→        uses: ./.github/actions/check-impl-context
+
+... [452 lines omitted] ...
+
+    84→            echo "::error::Files need formatting or docs are out of sync"
+    93→            echo "::error::Formatting issues found (cannot auto-fix fork PRs)"
+   196→      (needs.format.result == 'failure' ||
+   197→       needs.lint.result == 'failure' ||
+   198→       needs.fix-formatting.result == 'failure' ||
+   199→       needs.docs-check.result == 'failure' ||
+   200→       needs.ty.result == 'failure')
+   313→      # Inlined from .github/actions/setup-claude-erk to avoid CodeQL warning
+   340→      - name: Collect failure context
+   342→        id: failures
+   353→      - name: Collect actual errors
+   355→        id: errors
+   357→          errors=""
+   359→          if [ "${{ needs.format.result }}" = "failure" ]; then
+   360→            errors+="=== RUFF FORMAT ERRORS ===\n"
+   361→            errors+="$(uv run ruff format --check . 2&gt;&amp;1 || true)\n\n"
+   364→          if [ "${{ needs.lint.result }}" = "failure" ]; then
+   365→            errors+="=== RUFF LINT ERRORS ===\n"
+   366→            errors+="$(uv run ruff check . 2&gt;&amp;1 || true)\n\n"
+   369→          if [ "${{ needs.fix-formatting.result }}" = "failure" ]; then
+   370→            errors+="=== MARKDOWN-FIX ERRORS ===\n"
+   371→            errors+="$(prettier --check '**/*.md' --ignore-path .gitignore 2&gt;&amp;1 || true)\n\n"
+   374→          if [ "${{ needs.docs-check.result }}" = "failure" ]; then
+   375→            errors+="=== DOCS CHECK ERRORS ===\n"
+   376→            errors+="$(make md-check 2&gt;&amp;1 || true)\n"
+   377→            errors+="$(make docs-check 2&gt;&amp;1 || true)\n\n"
+   380→          if [ "${{ needs.ty.result }}" = "failure" ]; then
+   381→            errors+="=== TY TYPE ERRORS ===\n"
+   382→            errors+="$(uv run ty check 2&gt;&amp;1 || true)\n\n"
+   386→          echo -e "$errors" &gt; /tmp/errors.txt
+   397→          echo "Debug: erk version: $(erk --version 2&gt;&amp;1 || echo 'version failed')"
+   407→            --var-file "ERRORS=/tmp/errors.txt" 2&gt;&amp;1); then
+   408→            echo "Error: Failed to get ci-autofix prompt"
+   415→            echo "Error: ci-autofix prompt is empty (command succeeded but no output)"
+   437→  # === CI Failure Summarization (Haiku) ===
+   456→      (needs.format.result == 'failure' ||
+   457→       needs.lint.result == 'failure' ||
+   458→       needs.fix-formatting.result == 'failure' ||
+   459→       needs.docs-check.result == 'failure' ||
+   460→       needs.ty.result == 'failure' ||
+   461→       needs.unit-tests.result == 'failure' ||
+   462→       needs.integration-tests.result == 'failure' ||
+   463→       needs.erkbot-tests.result == 'failure')
+   477→      - name: Summarize failures
+  </tool_result>
+  <thinking>Now I have a comprehensive understanding of everything needed. Let me design the plan. The task is straightforward:
+
+1. Add a `test-erk-mcp` Makefile target to run the erk-mcp package tests
+2. Add an `erk-mcp-tests` job in CI workflow (following the erkbot-tests pattern)
+3. Add it to the `ci-summarize` needs list
+4. Add it to the `py-fast-ci`, `fast-ci`, and `all-ci` local targets
+
+Let me also check if there's a CI tripwires doc I should read first.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="7312" cache_read_input_tokens="48896" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7312}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the CI tripwires before writing the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7312" cache_read_input_tokens="48896" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7312}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01U75kTSXgVBtJF28FqgBpRp">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/docs/learned/ci/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7312" cache_read_input_tokens="48896" output_tokens="258" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7312, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01U75kTSXgVBtJF28FqgBpRp">
+     1→---
+     2→title: Ci Tripwires
+     3→read_when:
+     4→  - "working on ci code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from ci/*.md frontmatter --&gt;
+    10→
+    11→# Ci Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Add branches-ignore for ephemeral branch patterns** → Read [GitHub Actions Workflow Gating Patterns](workflow-gating-patterns.md) first. Label-based gating doesn't work on push events — use branches-ignore to prevent workflow queuing
+    16→
+    17→**Creating or modifying .prettierignore** → Read [Makefile Prettier Ignore Path](makefile-prettier-ignore-path.md) first. The Makefile uses `prettier --ignore-path .gitignore`, NOT `.prettierignore`. Adding rules to .prettierignore has no effect. Modify .gitignore to control what Prettier ignores.
+    18→
+    19→**GitHub Actions cannot interpolate Python constants** → Read [GitHub Actions Label Filtering Reference](github-actions-label-filtering.md) first. label strings must be hardcoded in YAML
+    20→
+    21→**GitHub Actions workflow needs to perform operations like gist creation, or session uploads fail in CI** → Read [GitHub CLI PR Comment Patterns](github-cli-comment-patterns.md) first. GitHub Actions GITHUB_TOKEN has restricted scope by default. Check token capabilities or use personal access token (PAT) for elevated permissions like gist creation.
+    22→
+    23→**Include cache keys for downloaded binaries** → Read [Composite Action Patterns](composite-action-patterns.md) first. NEVER skip cache keys for downloaded binaries — cache saves 10-20s per workflow run.
+    24→
+    25→**Label checks in push event workflows** → Read [GitHub Actions Label Queries](github-actions-label-queries.md) first. Job-level label access via github.event.pull_request.labels is ONLY available in pull_request events, NOT push events. For push events, you must use step-level GitHub API queries with gh cli or REST API.
+    26→
+    27→**Renaming a GitHub label used in CI automation** → Read [CI Label Rename Checklist](label-rename-checklist.md) first. Labels are referenced in multiple places: (1) Job-level if: conditions in all workflow files, (2) Step name descriptions and comments, (3) Documentation examples showing the label check. Missing any location will cause CI behavior to diverge from intent. Use the CI Label Rename Checklist to ensure comprehensive updates.
+    28→
+    29→**Use !contains() pattern for label-based gating** → Read [GitHub Actions Workflow Gating Patterns](workflow-gating-patterns.md) first. Negation is critical — contains() without ! skips all push events
+    30→
+
+... [96 lines omitted] ...
+
+    47→**asking devrun agent to fix errors** → Read [CI Iteration Pattern with devrun Agent](ci-iteration.md) first. devrun is READ-ONLY. Never prompt with 'fix errors' or 'make tests pass'. Use pattern: 'Run command and report results', then parent agent fixes based on output.
+    53→**changing the ci-summarize job `needs` array** → Read [CI Failure Summarization](ci-failure-summarization.md) first. The `needs` array must reference actual job names in ci.yml. Broken references silently skip the job. Verify every name exists.
+    71→**editing markdown files in docs/** → Read [Markdown Formatting in CI Workflows](markdown-formatting.md) first. Run `make prettier` via devrun after markdown edits. Multi-line edits trigger Prettier failures. Never manually format - use the command.
+    79→**matching check names from summaries to GitHub check runs** → Read [CI Failure Summarization](ci-failure-summarization.md) first. GitHub prepends 'ci / ' to check names in statusCheckRollup. Use match_summary_to_check() which strips this prefix.
+    81→**parsing ERK-CI-SUMMARY markers without re.DOTALL** → Read [CI Failure Summarization](ci-failure-summarization.md) first. Summary content is multiline. The regex uses re.DOTALL so `.` matches newlines. Without it, multiline summaries won't be captured.
+    91→**removing test jobs from autofix's needs list** → Read [Autofix Job Needs](autofix-job-needs.md) first. Autofix depends on ALL validation jobs including unit-tests and integration-tests. It needs full failure context to attempt intelligent fixes. See the needs array in ci.yml.
+    93→**removing test jobs from autofix's needs list** → Read [CI Job Ordering Strategy](job-ordering-strategy.md) first. Autofix depends on ALL validation jobs including unit-tests and integration-tests. It needs full failure context to attempt fixes. See autofix-job-needs.md.
+   117→**using heredoc (&lt;&lt;) syntax in GitHub Actions YAML** → Read [CI Prompt Patterns](prompt-patterns.md) first. Use `erk exec get-embedded-prompt` instead. Heredocs in YAML `run:` blocks have fragile indentation that causes silent failures.
+  </tool_result>
+  <assistant>Good. Now I have everything I need. The key CI tripwires for this task:
+- All validation jobs must depend on both `check-submission` and `fix-formatting`
+- The `ci-summarize` `needs` array must reference actual job names
+- Follow the erkbot-tests pattern exactly
+
+Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4531" cache_read_input_tokens="56208" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4531}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_018wFDkVZC4DBuaLK8CV5CWB">
+    <param name="file_path">/Users/schrockn/.claude/plans/cached-mapping-graham.md</param>
+    <param name="content"># Plan: Add CI Step for erk-mcp Tests
+
+## Context
+
+The `erk-mcp` package (`packages/erk-mc...[truncated 1517 chars]...make test-erk-mcp` locally to confirm the target works
+- Verify CI workflow YAML is valid
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4531" cache_read_input_tokens="56208" output_tokens="757" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4531, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018wFDkVZC4DBuaLK8CV5CWB">
+File created successfully at: /Users/schrockn/.claude/plans/cached-mapping-graham.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01UejQFLsMY63puDQcGpn9BS">
+    <param name="plan"># Plan: Add CI Step for erk-mcp Tests
+
+## Context
+
+The `erk-mcp` package (`packages/erk-mc...[truncated 1517 chars]...make test-erk-mcp` locally to confirm the target works
+- Verify CI workflow YAML is valid
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="887" cache_read_input_tokens="60739" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 887, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UejQFLsMY63puDQcGpn9BS">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/cached-mapping-graham.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Add CI Step for erk-mcp Tests
+Current context: (wt:erk-slot-62) (br:plnd/create-erk-mcp-server-03-03-0534) (pr:#8660)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/crea"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR on new branch" - Create a new branch, save plan as draft PR, and stop. Does NOT proceed to implementation.
+  2. "Just implement on the current branch without creating a PR." - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR on new branch':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Just implement on the current branch without creating a PR.':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 22c14385-fc7f-4fbd-9027-1b62b3ca04a5 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/cached-mapping-graham.md
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+## Plan: Add CI Step for erk-mcp Tests
+
+### Context
+
+The `erk-mcp` package (`packages/erk-mcp/`) was recently added with a FastMCP server and unit tests, but those tests aren't run in CI. This means regressions can land undetected.
+
+### Changes
+
+**1. Add Makefile target `test-erk-mcp`** — Under "Package-specific test targets" section, following the `test-erkbot` pattern (cd into package, run pytest).
+
+**2. Add `erk-mcp-tests` job to CI workflow** (`.github/workflows/ci.yml`) — New job after `erkbot-tests` with `needs: [check-submission, fix-formatting]`, same guard conditions.
+
+**3. Add `erk-mcp-tests` to `ci-summarize` needs** — So failures get summarized in PR comments.
+
+**4. Add erk-mcp tests to local CI targets** — Add to `py-fast-ci`, `fast-ci`, and `all-ci` Makefile targets.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="708" cache_read_input_tokens="61626" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 708}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01NR2wmnipFCyz9RUQo99z19">
+    <param name="questions">[{'question': '📋 Plan: Add CI Step for erk-mcp Tests\nCurrent context: (wt:erk-slot-62) (b...[truncated 470 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="708" cache_read_input_tokens="61626" output_tokens="515" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 708, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NR2wmnipFCyz9RUQo99z19">
+User has answered your questions: "📋 Plan: Add CI Step for erk-mcp Tests
+Current context: (wt:erk-slot-62) (br:plnd/create-erk-mcp-server-03-03-0534) (pr:#8660)
+
+What would you like to do with this plan?"="Create a plan PR on new branch". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01CF1WYXJMTZwNUHbVENwHrL">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="624" cache_read_input_tokens="62334" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 624, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CF1WYXJMTZwNUHbVENwHrL">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="22c14385-fc7f-4fbd-9027-1b62b3ca04a5" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "22c14385-fc7f-4fbd-9027-1b62b3ca04a5" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true** (new-wt recommended → "In new wt" listed first):
+
+```
+OR exit Claude Code first, then run one of:
+
+Implement plan #&lt;plan_number&gt;:
+  In new wt:        source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+  In plan br:       source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+
+Checkout plan #&lt;plan_number&gt;:
+  In new wt:  erk br co --new-slot --for-plan &lt;plan_number&gt;
+  In plan br: erk br co --for-plan &lt;plan_number&gt;
+
+Dispatch to queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false** (same slot recommended → "Here" listed first):
+
+```
+OR exit Claude Code first, then run one of:
+
+Implement plan #&lt;plan_number&gt;:
+  In plan br:       source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+
+Checkout plan #&lt;plan_number&gt;:
+  In plan br: erk br co --for-plan &lt;plan_number&gt;
+  In new wt:  erk br co --new-slot --for-plan &lt;plan_number&gt;
+
+Dispatch to queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout plan #&lt;plan_number&gt;:  erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to queue:             erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "22c14385-fc7f-4fbd-9027-1b62b3ca04a5" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "22c14385-fc7f-4fbd-9027-1b62b3ca04a5" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "22c14385-fc7f-4fbd-9027-1b62b3ca04a5" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>Let me follow the plan-save instructions. I need to:
+
+1. Parse arguments - no special flags passed
+2. Generate a branch slug from the plan title "Add CI Step for erk-mcp Tests"
+3. Generate a plan summary
+4. Run the save command
+5. Display results
+
+Let me start.
+
+**Step 1: Parse Arguments**
+No `--plan-type`, no `--objective`, no `--current-branch` flags.
+
+**Step 2: Generate Branch Slug**
+Plan title: "Add CI Step for erk-mcp Tests"
+Slug: "add-mcp-ci-tests" (4 words, 18 chars)
+
+
+Now I'm creating the plan summary that describes adding erk-mcp package tests to CI through a new Makefile target and GitHub Actions job following the erkbot-tests pattern, then executing the save command to persist this plan.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2858" cache_read_input_tokens="62958" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2858}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NwT1v6XTNwms3apr6KZMuT">
+    <param name="command">erk exec plan-save --format json --session-id="22c14385-fc7f-4fbd-9027-1b62b3ca04a5" --bra...[truncated 119 chars]...irroring the erkbot-tests pattern, and including it in ci-summarize and local CI targets."</param>
+    <param name="description">Save plan as draft PR on new branch</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2858" cache_read_input_tokens="62958" output_tokens="436" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2858, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NwT1v6XTNwms3apr6KZMuT">
+Exit code 1
+Traceback (most recent call last):
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/packages/erk-shared/src/erk_shared/subprocess_utils.py", line 122, in run_subprocess_with_context
+    result = subprocess.run(
+        cmd,
+    ...&lt;8 lines&gt;...
+        **kwargs,
+    )
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['gt', 'track', 'plnd/add-mcp-ci-tests-03-03-0600', '--parent', 'plnd/create-erk-mcp-server-03-03-0534', '--no-interactive']' returned non-zero exit status 1.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.venv/bin/erk", line 10, in &lt;module&gt;
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/src/erk/cli/cli.py", line 230, in main
+    cli()
+    ~~~^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.venv/lib/python3.13/site-packages/click/core.py", line 1485, in __call__
+    return self.main(*args, **kwargs)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.venv/lib/python3.13/site-packages/click/core.py", line 1406, in main
+    rv = self.invoke(ctx)
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.venv/lib/python3.13/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+
+... [139 lines omitted] ...
+
+    raise RuntimeError(error_msg) from e
+RuntimeError: Failed to track branch 'plnd/add-mcp-ci-tests-03-03-0600' with Graphite
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['gt', 'track', 'plnd/add-mcp-ci-tests-03-03-0600', '--parent', 'plnd/create-erk-mcp-server-03-03-0534', '--no-interactive']' returned non-zero exit status 1.
+The above exception was the direct cause of the following exception:
+    raise RuntimeError(error_msg) from e
+RuntimeError: Failed to track branch 'plnd/add-mcp-ci-tests-03-03-0600' with Graphite
+ERROR: plnd/create-erk-mcp-server-03-03-0534 is not in the history of plnd/add-mcp-ci-tests-03-03-0600.
+  </tool_result>
+  <thinking>The plan-save failed because Graphite can't track the new branch as a child of the current branch. The current branch `plnd/create-erk-mcp-server-03-03-0534` isn't in the history of the new branch. This is a Graphite stacking issue.
+
+Let me try with `--current-branch` flag instead, since we're already on a plan branch for the MCP server. Actually, looking at the error more carefully, the issue is that Graphite is trying to create a stacked branch, but the git history doesn't support it.
+
+Since we're in plan mode and the save failed, let me try the `--current-branch` option. 
+
+I think the real problem is that the plan is trying to stack a CI test branch on top of the MCP server implementation branch, but they're based on different commits. The plan-save command is creating a new branch from a different base than what Graphite expects for stacking.
+
+Since this is a separate concern, I should probably just let the user know about the Graphite tracking issue and suggest they either use `--current-branch` to save directly to the existing branch, or create the CI test branch independently. We're still in plan mode after the error, so I need to ask what they'd prefer to do.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5274" cache_read_input_tokens="65816" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5274}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The plan-save failed because Graphite can't stack a new branch on the current `plnd/create-erk-mcp-server-03-03-0534` branch (git history mismatch). 
+
+Since this CI addition is closely related to the MCP server PR that's already on this branch, saving on the current branch makes sense.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5274" cache_read_input_tokens="65816" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5274}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_011j4ja3PeywWB2JELsotrx1">
+    <param name="questions">[{'question': 'Plan save failed due to Graphite stacking issue. How would you like to proc...[truncated 199 chars]...p saving the plan as a PR and implement directly on this branch'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5274" cache_read_input_tokens="65816" output_tokens="731" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5274, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011j4ja3PeywWB2JELsotrx1">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>can you do rebase and then gt track</user>
+  <thinking>The user wants me to rebase the current branch onto its parent and then track it with Graphite. Let me first check what the current branch situation is.
+
+The current branch is `plnd/create-erk-mcp-server-03-03-0534`. The plan-save tried to create `plnd/add-mcp-ci-tests-03-03-0600` as a child but failed because the parent wasn't in its history.
+
+Wait, let me re-read. The user said "can you do rebase and then gt track". They want me to fix the Graphite tracking issue. Let me check the current state first.
+
+
+Actually, I see the issue now—the new branch `plnd/add-mcp-ci-tests-03-03-0600` was created but the parent branch isn't in its history, so I need to rebase it onto `plnd/create-erk-mcp-server-03-03-0534` first, then set up the Graphite tracking.
+
+Let me verify the branch actually exists before proceeding.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="59322" cache_read_input_tokens="17221" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 59322}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the current state first.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="59322" cache_read_input_tokens="17221" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 59322}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UC8iinL1ziBgFnSe7fAgQN">
+    <param name="command">git branch --list 'plnd/add-mcp*'</param>
+    <param name="description">Check if the new plan branch exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="59322" cache_read_input_tokens="17221" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 59322}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UC8iinL1ziBgFnSe7fAgQN">
+  plnd/add-mcp-ci-tests-03-03-0600
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01VBbMeMAaPre2Gm3MGJZBFd">
+    <param name="command">git branch --show-current</param>
+    <param name="description">Show current branch</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="59322" cache_read_input_tokens="17221" output_tokens="627" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 59322, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VBbMeMAaPre2Gm3MGJZBFd">
+plnd/create-erk-mcp-server-03-03-0534
+  </tool_result>
+  <assistant>The branch exists but wasn't tracked. I'll rebase it onto the current branch then track it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="664" cache_read_input_tokens="76543" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 664}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BC4NoXoCJiGZFexEoMpqPr">
+    <param name="command">git rebase plnd/create-erk-mcp-server-03-03-0534 plnd/add-mcp-ci-tests-03-03-0600</param>
+    <param name="description">Rebase new plan branch onto parent</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="664" cache_read_input_tokens="76543" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 664, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BC4NoXoCJiGZFexEoMpqPr">
+Exit code 1
+warning: skipped previously applied commit ffb429c94
+warning: skipped previously applied commit 376c14eb5
+warning: skipped previously applied commit 0450a939e
+hint: use --reapply-cherry-picks to include skipped commits
+hint: Disable this message with "git config set advice.skippedCherryPicks false"
+Rebasing (1/2)Auto-merging uv.lock
+CONFLICT (content): Merge conflict in uv.lock
+error: could not apply 5e9e67bbe... Create erk-mcp server exposing erk capabilities via MCP protocol
+hint: Resolve all conflicts manually, mark them as resolved with
+hint: "git add/rm &lt;conflicted_files&gt;", then run "git rebase --continue".
+hint: You can instead skip this commit: run "git rebase --skip".
+hint: To abort and get back to the state before "git rebase", run "git rebase --abort".
+hint: Disable this message with "git config set advice.mergeConflict false"
+Could not apply 5e9e67bbe... # Create erk-mcp server exposing erk capabilities via MCP protocol
+
+warning: skipped previously applied commit ffb429c94
+warning: skipped previously applied commit 376c14eb5
+warning: skipped previously applied commit 0450a939e
+hint: use --reapply-cherry-picks to include skipped commits
+hint: Disable this message with "git config set advice.skippedCherryPicks false"
+Rebasing (1/2)Auto-merging uv.lock
+CONFLICT (content): Merge conflict in uv.lock
+error: could not apply 5e9e67bbe... Create erk-mcp server exposing erk capabilities via MCP protocol
+hint: Resolve all conflicts manually, mark them as resolved with
+hint: "git add/rm &lt;conflicted_files&gt;", then run "git rebase --continue".
+hint: You can instead skip this commit: run "git rebase --skip".
+hint: To abort and get back to the state before "git rebase", run "git rebase --abort".
+hint: Disable this message with "git config set advice.mergeConflict false"
+Could not apply 5e9e67bbe... # Create erk-mcp server exposing erk capabilities via MCP protocol
+  </tool_result>
+  <thinking>The rebase has conflicts in uv.lock. The commits being rebased are the ones that created the erk-mcp server, but those commits are already applied on the parent branch (the "skipped previously applied commit" messages). So the new branch likely just has the plan file commit. Let me check what the conflict looks like and if I can just skip this commit since it was already applied.
+
+Looking at the messages:
+- `skipped previously applied commit ffb429c94` - "Add plan: Plan: Create erk-mcp Server"
+- `skipped previously applied commit 376c14eb5` - "Clean up .erk/impl-context/ after implementation"
+
+
+- `skipped previously applied commit 0450a939e` - another one that was already applied
+- `Could not apply 5e9e67bbe` - "Create erk-mcp server exposing erk capabilities via MCP protocol"
+
+The conflict is on the erk-mcp server creation commit, which the parent branch already has as `b94011ac4` ("Implement FastMCP server"). Since this is essentially the same work already integrated, I should be able to skip it during the rebase.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="714" cache_read_input_tokens="77207" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 714}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>The conflicting commit was already applied on the parent branch. Let me skip it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="714" cache_read_input_tokens="77207" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 714}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01E4TvVTMVWW8nhedLCggDeg">
+    <param name="command">git rebase --skip</param>
+    <param name="description">Skip already-applied commit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="714" cache_read_input_tokens="77207" output_tokens="592" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 714, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01E4TvVTMVWW8nhedLCggDeg">
+Exit code 1
+Rebasing (2/2)Auto-merging Makefile
+CONFLICT (content): Merge conflict in Makefile
+error: could not apply b94011ac4... Implement FastMCP server exposing erk capabilities via MCP protocol
+hint: Resolve all conflicts manually, mark them as resolved with
+hint: "git add/rm &lt;conflicted_files&gt;", then run "git rebase --continue".
+hint: You can instead skip this commit: run "git rebase --skip".
+hint: To abort and get back to the state before "git rebase", run "git rebase --abort".
+hint: Disable this message with "git config set advice.mergeConflict false"
+Could not apply b94011ac4... # Implement FastMCP server exposing erk capabilities via MCP protocol
+
+Rebasing (2/2)Auto-merging Makefile
+CONFLICT (content): Merge conflict in Makefile
+error: could not apply b94011ac4... Implement FastMCP server exposing erk capabilities via MCP protocol
+hint: Resolve all conflicts manually, mark them as resolved with
+hint: "git add/rm &lt;conflicted_files&gt;", then run "git rebase --continue".
+hint: You can instead skip this commit: run "git rebase --skip".
+hint: To abort and get back to the state before "git rebase", run "git rebase --abort".
+hint: Disable this message with "git config set advice.mergeConflict false"
+Could not apply b94011ac4... # Implement FastMCP server exposing erk capabilities via MCP protocol
+  </tool_result>
+  <assistant>Same situation - this commit is also already on the parent. Let me skip it too.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="58309" cache_read_input_tokens="20661" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 58309}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015EVfjfdjdez4TRgadUrieP">
+    <param name="command">git rebase --skip</param>
+    <param name="description">Skip second already-applied commit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="58309" cache_read_input_tokens="20661" output_tokens="97" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 58309, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015EVfjfdjdez4TRgadUrieP">
+Successfully rebased and updated refs/heads/plnd/add-mcp-ci-tests-03-03-0600.
+  </tool_result>
+  <assistant>Rebase succeeded. Now the new branch is on top of the parent. Let me track it with Graphite.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="136" cache_read_input_tokens="78970" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 136}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BQediftYGZCzwFc59PCzHb">
+    <param name="command">git checkout plnd/add-mcp-ci-tests-03-03-0600</param>
+    <param name="description">Switch to the new plan branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="136" cache_read_input_tokens="78970" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 136, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BQediftYGZCzwFc59PCzHb">
+Already on 'plnd/add-mcp-ci-tests-03-03-0600'
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01VVL37yrWe4jceE247FKYRB">
+    <param name="command">gt track plnd/add-mcp-ci-tests-03-03-0600 --parent plnd/create-erk-mcp-server-03-03-0534 --no-interactive</param>
+    <param name="description">Track branch with Graphite</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="264" cache_read_input_tokens="79106" output_tokens="120" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 264, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VVL37yrWe4jceE247FKYRB">
+Tracked branch plnd/add-mcp-ci-tests-03-03-0600 with parent plnd/create-erk-mcp-server-03-03-0534 (includes 0 commits).
+  </tool_result>
+  <assistant>Tracked successfully. Now let me resume the plan-save. The branch exists and is tracked - let me re-run the save command with `--current-branch` since the branch is already set up.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="183" cache_read_input_tokens="79370" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 183}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011ZLwEP8ZByx3AFGzNySiRW">
+    <param name="command">erk exec plan-save --format json --session-id="22c14385-fc7f-4fbd-9027-1b62b3ca04a5" --bra...[truncated 136 chars]...ot-tests pattern, and including it in ci-summarize and local CI targets." --current-branch</param>
+    <param name="description">Save plan as draft PR on current branch</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="183" cache_read_input_tokens="79370" output_tokens="246" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 183, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011ZLwEP8ZByx3AFGzNySiRW">
+{"success": true, "plan_number": 8664, "plan_url": "https://github.com/dagster-io/erk/pull/8664", "title": "[erk-plan] Plan: Add CI Step for erk-mcp Tests", "branch_name": "plnd/add-mcp-ci-tests-03-03-0600", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.erk/scratch/sessions/22c14385-fc7f-4fbd-9027-1b62b3ca04a5/plan_snapshots/000001-563b0dda"}
+  </tool_result>
+  <assistant>Plan saved. Let me push the planning session and display results.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="440" cache_read_input_tokens="79553" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 440}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SXU65k5U387sQEKj1WmzgV">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Capture session file path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="440" cache_read_input_tokens="79553" output_tokens="100" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 440, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SXU65k5U387sQEKj1WmzgV">
+SESSION_ID=22c14385-fc7f-4fbd-9027-1b62b3ca04a5
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-62/22c14385-fc7f-4fbd-9027-1b62b3ca04a5.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01MhYxZ7b16KpYQiDhW7C4aq">
+    <param name="command">erk exec push-session \
+    --session-file "/Users/schrockn/.claude/projects/-Users-schroc...[truncated 122 chars]...\
+    --stage planning \
+    --source local \
+    --plan-id 8664 \
+    2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="211" cache_read_input_tokens="79993" output_tokens="240" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 211, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MhYxZ7b16KpYQiDhW7C4aq">
+{"uploaded": true, "plan_id": 8664, "session_branch": "async-learn/8664", "session_id": "22c14385-fc7f-4fbd-9027-1b62b3ca04a5", "stage": "planning", "files": ["planning-22c14385-fc7f-4fbd-9027-1b62b3ca04a5-22c14385-fc7f-4fbd-9027-1b62b3ca04a5-part1.xml", "planning-22c14385-fc7f-4fbd-9027-1b62b3ca04a5-22c14385-fc7f-4fbd-9027-1b62b3ca04a5-part2.xml"]}
+  </tool_result>
+  <assistant>Plan "Add CI Step for erk-mcp Tests" saved as draft PR #8664
+URL: https://github.com/dagster-io/erk/pull/8664
+
+**Next steps:**
+
+View PR: https://github.com/dagster-io/erk/pull/8664
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+Implement plan #8664:
+  In plan br:       `source "$(erk br co --for-plan 8664 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --for-plan 8664 --script)" &amp;&amp; erk implement -d`
+  In new wt:        `source "$(erk br co --new-slot --for-plan 8664 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --new-slot --for-plan 8664 --script)" &amp;&amp; erk implement -d`
+
+Checkout plan #8664:
+  In plan br: `erk br co --for-plan 8664`
+  In new wt:  `erk br co --new-slot --for-plan 8664`
+
+Dispatch to queue: `erk pr dispatch 8664`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="440" cache_read_input_tokens="80204" output_tokens="325" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 440, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>
