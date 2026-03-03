@@ -1,0 +1,1119 @@
+<session>
+  <meta branch="plnd/uv-sync-outside-guard-03-03-1026" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="74c737e4-4a64-4315-8b92-e7a8e896c696" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="74c737e4-4a64-4315-8b92-e7a8e896c696" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="74c737e4-4a64-4315-8b92-e7a8e896c696" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="74c737e4-4a64-4315-8b92-e7a8e896c696" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement` which is a skill for implementing a plan. Let me follow the instructions step by step.
+
+First, I need to check the current state. The branch is `plnd/uv-sync-outside-guard-03-03-1026`, which looks like a plan branch. Let me run `erk exec setup-impl` to auto-detect from the branch.
+
+Let me start with Step 1.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="15691" cache_read_input_tokens="17292" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15691}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation from the current branch...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="15691" cache_read_input_tokens="17292" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15691}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014o7W7FRhje5eWW52vTH5oZ">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Auto-detect and set up impl from current branch</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15691" cache_read_input_tokens="17292" output_tokens="259" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15691, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014o7W7FRhje5eWW52vTH5oZ">
+Found existing impl dir for plan #8696, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.erk/impl-context/plnd--uv-sync-outside-guard-03-03-1026", "plan_number": 8696, "plan_url": "https://github.com/dagster-io/erk/pull/8696", "branch": "plnd/uv-sync-outside-guard-03-03-1026", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8696, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="438" cache_read_input_tokens="32983" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 438}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CyoURfXAcXvHfrmKFj37K7">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.erk/impl-context/plnd--uv-sync-outside-guard-03-03-1026/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="438" cache_read_input_tokens="32983" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 438, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CyoURfXAcXvHfrmKFj37K7">
+     1→# Move `uv sync` outside VIRTUAL_ENV guard in activation scripts
+     2→
+     3→## Context
+     4→
+     5→When a worktree slot is reused for a new branch (via `erk br co --new-slot --for-plan`), the user hits `ModuleNotFoundError` for newly added packages (e.g., `anthropic`). This happens because:
+     6→
+     7→1. `allocate_slot_for_branch` checks out the new branch (updating `uv.lock` on disk)
+     8→2. The user sources the activation script, which `cd`s into the worktree
+     9→3. direnv triggers and loads `.erk/bin/activate.sh`
+    10→4. The VIRTUAL_ENV guard (`if [ "$VIRTUAL_ENV" != ".../.venv" ]`) may **skip** `uv sync` if VIRTUAL_ENV is already set from a prior session or direnv state
+    11→5. `erk completion zsh` (inside the guard) and then `erk implement` both fail because new deps weren't installed
+    12→
+    13→The root cause: `uv sync` is inside the VIRTUAL_ENV guard, so it gets skipped when the guard determines the venv is "already active" — even though the branch (and lockfile) changed.
+    14→
+    15→## Changes
+    16→
+    17→### 1. Move `uv sync` outside the VIRTUAL_ENV guard
+    18→
+    19→**File**: `src/erk/cli/activation.py` — `render_activation_script()`
+    20→
+    21→Restructure the generated shell script so `uv sync` and `uv pip install --no-deps` run **unconditionally** (before the guard), while venv activation, `.env` loading, and shell completion remain guarded:
+    22→
+    23→```
+    24→cd {worktree_path}
+    25→
+    26→# Always sync deps (idempotent — handles branch switches in reused slots)
+    27→if [ ! -d {venv_dir} ]; then
+    28→  __erk_log "-&gt;" "Creating virtual environment..."
+    29→fi
+    30→uv sync --quiet
+
+... [35 lines omitted] ...
+  </tool_result>
+  <thinking>Now I understand the plan. Let me create tasks and start implementing.
+
+Let me:
+1. Create todo entries for each phase
+2. Read the relevant source files
+3. Start implementing
+
+Let me first read the source files to understand the current state.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1283" cache_read_input_tokens="33421" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1283}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I understand the plan. Three changes:
+1. Move `uv sync` outside the VIRTUAL_ENV guard in `activation.py`
+2. Change `ensure_worktree_activate_script` to `write_worktree_activate_script` in slot allocation
+3. Update tests
+
+Let me create tasks and start reading the relevant files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1283" cache_read_input_tokens="33421" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1283}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_019gTcjTDnVLvP3GjZ7F52uk">
+    <param name="subject">Move `uv sync` outside VIRTUAL_ENV guard in activation.py</param>
+    <param name="description">Restructure render_activation_script() so uv sync and uv pip install run unconditionally before the VIRTUAL_ENV guard</param>
+    <param name="activeForm">Moving uv sync outside VIRTUAL_ENV guard</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1283" cache_read_input_tokens="33421" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1283}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019gTcjTDnVLvP3GjZ7F52uk">
+Task #1 created successfully: Move `uv sync` outside VIRTUAL_ENV guard in activation.py
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01XbEgmKymdAsnbhRvHAHiq3">
+    <param name="subject">Change ensure_ to write_ in slot allocation</param>
+    <param name="description">In allocate_slot_for_branch(), change ensure_worktree_activate_script to write_worktree_activate_script so activation scripts are always regenerated</param>
+    <param name="activeForm">Updating slot allocation to always regenerate</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1283" cache_read_input_tokens="33421" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1283}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XbEgmKymdAsnbhRvHAHiq3">
+Task #2 created successfully: Change ensure_ to write_ in slot allocation
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01Uw4sHSR1yoyoH61ztax9UD">
+    <param name="subject">Update activation tests</param>
+    <param name="description">Update tests to reflect uv sync and uv pip install being outside the VIRTUAL_ENV guard</param>
+    <param name="activeForm">Updating activation tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1283" cache_read_input_tokens="33421" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1283}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Uw4sHSR1yoyoH61ztax9UD">
+Task #3 created successfully: Update activation tests
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01R6qh3CtXxWokgxLNi9kq2r">
+    <param name="subject">Run CI and submit PR</param>
+    <param name="description">Run CI checks, fix issues, then submit the PR</param>
+    <param name="activeForm">Running CI and submitting PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1283" cache_read_input_tokens="33421" output_tokens="592" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1283, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01R6qh3CtXxWokgxLNi9kq2r">
+Task #4 created successfully: Run CI and submit PR
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012wCZfkWAWLTEdFfWfau8jw">
+    <param name="command">erk exec impl-signal started --session-id="74c737e4-4a64-4315-8b92-e7a8e896c696" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub that implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="760" cache_read_input_tokens="34704" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 760}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PMXTU5xQVoRixQe7zWL41r">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/activation.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="760" cache_read_input_tokens="34704" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 760}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SRuWdcxTmqh6rLRXj3wAf8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/slot/common.py</param>
+    <param name="offset">680</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="760" cache_read_input_tokens="34704" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 760}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012TeXF44pwrfA7xyFpeBDPi">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/unit/cli/test_activation.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="760" cache_read_input_tokens="34704" output_tokens="373" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 760, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012wCZfkWAWLTEdFfWfau8jw">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8696
+}
+  </tool_result>
+  <tool_result tool="toolu_01PMXTU5xQVoRixQe7zWL41r">
+     1→"""Shell activation script generation for worktree environments.
+     2→
+     3→This module provides utilities for generating shell scripts that activate
+     4→worktree environments by setting up virtual environments and loading .env files.
+     5→"""
+     6→
+     7→import shlex
+     8→from collections.abc import Sequence
+     9→from dataclasses import dataclass
+    10→from pathlib import Path
+    11→
+    12→import click
+    13→
+    14→from erk.core.display_utils import copy_to_clipboard_osc52
+    15→from erk_shared.output.output import user_output
+    16→
+    17→
+    18→@dataclass(frozen=True)
+    19→class ActivationConfig:
+    20→    """Configuration for activation instructions.
+    21→
+    22→    Replaces the combinatorial ActivationMode Literal with composable flags.
+    23→    All fields required - use factory functions for convenience.
+    24→
+    25→    Attributes:
+    26→        implement: If True, append `erk implement` to the source command.
+    27→            False means activate-only mode (just source the script).
+    28→        dangerous: If True, include --dangerous flag (skip permission prompts).
+    29→        docker: If True, include --docker flag (filesystem isolation).
+    30→        codespace: If not None, include --codespace flag for codespace isolation.
+
+... [414 lines omitted] ...
+
+    86→def render_error_script() -&gt; str:
+    94→    return "# erk error\nreturn 1\n"
+   104→    Quiet mode (ERK_QUIET=1): Suppresses transparency output (errors still shown)
+   144→            If the subpath doesn't exist, a warning is shown and the script
+   171→        # Check if subpath exists in target worktree, fall back to root with warning
+   178→  echo "Warning: '{target_subpath}' doesn't exist in target, using worktree root" &gt;&amp;2
+  </tool_result>
+  <tool_result tool="toolu_01SRuWdcxTmqh6rLRXj3wAf8">
+   680→                ctx.git.worktree.add_worktree(
+   681→                    repo.root,
+   682→                    worktree_path,
+   683→                    branch=branch_name,
+   684→                    ref=None,
+   685→                    create_branch=False,
+   686→                )
+   687→        else:
+   688→            # Create new slot - no worktree exists yet
+   689→            slot_name = generate_slot_name(slot_num)
+   690→            worktree_path = repo.worktrees_dir / slot_name
+   691→            worktree_path.mkdir(parents=True, exist_ok=True)
+   692→            ctx.git.worktree.add_worktree(
+   693→                repo.root,
+   694→                worktree_path,
+   695→                branch=branch_name,
+   696→                ref=None,
+   697→                create_branch=False,
+   698→            )
+   699→
+   700→    # Ensure activation script exists with latest template
+   701→    ensure_worktree_activate_script(
+   702→        worktree_path=worktree_path,
+   703→        post_create_commands=None,
+   704→    )
+   705→
+   706→    # Create new assignment
+   707→    now = ctx.time.now().isoformat()
+   708→    new_assignment = SlotAssignment(
+   709→        slot_name=slot_name,
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_012TeXF44pwrfA7xyFpeBDPi">
+&lt;persisted-output&gt;
+Output too large (52.1KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-03/74c737e4-4a64-4315-8b92-e7a8e896c696/tool-results/toolu_012TeXF44pwrfA7xyFpeBDPi.txt
+
+Preview (first 2KB):
+     1→"""Tests for activation script generation."""
+     2→
+     3→import base64
+     4→from pathlib import Path
+     5→
+     6→import pytest
+     7→
+     8→from erk.cli.activation import (
+     9→    ActivationConfig,
+    10→    _render_logging_helper,
+    11→    activation_config_activate_only,
+    12→    activation_config_for_implement,
+    13→    build_activation_command,
+    14→    ensure_land_script,
+    15→    ensure_worktree_activate_script,
+    16→    print_activation_instructions,
+    17→    print_temp_script_instructions,
+    18→    render_activation_script,
+    19→    render_land_script,
+    20→    write_worktree_activate_script,
+    21→)
+    22→
+    23→# ActivationConfig tests
+    24→
+    25→
+    26→def test_activation_config_frozen() -&gt; None:
+
+... [27 lines omitted] ...
+
+    29→    with pytest.raises(AttributeError):
+  </tool_result>
+  <thinking>Now let me read the full test file for the relevant tests.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="11744" cache_read_input_tokens="35464" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11744}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the specific test functions that need updating.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11744" cache_read_input_tokens="35464" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11744}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BrU8PrUfsuDCqozAphthgy">
+    <param name="file_path">/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-03/74c737e4-4a64-4315-8b92-e7a8e896c696/tool-results/toolu_012TeXF44pwrfA7xyFpeBDPi.txt</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11744" cache_read_input_tokens="35464" output_tokens="183" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11744, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BrU8PrUfsuDCqozAphthgy">
+&lt;persisted-output&gt;
+Output too large (60.5KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-03/74c737e4-4a64-4315-8b92-e7a8e896c696/tool-results/toolu_01BrU8PrUfsuDCqozAphthgy.txt
+
+Preview (first 2KB):
+     1→     1→"""Tests for activation script generation."""
+     2→     2→
+     3→     3→import base64
+     4→     4→from pathlib import Path
+     5→     5→
+     6→     6→import pytest
+     7→     7→
+     8→     8→from erk.cli.activation import (
+     9→     9→    ActivationConfig,
+    10→    10→    _render_logging_helper,
+    11→    11→    activation_config_activate_only,
+    12→    12→    activation_config_for_implement,
+    13→    13→    build_activation_command,
+    14→    14→    ensure_land_script,
+    15→    15→    ensure_worktree_activate_script,
+    16→    16→    print_activation_instructions,
+    17→    17→    print_temp_script_instructions,
+    18→    18→    render_activation_script,
+    19→    19→    render_land_script,
+    20→    20→    write_worktree_activate_script,
+    21→    21→)
+    22→    22→
+    23→    23→# ActivationConfig tests
+    24→    24→
+    25→    25→
+    26→    26→def test_activation_config_frozen() -&gt; None:
+
+... [19 lines omitted] ...
+
+    29→    29→    with pytest.raises(AttributeError):
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012s3Lxebmjz74gmNeuMLMdu">
+    <param name="pattern">def test_render_activation_script</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/unit/cli/test_activation.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="934" cache_read_input_tokens="47208" output_tokens="132" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 934, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012s3Lxebmjz74gmNeuMLMdu">
+160:def test_render_activation_script_without_subpath() -&gt; None:
+178:def test_render_activation_script_refreshes_workspace_packages() -&gt; None:
+198:def test_render_activation_script_with_subpath() -&gt; None:
+218:def test_render_activation_script_with_deeply_nested_subpath() -&gt; None:
+231:def test_render_activation_script_subpath_none_no_subpath_logic() -&gt; None:
+244:def test_render_activation_script_custom_final_message() -&gt; None:
+256:def test_render_activation_script_custom_comment() -&gt; None:
+268:def test_render_activation_script_quotes_paths_with_spaces() -&gt; None:
+320:def test_render_activation_script_contains_logging_helper() -&gt; None:
+333:def test_render_activation_script_logs_switching_message() -&gt; None:
+345:def test_render_activation_script_logs_venv_activation() -&gt; None:
+359:def test_render_activation_script_logs_env_loading() -&gt; None:
+371:def test_render_activation_script_contains_completion_setup() -&gt; None:
+390:def test_render_activation_script_shows_full_paths_in_normal_mode() -&gt; None:
+405:def test_render_activation_script_with_subpath_logs_correctly() -&gt; None:
+421:def test_render_activation_script_with_post_cd_commands() -&gt; None:
+444:def test_render_activation_script_without_post_cd_commands() -&gt; None:
+456:def test_render_activation_script_post_cd_commands_none_no_post_section() -&gt; None:
+468:def test_render_activation_script_post_cd_commands_empty_list_no_section() -&gt; None:
+483:def test_render_activation_script_contains_virtual_env_guard() -&gt; None:
+502:def test_render_activation_script_guard_with_post_cd_commands() -&gt; None:
+  </tool_result>
+  <assistant>Let me read the key tests that need updating.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="627" cache_read_input_tokens="48142" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 627}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01K7fjiwPHS3HQkL6ZtvgPMC">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/unit/cli/test_activation.py</param>
+    <param name="offset">160</param>
+    <param name="limit">110</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="627" cache_read_input_tokens="48142" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 627}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01K7fjiwPHS3HQkL6ZtvgPMC">
+   160→def test_render_activation_script_without_subpath() -&gt; None:
+   161→    """Basic activation script without target_subpath."""
+   162→    script = render_activation_script(
+   163→        worktree_path=Path("/path/to/worktree"),
+   164→        target_subpath=None,
+   165→        post_cd_commands=None,
+   166→        final_message='echo "Activated worktree: $(pwd)"',
+   167→        comment="work activate-script",
+   168→    )
+   169→    # shlex.quote doesn't add quotes for simple paths without special characters
+   170→    assert "cd /path/to/worktree" in script
+   171→    assert "# work activate-script" in script
+   172→    assert "uv sync" in script
+   173→    assert ".venv/bin/activate" in script
+   174→    # Should NOT have subpath logic
+   175→    assert "Try to preserve relative directory position" not in script
+   176→
+   177→
+   178→def test_render_activation_script_refreshes_workspace_packages() -&gt; None:
+   179→    """Activation script includes unconditional workspace package refresh."""
+   180→    script = render_activation_script(
+   181→        worktree_path=Path("/path/to/worktree"),
+   182→        target_subpath=None,
+   183→        post_cd_commands=None,
+   184→        final_message='echo "Activated worktree: $(pwd)"',
+   185→        comment="work activate-script",
+   186→    )
+   187→    assert "uv pip install --no-deps --quiet" in script
+   188→    assert "-e packages/erk-shared" in script
+   189→    assert "-e packages/erk-statusline" in script
+
+... [80 lines omitted] ...
+
+   213→    # Should have fallback warning
+   214→    assert "Warning: 'src/lib' doesn't exist in target" in script
+   215→    assert "&gt;&amp;2" in script  # Warning goes to stderr
+  </tool_result>
+  <tool_use name="Read" id="toolu_016w9cPNNZVbS4BS3XagfrVi">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/unit/cli/test_activation.py</param>
+    <param name="offset">320</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="627" cache_read_input_tokens="48142" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 627}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016w9cPNNZVbS4BS3XagfrVi">
+   320→def test_render_activation_script_contains_logging_helper() -&gt; None:
+   321→    """Activation script includes the logging helper functions."""
+   322→    script = render_activation_script(
+   323→        worktree_path=Path("/path/to/worktree"),
+   324→        target_subpath=None,
+   325→        post_cd_commands=None,
+   326→        final_message='echo "Activated worktree: $(pwd)"',
+   327→        comment="work activate-script",
+   328→    )
+   329→    assert "__erk_log()" in script
+   330→    assert "__erk_log_verbose()" in script
+   331→
+   332→
+   333→def test_render_activation_script_logs_switching_message() -&gt; None:
+   334→    """Activation script logs the cd command with full worktree path."""
+   335→    script = render_activation_script(
+   336→        worktree_path=Path("/path/to/worktree"),
+   337→        target_subpath=None,
+   338→        post_cd_commands=None,
+   339→        final_message='echo "Activated worktree: $(pwd)"',
+   340→        comment="work activate-script",
+   341→    )
+   342→    assert '__erk_log "-&gt;" "cd /path/to/worktree"' in script
+   343→
+   344→
+   345→def test_render_activation_script_logs_venv_activation() -&gt; None:
+   346→    """Activation script logs venv path with Python version when activating."""
+   347→    script = render_activation_script(
+   348→        worktree_path=Path("/path/to/worktree"),
+   349→        target_subpath=None,
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DQ4MRhxRLTKdjV9JWqwyHT">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/unit/cli/test_activation.py</param>
+    <param name="offset">420</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="627" cache_read_input_tokens="48142" output_tokens="349" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 627, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DQ4MRhxRLTKdjV9JWqwyHT">
+   420→
+   421→def test_render_activation_script_with_post_cd_commands() -&gt; None:
+   422→    """Activation script includes post_cd_commands after venv activation."""
+   423→    script = render_activation_script(
+   424→        worktree_path=Path("/path/to/worktree"),
+   425→        target_subpath=None,
+   426→        post_cd_commands=[
+   427→            '__erk_log "-&gt;" "git pull origin main"',
+   428→            'git pull --ff-only origin main || echo "Warning: git pull failed" &gt;&amp;2',
+   429→        ],
+   430→        final_message='echo "Activated worktree: $(pwd)"',
+   431→        comment="work activate-script",
+   432→    )
+   433→    # Should include post-activation commands section
+   434→    assert "# Post-activation commands" in script
+   435→    assert '__erk_log "-&gt;" "git pull origin main"' in script
+   436→    assert "git pull --ff-only origin main" in script
+   437→    # Commands should be after .env loading and before final message
+   438→    env_index = script.index("set +a")  # End of .env loading
+   439→    pull_index = script.index("git pull")
+   440→    final_index = script.index("Activated worktree")
+   441→    assert env_index &lt; pull_index &lt; final_index
+   442→
+   443→
+   444→def test_render_activation_script_without_post_cd_commands() -&gt; None:
+   445→    """Activation script without post_cd_commands has no post-activation section."""
+   446→    script = render_activation_script(
+   447→        worktree_path=Path("/path/to/worktree"),
+   448→        target_subpath=None,
+   449→        post_cd_commands=None,
+
+... [90 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a clear picture. Let me implement the changes:
+
+1. **`activation.py`**: Move `uv sync` and `uv pip install` outside the VIRTUAL_ENV guard
+2. **`common.py`**: Change `ensure_worktree_activate_script` to `write_worktree_activate_script`
+3. **Tests**: Update assertions about what's inside/outside the guard
+
+Let me start with the activation.py change.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4793" cache_read_input_tokens="48769" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4793}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture. Let me implement all three changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4793" cache_read_input_tokens="48769" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4793}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01CaXVdRUPaDQLtAeqSoMNS6">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4793" cache_read_input_tokens="48769" output_tokens="206" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4793, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CaXVdRUPaDQLtAeqSoMNS6">
+Updated task #1 status
+  </tool_result>
+  <assistant>**Phase 1: Move `uv sync` outside the VIRTUAL_ENV guard**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="222" cache_read_input_tokens="53562" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 222}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CBiJnGXtmeu759EfeKmWaq">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/activation.py</param>
+    <param name="old_string">    return f"""# {comment}
+{logging_helper}
+{cd_command}
+# Skip activation if VIRTUAL_ENV ...[truncated 1128 chars]...n zsh)"
+  fi
+fi
+{post_activation_section}# Optional: show where we are
+{final_message}
+"""</param>
+    <param name="new_string">    return f"""# {comment}
+{logging_helper}
+{cd_command}
+# Always sync deps (idempotent — ...[truncated 1003 chars]...n zsh)"
+  fi
+fi
+{post_activation_section}# Optional: show where we are
+{final_message}
+"""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="222" cache_read_input_tokens="53562" output_tokens="1035" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 222, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CBiJnGXtmeu759EfeKmWaq">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/activation.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01KECxJZ2HBc4bT5gvyZAixQ">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1109" cache_read_input_tokens="53784" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1109}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KECxJZ2HBc4bT5gvyZAixQ">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01WUv3zN4QF9XptzaZQzBdoL">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1109" cache_read_input_tokens="53784" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1109, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WUv3zN4QF9XptzaZQzBdoL">
+Updated task #2 status
+  </tool_result>
+  <assistant>**Phase 2: Change `ensure_` to `write_` in slot allocation**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="54893" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QCj4x2zZo2pjzatomnaWGw">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/slot/common.py</param>
+    <param name="old_string">    # Ensure activation script exists with latest template
+    ensure_worktree_activate_script(
+        worktree_path=worktree_path,
+        post_create_commands=None,
+    )</param>
+    <param name="new_string">    # Always regenerate activation script with latest template
+    write_worktree_activate_script(
+        worktree_path=worktree_path,
+        post_create_commands=None,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="54893" output_tokens="247" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QCj4x2zZo2pjzatomnaWGw">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/slot/common.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me update the import in `common.py`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="55091" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 325}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017wAzDDHJrrvPyaE8XF9wRw">
+    <param name="pattern">ensure_worktree_activate_script</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/slot/common.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="55091" output_tokens="149" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 325, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017wAzDDHJrrvPyaE8XF9wRw">
+10:from erk.cli.activation import ensure_worktree_activate_script
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01N8NFRnmvkC2kSjQzKfZmzR">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/slot/common.py</param>
+    <param name="old_string">from erk.cli.activation import ensure_worktree_activate_script</param>
+    <param name="new_string">from erk.cli.activation import write_worktree_activate_script</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="180" cache_read_input_tokens="55416" output_tokens="182" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 180, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N8NFRnmvkC2kSjQzKfZmzR">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/slot/common.py has been updated successfully.
+  </tool_result>
+  <assistant>Let me check if `ensure_worktree_activate_script` is used anywhere else in the codebase.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="241" cache_read_input_tokens="55596" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 241}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PT9cjRMfQrTutmr5s3rXe1">
+    <param name="pattern">ensure_worktree_activate_script</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="241" cache_read_input_tokens="55596" output_tokens="130" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 241, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PT9cjRMfQrTutmr5s3rXe1">
+Found 7 files
+src/erk/cli/activation.py
+src/erk/cli/commands/wt/checkout_cmd.py
+src/erk/cli/commands/wt/create_from_cmd.py
+src/erk/cli/commands/pr/checkout_cmd.py
+src/erk/cli/commands/navigation_helpers.py
+src/erk/cli/commands/branch/checkout_cmd.py
+src/erk/cli/commands/checkout_helpers.py
+  </tool_result>
+  <thinking>The plan only mentions changing `ensure_worktree_activate_script` to `write_worktree_activate_script` in `allocate_slot_for_branch()` in `common.py`. The other callers should still use `ensure_` since those are for other contexts (like initial worktree creation where you want to preserve existing scripts). Let me keep those as-is — the plan is specific about only changing the slot allocation code.
+
+Actually, wait. Let me re-read the plan. The plan says:
+
+&gt; Change line 701 from `ensure_worktree_activate_script` to `write_worktree_activate_script`. The `ensure_` variant skips regeneration if the file exists, which means old slots keep stale activation scripts. 
+
+So the issue is that when reusing slots, we need to regenerate the activation script with the latest template, not skip it if it already exists. This change is scoped to the slot allocation context specifically. Good, the common.py change is done. Now I need to update the tests.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="55837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 260}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good — the other callers use `ensure_` in different contexts (initial creation, checkout) where it's appropriate to skip if the script already exists. The plan only calls for changing the slot allocation path.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="55837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 260}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01CseYhFzbsGHQGJ4NKs1RKh">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="55837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 260}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CseYhFzbsGHQGJ4NKs1RKh">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01CDC7uGQMcsCpyDWCvT95gm">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="260" cache_read_input_tokens="55837" output_tokens="454" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 260, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CDC7uGQMcsCpyDWCvT95gm">
+Updated task #3 status
+  </tool_result>
+  <assistant>**Phase 3: Update tests**
+
+The key test that needs updating is `test_render_activation_script_contains_virtual_env_guard` — it asserts that `uv sync` and `uv pip install` are inside the guard. Now they should be outside.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="526" cache_read_input_tokens="56097" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 526}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UJ7wML9puaaBW6pxAcbzcC">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/unit/cli/test_activation.py</param>
+    <param name="old_string">def test_render_activation_script_contains_virtual_env_guard() -&gt; None:
+    """Activation ...[truncated 577 chars]...ation section should be outside guard
+    assert "# Optional: show where we are" in script</param>
+    <param name="new_string">def test_render_activation_script_contains_virtual_env_guard() -&gt; None:
+    """Activation ...[truncated 835 chars]...ation section should be outside guard
+    assert "# Optional: show where we are" in script</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="526" cache_read_input_tokens="56097" output_tokens="735" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 526, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UJ7wML9puaaBW6pxAcbzcC">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/unit/cli/test_activation.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the activation tests to verify everything passes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="791" cache_read_input_tokens="56623" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 791}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01LtWGf4Jxpw9Y2JvTeN8MKg">
+    <param name="description">Run activation tests</param>
+    <param name="prompt">Run `uv run pytest tests/unit/cli/test_activation.py -v` and report the results. Do NOT fix any errors — just report.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="791" cache_read_input_tokens="56623" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 791, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LtWGf4Jxpw9Y2JvTeN8MKg">
+pytest passed: All 75 tests passed in 0.48s
+agentId: a0ce9c26b7535b0b1 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13634
+tool_uses: 1
+duration_ms: 4054&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 75 tests pass.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="222" cache_read_input_tokens="57414" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 222}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01F9cX7GBLpGYvEvPtwGMpvF">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="222" cache_read_input_tokens="57414" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 222}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F9cX7GBLpGYvEvPtwGMpvF">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01853w1QWKLJ7D13Tc8PQNkq">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="222" cache_read_input_tokens="57414" output_tokens="133" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 222, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01853w1QWKLJ7D13Tc8PQNkq">
+Updated task #4 status
+  </tool_result>
+  <assistant>**Phase 4: Run CI and submit**
+
+Let me also check for any tests related to `allocate_slot_for_branch` that might be affected.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="206" cache_read_input_tokens="57636" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 206}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014BZ24tCQDywY9ro7b1SUSh">
+    <param name="pattern">allocate_slot_for_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="206" cache_read_input_tokens="57636" output_tokens="139" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 206, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014BZ24tCQDywY9ro7b1SUSh">
+Found 1 file
+tests/commands/branch/test_checkout_cmd.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01AEGFVk4cFLrURb5QszuRJQ">
+    <param name="pattern">ensure_worktree_activate_script|write_worktree_activate_script</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="170" cache_read_input_tokens="57842" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 170, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AEGFVk4cFLrURb5QszuRJQ">
+Found 1 file
+tests/unit/cli/test_activation.py
+  </tool_result>
+  <assistant>Good — the slot allocation tests don't directly test the activation script function call, so they should be fine. Let me run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="143" cache_read_input_tokens="58012" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 143}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01AvAPydX3Kn8Qzo6Y4rfngK">
+    <param name="skill">local:py-fast-ci</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="143" cache_read_input_tokens="58012" output_tokens="86" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 143, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AvAPydX3Kn8Qzo6Y4rfngK">
+Launching skill: local:py-fast-ci
+  </tool_result>
+  <user>You are an implementation finalizer for rapid Python-focused development feedback. Your task is to run `make py-fast-ci` and iteratively fix any issues until all CI checks pass successfully.
+
+## Your Mission
+
+Run the Python-only fast CI pipeline (`make py-fast-ci`) from the repository root and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**py-fast-ci vs fast-ci**: The `py-fast-ci` target runs Python checks (lint, format, ty, pytest), skipping markdown and documentation checks. Use this when you're iterating on Python code and don't want to wait for prettier/markdown validation. Use `/fast-ci` when you need the full fast CI pipeline including all checks.
+
+## CI Pipeline (make py-fast-ci)
+
+The `make py-fast-ci` target runs these checks in order:
+
+1. **lint** - Ruff linting checks
+2. **format** - Python formatting check (ruff format --check)
+3. **ty** - Type checking
+4. **test-unit-erk** - Pytest unit tests for erk
+5. **test-erk-dev** - Pytest tests for erk-dev
+
+**Skipped** (compared to fast-ci):
+
+- Prettier check (markdown formatting)
+- Markdown check (AGENTS.md compliance)
+- Docs validate/sync
+
+## Iteration Process
+
+Load the `ci-iteration` skill for the iterative fix workflow.
+
+## Fail-Fast Workflow
+
+This command uses a two-phase approach to fail fast on Python code quality issues:
+
+1. **Phase 1 (Fail-Fast)**: Run `make lint format ty` together (ruff lint + ruff format + type checking). If ANY fails, stop immediately to fix issues before proceeding to test runs.
+2. **Phase 2 (Test Runs)**: Only after phase 1 passes, run `make test-unit-erk test-erk-dev`.
+
+This ensures that syntax/formatting and type errors are caught and fixed first, providing rapid feedback without waiting for test execution.
+
+## Begin Now
+
+Start by using the Task tool with the devrun agent to run the fail-fast phase (`make lint format ty`) from the repository root. If that passes, proceed with test targets (`make test-unit-erk test-erk-dev`). Track your progress with TodoWrite and report your final status clearly.
+
+**Remember**:
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>
+
+I'll run the Python fast CI pipeline. Let me start with the fail-fast phase.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="735" cache_read_input_tokens="58155" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 735}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01H8wpPgAFTw7JuX3j2X5FKf">
+    <param name="description">Run lint format ty checks</param>
+    <param name="prompt">Run `make lint format ty` from the repository root at /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03 and report results. Do NOT fix any errors — just report.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="735" cache_read_input_tokens="58155" output_tokens="165" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 735, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H8wpPgAFTw7JuX3j2X5FKf">
+## Results
+
+**REFUSED: devrun is read-only. Returning results only.**
+
+All three checks passed successfully:
+
+1. **make lint** (ruff check): All checks passed!
+2. **make format-check** (ruff format check): 1598 files already formatted
+3. **make ty** (ty type checker): All checks passed!
+
+**Note:** The command `make format` does not exist in the Makefile. The correct target is `make format-check` for checking formatting, or `make fix` to apply formatting fixes.
+agentId: abf2e3d223c556e13 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 17124
+tool_uses: 6
+duration_ms: 10962&lt;/usage&gt;
+  </tool_result>
+  <assistant>Phase 1 passed (lint, format, ty). Now running tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="58890" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 359}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01GtvmMaeTxMkfA5Zm34XNJu">
+    <param name="description">Run unit tests</param>
+    <param name="prompt">Run `make test-unit-erk test-erk-dev` from the repository root at /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03 and report results. Do NOT fix any errors — just report.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="58890" output_tokens="168" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 359, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GtvmMaeTxMkfA5Zm34XNJu">
+pytest passed: 5546 tests passed in main test suite and 136 tests passed in erk-dev suite, for a total of 5682 tests passing.
+
+**Summary:**
+- `make test-unit-erk` → 5546 passed in 13.45s
+- `make test-erk-dev` → 136 passed in 3.19s
+- **Total: 5682 tests passed**
+agentId: ad95cdf5a0950937d (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14336
+tool_uses: 1
+duration_ms: 19850&lt;/usage&gt;
+  </tool_result>
+  <assistant>All CI checks pass:
+
+- **Lint**: passed
+- **Format**: passed  
+- **Type checking**: passed
+- **Unit tests**: 5546 passed
+- **Erk-dev tests**: 136 passed
+
+All 5682 tests green. Now let me clean up and submit.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="333" cache_read_input_tokens="59249" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 333}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BCfo4qDiku8bQ52beLJhDc">
+    <param name="command">erk exec impl-signal ended --session-id="74c737e4-4a64-4315-8b92-e7a8e896c696" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub that implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="333" cache_read_input_tokens="59249" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 333}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01T3qQgUBMvZcr5qVzhY4Ces">
+    <param name="command">erk exec upload-impl-session --session-id="74c737e4-4a64-4315-8b92-e7a8e896c696" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="333" cache_read_input_tokens="59249" output_tokens="347" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BCfo4qDiku8bQ52beLJhDc">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8696
+}
+  </tool_result>
+  <tool_result tool="toolu_01T3qQgUBMvZcr5qVzhY4Ces">
+{"uploaded": true, "plan_id": 8696}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01KGUQgbP5gKs4QjY2KAoK88">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="570" cache_read_input_tokens="59582" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 570, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KGUQgbP5gKs4QjY2KAoK88">
+{"cleaned": true}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SxiEBVwkbWrYUoCjzgAb3G">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="97" cache_read_input_tokens="60152" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 97, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SxiEBVwkbWrYUoCjzgAb3G">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01KWnX1gAecHarHD9bPdPWgC">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal lifecycle transition to submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="120" cache_read_input_tokens="60249" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 120}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Fu5y3bQNF59pn7PPZGnp7B">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="120" cache_read_input_tokens="60249" output_tokens="159" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 120, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KWnX1gAecHarHD9bPdPWgC">
+{
+  "success": false,
+  "event": "submitted",
+  "error_type": "no-plan-reference",
+  "message": "No plan reference found"
+}
+  </tool_result>
+  <tool_result tool="toolu_01Fu5y3bQNF59pn7PPZGnp7B">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018p1v7Xbfn51GFQKWq2eB2m">
+    <param name="command">gh pr view --json url -q .url 2&gt;/dev/null || echo "no PR found"</param>
+    <param name="description">Get PR URL</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="60369" output_tokens="122" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 267, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018p1v7Xbfn51GFQKWq2eB2m">
+https://github.com/dagster-io/erk/pull/8696
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01VGqhcfiYauc6AER9EbpJjn">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="123" cache_read_input_tokens="60636" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 123, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VGqhcfiYauc6AER9EbpJjn">
+Updated task #4 status
+  </tool_result>
+  <assistant>Plan execution complete. Here's the summary:
+
+**Changes made:**
+
+1. **`src/erk/cli/activation.py`** — Moved `uv sync --quiet` and `uv pip install --no-deps` **before** the `VIRTUAL_ENV` guard so they run unconditionally on every activation (handles branch switches in reused slots)
+
+2. **`src/erk/cli/commands/slot/common.py`** — Changed `ensure_worktree_activate_script` → `write_worktree_activate_script` in `allocate_slot_for_branch()` so activation scripts are always regenerated with the latest template
+
+3. **`tests/unit/cli/test_activation.py`** — Updated `test_render_activation_script_contains_virtual_env_guard` to assert that `uv sync` and `uv pip install` appear **before** the guard, not inside it
+
+**PR**: https://github.com/dagster-io/erk/pull/8696</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="60759" output_tokens="237" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 88, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>/local:statusline-refresh</user>
+  <user>&lt;local-command-stdout&gt;
+🔄 Status line refreshed
+&lt;/local-command-stdout&gt;</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;bash-input&gt;gt pr&lt;/bash-input&gt;</user>
+  <user>&lt;bash-stdout&gt;https://app.graphite.dev/github/pr/dagster-io/erk/8696&lt;/bash-stdout&gt;&lt;bash-stderr&gt;&lt;/bash-stderr&gt;</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+</session>

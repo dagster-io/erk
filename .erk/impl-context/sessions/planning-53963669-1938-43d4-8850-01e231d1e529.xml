@@ -1,0 +1,1381 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>Resume this session with:
+claude --resume 1bb5f5c9-d061-441e-b0eb-f5fd9f3a35f2
+(erk) ➜  erk git:(master) source "$(erk br co --new-slot --for-plan 8695 --script)" &amp;&amp; erk implement -d
+Checking out plan branch: plnd/e2e-agent-sdk-tests-03-03-0954
+✓ Assigned plnd/e2e-agent-sdk-tests-03-03-0954 to erk-slot-02
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-02/.envrc
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-02/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02
+-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/.venv (3.13.1)
+-&gt; Loading .env
+Traceback (most recent call last):
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/.venv/bin/erk", line 10, in &lt;module&gt;
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/src/erk/cli/cli.py", line 230, in main
+    cli()
+    ~~~^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/.venv/lib/python3.13/site-packages/click/core.py", line 1485, in __call__
+    return self.main(*args, **kwargs)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/.venv/lib/python3.13/site-packages/click/core.py", line 1406, in main
+    rv = self.invoke(ctx)
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/.venv/lib/python3.13/site-packages/click/core.py", line 1870, in invoke
+    super().invoke(ctx)
+    ~~~~~~~~~~~~~~^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/.venv/lib/python3.13/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/.venv/lib/python3.13/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/.venv/lib/python3.13/site-packages/click/decorators.py", line 34, in new_func
+    return f(get_current_context(), *args, **kwargs)
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/src/erk/cli/cli.py", line 177, in cli
+    ctx.obj = create_context(dry_run=False)
+              ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/src/erk/core/context.py", line 644, in create_context
+    from erk.core.fast_llm import AnthropicLlmCaller
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/src/erk/core/fast_llm.py", line 10, in &lt;module&gt;
+    from anthropic import Anthropic, APIError
+ModuleNotFoundError: No module named 'anthropic'
+Activated: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02
+direnv: export +REPO_ROOT +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT +WORKTREE_NAME +WORKTREE_PATH ~PATH
+Prepared plan #8695 at /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02
+Traceback (most recent call last):
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/.venv/bin/erk", line 10, in &lt;module&gt;
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/src/erk/cli/cli.py", line 230, in main
+    cli()
+    ~~~^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/.venv/lib/python3.13/site-packages/click/core.py", line 1485, in __call__
+    return self.main(*args, **kwargs)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/.venv/lib/python3.13/site-packages/click/core.py", line 1406, in main
+    rv = self.invoke(ctx)
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/.venv/lib/python3.13/site-packages/click/core.py", line 1870, in invoke
+    super().invoke(ctx)
+    ~~~~~~~~~~~~~~^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/.venv/lib/python3.13/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/.venv/lib/python3.13/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/.venv/lib/python3.13/site-packages/click/decorators.py", line 34, in new_func
+    return f(get_current_context(), *args, **kwargs)
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/src/erk/cli/cli.py", line 177, in cli
+    ctx.obj = create_context(dry_run=False)
+              ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/src/erk/core/context.py", line 644, in create_context
+    from erk.core.fast_llm import AnthropicLlmCaller
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/src/erk/core/fast_llm.py", line 10, in &lt;module&gt;
+    from anthropic import Anthropic, APIError
+ModuleNotFoundError: No module named 'anthropic'
+(erk) ➜  erk-slot-02 git:(plnd/e2e-agent-sdk-tests-03-03-0954) ✗ uv sync
+Resolved 133 packages in 3ms
+      Built erk @ file:///Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02
+      Built erk-dev @ file:///Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/packages/erk-dev
+      Built erk-shared @ file:///Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/packages/erk-shared
+      Built erk-statusline @ file:///Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/packages/erk-statusline
+Prepared 4 packages in 335ms
+Uninstalled 22 packages in 916ms
+Installed 27 packages in 451ms
+ + anthropic==0.84.0
+ - babel==2.17.0
+ + babel==2.18.0
+ - backrefs==6.1
+ + backrefs==6.2
+ - certifi==2026.1.4
+ + certifi==2026.2.25
+ - coverage==7.13.1
+ + coverage==7.13.4
+ + distro==1.9.0
+ + docstring-parser==0.17.0
+ - erk==0.6.0 (from file:///Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02)
+ + erk==0.9.4 (from file:///Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02)
+ - erk-dev==0.6.0 (from file:///Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/packages/erk-dev)
+ + erk-dev==0.9.4 (from file:///Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/packages/erk-dev)
+ - erk-shared==0.6.0 (from file:///Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/packages/erk-shared)
+ + erk-shared==0.9.4 (from file:///Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/packages/erk-shared)
+ - erk-statusline==0.6.0 (from file:///Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/packages/erk-statusline)
+ + erk-statusline==0.9.4 (from file:///Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/packages/erk-statusline)
+ + jiter==0.13.0
+ - linkify-it-py==2.0.3
+ + linkify-it-py==2.1.0
+ - markdown==3.10
+ + markdown==3.10.2
+ - mkdocs-material==9.7.1
+ + mkdocs-material==9.7.3
+ - multidict==6.7.0
+ + multidict==6.7.1
+ - packaging==25.0
+ + packaging==26.0
+ - pathspec==1.0.3
+ + pathspec==1.0.4
+ - platformdirs==4.5.1
+ + platformdirs==4.9.2
+ - pymdown-extensions==10.20
+ + pymdown-extensions==10.21
+ - rich==14.2.0
+ + rich==14.3.3
+ - ruff==0.14.13
+ + ruff==0.15.4
+ + sniffio==1.3.1
+ - textual==7.3.0
+ + textual==8.0.1
+ - ty==0.0.12
+ + ty==0.0.20
+ - uc-micro-py==1.0.3
+ + uc-micro-py==2.0.0
+ - yarl==1.22.0
+ + yarl==1.23.0
+(erk) ➜  erk-slot-02 git:(plnd/e2e-agent-sdk-tests-03-03-0954) ✗
+
+can we change the order here so that uv sync is called before getting the error about missing packages. this will happen anytime we change packages and i don't want that</user>
+  <thinking>The user is experiencing an issue where `erk implement -d` (or the full workflow of checking out a plan branch and implementing) runs `erk` commands before `uv sync` has been called in the worktree, leading to `ModuleNotFoundError` when new dependencies have been added (like `anthropic`). They want `uv sync` to be called earlier in the workflow so that dependencies are installed before any `erk` commands run.
+
+Let me explore the relevant code to understand the flow:
+
+1. The `erk br co` command (branch checkout)
+2. The `erk implement` command
+3. The worktree setup/activation flow
+
+
+4. Where `uv sync` could be inserted
+
+Now I'm looking at the code to see where the dependency sync happens and how it fits into the command execution order.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="13223" cache_read_input_tokens="20641" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13223}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the relevant code to understand the worktree setup and implement workflows.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="13223" cache_read_input_tokens="20641" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13223}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01CHfNf3Yiba1DELjkKtR96T">
+    <param name="description">Explore worktree setup flow</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1157 chars]... what happens between "checkout worktree" and "run erk implement" and where uv sync fits.
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="13223" cache_read_input_tokens="20641" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13223}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_013UmbrrZsjD1VWZuDwenv9o">
+    <param name="description">Explore direnv/activate setup</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 691 chars]...v sync or dependency installation logic
+- Any scripts that handle worktree initialization
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="13223" cache_read_input_tokens="20641" output_tokens="985" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13223, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013UmbrrZsjD1VWZuDwenv9o">
+Perfect! Now I have enough information. Let me create a comprehensive summary document of my findings:
+
+## Summary: Worktree Environment Setup in Erk
+
+Based on my thorough exploration of the codebase, here's exactly how worktree environments are set up in erk:
+
+### Current Architecture
+
+**YES, `uv sync` is already integrated into the worktree setup flow.**
+
+There are **two activation mechanisms**:
+
+#### 1. **Root Worktree (.envrc → direnv)**
+File: `/Users/schrockn/code/erk/.envrc`
+
+When entering the root worktree directory, direnv automatically sources:
+```bash
+source_env_if_exists .erk/bin/activate.sh
+```
+
+The root activation script at `/Users/schrockn/code/erk/.erk/bin/activate.sh` handles:
+- Logging helpers (`__erk_log`)
+- Creates `.venv` with `uv sync` if missing (line 23)
+- Activates the venv (sources `.venv/bin/activate`)
+- Loads `.env` file
+
+#### 2. **Child Worktrees (.erk/bin/activate.sh)**
+File: `src/erk/cli/activation.py` - `render_activation_script()` function
+
+Generated at worktree creation time via `run_post_worktree_setup()` in `src/erk/cli/commands/init/main.py`
+
+... [96 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01CHfNf3Yiba1DELjkKtR96T">
+Perfect! Now I have the full picture. Let me create a comprehensive analysis document.
+
+## Summary: Worktree Checkout and Implement Workflow Analysis
+
+Based on my thorough exploration of the erk codebase, here's what I found about the issue where `erk implement` fails with `ModuleNotFoundError: No module named 'anthropic'` after running `source "$(erk br co --new-slot --for-plan 8695 --script)" &amp;&amp; erk implement -d`:
+
+### The Workflow Flow
+
+#### 1. **`erk br co --script` Output** (Command: `erk branch checkout --for-plan 8695 --new-slot --script`)
+
+Location: `/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py`
+
+When `--script` flag is used:
+- Line 325-339 in `_setup_impl_for_plan()` renders an activation script via `render_activation_script()`
+- The script is written to a temp file via `ctx.script_writer.write_activation_script()`
+- `result.output_for_shell_integration()` outputs the path to stdout (lines 338)
+- This path is what gets sourced in the shell command
+
+#### 2. **Activation Script Content** (Generated by: `/Users/schrockn/code/erk/src/erk/cli/activation.py`)
+
+The activation script (`render_activation_script()`) performs these steps in order:
+- **Line 206**: `uv sync --quiet` - Creates/updates the venv, installs all dependencies including anthropic
+- **Line 208**: `uv pip install --no-deps --quiet -e . -e packages/erk-shared -e packages/erk-statusline` - Refreshes workspace packages
+- **Line 210**: Sources `.venv/bin/activate` if it exists
+- **Line 216-220**: Loads `.env` file
+
+This is documented in `/Users/schrockn/code/erk/docs/learned/erk/workspace-activation.md`, which explains that `uv sync` creates the venv and installs all external dependencies (like anthropic).
+
+#### 3. **The Problem: `erk implement -d` Runs Immediately**
+
+
+... [62 lines omitted] ...
+
+    from anthropic import Anthropic, APIError
+  </tool_result>
+  <thinking>Now I have a good understanding of the problem. Let me piece together what's happening:
+
+1. The user runs: `source "$(erk br co --new-slot --for-plan 8695 --script)" &amp;&amp; erk implement -d`
+2. `erk br co --new-slot --for-plan 8695 --script` runs the erk CLI (which needs the current venv's packages) and outputs a path to an activation script
+3. That activation script is sourced - it does `uv sync`, installs deps, activates venv
+4. Then `erk implement -d` runs
+
+But the error traceback shows that the error happens TWICE:
+
+
+1. First during `erk implement -d` (the second command)
+2. But also during the initial `erk br co --new-slot` command itself
+
+Looking at the output more carefully, I can see the checkout process starts (checking out the plan branch, assigning the slot, changing directory) but then gets cut off mid-way through the direnv loading message, which suggests the error is happening during that initial setup phase before the second command even runs. I'm seeing two separate failures here. The activation script successfully changes to the worktree and activates the venv, but then hits the missing anthropic module error. Then when the plan is prepared, the same error occurs again. I think the issue is that the venv was created from an older lockfile before anthropic was added as a dependency, and since the directory already exists, `uv sync` might be skipping the update due to some idempotency check. The issue is that `uv sync` might be skipped if the venv is already activated, but more importantly, the `.venv` was likely created with an old lockfile before the new `anthropic` dependency was added. When the branch is checked out with the updated code, something in the activation or post-create process is invoking an `erk` command that fails because the dependencies aren't properly synced yet. I need to trace through the exact sequence of when `erk` gets called during the checkout and activation flow. The activation script sources `.erk/bin/activate.sh`, which handles the CD, dependency sync, venv activation, and environment loading, then runs post-create commands. There's an idempotency guard checking if `VIRTUAL_ENV` matches the worktree's venv path, but since the root worktree's venv is already active, it wouldn't match and the script would proceed anyway—so that's not preventing the issue.
+
+The log output shows the activation and `.env` loading did run, but then `anthropic` isn't found, which suggests `uv sync` pulled from the root worktree's old `uv.lock` instead of the plan branch's updated one. The worktree was created from the branch `plnd/e2e-agent-sdk-tests-03-03-0954`, which presumably has a different lock file, but something's causing the wrong dependencies to be installed.
+
+Actually, I think the real issue is that this slot was reused from a previous run with an older codebase that didn't include `anthropic`. The `.venv` was synced at that time, and now when checking out the new branch, the activation script runs again but the virtual environment still has the old dependencies. The activation script itself is generated once and stored in `.erk/bin/activate.sh`, so it's not being regenerated when the branch changes—it's just being sourced again by direnv, but the underlying `.venv` hasn't been updated with the new dependencies. The activation script is running with the `--quiet` flag on `uv sync`, so there's no output to confirm it actually executed or installed the `anthropic` package. I'm realizing the real problem might be timing—when `erk br co` creates the new slot and switches branches, the activation script fires on directory change, but at that point the worktree might still be on the old branch with the old lockfile.
+
+Actually, tracing through the flow more carefully: the slot gets assigned and the plan branch is checked out before the activation script even runs, so `uv sync` should be reading the correct lockfile. But the user's comment about this happening "anytime we change packages" suggests the issue is that the plan branch's lockfile doesn't have `anthropic` in it yet—it was created from an older version of master that predates when `anthropic` was added as a dependency. - Master now has `anthropic` as a dependency (it was recently added)
+- But the worktree's `.venv` was created from an older version that didn't have it
+- When the activation script runs, `uv sync --quiet` should fix this, but something about the ordering is wrong
+
+Wait, let me look at the activation script's idempotency guard again. The agent said:
+
+```bash
+if [ "$VIRTUAL_ENV" != "{worktree_path}/.venv" ]; then
+  # activation code (uv sync, venv creation, etc.)
+fi
+```
+
+So if VIRTUAL_ENV is ALREADY set to THIS worktree's venv (maybe from a previous session), the entire uv sync would be SKIPPED! That's a problem when the lockfile changes.
+
+But in the user's case, they're going from the root worktree to a new slot, so VIRTUAL_ENV would be the root's venv, not the slot's venv. So the guard shouldn't skip it.
+
+Actually, I'm overcomplicating this. The user's real issue is that `erk` commands run before `uv sync` gets called, triggering errors about missing packages. They want `uv sync` to execute earlier in the activation sequence so dependencies are available when those commands run. The activation script is running an `erk` command after venv activation but before the "Activated" message, and that command fails because `anthropic` isn't installed yet—even though `uv sync` should have installed it beforehand. I'm wondering if the issue is that `uv sync` ran against the wrong lockfile or didn't complete properly.
+
+Actually, I think the real problem might be that when `erk br co` checks out a new branch, the `uv.lock` file updates to include `anthropic`, but the `.venv` directory still contains the old packages. The activation script then runs `uv sync`, which should install the missing dependencies, but maybe `uv sync` is being skipped because it thinks the venv is already up to date.
+
+Let me look at the actual code to understand what's happening. I need to check the activation script generator, the branch checkout command, and how the `implement` command works. Looking back at the error output, the slot is `erk-slot-02` and the branch being checked out is `plnd/e2e-agent-sdk-tests-03-03-0954`. Since this is an existing slot, `erk br co --new-slot` is reusing an inactive slot by checking out the new branch there.
+
+The activation script in the slot's worktree was generated when the slot was first created, not regenerated on each branch checkout, so it still has the `uv sync --quiet` call. When the new branch is checked out, git updates the files including `uv.lock` and `pyproject.toml`, then the activation script runs `uv sync --quiet` to install the new dependencies. But then something fails when `erk` is invoked afterward.
+
+Looking at the log output, I can see the activation script is running and printing messages about changing directories, activating the venv, and loading the `.env` file. But I'm not seeing any log output that indicates `uv sync` actually ran—there's no message like `-&gt; Running uv sync` or similar, which suggests the sync step might be silently failing or not executing at all.
+
+The fact that we see the venv activation message with the Python version suggests the venv already existed rather than being freshly created. I'm wondering if the `VIRTUAL_ENV` guard in the activation script might be preventing `uv sync` from running—maybe the environment variable was still set from a previous session in this shell, even though the script explicitly unsets it at the start. That could explain why `anthropic` isn't installed despite the activation script supposedly running.
+
+Let me step back and look at what the user actually needs: they want `uv sync` to run before the import error occurs, since they're changing packages frequently and don't want to manually run it each time. When they ran `uv sync` manually, it installed `anthropic==0.84.0`, which suggests the activation script skipped that step somehow.
+
+I should examine the activation.py and checkout_cmd.py files to understand how the generated script works and why `uv sync` might not be running during the `erk br co` flow.
+
+The issue might be that when `erk br co --new-slot --for-plan 8695 --script` runs in the root worktree, it generates an activation script that gets sourced by the shell. That script should cd into the new worktree, run `uv sync`, and activate the venv. But direnv is interfering—when the script cds to the worktree, direnv automatically loads and sources .erk/bin/activate.sh before the script's own `uv sync` can execute, which means the venv gets activated with stale dependencies. The activation script generated by `render_activation_script()` should include `uv sync`, so direnv ought to run it. But if the `.erk/bin/activate.sh` in the worktree is stale—generated by an older version that didn't include `uv sync`—then it wouldn't execute. Since `--new-slot` reuses existing inactive slots rather than creating brand new ones, the activation script could be outdated.
+
+Let me actually look at the code instead of speculating. The user wants `uv sync` to run before any erk commands execute in the worktree, and the error occurs when erk tries to import anthropic during activation. So I need to figure out whether to add `uv sync` directly to the `erk br co` process or handle it differently.</thinking>
+  <usage input_tokens="1745" cache_creation_input_tokens="2606" cache_read_input_tokens="33864" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2606}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good exploration results. Let me read the key files to understand the exact ordering issue.</assistant>
+  <usage input_tokens="1745" cache_creation_input_tokens="2606" cache_read_input_tokens="33864" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2606}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019W73SMRPrLgYxMJaRHdjFX">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/activation.py</param>
+  </tool_use>
+  <usage input_tokens="1745" cache_creation_input_tokens="2606" cache_read_input_tokens="33864" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2606}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019W73SMRPrLgYxMJaRHdjFX">
+     1→"""Shell activation script generation for worktree environments.
+     2→
+     3→This module provides utilities for generating shell scripts that activate
+     4→worktree environments by setting up virtual environments and loading .env files.
+     5→"""
+     6→
+     7→import shlex
+     8→from collections.abc import Sequence
+     9→from dataclasses import dataclass
+    10→from pathlib import Path
+    11→
+    12→import click
+    13→
+    14→from erk.core.display_utils import copy_to_clipboard_osc52
+    15→from erk_shared.output.output import user_output
+    16→
+    17→
+    18→@dataclass(frozen=True)
+    19→class ActivationConfig:
+    20→    """Configuration for activation instructions.
+    21→
+    22→    Replaces the combinatorial ActivationMode Literal with composable flags.
+    23→    All fields required - use factory functions for convenience.
+    24→
+    25→    Attributes:
+    26→        implement: If True, append `erk implement` to the source command.
+    27→            False means activate-only mode (just source the script).
+    28→        dangerous: If True, include --dangerous flag (skip permission prompts).
+    29→        docker: If True, include --docker flag (filesystem isolation).
+    30→        codespace: If not None, include --codespace flag for codespace isolation.
+
+... [414 lines omitted] ...
+
+    86→def render_error_script() -&gt; str:
+    94→    return "# erk error\nreturn 1\n"
+   104→    Quiet mode (ERK_QUIET=1): Suppresses transparency output (errors still shown)
+   144→            If the subpath doesn't exist, a warning is shown and the script
+   171→        # Check if subpath exists in target worktree, fall back to root with warning
+   178→  echo "Warning: '{target_subpath}' doesn't exist in target, using worktree root" &gt;&amp;2
+  </tool_result>
+  <tool_use name="Read" id="toolu_019brYoSWxmLxhdCuQdyPGpm">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1745" cache_creation_input_tokens="2606" cache_read_input_tokens="33864" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2606}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019brYoSWxmLxhdCuQdyPGpm">
+     1→"""Checkout command - find and switch to a worktree by branch name."""
+     2→
+     3→import contextlib
+     4→import sys
+     5→from pathlib import Path
+     6→
+     7→import click
+     8→
+     9→from erk.cli.activation import (
+    10→    activation_config_activate_only,
+    11→    ensure_worktree_activate_script,
+    12→    print_activation_instructions,
+    13→    render_activation_script,
+    14→)
+    15→from erk.cli.alias import alias
+    16→from erk.cli.commands.checkout_helpers import (
+    17→    display_sync_status,
+    18→    navigate_to_worktree,
+    19→    script_error_handler,
+    20→)
+    21→from erk.cli.commands.completions import complete_branch_names
+    22→from erk.cli.commands.slot.common import (
+    23→    allocate_slot_for_branch,
+    24→    update_slot_assignment_tip,
+    25→)
+    26→from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
+    27→from erk.cli.core import discover_repo_context
+    28→from erk.cli.github_parsing import parse_issue_identifier
+    29→from erk.cli.graphite import find_worktrees_containing_branch
+    30→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+
+... [752 lines omitted] ...
+
+    39→    IssueValidationFailed,
+   386→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+   441→    handler = script_error_handler(ctx) if script else contextlib.nullcontext()
+   464→    """Implementation body for branch_checkout — separated for error wrapping."""
+   468→            "Error: Cannot specify both BRANCH and --for-plan.\n"
+   474→        user_output("Error: Must provide BRANCH argument or --for-plan option.")
+   478→        user_output("Error: --new-slot and --no-slot cannot be used together.")
+   496→            raise click.ClickException(f"Plan #{plan_number} not found")
+   500→        if isinstance(plan_result, IssueValidationFailed):
+   501→            user_output(f"Error: {plan_result.message}")
+   507→        for warning in setup.warnings:
+   508→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   517→            user_output("Error: Could not detect trunk branch.")
+   568→                        f'Error: Cannot create worktree for trunk branch "{trunk_branch}".\n'
+   591→                                f"Error: Branch '{branch}' does not exist.\n"
+   685→            raise click.ClickException(
+   725→            raise click.ClickException(
+   769→                f"Error: Internal state mismatch. Branch '{branch}' was allocated "
+  </tool_result>
+  <thinking>Now I can see the issue clearly. Let me trace through the flow:
+
+1. `erk br co --new-slot --for-plan 8695 --script` runs from the root worktree
+2. It allocates a slot, checks out the branch
+3. In `_setup_impl_for_plan()` (line 325-339), when `script=True`, it calls `render_activation_script()` which generates the activation script, writes it to a temp file, and outputs the path
+4. The user sources this temp file in their shell
+
+The activation script (from `render_activation_script()`) does:
+1. 
+`cd` to the worktree
+2. Check if `VIRTUAL_ENV != worktree/.venv` (guard)
+3. If different: `uv sync --quiet`, `uv pip install --no-deps`, source venv/bin/activate, load .env
+4. Then run shell completion: `eval "$(erk completion bash)"` or `eval "$(erk completion zsh)"`
+
+Step 4 is the culprit! When the activation script runs `erk completion zsh`, it invokes the CLI which triggers `create_context()`, and that imports `fast_llm.py` which pulls in `anthropic` — that's where the import error happens.
+
+But here's the catch: the idempotency guard means if `VIRTUAL_ENV` already points to the right `.venv`, the entire setup block gets skipped, including `uv sync`. When a worktree slot is reused for a new branch, the `.erk/bin/activate.sh` still references the old worktree path, so direnv sources it again without re-running the dependency sync.
+
+The real issue is that the temp activation script generated in script mode gets sourced by the user, which triggers a `cd` into the worktree. This causes direnv to load the worktree's `.erk/bin/activate.sh`, which runs its own setup logic. Then the temp script continues executing, creating a conflict between these two activation flows. The direnv activation runs in a subshell context that doesn't affect the sourcing script. Actually wait, direnv intercepts `cd` and runs its hooks in the current shell. So when the temp file does `cd $worktree_path`, direnv triggers and runs `.envrc` → `.erk/bin/activate.sh` in the current shell.
+
+So the order would be:
+1. Temp file sourced
+2. `cd /path/to/worktree`
+3. direnv triggers, sources `.envrc` → `.erk/bin/activate.sh`
+4. `.erk/bin/activate.sh` checks VIRTUAL_ENV guard, runs `uv sync`, activates venv
+5. direnv finishes
+6. Temp file continues with its own `if VIRTUAL_ENV != ...` check
+7. Since direnv's activate.sh already set VIRTUAL_ENV, the guard skips the temp file's uv sync
+8. Temp file outputs final message
+
+Now I'm wondering whether the `.erk/bin/activate.sh` in the worktree actually runs `uv sync`. Looking at how the activate script gets created, it checks if the script already exists from a previous slot use, and if it does, it just returns the existing one without regenerating it. Looking at the error stack trace more carefully, the `erk` command is running from the worktree's venv, which means `uv sync` should have installed `anthropic` already. But the slot might have been created before `anthropic` was added as a dependency, so the venv could be stale and missing the package.
+
+When reusing a slot with `erk br co --new-slot`, the git checkout updates the pyproject.toml and uv.lock files, but the old activate script still sources the outdated venv. If VIRTUAL_ENV was already set from a previous session, the old activate.sh won't re-run `uv sync` to refresh the dependencies. Looking at the actual output, the venv is being activated and the `.env` is loaded, but then the script immediately fails trying to import `anthropic` - which means `uv sync` never ran, or it ran but didn't actually install the package. The guard condition must have skipped the sync step even though it shouldn't have. The activation script was generated when the slot was first created, before `anthropic` was added as a dependency, so even though `uv sync` runs in the current worktree with the updated lockfile, it might not be installing the package for some reason. I'm wondering if the real problem is simpler—maybe `erk completion zsh` on line 224 fails non-fatally, the script continues and prints "Activated: ...", but then `erk implement -d` fails with the same missing dependency error, which suggests `uv sync` either didn't run or didn't actually install `anthropic` despite having it in the lockfile.
+
+Let me trace through the actual flow when using `--new-slot` with `--for-plan` and `--script`: the branch checkout implementation runs, prepares the plan info, sets up the branch with tracking if needed, allocates an inactive slot, and refreshes the worktrees—but I need to figure out exactly when the git checkout happens relative to when the activation script runs. I'm realizing the critical issue: in the `--for-plan + --script` flow, `_setup_impl_for_plan` calls `sys.exit(0)` before `_perform_checkout` ever runs, so the actual git checkout never happens. Let me trace through `allocate_slot_for_branch` to see if that's where the checkout occurs, or if there's a gap in the flow. that worktree. For a new slot, it creates a new worktree with that branch.
+
+The issue might be that when the user's activation script does `cd` into the worktree, direnv triggers and runs the old `.erk/bin/activate.sh`, which calls `uv sync` with a potentially stale lockfile. But wait, git checkout should have already happened at that point.
+
+Let me trace through what `allocate_slot_for_branch` actually does and check the `.envrc` more carefully to understand where `uv sync` is being invoked and whether the activate script gets regenerated when a slot is reused.
+
+Actually, I think I've found it—the activation script runs `uv sync` first, then sources the venv's activate script, and then tries to run `erk completion` for shell integration. The problem is that `erk` command itself (running in the worktree's venv) needs the `anthropic` package, but `uv sync` might not have completed successfully or the dependencies aren't being installed properly before that completion command runs.
+
+But wait, the activation messages show up after `uv sync`, so that's not the issue. The real problem might be that the worktree's activate.sh script is an older version that doesn't have the `uv sync` step at all, since `ensure_worktree_activate_script()` only generates it once and never updates it. Let me check what's actually in that specific worktree's activation script. The function always includes `uv sync`, so even older scripts should have it unless the slot was created with a very early version of erk that predates that feature. Let me look at the error output more carefully to understand what's actually happening when direnv loads these files.
+
+The activation is working and the venv is being loaded, but then it's failing because the `anthropic` module isn't installed in the environment—the import is failing when trying to load the fast_llm module during CLI initialization.
+
+Looking at the activation script, I see `uv sync` runs on line 206, but then `erk completion zsh` runs on line 224, which invokes the CLI and triggers the import error. The issue is that `uv sync` should have installed the anthropic dependency, but it didn't—or maybe the venv wasn't properly synced before the completion command tried to run.
+
+Actually, I think I've found it. The `ensure_worktree_activate_script()` function only creates the activation script if it doesn't already exist. If this slot's script was generated by an older version of erk before `uv sync` was added to the template, it would be missing that critical sync step entirely. That would explain why anthropic isn't installed even though the current code expects it to be.
+
+The sequence would be: the stale activation script runs without syncing dependencies, `erk completion zsh` fails because anthropic isn't available, but the script continues and prints "Activated:" anyway, then `erk implement` also fails. I need to either regenerate the activation script when reusing a slot, add `uv sync` to the `.envrc` directly, or ensure it runs before any erk commands execute. Let me check what the `.envrc` actually contains.
+
+The `.envrc` just sources the activation script from `.erk/bin/activate.sh`, so if that's stale, there's no help there. But wait—the temp file that gets sourced includes a freshly generated activation script with `uv sync` built in. The problem is that when the temp file changes into the worktree, direnv triggers and runs the stale script first, which activates the venv without syncing, causing `erk completion zsh` to fail before the temp file's own environment guard can take effect.
+
+The real issue is that the stale activation script sets `VIRTUAL_ENV`, so when the temp file checks its guard later, it sees the environment is already set and skips running `uv sync`. The simplest fix would be to regenerate the activation script whenever a slot gets reused for a new branch, but `ensure_worktree_activate_script` currently doesn't force a refresh. The issue is that the old `.erk/bin/activate.sh` in the worktree is what direnv actually runs, so we need to regenerate it whenever we allocate or reuse a slot for a new branch to pick up the latest activation logic with `uv sync`. I could either regenerate the activation script during the checkout flow, or add `uv sync` directly to the `.envrc` file before sourcing the activation script, though the `.envrc` is shared across all worktrees so that approach has tradeoffs. be the most robust fix.
+
+But `.envrc` just does `source_env_if_exists .erk/bin/activate.sh`. The `.envrc` delegates to the activate script. If we add `uv sync` before the source, it would run even before venv creation.
+
+Actually, `.envrc` is checked into git, so it's the same across all worktrees. We could modify it to include `uv sync --quiet` before sourcing the activate script, but that would mean `uv sync` runs on every directory change, which might be slow.
+
+The cleanest approach is to regenerate `.erk/bin/activate.sh` whenever we check out a new branch into an existing slot. This ensures the activate script is fresh and includes the proper `uv sync` call when direnv triggers. I should add this regeneration step in `_branch_checkout_impl` right after `allocate_slot_for_branch` returns. I'm wondering if the issue is that `uv sync` actually ran, but the `erk` binary was already cached in memory from the old venv, so it couldn't access the newly installed packages—though that doesn't quite fit with shell completion launching a fresh process. More likely, the stale activation script in the slot doesn't include `uv sync` at all because it was created by an older version of erk before that step was added to the script generation, and since `ensure_worktree_activate_script` doesn't overwrite existing scripts, the old one persists. But the user mentioned this happens whenever packages change, suggesting it's not just a one-time legacy script problem.
+
+If the activate script does have `uv sync`, then something's preventing it from actually installing the new packages—maybe the guard check is comparing against a stale VIRTUAL_ENV from the parent shell, causing `uv sync` to run twice with conflicting results. I know the user is hitting a `ModuleNotFoundError` for a newly installed package, so something in the activation flow isn't picking up the changes.
+
+The real issue is probably that `.erk/bin/activate.sh` is stale and doesn't include `uv sync` at all, or it's running before the packages are synced. The most reliable fix would be to regenerate the activation script whenever a branch is checked out, ensuring it always has the latest template with `uv sync` in the right place.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="24034" cache_read_input_tokens="36470" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 24034}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XZuUck72v6JK662ypMsg7F">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/slot/common.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="24034" cache_read_input_tokens="36470" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 24034}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XZuUck72v6JK662ypMsg7F">
+     1→"""Shared utilities for slot commands."""
+     2→
+     3→import re
+     4→import shutil
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→
+     8→import click
+     9→
+    10→from erk.cli.activation import ensure_worktree_activate_script
+    11→from erk.core.context import ErkContext
+    12→from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+    13→from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+    14→from erk_shared.gateway.console.abc import Console
+    15→from erk_shared.gateway.git.abc import Git
+    16→from erk_shared.impl_folder import IMPL_DIR_RELATIVE
+    17→from erk_shared.output.output import user_output
+    18→
+    19→
+    20→@dataclass(frozen=True)
+    21→class SlotAllocationResult:
+    22→    """Result of allocating a slot for a branch."""
+    23→
+    24→    slot_name: str
+    25→    worktree_path: Path
+    26→    already_assigned: bool  # True if branch was already in a slot
+    27→
+    28→
+    29→# Default pool configuration
+    30→DEFAULT_POOL_SIZE = 4
+
+... [701 lines omitted] ...
+
+   314→    3. Worktree has wrong branch → fix it or error if uncommitted changes
+   327→        - both None: Should not happen (raises SystemExit on error)
+   365→            click.style("Error: ", fg="red")
+   453→    """Handle pool-full condition: prompt to unassign oldest or error.
+   458→    - If non-interactive (no TTY): error with instructions
+   466→        SlotAssignment to unassign, or None if user declined/error
+   478→            f"Error: Pool is full ({state.pool_size} slots). "
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UxiBeaxAvpxiZ9ugZsyVst">
+    <param name="file_path">/Users/schrockn/code/erk/.envrc</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="24034" cache_read_input_tokens="36470" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 24034}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UxiBeaxAvpxiZ9ugZsyVst">
+     1→# Source erk activation script if it exists
+     2→# This script:
+     3→#   - Creates .venv with `uv sync` if missing
+     4→#   - Activates the virtual environment
+     5→#   - Loads .env into the environment
+     6→#   - Sets up shell completion for erk
+     7→source_env_if_exists .erk/bin/activate.sh
+     8→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LHEfgVgTDRsHk3JRX9BJgu">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/checkout_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="24034" cache_read_input_tokens="36470" output_tokens="7472" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 24034, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LHEfgVgTDRsHk3JRX9BJgu">
+     1→"""Checkout navigation helpers - shared across checkout commands.
+     2→
+     3→This module is separate from navigation_helpers.py to avoid circular imports.
+     4→navigation_helpers imports from wt.create_cmd, which triggers wt/__init__.py,
+     5→which imports wt.checkout_cmd. By having checkout-specific helpers here,
+     6→we break that cycle.
+     7→"""
+     8→
+     9→import contextlib
+    10→import logging
+    11→import sys
+    12→from collections.abc import Generator, Sequence
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.activation import (
+    18→    ensure_worktree_activate_script,
+    19→    render_activation_script,
+    20→    render_error_script,
+    21→)
+    22→from erk.cli.commands.slot.common import allocate_slot_for_branch
+    23→from erk.cli.core import worktree_path_for
+    24→from erk.core.context import ErkContext
+    25→from erk.core.repo_discovery import RepoContext
+    26→from erk_shared.output.output import user_output
+    27→
+    28→logger = logging.getLogger(__name__)
+    29→
+    30→
+
+... [299 lines omitted] ...
+
+    31→def _write_error_script_and_exit(ctx: ErkContext) -&gt; None:
+    32→    """Write a minimal error script and output its path, then exit 1.
+    34→    Used by ``script_error_handler`` to ensure ``source "$(erk br co --script)"``
+    35→    always receives a valid file path — even on failure — so the shell never
+    39→        render_error_script(),
+    41→        comment="checkout error",
+    48→def script_error_handler(ctx: ErkContext) -&gt; Generator[None]:
+    49→    """Catch errors in --script mode and emit an error script instead of empty stdout.
+    51→    Wraps the checkout body so that any error path produces a valid script
+    54→    ``source: no such file or directory:`` error.
+    56→    Exception handling:
+    58→    - ``SystemExit(non-zero)``: Error already printed via ``user_output()``;
+    59→      write error script and exit 1.
+    60→    - ``click.ClickException``: Format the error ourselves (Click's handler
+    61→      won't run since we catch first), write error script, exit 1.
+    62→    - ``RuntimeError``: Print to stderr, write error script, exit 1.
+    69→        _write_error_script_and_exit(ctx)
+    70→    except click.ClickException as exc:
+    71→        user_output(f"Error: {exc.format_message()}")
+    72→        _write_error_script_and_exit(ctx)
+    73→    except RuntimeError as exc:
+    74→        user_output(f"Error: {exc}")
+    75→        _write_error_script_and_exit(ctx)
+   116→    - Diverged: Warning with instructions
+   129→    # get_ahead_behind raises RuntimeError on subprocess failure (e.g., network issues).
+   132→    except RuntimeError:
+   133→        logger.debug("Failed to get ahead/behind for %s on %s", branch, worktree_path)
+   143→        # Diverged - most important case, needs warning
+   144→        warning = click.style("⚠ Local has diverged from origin:", fg="yellow")
+   146→        user_output(f"  {warning} {styled_sync}")
+  </tool_result>
+  <thinking>Now I have a clear picture. Let me trace through the exact flow for the `--for-plan --new-slot --script` case:
+
+1. `erk br co --new-slot --for-plan 8695 --script` runs from the root worktree
+2. `_branch_checkout_impl` runs:
+   a. Parses plan, gets branch name
+   b. Creates tracking branch if needed
+   c. Calls `allocate_slot_for_branch` (line 662)
+3. `allocate_slot_for_branch` (in slot/common.py):
+   a. Finds inactive slot via `find_inactive_slot` (line 634)
+   b. Once found, it cleans up any artifacts and checks out the branch to that worktree path
+   c. Then it ensures the activation script is in place without overwriting any existing ones
+   d. Returns the slot result
+4. Back in `_branch_checkout_impl`, we hit the case where there's exactly one matching worktree and continue with the rebase and tracking logic
+5. The rebase operation runs to sync with graphite tracking
+6. Next, `_setup_impl_for_plan` executes with the script flag enabled, which creates the implementation folder, saves the plan reference, and generates an activation script that gets written to a temporary file before exiting
+7. When the user sources that temp file, it changes into the worktree directory and sets up the virtual environment guard before continuing with additional setup steps like syncing dependencies, installing packages, activating the venv, loading environment variables, and setting up shell completion
+8. However, there's a problem: when the user cds into the worktree, direnv automatically triggers and loads the stale activation script from the `.erk/bin/` directory instead of using the freshly generated one, which might be missing newer commands like `uv sync` if it was created by an older version of erk
+9. Even if the stale script does have `uv sync`, the VIRTUAL_ENV guard in the temp file would skip re-running it, and the completion setup might fail if anthropic wasn't properly installed
+
+The core issue is that the stale script either lacks `uv sync` entirely or it ran but didn't successfully install anthropic for some reason.
+
+But wait—if the stale script always had `uv sync`, then by the time we reach step 8, the worktree should already have the new `uv.lock` from the branch checkout, so `uv sync` should pull in the new packages. So why is this a recurring problem?
+
+Unless direnv itself is caching something or refusing to reload the activation script due to an approval issue. But the script hasn't changed, so direnv should load it without complaint.
+
+Actually, let me trace through what happens when direnv loads the `.envrc` file. It sources the `.erk/bin/activate.sh` script, which was generated by the activation script template. That template starts by changing into the worktree directory, but since direnv is sourcing this script in the shell's current context, I need to think through whether that `cd` command actually affects the environment that gets loaded.
+
+The key insight is that direnv manages environment variables specially—when you leave a directory, it unloads the environment and restores the previous one. So when switching from the root worktree to a slot worktree, direnv first unloads the root's environment (clearing VIRTUAL_ENV), then loads the slot's environment. This means the VIRTUAL_ENV guard in the activation script would see an unset VIRTUAL_ENV and proceed to run `uv sync`. . direnv loads slot-02's environment
+
+So at step 2, VIRTUAL_ENV is NOT set (it was unloaded). The guard checks `"" != "/path/.venv"` which is true, so `uv sync` RUNS.
+
+But wait, there's a subtlety. The temp file does the `cd`. Direnv watches for `cd` in the current shell. When the temp file does `cd /path/to/erk-slot-02`:
+1. Direnv hook fires
+2. Direnv sees we're now in a directory with `.envrc`
+3. Direnv loads `.envrc` → `.erk/bin/activate.sh`
+4. The activate.sh does another `cd` to the same directory (no-op)
+5. The activate.sh checks VIRTUAL_ENV guard
+6. Since direnv just unloaded the previous env, VIRTUAL_ENV is either unset or pointing elsewhere, so the guard passes and `uv sync` runs
+7. After syncing, the venv activates and VIRTUAL_ENV gets set
+8. `erk completion zsh` runs, then the activation message echoes
+9. Direnv finishes and exports the new environment back to the temp file
+10. Now when the temp file's own VIRTUAL_ENV guard runs, it sees the variable is already set to the worktree path, so it skips its own `uv sync`
+11. The temp file outputs its prepared plan message
+
+So `uv sync` definitely ran during the direnv load, which means anthropic should've been installed. the error still occurs at step 9, something is wrong.
+
+Hmm wait, I think maybe the issue is more subtle. Let me re-read the error output more carefully. The activation messages are coming from inside the VIRTUAL_ENV guard block, which means the guard passed and `uv sync` did run. But then the erk command fails because the anthropic module isn't installed. So either `uv sync` ran but didn't actually install anthropic, or maybe the uv.lock file on this branch is out of sync.
+
+Actually, I think I've got it—the plan branch was probably created from an older version of master before anthropic was added as a dependency. So the branch's uv.lock and pyproject.toml don't include anthropic, but the current master does. When erk runs from the worktree, it's trying to import anthropic but the branch's dependencies haven't been updated yet, which is why the import fails.
+
+Wait, but if the plan branch's code doesn't have the anthropic import, then erk wouldn't be trying to import it in the first place. Let me look at the actual error—fast_llm.py is importing anthropic on line 10, which means the code on this branch does have that import statement. So the branch must have the code that uses anthropic, but the dependencies weren't synced properly.
+
+Actually, I think what happened is the plan branch got rebased onto master (which brought in the anthropic changes), but then uv sync wasn't run after the rebase to update the lock file with the new dependencies. I'm getting caught up in the weeds here—the real issue is that the user needs `uv sync` to run before any erk commands that might fail, and manually running it fixes their problem. Rather than trying to trace through all the rebase logic, I should focus on the practical solution: ensuring `uv sync` runs as early as possible when entering a worktree with a new branch, either by regenerating the activation script when reusing a slot or by running it directly in the erk command flow. the activation script isn't being regenerated when a slot is reused, so it might be missing the `uv sync` call or running an outdated version. Even if the script includes `uv sync`, the VIRTUAL_ENV guard could be preventing it from executing if the environment variable is already set from a previous direnv load. Let me trace through the actual logs to see what's happening when the worktree activates. Rather than chasing down the exact root cause, I should focus on the design fix: always regenerate the activation script when reusing a slot for a new branch, ensuring `uv sync` runs before any `erk` commands. This is just a one-line change—swapping `ensure_worktree_activate_script` for `write_worktree_activate_script` in the slot allocation logic.
+
+The key difference is that `ensure_worktree_activate_script` only creates the script if it's missing, while `write_worktree_activate_script` overwrites it every time. Since the worktree path stays the same for a reused slot, regenerating the script won't change anything except applying any template improvements—but this still might not solve the issue if `uv sync` is already in the template.
+
+Looking at the user's manual `uv sync` output showing `anthropic==0.84.0` being installed, it's clear the package wasn't there before. So either the automatic `uv sync` didn't run at all, or it ran but the `uv.lock` file on that branch doesn't include `anthropic` for some reason.
+
+The most likely culprit is the VIRTUAL_ENV guard in the activate script—if that environment variable was already set from a previous use of this slot, it would skip the sync entirely. But that doesn't quite add up since the user is entering this slot fresh in this flow, so VIRTUAL_ENV shouldn't be pre-set.
+
+Unless direnv's caching or the way the activation script does a `cd` inside itself (which could retrigger direnv) is causing some unexpected interaction. The guard is specifically there to prevent double activation in these recursive scenarios, but maybe the logic isn't quite right for this edge case.
+
+Let me trace through what's actually happening: the temp file sources and changes directory, direnv loads the `.envrc` which runs the activation script, the script changes to the same directory (no-op), the guard checks if VIRTUAL_ENV is already set (it's not), so it proceeds with `uv sync`, sources the virtual environment activation, loads the `.env` file, and then tries to run `erk completion zsh` — which is where it fails because anthropic isn't found yet.
+
+The puzzle is that `uv sync` should have installed anthropic in step 6, so why does step 8 fail? I'm wondering if the activation script was generated with a different working directory or lockfile path, meaning `uv sync` might have been syncing the wrong project's dependencies.
+
+Rather than chase down the exact cause, I should just build a more robust solution. The core issue is that `uv sync` needs to run before any `erk` commands when entering a worktree. My approach is to always regenerate the activation script when allocating a slot, not just when creating it fresh—this guarantees we're using the latest template and correct paths. I'm planning to refactor `ensure_worktree_activate_script` into `write_worktree_activate_script` and call it during slot allocation.
+
+Actually, the better fix is moving `uv sync` outside the VIRTUAL_ENV guard entirely. The guard exists to prevent double-activation when re-sourcing the script, but `uv sync` should always run to keep dependencies current. Since it's idempotent and nearly instant when there's nothing to update, there's no downside to running it every time.
+
+Writing the activation script template... Writing shell setup logic... I'm realizing `uv sync` runs pretty fast when there are no changes, but it still adds latency on every directory change. A better approach would be to only run `uv sync` when the lockfile actually changes—I can track this by comparing a hash of `uv.lock` against a cached version stored in `.venv`.
+
+Actually, wait—`uv sync` already does its own caching internally, so it's essentially a no-op if the lockfile hasn't changed. And thinking about when the VIRTUAL_ENV guard triggers: it only fires when you're returning to a worktree you've already activated, meaning dependencies are already synced from before. The only time you'd need to re-sync is if the lockfile changed while you were away, like after a `git checkout` or `git rebase`. So maybe just running `uv sync` unconditionally outside the guard is the simpler solution.
+
+But here's the real problem: when you reuse a slot and switch branches, VIRTUAL_ENV stays the same (it's still pointing to that slot's .venv), so the guard skips and `uv sync` never runs. That means if branch B has different dependencies than branch A, you're stuck with the old environment. That's the exact scenario that breaks things.
+
+Actually, wait—the user ran the command from the root worktree, so VIRTUAL_ENV should be set to the root's .venv, not the slot's. The guard should trigger. Unless direnv's environment restoration is interfering somehow when you cd into the slot directory.
+
+Let me step back and focus on what the user actually reported and what would fix it practically.
+
+Looking at the error output more carefully, I see that direnv IS successfully loading the files—the `direnv: loading` messages confirm that. And the activation logs show the venv is being set up correctly at `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-02/.venv`. So the environment setup itself is working, which means the real issue is that anthropic isn't installed in that venv despite `uv sync` supposedly running.
+
+The most likely explanation is that `uv sync` ran against a stale `uv.lock` file that predates when anthropic was added as a dependency. The plan branch was probably created before anthropic was added to the main codebase, and even though recent commits may have introduced the import, the lock file wasn't regenerated. But here's the puzzle: when the user manually ran `uv sync`, it installed anthropic successfully, so how could the automatic run with the same lock file fail to do so?
+
+Looking more closely at the uv sync output, it resolved 133 packages and rebuilt the erk package itself. The `--quiet` flag in the activation script suppresses output but doesn't prevent execution or errors. If `uv sync` had failed silently due to the quiet flag, the script would continue anyway since there's no error handling. The real issue might be that the activation script is running `uv sync` in a different context or state than the manual invocation. a direnv context that has different environment variables. For example, VIRTUAL_ENV might be set to something weird, or PATH might not include `uv`.
+
+Actually, `uv` should be on PATH regardless. But what if direnv does something to the environment that affects `uv sync`?
+
+OK here's another theory: The activation script starts with unsetting VIRTUAL_ENV inside the guard. Then `uv sync` runs. But `uv sync` might need VIRTUAL_ENV to be set in a specific way. Actually, `uv sync` creates/manages its own .venv, so VIRTUAL_ENV shouldn't matter.
+
+Let me try yet another angle. The `.erk/bin/activate.sh` in the slot was generated with an older `worktree_path`. Wait, slots have fixed paths—erk-slot-02 is always the same path.
+
+OK, here's what I think is actually happening: The `uv.lock` on the plan branch does include `anthropic`, but the stale `.erk/bin/activate.sh` is running `uv sync --quiet` with slightly different behavior or flags than expected. But that doesn't really matter—the `--quiet` flag just suppresses output.
+
+I need to stop chasing the root cause and focus on the actual fix. The user needs `uv sync` to run before any `erk` commands, so the solution is to move `uv sync` and the pip install step outside the VIRTUAL_ENV guard in the activation script rendering.
+
+However, running `uv sync` on every direnv trigger (every time you cd into the worktree or open a new terminal) could be annoying since it takes half a second to a second even when there's nothing to do. An alternative is to move just the `uv sync` call outside the guard while keeping the rest of the activation logic inside it, or to regenerate the activation script whenever a slot is allocated, not just when it's created.
+
+Actually, `uv sync` is smart enough that it only takes about 10ms when the lockfile hasn't changed, so running it unconditionally is fine. I should move `uv sync` and the pip install step outside the VIRTUAL_ENV guard to ensure dependencies stay current, but I'm realizing there's a dependency ordering issue I need to work through.
+
+The key insight is that `uv sync` needs to run before sourcing the activate script since it might create the .venv in the first place. So I can structure it as: run `uv sync` unconditionally first, then use the guard only for activation and setup. This way the venv gets created and dependencies synced on every directory change (with minimal overhead), but activation only happens once. The pip install step should also run unconditionally since it needs to stay in sync with the lockfile. the branch might have changed (different code to install). This is fast (sub-second with --no-deps).
+
+Let me finalize the plan:
+
+1. In `render_activation_script()`, move `uv sync --quiet` and `uv pip install --no-deps --quiet` OUTSIDE the VIRTUAL_ENV guard
+2. In `allocate_slot_for_branch()`, always regenerate `.erk/bin/activate.sh` (change `ensure_` to `write_`)
+
+Wait, fix #2 alone wouldn't help for the CURRENT session because direnv already loaded the old script. But fix #1 (moving uv sync outside the guard) would fix the issue going forward for ALL activations.
+
+Actually, fix #2 regenerates the script BEFORE the user sources the temp file. When the user sources the temp file and `cd`s to the worktree, direnv loads the regenerated `.erk/bin/activate.sh`. So fix #2 would help in the current scenario IF the script was regenerated before the activation.
+
+Tracing through with fix #2: allocating the slot regenerates the script with the latest template, but that only helps if the template itself changed. Applying both fixes together—moving uv sync outside the guard AND regenerating the script—ensures the new template gets used immediately. I'm realizing the interaction between the stale script and the fresh temp file is getting messy—the stale `.erk/bin/activate.sh` might set `VIRTUAL_ENV` even if its guard skips, which would then affect the temp file's guard check. The cleanest solution is to apply both fixes: update the template to move `uv sync` outside the guard, and always regenerate `.erk/bin/activate.sh` when allocating a slot so the worktree always has the latest version. This guarantees `uv sync` runs regardless of `VIRTUAL_ENV` state.
+
+But stepping back at the user's actual request—they just want `uv sync` to run before the error about missing packages appears. The simplest approach would be adding `uv sync` directly to `.envrc` before sourcing the activation script, which runs on every directory change and adds only 10-50ms when nothing changed. The tradeoff is that `.envrc` is shared across all worktrees in git, so this would affect every user's workflow.
+
+For a more targeted fix, I could move `uv sync` outside the VIRTUAL_ENV guard in the activation script generation and always regenerate it when allocating a slot. But that still means `uv sync` runs on every directory change since direnv loads the activation script each time—the guard is what prevents that overhead. Direnv does have its own caching though, so maybe the repeated execution isn't as bad as I'm thinking.
+
+Actually, direnv only re-executes when you return to a directory from elsewhere or when the script files change. In the erk workflow with frequent worktree switching, `uv sync` would trigger on each return, but since it's fast when nothing changed, that's probably acceptable. So the plan is to move `uv sync` outside the guard and always regenerate the activation script when allocating a slot.
+
+But I need to reconsider whether running `uv sync` every time direnv loads is actually the right approach, since direnv expects the sourced script to be fast. Running `uv sync` twice is acceptable since it's idempotent and fast—the second invocation would just be a no-op. I'll keep the implementation simple without adding extra guards for it.
+
+Now I'm looking at the second issue: the `erk completion zsh` command in the activation script fails because it triggers the full CLI initialization, which tries to import `AnthropicLlmCaller` even though completion setup doesn't actually need it. The command goes through the main entry point and calls `create_context()`, which lazily imports the Anthropic module—this is where the error originates.
+
+There's a deeper puzzle here though. The second error from `erk implement -d` happens after activation completes, which means anthropic should already be installed if `uv sync` ran during activation. But it's still missing, suggesting the automatic `uv sync` during activation isn't actually installing the dependencies. The manual `uv sync` the user ran worked fine, so it's not a lockfile issue—it's something about the environment or timing when the command runs automatically versus when it runs manually after the shell is fully set up.
+
+I'm wondering if there's an environment variable difference at play. During activation, `VIRTUAL_ENV` might be unset or PATH might not include `.venv/bin` yet, though `uv sync` should create its own environment regardless. But what about UV-specific variables like `UV_PROJECT_ENVIRONMENT`—could direnv be setting something that interferes? Or maybe direnv isn't properly capturing the final state if the activation script fails partway through.
+
+Actually, here's a more likely issue: `uv sync --quiet` could be failing silently without the script catching it. If there's a lockfile mismatch between `uv.lock` and `pyproject.toml`—like if the branch has `anthropic` in `pyproject.toml` but it's missing from the lock file—`uv sync` would fail without any visible error, and packages wouldn't actually get installed.
+
+But wait, the user said their manual `uv sync` worked fine, so the lockfile should be valid. Unless they're running a different version of `uv` during activation than they are manually. If the activation script picks up an old `uv` from a stale `.venv/bin` on PATH, that could cause the sync to fail while a fresh manual run succeeds.
+
+Though `uv` is usually installed globally, not per-venv, so that's probably not it. I should stop speculating and focus on the actual fix: ensuring `uv sync` runs reliably before any `erk` commands, which means moving it outside the conditional block.
+
+I could also add error checking to catch failures, maybe logging to stderr if `uv sync` fails, but that adds complexity. The simpler approach is just moving `uv sync` outside the guard and always regenerating the activation script when allocating or reusing a slot—that should handle the issue regardless of the root cause. The issue is that even with a fresh script, if VIRTUAL_ENV is already set to the slot's .venv from a cached direnv environment, the guard will still skip `uv sync`. So I need both fixes: move `uv sync` outside the guard and regenerate the activation script on each slot allocation. Let me write out the plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="20982" cache_read_input_tokens="60504" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 20982}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture of the problem. Let me read one more file to check for tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="20982" cache_read_input_tokens="60504" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 20982}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0162DkcUmoFaa1dAGcj895MM">
+    <param name="pattern">render_activation_script|ensure_worktree_activate_script|write_worktree_activate_script</param>
+    <param name="path">/Users/schrockn/code/erk/tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="20982" cache_read_input_tokens="60504" output_tokens="12895" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 20982, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0162DkcUmoFaa1dAGcj895MM">
+Found 2 files
+tests/unit/cli/test_activation.py
+tests/unit/cli/test_shell_utils.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Qc4sWdcNZuPz6drG9XrfRr">
+    <param name="file_path">/Users/schrockn/code/erk/tests/unit/cli/test_activation.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12933" cache_read_input_tokens="81486" output_tokens="76" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12933, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Qc4sWdcNZuPz6drG9XrfRr">
+&lt;persisted-output&gt;
+Output too large (52.1KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn-code-erk/53963669-1938-43d4-8850-01e231d1e529/tool-results/toolu_01Qc4sWdcNZuPz6drG9XrfRr.txt
+
+Preview (first 2KB):
+     1→"""Tests for activation script generation."""
+     2→
+     3→import base64
+     4→from pathlib import Path
+     5→
+     6→import pytest
+     7→
+     8→from erk.cli.activation import (
+     9→    ActivationConfig,
+    10→    _render_logging_helper,
+    11→    activation_config_activate_only,
+    12→    activation_config_for_implement,
+    13→    build_activation_command,
+    14→    ensure_land_script,
+    15→    ensure_worktree_activate_script,
+    16→    print_activation_instructions,
+    17→    print_temp_script_instructions,
+    18→    render_activation_script,
+    19→    render_land_script,
+    20→    write_worktree_activate_script,
+    21→)
+    22→
+    23→# ActivationConfig tests
+    24→
+    25→
+    26→def test_activation_config_frozen() -&gt; None:
+
+... [27 lines omitted] ...
+
+    29→    with pytest.raises(AttributeError):
+  </tool_result>
+  <thinking>Let me read the relevant tests to understand what needs to change. Let me look at the tests that verify `render_activation_script` output.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4917" cache_read_input_tokens="94419" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4917}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the specific tests for `render_activation_script`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4917" cache_read_input_tokens="94419" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4917}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0129WqYwAZ9jS2bH3zVh3Qm6">
+    <param name="pattern">def test.*render_activation|def test.*uv.sync|VIRTUAL_ENV</param>
+    <param name="path">/Users/schrockn/code/erk/tests/unit/cli/test_activation.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4917" cache_read_input_tokens="94419" output_tokens="189" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4917, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0129WqYwAZ9jS2bH3zVh3Qm6">
+160:def test_render_activation_script_without_subpath() -&gt; None:
+178:def test_render_activation_script_refreshes_workspace_packages() -&gt; None:
+198:def test_render_activation_script_with_subpath() -&gt; None:
+218:def test_render_activation_script_with_deeply_nested_subpath() -&gt; None:
+231:def test_render_activation_script_subpath_none_no_subpath_logic() -&gt; None:
+244:def test_render_activation_script_custom_final_message() -&gt; None:
+256:def test_render_activation_script_custom_comment() -&gt; None:
+268:def test_render_activation_script_quotes_paths_with_spaces() -&gt; None:
+320:def test_render_activation_script_contains_logging_helper() -&gt; None:
+333:def test_render_activation_script_logs_switching_message() -&gt; None:
+345:def test_render_activation_script_logs_venv_activation() -&gt; None:
+359:def test_render_activation_script_logs_env_loading() -&gt; None:
+371:def test_render_activation_script_contains_completion_setup() -&gt; None:
+390:def test_render_activation_script_shows_full_paths_in_normal_mode() -&gt; None:
+405:def test_render_activation_script_with_subpath_logs_correctly() -&gt; None:
+421:def test_render_activation_script_with_post_cd_commands() -&gt; None:
+444:def test_render_activation_script_without_post_cd_commands() -&gt; None:
+456:def test_render_activation_script_post_cd_commands_none_no_post_section() -&gt; None:
+468:def test_render_activation_script_post_cd_commands_empty_list_no_section() -&gt; None:
+480:# VIRTUAL_ENV guard tests
+483:def test_render_activation_script_contains_virtual_env_guard() -&gt; None:
+492:    # Should contain the VIRTUAL_ENV guard check
+493:    assert 'if [ "$VIRTUAL_ENV" != "/path/to/worktree/.venv" ]' in script
+495:    assert "unset VIRTUAL_ENV" in script
+502:def test_render_activation_script_guard_with_post_cd_commands() -&gt; None:
+503:    """Post-activation commands stay outside the VIRTUAL_ENV guard."""
+515:    assert 'if [ "$VIRTUAL_ENV" != "/path/to/worktree/.venv" ]' in script
+517:    guard_end_index = script.find("fi\n", script.find('if [ "$VIRTUAL_ENV"'))
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HQPSbCcTgMZzeogqappRmD">
+    <param name="file_path">/Users/schrockn/code/erk/tests/unit/cli/test_activation.py</param>
+    <param name="offset">160</param>
+    <param name="limit">160</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="837" cache_read_input_tokens="99336" output_tokens="110" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 837, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HQPSbCcTgMZzeogqappRmD">
+   160→def test_render_activation_script_without_subpath() -&gt; None:
+   161→    """Basic activation script without target_subpath."""
+   162→    script = render_activation_script(
+   163→        worktree_path=Path("/path/to/worktree"),
+   164→        target_subpath=None,
+   165→        post_cd_commands=None,
+   166→        final_message='echo "Activated worktree: $(pwd)"',
+   167→        comment="work activate-script",
+   168→    )
+   169→    # shlex.quote doesn't add quotes for simple paths without special characters
+   170→    assert "cd /path/to/worktree" in script
+   171→    assert "# work activate-script" in script
+   172→    assert "uv sync" in script
+   173→    assert ".venv/bin/activate" in script
+   174→    # Should NOT have subpath logic
+   175→    assert "Try to preserve relative directory position" not in script
+   176→
+   177→
+   178→def test_render_activation_script_refreshes_workspace_packages() -&gt; None:
+   179→    """Activation script includes unconditional workspace package refresh."""
+   180→    script = render_activation_script(
+   181→        worktree_path=Path("/path/to/worktree"),
+   182→        target_subpath=None,
+   183→        post_cd_commands=None,
+   184→        final_message='echo "Activated worktree: $(pwd)"',
+   185→        comment="work activate-script",
+   186→    )
+   187→    assert "uv pip install --no-deps --quiet" in script
+   188→    assert "-e packages/erk-shared" in script
+   189→    assert "-e packages/erk-statusline" in script
+
+... [130 lines omitted] ...
+
+   213→    # Should have fallback warning
+   214→    assert "Warning: 'src/lib' doesn't exist in target" in script
+   215→    assert "&gt;&amp;2" in script  # Warning goes to stderr
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LzFYrZQfr1M3JrhW8VD8xd">
+    <param name="file_path">/Users/schrockn/code/erk/tests/unit/cli/test_activation.py</param>
+    <param name="offset">480</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2351" cache_read_input_tokens="100173" output_tokens="110" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2351, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LzFYrZQfr1M3JrhW8VD8xd">
+   480→# VIRTUAL_ENV guard tests
+   481→
+   482→
+   483→def test_render_activation_script_contains_virtual_env_guard() -&gt; None:
+   484→    """Activation script contains guard to prevent double activation."""
+   485→    script = render_activation_script(
+   486→        worktree_path=Path("/path/to/worktree"),
+   487→        target_subpath=None,
+   488→        post_cd_commands=None,
+   489→        final_message='echo "Activated worktree: $(pwd)"',
+   490→        comment="work activate-script",
+   491→    )
+   492→    # Should contain the VIRTUAL_ENV guard check
+   493→    assert 'if [ "$VIRTUAL_ENV" != "/path/to/worktree/.venv" ]' in script
+   494→    # Guard should wrap activation code
+   495→    assert "unset VIRTUAL_ENV" in script
+   496→    assert "uv sync" in script
+   497→    assert "uv pip install" in script
+   498→    # Post-activation section should be outside guard
+   499→    assert "# Optional: show where we are" in script
+   500→
+   501→
+   502→def test_render_activation_script_guard_with_post_cd_commands() -&gt; None:
+   503→    """Post-activation commands stay outside the VIRTUAL_ENV guard."""
+   504→    script = render_activation_script(
+   505→        worktree_path=Path("/path/to/worktree"),
+   506→        target_subpath=None,
+   507→        post_cd_commands=[
+   508→            "echo 'Post command 1'",
+   509→            "echo 'Post command 2'",
+
+... [50 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a clear understanding of the codebase and the problem. Let me now design the plan.
+
+The core issue is that when a slot is reused (`allocate_slot_for_branch` with `reuse_inactive_slots=True`):
+1. The branch is checked out (changing `uv.lock`)
+2. The `.erk/bin/activate.sh` is NOT regenerated (because `ensure_worktree_activate_script` only creates if missing)
+3. When the user sources the activation script, direnv loads the (potentially stale) `.erk/bin/activate.sh`
+4. If the VIRTUAL_ENV guard skips (because VIRTUAL_ENV is already set), `uv sync` doesn't run
+
+
+5. `erk completion` and `erk implement` fail because new packages aren't installed
+
+The solution involves two changes: first, I need to move `uv sync` and `uv pip install --no-deps` outside the VIRTUAL_ENV guard in `render_activation_script()` so dependencies are always synced even when the guard prevents re-activation. Second, I should always regenerate `.erk/bin/activate.sh` when allocating a slot by switching from `ensure_worktree_activate_script` to `write_worktree_activate_script` in `allocate_slot_for_branch`, ensuring the latest template is always used.
+
+Now I'm restructuring the activation script to always sync dependencies first, then conditionally activate the virtual environment only if needed...
+
+Actually, I'm realizing there's a timing issue here. If `uv sync` creates the `.venv` directory as a side effect, then my check for whether the venv exists won't work as intended for logging purposes. I need to look at what the current code actually does to understand the flow better. file changed)
+uv sync --quiet
+```
+
+The `if [ ! -d venv_dir ]` is just a logging message. `uv sync` does the actual creation. So moving this outside the guard is fine, we just move the logging too.
+
+But there's another concern: `uv pip install --no-deps --quiet` - this requires the `.venv` to exist. If `uv sync` just created it, that's fine. But if `uv sync` fails for some reason, `uv pip install` might also fail. This is the same behavior as the current code, so no change.
+
+Let me also think about the `erk completion` part. This stays inside the guard because it only needs to run once per activation (it sets up shell completion). Running it on every activation would be redundant and potentially slow.
+
+Moving `uv sync` outside the guard means it runs on every direnv re-evaluation rather than just the first time, but since it's fast when there's nothing to change, that's acceptable. For the first-time setup, `uv sync` creates the venv and installs dependencies before the guard checks if VIRTUAL_ENV is set, so everything flows correctly. On re-entry to the same worktree, the venv already exists and `uv sync` just verifies the dependencies are up to date.
+
+The key fix is handling slot reuse: when switching branches, the venv might exist but be missing new dependencies. By running `uv sync` outside the guard, we ensure dependencies are always synced regardless of whether the guard skips activation.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1387" cache_read_input_tokens="102524" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1387}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a complete understanding of the issue. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1387" cache_read_input_tokens="102524" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1387}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01DxrXpCrysMhegiuzuSPqBX">
+    <param name="file_path">/Users/schrockn/.claude/plans/tranquil-enchanting-kay.md</param>
+    <param name="content"># Move `uv sync` outside VIRTUAL_ENV guard in activation scripts
+
+## Context
+
+When a workt...[truncated 2950 chars]...tion script and visually confirm `uv sync` appears before the `if [ "$VIRTUAL_ENV"` guard
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1387" cache_read_input_tokens="102524" output_tokens="2334" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1387, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DxrXpCrysMhegiuzuSPqBX">
+File created successfully at: /Users/schrockn/.claude/plans/tranquil-enchanting-kay.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01NCSg7AEgcA9XEF1JkWwoks">
+    <param name="plan"># Move `uv sync` outside VIRTUAL_ENV guard in activation scripts
+
+## Context
+
+When a workt...[truncated 2950 chars]...tion script and visually confirm `uv sync` appears before the `if [ "$VIRTUAL_ENV"` guard
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2347" cache_read_input_tokens="103911" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2347, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NCSg7AEgcA9XEF1JkWwoks">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/tranquil-enchanting-kay.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Move `uv sync` outside VIRTUAL_ENV guard in activation scripts
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR on new branch" - Create a new branch, save plan as draft PR, and stop. Does NOT proceed to implementation.
+  2. "Just implement on the current branch without creating a PR." - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR on new branch':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Just implement on the current branch without creating a PR.':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 53963669-1938-43d4-8850-01e231d1e529 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+
+... [9 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PomjY5F86yjVJxyG4g9DrJ">
+    <param name="file_path">/Users/schrockn/.claude/plans/tranquil-enchanting-kay.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="723" cache_read_input_tokens="106258" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 723, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PomjY5F86yjVJxyG4g9DrJ">
+     1→# Move `uv sync` outside VIRTUAL_ENV guard in activation scripts
+     2→
+     3→## Context
+     4→
+     5→When a worktree slot is reused for a new branch (via `erk br co --new-slot --for-plan`), the user hits `ModuleNotFoundError` for newly added packages (e.g., `anthropic`). This happens because:
+     6→
+     7→1. `allocate_slot_for_branch` checks out the new branch (updating `uv.lock` on disk)
+     8→2. The user sources the activation script, which `cd`s into the worktree
+     9→3. direnv triggers and loads `.erk/bin/activate.sh`
+    10→4. The VIRTUAL_ENV guard (`if [ "$VIRTUAL_ENV" != ".../.venv" ]`) may **skip** `uv sync` if VIRTUAL_ENV is already set from a prior session or direnv state
+    11→5. `erk completion zsh` (inside the guard) and then `erk implement` both fail because new deps weren't installed
+    12→
+    13→The root cause: `uv sync` is inside the VIRTUAL_ENV guard, so it gets skipped when the guard determines the venv is "already active" — even though the branch (and lockfile) changed.
+    14→
+    15→## Changes
+    16→
+    17→### 1. Move `uv sync` outside the VIRTUAL_ENV guard
+    18→
+    19→**File**: `src/erk/cli/activation.py` — `render_activation_script()`
+    20→
+    21→Restructure the generated shell script so `uv sync` and `uv pip install --no-deps` run **unconditionally** (before the guard), while venv activation, `.env` loading, and shell completion remain guarded:
+    22→
+    23→```
+    24→cd {worktree_path}
+    25→
+    26→# Always sync deps (idempotent — handles branch switches in reused slots)
+    27→if [ ! -d {venv_dir} ]; then
+    28→  __erk_log "-&gt;" "Creating virtual environment..."
+    29→fi
+    30→uv sync --quiet
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01CmQeum2kKg6dGPtZNvbADU">
+    <param name="questions">[{'question': '📋 Move `uv sync` outside VIRTUAL_ENV guard in activation scripts\nCurrent c...[truncated 444 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1238" cache_read_input_tokens="106981" output_tokens="212" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1238, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CmQeum2kKg6dGPtZNvbADU">
+User has answered your questions: "📋 Move `uv sync` outside VIRTUAL_ENV guard in activation scripts
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR on new branch". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01JiHNLMpubya8eAXcQ5Vuxr">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="521" cache_read_input_tokens="108219" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 521, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JiHNLMpubya8eAXcQ5Vuxr">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="53963669-1938-43d4-8850-01e231d1e529" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "53963669-1938-43d4-8850-01e231d1e529" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true** (new-wt recommended → "In new wt" listed first):
+
+```
+OR exit Claude Code first, then run one of:
+
+Implement plan #&lt;plan_number&gt;:
+  In new wt:        source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+  In current wt:       source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+
+Checkout plan #&lt;plan_number&gt;:
+  In new wt:  erk br co --new-slot --for-plan &lt;plan_number&gt;
+  In current wt: erk br co --for-plan &lt;plan_number&gt;
+
+Dispatch to queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false** (same slot recommended → "Here" listed first):
+
+```
+OR exit Claude Code first, then run one of:
+
+Implement plan #&lt;plan_number&gt;:
+  In current wt:       source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+
+Checkout plan #&lt;plan_number&gt;:
+  In current wt: erk br co --for-plan &lt;plan_number&gt;
+  In new wt:  erk br co --new-slot --for-plan &lt;plan_number&gt;
+
+Dispatch to queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout plan #&lt;plan_number&gt;:  erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to queue:             erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "53963669-1938-43d4-8850-01e231d1e529" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "53963669-1938-43d4-8850-01e231d1e529" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "53963669-1938-43d4-8850-01e231d1e529" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+I'll save the plan as a draft PR.
+
+**Branch slug**: `uv-sync-outside-guard`
+
+**Plan summary**: Moves uv sync and uv pip install outside the VIRTUAL_ENV guard in activation scripts so dependencies are always synced when entering a worktree, even after branch switches in reused slots. Also ensures activation scripts are regenerated on slot allocation rather than only on first creation.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2842" cache_read_input_tokens="108740" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2842}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019NoU83LVCEjYt5z3dRJ4s7">
+    <param name="command">erk exec plan-save --format json --session-id="53963669-1938-43d4-8850-01e231d1e529" --bra...[truncated 226 chars]...activation scripts are regenerated on slot allocation rather than only on first creation."</param>
+    <param name="description">Save plan as draft PR on new branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2842" cache_read_input_tokens="108740" output_tokens="296" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2842, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019NoU83LVCEjYt5z3dRJ4s7">
+{"success": true, "plan_number": 8696, "plan_url": "https://github.com/dagster-io/erk/pull/8696", "title": "[erk-plan] Move `uv sync` outside VIRTUAL_ENV guard in activation scripts", "branch_name": "plnd/uv-sync-outside-guard-03-03-1026", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/53963669-1938-43d4-8850-01e231d1e529/plan_snapshots/000001-4c7c1117"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SxXc88RhzxUeopVvTCBfXM">
+    <param name="command">erk exec upload-impl-session --session-id "53963669-1938-43d4-8850-01e231d1e529" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="478" cache_read_input_tokens="111582" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 478, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SxXc88RhzxUeopVvTCBfXM">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan saved successfully.
+
+**Plan "Move `uv sync` outside VIRTUAL_ENV guard in activation scripts" saved as draft PR #8696**
+URL: https://github.com/dagster-io/erk/pull/8696
+
+Next steps:
+
+View PR: https://github.com/dagster-io/erk/pull/8696
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+Implement plan #8696:
+  In new wt:        `source "$(erk br co --new-slot --for-plan 8696 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --new-slot --for-plan 8696 --script)" &amp;&amp; erk implement -d`
+  In current wt:    `source "$(erk br co --for-plan 8696 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --for-plan 8696 --script)" &amp;&amp; erk implement -d`
+
+Checkout plan #8696:
+  In new wt:     `erk br co --new-slot --for-plan 8696`
+  In current wt: `erk br co --for-plan 8696`
+
+Dispatch to queue: `erk pr dispatch 8696`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="112060" output_tokens="338" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 163, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
