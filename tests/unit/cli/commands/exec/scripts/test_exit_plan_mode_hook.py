@@ -125,10 +125,10 @@ class TestDetermineExitAction:
         assert result.delete_incremental_plan_marker is True
         assert result.delete_plan_saved_marker is False  # Not touched
 
-    def test_plan_saved_marker_allows_and_cleans_up(self) -> None:
-        """Plan-saved marker allows exit and deletes the marker.
+    def test_plan_saved_marker_blocks_and_cleans_up(self) -> None:
+        """Plan-saved marker blocks exit to suppress dialog and deletes the marker.
 
-        Plan mode should turn off after plan-save; the marker is deleted
+        The BLOCK suppresses the "Ready to code?" dialog. The marker is deleted
         so the planning session is fully cleaned up.
         """
         result = determine_exit_action(
@@ -137,7 +137,7 @@ class TestDetermineExitAction:
                 plan_file_path=Path("/some/plan.md"),
             )
         )
-        assert result.action == ExitAction.ALLOW
+        assert result.action == ExitAction.BLOCK
         assert "Plan PR saved" in result.message
         assert result.delete_plan_saved_marker is True
         assert result.delete_implement_now_marker is False
@@ -150,7 +150,7 @@ class TestDetermineExitAction:
                 plan_file_path=Path("/some/plan.md"),
             )
         )
-        assert result.action == ExitAction.ALLOW
+        assert result.action == ExitAction.BLOCK
         assert "Plan PR saved" in result.message
 
     def test_no_plan_file_allows_exit(self) -> None:
@@ -184,7 +184,7 @@ class TestDetermineExitAction:
         assert result.delete_objective_context_marker is True
 
     def test_plan_saved_deletes_objective_context_marker_when_present(self) -> None:
-        """Plan-saved marker allows exit and deletes both markers."""
+        """Plan-saved marker blocks exit and deletes both markers."""
         result = determine_exit_action(
             HookInput.for_test(
                 plan_saved_marker_exists=True,
@@ -193,7 +193,7 @@ class TestDetermineExitAction:
                 plan_file_path=Path("/some/plan.md"),
             )
         )
-        assert result.action == ExitAction.ALLOW
+        assert result.action == ExitAction.BLOCK
         # Plan-saved marker is deleted (session complete)
         assert result.delete_plan_saved_marker is True
         # Objective-context marker is also deleted (one-time use)
@@ -987,10 +987,10 @@ class TestHookIntegration:
         assert "Implement-now marker found" in result.output
         assert not implement_now_marker.exists()  # Marker deleted
 
-    def test_plan_saved_marker_flow_allows_exit_and_cleans_up(self, tmp_path: Path) -> None:
-        """Verify plan-saved marker allows exit and deletes the marker.
+    def test_plan_saved_marker_flow_blocks_and_cleans_up(self, tmp_path: Path) -> None:
+        """Verify plan-saved marker blocks exit (suppressing dialog) and deletes the marker.
 
-        Plan mode should turn off after plan-save; the marker is deleted
+        The BLOCK suppresses the "Ready to code?" dialog. The marker is deleted
         so the planning session is fully cleaned up.
         """
         runner = CliRunner()
@@ -1011,7 +1011,7 @@ class TestHookIntegration:
         stdin_data = json.dumps({"session_id": session_id})
         result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
 
-        assert result.exit_code == 0
+        assert result.exit_code == 2
         assert "Plan PR saved" in result.output
         assert not plan_saved_marker.exists()  # Marker deleted after session ends
 
@@ -1114,7 +1114,7 @@ class TestHookIntegration:
         stdin_data = json.dumps({"session_id": session_id})
         result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
 
-        assert result.exit_code == 0
+        assert result.exit_code == 2
         assert "Plan PR saved" in result.output
         assert not plan_saved_marker.exists()  # Marker deleted
         assert not objective_context_marker.exists()  # Objective marker also deleted

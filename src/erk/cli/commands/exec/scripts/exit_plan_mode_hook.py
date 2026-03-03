@@ -372,10 +372,7 @@ def build_blocking_message(
             "",
             "If user chooses 'Save plan as draft PR':",
             f"  1. Run {save_cmd}",
-            "  2. Tell the user: 'Plan saved! I\\'ll exit plan mode now —",
-            "     click **Approve** on the next dialog to confirm.",
-            "     This will NOT start implementation.'",
-            "  3. Call ExitPlanMode to end the planning session.",
+            "  2. Call ExitPlanMode to end the planning session.",
         ]
     )
 
@@ -402,10 +399,7 @@ def build_blocking_message(
                 "",
                 "If user chooses 'Save plan on current branch':",
                 f"  1. Run {save_cmd} --current-branch",
-                "  2. Tell the user: 'Plan saved on current branch! I\\'ll exit plan mode now —",
-                "     click **Approve** on the next dialog to confirm.",
-                "     This will NOT start implementation.'",
-                "  3. Call ExitPlanMode to end the planning session.",
+                "  2. Call ExitPlanMode to end the planning session.",
                 "     This converts the current branch into the plan PR branch",
                 "     instead of creating a new branch.",
             ]
@@ -472,15 +466,15 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
         )
 
     # Plan-saved marker present (user chose "Save to GitHub" / "Create a plan PR")
-    # Allow exit and clean up the marker - planning session is complete
+    # Block exit to suppress "Ready to code?" dialog - planning session is complete
     if hook_input.plan_saved_marker_exists:
         saved_msg = (
             "✅ Plan PR saved. Planning session complete. "
-            "Plan mode is now off. Do NOT implement — "
-            "use a dedicated worktree for implementation."
+            "Do NOT call ExitPlanMode again — plan mode stays on "
+            "to prevent accidental edits. Session is done."
         )
         return HookOutput(
-            ExitAction.ALLOW,
+            ExitAction.BLOCK,
             saved_msg,
             delete_plan_saved_marker=True,
             delete_objective_context_marker=hook_input.objective_context_marker_exists,
