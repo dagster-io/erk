@@ -233,6 +233,7 @@ def render_deferred_deletion_commands(
     slot_name: str | None,
     is_graphite_managed: bool,
     main_repo_root: Path,
+    is_root_worktree: bool,
 ) -> list[str]:
     """Generate shell commands for deferred worktree/branch deletion.
 
@@ -246,6 +247,7 @@ def render_deferred_deletion_commands(
         slot_name: Slot name if the worktree is a pool slot, None otherwise
         is_graphite_managed: Whether to use Graphite (gt) or plain Git for branch deletion
         main_repo_root: Path to the main repository root (for operations after worktree removal)
+        is_root_worktree: If True, skip worktree cleanup (root worktree cannot be removed)
 
     Returns:
         List of shell commands to execute for deferred deletion
@@ -253,11 +255,12 @@ def render_deferred_deletion_commands(
     commands: list[str] = []
     quoted_main_repo = shlex.quote(str(main_repo_root))
 
-    # Worktree cleanup
-    if slot_name is not None:
-        commands.append(f"erk slot unassign {shlex.quote(slot_name)}")
-    else:
-        commands.append(f"git worktree remove --force {shlex.quote(str(worktree_path))}")
+    # Worktree cleanup (skip for root worktree - it cannot be removed)
+    if not is_root_worktree:
+        if slot_name is not None:
+            commands.append(f"erk slot unassign {shlex.quote(slot_name)}")
+        else:
+            commands.append(f"git worktree remove --force {shlex.quote(str(worktree_path))}")
 
     # Branch deletion (run from main repo root to ensure it exists after worktree removal)
     quoted_branch = shlex.quote(branch)
@@ -583,18 +586,8 @@ def resolve_down_navigation(
     # Check if parent is the trunk - if so, switch to root
     detected_trunk = ctx.git.branch.detect_trunk_branch(repo.root)
     if parent_branch == detected_trunk:
-        # Check if trunk is checked out in root (repo.root path)
-        trunk_wt_path = ctx.git.worktree.find_worktree_for_branch(repo.root, detected_trunk)
-        if trunk_wt_path is not None and trunk_wt_path == repo.root:
-            # Trunk is in root repository, not in a dedicated worktree
-            return "root", False
-        else:
-            # Trunk has a dedicated worktree
-            if trunk_wt_path is None:
-                # Auto-create worktree for trunk branch
-                _worktree_path, was_created = ensure_worktree_for_branch(ctx, repo, parent_branch)
-                return parent_branch, was_created
-            return parent_branch, False
+        # Trunk always belongs in the root worktree
+        return "root", False
     else:
         # Parent is not trunk, check if it has a worktree
         target_wt_path = ctx.git.worktree.find_worktree_for_branch(repo.root, parent_branch)
@@ -740,12 +733,16 @@ def execute_stack_navigation(
         main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
         slot_name = get_slot_name_for_worktree(repo.pool_json_path, current_worktree_path)
         use_graphite = ctx.global_config.use_graphite if ctx.global_config else False
+        is_current_root_wt = any(
+            wt.is_root and wt.path == current_worktree_path for wt in worktrees
+        )
         deletion_commands = render_deferred_deletion_commands(
             worktree_path=current_worktree_path,
             branch=current_branch,
             slot_name=slot_name,
             is_graphite_managed=use_graphite,
             main_repo_root=main_repo_root,
+            is_root_worktree=is_current_root_wt,
         )
 
     # Resolve target path
@@ -757,15 +754,25 @@ def execute_stack_navigation(
             f"Branch '{target_name}' has no worktree. This should not happen.",
         )
 
+    # Build checkout command when navigating to root with non-trunk branch
+    checkout_commands: list[str] | None = None
+    if is_root:
+        detected_trunk = ctx.git.branch.detect_trunk_branch(repo.root)
+        root_wt = next((wt for wt in worktrees if wt.is_root), None)
+        if root_wt is not None and root_wt.branch != detected_trunk:
+            checkout_commands = [f"git checkout {shlex.quote(detected_trunk)}"]
+
     # Handle activation
     if delete_current and current_worktree_path is not None:
+        # Prepend checkout command before deletion commands
+        all_post_cd = (checkout_commands or []) + (deletion_commands or [])
         # Handle activation inline with deferred deletion
         _activate_with_deferred_deletion(
             ctx=ctx,
             repo=repo,
             target_path=target_path,
             worktrees=worktrees,
-            deletion_commands=deletion_commands,
+            deletion_commands=all_post_cd if all_post_cd else None,
             script=script,
             command_name=direction,
             current_branch=current_branch,
@@ -781,7 +788,7 @@ def execute_stack_navigation(
             script=script,
             command_name=direction,
             preserve_relative_path=True,
-            post_cd_commands=None,
+            post_cd_commands=checkout_commands,
             source_branch=current_branch,
             force=force,
             is_root=is_root,

@@ -10,6 +10,8 @@ from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub
+from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.graphite.types import BranchMetadata
@@ -397,9 +399,6 @@ def test_down_delete_current_success() -> None:
         )
 
         # PR for feature-2 is merged
-        from erk_shared.gateway.github.fake import FakeGitHub
-        from erk_shared.gateway.github.types import PullRequestInfo
-
         github_ops = FakeGitHub(
             prs={
                 "feature-2": PullRequestInfo(
@@ -527,8 +526,6 @@ def test_down_delete_current_pr_open() -> None:
         )
 
         # PR for feature-2 is OPEN (active work in progress)
-        from erk_shared.gateway.github.fake import FakeGitHub
-        from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
         github_ops = FakeGitHub(
             prs={
@@ -618,8 +615,6 @@ def test_down_delete_current_force_with_open_pr() -> None:
         )
 
         # PR for feature-2 is OPEN
-        from erk_shared.gateway.github.fake import FakeGitHub
-        from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
 
         github_ops = FakeGitHub(
             prs={
@@ -729,9 +724,6 @@ def test_down_delete_current_pr_closed() -> None:
         )
 
         # PR for feature-2 is CLOSED (abandoned/rejected work)
-        from erk_shared.gateway.github.fake import FakeGitHub
-        from erk_shared.gateway.github.types import PullRequestInfo
-
         github_ops = FakeGitHub(
             prs={
                 "feature-2": PullRequestInfo(
@@ -808,8 +800,6 @@ def test_down_delete_current_no_pr() -> None:
         )
 
         # No PR for feature-2
-        from erk_shared.gateway.github.fake import FakeGitHub
-
         github_ops = FakeGitHub(prs={})
 
         repo = RepoContext(
@@ -867,9 +857,6 @@ def test_down_delete_current_trunk_in_root() -> None:
         )
 
         # PR for feature-1 is merged
-        from erk_shared.gateway.github.fake import FakeGitHub
-        from erk_shared.gateway.github.types import PullRequestInfo
-
         github_ops = FakeGitHub(
             prs={
                 "feature-1": PullRequestInfo(
@@ -1244,9 +1231,6 @@ def test_down_delete_current_slot_aware_unassigns_slot() -> None:
         )
 
         # PR for feature-2 is merged
-        from erk_shared.gateway.github.fake import FakeGitHub
-        from erk_shared.gateway.github.types import PullRequestInfo
-
         github_ops = FakeGitHub(
             prs={
                 "feature-2": PullRequestInfo(
@@ -1307,3 +1291,129 @@ def test_down_delete_current_slot_aware_unassigns_slot() -> None:
         state = load_pool_state(repo.pool_json_path)
         assert state is not None
         assert len(state.assignments) == 1, "Assignment should still exist (deferred)"
+
+
+def test_down_from_root_worktree_non_trunk_branch() -> None:
+    """Test down from root worktree when root has a non-trunk branch checked out."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Root worktree has feature-1 (not trunk), no dedicated worktrees
+        git_ops = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="feature-1", is_root=True),
+                ]
+            },
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        # Set up stack: main -> feature-1
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
+        )
+
+        result = runner.invoke(cli, ["down", "--script"], obj=test_ctx, catch_exceptions=False)
+
+        assert result.exit_code == 0
+
+        # Should generate script navigating to root
+        script_path = Path(result.stdout.strip())
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+        assert str(env.cwd) in script_content
+        # Should include git checkout to switch root to trunk
+        assert "git checkout main" in script_content
+
+
+def test_down_delete_current_from_root_worktree() -> None:
+    """Test down --delete-current when on a non-trunk branch in root worktree."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Root worktree has feature-1 (not trunk), no dedicated worktrees
+        git_ops = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="feature-1", is_root=True),
+                ]
+            },
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            file_statuses={env.cwd: ([], [], [])},
+        )
+
+        # Set up stack: main -> feature-1
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch("feature-1", "main", commit_sha="def456"),
+            }
+        )
+
+        # PR for feature-1 is merged
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="MERGED",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            }
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+
+        result = runner.invoke(
+            cli, ["down", "--delete-current", "--script"], obj=test_ctx, catch_exceptions=False
+        )
+
+        assert result.exit_code == 0
+
+        # Should generate script navigating to root
+        script_path = Path(result.stdout.strip())
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+        assert str(env.cwd) in script_content
+        # Should include git checkout to switch root to trunk
+        assert "git checkout main" in script_content
+        # Should include branch deletion
+        assert "gt delete -f --no-interactive feature-1" in script_content
+        # Should NOT include git worktree remove (root worktree cannot be removed)
+        assert "git worktree remove" not in script_content
