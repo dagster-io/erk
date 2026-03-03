@@ -8,6 +8,7 @@ import logging
 import os
 
 from anthropic import Anthropic, APIError
+from anthropic.types import TextBlock
 
 from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey
 
@@ -28,7 +29,10 @@ class AnthropicLlmCaller(LlmCaller):
                 system=system_prompt,
                 messages=[{"role": "user", "content": prompt}],
             )
-            return LlmResponse(text=response.content[0].text.strip())
+            content_block = response.content[0]
+            if not isinstance(content_block, TextBlock):
+                return LlmCallFailed(message="Unexpected response type from LLM")
+            return LlmResponse(text=content_block.text.strip())
         except APIError as exc:
             logger.warning("LLM call failed: %s", exc)
             return LlmCallFailed(message=str(exc))
