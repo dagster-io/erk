@@ -1,0 +1,1986 @@
+<session>
+  <meta branch="plnd/extract-metadata-injection-03-02-1210" />
+  <meta model="claude-opus-4-6" />
+  <user>Implement the following plan:
+
+# Address PR #8631 Review Comments
+
+## Context
+
+PR #8631 has 1 unresolved review thread. The reviewer (schrockn) commented on `.erk/impl-context/plan.md:5` saying "no need to explicitly call out that it is pure".
+
+## Changes
+
+### Batch 1: Local Fix (1 comment)
+
+**File:** `.erk/impl-context/plan.md`
+
+1. **Line 5**: Change "reusable pure function" → "reusable function"
+2. **Line 14**: Change "Pure string function" → "String function" (same intent, consistency)
+
+### Post-fix
+
+1. Commit with `git add -f .erk/impl-context/plan.md` (gitignored directory)
+2. Resolve thread `PRRT_kwDOPxC3hc5xprFY` via `erk exec resolve-review-threads`
+3. Re-run classifier to verify no remaining threads
+4. Update PR description via `erk exec update-pr-description`
+5. Upload session via `erk exec upload-impl-session`
+
+## Verification
+
+- Re-run classifier confirms 0 unresolved threads
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-60/b11d96ab-ee90-4cb4-8260-0f06ad7ac771.jsonl</user>
+  <thinking>Let me implement the plan to address PR #8631 review comments. Let me start by reading the file that needs to be modified.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="7619" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7619}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll start by reading the file that needs to be modified.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7619" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7619}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01V3sEenDFi1FwvypbDEtuf8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.erk/impl-context/plan.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7619" cache_read_input_tokens="19113" output_tokens="147" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7619, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V3sEenDFi1FwvypbDEtuf8">
+     1→# Extract generic `inject_metadata_block_before_footer` utility
+     2→
+     3→## Context
+     4→
+     5→`ensure_plan_header()` in `planned_pr.py` contains inline footer-separator injection logic that is plan-specific but mechanically generic. The same "inject a metadata block before the `\n---\n` footer" pattern will be needed for objectives and future entity types. This extracts the injection logic into a reusable pure function, then refactors `ensure_plan_header()` to use it.
+     6→
+     7→## Changes
+     8→
+     9→### 1. Add `inject_metadata_block_before_footer()` to `core.py`
+    10→
+    11→**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py`
+    12→**Location:** After `replace_metadata_block_in_body()` (~line 689), before `create_objective_header_block()` (~line 692)
+    13→
+    14→Pure string function — takes `(body: str, rendered_block: str) -&gt; str`. Injects the rendered block before the last `\n---\n` footer separator, or appends if none found. No new imports needed.
+    15→
+    16→### 2. Refactor `ensure_plan_header()` to use it
+    17→
+    18→**File:** `packages/erk-shared/src/erk_shared/plan_store/planned_pr.py`
+    19→
+    20→- Add `inject_metadata_block_before_footer` to imports from `erk_shared.gateway.github.metadata.core`
+    21→- Replace lines 657-665 (inline footer injection) with:
+    22→  ```python
+    23→  updated_body = inject_metadata_block_before_footer(result.body, metadata_body)
+    24→  ```
+    25→
+    26→### 3. Add unit tests for the new function
+    27→
+    28→**File:** `tests/unit/gateways/github/metadata_blocks/test_block_injection.py` (new)
+    29→
+    30→Test cases:
+
+... [12 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll make both edits to the plan file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4510" cache_read_input_tokens="26732" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4510}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CoDny6QpScvYyYoAqRBFwN">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.erk/impl-context/plan.md</param>
+    <param name="old_string">This extracts the injection logic into a reusable pure function, then refactors</param>
+    <param name="new_string">This extracts the injection logic into a reusable function, then refactors</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4510" cache_read_input_tokens="26732" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4510}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0157HCx1UY2HiywqQHeiGs9B">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.erk/impl-context/plan.md</param>
+    <param name="old_string">Pure string function</param>
+    <param name="new_string">String function</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4510" cache_read_input_tokens="26732" output_tokens="286" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4510, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CoDny6QpScvYyYoAqRBFwN">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.erk/impl-context/plan.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0157HCx1UY2HiywqQHeiGs9B">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.erk/impl-context/plan.md has been updated successfully.
+  </tool_result>
+  <assistant>Now commit with `git add -f` since `.erk/` is gitignored.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="469" cache_read_input_tokens="31242" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 469}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YABJBw8FZidr33tAf5VYwv">
+    <param name="command">git add -f .erk/impl-context/plan.md &amp;&amp; git commit -m "$(cat &lt;&lt;'EOF'
+Remove 'pure' qualifier from plan description per review feedback
+
+Co-Authored-By: Claude Opus 4.6 &lt;noreply@anthropic.com&gt;
+EOF
+)"</param>
+    <param name="description">Commit plan.md changes with force-add</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="469" cache_read_input_tokens="31242" output_tokens="197" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 469, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YABJBw8FZidr33tAf5VYwv">
+[plnd/extract-metadata-injection-03-02-1210 1b22b669a] Remove 'pure' qualifier from plan description per review feedback
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+  </tool_result>
+  <assistant>Now resolve the review thread.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="236" cache_read_input_tokens="31711" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 236}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HnGGa3BH6K9y5cqsEK8XgN">
+    <param name="command">erk exec resolve-review-threads PRRT_kwDOPxC3hc5xprFY</param>
+    <param name="description">Resolve the review thread</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="236" cache_read_input_tokens="31711" output_tokens="105" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 236, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HnGGa3BH6K9y5cqsEK8XgN">
+Exit code 2
+Usage: erk exec resolve-review-threads [OPTIONS]
+Try 'erk exec resolve-review-threads -h' for help.
+
+Error: Got unexpected extra argument (PRRT_kwDOPxC3hc5xprFY)
+
+Usage: erk exec resolve-review-threads [OPTIONS]
+Try 'erk exec resolve-review-threads -h' for help.
+
+Error: Got unexpected extra argument (PRRT_kwDOPxC3hc5xprFY)
+  </tool_result>
+  <assistant>Let me check the command syntax.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="246" cache_read_input_tokens="31947" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 246}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Su7fPxyoFZ8CkAWP6Kq2o1">
+    <param name="command">erk exec resolve-review-threads -h</param>
+    <param name="description">Check resolve-review-threads usage</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="246" cache_read_input_tokens="31947" output_tokens="92" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 246, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Su7fPxyoFZ8CkAWP6Kq2o1">
+Usage: erk exec resolve-review-threads [OPTIONS]
+
+  Resolve multiple PR review threads from JSON stdin.
+
+  Reads a JSON array from stdin where each item has: - thread_id (required):
+  GraphQL node ID of the thread - comment (optional): Comment to add before
+  resolving
+
+  Processes each thread sequentially and outputs batch results. Top-level
+  success is true only if ALL threads resolved successfully.
+
+Options:
+  -h, --help  Show this message and exit.
+  </tool_result>
+  <assistant>It reads JSON from stdin. Let me pass the thread ID that way.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="327" cache_read_input_tokens="32193" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 327}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016uxBAq12nyh6LWm6TgWfyX">
+    <param name="command">echo '[{"thread_id": "PRRT_kwDOPxC3hc5xprFY"}]' | erk exec resolve-review-threads</param>
+    <param name="description">Resolve review thread via stdin JSON</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="327" cache_read_input_tokens="32193" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 327, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016uxBAq12nyh6LWm6TgWfyX">
+{
+  "success": true,
+  "results": [
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5xprFY",
+      "comment_added": false
+    }
+  ]
+}
+  </tool_result>
+  <assistant>Thread resolved. Now re-run the classifier to verify no remaining threads.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="205" cache_read_input_tokens="32520" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 205}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PfsYYMqRsoCYz2Gf1EcfiM">
+    <param name="command">erk exec classify-review-feedback</param>
+    <param name="description">Verify no remaining unresolved threads</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="205" cache_read_input_tokens="32520" output_tokens="99" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 205, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PfsYYMqRsoCYz2Gf1EcfiM">
+Exit code 2
+Usage: erk exec [OPTIONS] COMMAND [ARGS]...
+Try 'erk exec -h' for help.
+
+Error: No such command 'classify-review-feedback'.
+
+Usage: erk exec [OPTIONS] COMMAND [ARGS]...
+Try 'erk exec -h' for help.
+
+Error: No such command 'classify-review-feedback'.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01P6HXPk3aGJhz2kNbypHa2P">
+    <param name="command">erk exec -h 2&gt;&amp;1 | grep -i classif</param>
+    <param name="description">Find classifier command name</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="209" cache_read_input_tokens="32725" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 209}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01P6HXPk3aGJhz2kNbypHa2P">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01GjkQmxMJHef84H3swRzU2C">
+    <param name="command">erk exec -h 2&gt;&amp;1 | grep -i review</param>
+    <param name="description">Find review-related exec commands</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="113" cache_read_input_tokens="32934" output_tokens="88" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 113, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GjkQmxMJHef84H3swRzU2C">
+  discover-reviews                Discover code reviews matching PR...
+  get-pr-review-comments          Fetch PR review comments for agent...
+  post-pr-inline-comment          Post an inline review comment on a PR.
+  resolve-review-thread           Resolve a PR review thread.
+  resolve-review-threads          Resolve multiple PR review threads...
+  run-review                      Run a code review using Claude.
+  set-local-review-marker         Set local review marker on PR to skip...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019uoZ7hiRxV1s2Dgae5GzfM">
+    <param name="command">erk exec get-pr-review-comments -h</param>
+    <param name="description">Check get-pr-review-comments usage</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="211" cache_read_input_tokens="33047" output_tokens="88" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 211, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019uoZ7hiRxV1s2Dgae5GzfM">
+Usage: erk exec get-pr-review-comments [OPTIONS]
+
+  Fetch PR review comments for agent context injection.
+
+  Queries GitHub for review threads on a pull request and outputs structured
+  JSON for agent processing. By default, excludes resolved threads.
+
+  If --pr is not specified, finds the PR for the current branch.
+
+Options:
+  --pr INTEGER        PR number (defaults to current branch's PR)
+  --include-resolved  Include resolved threads
+  -h, --help          Show this message and exit.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PWdG5bZ9RKdFUcm8CeuaMu">
+    <param name="command">erk exec get-pr-review-comments</param>
+    <param name="description">Check for remaining unresolved review threads</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="33258" output_tokens="85" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 216, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PWdG5bZ9RKdFUcm8CeuaMu">
+{
+  "success": true,
+  "pr_number": 8631,
+  "pr_url": "https://github.com/dagster-io/erk/pull/8631",
+  "pr_title": "[erk-plan] Extract generic `inject_metadata_block_before_footer` utility",
+  "threads": []
+}
+  </tool_result>
+  <assistant>Zero unresolved threads. Now update the PR description and upload the session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="177" cache_read_input_tokens="33474" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 177}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KwmUfmBgUVmsWmiouKekgE">
+    <param name="command">erk exec update-pr-description</param>
+    <param name="description">Update PR description</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="177" cache_read_input_tokens="33474" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 177}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014CTyoYwAM7vjSEwXcaZkoh">
+    <param name="command">erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}"</param>
+    <param name="description">Upload implementation session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="177" cache_read_input_tokens="33474" output_tokens="168" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 177, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KwmUfmBgUVmsWmiouKekgE">
+
+  </tool_result>
+  <tool_result tool="toolu_014CTyoYwAM7vjSEwXcaZkoh">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>All done. Here's what was completed:
+
+1. **Edited `.erk/impl-context/plan.md`** — removed "pure" from both line 5 ("reusable pure function" → "reusable function") and line 14 ("Pure string function" → "String function")
+2. **Committed** the change with `git add -f`
+3. **Resolved** review thread `PRRT_kwDOPxC3hc5xprFY`
+4. **Verified** 0 unresolved threads remain on PR #8631
+5. **Updated** the PR description (session upload skipped — no impl folder detected, which is expected for a plan-only change)</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="34026" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 34026}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-submit&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-submit&lt;/command-name&gt;</user>
+  <user># Submit PR
+
+Automatically create a git commit with a helpful summary message and submit the current branch as a pull request.
+
+**Note:** This command squashes commits and rebases the stack. If you prefer a simpler workflow that preserves your commit history, use `/erk:git-pr-push` instead.
+
+## Usage
+
+```bash
+# Invoke the command (description argument is optional but recommended)
+/erk:pr-submit "Add user authentication feature"
+
+# Without argument (will analyze changes automatically)
+/erk:pr-submit
+```
+
+## Implementation
+
+This command uses a three-step flow to avoid nested Claude subprocess calls:
+
+1. **Push + create PR** (no AI) via `erk exec push-and-create-pr`
+2. **Gather context** via `erk exec get-pr-context` (returns JSON)
+3. **Generate title + body** natively (you are the agent — no subprocess)
+4. **Apply description** via `erk exec set-pr-description`
+
+### Step 1: Push and Create PR
+
+```bash
+erk exec push-and-create-pr
+```
+
+This pushes the branch, creates/finds the PR via Graphite, but skips AI description generation. The PR is created with a placeholder title. Outputs JSON with `pr.number` and `pr.url`.
+
+If this fails (exit code 1), display the error from the JSON output and stop.
+
+### Step 2: Get PR Context
+
+```bash
+erk exec get-pr-context
+```
+
+This outputs JSON to stdout with:
+
+- `branch.current` and `branch.parent`
+- `pr.number` and `pr.url`
+- `diff_file` path to the diff content
+- `commit_messages` array
+- `plan_context` (nullable) with `plan_id`, `plan_content`, `objective_summary`
+
+Parse the JSON output. If this fails, display the error and stop.
+
+### Step 3: Generate Title and Body
+
+1. Read the diff file from the `diff_file` path in the JSON
+2. Load the `erk-diff-analysis` skill for the commit message prompt format
+3. Consider the `commit_messages` and `plan_context` from the JSON
+4. If the user provided a `` argument, use it to guide the description
+5. Generate a PR title (first line) and body following the diff analysis format
+
+### Step 4: Apply Description
+
+Write the generated body to a temp file, then apply:
+
+```bash
+erk exec set-pr-description --title "&lt;generated title&gt;" --body-file "&lt;temp file path&gt;"
+```
+
+If this fails, display the error and stop.
+
+### Step 5: Link PR to Objective (if applicable)
+
+If `ref.json` exists in `.erk/impl-context/&lt;branch&gt;/` and contains `objective_id`:
+
+```bash
+erk exec objective-link-pr --pr-number &lt;pr_number&gt;
+```
+
+Where `&lt;pr_number&gt;` is the PR number from Step 1. If this fails, warn but continue -- PR creation succeeded.
+
+### Step 6: Report Results
+
+Report:
+
+- PR URL (from step 2 JSON)
+- Success message
+
+### Refresh Status Line
+
+After reporting results, output the following to trigger a status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+## Error Handling
+
+If any step fails, display the error and stop. Do NOT attempt to auto-resolve errors. Let the user fix issues and re-run.
+
+Common errors:
+
+- Authentication issues (Graphite/GitHub)
+- Merge conflicts
+- No commits to submit
+- No PR found for branch
+</user>
+  <thinking>The user invoked `/erk:pr-submit` which is a skill for submitting a PR. Let me follow the steps outlined in the command.
+
+### Step 1: Push and Create PR</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="35122" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 35122}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Starting the PR submit flow.
+
+### Step 1: Push and Create PR</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="35122" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 35122}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014GLh5qAp2e8ycVtMGJ92Es">
+    <param name="command">erk exec push-and-create-pr</param>
+    <param name="description">Push branch and create PR via Graphite</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="35122" cache_read_input_tokens="0" output_tokens="161" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 35122, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014GLh5qAp2e8ycVtMGJ92Es">
+{
+  "success": true,
+  "branch": "plnd/extract-metadata-injection-03-02-1210",
+  "pr": {
+    "number": 8631,
+    "url": "https://github.com/dagster-io/erk/pull/8631",
+    "was_created": true
+  },
+  "graphite_url": "https://app.graphite.com/github/pr/dagster-io/erk/8631",
+  "plan_id": null
+}
+  </tool_result>
+  <assistant>### Step 2: Get PR Context</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="35122" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 294}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01D2znNEcwXJa7zgp2ftYhaz">
+    <param name="command">erk exec get-pr-context</param>
+    <param name="description">Get PR context for description generation</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="294" cache_read_input_tokens="35122" output_tokens="90" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 294, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01D2znNEcwXJa7zgp2ftYhaz">
+{
+  "branch": {
+    "current": "plnd/extract-metadata-injection-03-02-1210",
+    "parent": "plnd/ensure-plan-header-dispatc-03-02-1835"
+  },
+  "pr": {
+    "number": 8631,
+    "url": "https://github.com/dagster-io/erk/pull/8631"
+  },
+  "diff_file": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.erk/scratch/sessions/bcd847b6-45c4-411f-b719-82571e38c6b5/pr-diff-0a3d7245.diff",
+  "commit_messages": [
+    "Add plan: Extract generic `inject_metadata_block_before_footer` utility",
+    "Remove 'pure' qualifier from plan description per review feedback\n\nCo-Authored-By: Claude Opus 4.6 &lt;noreply@anthropic.com&gt;",
+    "Remove .erk/impl-context/ before submission"
+  ],
+  "plan_context": {
+    "plan_id": "8631",
+    "plan_content": "# Extract generic `inject_metadata_block_before_footer` utility\n\n## Context\n\n`ensure_plan_header()` in `planned_pr.py` contains inline footer-separator injection logic that is plan-specific but mechanically generic. The same \"inject a metadata block before the `\\n---\\n` footer\" pattern will be needed for objectives and future entity types. This extracts the injection logic into a reusable pure function, then refactors `ensure_plan_header()` to use it.\n\n## Changes\n\n### 1. Add `inject_metadata_block_before_footer()` to `core.py`\n\n**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py`\n**Location:** After `replace_metadata_block_in_body()` (~line 689), before `create_objective_header_block()` (~line 692)\n\nPure string function \u2014 takes `(body: str, rendered_block: str) -&gt; str`. Injects the rendered block before the last `\\n---\\n` footer separator, or appends if none found. No new imports needed.\n\n### 2. Refactor `ensure_plan_header()` to use it\n\n**File:** `packages/erk-shared/src/erk_shared/plan_store/planned_pr.py`\n\n- Add `inject_metadata_block_before_footer` to imports from `erk_shared.gateway.github.metadata.core`\n- Replace lines 657-665 (inline footer injection) with:\n  ```python\n  updated_body = inject_metadata_block_before_footer(result.body, metadata_body)\n  ```\n\n### 3. Add unit tests for the new function\n\n**File:** `tests/unit/gateways/github/metadata_blocks/test_block_injection.py` (new)\n\nTest cases:\n- Block injected before footer separator\n- Block appended when no footer separator\n- Uses last separator when multiple exist\n- Handles empty body\n\n## Verification\n\n1. Run `pytest tests/unit/gateways/github/metadata_blocks/test_block_injection.py` \u2014 new tests pass\n2. Run `pytest tests/unit/gateways/github/metadata_blocks/` \u2014 all existing metadata tests pass\n3. Run `pytest tests/unit/cli/commands/pr/test_metadata_helpers.py` \u2014 ensure_plan_header callers still pass\n4. Run `make fast-ci` \u2014 full fast CI green\n",
+    "objective_summary": null
+  }
+}
+  </tool_result>
+  <assistant>### Step 3: Generate Title and Body
+
+Let me read the diff and load the diff-analysis skill.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1055" cache_read_input_tokens="35416" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1055}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01US7dspd6FJEKUY4hoqtB9N">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.erk/scratch/sessions/bcd847b6-45c4-411f-b719-82571e38c6b5/pr-diff-0a3d7245.diff</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1055" cache_read_input_tokens="35416" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1055}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01US7dspd6FJEKUY4hoqtB9N">
+&lt;system-reminder&gt;Warning: the file exists but is shorter than the provided offset (1). The file has 1 lines.&lt;/system-reminder&gt;
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01DRTmMEgvTLYrpK2XsqCBe1">
+    <param name="skill">erk-diff-analysis</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1055" cache_read_input_tokens="35416" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1055}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DRTmMEgvTLYrpK2XsqCBe1">
+Launching skill: erk-diff-analysis
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.claude/skills/erk-diff-analysis
+
+# Diff Analysis
+
+This skill provides the commit message generation prompt used by PR submission commands.
+
+## When to Use
+
+Only load this skill when:
+
+- Explicitly requested by name (`erk-diff-analysis`)
+- Invoked by commands like `/erk:git-pr-push`
+
+## Usage
+
+Load `references/commit-message-prompt.md` when analyzing a diff, then apply its principles to generate output.
+
+## Key Principles
+
+- Be concise and strategic - focus on significant changes
+- Use component-level descriptions - reference modules/components, not individual functions
+- Highlight breaking changes prominently
+- Note test coverage patterns
+- Use relative paths from repository root
+</user>
+  <tool_use name="Read" id="toolu_01J6MeXP8iC3TxV6YGFCwtBK">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.claude/skills/erk-diff-analysis/references/commit-message-prompt.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="483" cache_read_input_tokens="36471" output_tokens="100" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 483, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01J6MeXP8iC3TxV6YGFCwtBK">
+     1→You are a commit message generator. Analyze the provided git diff and return ONLY a commit message.
+     2→
+     3→## Analysis Principles
+     4→
+     5→Analyze the diff following these principles:
+     6→
+     7→- **Be concise and strategic** - focus on significant changes
+     8→- **Use component-level descriptions** - reference modules/components, not individual functions
+     9→- **Highlight breaking changes prominently**
+    10→- **Note test coverage patterns**
+    11→- **Use relative paths from repository root**
+    12→
+    13→## Level of Detail
+    14→
+    15→- Focus on architectural and component-level impact
+    16→- Keep "Key Changes" to 3-5 major items
+    17→- Group related changes together
+    18→- Skip minor refactoring, formatting, or trivial updates
+    19→
+    20→## Output Format
+    21→
+    22→```
+    23→[Clear one-line PR title describing the change]
+    24→
+    25→[2-3 sentence summary explaining what changed and why. State what the branch does (feature/fix/refactor) and highlight key changes briefly.]
+    26→
+    27→## Files Changed
+    28→
+    29→&lt;details&gt;
+    30→&lt;summary&gt;Files Changed&lt;/summary&gt;
+
+... [54 lines omitted] ...
+
+    69→[Only if there are breaking changes, security concerns, or important warnings - 1-2 bullets max]
+  </tool_result>
+  <thinking>The diff file appears to be empty (only 1 line, which is likely empty). This is a plan-only PR — the diff is just the `.erk/impl-context/plan.md` file. Let me check the actual diff more carefully.
+
+Since this is a plan PR (erk-plan), the diff is likely minimal — just the plan document itself. The commit messages tell the story:
+1. "Add plan: Extract generic `inject_metadata_block_before_footer` utility"
+2. "Remove 'pure' qualifier from plan description per review feedback"
+3. "Remove .erk/impl-context/ before submission"
+
+
+Now I need to generate a title and body based on the plan content and commit messages. Since the diff is essentially empty with the plan removed before submission, I'll craft a title that reflects this is a plan PR and a body that describes what the plan proposes.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1007" cache_read_input_tokens="36954" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1007}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The diff is essentially empty (plan file was removed before submission). This is a plan PR — I'll generate the title and body from the plan context.
+
+### Step 4: Apply Description</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1007" cache_read_input_tokens="36954" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1007}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GtPaWhE5rW59itQhf95Wf4">
+    <param name="command">BODY_FILE=$(mktemp) &amp;&amp; cat &gt; "$BODY_FILE" &lt;&lt;'BODY'
+Extract the inline footer-separator inj...[truncated 567 chars]...ter injection, append fallback, multiple separators, and empty body
+BODY
+echo "$BODY_FILE"</param>
+    <param name="description">Write PR body to temp file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1007" cache_read_input_tokens="36954" output_tokens="587" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1007, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GtPaWhE5rW59itQhf95Wf4">
+/var/folders/9r/wfby6pcs4mgbfb_lg0ndgb180000gn/T/tmp.QV4yYnzWXO
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018bMVJZ3NeWk6Mg4XKvFsLN">
+    <param name="command">erk exec set-pr-description --title "[erk-plan] Extract generic inject_metadata_block_before_footer utility" --body-file "/var/folders/9r/wfby6pcs4mgbfb_lg0ndgb180000gn/T/tmp.QV4yYnzWXO"</param>
+    <param name="description">Set PR title and body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="751" cache_read_input_tokens="37961" output_tokens="150" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 751, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018bMVJZ3NeWk6Mg4XKvFsLN">
+PR #8631 updated: [erk-plan] Extract generic inject_metadata_block_before_footer utility
+  </tool_result>
+  <assistant>### Step 5: Link to Objective</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="187" cache_read_input_tokens="38712" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 187}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WRQuzzYY8G6ba2kjixJEYg">
+    <param name="command">cat .erk/impl-context/plnd/extract-metadata-injection-03-02-1210/ref.json 2&gt;/dev/null || cat .erk/impl-context/ref.json 2&gt;/dev/null || echo "no ref.json found"</param>
+    <param name="description">Check for objective ref.json</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="187" cache_read_input_tokens="38712" output_tokens="145" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 187, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WRQuzzYY8G6ba2kjixJEYg">
+no ref.json found
+  </tool_result>
+  <assistant>No objective to link — skipping.
+
+### Step 6: Results
+
+PR submitted successfully:
+- **PR:** https://github.com/dagster-io/erk/pull/8631
+- **Title:** [erk-plan] Extract generic inject_metadata_block_before_footer utility
+
+🔄 Status line refreshed</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="38899" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 162, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;bash-input&gt;gt pr&lt;/bash-input&gt;</user>
+  <user>&lt;bash-stdout&gt;https://app.graphite.dev/github/pr/dagster-io/erk/8631&lt;/bash-stdout&gt;&lt;bash-stderr&gt;&lt;/bash-stderr&gt;</user>
+  <user>i'm still not seeing the chnages to .erk/impl-context/plan.md</user>
+  <thinking>The user is saying they don't see the changes to `.erk/impl-context/plan.md` in the PR. Let me check the current state of the file and the git status to understand what's happening.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="1800" cache_read_input_tokens="39061" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1800}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the current state of the file and git history to understand what happened.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1800" cache_read_input_tokens="39061" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1800}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LsUf2ub8zywbh6PmBESaqT">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.erk/impl-context/plan.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1800" cache_read_input_tokens="39061" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1800}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LsUf2ub8zywbh6PmBESaqT">
+File does not exist. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01UuTLaL1H7yaVYjDYK5PabD">
+    <param name="command">git log --oneline -5</param>
+    <param name="description">Check recent commits</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1800" cache_read_input_tokens="39061" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1800}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UuTLaL1H7yaVYjDYK5PabD">
+&lt;tool_use_error&gt;Sibling tool call errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Lm8QfcZae6UZnyYgN5RLVH">
+    <param name="command">git diff HEAD~1 -- .erk/impl-context/plan.md</param>
+    <param name="description">Check if plan.md changes are in latest commit</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1800" cache_read_input_tokens="39061" output_tokens="365" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1800, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Lm8QfcZae6UZnyYgN5RLVH">
+&lt;tool_use_error&gt;Sibling tool call errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FJ9epqZ5wFz2muNfrSdx8s">
+    <param name="command">git log --oneline -5</param>
+    <param name="description">Check recent commits</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="468" cache_read_input_tokens="40861" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 468}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FJ9epqZ5wFz2muNfrSdx8s">
+34835a135 Remove .erk/impl-context/ before submission
+1b22b669a Remove 'pure' qualifier from plan description per review feedback
+9e2cb12ca Add plan: Extract generic `inject_metadata_block_before_footer` utility
+9e920f7b3 WIP: Prepare for PR submission
+4aff755d6 Trigger CI workflows
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DrAtLD3zRmgWvjv56V3J4w">
+    <param name="command">git show --stat HEAD</param>
+    <param name="description">Check what's in the latest commit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="468" cache_read_input_tokens="40861" output_tokens="139" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 468, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DrAtLD3zRmgWvjv56V3J4w">
+commit 34835a13567dba16835ce01e4099133d6593559f
+Author: Nick Schrock &lt;schrockn@dagsterlabs.com&gt;
+Date:   Mon Mar 2 13:22:36 2026 -0800
+
+    Remove .erk/impl-context/ before submission
+
+ .erk/impl-context/plan.md  | 41 -----------------------------------------
+ .erk/impl-context/ref.json |  4 ----
+ 2 files changed, 45 deletions(-)
+  </tool_result>
+  <thinking>I see the problem. The `/erk:pr-submit` command ran `erk exec push-and-create-pr` which squashes commits via Graphite. But looking at the commit history:
+
+1. `9e2cb12ca` - Added the plan
+2. `1b22b669a` - My fix (removing "pure")
+3. `34835a135` - Removed `.erk/impl-context/` before submission
+
+So the last commit `34835a135` deleted the plan.md file entirely! The `push-and-create-pr` command apparently includes a step that removes `.erk/impl-context/` before submission. And since Graphite squashes commits, the net effect is that the plan.md changes are gone — the file was added then deleted in the same squashed PR.
+
+
+The real issue is that the cleanup step removing `.erk/impl-context/` happened after I added the plan, so when Graphite squashes everything together, the plan.md ends up deleted in the final diff. I need to check what the actual squashed commit shows and understand the order of operations better. plan mode, `1b22b669a` fixed the "pure" text, and `34835a135` removed impl-context. The problem is that `34835a135` deleted the plan.md, so the net squashed diff doesn't include the plan.md changes. The user expected the plan.md with the "pure" fix to be visible in the PR, but the deletion commit wiped it out.
+
+So the fix would be: we need to revert the deletion of `.erk/impl-context/plan.md` or re-add it. But I'm in plan mode now, so I need to plan this fix.
+
+Actually, let me think about this differently. This is an erk-plan PR. The plan should be in the PR body or as a file. Looking at the commits:
+
+1. The plan was added as `.erk/impl-context/plan.md`
+2. The "pure" qualifier was removed
+3. Then the entire `.erk/impl-context/` directory was removed before submission
+
+The removal happened as part of the submission pipeline, which seems intentional, but the user expected the modified plan.md to be visible in the PR. The squashed commit doesn't show the plan.md since it was added then deleted, so the "pure" → non-pure change isn't reflected anywhere the user can see it. I need to figure out whether the PR body still has the old text with "pure" or if I should re-add the plan.md file to make the changes visible. I see the issue now — the reviewer commented on a file that was part of the PR diff, but my subsequent commit deleted the entire `.erk/impl-context/` directory, so when Graphite squashed everything together, the plan.md file disappeared from the final PR diff even though I'd edited it locally. That's why the user still sees the old "pure" text in the PR context — the file isn't showing up in the diff at all anymore.
+
+The fix is straightforward: I need to restore the plan.md file with the corrected content and push it again, making sure the deletion commit doesn't get included in the squash this time.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="628" cache_read_input_tokens="41329" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 628}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I see the problem. The commit history shows:
+
+1. `9e2cb12ca` — Added the plan
+2. `1b22b669a` — My fix (removed "pure")
+3. `34835a135` — **Deleted `.erk/impl-context/` entirely before submission**
+
+Since Graphite squashes commits, the net diff is: plan.md added then deleted = **no plan.md in the PR at all**. My fix got wiped out by the deletion commit.
+
+Let me plan the fix.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="628" cache_read_input_tokens="41329" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 628}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AiH7mJe21YyoxgN2Ff2TZ3">
+    <param name="file_path">/Users/schrockn/.claude/plans/quizzical-fluttering-pebble.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="628" cache_read_input_tokens="41329" output_tokens="1522" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 628, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AiH7mJe21YyoxgN2Ff2TZ3">
+     1→# Address PR #8631 Review Comments
+     2→
+     3→## Context
+     4→
+     5→PR #8631 has 1 unresolved review thread. The reviewer (schrockn) commented on `.erk/impl-context/plan.md:5` saying "no need to explicitly call out that it is pure".
+     6→
+     7→## Changes
+     8→
+     9→### Batch 1: Local Fix (1 comment)
+    10→
+    11→**File:** `.erk/impl-context/plan.md`
+    12→
+    13→1. **Line 5**: Change "reusable pure function" → "reusable function"
+    14→2. **Line 14**: Change "Pure string function" → "String function" (same intent, consistency)
+    15→
+    16→### Post-fix
+    17→
+    18→1. Commit with `git add -f .erk/impl-context/plan.md` (gitignored directory)
+    19→2. Resolve thread `PRRT_kwDOPxC3hc5xprFY` via `erk exec resolve-review-threads`
+    20→3. Re-run classifier to verify no remaining threads
+    21→4. Update PR description via `erk exec update-pr-description`
+    22→5. Upload session via `erk exec upload-impl-session`
+    23→
+    24→## Verification
+    25→
+    26→- Re-run classifier confirms 0 unresolved threads
+    27→
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01QumQCM7LH48bjiYPxNgvu7">
+    <param name="command">git show 1b22b669a:.erk/impl-context/plan.md</param>
+    <param name="description">Get the corrected plan.md content from the fix commit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1894" cache_read_input_tokens="41957" output_tokens="99" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1894, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QumQCM7LH48bjiYPxNgvu7">
+# Extract generic `inject_metadata_block_before_footer` utility
+
+## Context
+
+`ensure_plan_header()` in `planned_pr.py` contains inline footer-separator injection logic that is plan-specific but mechanically generic. The same "inject a metadata block before the `\n---\n` footer" pattern will be needed for objectives and future entity types. This extracts the injection logic into a reusable function, then refactors `ensure_plan_header()` to use it.
+
+## Changes
+
+### 1. Add `inject_metadata_block_before_footer()` to `core.py`
+
+**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py`
+**Location:** After `replace_metadata_block_in_body()` (~line 689), before `create_objective_header_block()` (~line 692)
+
+String function — takes `(body: str, rendered_block: str) -&gt; str`. Injects the rendered block before the last `\n---\n` footer separator, or appends if none found. No new imports needed.
+
+### 2. Refactor `ensure_plan_header()` to use it
+
+**File:** `packages/erk-shared/src/erk_shared/plan_store/planned_pr.py`
+
+- Add `inject_metadata_block_before_footer` to imports from `erk_shared.gateway.github.metadata.core`
+- Replace lines 657-665 (inline footer injection) with:
+  ```python
+  updated_body = inject_metadata_block_before_footer(result.body, metadata_body)
+  ```
+
+### 3. Add unit tests for the new function
+
+**File:** `tests/unit/gateways/github/metadata_blocks/test_block_injection.py` (new)
+
+Test cases:
+
+... [11 lines omitted] ...
+  </tool_result>
+  <assistant>Good — the corrected content exists in commit `1b22b669a`. The fix was applied, but then `34835a135` deleted the file. Let me also check if `ref.json` needs to come back.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="680" cache_read_input_tokens="43851" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 680}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GVjyErgAY5xFKSxCwyfVSg">
+    <param name="command">git show 1b22b669a:.erk/impl-context/ref.json 2&gt;/dev/null</param>
+    <param name="description">Check ref.json content from before deletion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="680" cache_read_input_tokens="43851" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 680}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GVjyErgAY5xFKSxCwyfVSg">
+{
+  "provider": "github-draft-pr",
+  "title": "Extract generic `inject_metadata_block_before_footer` utility"
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01N6Z454Wd9NPZUZgmb2eUdV">
+    <param name="command">git diff HEAD~3..HEAD~1 -- .erk/impl-context/plan.md</param>
+    <param name="description">Verify the "pure" fix diff</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="680" cache_read_input_tokens="43851" output_tokens="231" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 680, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N6Z454Wd9NPZUZgmb2eUdV">
+diff --git a/.erk/impl-context/plan.md b/.erk/impl-context/plan.md
+new file mode 100644
+index 000000000..7dad98d5e
+--- /dev/null
++++ b/.erk/impl-context/plan.md
+@@ -0,0 +1,41 @@
++# Extract generic `inject_metadata_block_before_footer` utility
++
++## Context
++
++`ensure_plan_header()` in `planned_pr.py` contains inline footer-separator injection logic that is plan-specific but mechanically generic. The same "inject a metadata block before the `\n---\n` footer" pattern will be needed for objectives and future entity types. This extracts the injection logic into a reusable function, then refactors `ensure_plan_header()` to use it.
++
++## Changes
++
++### 1. Add `inject_metadata_block_before_footer()` to `core.py`
++
++**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py`
++**Location:** After `replace_metadata_block_in_body()` (~line 689), before `create_objective_header_block()` (~line 692)
++
++String function — takes `(body: str, rendered_block: str) -&gt; str`. Injects the rendered block before the last `\n---\n` footer separator, or appends if none found. No new imports needed.
++
++### 2. Refactor `ensure_plan_header()` to use it
++
++**File:** `packages/erk-shared/src/erk_shared/plan_store/planned_pr.py`
++
++- Add `inject_metadata_block_before_footer` to imports from `erk_shared.gateway.github.metadata.core`
++- Replace lines 657-665 (inline footer injection) with:
++  ```python
++  updated_body = inject_metadata_block_before_footer(result.body, metadata_body)
++  ```
+
+... [17 lines omitted] ...
+  </tool_result>
+  <assistant>Clear picture. Now let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1135" cache_read_input_tokens="44531" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1135}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01JFxDnkrCbkmVG2M6yj1m6o">
+    <param name="file_path">/Users/schrockn/.claude/plans/quizzical-fluttering-pebble.md</param>
+    <param name="content"># Restore plan.md after accidental deletion by submission pipeline
+
+## Context
+
+The previo...[truncated 659 chars]...k/impl-context/plan.md` with "reusable function" (not "reusable pure function") on line 5
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1135" cache_read_input_tokens="44531" output_tokens="372" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1135, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JFxDnkrCbkmVG2M6yj1m6o">
+The file /Users/schrockn/.claude/plans/quizzical-fluttering-pebble.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01A1twvkut48ChNsVr2YauLd">
+    <param name="plan"># Restore plan.md after accidental deletion by submission pipeline
+
+## Context
+
+The previo...[truncated 659 chars]...k/impl-context/plan.md` with "reusable function" (not "reusable pure function") on line 5
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="415" cache_read_input_tokens="45666" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 415, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A1twvkut48ChNsVr2YauLd">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/quizzical-fluttering-pebble.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Restore plan.md after accidental deletion by submission pipeline
+Current context: (wt:erk-slot-60) (br:plnd/extract-metadata-injection-03-02-1210) (pr:#8631)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/extr"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 03733d39-101b-4985-aa9e-f675ccebfbfd \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Restore plan.md after accidental deletion by submission pipeline
+
+## Context
+
+The previous attempt to address the review comment succeeded locally — commit `1b22b669a` has the correct plan.md with "pure" removed. But `erk exec push-and-create-pr` (Graphite submit) squashed all commits, and the final commit `34835a135` had deleted `.erk/impl-context/` entirely. Net result: plan.md doesn't appear in the PR diff at all.
+
+## Changes
+
+1. **Restore `.erk/impl-context/plan.md`** from commit `1b22b669a` (the corrected version)
+2. **Restore `.erk/impl-context/ref.json`** from the same commit
+3. **Commit** with `git add -f .erk/impl-context/`
+4. **Re-submit** via `erk exec push-and-create-pr` to push the fix
+
+## Verification
+
+- `gt pr` shows the PR diff includes `.erk/impl-context/plan.md` with "reusable function" (not "reusable pure function") on line 5
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="46081" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 651}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_0111V9iva6dHGehnHEdjgYjs">
+    <param name="questions">[{'question': '📋 Restore plan.md after accidental deletion by submission pipeline\nCurrent...[truncated 506 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="46081" output_tokens="534" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 651, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0111V9iva6dHGehnHEdjgYjs">
+User has answered your questions: "📋 Restore plan.md after accidental deletion by submission pipeline
+Current context: (wt:erk-slot-60) (br:plnd/extract-metadata-injection-03-02-1210) (pr:#8631)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01D4ptzrDyESKTw3SSebfeud">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="31042" cache_read_input_tokens="16613" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 31042, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01D4ptzrDyESKTw3SSebfeud">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="03733d39-101b-4985-aa9e-f675ccebfbfd" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "03733d39-101b-4985-aa9e-f675ccebfbfd" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "03733d39-101b-4985-aa9e-f675ccebfbfd" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "03733d39-101b-4985-aa9e-f675ccebfbfd" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "03733d39-101b-4985-aa9e-f675ccebfbfd" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <user>[Request interrupted by user]</user>
+  <user>how do we fix underlying issue here so this doesn't happen again in the future</user>
+  <thinking>The user is asking about the root cause of the problem and how to prevent it from happening again. Let me think about what happened:
+
+1. PR #8631 is a plan PR - it contains `.erk/impl-context/plan.md` in its diff
+2. A review comment was made on `.erk/impl-context/plan.md:5` about the word "pure"
+3. I edited the file, committed with `git add -f`
+4. Then `/erk:pr-submit` was run, which called `erk exec push-and-create-pr`
+5. But there was already a commit `34835a135` "Remove .erk/impl-context/ before submission" that deleted the plan.md
+
+
+6. Graphite squashed all commits, so the net effect was: plan.md added then deleted = not in PR
+
+The real issue is that the submission workflow automatically removes `.erk/impl-context/` before pushing, which works fine for implementation PRs where that's just scratch data, but breaks plan PRs where the plan.md file is actually the core content. I'm looking back at the commit history to understand the sequence better and figure out how to prevent this in the future. I see the issue now—the `erk exec push-and-create-pr` command itself removes the `.erk/impl-context/` directory as part of its submission process, which means the plan.md file that should be included in the PR diff gets deleted before the PR is created. For plan-based PRs, that directory contains the actual content that needs to be in the submission. The real problem is that `/erk:pr-submit` runs the same `push-and-create-pr` step for both plan and implementation PRs, but that step cleans up `.erk/impl-context/` as scratch data—which works fine for implementation PRs but deletes the actual plan content for plan PRs. I need to figure out where in the codebase this cleanup happens and add logic to skip it when we're in plan mode. mode, so I should explore and plan.
+
+Let me think about what the underlying issue really is:
+
+1. The PR was already submitted (it's PR #8631)
+2. A review comment was made on plan.md
+3. To address the review, I edited plan.md and committed
+4. Then we ran `/erk:pr-submit` which squashed and re-pushed
+5. The squash included a commit that deletes `.erk/impl-context/`
+
+The question is: why was `/erk:pr-submit` run after addressing a review comment? Looking back at the conversation, the user ran `/erk:pr-submit` after I committed the fix. That's a reasonable workflow - commit the fix then push.
+
+But `/erk:pr-submit` runs `erk exec push-and-create-pr` which apparently creates a new commit that removes `.erk/impl-context/`. This is the problem.
+
+I need to dig into the codebase to understand what's happening with that cleanup step and figure out how to fix it properly.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="2775" cache_read_input_tokens="47655" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2775}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good question. Let me explore the root cause — why `push-and-create-pr` removes `.erk/impl-context/` on plan PRs where that content IS the PR.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2775" cache_read_input_tokens="47655" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2775}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_011A2VABgmP8M8AtujFKytRk">
+    <param name="description">Explore push-and-create-pr impl</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 801 chars]...moval happens, and whether the code distinguishes between plan PRs and implementation PRs.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2775" cache_read_input_tokens="47655" output_tokens="1770" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2775, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011A2VABgmP8M8AtujFKytRk">
+Perfect! Now I have all the information I need. Let me compile my findings:
+
+## Summary of Findings
+
+I've identified the exact issue and provided comprehensive details about where and why `.erk/impl-context/` is being removed before pushing plan PRs.
+
+### The Problem
+
+**Location of the removal:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/submit_pipeline.py`, lines 193-210 in the `cleanup_impl_for_submit()` function.
+
+**The code:**
+```python
+def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+    """Remove .erk/impl-context/ if present and git-tracked.
+    
+    Inserted after prepare_state (which discovers plan_id) and before commit_wip
+    (which adds implementation changes). The cleanup commit is local-only; the
+    push happens later in push_and_create_pr.
+    """
+    if not impl_context_exists(state.repo_root):
+        return state
+    
+    if not ctx.git.status.has_tracked_files(state.repo_root, ".erk/impl-context"):
+        return state
+    
+    remove_impl_context(state.repo_root)
+    ctx.git.commit.stage_files(state.repo_root, [".erk/impl-context/"], force=True)
+    ctx.git.commit.commit(state.repo_root, "Remove .erk/impl-context/ before submission")
+    
+    return state
+
+... [68 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a clear picture. The issue is in `submit_pipeline.py` - the `cleanup_impl_for_submit()` function unconditionally removes `.erk/impl-context/` for all PRs, but for plan PRs (branches starting with `plnd/`), this directory IS the PR content. The fix is to skip the cleanup for plan PRs.
+
+Let me read the relevant code to plan the fix precisely.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3092" cache_read_input_tokens="50430" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3092}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Excellent — the root cause is clear. Let me read the exact code to write a precise plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3092" cache_read_input_tokens="50430" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3092}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EJF9aTFhQgJ1TGK616VjX8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">185</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3092" cache_read_input_tokens="50430" output_tokens="262" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3092, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EJF9aTFhQgJ1TGK616VjX8">
+   185→        repo_root=repo_root,
+   186→        branch_name=branch_name,
+   187→        parent_branch=parent_branch,
+   188→        trunk_branch=trunk_branch,
+   189→        plan_id=plan_id,
+   190→    )
+   191→
+   192→
+   193→def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   194→    """Remove .erk/impl-context/ if present and git-tracked.
+   195→
+   196→    Inserted after prepare_state (which discovers plan_id) and before commit_wip
+   197→    (which adds implementation changes). The cleanup commit is local-only; the
+   198→    push happens later in push_and_create_pr.
+   199→    """
+   200→    if not impl_context_exists(state.repo_root):
+   201→        return state
+   202→
+   203→    if not ctx.git.status.has_tracked_files(state.repo_root, ".erk/impl-context"):
+   204→        return state
+   205→
+   206→    remove_impl_context(state.repo_root)
+   207→    ctx.git.commit.stage_files(state.repo_root, [".erk/impl-context/"], force=True)
+   208→    ctx.git.commit.commit(state.repo_root, "Remove .erk/impl-context/ before submission")
+   209→
+   210→    return state
+   211→
+   212→
+   213→def commit_wip(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   214→    """Check for uncommitted changes; if present, add_all + commit."""
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_017X99sE24MaNhL84QHUKXQP">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">250</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="922" cache_read_input_tokens="53522" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 922, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017X99sE24MaNhL84QHUKXQP">
+   250→def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   251→    """Graphite-first flow: gt submit handles push + PR creation."""
+   252→    if not state.quiet:
+   253→        click.echo(click.style("Phase 1: Graphite Submit", bold=True))
+   254→
+   255→    # Auto-force for plan implementations (branches always diverge from remote).
+   256→    # Fall back to branch prefix when cleanup already deleted .erk/impl-context/
+   257→    # but the first submit attempt failed before pushing.
+   258→    is_plan_impl = state.plan_id is not None or state.branch_name.startswith("plnd/")
+   259→    effective_force = state.force or is_plan_impl
+   260→
+   261→    # Pre-check: detect remote divergence before gt submit
+   262→    if ctx.git.branch.branch_exists_on_remote(state.repo_root, "origin", state.branch_name):
+   263→        ctx.git.remote.fetch_branch(state.repo_root, "origin", state.branch_name)
+   264→        divergence = ctx.git.branch.is_branch_diverged_from_remote(
+  </tool_result>
+  <assistant>Now let me check what `PLANNED_PREFIX` looks like — the `plnd/` prefix detection:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="54444" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 459}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VYPmpvKVq3kd7sgJE1kCYk">
+    <param name="pattern">PLANNED_PR_BRANCH_PREFIX|is_plan_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="54444" output_tokens="168" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 459, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VYPmpvKVq3kd7sgJE1kCYk">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01JmJEe2ueTQBriKyNP8exi4">
+    <param name="pattern">plnd/</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="183" cache_read_input_tokens="54903" output_tokens="132" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 183, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JmJEe2ueTQBriKyNP8exi4">
+67:    """Prepend 'plnd/' prefix to PR title (idempotent).
+73:        The title with 'plnd/' prefix, skipping if already prefixed
+258:    is_plan_impl = state.plan_id is not None or state.branch_name.startswith("plnd/")
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01P7jP9jT2dbUTor2LFkWR9E">
+    <param name="pattern">PLANNED_PR_BRANCH_PREFIX</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="217" cache_read_input_tokens="55086" output_tokens="146" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 217, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01P7jP9jT2dbUTor2LFkWR9E">
+No matches found
+
+[Showing results with pagination = limit: 5, offset: 0]
+  </tool_result>
+  <assistant>Good — there's a `"plnd/"` string literal used inline at line 258. Now let me check if there's a constant for this and look at the `SubmitState` to understand what's available:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1492" cache_read_input_tokens="55303" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1492}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019fWpQ7Kutu8j8caYw5Lhq8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1492" cache_read_input_tokens="55303" output_tokens="177" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1492, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019fWpQ7Kutu8j8caYw5Lhq8">
+     1→"""Linear pipeline for PR submission.
+     2→
+     3→Replaces the dual-path branching orchestration with a sequence of plain
+     4→functions transforming a frozen SubmitState dataclass.
+     5→
+     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+     7→"""
+     8→
+     9→import dataclasses
+    10→import sys
+    11→import uuid
+    12→from collections.abc import Callable
+    13→from dataclasses import dataclass
+    14→from functools import cache
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.pr.shared import (
+    20→    assemble_pr_body,
+    21→    echo_plan_context_status,
+    22→    maybe_advance_lifecycle_to_impl,
+    23→    recover_plan_header,
+    24→    run_commit_message_generation,
+    25→)
+    26→from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
+    27→from erk.cli.ensure import UserFacingCliError
+    28→from erk.core.commit_message_generator import CommitMessageGenerator
+    29→from erk.core.context import ErkContext
+    30→from erk.core.plan_context_provider import PlanContext, PlanContextProvider
+
+... [20 lines omitted] ...
+
+    31→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+  </tool_result>
+  <tool_use name="Read" id="toolu_01APHvRavDhGKxP5cBcQAAWv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">50</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="917" cache_read_input_tokens="56795" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 917}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01APHvRavDhGKxP5cBcQAAWv">
+    50→from erk_shared.gateway.pr.graphite_enhance import should_enhance_with_graphite
+    51→from erk_shared.impl_context import impl_context_exists, remove_impl_context
+    52→from erk_shared.impl_folder import (
+    53→    has_plan_ref,
+    54→    read_plan_ref,
+    55→    resolve_impl_dir,
+    56→    save_plan_ref,
+    57→    validate_plan_linkage,
+    58→)
+    59→from erk_shared.scratch.scratch import write_scratch_file
+    60→
+    61→# ---------------------------------------------------------------------------
+    62→# Utilities
+    63→# ---------------------------------------------------------------------------
+    64→
+    65→
+    66→def _add_planned_prefix(title: str) -&gt; str:
+    67→    """Prepend 'plnd/' prefix to PR title (idempotent).
+    68→
+    69→    Args:
+    70→        title: The PR title to prefix
+    71→
+    72→    Returns:
+    73→        The title with 'plnd/' prefix, skipping if already prefixed
+    74→    """
+    75→    if title.startswith(PLANNED_PR_TITLE_PREFIX):
+    76→        return title
+    77→    return f"{PLANNED_PR_TITLE_PREFIX}{title}"
+    78→
+    79→
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01E1yBm55LSqcSg7mL2Viiud">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">100</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="656" cache_read_input_tokens="57712" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 656, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01E1yBm55LSqcSg7mL2Viiud">
+   100→    plan_id: str | None
+   101→    pr_number: int | None
+   102→    pr_url: str | None
+   103→    was_created: bool
+   104→    base_branch: str | None
+   105→    graphite_url: str | None
+   106→    diff_file: Path | None
+   107→    plan_context: PlanContext | None
+   108→    title: str | None
+   109→    body: str | None
+   110→    existing_pr_body: str
+   111→
+   112→
+   113→@dataclass(frozen=True)
+   114→class SubmitError:
+   115→    """Error result from a pipeline step."""
+   116→
+   117→    phase: str
+   118→    error_type: str
+   119→    message: str
+   120→    details: dict[str, str]
+   121→
+   122→
+   123→# ---------------------------------------------------------------------------
+   124→# Pipeline Steps
+   125→# ---------------------------------------------------------------------------
+   126→
+   127→SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
+   128→
+   129→
+  </tool_result>
+  <assistant>Now I have everything. The fix is straightforward — `cleanup_impl_for_submit` at line 193 needs to check if the branch is a plan branch (`plnd/` prefix) and skip cleanup if so. `state.branch_name` is available.
+
+Let me also check for existing tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="427" cache_read_input_tokens="58368" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 427}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_017tz6nBq8j8H1LJszMw8ouM">
+    <param name="pattern">cleanup_impl_for_submit</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="427" cache_read_input_tokens="58368" output_tokens="171" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 427, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017tz6nBq8j8H1LJszMw8ouM">
+Found 1 file
+tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TxbkdeLbz2opjg56SYfALj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="314" cache_read_input_tokens="58795" output_tokens="104" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 314, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TxbkdeLbz2opjg56SYfALj">
+     1→"""Unit tests for cleanup_impl_for_submit pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitState,
+     7→    cleanup_impl_for_submit,
+     8→)
+     9→from erk.core.context import context_for_test
+    10→from erk_shared.gateway.git.fake import FakeGit
+    11→
+    12→
+    13→def _make_state(
+    14→    *,
+    15→    cwd: Path,
+    16→    repo_root: Path | None = None,
+    17→    branch_name: str = "feature",
+    18→) -&gt; SubmitState:
+    19→    return SubmitState(
+    20→        cwd=cwd,
+    21→        repo_root=repo_root if repo_root is not None else cwd,
+    22→        branch_name=branch_name,
+    23→        parent_branch="main",
+    24→        trunk_branch="main",
+    25→        use_graphite=True,
+    26→        force=False,
+    27→        debug=False,
+    28→        session_id="test-session",
+    29→        skip_description=False,
+    30→        quiet=False,
+
+... [62 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check what constant is used for the branch prefix:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5516" cache_read_input_tokens="59109" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5516}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PWknYAH4HGkDQ3Vkj8juB5">
+    <param name="pattern">PLANNED_PR_TITLE_PREFIX</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/constants.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5516" cache_read_input_tokens="59109" output_tokens="146" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5516, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PWknYAH4HGkDQ3Vkj8juB5">
+13:PLANNED_PR_TITLE_PREFIX = "plnd/"
+  </tool_result>
+  <tool_use name="Grep" id="toolu_014V3VADkoCCcDQvCkA5RAou">
+    <param name="pattern">PLANNED.*BRANCH|PLAN.*BRANCH_PREFIX</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="174" cache_read_input_tokens="64625" output_tokens="131" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 174, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014V3VADkoCCcDQvCkA5RAou">
+No matches found
+  </tool_result>
+  <assistant>There's no branch prefix constant — the code uses `"plnd/"` as a string literal at line 258. Now I have everything I need. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="256" cache_read_input_tokens="64799" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 256}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01VZeGNj7ZcnNDr45XgVYX3w">
+    <param name="file_path">/Users/schrockn/.claude/plans/quizzical-fluttering-pebble.md</param>
+    <param name="content"># Skip impl-context cleanup for plan PRs in submit pipeline
+
+## Context
+
+`cleanup_impl_for...[truncated 2157 chars]..._submit.py` — all tests pass including new one
+2. Run `make fast-ci` — full fast CI green
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="256" cache_read_input_tokens="64799" output_tokens="876" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 256, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VZeGNj7ZcnNDr45XgVYX3w">
+The file /Users/schrockn/.claude/plans/quizzical-fluttering-pebble.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01SponHZyiuEcB8wxdZs8HmL">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run erk exec commands for plan save and PR operations'}]</param>
+    <param name="plan"># Skip impl-context cleanup for plan PRs in submit pipeline
+
+## Context
+
+`cleanup_impl_for...[truncated 2157 chars]..._submit.py` — all tests pass including new one
+2. Run `make fast-ci` — full fast CI green
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1018" cache_read_input_tokens="65055" output_tokens="82" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1018, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SponHZyiuEcB8wxdZs8HmL">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/quizzical-fluttering-pebble.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Skip impl-context cleanup for plan PRs in submit pipeline
+Current context: (wt:erk-slot-60) (br:plnd/extract-metadata-injection-03-02-1210) (pr:#8631)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/extr"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 03733d39-101b-4985-aa9e-f675ccebfbfd \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Skip impl-context cleanup for plan PRs in submit pipeline
+
+## Context
+
+`cleanup_impl_for_submit()` unconditionally removes `.erk/impl-context/` before pushing. For implementation PRs this is correct (scratch data), but for **plan PRs** (branches starting with `plnd/`), `.erk/impl-context/plan.md` IS the PR content — it enables inline review comments on the plan via GitHub's "Files Changed" tab. When `/erk:pr-submit` is used to re-push a plan PR after addressing review comments, the cleanup deletes the plan from the diff entirely.
+
+## Changes
+
+### 1. Add early return for plan branches
+
+**File:** `src/erk/cli/commands/pr/submit_pipeline.py` (line ~200)
+
+In `cleanup_impl_for_submit()`, add an early return when the branch is a plan branch. `PLANNED_PR_TITLE_PREFIX` (`"plnd/"`) is already imported.
+
+### 2. Add test for plan branch skip
+
+**File:** `tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py`
+
+Add a test verifying plan branches (`plnd/*`) keep their `.erk/impl-context/` — no removal, no commits.
+
+## Verification
+
+1. Run `pytest tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py`
+2. Run `make fast-ci`
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="695" cache_read_input_tokens="66073" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 695}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01MpcQ5t6BF6ahbZ4D2SkRcy">
+    <param name="questions">[{'question': '📋 Skip impl-context cleanup for plan PRs in submit pipeline\nCurrent contex...[truncated 499 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="695" cache_read_input_tokens="66073" output_tokens="611" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 695, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MpcQ5t6BF6ahbZ4D2SkRcy">
+User has answered your questions: "📋 Skip impl-context cleanup for plan PRs in submit pipeline
+Current context: (wt:erk-slot-60) (br:plnd/extract-metadata-injection-03-02-1210) (pr:#8631)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01D82dh4wVo5vZ58mxahZqh8">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="717" cache_read_input_tokens="66768" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 717, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01D82dh4wVo5vZ58mxahZqh8">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="03733d39-101b-4985-aa9e-f675ccebfbfd" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "03733d39-101b-4985-aa9e-f675ccebfbfd" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "03733d39-101b-4985-aa9e-f675ccebfbfd" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "03733d39-101b-4985-aa9e-f675ccebfbfd" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "03733d39-101b-4985-aa9e-f675ccebfbfd" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+### Step 1: Parse Arguments
+
+No `--plan-type` or `--objective` flags. Both flags are empty.
+
+### Step 2: Generate Branch Slug
+
+The plan title is "Skip impl-context cleanup for plan PRs in submit pipeline".
+
+`BRANCH_SLUG` = `skip-cleanup-plan-prs`
+
+### Step 3: Generate Plan Summary
+
+`PLAN_SUMMARY` = "The submit pipeline unconditionally removes .erk/impl-context/ before pushing, which destroys plan PR content. This adds an early return in cleanup_impl_for_submit() for plan branches (plnd/*) so their impl-context files are preserved in the PR diff."
+
+### Step 4: Run Save Command</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2600" cache_read_input_tokens="67485" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2600}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013qsPU4MkSwPqqEFavwv7Lc">
+    <param name="command">erk exec plan-save --format json --session-id="03733d39-101b-4985-aa9e-f675ccebfbfd" --bra...[truncated 185 chars]...it() for plan branches (plnd/*) so their impl-context files are preserved in the PR diff."</param>
+    <param name="description">Save plan as draft PR</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2600" cache_read_input_tokens="67485" output_tokens="351" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2600, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013qsPU4MkSwPqqEFavwv7Lc">
+{"success": true, "plan_number": 8636, "plan_url": "https://github.com/dagster-io/erk/pull/8636", "title": "[erk-plan] Skip impl-context cleanup for plan PRs in submit pipeline", "branch_name": "plnd/skip-cleanup-plan-prs-03-02-1452", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.erk/scratch/sessions/03733d39-101b-4985-aa9e-f675ccebfbfd/plan_snapshots/000001-aca2891e"}
+  </tool_result>
+  <assistant>No objective linked — skipping Steps 5 and 6.
+
+### Step 7: Display Results
+
+Plan "[erk-plan] Skip impl-context cleanup for plan PRs in submit pipeline" saved as draft PR #8636
+URL: https://github.com/dagster-io/erk/pull/8636
+
+Next steps:
+
+View PR: https://github.com/dagster-io/erk/pull/8636
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: `erk br co --for-plan 8636`
+    Implement: `source "$(erk br co --for-plan 8636 --script)" &amp;&amp; erk implement --dangerous`
+
+  New slot:
+    Local: `erk br co --new-slot --for-plan 8636`
+    Implement: `source "$(erk br co --new-slot --for-plan 8636 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8636`
+
+### Push Planning Session</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="644" cache_read_input_tokens="70085" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 644}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01V2zkfbgAcLjTFuwRy6JCkU">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="644" cache_read_input_tokens="70085" output_tokens="366" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 644, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V2zkfbgAcLjTFuwRy6JCkU">
+SESSION_ID=03733d39-101b-4985-aa9e-f675ccebfbfd
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-60/03733d39-101b-4985-aa9e-f675ccebfbfd.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018Xk44CRF37zRDMRpTHM5LR">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn--er...[truncated 86 chars]...4985-aa9e-f675ccebfbfd" --stage planning --source local --plan-id 8636 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="581" cache_read_input_tokens="70729" output_tokens="198" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 581, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018Xk44CRF37zRDMRpTHM5LR">
+{"uploaded": true, "plan_id": 8636, "session_branch": "async-learn/8636", "session_id": "03733d39-101b-4985-aa9e-f675ccebfbfd", "stage": "planning", "files": ["planning-03733d39-101b-4985-aa9e-f675ccebfbfd-03733d39-101b-4985-aa9e-f675ccebfbfd-part1.xml", "planning-03733d39-101b-4985-aa9e-f675ccebfbfd-03733d39-101b-4985-aa9e-f675ccebfbfd-part2.xml"]}
+  </tool_result>
+  <assistant>Plan saved and session uploaded successfully.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="383" cache_read_input_tokens="71310" output_tokens="10" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 383, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;bash-input&gt;gt pr&lt;/bash-input&gt;</user>
+  <user>&lt;bash-stdout&gt;https://app.graphite.dev/github/pr/dagster-io/erk/8631&lt;/bash-stdout&gt;&lt;bash-stderr&gt;&lt;/bash-stderr&gt;</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
