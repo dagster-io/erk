@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Fix: `find_inactive_slot` fails to reuse slots due to untracked files"
-}
