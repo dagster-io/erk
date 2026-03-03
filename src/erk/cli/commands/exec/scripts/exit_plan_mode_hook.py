@@ -726,9 +726,7 @@ def _gather_inputs(
         trunk_branch = git.branch.detect_trunk_branch(repo_root)
         # Use Graphite stack parent if available, otherwise trunk
         parent_branch = (
-            branch_manager.get_parent_branch(repo_root, current_branch)
-            if current_branch
-            else None
+            branch_manager.get_parent_branch(repo_root, current_branch) if current_branch else None
         ) or trunk_branch
         commits_ahead = git.analysis.count_commits_ahead(repo_root, parent_branch)
         branch_has_commits = commits_ahead > 0
