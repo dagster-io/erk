@@ -1,0 +1,1080 @@
+<session>
+  <meta branch="plnd/fix-activation-workspace-d-03-02-0950" />
+  <meta model="claude-opus-4-6" />
+  <user>plnd/fix-activation-workspace-d-03-02-0950: https://app.graphite.com/github/pr/dagster-io/erk/8622 (updated)
+Checked out PR #8622 at /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60
+➜  erk-slot-60 git:(plnd/fix-activation-workspace-d-03-02-0950) erk dispatch
+Usage: erk [OPTIONS] COMMAND [ARGS]...
+Try 'erk -h' for help.
+
+Error: No such command 'dispatch'.
+➜  erk-slot-60 git:(plnd/fix-activation-workspace-d-03-02-0950) erk pr dispatch
+Checking GitHub authentication...
+Syncing trunk with remote...
+Error: No plan numbers provided and could not auto-detect from context.
+
+Provide plan numbers explicitly: erk pr dispatch &lt;number&gt;
+Or run from a plan branch with an associated PR.
+➜  erk-slot-60 git:(plnd/fix-activation-workspace-d-03-02-0950) gt pr
+https://app.graphite.dev/github/pr/dagster-io/erk/8622
+➜  erk-slot-60 git:(plnd/fix-activation-workspace-d-03-02-0950) claumore
+➜  erk-slot-60 git:(plnd/fix-activation-workspace-d-03-02-0950)
+➜  erk-slot-60 git:(plnd/fix-activation-workspace-d-03-02-0950) more .erk/impl-context/erf
+.erk/impl-context/erf: No such file or directory
+➜  erk-slot-60 git:(plnd/fix-activation-workspace-d-03-02-0950) more .erk/impl-context/ref.json
+{
+  "provider": "github-draft-pr",
+  "title": "Fix hardcoded workspace packages in activation script"
+}
+➜  erk-slot-60 git:(plnd/fix-activation-workspace-d-03-02-0950)
+
+should be able to figure it out from context even though gt pr works</user>
+  <user>[Request interrupted by user]</user>
+  <user>plnd/fix-activation-workspace-d-03-02-0950: https://app.graphite.com/github/pr/dagster-io/erk/8622 (updated)
+Checked out PR #8622 at /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60
+➜  erk-slot-60 git:(plnd/fix-activation-workspace-d-03-02-0950) erk dispatch
+Usage: erk [OPTIONS] COMMAND [ARGS]...
+Try 'erk -h' for help.
+
+Error: No such command 'dispatch'.
+➜  erk-slot-60 git:(plnd/fix-activation-workspace-d-03-02-0950) erk pr dispatch
+Checking GitHub authentication...
+Syncing trunk with remote...
+Error: No plan numbers provided and could not auto-detect from context.
+
+Provide plan numbers explicitly: erk pr dispatch &lt;number&gt;
+Or run from a plan branch with an associated PR.
+➜  erk-slot-60 git:(plnd/fix-activation-workspace-d-03-02-0950) gt pr
+https://app.graphite.dev/github/pr/dagster-io/erk/8622
+➜  erk-slot-60 git:(plnd/fix-activation-workspace-d-03-02-0950) claumore
+➜  erk-slot-60 git:(plnd/fix-activation-workspace-d-03-02-0950)
+➜  erk-slot-60 git:(plnd/fix-activation-workspace-d-03-02-0950) more .erk/impl-context/erf
+.erk/impl-context/erf: No such file or directory
+➜  erk-slot-60 git:(plnd/fix-activation-workspace-d-03-02-0950) more .erk/impl-context/ref.json
+{
+  "provider": "github-draft-pr",
+  "title": "Fix hardcoded workspace packages in activation script"
+}
+➜  erk-slot-60 git:(plnd/fix-activation-workspace-d-03-02-0950)
+
+should be able to figure it out from context even since gt pr works</user>
+  <thinking>The user is reporting a bug: `erk pr dispatch` fails to auto-detect the PR number when run from a plan branch, even though `gt pr` successfully identifies PR #8622. The `.erk/impl-context/ref.json` exists but doesn't contain a PR number. The command should be able to figure out the PR number from the current branch context.
+
+Let me explore the codebase to understand how `erk pr dispatch` works and how it tries to auto-detect PR numbers.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="13512" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13512}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll explore the dispatch command's auto-detection logic to understand why it fails to find the PR number from the current branch context.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="13512" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13512}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01AkmREFfn8g9226oUD9rWBx">
+    <param name="description">Explore dispatch auto-detect</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 874 chars]..., and how other commands (like `erk pr submit`) handle auto-detection from branch context.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="13512" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13512}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01QvhyrQc5ZuJHtDunsk8mZ5">
+    <param name="description">Explore ref.json and PR number resolution</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 632 chars]...e_plan_number` type functions
+- How the GitHub gateway gets PR info for the current branch</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="13512" cache_read_input_tokens="19113" output_tokens="810" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13512, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QvhyrQc5ZuJHtDunsk8mZ5">
+Excellent! Now I have enough information. Let me create a comprehensive report:
+
+## Summary: ref.json Creation and PR Number Resolution
+
+Based on my exploration of the codebase, here are the two things you asked about:
+
+### 1. How `ref.json` is Created and What Fields It Should Contain
+
+**Creation in `plan_save.py` (lines 212-227):**
+
+When saving a plan as a draft PR, `plan_save.py` creates a minimal `ref.json` file **before** the PR is even created:
+
+```python
+ref_data: dict[str, str | int | list[str] | None] = {
+    "provider": "github-draft-pr",
+    "title": title,
+}
+if objective_issue is not None:
+    ref_data["objective_id"] = objective_issue
+if node_ids is not None:
+    ref_data["node_ids"] = list(node_ids)
+
+files: dict[str, str] = {
+    f"{IMPL_CONTEXT_DIR}/plan.md": plan_content,
+    f"{IMPL_CONTEXT_DIR}/ref.json": json.dumps(ref_data, indent=2),
+}
+```
+
+**Key insight:** At this stage, the PR doesn't exist yet, so `ref.json` intentionally omits the PR number. It only contains:
+- `provider`: "github-draft-pr"
+
+... [143 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01AkmREFfn8g9226oUD9rWBx">
+Perfect! Now let me create a comprehensive analysis document. Let me summarize the findings:
+
+## Summary of Findings
+
+Based on my thorough investigation, I've identified the root cause of the `erk pr dispatch` auto-detection failure:
+
+### The Bug
+
+**Location**: `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/exec/scripts/plan_save.py` (lines 213-227)
+
+**Root Cause**: The `plan_save.py` script creates an **incomplete** `ref.json` file in the root `.erk/impl-context/` directory instead of creating a proper **branch-scoped** subdirectory with a **complete** `ref.json`.
+
+### What Happens
+
+1. **`plan_save.py` creates incomplete ref.json**:
+   ```json
+   {
+     "provider": "github-draft-pr",
+     "title": "Fix hardcoded workspace packages in activation script"
+   }
+   ```
+   This is written to: `.erk/impl-context/ref.json`
+
+2. **Missing required fields** (per `impl_folder.py` line 30):
+   - `plan_id` (string)
+   - `url` (string)
+   - `created_at` (ISO 8601 timestamp)
+   - `synced_at` (ISO 8601 timestamp)
+
+3. **`resolve_impl_dir()` fails to find the plan**:
+
+... [75 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a good understanding of the issue. Let me read the specific dispatch command code to understand the auto-detection logic more precisely.</thinking>
+  <usage input_tokens="1929" cache_creation_input_tokens="2455" cache_read_input_tokens="32625" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2455}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I have a clear picture now. Let me read the dispatch command's auto-detection code to confirm the fix approach.</assistant>
+  <usage input_tokens="1929" cache_creation_input_tokens="2455" cache_read_input_tokens="32625" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2455}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KLRQ4JCTezre6334MA7ocp">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/exec/scripts/dispatch_cmd.py</param>
+    <param name="offset">350</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1929" cache_creation_input_tokens="2455" cache_read_input_tokens="32625" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2455}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KLRQ4JCTezre6334MA7ocp">
+File does not exist. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60.
+  </tool_result>
+  <tool_use name="Read" id="toolu_011hBecv297bTm7zxbUDEcbw">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/exec/scripts/detect_plan_from_branch.py</param>
+  </tool_use>
+  <usage input_tokens="1929" cache_creation_input_tokens="2455" cache_read_input_tokens="32625" output_tokens="285" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2455, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011hBecv297bTm7zxbUDEcbw">
+&lt;tool_use_error&gt;Sibling tool call errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Wb1PKjQKB7zahutyJV5Vj4">
+    <param name="pattern">dispatch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2425" cache_read_input_tokens="35080" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2425}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Wb1PKjQKB7zahutyJV5Vj4">
+Found 17 files
+src/erk/cli/commands/objective/plan_cmd.py
+src/erk/cli/commands/one_shot.py
+src/erk/cli/commands/pr/dispatch_cmd.py
+src/erk/cli/commands/ref_resolution.py
+src/erk/cli/commands/doctor_workflow.py
+src/erk/cli/commands/launch_cmd.py
+src/erk/cli/config.py
+src/erk/cli/commands/one_shot_dispatch.py
+src/erk/cli/constants.py
+src/erk/cli/commands/pr/view_cmd.py
+src/erk/cli/commands/pr/dispatch_helpers.py
+src/erk/cli/commands/pr/metadata_helpers.py
+src/erk/cli/commands/pr/__init__.py
+src/erk/cli/commands/land_cmd.py
+src/erk/cli/commands/exec/scripts/update_plan_header.py
+src/erk/cli/commands/exec/scripts/register_one_shot_plan.py
+src/erk/cli/commands/admin.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01EkpDA6tQPZp1J6gB11oQJu">
+    <param name="pattern">detect_plan.*from.*context\|auto.detect\|_detect_plan</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2425" cache_read_input_tokens="35080" output_tokens="238" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2425, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EkpDA6tQPZp1J6gB11oQJu">
+No files found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TbDfJV4jjY8enV7aKNFN5b">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="578" cache_read_input_tokens="37505" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 578}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TbDfJV4jjY8enV7aKNFN5b">
+     1→"""Dispatch plans for remote AI implementation via GitHub Actions."""
+     2→
+     3→import logging
+     4→import tomllib
+     5→from dataclasses import dataclass
+     6→from datetime import UTC, datetime
+     7→from pathlib import Path
+     8→
+     9→import click
+    10→
+    11→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+    12→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    13→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    14→from erk.cli.commands.slot.common import is_placeholder_branch
+    15→from erk.cli.constants import (
+    16→    DISPATCH_WORKFLOW_METADATA_NAME,
+    17→    DISPATCH_WORKFLOW_NAME,
+    18→    ERK_PLAN_LABEL,
+    19→)
+    20→from erk.cli.core import discover_repo_context
+    21→from erk.cli.ensure import Ensure, UserFacingCliError
+    22→from erk.core.context import ErkContext
+    23→from erk.core.repo_discovery import RepoContext
+    24→from erk_shared.gateway.git.remote_ops.types import PushError
+    25→from erk_shared.gateway.github.metadata.core import (
+    26→    create_submission_queued_block,
+    27→    render_erk_issue_event,
+    28→)
+    29→from erk_shared.gateway.github.parsing import (
+    30→    construct_pr_url,
+
+... [514 lines omitted] ...
+
+   155→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number} not found")
+   161→            click.style("Error: ", fg="red")
+   170→            click.style("Error: ", fg="red") + f"PR #{plan_number} is {pr_result.state}\n\n"
+   216→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number}: plan content not found")
+   245→    if isinstance(push_result, PushError):
+   246→        raise UserFacingCliError(push_result.message)
+   292→    except Exception as e:
+   294→            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+   304→    except Exception as e:
+   305→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+   336→    except Exception as e:
+   338→            click.style("Warning: ", fg="yellow")
+   339→            + f"Failed to post queued comment: {e}\n"
+   451→            click.style("Error: ", fg="red")
+   461→                click.style("Error: ", fg="red")
+   474→                click.style("Error: ", fg="red") + f"Base branch '{base}' does not exist on remote"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DhhRZ8eCaZ9M8gxY7JL4B5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/ref_resolution.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="578" cache_read_input_tokens="37505" output_tokens="171" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 578, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DhhRZ8eCaZ9M8gxY7JL4B5">
+     1→"""Shared helper for resolving dispatch ref across multiple commands.
+     2→
+     3→This module provides a single point for handling --ref and --ref-current flag
+     4→resolution, ensuring consistent validation and error handling across all
+     5→dispatch commands (launch, one-shot, pr dispatch, workflow smoke-test, objective plan).
+     6→"""
+     7→
+     8→import click
+     9→
+    10→from erk.core.context import ErkContext
+    11→
+    12→
+    13→def resolve_dispatch_ref(
+    14→    ctx: ErkContext, *, dispatch_ref: str | None, ref_current: bool
+    15→) -&gt; str | None:
+    16→    """Resolve dispatch ref from flags and config.
+    17→
+    18→    Handles mutual exclusivity check and falls back to config default.
+    19→
+    20→    Args:
+    21→        ctx: ErkContext with git and local_config
+    22→        dispatch_ref: Value from --ref flag (None if not provided)
+    23→        ref_current: Value from --ref-current flag
+    24→
+    25→    Returns:
+    26→        The resolved ref (branch name) or None if using default
+    27→
+    28→    Raises:
+    29→        click.UsageError: If both --ref and --ref-current are provided,
+    30→            or if --ref-current is used with detached HEAD
+
+... [12 lines omitted] ...
+
+    33→        raise click.UsageError("--ref and --ref-current are mutually exclusive")
+    38→            raise click.UsageError("--ref-current requires being on a branch (not detached HEAD)")
+  </tool_result>
+  <thinking>Now I understand the issue. The `_detect_plan_number_from_context` function at line 356-378 only checks `resolve_impl_dir()` + `read_plan_ref()`. If the impl dir doesn't have a valid ref.json with all required fields, it returns None.
+
+The user wants the dispatch command to also try resolving the PR number from the current branch using the GitHub API (like `gt pr` does), as a fallback when the impl-context approach fails.
+
+Let me look at `resolve_impl_dir` and `PlannedPRBackend.resolve_plan_id_for_branch` to understand the full picture.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="8069" cache_read_input_tokens="38083" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8069}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me look at `resolve_impl_dir` and `PlannedPRBackend.resolve_plan_id_for_branch` to understand the available fallback.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8069" cache_read_input_tokens="38083" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8069}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EDLWZUvMNv7FyHvoAjgW5n">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk_shared/impl_folder.py</param>
+    <param name="offset">240</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8069" cache_read_input_tokens="38083" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8069}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EDLWZUvMNv7FyHvoAjgW5n">
+File does not exist. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60.
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01L8fAbtn64hpbF3H4tgptSb">
+    <param name="pattern">resolve_plan_id_for_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8069" cache_read_input_tokens="38083" output_tokens="492" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8069, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01L8fAbtn64hpbF3H4tgptSb">
+&lt;tool_use_error&gt;Sibling tool call errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01VToK46bzp4LaVsvj5Z89ER">
+    <param name="pattern">**/impl_folder.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="704" cache_read_input_tokens="46152" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 704, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VToK46bzp4LaVsvj5Z89ER">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/impl_folder.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TZDiCAQXJJ5wYbzKXEYwkk">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/impl_folder.py</param>
+    <param name="offset">240</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="115" cache_read_input_tokens="46856" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 115}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TZDiCAQXJJ5wYbzKXEYwkk">
+   240→    """Save provider-agnostic plan reference to impl dir as ref.json.
+   241→
+   242→    Args:
+   243→        impl_dir: Path to impl directory
+   244→        provider: Plan provider name (e.g. "github", "github-draft-pr")
+   245→        plan_id: Provider-specific ID as string ("42", "PROJ-123")
+   246→        url: Web URL to view the plan
+   247→        labels: Plan labels
+   248→        objective_id: Optional linked objective issue number
+   249→        node_ids: Optional objective node IDs this plan targets
+   250→
+   251→    Raises:
+   252→        FileNotFoundError: If impl_dir doesn't exist
+   253→    """
+   254→    if not impl_dir.exists():
+   255→        msg = f"Implementation directory does not exist: {impl_dir}"
+   256→        raise FileNotFoundError(msg)
+   257→
+   258→    ref_file = impl_dir / "ref.json"
+   259→    content = build_plan_ref_json(
+   260→        provider=provider,
+   261→        plan_id=plan_id,
+   262→        url=url,
+   263→        labels=labels,
+   264→        objective_id=objective_id,
+   265→        node_ids=node_ids,
+   266→    )
+   267→    ref_file.write_text(content, encoding="utf-8")
+   268→
+   269→
+
+... [90 lines omitted] ...
+
+   277→    except json.JSONDecodeError:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01PAYZSHkgHXYoNb81ChHxZq">
+    <param name="pattern">resolve_plan_id_for_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="115" cache_read_input_tokens="46856" output_tokens="290" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 115, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PAYZSHkgHXYoNb81ChHxZq">
+&lt;persisted-output&gt;
+Output too large (27.7KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-60/e1392930-8e4a-40e8-a4a3-510b0214b0b7/tool-results/toolu_01PAYZSHkgHXYoNb81ChHxZq.txt
+
+Preview (first 2KB):
+src/erk/cli/commands/implement_shared.py:465:    return ctx.plan_backend.resolve_plan_id_for_branch(ctx.cwd, current_branch)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/implement_shared.py-466-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/implement_shared.py-467-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/implement_shared.py-468-@dataclass(frozen=True)
+src/erk/cli/commands/implement_shared.py-469-class PlanSource:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/implement_shared.py-470-    """Source information for creating a worktree with plan.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/implement_shared.py-471-
+src/erk/cli/commands/implement_shared.py-472-    Attributes:
+src/erk/cli/commands/implement_shared.py-473-        plan_content: The plan content as a string
+src/erk/cli/commands/implement_shared.py-474-        base_name: Base name for generating worktree name
+src/erk/cli/commands/implement_shared.py-475-        dry_run_description: Description to show in dry-run mode
+--
+src/erk/cli/commands/land_cmd.py:897:    plan_id = ctx.plan_backend.resolve_plan_id_for_branch(main_repo_root, branch)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/land_cmd.py-898-    objective_number = get_objective_for_branch(ctx, main_repo_root, branch)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/land_cmd.py-899-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/land_cmd.py-900-    # Build execution state and run the pipeline directly
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/land_cmd.py-901-    state = make_execution_state(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/land_cmd.py-902-        cwd=ctx.cwd,
+...
+&lt;/persisted-output&gt;
+  </tool_result>
+  <thinking>Now I can see the issue clearly. Let me look at `resolve_impl_dir` to understand the full auto-detection flow, and also `resolve_plan_id_for_branch` in the plan backend.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2714" cache_read_input_tokens="46971" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2714}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Bdjv1n35VpeVMFASJJtNQ5">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/impl_folder.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2714" cache_read_input_tokens="46971" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2714}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Bdjv1n35VpeVMFASJJtNQ5">
+     1→"""Implementation folder utilities for erk and erk-kits.
+     2→
+     3→This module provides shared utilities for managing branch-scoped impl directories
+     4→under .erk/impl-context/&lt;branch&gt;/:
+     5→- plan.md: Immutable implementation plan
+     6→- plan-ref.json: Provider-agnostic plan reference
+     7→
+     8→These utilities are used by both erk (for local operations) and erk-kits
+     9→(for kit CLI commands).
+    10→"""
+    11→
+    12→from __future__ import annotations
+    13→
+    14→import json
+    15→import shutil
+    16→from dataclasses import dataclass
+    17→from datetime import UTC, datetime
+    18→from pathlib import Path
+    19→from typing import Literal
+    20→
+    21→from erk_shared.gateway.github.metadata.core import (
+    22→    create_worktree_creation_block,
+    23→    render_erk_issue_event,
+    24→)
+    25→from erk_shared.gateway.github.metadata.schemas import CREATED_BY, LAST_DISPATCHED_RUN_ID
+    26→
+    27→IMPL_DIR_RELATIVE = ".erk/impl-context"
+    28→"""Relative path for branch-scoped implementation directories."""
+    29→
+    30→_REQUIRED_REF_FIELDS = ("provider", "plan_id", "url", "created_at", "synced_at")
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01JCVxuXFN5ptFaEnC6tLvgR">
+    <param name="pattern">def resolve_impl_dir</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2714" cache_read_input_tokens="46971" output_tokens="348" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2714, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JCVxuXFN5ptFaEnC6tLvgR">
+packages/erk-shared/src/erk_shared/impl_folder.py:54:def resolve_impl_dir(base_path: Path, *, branch_name: str | None) -&gt; Path | None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/impl_folder.py-55-    """Resolve the implementation directory using a multi-step discovery strategy.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/impl_folder.py-56-
+packages/erk-shared/src/erk_shared/impl_folder.py-57-    Resolution order:
+packages/erk-shared/src/erk_shared/impl_folder.py-58-    1. Branch-scoped: get_impl_dir(base_path, branch_name=branch_name) if branch_name
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/impl_folder.py-59-       provided and directory exists
+packages/erk-shared/src/erk_shared/impl_folder.py-60-    2. Discovery: search base_path / IMPL_DIR_RELATIVE for any subdir containing plan.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/impl_folder.py-61-    3. Return None if not found
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/impl_folder.py-62-
+packages/erk-shared/src/erk_shared/impl_folder.py-63-    Args:
+packages/erk-shared/src/erk_shared/impl_folder.py-64-        base_path: Repository root or worktree path
+packages/erk-shared/src/erk_shared/impl_folder.py-65-        branch_name: Git branch name (may contain `/`), or None to skip step 1
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/impl_folder.py-66-
+packages/erk-shared/src/erk_shared/impl_folder.py-67-    Returns:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/impl_folder.py-68-        Path to the resolved impl directory, or None if not found
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/impl_folder.py-69-    """
+packages/erk-shared/src/erk_shared/impl_folder.py-70-    # Step 1: Branch-scoped lookup
+packages/erk-shared/src/erk_shared/impl_folder.py-71-    if branch_name is not None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/impl_folder.py-72-        branch_dir = get_impl_dir(base_path, branch_name=branch_name)
+packages/erk-shared/src/erk_shared/impl_folder.py-73-        if branch_dir.exists():
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/impl_folder.py-74-            return branch_dir
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/impl_folder.py-75-
+packages/erk-shared/src/erk_shared/impl_folder.py-76-    # Step 2: Discovery — search IMPL_DIR_RELATIVE for any subdir with plan.md or progress.md
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/impl_folder.py-77-    impl_context_root = base_path / IMPL_DIR_RELATIVE
+packages/erk-shared/src/erk_shared/impl_folder.py-78-    if impl_context_root.exists():
+packages/erk-shared/src/erk_shared/impl_folder.py-79-        for child in impl_context_root.iterdir():
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/impl_folder.py-80-            if child.is_dir() and (
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/impl_folder.py-81-                (child / "plan.md").exists() or (child / "progress.md").exists()
+packages/erk-shared/src/erk_shared/impl_folder.py-82-            ):
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/impl_folder.py-83-                return child
+
+... [11 lines omitted] ...
+  </tool_result>
+  <thinking>Now I understand the full picture. Let me also check how `plan_backend.resolve_plan_id_for_branch` works to see if it's available on the `ErkContext`.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3021" cache_read_input_tokens="49685" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3021}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check the `plan_backend` attribute on `ErkContext` to confirm the API is available.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3021" cache_read_input_tokens="49685" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3021}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01ANshY2kfXv9bqfNHdNhZ9e">
+    <param name="pattern">def resolve_plan_id_for_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3021" cache_read_input_tokens="49685" output_tokens="257" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3021, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ANshY2kfXv9bqfNHdNhZ9e">
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:112:    def resolve_plan_id_for_branch(self, repo_root: Path, branch_name: str) -&gt; str | None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-113-        """Resolve plan identifier for a branch by querying for a PR.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-114-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-115-        Resolving the plan requires an API call to find the draft PR associated
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-116-        with the branch.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-117-
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-118-        Args:
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-119-            repo_root: Repository root directory
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-120-            branch_name: Git branch name
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-121-
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-122-        Returns:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-123-            PR number as string if a draft PR exists for the branch, None otherwise
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-124-        """
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-125-        result = self._github.get_pr_for_branch(repo_root, branch_name)
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-126-        if isinstance(result, PRNotFound):
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-127-            return None
+--
+packages/erk-shared/src/erk_shared/plan_store/backend.py:265:    def resolve_plan_id_for_branch(self, repo_root: Path, branch_name: str) -&gt; str | None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/plan_store/backend.py-266-        """Resolve plan identifier for a branch without fetching the full plan.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/plan_store/backend.py-267-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/plan_store/backend.py-268-        Lightweight resolution that does NOT verify the plan exists.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/plan_store/backend.py-269-        Returns None if the branch is not associated with a plan.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/plan_store/backend.py-270-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/plan_store/backend.py-271-        For GitHubPlanBackend this is a zero-cost regex operation.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/plan_store/backend.py-272-        Future backends (e.g., PlannedPRBackend) may require an API call.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/plan_store/backend.py-273-
+packages/erk-shared/src/erk_shared/plan_store/backend.py-274-        Args:
+packages/erk-shared/src/erk_shared/plan_store/backend.py-275-            repo_root: Repository root directory
+packages/erk-shared/src/erk_shared/plan_store/backend.py-276-            branch_name: Git branch name
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/packages/erk-shared/src/erk_shared/plan_store/backend.py-277-
+
+... [3 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check how `implement_shared.py` does it (it was shown in the grep results as using `ctx.plan_backend.resolve_plan_id_for_branch`).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2072" cache_read_input_tokens="52706" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2072}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SL3FaSZMuP9VEC6iWEcobH">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/implement_shared.py</param>
+    <param name="offset">455</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2072" cache_read_input_tokens="52706" output_tokens="170" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2072, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SL3FaSZMuP9VEC6iWEcobH">
+   455→
+   456→    Examples:
+   457→        plnd/fix-bug-01-15-1430 (with plan-ref.json) → "123"
+   458→        main → None
+   459→        feature-branch → None
+   460→    """
+   461→    current_branch = ctx.git.branch.get_current_branch(ctx.cwd)
+   462→    if current_branch is None:
+   463→        return None
+   464→
+   465→    return ctx.plan_backend.resolve_plan_id_for_branch(ctx.cwd, current_branch)
+   466→
+   467→
+   468→@dataclass(frozen=True)
+   469→class PlanSource:
+   470→    """Source information for creating a worktree with plan.
+   471→
+   472→    Attributes:
+   473→        plan_content: The plan content as a string
+   474→        base_name: Base name for generating worktree name
+  </tool_result>
+  <thinking>Now I have all the context I need. Let me also check how `detect_plan_from_branch.py` works since the explore agent mentioned it:</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="417" cache_read_input_tokens="54778" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 417}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear understanding. Let me also check the existing `detect_plan_from_branch.py` exec script since it was mentioned.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="417" cache_read_input_tokens="54778" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 417}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01JYv4RSTP9T47pLuCHGc8C4">
+    <param name="pattern">**/detect_plan_from_branch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="417" cache_read_input_tokens="54778" output_tokens="142" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 417, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JYv4RSTP9T47pLuCHGc8C4">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/exec/scripts/detect_plan_from_branch.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NQ9UkkU5hbbTRUf34JqQEW">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/exec/scripts/detect_plan_from_branch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="55195" output_tokens="101" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 297, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NQ9UkkU5hbbTRUf34JqQEW">
+     1→"""Detect plan number from the current git branch.
+     2→
+     3→Uses github.get_pr_for_branch() to look up the associated PR for plnd/ branches.
+     4→Plan-ref.json is the primary source; this exec script is the fallback when no
+     5→.erk/impl-context/ folder exists yet.
+     6→
+     7→Usage:
+     8→    erk exec detect-plan-from-branch
+     9→
+    10→Output:
+    11→    JSON with detection result:
+    12→    {"found": true, "plan_number": 2521, "detection_method": "pr_lookup"}
+    13→    {"found": false}
+    14→
+    15→Exit Codes:
+    16→    0: Always (caller decides how to handle not-found)
+    17→
+    18→Examples:
+    19→    $ erk exec detect-plan-from-branch
+    20→    {"found": true, "plan_number": 2521, "detection_method": "pr_lookup"}
+    21→"""
+    22→
+    23→import json
+    24→from collections.abc import Callable
+    25→
+    26→import click
+    27→
+    28→from erk_shared.context.helpers import require_cwd, require_git, require_github, require_repo_root
+    29→from erk_shared.gateway.github.types import PRNotFound
+    30→
+
+... [57 lines omitted] ...
+  </tool_result>
+  <assistant>I now have all the information I need. The issue is clear and the fix is straightforward. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1936" cache_read_input_tokens="55492" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1936}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01SvrzGMSVEPwTe7wwQjPEBD">
+    <param name="file_path">/Users/schrockn/.claude/plans/reactive-jingling-fog.md</param>
+    <param name="content"># Fix: `erk pr dispatch` auto-detect from branch context
+
+## Context
+
+When running `erk pr...[truncated 2128 chars]...spatch tests exist)
+- Write a unit test for the fallback path using the fake plan backend
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1936" cache_read_input_tokens="55492" output_tokens="830" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1936, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SvrzGMSVEPwTe7wwQjPEBD">
+File created successfully at: /Users/schrockn/.claude/plans/reactive-jingling-fog.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01XVfS5DPQn54Qm2c1k8jjNZ">
+    <param name="plan"># Fix: `erk pr dispatch` auto-detect from branch context
+
+## Context
+
+When running `erk pr...[truncated 2128 chars]...spatch tests exist)
+- Write a unit test for the fallback path using the fake plan backend
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="867" cache_read_input_tokens="57428" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 867, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XVfS5DPQn54Qm2c1k8jjNZ">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/reactive-jingling-fog.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: `erk pr dispatch` auto-detect from branch context
+Current context: (wt:erk-slot-60) (br:plnd/fix-activation-workspace-d-03-02-0950) (pr:#8622) (plan:#8622)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/fix-"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id e1392930-8e4a-40e8-a4a3-510b0214b0b7 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+## Fix: `erk pr dispatch` auto-detect from branch context
+
+### Context
+
+When running `erk pr dispatch` with no arguments on a plan branch (`plnd/fix-activation-workspace-d-03-02-0950`), auto-detection fails with "No plan numbers provided and could not auto-detect from context" even though `gt pr` correctly identifies PR #8622.
+
+The root cause is that `_detect_plan_number_from_context()` in `dispatch_cmd.py` only checks `.erk/impl-context/` for a valid `ref.json` via `resolve_impl_dir()` + `read_plan_ref()`. When the branch-scoped impl dir doesn't exist (or the root `ref.json` is incomplete — missing `plan_id`, `url`, `created_at`, `synced_at`), it returns `None` with no fallback.
+
+Other commands like `implement_shared.py` and `land_cmd.py` already use `ctx.plan_backend.resolve_plan_id_for_branch()` which queries the GitHub API to find the PR for the current branch. The dispatch command should use this same fallback.
+
+### Change
+
+**File:** `src/erk/cli/commands/pr/dispatch_cmd.py`
+
+Modify `_detect_plan_number_from_context()` (lines 356-378) to add a GitHub API fallback when the impl-context lookup fails:
+
+```python
+def _detect_plan_number_from_context(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    branch_name: str | None,
+) -&gt; int | None:
+    # Step 1: Check .erk/impl-context/ (existing logic, no API call)
+    impl_dir = resolve_impl_dir(repo.root, branch_name=branch_name)
+    if impl_dir is not None:
+        plan_ref = read_plan_ref(impl_dir)
+        if plan_ref is not None and plan_ref.plan_id.isdigit():
+            return int(plan_ref.plan_id)
+
+    # Step 2: Fall back to GitHub API lookup
+    if branch_name is not None:
+        plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
+        if plan_id is not None and plan_id.isdigit():
+            return int(plan_id)
+
+    return None
+```
+
+Update the call site (line 458) to pass `ctx` and `repo`.
+
+### Verification
+
+- Run `erk pr dispatch` from a plan branch with a PR but no branch-scoped impl-context dir
+- Run existing tests + write a unit test for the fallback path
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="656" cache_read_input_tokens="58295" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 656}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01RUBXBEjrw5wXEAp4vRanPE">
+    <param name="questions">[{'question': '📋 Fix: `erk pr dispatch` auto-detect from branch context\nCurrent context: ...[truncated 509 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="656" cache_read_input_tokens="58295" output_tokens="902" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 656, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RUBXBEjrw5wXEAp4vRanPE">
+User has answered your questions: "📋 Fix: `erk pr dispatch` auto-detect from branch context
+Current context: (wt:erk-slot-60) (br:plnd/fix-activation-workspace-d-03-02-0950) (pr:#8622) (plan:#8622)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01SPPgDuntTbfNZh4i5GEwmD">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2344" cache_read_input_tokens="58951" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2344, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SPPgDuntTbfNZh4i5GEwmD">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="e1392930-8e4a-40e8-a4a3-510b0214b0b7" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "e1392930-8e4a-40e8-a4a3-510b0214b0b7" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "e1392930-8e4a-40e8-a4a3-510b0214b0b7" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "e1392930-8e4a-40e8-a4a3-510b0214b0b7" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "e1392930-8e4a-40e8-a4a3-510b0214b0b7" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+I'll save this plan as a draft PR.
+
+**Branch slug:** `fix-dispatch-auto-detect`
+
+**Plan summary:** Adds a GitHub API fallback to the dispatch command's auto-detection logic so it can resolve the PR number from the current branch when no valid impl-context ref.json exists, matching the pattern already used by implement and land commands.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2625" cache_read_input_tokens="61295" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2625}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019XAY2gpjTapCUb6yKGYYYh">
+    <param name="command">erk exec plan-save --format json --session-id="e1392930-8e4a-40e8-a4a3-510b0214b0b7" --bra...[truncated 175 chars]...ontext ref.json exists, matching the pattern already used by implement and land commands."</param>
+    <param name="description">Save plan as draft PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2625" cache_read_input_tokens="61295" output_tokens="308" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2625, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019XAY2gpjTapCUb6yKGYYYh">
+{"success": true, "plan_number": 8624, "plan_url": "https://github.com/dagster-io/erk/pull/8624", "title": "[erk-plan] Fix: `erk pr dispatch` auto-detect from branch context", "branch_name": "plnd/fix-dispatch-auto-detect-03-02-1014", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.erk/scratch/sessions/e1392930-8e4a-40e8-a4a3-510b0214b0b7/plan_snapshots/000001-bb061143"}
+  </tool_result>
+  <assistant>Plan saved as draft PR #8624.
+
+Now let me push the planning session:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="476" cache_read_input_tokens="63920" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 476}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011HnWqGAosRQj9dS2d8VGEE">
+    <param name="command">erk exec upload-impl-session --session-id "e1392930-8e4a-40e8-a4a3-510b0214b0b7" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="476" cache_read_input_tokens="63920" output_tokens="158" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 476, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011HnWqGAosRQj9dS2d8VGEE">
+{"uploaded": true, "plan_id": 8622}
+  </tool_result>
+  <assistant>Plan **"Fix: `erk pr dispatch` auto-detect from branch context"** saved as draft PR #8624
+
+**URL:** https://github.com/dagster-io/erk/pull/8624
+
+**Next steps:**
+
+In Claude Code:
+- Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+  - Local: `erk br co --for-plan 8624`
+  - Implement: `source "$(erk br co --for-plan 8624 --script)" &amp;&amp; erk implement --dangerous`
+
+  New slot:
+  - Local: `erk br co --new-slot --for-plan 8624`
+  - Implement: `source "$(erk br co --new-slot --for-plan 8624 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8624`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="279" cache_read_input_tokens="64396" output_tokens="238" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 279, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>
