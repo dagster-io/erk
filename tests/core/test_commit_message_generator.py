@@ -9,6 +9,7 @@ from erk.core.commit_message_generator import (
 )
 from erk.core.plan_context_provider import PlanContext
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.gateway.time.fake import FakeTime
 from tests.fakes.prompt_executor import FakePromptExecutor
 
 
@@ -41,7 +42,7 @@ def test_generate_success(tmp_path: Path) -> None:
         available=True,
         simulated_prompt_output="Add new feature\n\nThis adds a new feature to the codebase.",
     )
-    generator = CommitMessageGenerator(executor)
+    generator = CommitMessageGenerator(executor, time=FakeTime(), model="haiku")
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -89,7 +90,7 @@ def test_generate_with_multiline_body(tmp_path: Path) -> None:
             "- `tests/test_auth.py` - Updated tests"
         ),
     )
-    generator = CommitMessageGenerator(executor)
+    generator = CommitMessageGenerator(executor, time=FakeTime(), model="haiku")
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -111,7 +112,7 @@ def test_generate_with_multiline_body(tmp_path: Path) -> None:
 def test_generate_fails_when_diff_file_not_found(tmp_path: Path) -> None:
     """Test that generation fails when diff file doesn't exist."""
     executor = FakePromptExecutor(available=True)
-    generator = CommitMessageGenerator(executor)
+    generator = CommitMessageGenerator(executor, time=FakeTime(), model="haiku")
     request = CommitMessageRequest(
         diff_file=tmp_path / "nonexistent.diff",
         repo_root=tmp_path,
@@ -139,7 +140,7 @@ def test_generate_fails_when_diff_file_empty(tmp_path: Path) -> None:
     diff_file.write_text("", encoding="utf-8")
 
     executor = FakePromptExecutor(available=True)
-    generator = CommitMessageGenerator(executor)
+    generator = CommitMessageGenerator(executor, time=FakeTime(), model="haiku")
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -168,7 +169,7 @@ def test_generate_fails_when_executor_fails(tmp_path: Path) -> None:
         available=True,
         simulated_prompt_error="Claude CLI execution failed",
     )
-    generator = CommitMessageGenerator(executor)
+    generator = CommitMessageGenerator(executor, time=FakeTime(), model="haiku")
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -196,7 +197,7 @@ def test_generate_handles_title_only_output(tmp_path: Path) -> None:
         available=True,
         simulated_prompt_output="Fix typo in README",
     )
-    generator = CommitMessageGenerator(executor)
+    generator = CommitMessageGenerator(executor, time=FakeTime(), model="haiku")
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -223,7 +224,7 @@ def test_generate_uses_custom_model(tmp_path: Path) -> None:
         simulated_prompt_output="Title\n\nBody",
     )
     # Use sonnet instead of default haiku
-    generator = CommitMessageGenerator(executor, model="sonnet")
+    generator = CommitMessageGenerator(executor, time=FakeTime(), model="sonnet")
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -255,7 +256,7 @@ def test_generate_strips_code_fence_wrapper(tmp_path: Path) -> None:
             "```"
         ),
     )
-    generator = CommitMessageGenerator(executor)
+    generator = CommitMessageGenerator(executor, time=FakeTime(), model="haiku")
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -286,7 +287,7 @@ def test_generate_strips_code_fence_with_language_tag(tmp_path: Path) -> None:
             "```markdown\nAdd new feature\n\n## Summary\n\nThis adds a new feature.\n```"
         ),
     )
-    generator = CommitMessageGenerator(executor)
+    generator = CommitMessageGenerator(executor, time=FakeTime(), model="haiku")
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -315,7 +316,7 @@ def test_generate_includes_commit_messages_in_prompt(tmp_path: Path) -> None:
         available=True,
         simulated_prompt_output="Add feature based on commit context\n\nUsed commit messages.",
     )
-    generator = CommitMessageGenerator(executor)
+    generator = CommitMessageGenerator(executor, time=FakeTime(), model="haiku")
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -350,7 +351,7 @@ def test_generate_works_without_commit_messages(tmp_path: Path) -> None:
         available=True,
         simulated_prompt_output="Simple title\n\nSimple body.",
     )
-    generator = CommitMessageGenerator(executor)
+    generator = CommitMessageGenerator(executor, time=FakeTime(), model="haiku")
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -385,7 +386,7 @@ def test_generate_passes_system_prompt_separately(tmp_path: Path) -> None:
         available=True,
         simulated_prompt_output="Add new feature\n\nThis adds a new feature.",
     )
-    generator = CommitMessageGenerator(executor)
+    generator = CommitMessageGenerator(executor, time=FakeTime(), model="haiku")
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -432,7 +433,7 @@ def test_generate_includes_plan_context_in_prompt(tmp_path: Path) -> None:
         available=True,
         simulated_prompt_output="Fix authentication session expiration\n\nImplemented fix.",
     )
-    generator = CommitMessageGenerator(executor)
+    generator = CommitMessageGenerator(executor, time=FakeTime(), model="haiku")
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -469,7 +470,7 @@ def test_generate_includes_plan_context_with_objective_summary(tmp_path: Path) -
         available=True,
         simulated_prompt_output="Add usage metrics tracking\n\nImplemented metrics.",
     )
-    generator = CommitMessageGenerator(executor)
+    generator = CommitMessageGenerator(executor, time=FakeTime(), model="haiku")
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -504,7 +505,7 @@ def test_generate_includes_both_plan_and_commit_messages(tmp_path: Path) -> None
         available=True,
         simulated_prompt_output="Refactor API for simplicity\n\nSimplified API layer.",
     )
-    generator = CommitMessageGenerator(executor)
+    generator = CommitMessageGenerator(executor, time=FakeTime(), model="haiku")
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
