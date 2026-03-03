@@ -375,6 +375,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="feature-branch",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title=None,
             worktree_name=None,
@@ -385,23 +386,23 @@ class TestBuildBlockingMessage:
         assert "PLAN SAVE PROMPT" in message
         assert "AskUserQuestion" in message
         assert "Implement here" in message
-        assert "Save as draft PR" in message
-        assert "Save and dispatch" in message
+        assert "Save plan as draft PR" in message
+        assert "Save plan on current branch" in message
         assert "View/Edit the Plan" in message
         assert "/erk:plan-save" in message
         assert "Do NOT call ExitPlanMode" in message
         assert "erk exec marker create --session-id session-123" in message
         assert "exit-plan-mode-hook.implement-now" in message
         assert "If user chooses 'Implement here':" in message
-        assert "If user chooses 'Save as draft PR':" in message
-        assert "If user chooses 'Save and dispatch':" in message
+        assert "If user chooses 'Save plan as draft PR':" in message
 
-    def test_save_and_dispatch_instruction_block(self) -> None:
-        """Save and dispatch option runs plan-save then pr-dispatch."""
+    def test_current_branch_option_uses_current_branch_flag(self) -> None:
+        """Save plan on current branch passes --current-branch to plan-save command."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
             session_id="session-123",
             current_branch="feature-branch",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title=None,
             worktree_name=None,
@@ -409,8 +410,22 @@ class TestBuildBlockingMessage:
             plan_number=None,
             editor=None,
         )
-        assert "If user chooses 'Save and dispatch':" in message
-        assert "/erk:pr-dispatch" in message
+        # Extract the instruction block
+        lines = message.split("\n")
+        option_start = None
+        option_end = None
+        for i, line in enumerate(lines):
+            if "If user chooses 'Save plan on current branch':" in line:
+                option_start = i
+            elif option_start is not None and line.startswith("If user chooses"):
+                option_end = i
+                break
+        assert option_start is not None, "Save plan on current branch instruction block not found"
+        if option_end is None:
+            option_end = len(lines)
+        option_block = "\n".join(lines[option_start:option_end])
+        assert "/erk:plan-save --current-branch" in option_block
+        assert "converts the current branch into the plan PR branch" in option_block
 
     def test_includes_header_instruction(self) -> None:
         """Message includes header instruction for AskUserQuestion."""
@@ -418,6 +433,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="P4535-add-feature",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title=None,
             worktree_name="erk-slot-02",
@@ -436,6 +452,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch=None,
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title=None,
             worktree_name=None,
@@ -451,6 +468,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="main",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title=None,
             worktree_name=None,
@@ -469,6 +487,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="master",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title=None,
             worktree_name=None,
@@ -486,6 +505,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="feature-branch",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title=None,
             worktree_name=None,
@@ -502,6 +522,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch=None,
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title=None,
             worktree_name=None,
@@ -518,6 +539,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="feature-branch",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title=None,
             worktree_name=None,
@@ -534,6 +556,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="feature-branch",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title=None,
             worktree_name=None,
@@ -553,6 +576,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="feature-branch",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title=None,
             worktree_name=None,
@@ -570,6 +594,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="feature-branch",
+            branch_has_commits=False,
             plan_file_path=None,
             plan_title=None,
             worktree_name=None,
@@ -587,6 +612,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="feature-branch",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title=None,
             worktree_name=None,
@@ -603,6 +629,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="feature-branch",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title="Add Feature X",
             worktree_name=None,
@@ -619,6 +646,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="P4224-add-feature",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title="Add Feature X",
             worktree_name="erk-slot-02",
@@ -642,6 +670,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="feature-branch",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title=None,
             worktree_name="erk-slot-02",
@@ -662,6 +691,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch=None,
+            branch_has_commits=False,
             plan_file_path=None,
             plan_title=None,
             worktree_name=None,
@@ -682,6 +712,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="feature-branch",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title=None,
             worktree_name=None,
@@ -704,6 +735,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="feature-branch",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title=None,
             worktree_name=None,
@@ -720,6 +752,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="feature-branch",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title=None,
             worktree_name=None,
@@ -739,6 +772,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="feature-branch",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title=None,
             worktree_name=None,
@@ -757,6 +791,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="feature-branch",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title="My Plan",
             worktree_name=None,
@@ -776,6 +811,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="feature-branch",
+            branch_has_commits=False,
             plan_file_path=None,
             plan_title=None,
             worktree_name=None,
@@ -788,11 +824,12 @@ class TestBuildBlockingMessage:
         assert "PLAN SAVE PROMPT" in message
 
     def test_new_menu_options(self) -> None:
-        """New menu has correct 4 options."""
+        """New menu has correct 4 options when branch has no commits."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
             session_id="session-123",
             current_branch="feature-branch",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title=None,
             worktree_name=None,
@@ -800,9 +837,9 @@ class TestBuildBlockingMessage:
             plan_number=None,
             editor=None,
         )
-        assert '  1. "Implement here"' in message
-        assert '  2. "Save as draft PR"' in message
-        assert '  3. "Save and dispatch"' in message
+        assert '  1. "Save plan as draft PR"' in message
+        assert '  2. "Implement here"' in message
+        assert '  3. "Save plan on current branch"' in message
         assert '  4. "View/Edit the Plan"' in message
 
     def test_old_options_not_present(self) -> None:
@@ -811,6 +848,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="feature-branch",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title=None,
             worktree_name=None,
@@ -821,6 +859,7 @@ class TestBuildBlockingMessage:
         assert "Create a plan PR on new branch" not in message
         assert "Create a plan PR on the current branch" not in message
         assert "Just implement on the current branch without creating a PR." not in message
+        assert "Save and dispatch" not in message
 
     def test_instruction_blocks_use_new_labels(self) -> None:
         """Instruction blocks use new option labels."""
@@ -828,6 +867,7 @@ class TestBuildBlockingMessage:
         message = build_blocking_message(
             session_id="session-123",
             current_branch="feature-branch",
+            branch_has_commits=False,
             plan_file_path=plan_path,
             plan_title=None,
             worktree_name=None,
@@ -836,12 +876,78 @@ class TestBuildBlockingMessage:
             editor=None,
         )
         assert "If user chooses 'Implement here':" in message
-        assert "If user chooses 'Save as draft PR':" in message
-        assert "If user chooses 'Save and dispatch':" in message
+        assert "If user chooses 'Save plan as draft PR':" in message
+        assert "If user chooses 'Save plan on current branch':" in message
         assert "If user chooses 'View/Edit the Plan':" in message
         # Old labels absent
         assert "If user chooses 'Create a plan PR on new branch':" not in message
         assert "If user chooses 'Create a plan PR on the current branch':" not in message
+        assert "If user chooses 'Save and dispatch':" not in message
+
+    def test_current_branch_option_hidden_when_branch_has_commits(self) -> None:
+        """Option 'Save plan on current branch' hidden when branch has commits."""
+        plan_path = Path("/home/user/.claude/plans/session-123.md")
+        message = build_blocking_message(
+            session_id="session-123",
+            current_branch="feature-branch",
+            branch_has_commits=True,
+            plan_file_path=plan_path,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_number=None,
+            editor=None,
+        )
+        # Option should NOT be present
+        assert "Save plan on current branch" not in message
+        assert "If user chooses 'Save plan on current branch':" not in message
+        assert "/erk:plan-save --current-branch" not in message
+        # Other options should still be present
+        assert "Save plan as draft PR" in message
+        assert "Implement here" in message
+        assert "View/Edit the Plan" in message
+        assert "If user chooses 'Save plan as draft PR':" in message
+        assert "If user chooses 'Implement here':" in message
+
+    def test_current_branch_option_shown_when_no_commits(self) -> None:
+        """Option 'Save plan on current branch' shown when branch has no commits."""
+        plan_path = Path("/home/user/.claude/plans/session-123.md")
+        message = build_blocking_message(
+            session_id="session-123",
+            current_branch="feature-branch",
+            branch_has_commits=False,
+            plan_file_path=plan_path,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_number=None,
+            editor=None,
+        )
+        # Option should be present
+        assert "Save plan on current branch" in message
+        assert "If user chooses 'Save plan on current branch':" in message
+        assert "/erk:plan-save --current-branch" in message
+
+    def test_options_renumbered_when_current_branch_option_hidden(self) -> None:
+        """Options are renumbered correctly when current branch option is hidden."""
+        plan_path = Path("/home/user/.claude/plans/session-123.md")
+        message = build_blocking_message(
+            session_id="session-123",
+            current_branch="feature-branch",
+            branch_has_commits=True,
+            plan_file_path=plan_path,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_number=None,
+            editor=None,
+        )
+        # With branch_has_commits=True, should be 3 options numbered 1-3
+        assert '  1. "Save plan as draft PR"' in message
+        assert '  2. "Implement here"' in message
+        assert '  3. "View/Edit the Plan"' in message
+        # Should NOT have option 4
+        assert "  4." not in message
 
 
 # ============================================================================
