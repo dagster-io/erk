@@ -23,6 +23,7 @@ from erk_shared.gateway.github.metadata.core import (
     render_erk_issue_event,
 )
 from erk_shared.gateway.github.metadata.schemas import CREATED_BY, LAST_DISPATCHED_RUN_ID
+from erk_shared.gateway.github.metadata.types import BlockKeys
 
 IMPL_DIR_RELATIVE = ".erk/impl-context"
 """Relative path for branch-scoped implementation directories."""
@@ -410,7 +411,7 @@ def read_plan_author(impl_dir: Path) -> str | None:
     # Use existing metadata parsing infrastructure
     from erk_shared.gateway.github.metadata.core import find_metadata_block
 
-    block = find_metadata_block(plan_content, "plan-header")
+    block = find_metadata_block(plan_content, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -443,7 +444,7 @@ def read_last_dispatched_run_id(impl_dir: Path) -> str | None:
     # Use existing metadata parsing infrastructure
     from erk_shared.gateway.github.metadata.core import find_metadata_block
 
-    block = find_metadata_block(plan_content, "plan-header")
+    block = find_metadata_block(plan_content, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 

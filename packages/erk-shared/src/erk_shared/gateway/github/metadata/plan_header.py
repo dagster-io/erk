@@ -60,7 +60,7 @@ from erk_shared.gateway.github.metadata.schemas import (
     PlanHeaderSchema,
     SessionSourceValue,
 )
-from erk_shared.gateway.github.metadata.types import MetadataBlock
+from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
 
 
 def create_plan_header_block(
@@ -333,7 +333,7 @@ def extract_plan_from_comment(comment_body: str) -> str | None:
     # Try new format first (plan-body metadata block)
     raw_blocks = extract_raw_metadata_blocks(comment_body)
     for block in raw_blocks:
-        if block.key == "plan-body":
+        if block.key == BlockKeys.PLAN_BODY:
             # Extract content from <details> structure
             # The plan-body block uses <strong> tags in summary (not <code>)
             # Accept both <details> and <details open>
@@ -377,7 +377,7 @@ def update_plan_header_dispatch(
         ValueError: If plan-header block not found or invalid
     """
     # Extract existing plan-header block
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         raise ValueError("plan-header block not found in issue body")
 
@@ -392,11 +392,11 @@ def update_plan_header_dispatch(
     schema.validate(updated_data)
 
     # Create new block and render
-    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=updated_data)
     new_block_content = render_metadata_block(new_block)
 
     # Replace block in full body
-    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+    return replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)
 
 
 def extract_plan_header_dispatch_info(
@@ -411,7 +411,7 @@ def extract_plan_header_dispatch_info(
         Tuple of (last_dispatched_run_id, last_dispatched_node_id, last_dispatched_at)
         All are None if block not found or fields not present
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return (None, None, None)
 
@@ -431,7 +431,7 @@ def extract_plan_header_worktree_name(issue_body: str) -> str | None:
     Returns:
         worktree_name if found, None if block is missing or field is unset
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -447,7 +447,7 @@ def extract_plan_header_branch_name(issue_body: str) -> str | None:
     Returns:
         branch_name if found, None if block is missing or field is unset
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -463,7 +463,7 @@ def extract_plan_header_comment_id(issue_body: str) -> int | None:
     Returns:
         plan_comment_id if found, None if block is missing or field is unset
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -491,7 +491,7 @@ def update_plan_header_comment_id(
         ValueError: If plan-header block not found or invalid
     """
     # Extract existing plan-header block
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         raise ValueError("plan-header block not found in issue body")
 
@@ -504,11 +504,11 @@ def update_plan_header_comment_id(
     schema.validate(updated_data)
 
     # Create new block and render
-    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=updated_data)
     new_block_content = render_metadata_block(new_block)
 
     # Replace block in full body
-    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+    return replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)
 
 
 def update_plan_header_local_impl(
@@ -532,7 +532,7 @@ def update_plan_header_local_impl(
         ValueError: If plan-header block not found or invalid
     """
     # Extract existing plan-header block
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         raise ValueError("plan-header block not found in issue body")
 
@@ -545,11 +545,11 @@ def update_plan_header_local_impl(
     schema.validate(updated_data)
 
     # Create new block and render
-    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=updated_data)
     new_block_content = render_metadata_block(new_block)
 
     # Replace block in full body
-    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+    return replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)
 
 
 def update_plan_header_worktree_name(
@@ -573,7 +573,7 @@ def update_plan_header_worktree_name(
         ValueError: If plan-header block not found or invalid
     """
     # Extract existing plan-header block
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         raise ValueError("plan-header block not found in issue body")
 
@@ -586,11 +586,11 @@ def update_plan_header_worktree_name(
     schema.validate(updated_data)
 
     # Create new block and render
-    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=updated_data)
     new_block_content = render_metadata_block(new_block)
 
     # Replace block in full body
-    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+    return replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)
 
 
 def update_plan_header_worktree_and_branch(
@@ -616,7 +616,7 @@ def update_plan_header_worktree_and_branch(
         ValueError: If plan-header block not found or invalid
     """
     # Extract existing plan-header block
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         raise ValueError("plan-header block not found in issue body")
 
@@ -630,11 +630,11 @@ def update_plan_header_worktree_and_branch(
     schema.validate(updated_data)
 
     # Create new block and render
-    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=updated_data)
     new_block_content = render_metadata_block(new_block)
 
     # Replace block in full body
-    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+    return replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)
 
 
 def extract_plan_header_local_impl_at(issue_body: str) -> str | None:
@@ -646,7 +646,7 @@ def extract_plan_header_local_impl_at(issue_body: str) -> str | None:
     Returns:
         last_local_impl_at ISO timestamp if found, None otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -678,7 +678,7 @@ def update_plan_header_local_impl_event(
         ValueError: If plan-header block not found or invalid
     """
     # Extract existing plan-header block
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         raise ValueError("plan-header block not found in issue body")
 
@@ -694,11 +694,11 @@ def update_plan_header_local_impl_event(
     schema.validate(updated_data)
 
     # Create new block and render
-    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=updated_data)
     new_block_content = render_metadata_block(new_block)
 
     # Replace block in full body
-    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+    return replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)
 
 
 def extract_plan_header_local_impl_event(issue_body: str) -> str | None:
@@ -710,7 +710,7 @@ def extract_plan_header_local_impl_event(issue_body: str) -> str | None:
     Returns:
         last_local_impl_event ("started" or "ended") if found, None otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -738,7 +738,7 @@ def update_plan_header_remote_impl(
         ValueError: If plan-header block not found or invalid
     """
     # Extract existing plan-header block
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         raise ValueError("plan-header block not found in issue body")
 
@@ -751,11 +751,11 @@ def update_plan_header_remote_impl(
     schema.validate(updated_data)
 
     # Create new block and render
-    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=updated_data)
     new_block_content = render_metadata_block(new_block)
 
     # Replace block in full body
-    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+    return replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)
 
 
 def extract_plan_header_remote_impl_at(issue_body: str) -> str | None:
@@ -767,7 +767,7 @@ def extract_plan_header_remote_impl_at(issue_body: str) -> str | None:
     Returns:
         last_remote_impl_at ISO timestamp if found, None otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -783,7 +783,7 @@ def extract_plan_header_source_repo(issue_body: str) -> str | None:
     Returns:
         source_repo in "owner/repo" format if found, None otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -799,7 +799,7 @@ def extract_plan_header_objective_issue(issue_body: str) -> int | None:
     Returns:
         objective_issue number if found, None otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -815,7 +815,7 @@ def extract_plan_header_created_from_session(issue_body: str) -> str | None:
     Returns:
         Session ID that created this plan if found, None otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -831,7 +831,7 @@ def extract_plan_header_local_impl_session(issue_body: str) -> str | None:
     Returns:
         Session ID of last local implementation if found, None otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -862,7 +862,7 @@ def update_plan_header_learn_event(
         ValueError: If plan-header block not found or invalid
     """
     # Extract existing plan-header block
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         raise ValueError("plan-header block not found in issue body")
 
@@ -876,11 +876,11 @@ def update_plan_header_learn_event(
     schema.validate(updated_data)
 
     # Create new block and render
-    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=updated_data)
     new_block_content = render_metadata_block(new_block)
 
     # Replace block in full body
-    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+    return replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)
 
 
 def extract_plan_header_last_learn_session(issue_body: str) -> str | None:
@@ -892,7 +892,7 @@ def extract_plan_header_last_learn_session(issue_body: str) -> str | None:
     Returns:
         Session ID of last learn invocation if found, None otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -908,7 +908,7 @@ def extract_plan_header_last_learn_at(issue_body: str) -> str | None:
     Returns:
         ISO 8601 timestamp of last learn invocation if found, None otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -924,7 +924,7 @@ def extract_plan_header_remote_impl_run_id(issue_body: str) -> str | None:
     Returns:
         GitHub Actions run ID if found, None otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -940,7 +940,7 @@ def extract_plan_header_remote_impl_session_id(issue_body: str) -> str | None:
     Returns:
         Claude Code session ID for remote implementation if found, None otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -974,7 +974,7 @@ def update_plan_header_remote_impl_event(
         ValueError: If plan-header block not found or invalid
     """
     # Extract existing plan-header block
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         raise ValueError("plan-header block not found in issue body")
 
@@ -989,11 +989,11 @@ def update_plan_header_remote_impl_event(
     schema.validate(updated_data)
 
     # Create new block and render
-    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=updated_data)
     new_block_content = render_metadata_block(new_block)
 
     # Replace block in full body
-    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+    return replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)
 
 
 def extract_plan_header_learn_status(issue_body: str) -> LearnStatusValue | None:
@@ -1005,7 +1005,7 @@ def extract_plan_header_learn_status(issue_body: str) -> LearnStatusValue | None
     Returns:
         learn_status ("pending" or "completed") if found, None otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -1025,7 +1025,7 @@ def extract_plan_header_learn_run_id(issue_body: str) -> str | None:
     Returns:
         Workflow run ID for pending learn workflow if found, None otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -1052,7 +1052,7 @@ def update_plan_header_learn_status(
         ValueError: If plan-header block not found or invalid
     """
     # Extract existing plan-header block
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         raise ValueError("plan-header block not found in issue body")
 
@@ -1067,11 +1067,11 @@ def update_plan_header_learn_status(
     schema.validate(updated_data)
 
     # Create new block and render
-    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=updated_data)
     new_block_content = render_metadata_block(new_block)
 
     # Replace block in full body
-    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+    return replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)
 
 
 def update_plan_header_session_branch(
@@ -1104,7 +1104,7 @@ def update_plan_header_session_branch(
         ValueError: If plan-header block not found or invalid
     """
     # Extract existing plan-header block
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         raise ValueError("plan-header block not found in issue body")
 
@@ -1120,11 +1120,11 @@ def update_plan_header_session_branch(
     schema.validate(updated_data)
 
     # Create new block and render
-    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=updated_data)
     new_block_content = render_metadata_block(new_block)
 
     # Replace block in full body
-    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+    return replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)
 
 
 def extract_plan_header_session_branch(issue_body: str) -> str | None:
@@ -1136,7 +1136,7 @@ def extract_plan_header_session_branch(issue_body: str) -> str | None:
     Returns:
         Branch name containing session JSONL if found, None otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -1152,7 +1152,7 @@ def extract_plan_header_last_session_id(issue_body: str) -> str | None:
     Returns:
         Claude Code session ID if found, None otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -1168,7 +1168,7 @@ def extract_plan_header_last_session_source(issue_body: str) -> SessionSourceVal
     Returns:
         "local" or "remote" if found, None otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -1188,7 +1188,7 @@ def extract_plan_header_learn_plan_issue(issue_body: str) -> int | None:
     Returns:
         Issue number of generated learn plan if found, None otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -1204,7 +1204,7 @@ def extract_plan_header_learn_plan_pr(issue_body: str) -> int | None:
     Returns:
         PR number that implemented the learn plan if found, None otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -1223,7 +1223,7 @@ def extract_plan_header_learned_from_issue(issue_body: str) -> int | None:
     Returns:
         Parent plan issue number if this is a learn plan, None otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -1257,7 +1257,7 @@ def update_plan_header_learn_result(
         ValueError: If plan-header block not found or invalid
     """
     # Extract existing plan-header block
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         raise ValueError("plan-header block not found in issue body")
 
@@ -1274,11 +1274,11 @@ def update_plan_header_learn_result(
     schema.validate(updated_data)
 
     # Create new block and render
-    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=updated_data)
     new_block_content = render_metadata_block(new_block)
 
     # Replace block in full body
-    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+    return replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)
 
 
 def update_plan_header_learn_plan_completed(
@@ -1302,7 +1302,7 @@ def update_plan_header_learn_plan_completed(
         ValueError: If plan-header block not found or invalid
     """
     # Extract existing plan-header block
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         raise ValueError("plan-header block not found in issue body")
 
@@ -1316,11 +1316,11 @@ def update_plan_header_learn_plan_completed(
     schema.validate(updated_data)
 
     # Create new block and render
-    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=updated_data)
     new_block_content = render_metadata_block(new_block)
 
     # Replace block in full body
-    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+    return replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)
 
 
 def extract_plan_header_learn_materials_branch(issue_body: str) -> str | None:
@@ -1332,7 +1332,7 @@ def extract_plan_header_learn_materials_branch(issue_body: str) -> str | None:
     Returns:
         Branch name containing preprocessed learn materials if found, None otherwise
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         return None
 
@@ -1355,7 +1355,7 @@ def update_plan_header_learn_materials_branch(
     Raises:
         ValueError: If plan-header block not found or invalid
     """
-    block = find_metadata_block(issue_body, "plan-header")
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
     if block is None:
         raise ValueError("plan-header block not found in issue body")
 
@@ -1365,7 +1365,7 @@ def update_plan_header_learn_materials_branch(
     schema = PlanHeaderSchema()
     schema.validate(updated_data)
 
-    new_block = MetadataBlock(key="plan-header", data=updated_data)
+    new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=updated_data)
     new_block_content = render_metadata_block(new_block)
 
-    return replace_metadata_block_in_body(issue_body, "plan-header", new_block_content)
+    return replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)

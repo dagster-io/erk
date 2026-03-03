@@ -33,6 +33,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     render_objective_roadmap_block,
     render_roadmap_block_inner,
 )
+from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.types import BodyText
 
 
@@ -68,7 +69,7 @@ def migrate_objective_schema(
     raw_blocks = extract_raw_metadata_blocks(issue.body)
     roadmap_block = None
     for block in raw_blocks:
-        if block.key == "objective-roadmap":
+        if block.key == BlockKeys.OBJECTIVE_ROADMAP:
             roadmap_block = block
             break
 
@@ -163,7 +164,7 @@ def migrate_objective_schema(
     try:
         updated_body = replace_metadata_block_in_body(
             issue.body,
-            "objective-roadmap",
+            BlockKeys.OBJECTIVE_ROADMAP,
             new_block_with_markers,
         )
     except ValueError:

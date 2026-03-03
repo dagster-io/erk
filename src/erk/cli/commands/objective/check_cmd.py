@@ -26,6 +26,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     parse_roadmap,
     serialize_phases,
 )
+from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.output.output import user_output
 
 ERK_OBJECTIVE_LABEL = "erk-objective"
@@ -162,7 +163,7 @@ def validate_objective(
         checks.append((False, f"Phase numbering is not sequential: {phase_labels}"))
 
     # Check 6: v2 format integrity (if objective-header present, verify objective_comment_id)
-    header_block = find_metadata_block(issue.body, "objective-header")
+    header_block = find_metadata_block(issue.body, BlockKeys.OBJECTIVE_HEADER)
     if header_block is not None:
         comment_id = header_block.data.get("objective_comment_id")
         if comment_id is not None:

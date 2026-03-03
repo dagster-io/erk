@@ -11,6 +11,7 @@ from erk.cli.core import discover_repo_context
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import ensure_erk_metadata_dir
 from erk_shared.gateway.github.metadata.core import parse_metadata_blocks
+from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import PlanNotFound
 
@@ -203,12 +204,12 @@ def _block_to_event(key: str, data: dict) -> Event | None:
     """
     # Map block types to event extractors
     extractors: dict[str, EventExtractor] = {
-        "erk-plan": _extract_plan_created_event,
-        "submission-queued": _extract_submission_queued_event,
-        "workflow-started": _extract_workflow_started_event,
-        "erk-implementation-status": _extract_implementation_status_event,
-        "plan-retry": _extract_plan_retry_event,
-        "erk-worktree-creation": _extract_worktree_creation_event,
+        BlockKeys.ERK_PLAN: _extract_plan_created_event,
+        BlockKeys.SUBMISSION_QUEUED: _extract_submission_queued_event,
+        BlockKeys.WORKFLOW_STARTED: _extract_workflow_started_event,
+        BlockKeys.ERK_IMPLEMENTATION_STATUS: _extract_implementation_status_event,
+        BlockKeys.PLAN_RETRY: _extract_plan_retry_event,
+        BlockKeys.ERK_WORKTREE_CREATION: _extract_worktree_creation_event,
     }
 
     extractor = extractors.get(key)

@@ -63,6 +63,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     rerender_comment_roadmap,
     update_node_in_frontmatter,
 )
+from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.types import BodyText
 
 
@@ -155,7 +156,7 @@ def _replace_node_refs_in_body(
     raw_blocks = extract_raw_metadata_blocks(body)
     roadmap_block = None
     for block in raw_blocks:
-        if block.key == "objective-roadmap":
+        if block.key == BlockKeys.OBJECTIVE_ROADMAP:
             roadmap_block = block
             break
 
@@ -176,7 +177,7 @@ def _replace_node_refs_in_body(
     try:
         body = replace_metadata_block_in_body(
             body,
-            "objective-roadmap",
+            BlockKeys.OBJECTIVE_ROADMAP,
             new_block_with_markers,
         )
     except ValueError:
@@ -346,7 +347,7 @@ def update_objective_node(
 
     # v2 format: deterministically re-render the comment table from updated YAML
     objective_comment_id = extract_metadata_value(
-        updated_body, "objective-header", "objective_comment_id"
+        updated_body, BlockKeys.OBJECTIVE_HEADER, "objective_comment_id"
     )
     if objective_comment_id is not None:
         comment_body = github.get_comment_by_id(repo_root, objective_comment_id)

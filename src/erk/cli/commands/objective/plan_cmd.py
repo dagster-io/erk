@@ -38,6 +38,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     enrich_phase_names,
     rerender_comment_roadmap,
 )
+from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.types import BodyText
 from erk_shared.naming import sanitize_worktree_name
 from erk_shared.output.output import user_output
@@ -357,7 +358,7 @@ def _update_objective_node(
 
     # v2 format: re-render the comment table from updated YAML
     objective_comment_id = extract_metadata_value(
-        updated_body, "objective-header", "objective_comment_id"
+        updated_body, BlockKeys.OBJECTIVE_HEADER, "objective_comment_id"
     )
     if objective_comment_id is not None:
         comment_body = issues.get_comment_by_id(repo_root, objective_comment_id)
@@ -411,7 +412,7 @@ def _batch_update_objective_nodes(
 
     # v2 format: re-render comment table from updated YAML (single write)
     objective_comment_id = extract_metadata_value(
-        updated_body, "objective-header", "objective_comment_id"
+        updated_body, BlockKeys.OBJECTIVE_HEADER, "objective_comment_id"
     )
     if objective_comment_id is not None:
         comment_body = issues.get_comment_by_id(repo_root, objective_comment_id)
@@ -453,7 +454,7 @@ def _mark_node_planning(
 
     # v2 format: re-render the comment table from updated YAML
     objective_comment_id = extract_metadata_value(
-        updated_body, "objective-header", "objective_comment_id"
+        updated_body, BlockKeys.OBJECTIVE_HEADER, "objective_comment_id"
     )
     if objective_comment_id is not None:
         comment_body = issues.get_comment_by_id(repo_root, objective_comment_id)

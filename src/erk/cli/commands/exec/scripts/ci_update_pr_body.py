@@ -54,6 +54,7 @@ from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
+from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer, build_remote_execution_note
 from erk_shared.gateway.github.types import BodyText, PRNotFound
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt, truncate_diff
@@ -263,7 +264,7 @@ def _update_pr_body_impl(
     # Build full PR body
     if is_planned_pr:
         # For planned-PR plans: preserve metadata prefix, include original plan section
-        plan_header = find_metadata_block(pr_result.body, "plan-header")
+        plan_header = find_metadata_block(pr_result.body, BlockKeys.PLAN_HEADER)
         if plan_header is None:
             return UpdateError(
                 success=False,

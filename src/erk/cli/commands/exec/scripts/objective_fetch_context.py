@@ -46,6 +46,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     parse_roadmap_frontmatter,
     serialize_phases,
 )
+from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.objective_fetch_context_result import (
     ObjectiveFetchContextErrorDict,
@@ -79,7 +80,7 @@ def _build_roadmap_context(objective_body: str, plan_id: str) -> RoadmapContextD
     (not parse_roadmap() which enriches phase names from markdown headers).
     """
     raw_blocks = extract_raw_metadata_blocks(objective_body)
-    matching_blocks = [block for block in raw_blocks if block.key == "objective-roadmap"]
+    matching_blocks = [block for block in raw_blocks if block.key == BlockKeys.OBJECTIVE_ROADMAP]
 
     if not matching_blocks:
         return _empty_roadmap()

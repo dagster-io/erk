@@ -36,6 +36,7 @@ from erk_shared.gateway.git.abc import Git
 from erk_shared.gateway.git.remote_ops.types import PullRebaseError
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.schemas import OBJECTIVE_ISSUE
+from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.impl_folder import (
     create_impl_folder,
@@ -215,7 +216,7 @@ def _setup_planned_pr_plan(
         plan_content = extract_plan_content(pr_result.body)
         plan_title = pr_result.title
         objective_id = None
-        block = find_metadata_block(pr_result.body, "plan-header")
+        block = find_metadata_block(pr_result.body, BlockKeys.PLAN_HEADER)
         if block is not None:
             raw_objective = block.data.get(OBJECTIVE_ISSUE)
             if isinstance(raw_objective, int):

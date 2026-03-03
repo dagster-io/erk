@@ -25,7 +25,7 @@ from erk_shared.gateway.github.metadata.schemas import (
     LIFECYCLE_STAGE,
     SCHEMA_VERSION,
 )
-from erk_shared.gateway.github.metadata.types import MetadataBlock
+from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
@@ -200,7 +200,7 @@ def recover_plan_header(
 
     # If the plan still has header_fields, use them directly
     if plan_result.header_fields:
-        return MetadataBlock(key="plan-header", data=dict(plan_result.header_fields))
+        return MetadataBlock(key=BlockKeys.PLAN_HEADER, data=dict(plan_result.header_fields))
 
     # Otherwise, construct a minimal plan-header from PR metadata
     created_at_value = plan_result.created_at.isoformat()
@@ -211,7 +211,7 @@ def recover_plan_header(
         created_by_value = "unknown"
 
     return MetadataBlock(
-        key="plan-header",
+        key=BlockKeys.PLAN_HEADER,
         data={
             SCHEMA_VERSION: "2",
             CREATED_AT: created_at_value,
@@ -282,7 +282,7 @@ def assemble_pr_body(
     Returns:
         Complete PR body ready for GitHub API
     """
-    plan_header = find_metadata_block(existing_pr_body, "plan-header")
+    plan_header = find_metadata_block(existing_pr_body, BlockKeys.PLAN_HEADER)
     if plan_header is None and recovered_plan_header is not None:
         plan_header = recovered_plan_header
 

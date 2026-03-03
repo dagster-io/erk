@@ -14,6 +14,7 @@ from erk_shared.gateway.github.metadata.core import (
     create_metadata_block,
     render_erk_issue_event,
 )
+from erk_shared.gateway.github.metadata.types import BlockKeys
 
 if TYPE_CHECKING:
     from erk_shared.plan_store.backend import PlanBackend
@@ -53,7 +54,7 @@ def track_learn_invocation(
         data["session_id"] = session_id
 
     metadata_block = create_metadata_block(
-        key="learn-invoked",
+        key=BlockKeys.LEARN_INVOKED,
         data=data,
         schema=None,
     )

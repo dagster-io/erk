@@ -5,6 +5,7 @@ contain erk metadata blocks for implementation and learn events.
 """
 
 from erk_shared.gateway.github.metadata.core import extract_metadata_value
+from erk_shared.gateway.github.metadata.types import BlockKeys
 
 
 def extract_implementation_sessions(comments: list[str]) -> list[str]:
@@ -24,7 +25,7 @@ def extract_implementation_sessions(comments: list[str]) -> list[str]:
 
     for comment in comments:
         # Check both impl-started and impl-ended blocks
-        for block_key in ("impl-started", "impl-ended"):
+        for block_key in (BlockKeys.IMPL_STARTED, BlockKeys.IMPL_ENDED):
             session_id = extract_metadata_value(comment, block_key, "session_id")
             if session_id is not None and session_id not in seen:
                 session_ids.append(session_id)
@@ -49,7 +50,7 @@ def extract_learn_sessions(comments: list[str]) -> list[str]:
     seen: set[str] = set()
 
     for comment in comments:
-        session_id = extract_metadata_value(comment, "learn-invoked", "session_id")
+        session_id = extract_metadata_value(comment, BlockKeys.LEARN_INVOKED, "session_id")
         if session_id is not None and session_id not in seen:
             session_ids.append(session_id)
             seen.add(session_id)

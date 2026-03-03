@@ -10,6 +10,7 @@ from datetime import datetime
 from erk_shared.gateway.github.issues.types import IssueInfo
 from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.schemas import OBJECTIVE_ISSUE
+from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.types import PRDetails
 from erk_shared.plan_store.types import Plan, PlanState
 
@@ -32,7 +33,7 @@ def github_issue_to_plan(issue: IssueInfo) -> Plan:
     state = PlanState.OPEN if issue.state == "OPEN" else PlanState.CLOSED
 
     header_fields: dict[str, object] = {}
-    block = find_metadata_block(issue.body, "plan-header")
+    block = find_metadata_block(issue.body, BlockKeys.PLAN_HEADER)
     if block is not None:
         header_fields = dict(block.data)
 
@@ -76,7 +77,7 @@ def pr_details_to_plan(pr: PRDetails, *, plan_body: str | None) -> Plan:
 
     # Parse plan-header block from PR body
     header_fields: dict[str, object] = {}
-    block = find_metadata_block(pr.body, "plan-header")
+    block = find_metadata_block(pr.body, BlockKeys.PLAN_HEADER)
     if block is not None:
         header_fields = dict(block.data)
 

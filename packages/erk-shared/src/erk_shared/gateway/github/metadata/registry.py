@@ -3,6 +3,9 @@
 Provides a central registry of all known metadata block types, categorized
 as either YAML (structured data parsed as YAML) or CONTENT (raw content
 like markdown that should not be YAML-parsed).
+
+Block key constants are defined in ``types.BlockKeys``. Import
+``BlockKeys`` instead of hardcoding string literals in production code.
 """
 
 from dataclasses import dataclass
@@ -18,7 +21,7 @@ from erk_shared.gateway.github.metadata.schemas import (
     WorkflowStartedSchema,
     WorktreeCreationSchema,
 )
-from erk_shared.gateway.github.metadata.types import MetadataBlockSchema
+from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlockSchema
 
 
 class BlockCategory(Enum):
@@ -42,85 +45,85 @@ class BlockTypeInfo:
 # CONTENT blocks contain raw content (markdown, etc.) that should not be YAML-parsed.
 _BLOCK_TYPE_REGISTRY: dict[str, BlockTypeInfo] = {
     # YAML blocks with schemas
-    "plan-header": BlockTypeInfo(
-        key="plan-header",
+    BlockKeys.PLAN_HEADER: BlockTypeInfo(
+        key=BlockKeys.PLAN_HEADER,
         category=BlockCategory.YAML,
         schema=PlanHeaderSchema(),
     ),
-    "objective-header": BlockTypeInfo(
-        key="objective-header",
+    BlockKeys.OBJECTIVE_HEADER: BlockTypeInfo(
+        key=BlockKeys.OBJECTIVE_HEADER,
         category=BlockCategory.YAML,
         schema=ObjectiveHeaderSchema(),
     ),
-    "erk-plan": BlockTypeInfo(
-        key="erk-plan",
+    BlockKeys.ERK_PLAN: BlockTypeInfo(
+        key=BlockKeys.ERK_PLAN,
         category=BlockCategory.YAML,
         schema=PlanSchema(),
     ),
-    "erk-worktree-creation": BlockTypeInfo(
-        key="erk-worktree-creation",
+    BlockKeys.ERK_WORKTREE_CREATION: BlockTypeInfo(
+        key=BlockKeys.ERK_WORKTREE_CREATION,
         category=BlockCategory.YAML,
         schema=WorktreeCreationSchema(),
     ),
-    "erk-implementation-status": BlockTypeInfo(
-        key="erk-implementation-status",
+    BlockKeys.ERK_IMPLEMENTATION_STATUS: BlockTypeInfo(
+        key=BlockKeys.ERK_IMPLEMENTATION_STATUS,
         category=BlockCategory.YAML,
         schema=ImplementationStatusSchema(),
     ),
-    "workflow-started": BlockTypeInfo(
-        key="workflow-started",
+    BlockKeys.WORKFLOW_STARTED: BlockTypeInfo(
+        key=BlockKeys.WORKFLOW_STARTED,
         category=BlockCategory.YAML,
         schema=WorkflowStartedSchema(),
     ),
-    "submission-queued": BlockTypeInfo(
-        key="submission-queued",
+    BlockKeys.SUBMISSION_QUEUED: BlockTypeInfo(
+        key=BlockKeys.SUBMISSION_QUEUED,
         category=BlockCategory.YAML,
         schema=SubmissionQueuedSchema(),
     ),
-    "plan-retry": BlockTypeInfo(
-        key="plan-retry",
+    BlockKeys.PLAN_RETRY: BlockTypeInfo(
+        key=BlockKeys.PLAN_RETRY,
         category=BlockCategory.YAML,
         schema=PlanRetrySchema(),
     ),
     # YAML blocks without schemas
-    "impl-started": BlockTypeInfo(
-        key="impl-started",
+    BlockKeys.IMPL_STARTED: BlockTypeInfo(
+        key=BlockKeys.IMPL_STARTED,
         category=BlockCategory.YAML,
         schema=None,
     ),
-    "impl-ended": BlockTypeInfo(
-        key="impl-ended",
+    BlockKeys.IMPL_ENDED: BlockTypeInfo(
+        key=BlockKeys.IMPL_ENDED,
         category=BlockCategory.YAML,
         schema=None,
     ),
-    "learn-invoked": BlockTypeInfo(
-        key="learn-invoked",
+    BlockKeys.LEARN_INVOKED: BlockTypeInfo(
+        key=BlockKeys.LEARN_INVOKED,
         category=BlockCategory.YAML,
         schema=None,
     ),
-    "tripwire-candidates": BlockTypeInfo(
-        key="tripwire-candidates",
+    BlockKeys.TRIPWIRE_CANDIDATES: BlockTypeInfo(
+        key=BlockKeys.TRIPWIRE_CANDIDATES,
         category=BlockCategory.YAML,
         schema=None,
     ),
-    "objective-roadmap": BlockTypeInfo(
-        key="objective-roadmap",
+    BlockKeys.OBJECTIVE_ROADMAP: BlockTypeInfo(
+        key=BlockKeys.OBJECTIVE_ROADMAP,
         category=BlockCategory.YAML,
         schema=None,
     ),
     # Content blocks (not YAML-parsed)
-    "plan-body": BlockTypeInfo(
-        key="plan-body",
+    BlockKeys.PLAN_BODY: BlockTypeInfo(
+        key=BlockKeys.PLAN_BODY,
         category=BlockCategory.CONTENT,
         schema=None,
     ),
-    "objective-body": BlockTypeInfo(
-        key="objective-body",
+    BlockKeys.OBJECTIVE_BODY: BlockTypeInfo(
+        key=BlockKeys.OBJECTIVE_BODY,
         category=BlockCategory.CONTENT,
         schema=None,
     ),
-    "planning-session-prompts": BlockTypeInfo(
-        key="planning-session-prompts",
+    BlockKeys.PLANNING_SESSION_PROMPTS: BlockTypeInfo(
+        key=BlockKeys.PLANNING_SESSION_PROMPTS,
         category=BlockCategory.CONTENT,
         schema=None,
     ),

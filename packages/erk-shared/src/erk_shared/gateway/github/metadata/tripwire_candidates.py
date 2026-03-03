@@ -15,11 +15,9 @@ from erk_shared.gateway.github.metadata.core import (
     find_metadata_block,
     render_metadata_block,
 )
-from erk_shared.gateway.github.metadata.types import MetadataBlock
+from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
 
 logger = logging.getLogger(__name__)
-
-TRIPWIRE_CANDIDATES_KEY = "tripwire-candidates"
 
 
 @dataclass(frozen=True)
@@ -94,7 +92,7 @@ def render_tripwire_candidates_comment(candidates: list[TripwireCandidate]) -> s
     ]
 
     block = MetadataBlock(
-        key=TRIPWIRE_CANDIDATES_KEY,
+        key=BlockKeys.TRIPWIRE_CANDIDATES,
         data={"candidates": candidates_data},
     )
     return render_metadata_block(block)
@@ -116,7 +114,7 @@ def extract_tripwire_candidates_from_comments(
         or on any parse failure (fail-open).
     """
     for comment_body in comments:
-        block = find_metadata_block(comment_body, TRIPWIRE_CANDIDATES_KEY)
+        block = find_metadata_block(comment_body, BlockKeys.TRIPWIRE_CANDIDATES)
         if block is None:
             continue
 

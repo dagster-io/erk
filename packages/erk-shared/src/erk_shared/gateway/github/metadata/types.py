@@ -1,8 +1,36 @@
-"""Core data structures for GitHub metadata blocks."""
+"""Core data structures and constants for GitHub metadata blocks."""
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any
+
+
+class BlockKeys:
+    """Canonical metadata block key constants.
+
+    Import this class instead of hardcoding string literals::
+
+        from erk_shared.gateway.github.metadata.types import BlockKeys
+
+        find_metadata_block(body, BlockKeys.PLAN_HEADER)
+    """
+
+    PLAN_HEADER = "plan-header"
+    PLAN_BODY = "plan-body"
+    OBJECTIVE_HEADER = "objective-header"
+    OBJECTIVE_BODY = "objective-body"
+    OBJECTIVE_ROADMAP = "objective-roadmap"
+    ERK_PLAN = "erk-plan"
+    ERK_WORKTREE_CREATION = "erk-worktree-creation"
+    ERK_IMPLEMENTATION_STATUS = "erk-implementation-status"
+    WORKFLOW_STARTED = "workflow-started"
+    SUBMISSION_QUEUED = "submission-queued"
+    PLAN_RETRY = "plan-retry"
+    IMPL_STARTED = "impl-started"
+    IMPL_ENDED = "impl-ended"
+    LEARN_INVOKED = "learn-invoked"
+    TRIPWIRE_CANDIDATES = "tripwire-candidates"
+    PLANNING_SESSION_PROMPTS = "planning-session-prompts"
 
 
 @dataclass(frozen=True)

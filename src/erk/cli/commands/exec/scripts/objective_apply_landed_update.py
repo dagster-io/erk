@@ -48,6 +48,7 @@ from erk_shared.gateway.github.metadata.core import (
     extract_metadata_value,
 )
 from erk_shared.gateway.github.metadata.roadmap import rerender_comment_roadmap
+from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.gateway.github.types import BodyText, PRNotFound
 from erk_shared.objective_apply_landed_update_result import (
     ApplyLandedUpdateErrorDict,
@@ -112,7 +113,7 @@ def _update_comment_table(
 ) -> None:
     """Re-render the markdown table in the objective-body comment from YAML (v2 format)."""
     objective_comment_id = extract_metadata_value(
-        updated_body, "objective-header", "objective_comment_id"
+        updated_body, BlockKeys.OBJECTIVE_HEADER, "objective_comment_id"
     )
     if objective_comment_id is None:
         return
