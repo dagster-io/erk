@@ -29,7 +29,7 @@ The plan is saved using the configured backend:
 
 ### Step 1: Parse Arguments
 
-Check `$ARGUMENTS` for the `--plan-type` and `--objective` flags:
+Check `$ARGUMENTS` for the `--plan-type`, `--objective`, and `--current-branch` flags:
 
 ```
 If $ARGUMENTS contains "--plan-type=<type>":
@@ -44,6 +44,11 @@ If $ARGUMENTS contains "--objective=<number>":
   - Set OBJECTIVE_FLAG to "--objective=<number>"
 Else:
   - Set OBJECTIVE_FLAG to empty string
+
+If $ARGUMENTS contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
 ```
 
 ### Step 2: Generate Branch Slug
@@ -76,7 +81,15 @@ Guidelines:
 
 ### Step 4: Run Save Command
 
-Run this command with the session ID, branch slug, summary, and optional flags:
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
 
 ```bash
 erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
