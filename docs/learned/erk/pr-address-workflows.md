@@ -103,7 +103,7 @@ See [PR-Based Plan Review Workflow](../planning/pr-review-workflow.md) for the c
 
 ### Plan File Mode
 
-When the PR's diff consists of a git-tracked `.erk/impl-context/plan.md`, `/erk:pr-address` automatically enters **Plan File Mode**. This mode handles feedback on plan-only PRs (created by `erk exec plan-save` or similar).
+When the PR's diff consists of a git-tracked `.erk/impl-context/plan.md`, `/erk:pr-address` automatically enters **Plan File Mode**. This mode handles feedback on plan-only PRs (created by the plan save workflow).
 
 #### How it's triggered
 
