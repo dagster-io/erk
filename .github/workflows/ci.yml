@@ -161,6 +161,17 @@ jobs:
       - name: Run integration tests
         run: make test-integration
 
+  erk-mcp-tests:
+    needs: [check-submission, fix-formatting]
+    if: github.event.pull_request.draft != true && needs.check-submission.outputs.skip == 'false'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-python-uv
+      - name: Run erk-mcp tests
+        run: make test-erk-mcp
+
   # === Autofix (runs after ALL checks) ===
   autofix:
     needs:
@@ -434,6 +445,7 @@ jobs:
         ty,
         unit-tests,
         integration-tests,
+        erk-mcp-tests,
       ]
     if: |
       vars.CLAUDE_ENABLED != 'false' &&
@@ -447,7 +459,8 @@ jobs:
        needs.docs-check.result == 'failure' ||
        needs.ty.result == 'failure' ||
        needs.unit-tests.result == 'failure' ||
-       needs.integration-tests.result == 'failure')
+       needs.integration-tests.result == 'failure' ||
+       needs.erk-mcp-tests.result == 'failure')
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
