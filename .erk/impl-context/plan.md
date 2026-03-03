@@ -15,10 +15,10 @@ Add a `print` statement at the top of the `main()` function:
 ```python
 def main() -> None:
     """CLI entry point used by the `erk` console script."""
-    print("erk starting")
+    print("hello world")
     cli()
 ```
 
 ## Verification
 
-Run `erk --help` and verify "erk starting" is printed before the help output.
+Run `erk --help` and verify "hello world" is printed before the help output.
