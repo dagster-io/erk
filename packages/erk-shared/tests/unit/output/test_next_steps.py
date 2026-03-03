@@ -39,9 +39,7 @@ def test_planned_pr_next_steps_implement_new_br() -> None:
     s = PlannedPRNextSteps(
         pr_number=42, branch_name="plan-feature-foo", url="https://github.com/org/repo/pull/42"
     )
-    assert s.implement_new_br == (
-        'source "$(erk br co --for-plan 42 --script)" && erk implement'
-    )
+    assert s.implement_new_br == ('source "$(erk br co --for-plan 42 --script)" && erk implement')
 
 
 def test_planned_pr_next_steps_implement_new_br_dangerous() -> None:
@@ -89,9 +87,7 @@ def test_issue_next_steps_view_returns_url() -> None:
 def test_issue_next_steps_implement_new_br() -> None:
     """IssueNextSteps.implement_new_br uses --for-plan with erk implement."""
     s = IssueNextSteps(plan_number=99, url="https://github.com/org/repo/issues/99")
-    assert s.implement_new_br == (
-        'source "$(erk br co --for-plan 99 --script)" && erk implement'
-    )
+    assert s.implement_new_br == ('source "$(erk br co --for-plan 99 --script)" && erk implement')
 
 
 def test_issue_next_steps_implement_new_wt() -> None:
