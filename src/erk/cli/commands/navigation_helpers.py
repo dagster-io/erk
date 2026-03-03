@@ -655,7 +655,8 @@ def find_worktree_for_branch_or_path(
     expected_path = worktree_path_for(repo.worktrees_dir, expected_name)
 
     for wt in worktrees:
-        if wt.path.exists() and wt.path.resolve() == expected_path:
+        # resolve() with strict=False (default) is safe on non-existent paths
+        if wt.path.resolve() == expected_path:
             return WorktreeLookupResult(path=wt.path, needs_checkout=True)
 
     return WorktreeLookupResult(path=None, needs_checkout=False)
