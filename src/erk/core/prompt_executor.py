@@ -25,9 +25,9 @@ from erk_shared.core.prompt_executor import (
     CommandResult,  # noqa: F401 - re-exported for erk.cli.output
     ErrorEvent,
     ExecutorEvent,
-    IssueNumberEvent,
     NoOutputEvent,
     NoTurnsEvent,
+    PlanNumberEvent,
     PrNumberEvent,
     ProcessErrorEvent,
     PromptExecutor,
@@ -242,7 +242,7 @@ class ClaudePromptExecutor(PromptExecutor):
                         yield PrTitleEvent(title=str(text_pr_title))
                     text_plan_number = text_metadata.get("plan_number")
                     if text_plan_number is not None:
-                        yield IssueNumberEvent(number=int(text_plan_number))
+                        yield PlanNumberEvent(number=int(text_plan_number))
 
                 # Yield tool summaries
                 tool_summary = parsed.get("tool_summary")
@@ -272,7 +272,7 @@ class ClaudePromptExecutor(PromptExecutor):
                 # Yield issue number
                 plan_number_value = parsed.get("plan_number")
                 if plan_number_value is not None:
-                    yield IssueNumberEvent(number=int(plan_number_value))
+                    yield PlanNumberEvent(number=int(plan_number_value))
 
                 # Detect zero-turn completions (hook blocking)
                 num_turns = parsed.get("num_turns")

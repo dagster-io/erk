@@ -8,7 +8,7 @@ from pathlib import Path
 from erk.core.codex_output_parser import CodexParserState, parse_codex_jsonl_line
 from erk_shared.core.prompt_executor import (
     ErrorEvent,
-    IssueNumberEvent,
+    PlanNumberEvent,
     PrNumberEvent,
     PrUrlEvent,
     SpinnerUpdateEvent,
@@ -196,7 +196,7 @@ class TestItemCompletedAgentMessage:
             }
         )
         assert any(isinstance(e, TextEvent) for e in events)
-        assert any(isinstance(e, IssueNumberEvent) and e.number == 123 for e in events)
+        assert any(isinstance(e, PlanNumberEvent) and e.number == 123 for e in events)
 
 
 class TestItemCompletedCommandExecution:

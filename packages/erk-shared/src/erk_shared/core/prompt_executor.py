@@ -64,8 +64,8 @@ class PrTitleEvent:
 
 
 @dataclass(frozen=True)
-class IssueNumberEvent:
-    """GitHub issue number."""
+class PlanNumberEvent:
+    """Plan number."""
 
     number: int
 
@@ -106,7 +106,7 @@ ExecutorEvent = (
     | PrUrlEvent
     | PrNumberEvent
     | PrTitleEvent
-    | IssueNumberEvent
+    | PlanNumberEvent
     | ErrorEvent
     | NoOutputEvent
     | NoTurnsEvent
@@ -284,7 +284,7 @@ class PromptExecutor(ABC):
                     pr_number = num
                 case PrTitleEvent(title=title):
                     pr_title = title
-                case IssueNumberEvent(number=num):
+                case PlanNumberEvent(number=num):
                     plan_number = num
                 case ErrorEvent(message=msg):
                     error_message = msg

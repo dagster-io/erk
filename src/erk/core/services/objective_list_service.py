@@ -31,9 +31,9 @@ _OBJECTIVE_LABEL = "erk-objective"
 class RealObjectiveListService(ObjectiveListService):
     """Fetches objectives directly via GitHub issue APIs.
 
-    Objectives are GitHub issues (not PRs), so this service uses the
-    issue-based path: get_issues_with_pr_linkages with the erk-objective
-    label, then converts via github_issue_to_plan.
+    Objectives are GitHub issues (not PRs), so this service uses
+    get_issues_with_pr_linkages with the erk-objective label, then
+    converts via github_issue_to_plan.
     """
 
     def __init__(self, github: GitHub, *, time: Time) -> None:

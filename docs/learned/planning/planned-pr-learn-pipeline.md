@@ -3,26 +3,20 @@ title: Planned PR Learn Pipeline
 read_when:
   - "debugging why erk learn fails for planned-PR-backed plans"
   - "understanding how trigger-async-learn discovers plan IDs for planned-PR plans"
-  - "working on the learn pipeline for non-issue-based plans"
+  - "working on the learn pipeline"
 ---
 
 # Planned PR Learn Pipeline
 
-The async learn pipeline discovers plan IDs differently for planned-PR plans vs. issue-based plans. This document explains the difference and the fallback behavior.
+The async learn pipeline discovers plan IDs from the PR number. Plans use the `plnd/` prefix and store the plan ID as the PR number.
 
-## The Problem
+## Plan ID Discovery
 
-The original learn pipeline discovered plan IDs via branch name → metadata lookup, which only worked for GitHub Issue-based plans (where the branch name encodes the issue number using the `P{issue}-` prefix). Planned PR plans use a `plnd/` prefix and store the plan ID as the PR number, not an issue number.
-
-## The Fix
-
-When the plan backend is `"github-draft-pr"`, the learn trigger in `trigger_async_learn.py` short-circuits the branch-name discovery step and uses the PR number directly as the plan ID.
+The learn trigger in `trigger_async_learn.py` uses the PR number directly as the plan ID.
 
 <!-- Source: src/erk/cli/commands/exec/scripts/trigger_async_learn.py -->
 
 The direct PR lookup logic lives in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`.
-
-For issue-based plans, the function falls back to branch-name lookup via `plan_backend.get_metadata_field(repo_root, plan_id, "branch_name")`.
 
 ## Metadata Fallback for Learn Materials Branch
 

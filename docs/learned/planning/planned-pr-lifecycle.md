@@ -28,7 +28,7 @@ tripwires:
 
 # Planned PR Lifecycle
 
-Planned PRs serve as the backing store for plans when the plan backend is `github-draft-pr`. Unlike issue-based plans (where the plan issue and implementation PR are separate), planned-PR-backed plans evolve through lifecycle stages within a single PR.
+Planned PRs serve as the backing store for plans. Plans evolve through lifecycle stages within a single PR.
 
 ## Stage Definitions
 
@@ -143,7 +143,7 @@ Planned PR branches contain `.erk/impl-context/plan.md` and `.erk/impl-context/r
 
 ## Lifecycle Stage Tracking
 
-Planned PR plans participate in the same `lifecycle_stage` tracking as issue-based plans. The stage progresses through the same values (`planned` → `implementing` → `implemented`) and is stored in the plan-header metadata block within the PR body.
+Plans use `lifecycle_stage` tracking. The stage progresses through the values (`planned` → `implementing` → `implemented`) and is stored in the plan-header metadata block within the PR body.
 
 See [Lifecycle Stage Tracking](lifecycle.md#lifecycle-stage-tracking) for the complete stage definitions and write points.
 
@@ -151,4 +151,4 @@ See [Lifecycle Stage Tracking](lifecycle.md#lifecycle-stage-tracking) for the co
 
 - [Planned PR Branch Sync](planned-pr-branch-sync.md) - How branches are synced with remote
 - [PR Body Assembly](../architecture/pr-body-assembly.md) - How `assemble_pr_body()` handles both backends
-- [Plan Lifecycle](lifecycle.md) - Overall plan lifecycle including issue-based plans
+- [Plan Lifecycle](lifecycle.md) - Overall plan lifecycle

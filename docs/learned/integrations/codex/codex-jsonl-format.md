@@ -166,7 +166,7 @@ Implementation: `src/erk/core/codex_output_parser.py` (shipped in PR #7308, gap-
 | -------------------------------------- | -------------------- | ----------- | ----------------------------------------------- |
 | `item.completed` + `agent_message`     | `TextEvent`          | Implemented | Extract `text` field                            |
 | `item.completed` + `agent_message`     | `PrUrlEvent` etc.    | Implemented | Reuse text-based PR metadata extraction         |
-| `item.completed` + `agent_message`     | `IssueNumberEvent`   | Implemented | Extract issue number from agent text            |
+| `item.completed` + `agent_message`     | `PlanNumberEvent`    | Implemented | Extract plan number from agent text             |
 | `item.started` + `command_execution`   | `SpinnerUpdateEvent` | Implemented | Shows in-progress command name while executing  |
 | `item.completed` + `command_execution` | `ToolEvent`          | Implemented | Summarize command + output + exit code          |
 | `item.completed` + `file_change`       | `ToolEvent`          | Implemented | Summarize file changes                          |

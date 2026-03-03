@@ -60,7 +60,7 @@ Plans are committed to `.erk/impl-context/plan.md` on the planned PR branch. The
 
 Three branch name formats are supported:
 
-- **P-prefix**: `P{number}-{slug}` (issue-based plan branches)
+- **P-prefix**: `P{number}-{slug}` (legacy plan branches)
 - **Objective format**: `P{number}-O{objective}-{slug}` (plans linked to objectives)
 - **Planned PR**: `plnd/{slug}-{MM-DD-HHMM}` or `plnd/O{objective}-{slug}-{MM-DD-HHMM}` (planned-PR plans)
 

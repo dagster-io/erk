@@ -35,7 +35,7 @@
 - **[metadata-block-fallback.md](metadata-block-fallback.md)** — extracting plan content from GitHub issue comments, debugging 'no plan content found' errors in replan or plan-implement, working with older erk-plan issues that lack metadata blocks
 - **[metadata-field-workflow.md](metadata-field-workflow.md)** — adding a new field to plan-header metadata, extending plan issue schema, coordinating metadata changes across files
 - **[metadata-update-patterns.md](metadata-update-patterns.md)** — writing plan dispatch metadata updates, choosing between assertive and best-effort metadata operations, working with write_dispatch_metadata or maybe_update_plan_dispatch_metadata
-- **[next-steps-output.md](next-steps-output.md)** — modifying next-steps output after plan save or submit, understanding IssueNextSteps vs PlannedPRNextSteps, adding new next-steps commands to plan output
+- **[next-steps-output.md](next-steps-output.md)** — modifying next-steps output after plan save or submit, understanding PlanNextSteps, adding new next-steps commands to plan output
 - **[no-changes-handling.md](no-changes-handling.md)** — implementing erk-impl workflow, debugging no-changes scenarios, understanding erk-impl error handling
 - **[objective-update-after-land.md](objective-update-after-land.md)** — modifying the land pipeline's post-merge behavior, working with objective-update-after-land exec script, understanding fail-open patterns in erk
 - **[one-shot-workflow.md](one-shot-workflow.md)** — working with erk one-shot dispatch, understanding how plans are autonomously created and implemented, debugging one-shot workflow failures, integrating objectives with one-shot dispatch
@@ -44,14 +44,14 @@
 - **[plan-creation-pathways.md](plan-creation-pathways.md)** — understanding how plans are created in erk, adding a new plan creation entry point, debugging which code path created a plan
 - **[plan-execution-patterns.md](plan-execution-patterns.md)** — implementing a plan from a GitHub issue, understanding branch naming and worktree isolation, designing PR submission workflows for plans
 - **[plan-header-privatization.md](plan-header-privatization.md)** — migrating callers of plan_header.py functions, understanding why plan_header functions are being privatized, working with PlanBackend metadata operations
-- **[plan-id-semantics.md](plan-id-semantics.md)** — calling github.get_pr() or github.get_issue() with a plan_id, writing code that handles both issue-based and planned-PR plans, debugging 404 errors when fetching plan metadata
+- **[plan-id-semantics.md](plan-id-semantics.md)** — calling github.get_pr() or github.get_issue() with a plan_id, writing code that handles plan IDs, debugging 404 errors when fetching plan metadata
 - **[plan-lookup-strategy.md](plan-lookup-strategy.md)** — debugging plan lookup issues, understanding plan file discovery, troubleshooting wrong plan saved
 - **[plan-mismatch-recovery.md](plan-mismatch-recovery.md)** — debugging stale plan content in .erk/impl-context/, plan content doesn't match what's on GitHub, re-running implementation setup for an existing plan
 - **[plan-schema.md](plan-schema.md)** — understanding plan issue structure, debugging plan validation errors, working with plan-header or plan-body blocks
 - **[plan-title-prefix-system.md](plan-title-prefix-system.md)** — working with PR titles for plan implementations, understanding the plnd/ prefix on PR titles, debugging why a PR title has or lacks the plnd/ prefix
 - **[planned-pr-backend.md](planned-pr-backend.md)** — working with plan storage or plan backends, adding plan storage behavior without checking plan backend type, understanding how plans are stored as planned pull requests, modifying plan-save or land pipeline for plan handling
 - **[planned-pr-branch-sync.md](planned-pr-branch-sync.md)** — implementing or debugging planned-PR plan setup, understanding branch sync during plan implementation, working with setup_impl_from_pr for planned PR plans, debugging divergence between local and remote plan branches
-- **[planned-pr-learn-pipeline.md](planned-pr-learn-pipeline.md)** — debugging why erk learn fails for planned-PR-backed plans, understanding how trigger-async-learn discovers plan IDs for planned-PR plans, working on the learn pipeline for non-issue-based plans
+- **[planned-pr-learn-pipeline.md](planned-pr-learn-pipeline.md)** — debugging why erk learn fails for planned-PR-backed plans, understanding how trigger-async-learn discovers plan IDs for planned-PR plans, working on the learn pipeline
 - **[planned-pr-lifecycle.md](planned-pr-lifecycle.md)** — working with planned-PR-backed plans, understanding PR body format for planned PR plans, debugging plan content extraction from PR bodies, building or modifying lifecycle stage transitions
 - **[planning-patterns.md](planning-patterns.md)** — preparing to enter plan mode, optimizing plan creation workflow, delegating tasks during planning
 - **[pr-analysis-pattern.md](pr-analysis-pattern.md)** — analyzing PR changes for documentation, building workflows that inspect PRs

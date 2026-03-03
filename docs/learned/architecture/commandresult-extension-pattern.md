@@ -50,7 +50,7 @@ See existing fields at `packages/erk-shared/src/erk_shared/core/prompt_executor.
 
 **File:** `packages/erk-shared/src/erk_shared/core/prompt_executor.py`
 
-Create a new frozen dataclass event (following the pattern of `PrUrlEvent`, `IssueNumberEvent`, etc.) and add it to the `ExecutorEvent` union type.
+Create a new frozen dataclass event (following the pattern of `PrUrlEvent`, `PlanNumberEvent`, etc.) and add it to the `ExecutorEvent` union type.
 
 ### 3. Add Key to `_parse_stream_json_line()` Result Dict
 
