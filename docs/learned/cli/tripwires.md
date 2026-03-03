@@ -132,7 +132,7 @@ Rules triggered by matching actions in code.
 
 **renaming CLI commands without checking workflow files** → Read [Command Rename Checklist](command-rename-checklist.md) first. After renaming CLI commands, grep .github/workflows/\*.yml for stale references.
 
-**renaming a CLI command without checking downstream packages** → Read [Command Rename Checklist](command-rename-checklist.md) first. CLI command renames in src/erk/cli/ silently break downstream packages (erkbot). Grep: rg --type py 'CliRunner.*invoke.*cli' packages/
+**renaming a CLI command without checking downstream packages** → Read [Command Rename Checklist](command-rename-checklist.md) first. CLI command renames in src/erk/cli/ may break downstream packages. Grep: rg --type py 'CliRunner.*invoke.*cli' packages/
 
 **renaming an exec command without updating all 9 reference locations** → Read [Command Rename Checklist](command-rename-checklist.md) first. Follow the 9-place checklist in command-rename-checklist.md to avoid stale references.
 

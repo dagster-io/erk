@@ -44,8 +44,6 @@ Rules triggered by matching actions in code.
 
 **calling get_bundled_claude_dir() inside a testable function** → Read [Bundled Path Parameter Injection for Testability](parameter-injection-pattern.md) first. Accept bundled_claude_dir as a parameter instead. Production callers pass get_bundled_claude_dir(), tests pass tmp_path / 'bundled'. Read this doc.
 
-**calling handler functions directly with AsyncMock say/client** → Read [Bolt Async Dispatch Testing Pattern](bolt-async-dispatch-testing.md) first. Dispatch through AsyncApp via AsyncBoltRequest for integration tests.
-
 **changing cleanup or deletion behavior without updating test assertions** → Read [Erk Test Reference](testing.md) first. When behavior changes from 'delete X' to 'preserve X', update test assertions to verify the new behavior (e.g., assert file persists instead of asserting it was deleted). Stale assertions silently validate the old behavior.
 
 **choosing between monkeypatch and fakes for a test** → Read [Monkeypatch vs Fakes Decision Guide](monkeypatch-vs-fakes-decision.md) first. Read monkeypatch-vs-fakes-decision.md first. Default to gateway fakes. Monkeypatch is only appropriate for process-level globals like Path.home() in exec scripts.
@@ -81,8 +79,6 @@ Rules triggered by matching actions in code.
 **importing FakePromptExecutor from erk_shared.gateway.prompt_executor.fake** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. This module was deleted in the consolidation. Import from tests.fakes.prompt_executor or erk_shared.core.fakes instead.
 
 **importing or monkeypatching a module with 'exec' in its path** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. `exec` is a Python keyword that blocks direct import and string-path monkeypatch. Use `importlib.import_module()` + object-form `setattr` instead.
-
-**mock chat.postMessage response missing ts field** → Read [Bolt Async Dispatch Testing Pattern](bolt-async-dispatch-testing.md) first. Always include ts in response - extract_slack_message_ts depends on it.
 
 **modifying business logic in src/ without adding a test** → Read [Erk Test Reference](testing.md) first. Bug fixes require regression tests (fails before, passes after). Features require behavior tests.
 
@@ -120,8 +116,6 @@ Rules triggered by matching actions in code.
 
 **using Path.home() directly in production code** [pattern: `Path\.home\(\)`] → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Use gateway abstractions instead. For ~/.claude/ paths use ClaudeInstallation, for ~/.erk/ paths use ErkInstallation. Direct Path.home() access bypasses testability (fakes) and creates parallel test flakiness.
 
-**using asyncio.sleep() to wait for Bolt handler completion** → Read [Bolt Async Dispatch Testing Pattern](bolt-async-dispatch-testing.md) first. Use dispatch_and_settle() from conftest — it awaits all background tasks deterministically.
-
 **using branch names with '/' in test data for resolve_impl_dir() tests** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. Branch name sanitization (\_sanitize_branch_for_dirname() at packages/erk-shared/src/erk_shared/impl_folder.py) replaces '/' with '--'. Test data must account for this: branch 'plnd/my-feature' becomes directory 'plnd--my-feature'.
 
 **using context_for_test without matching parameter names to the current API** → Read [FakeGitHub API Reference](fake-github-api-reference.md) first. context_for_test() parameter names evolve. Check the current function signature before adding new parameters.
@@ -129,8 +123,6 @@ Rules triggered by matching actions in code.
 **using context_for_test() with wrong parameter name for issues** → Read [context_for_test() Dual Implementations](context-builder-signatures.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
 
 **using context_for_test() with wrong parameter name for issues** → Read [Erk Test Reference](testing.md) first. erk-shared uses github_issues= parameter, src/erk uses issues= parameter. These are NOT interchangeable — using wrong name causes TypeError.
-
-**using hardcoded port numbers for mock server** → Read [Bolt Async Dispatch Testing Pattern](bolt-async-dispatch-testing.md) first. Use port=0 for auto-assigned port to avoid CI conflicts.
 
 **using isinstance() to detect plan backend type in application code** → Read [Plan Storage Testing](dual-backend-testing.md) first. Use plan_backend.get_provider_name() for backend-conditional logic (returns 'github-draft-pr'). isinstance checks couple to implementation classes. The provider name string is the stable API.
 

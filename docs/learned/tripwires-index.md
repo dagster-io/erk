@@ -27,7 +27,7 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [erk](erk/tripwires.md)                     | 23        | `erk/` code                              |
 | [gateway](gateway/tripwires.md)             | 5         | `gateway/` code                          |
 | [hooks](hooks/tripwires.md)                 | 4         | `.claude/hooks/`, hook development       |
-| [integrations](integrations/tripwires.md)   | 26        | `integrations/` code                     |
+| [integrations](integrations/tripwires.md)   | 19        | `integrations/` code                     |
 | [objectives](objectives/tripwires.md)       | 45        | `objectives/` code                       |
 | [planning](planning/tripwires.md)           | 124       | `.erk/impl-context/`, planning workflows |
 | [pr-operations](pr-operations/tripwires.md) | 18        | `pr-operations/` code                    |
@@ -36,7 +36,7 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [review](review/tripwires.md)               | 3         | `review/` code                           |
 | [reviews](reviews/tripwires.md)             | 4         | `reviews/` code                          |
 | [sessions](sessions/tripwires.md)           | 12        | `~/.claude/projects/`, session analysis  |
-| [testing](testing/tripwires.md)             | 68        | `tests/`                                 |
+| [testing](testing/tripwires.md)             | 64        | `tests/`                                 |
 | [textual](textual/tripwires.md)             | 1         | Textual framework code                   |
 | [tui](tui/tripwires.md)                     | 59        | `src/erk/tui/`                           |
 | [uncategorized](uncategorized/tripwires.md) | 15        | `uncategorized/` code                    |

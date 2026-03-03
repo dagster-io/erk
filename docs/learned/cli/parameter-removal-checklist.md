@@ -36,10 +36,10 @@ PR #8130 removed `branch_slug` from `setup_impl`:
 
 ## Cross-Package Impact
 
-CLI command changes in `src/erk/cli/` can silently break downstream packages:
+CLI command changes in `src/erk/cli/` can break downstream packages. Grep for consumers:
 
-- `packages/erkbot/` — May invoke CLI commands programmatically
-
-Grep: `rg --type py 'CliRunner.*invoke.*cli' packages/`
+```bash
+rg --type py 'CliRunner.*invoke.*cli' packages/
+```
 
 Also grep `.github/workflows/*.yml` for stale command references after renames.

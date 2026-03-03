@@ -221,7 +221,7 @@ name = name.removesuffix("_cmd")
 
 ## Pydantic Field() Exception
 
-Pydantic `Field()` with defaults is an exception to erk's "no default parameters" rule. This applies only to Pydantic config/settings classes (e.g., `BaseSettings` subclasses in `packages/erkbot/src/erkbot/config.py`), NOT to regular functions or dataclasses.
+Pydantic `Field()` with defaults is an exception to erk's "no default parameters" rule. This applies only to Pydantic config/settings classes (e.g., `BaseSettings` subclasses), NOT to regular functions or dataclasses.
 
 ## Single-Use Locals Line-Length Exception
 
