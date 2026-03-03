@@ -8,6 +8,7 @@ from erk_shared.scratch.session_markers import (
     create_plan_saved_marker,
     get_existing_saved_branch,
     get_existing_saved_issue,
+    read_plan_saved_marker,
     read_roadmap_step_marker,
 )
 
@@ -18,7 +19,7 @@ def test_create_plan_saved_marker_creates_file(tmp_path: Path) -> None:
     """Verify marker file is created at correct path."""
     session_id = "test-session-123"
 
-    create_plan_saved_marker(session_id, tmp_path)
+    create_plan_saved_marker(session_id, tmp_path, 42)
 
     marker_file = (
         tmp_path
@@ -32,10 +33,10 @@ def test_create_plan_saved_marker_creates_file(tmp_path: Path) -> None:
 
 
 def test_create_plan_saved_marker_has_descriptive_content(tmp_path: Path) -> None:
-    """Verify marker file contains descriptive metadata."""
+    """Verify marker file contains plan number and descriptive metadata."""
     session_id = "test-session-123"
 
-    create_plan_saved_marker(session_id, tmp_path)
+    create_plan_saved_marker(session_id, tmp_path, 42)
 
     marker_file = (
         tmp_path
@@ -46,10 +47,44 @@ def test_create_plan_saved_marker_has_descriptive_content(tmp_path: Path) -> Non
         / "exit-plan-mode-hook.plan-saved.marker"
     )
     content = marker_file.read_text(encoding="utf-8")
+    assert content.startswith("42\n")
     assert "Created by:" in content
     assert "Trigger:" in content
     assert "Effect:" in content
     assert "Lifecycle:" in content
+
+
+# read_plan_saved_marker tests
+
+
+def test_read_plan_saved_marker_returns_plan_number(tmp_path: Path) -> None:
+    """Verify plan number is returned from marker."""
+    session_id = "test-session-123"
+    create_plan_saved_marker(session_id, tmp_path, 99)
+
+    result = read_plan_saved_marker(session_id, tmp_path)
+
+    assert result == 99
+
+
+def test_read_plan_saved_marker_returns_none_when_no_marker(tmp_path: Path) -> None:
+    """Verify None is returned when no marker exists."""
+    result = read_plan_saved_marker("nonexistent-session", tmp_path)
+
+    assert result is None
+
+
+def test_read_plan_saved_marker_returns_none_for_non_numeric(tmp_path: Path) -> None:
+    """Verify None is returned when first line is not numeric."""
+    session_id = "test-session-123"
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+    marker_dir.mkdir(parents=True)
+    marker_file = marker_dir / "exit-plan-mode-hook.plan-saved.marker"
+    marker_file.write_text("not-a-number\n", encoding="utf-8")
+
+    result = read_plan_saved_marker(session_id, tmp_path)
+
+    assert result is None
 
 
 # create_plan_saved_issue_marker tests
