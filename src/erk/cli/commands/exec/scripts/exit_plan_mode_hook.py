@@ -722,9 +722,15 @@ def _gather_inputs(
             int(plan_ref.plan_id) if plan_ref is not None and plan_ref.plan_id.isdigit() else None
         )
         editor = os.environ.get("EDITOR")
-        # Detect if branch has commits ahead of trunk
+        # Detect if branch has commits ahead of its parent
         trunk_branch = git.branch.detect_trunk_branch(repo_root)
-        commits_ahead = git.analysis.count_commits_ahead(repo_root, trunk_branch)
+        # Use Graphite stack parent if available, otherwise trunk
+        parent_branch = (
+            branch_manager.get_parent_branch(repo_root, current_branch)
+            if current_branch
+            else None
+        ) or trunk_branch
+        commits_ahead = git.analysis.count_commits_ahead(repo_root, parent_branch)
         branch_has_commits = commits_ahead > 0
         # Only lookup PR if we have a branch
         if current_branch is not None:
