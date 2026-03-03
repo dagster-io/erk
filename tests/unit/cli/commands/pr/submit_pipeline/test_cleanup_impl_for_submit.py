@@ -70,6 +70,26 @@ def test_noop_when_not_tracked(tmp_path: Path) -> None:
     assert impl_dir.exists()
 
 
+def test_noop_for_plan_branch(tmp_path: Path) -> None:
+    """Plan branches (plnd/*) keep .erk/impl-context/ — it IS their PR content."""
+    impl_dir = tmp_path / ".erk" / "impl-context"
+    impl_dir.mkdir(parents=True)
+    (impl_dir / "plan.md").write_text("# Plan\n", encoding="utf-8")
+
+    fake_git = FakeGit(
+        tracked_paths={".erk/impl-context/plan.md"},
+    )
+    ctx = context_for_test(git=fake_git, cwd=tmp_path)
+    state = _make_state(cwd=tmp_path, branch_name="plnd/my-plan-branch")
+
+    result = cleanup_impl_for_submit(ctx, state)
+
+    assert isinstance(result, SubmitState)
+    assert result is state
+    assert impl_dir.exists()
+    assert len(fake_git.commits) == 0
+
+
 def test_removes_tracked_impl_context(tmp_path: Path) -> None:
     """Removes .erk/impl-context/ when it exists and is git-tracked."""
     impl_dir = tmp_path / ".erk" / "impl-context"
