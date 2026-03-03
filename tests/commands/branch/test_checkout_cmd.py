@@ -788,11 +788,12 @@ def test_checkout_for_plan_prints_activation_when_sync_status_fails() -> None:
         assert "activate.sh" in result.output
 
 
-def test_checkout_stacks_in_place_for_plan_prints_activation() -> None:
-    """Test that --for-plan in stack-in-place path prints activation instructions.
+def test_checkout_stacks_in_place_for_plan_outputs_activation_script() -> None:
+    """Test that --for-plan in stack-in-place path outputs activation script for shell integration.
 
     When --for-plan is used and the current worktree is a pool slot (stack-in-place
-    path), the activation instructions should still be printed.
+    path), the activation script path is emitted to stdout so that shell integration
+    can automatically execute it — no manual copy-paste step required.
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -842,10 +843,10 @@ def test_checkout_stacks_in_place_for_plan_prints_activation() -> None:
         assert result.exit_code == 0, f"Failed: {result.output}"
         assert "Stacked" in result.output
         assert "Created .erk/impl-context/ folder from plan #700" in result.output
-        # Activation instructions must be printed in stack-in-place path
-        assert "To activate the worktree environment:" in result.output
-        assert "source" in result.output
-        assert "activate.sh" in result.output
+        # Stack-in-place now auto-executes via script output (not interactive instructions)
+        assert "To activate the worktree environment:" not in result.output
+        # The activation script path is emitted to stdout for shell integration
+        assert ".sh" in result.output
 
 
 def test_checkout_for_plan_error_both_branch_and_for_plan() -> None:

@@ -161,6 +161,7 @@ def _perform_checkout(
     script: bool,
     is_newly_created: bool,
     worktrees: list[WorktreeInfo] | None,
+    force_script_activation: bool,
 ) -> None:
     """Perform the actual checkout and switch to a worktree.
 
@@ -172,10 +173,15 @@ def _perform_checkout(
         script: Whether to output only the activation script
         is_newly_created: Whether the worktree was just created
         worktrees: Optional list of worktrees (for relative path computation)
+        force_script_activation: Whether to force script mode output (e.g. for stack-in-place)
     """
     target_path = target_worktree.path
     current_branch_in_worktree = target_worktree.branch
     current_cwd = ctx.cwd
+
+    # In stack-in-place, we always emit the activation script even if the user
+    # didn't pass --script, so shell integration can pick it up automatically.
+    effective_script = script or force_script_activation
 
     # Compute relative path to preserve directory position
     relative_path = compute_relative_path_in_worktree(worktrees, ctx.cwd) if worktrees else None
@@ -189,10 +195,10 @@ def _perform_checkout(
 
     # Ensure branch is tracked with Graphite (idempotent)
     _ensure_graphite_tracking(
-        ctx, repo_root=repo_root, target_path=target_path, branch=branch, script=script
+        ctx, repo_root=repo_root, target_path=target_path, branch=branch, script=effective_script
     )
 
-    if need_checkout and not script:
+    if need_checkout and not effective_script:
         # Show stack context in non-script mode
         stack = ctx.branch_manager.get_branch_stack(repo_root, branch)
         if stack:
@@ -231,7 +237,7 @@ def _perform_checkout(
         ctx,
         worktree_path=target_path,
         branch=branch,
-        script=script,
+        script=effective_script,
         command_name="checkout",
         script_message=script_message,
         relative_path=relative_path,
@@ -648,6 +654,7 @@ def _branch_checkout_impl(
                         script=script,
                         is_newly_created=False,
                         worktrees=worktrees,
+                        force_script_activation=True,
                     )
                     return
                 else:
@@ -709,6 +716,7 @@ def _branch_checkout_impl(
             script=script,
             is_newly_created=is_newly_created,
             worktrees=worktrees,
+            force_script_activation=False,
         )
 
     else:
@@ -752,6 +760,7 @@ def _branch_checkout_impl(
                 script=script,
                 is_newly_created=is_newly_created,
                 worktrees=worktrees,
+                force_script_activation=False,
             )
         elif len(directly_checked_out) == 0:
             # Branch was allocated but no worktree has it checked out
