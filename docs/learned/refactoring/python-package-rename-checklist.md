@@ -13,7 +13,7 @@ tripwires:
 
 # Python Package Rename Checklist
 
-Reference checklist derived from the erk-slack-bot to erkbot rename (PR history). Use this when renaming any Python package in a monorepo.
+Reference checklist for renaming any Python package in a monorepo.
 
 ## Checklist
 

@@ -7,7 +7,6 @@
 - **[alias-verification-pattern.md](alias-verification-pattern.md)** — enforcing the no-import-aliases rule, building automated alias detection, distinguishing re-exports from alias violations
 - **[artifact-distribution-sync.md](artifact-distribution-sync.md)** — adding portable skills to codex_portable_skills(), modifying pyproject.toml force-include entries, understanding bundled skill testing and distribution
 - **[backend-testing-composition.md](backend-testing-composition.md)** — testing code that uses PlanBackend, deciding whether to fake a backend or gateway, writing tests for exec scripts with backend operations
-- **[bolt-async-dispatch-testing.md](bolt-async-dispatch-testing.md)** — working on erk-slack-bot integration tests, testing Slack handlers without live connection, working with slack_bolt AsyncApp dispatch
 - **[cli-test-error-assertions.md](cli-test-error-assertions.md)** — writing CLI tests with error assertions, testing error messages in Click commands, asserting on CLI output
 - **[cli-testing.md](cli-testing.md)** — writing tests for erk CLI commands, using ErkContext.for_test(), testing Click commands with context
 - **[command-group-testing.md](command-group-testing.md)** — testing Click command groups with invoke_without_command=True, writing tests for commands that serve as both group and default action

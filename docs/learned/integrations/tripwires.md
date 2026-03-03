@@ -12,15 +12,9 @@ read_when:
 
 Rules triggered by matching actions in code.
 
-**adding a Slack API call without error handling in agent_handler.py** → Read [ErkBot Architecture](erkbot/erkbot-architecture.md) first. ErkBot uses best-effort operations for Slack API calls. Wrap in try/except and log, don't raise. Agent execution should never fail due to a Slack API hiccup.
-
 **adding a force-include entry in pyproject.toml without updating codex_portable.py** → Read [Bundled Artifact Portability](bundled-artifacts.md) first. The portability registry and pyproject.toml force-include must stay in sync. A skill mapped to erk/data/codex/ must appear in codex_portable_skills().
 
 **adding a new Codex event type without updating the parser** → Read [Codex Integration](codex-integration.md) first. All Codex event types must be handled in parse_codex_jsonl_line(). See codex-integration.md.
-
-**adding a new erkbot command type without updating parser.py** → Read [ErkBot Architecture](erkbot/erkbot-architecture.md) first. New commands must be added to both parser.py (parse_erk_command) and slack_handlers.py (the app_mention handler's dispatch logic).
-
-**adding a new event type without updating the AgentEvent union** → Read [ErkBot Agent Event System](erkbot/agent-event-system.md) first. AgentEvent is a Union type in events.py. New event types must be added to it, or they won't be matched in downstream event handlers.
 
 **adding a skill to codex_portable_skills() without verifying it works outside Claude Code** → Read [Bundled Artifact Portability](bundled-artifacts.md) first. Portable skills must not use hooks, TodoWrite, EnterPlanMode, AskUserQuestion, or session log paths. Check against the portability classification table before adding.
 
@@ -42,13 +36,9 @@ Rules triggered by matching actions in code.
 
 **putting Closes keyword in PR title or commit message** → Read [Issue-PR Closing Integration](issue-pr-closing-integration.md) first. GitHub only processes closing keywords in the PR body. Title and commit message references are ignored.
 
-**requiring agent config fields in erkbot Settings** → Read [ErkBot Agent Configuration](erkbot-agent-config.md) first. Agent config fields (anthropic_api_key, erk_repo_path) must be optional. The bot starts in slack-only mode without them.
-
 **resolving issue number from a single source without checking for mismatches** → Read [Issue-PR Closing Integration](issue-pr-closing-integration.md) first. Both .erk/impl-context/plan-ref.json and branch name may contain issue numbers. If both exist, they must agree — otherwise the pipeline could silently close the wrong issue.
 
 **reusing ClaudePromptExecutor parsing logic for Codex** → Read [Codex CLI JSONL Output Format](codex/codex-jsonl-format.md) first. The two formats share almost nothing structurally. A CodexPromptExecutor needs its own parser — don't parameterize the existing Claude parser.
-
-**running uv sync without --package flag for workspace packages** → Read [ErkBot Architecture](erkbot/erkbot-architecture.md) first. For workspace packages like erkbot, use 'uv sync --package erkbot' instead of bare 'uv sync'. Bare sync resolves the root package, not the workspace member.
 
 **using --ask-for-approval with codex exec** → Read [Codex CLI Reference for Erk Integration](codex/codex-cli-reference.md) first. codex exec hardcodes approval to Never. Only the TUI supports --ask-for-approval. This means exec and TUI need different flag sets for the same PermissionMode.
 
@@ -58,8 +48,4 @@ Rules triggered by matching actions in code.
 
 **using --system-prompt or --allowedTools with codex** → Read [Codex CLI Reference for Erk Integration](codex/codex-cli-reference.md) first. Codex has no --system-prompt or --allowedTools. Prepend system prompt to user prompt. Tool restriction is not available — this affects execute_prompt() porting.
 
-**using attribute access on Claude SDK message objects in erkbot** → Read [ErkBot Agent Event System](erkbot/agent-event-system.md) first. The Claude Agent SDK uses dict-access patterns (.get('key')), not attribute access. See stream.py for the correct pattern.
-
 **using issue number from .erk/impl-context/plan-ref.json for a checkout footer** → Read [Issue-PR Closing Integration](issue-pr-closing-integration.md) first. The checkout footer requires the PR number, not the issue number. These are different values — the issue is the plan, the PR is the implementation.
-
-**using shell=True in subprocess calls for the Slack bot** → Read [Slack Bot Patterns](slack-bot-patterns.md) first. Never use shell=True for security. Pass arguments as a list to prevent shell injection. See runner.py for the pattern.
