@@ -1,0 +1,1242 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>
+⏺ Bash(erk pr submit 2&gt;&amp;1)
+  ⎿  🚀 Submitting PR...
+
+        Resolving branch and plan context...
+        Checking for existing PR...
+     Phase 1: Graphite Submit
+        Running gt submit...
+     Running in non-interactive mode. Inline prompts to fill PR fields will be skipped.
+
+     🥞 Validating that this Graphite stack is ready to submit...
+
+     ✏️ Preparing to submit PRs for the following branches...
+     ▸ plnd/create-erk-mcp-server-03-03-0534 (No-op)
+
+     🆗 All PRs up to date.
+        Graphite submit completed
+
+        Getting PR info...
+        PR #8660 ready
+
+     Phase 2: Getting diff
+
+     Phase 3: Fetching plan context
+        Incorporating plan #8660
+
+     Phase 4: Generating PR description
+     (6s · timeout 2m)
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  Showing detailed transcript · ctrl+o to tog
+
+let's change erk pr submit (and rewrite) to print out progress of some sort while the pr description is getting generated so it does not appear hung</user>
+  <thinking>The user wants to improve the UX of `erk pr submit` (and `erk pr rewrite`) by adding progress indicators during the PR description generation phase, which currently appears to hang. Let me explore the codebase to understand the current implementation.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="13621" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13621}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll explore the codebase to understand how `erk pr submit` and `erk pr rewrite` work, particularly the PR description generation phase.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="13621" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13621}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Qg5EwbjRwneNPCkpS7HjV7">
+    <param name="description">Explore pr submit/rewrite code</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 693 chars]...in use
+
+Be thorough - trace the full code path from CLI command to description generation.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="13621" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13621}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01KD8fn7hoExHSUghyfNkUsB">
+    <param name="description">Explore progress/spinner patterns</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 789 chars]...terns
+- Console/terminal output helpers
+- Any streaming or chunked output during API calls</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="13621" cache_read_input_tokens="16613" output_tokens="714" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13621, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KD8fn7hoExHSUghyfNkUsB">
+Perfect! I have gathered enough information. Let me create a comprehensive summary of my findings:
+
+## Progress Indicator and Spinner Patterns in Erk
+
+Based on my thorough exploration of the codebase, here's what I found:
+
+### 1. **Phase Status Output (PR Submit Pipeline)**
+Located in `/Users/schrockn/code/erk/src/erk/cli/commands/pr/submit_pipeline.py`:
+
+The "Phase 1:", "Phase 2:" style output is implemented using `click.echo()` with bold styling:
+```python
+click.echo(click.style("Phase 1: Creating or Updating PR", bold=True))
+click.echo(click.style("Phase 2: Getting diff", bold=True))
+click.echo(click.style("Phase 3: Fetching plan context", bold=True))
+click.echo(click.style("Phase 4: Generating PR description", bold=True))
+click.echo(click.style("Phase 5: Graphite enhancement", bold=True))
+click.echo(click.style("Phase 6: Updating PR metadata", bold=True))
+```
+
+Sub-steps use dimmed output:
+```python
+click.echo(click.style("   Resolving branch and plan context...", dim=True))
+click.echo(click.style(f"   Authenticated as {gh_username}", dim=True))
+```
+
+### 2. **Spinner/Progress Updates**
+Located in `/Users/schrockn/packages/erk-shared/src/erk_shared/core/prompt_executor.py`:
+
+The pattern uses a `SpinnerUpdateEvent` dataclass (lines 39-42) that is yielded during command execution to provide real-time status updates.
+
+
+... [84 lines omitted] ...
+
+    click.echo(click.style(f"--- Failed ({duration_str}) ---", fg="red", bold=True), err=True)
+  </tool_result>
+  <tool_result tool="toolu_01Qg5EwbjRwneNPCkpS7HjV7">
+Perfect! Now I have a comprehensive understanding. Let me compile the findings into a detailed report:
+
+## Summary: PR Submit and PR Rewrite Workflow
+
+Based on my thorough exploration of the erk codebase, here's a comprehensive breakdown of how `erk pr submit` and `erk pr rewrite` work:
+
+### 1. CLI COMMAND DEFINITIONS
+
+**File: `/Users/schrockn/code/erk/src/erk/cli/commands/pr/submit_cmd.py`**
+- Command: `@click.command("submit")`
+- Options:
+  - `--debug`: Show diagnostic output
+  - `--no-graphite`: Skip Graphite enhancement
+  - `-f, --force`: Force push when branch has diverged
+  - `--skip-description`: Skip AI description generation
+  - `--session-id`: Claude session ID for tracing
+
+**File: `/Users/schrockn/code/erk/src/erk/cli/commands/pr/rewrite_cmd.py`**
+- Command: `@click.command("rewrite")`
+- Options:
+  - `--debug`: Show diagnostic output
+- Purpose: Squash, regenerate AI commit message, push, and update remote PR
+- Five phases: validate, squash, extract diff, generate message, amend &amp; push
+
+---
+
+### 2. PR DESCRIPTION GENERATION (Phase 4 in PR Submit)
+
+**Primary Generator: `CommitMessageGenerator` class**
+- File: `/Users/schrockn/code/erk/src/erk/core/commit_message_generator.py`
+
+... [286 lines omitted] ...
+
+      style: Literal["info", "success", "warning", "error"] = "info"
+  - `fg="yellow"` for warnings
+  - `fg="red"` for errors
+  yield ProgressEvent("Diff truncated for size", style="warning")
+  </tool_result>
+  <thinking>Now I have a comprehensive understanding of the codebase. Let me read the key files to understand the exact code that needs to be modified. I need to look at:
+
+1. How `generate_description()` in `submit_pipeline.py` works - specifically the part that appears to hang
+2. How `CommitMessageGenerator.generate()` yields events
+3. How `run_commit_message_generation()` processes events
+4. The `PromptExecutor` and how it executes prompts - does it stream or block?
+
+The key issue is that during Phase 4 "Generating PR description", the Claude CLI call takes time and there's no visible progress output showing the user that something is happening. 
+
+The "(6s · timeout 2m)" text is coming from the Claude CLI itself, but it looks like the progress events aren't being surfaced properly or the prompt execution is blocking without any intermediate output. I need to dig into the critical files to see exactly what's happening.</thinking>
+  <usage input_tokens="1504" cache_creation_input_tokens="4706" cache_read_input_tokens="30234" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4706}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the key files to understand the exact code paths involved.</assistant>
+  <usage input_tokens="1504" cache_creation_input_tokens="4706" cache_read_input_tokens="30234" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4706}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PK5BmbiYPWALo4nLyCghHj">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/commit_message_generator.py</param>
+  </tool_use>
+  <usage input_tokens="1504" cache_creation_input_tokens="4706" cache_read_input_tokens="30234" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4706}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PK5BmbiYPWALo4nLyCghHj">
+     1→"""Commit message generation via Claude CLI.
+     2→
+     3→This module provides commit message generation for PR submissions,
+     4→using Claude CLI to analyze diffs and generate descriptive messages.
+     5→
+     6→The commit message prompt is loaded from the shared prompt file at:
+     7→packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md
+     8→"""
+     9→
+    10→from __future__ import annotations
+    11→
+    12→from collections.abc import Generator
+    13→from dataclasses import dataclass
+    14→from pathlib import Path
+    15→from typing import TYPE_CHECKING
+    16→
+    17→from erk.core.prompt_executor import PromptExecutor
+    18→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+    19→from erk_shared.gateway.gt.prompts import get_commit_message_prompt
+    20→
+    21→if TYPE_CHECKING:
+    22→    from erk.core.plan_context_provider import PlanContext
+    23→
+    24→# Feature flag: Use --system-prompt to replace Claude Code's default system prompt
+    25→# When True: More deterministic, no Claude Code behaviors (passes system prompt separately)
+    26→# When False: Legacy behavior (system prompt concatenated with user prompt)
+    27→USE_SYSTEM_PROMPT_REPLACEMENT = True
+    28→
+    29→
+    30→@dataclass(frozen=True)
+
+... [317 lines omitted] ...
+
+    59→        error_message: Error description if generation failed
+    65→    error_message: str | None
+   108→                    error_message=f"Diff file not found: {request.diff_file}",
+   121→                    error_message="Diff file is empty",
+   175→                    error_message=result.error or "Claude CLI execution failed",
+   189→                error_message=None,
+  </tool_result>
+  <tool_use name="Read" id="toolu_0182yWG9guLFCa1uSbVLNjnL">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/shared.py</param>
+  </tool_use>
+  <usage input_tokens="1504" cache_creation_input_tokens="4706" cache_read_input_tokens="30234" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4706}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0182yWG9guLFCa1uSbVLNjnL">
+     1→"""Shared utilities for PR commands.
+     2→
+     3→This module contains common functionality used by multiple PR commands
+     4→(rewrite, submit) to avoid code duplication.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from dataclasses import dataclass
+    10→from pathlib import Path
+    11→
+    12→import click
+    13→
+    14→from erk.core.commit_message_generator import (
+    15→    CommitMessageGenerator,
+    16→    CommitMessageRequest,
+    17→    CommitMessageResult,
+    18→)
+    19→from erk.core.context import ErkContext
+    20→from erk.core.plan_context_provider import PlanContext
+    21→from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
+    22→from erk_shared.gateway.github.metadata.schemas import (
+    23→    CREATED_AT,
+    24→    CREATED_BY,
+    25→    LIFECYCLE_STAGE,
+    26→    SCHEMA_VERSION,
+    27→)
+    28→from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
+    29→from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+    30→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+
+... [362 lines omitted] ...
+
+    55→        click.ClickException: If in detached HEAD state
+    59→        raise click.ClickException("Not on a branch (detached HEAD state)")
+    98→        Path to diff file, or None if extraction failed
+   155→    Silently returns on any failure — lifecycle updates must never block submission.
+   167→    except RuntimeError as e:
+   169→            msg = f"   Warning: failed to update lifecycle stage: {e}"
+   233→        except OSError:
+   317→    elif event.style == "warning":
+   319→    elif event.style == "error":
+   326→    """Verify Claude CLI is available, raising ClickException if not.
+   332→        click.ClickException: If Claude CLI is not available
+   335→        raise click.ClickException(
+   364→        CommitMessageResult with the generated title/body or error info
+   388→            error_message="Commit message generation did not complete",
+  </tool_result>
+  <tool_use name="Read" id="toolu_019zVTKqfDbMrDJdjiKRpTUn">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">590</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1504" cache_creation_input_tokens="4706" cache_read_input_tokens="30234" output_tokens="486" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4706, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019zVTKqfDbMrDJdjiKRpTUn">
+   590→    click.echo(click.style("Phase 3: Fetching plan context", bold=True))
+   591→
+   592→    plan_provider = PlanContextProvider(
+   593→        plan_backend=ctx.plan_backend, github_issues=ctx.github_issues
+   594→    )
+   595→    plan_context = plan_provider.get_plan_context(
+   596→        repo_root=state.repo_root,
+   597→        branch_name=state.branch_name,
+   598→    )
+   599→
+   600→    echo_plan_context_status(plan_context)
+   601→
+   602→    return dataclasses.replace(state, plan_context=plan_context)
+   603→
+   604→
+   605→def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   606→    """Generate AI PR title and body via CommitMessageGenerator."""
+   607→    if state.skip_description:
+   608→        return state
+   609→    click.echo(click.style("Phase 4: Generating PR description", bold=True))
+   610→
+   611→    if state.diff_file is None:
+   612→        return SubmitError(
+   613→            phase="generate_description",
+   614→            error_type="no_diff_file",
+   615→            message="Failed to extract diff for AI analysis",
+   616→            details={},
+   617→        )
+   618→
+   619→    # Get commit messages for AI context
+
+... [50 lines omitted] ...
+
+   635→        return SubmitError(
+   637→            error_type="ai_generation_failed",
+   638→            message=f"Failed to generate message: {msg_result.error_message}",
+   651→def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+  </tool_result>
+  <thinking>Now I understand the problem. The key issue is in `CommitMessageGenerator.generate()`. The flow is:
+
+1. `yield ProgressEvent("Analyzing changes with Claude...")` - this prints
+2. `self._executor.execute_prompt(...)` - this BLOCKS for ~6+ seconds with no output
+3. `yield ProgressEvent("PR description generated", style="success")` - this prints after
+
+The user sees "Analyzing changes with Claude..." and then nothing until it completes. The "(6s · timeout 2m)" they see is actually from Claude CLI's own output, but it appears erk doesn't show any intermediate progress.
+
+
+I need to check how `PromptExecutor.execute_prompt()` works to see if it can stream feedback back during execution.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="11524" cache_read_input_tokens="34940" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11524}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CY5kJzKf8wgo99e5Yo34mz">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/prompt_executor.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11524" cache_read_input_tokens="34940" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11524}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CY5kJzKf8wgo99e5Yo34mz">
+     1→"""Claude CLI prompt execution implementation.
+     2→
+     3→This module provides the ClaudePromptExecutor implementation and re-exports
+     4→ABC and types from erk_shared.core.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import json
+    10→import logging
+    11→import os
+    12→import shutil
+    13→import subprocess
+    14→import sys
+    15→import threading
+    16→from collections.abc import Iterator
+    17→from pathlib import Path
+    18→from typing import TYPE_CHECKING
+    19→
+    20→if TYPE_CHECKING:
+    21→    from erk_shared.context.types import PermissionMode
+    22→
+    23→from erk_shared.context.types import permission_mode_to_claude
+    24→from erk_shared.core.prompt_executor import (
+    25→    CommandResult,  # noqa: F401 - re-exported for erk.cli.output
+    26→    ErrorEvent,
+    27→    ExecutorEvent,
+    28→    IssueNumberEvent,
+    29→    NoOutputEvent,
+    30→    NoTurnsEvent,
+
+... [624 lines omitted] ...
+
+    32→    ProcessErrorEvent,
+    53→def format_prompt_error(
+    59→    """Format error message for failed prompt execution.
+    61→    Constructs a structured error message from subprocess failure details.
+    65→        stderr: Standard error output
+    69→        Formatted error string like "Exit code 1 | stderr: ... | stdout: ..."
+    71→    error_parts = [f"Exit code {returncode}"]
+    73→        error_parts.append(f"stderr: {stderr.strip()}")
+    76→        error_parts.append(f"stdout: {stdout_preview}")
+    77→    return " | ".join(error_parts)
+   153→                error_msg = f"Claude command {command} failed with exit code {result.returncode}"
+   154→                yield ErrorEvent(message=error_msg)
+   163→        # Handle Popen errors (e.g., claude not found, permission denied)
+   174→        except OSError as e:
+   175→            yield ProcessErrorEvent(
+   176→                message=f"Failed to start Claude CLI: {e}\nCommand: {' '.join(cmd_args)}"
+   282→                    diag += "\n  Run 'claude' directly to see hook error messages"
+   300→            yield ProcessErrorEvent(
+   318→                yield ErrorEvent(message=f"Exit code {returncode}")
+   321→        # Enhanced error messages for non-zero exit codes
+   323→            error_msg = f"Claude command {command} failed"
+   324→            error_msg += f"\n  Exit code: {returncode}"
+   325→            error_msg += f"\n  Lines processed: {line_count}"
+   327→                error_msg += "\n  Stderr:\n" + "".join(stderr_output).strip()
+   328→            yield ErrorEvent(message=error_msg)
+   364→        # Parse JSON safely - JSON parsing requires exception handling
+   371→            except json.JSONDecodeError:
+   386→            "is_error": None,
+   456→            result["is_error"] = data.get("is_error", False)
+   490→            raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
+   495→        # FileNotFoundError which is the appropriate error.
+   527→            except OSError:
+   592→                error=f"Prompt execution timed out after {PROMPT_TIMEOUT_SECONDS}s",
+   599→                error=format_prompt_error(
+   609→            error=None,
+  </tool_result>
+  <tool_use name="Read" id="toolu_015wiMmbs4GT9wGGkipyodrB">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/rewrite_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11524" cache_read_input_tokens="34940" output_tokens="328" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11524, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015wiMmbs4GT9wGGkipyodrB">
+     1→"""Squash, regenerate AI commit message, push, and update remote PR.
+     2→
+     3→Replaces the old multi-step workflow (gt squash → erk pr summarize → push)
+     4→with a single command that handles the full cycle: squash commits, generate
+     5→an AI-powered commit message, amend the local commit, force-push, and update
+     6→the remote PR title/body.
+     7→"""
+     8→
+     9→from pathlib import Path
+    10→
+    11→import click
+    12→
+    13→from erk.cli.commands.pr.shared import (
+    14→    assemble_pr_body,
+    15→    cleanup_diff_file,
+    16→    discover_branch_context,
+    17→    echo_plan_context_status,
+    18→    maybe_advance_lifecycle_to_impl,
+    19→    render_progress,
+    20→    require_claude_available,
+    21→    run_commit_message_generation,
+    22→    run_diff_extraction,
+    23→)
+    24→from erk.core.command_log import get_or_generate_session_id
+    25→from erk.core.commit_message_generator import CommitMessageGenerator
+    26→from erk.core.context import ErkContext
+    27→from erk.core.plan_context_provider import PlanContextProvider
+    28→from erk_shared.gateway.branch_manager.types import SubmitBranchError
+    29→from erk_shared.gateway.github.types import BodyText, PRNotFound
+    30→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+
+... [189 lines omitted] ...
+
+    33→from erk_shared.gateway.gt.types import SquashError
+    81→        raise click.ClickException(
+    94→    if isinstance(squash_result, SquashError):
+    95→        raise click.ClickException(f"Squash failed: {squash_result.message}")
+   108→        raise click.ClickException("Failed to extract diff for AI analysis")
+   137→        raise click.ClickException(f"Failed to generate message: {msg_result.error_message}")
+   159→    if isinstance(submit_result, SubmitBranchError):
+   160→        raise click.ClickException(f"Push failed: {submit_result.message}")
+   208→) -&gt; SquashError | None:
+   209→    """Run squash phase. Returns SquashError on failure, None on success."""
+   216→            if isinstance(result, SquashError):
+  </tool_result>
+  <thinking>Now I understand the problem clearly. The issue is in `execute_prompt()` (line 542 in `prompt_executor.py`). It uses `subprocess.run()` which blocks completely until the Claude CLI finishes. During that time, there's no progress indicator.
+
+The flow is:
+1. `CommitMessageGenerator.generate()` yields `ProgressEvent("Analyzing changes with Claude...")`
+2. Then it calls `self._executor.execute_prompt()` which blocks for ~6-120 seconds
+3. Only after the subprocess completes does it yield the next event
+
+So the user sees:
+```
+Phase 4: Generating PR description
+
+
+Reading diff file...
+Diff loaded (X chars)
+Analyzing changes with Claude...
+```
+And then silence for 6+ seconds. The "(6s · timeout 2m)" text is probably from Claude CLI's own stderr, which gets captured but not displayed since `capture_output=True` is set.
+
+To fix this, I need to add progress feedback while `execute_prompt` is running. I could show an elapsed timer like `(3s · timeout 2m)`, add a spinning character, or switch to streaming execution instead of blocking on the subprocess.
+
+Looking at the codebase, `execute_command_streaming()` already uses `Popen` with streaming, but `execute_prompt()` uses the simpler `subprocess.run()` with `capture_output=True` which blocks everything. The cleanest approach would be to add an elapsed time indicator in `run_commit_message_generation()` using a background thread, since that's the shared caller between submit and rewrite operations.
+
+But wait—the generator pattern uses `yield` events, so the blocking happens inside `generator.generate()` during the `execute_prompt()` call, and the event loop gets stuck waiting for the next yield. I can't easily add progress from the caller side without threading.
+
+The simplest solution is to either change `execute_prompt()` to use `Popen` with periodic stderr updates, or wrap the call with a background thread that prints elapsed time. I could implement this either in `CommitMessageGenerator.generate()` by yielding periodic progress events while waiting, or handle it at a higher level.
+
+Actually, the real constraint is that `execute_prompt()` is a synchronous blocking call—I need to either make it async or run it in a thread with progress updates in the main thread. The cleanest approach would be to add a timed progress display directly to `execute_prompt()` since that's where the blocking happens, though having an executor print to stderr feels off. I'm leaning toward wrapping it with a context manager that handles the elapsed time display.
+
+Wait, I think there's a better way: run the prompt execution in a background thread from within the generator itself. While that thread is working, I can yield periodic `ProgressEvent` updates with elapsed time every few seconds. Once the thread finishes, I continue with the result. This keeps everything contained in the generator, requires no changes to `PromptExecutor`, and automatically fixes both submit and rewrite since they both use the same generator.
+
+Setting up the threading wrapper... I'm realizing there's an issue with how the progress updates would display—each `ProgressEvent` would print on a new line, creating clutter. I should use carriage return (`\r`) to update the same line instead, though that's tricky with the event system and `click.echo`.
+
+Looking back at the user's output, the "(6s · timeout 2m)" appears to be coming from erk's own CLI showing the elapsed time of the entire `erk pr submit` command, not from the Claude CLI itself. The `execute_prompt()` function captures output with `capture_output=True`, so that's not the source.
+
+What's actually happening is that during Phase 4, there's about 6 seconds of silence while Claude analyzes the changes. The user wants to see progress feedback during that waiting period instead of just a blank screen. I should implement a progress indicator that updates periodically to show the command is still running and making progress. I'm realizing the generator/event model makes it hard to control terminal output directly—the renderer owns that responsibility. The most practical solution is to spawn a background thread in `run_commit_message_generation()` that periodically updates the same terminal line with elapsed time while the generator processes events, then finalize the output once complete. it knows a long operation is starting. It can start a timer thread that updates the terminal line.
+
+Wait, but the for loop is blocked on `next()` of the generator. So we can't both iterate and run a timer in the same thread.
+
+OK, here's my plan: I'll change `CommitMessageGenerator.generate()` to run the prompt in a background thread and yield periodic elapsed time events. The events would use a special rendering approach where each event prints a new line. But that means yielding multiple timer events would create multiple lines, which isn't ideal.
+
+A simpler approach would be to update the line in-place instead. I could modify `execute_prompt()` to show elapsed time on stderr while blocking—start the subprocess with `Popen`, check if it's finished every 2 seconds, write elapsed time to stderr with `\r` to update in place, then clear the line when done. But `execute_prompt()` is a shared abstraction used for testing, so adding terminal output to it feels wrong.
+
+The practical solution is to use a thread-based timer that wraps the blocking call in `generate()`. I'd start a timer thread...
+
+Setting up the timer mechanism... I'm seeing there's actually precedent in the codebase for direct terminal output during operations—`one_shot_dispatch.py` prints elapsed time with formatting, and `submit_cmd.py` does the same while polling. Those are command-level though, not in generator modules. I think the best approach is to have the generator yield ProgressEvents with elapsed time information, keep the interval reasonable like 5 seconds to avoid spam, and include useful context in each update.
+
+Actually, there's another option worth considering: I could run the generator in a background thread from `run_commit_message_generation()` since that's already the rendering layer, use a queue to pass events between threads, and have the main thread check the queue every couple seconds to render updates or print elapsed time. This keeps the generator clean while still giving the user feedback.
+
+But weighing the tradeoffs, the simple approach of having the generator yield timer events seems better—it's a contained change in one file, though it does mix concerns slightly. Let me think through the exact implementation, or maybe there's an even simpler option like adding a progress-aware version of `execute_prompt()` that yields elapsed time while the subprocess runs.
+
+Actually, stepping back—the user just wants *something* visible while the PR description generates so it doesn't look frozen. The simplest solution is to wrap `execute_prompt()` in a helper that runs it on a background thread and prints elapsed time every few seconds using carriage returns for in-place updates. I'll create a small utility function that takes any blocking operation, runs it in a thread, and displays elapsed time while waiting, then use it around the `execute_prompt()` call in the generator.
+
+Writing the elapsed time display helper... Writing the threading loop... I'm realizing the generator approach with Python's yield mechanism handles this elegantly—when the generator yields a progress event, control returns to the consumer loop which renders it, then calls next() again, and the generator naturally waits for the next interval before yielding again. Let me trace through the actual flow to make sure this works as expected.
+
+I need to add the threading and time imports to the module since they're not there yet, and I should check if there are existing tests for the generate method that might be affected by these changes.
+
+Looking at the `PromptExecutor` ABC, the threading approach should work fine even with the `FakePromptExecutor` used in tests since it returns immediately. I found a `format_duration()` utility in the shared output module, but for these short durations I'll just use a simple `f"{int(elapsed)}s"` format to keep it straightforward.
+
+Now I'm ready to outline the full implementation plan for the changes needed. I'm thinking through what message to display while waiting for Claude to generate the PR description. The key is balancing clarity with simplicity—something like "Analyzing changes with Claude..." followed by periodic updates showing elapsed time would give users feedback without being verbose. I could show just the elapsed time in parentheses, or add context like "Still waiting..." to make it feel more natural. Let me check how similar patterns are handled elsewhere in the codebase to keep the messaging consistent. I'm settling on a straightforward approach: yield periodic ProgressEvents at 5-second intervals to show the user the operation is still running, with messages like "Waiting for response... (5s)" that appear as dimmed lines. This keeps things simple and practical without trying to update the same line, which the event system doesn't support anyway. Now I need to check the existing tests for CommitMessageGenerator to understand what's already covered before implementing these changes.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="11665" cache_read_input_tokens="46464" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11665}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the test file and the `PromptResult` type to finalize my understanding.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11665" cache_read_input_tokens="46464" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11665}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011dxtYXcDHKv4s9nubFH71o">
+    <param name="pattern">class PromptResult</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11665" cache_read_input_tokens="46464" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11665}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011dxtYXcDHKv4s9nubFH71o">
+Found 1 file
+packages/erk-shared/src/erk_shared/core/prompt_executor.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0156hpKTSKzKuQqjBP32KiFx">
+    <param name="pattern">CommitMessageGenerator</param>
+    <param name="path">/Users/schrockn/code/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11665" cache_read_input_tokens="46464" output_tokens="6151" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11665, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0156hpKTSKzKuQqjBP32KiFx">
+Found 1 file
+tests/core/test_commit_message_generator.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01B76gqPrfGVQqv7CFbSMoXM">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/core/prompt_executor.py</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6344" cache_read_input_tokens="58129" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6344}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B76gqPrfGVQqv7CFbSMoXM">
+     1→"""Prompt execution abstraction - ABC and types.
+     2→
+     3→This module provides the abstract interface and typed events for prompt execution.
+     4→The real implementation (ClaudePromptExecutor) remains in erk.core.prompt_executor.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import time
+    10→from abc import ABC, abstractmethod
+    11→from collections.abc import Iterator
+    12→from dataclasses import dataclass, field
+    13→from pathlib import Path
+    14→from typing import TYPE_CHECKING
+    15→
+    16→if TYPE_CHECKING:
+    17→    from erk_shared.context.types import PermissionMode
+    18→
+    19→# =============================================================================
+    20→# Typed Executor Events
+    21→# =============================================================================
+    22→
+    23→
+    24→@dataclass(frozen=True)
+    25→class TextEvent:
+    26→    """Text content from Claude."""
+    27→
+    28→    content: str
+    29→
+    30→
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WoKzmouGR2n1J8cDD2XzJY">
+    <param name="file_path">/Users/schrockn/code/erk/tests/core/test_commit_message_generator.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6344" cache_read_input_tokens="58129" output_tokens="164" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6344, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WoKzmouGR2n1J8cDD2XzJY">
+     1→"""Tests for CommitMessageGenerator."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.core.commit_message_generator import (
+     6→    CommitMessageGenerator,
+     7→    CommitMessageRequest,
+     8→    CommitMessageResult,
+     9→)
+    10→from erk.core.plan_context_provider import PlanContext
+    11→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+    12→from tests.fakes.prompt_executor import FakePromptExecutor
+    13→
+    14→
+    15→def _consume_generator(
+    16→    generator: CommitMessageGenerator, request: CommitMessageRequest
+    17→) -&gt; tuple[CommitMessageResult, list[ProgressEvent]]:
+    18→    """Consume generator and return result with collected progress events."""
+    19→    progress_events: list[ProgressEvent] = []
+    20→    result: CommitMessageResult | None = None
+    21→
+    22→    for event in generator.generate(request):
+    23→        if isinstance(event, ProgressEvent):
+    24→            progress_events.append(event)
+    25→        elif isinstance(event, CompletionEvent):
+    26→            result = event.result
+    27→
+    28→    if result is None:
+    29→        raise AssertionError("Generator did not yield CompletionEvent")
+    30→
+
+... [500 lines omitted] ...
+
+    61→    assert result.error_message is None
+   129→    assert result.error_message is not None
+   130→    assert "not found" in result.error_message.lower()
+   155→    assert result.error_message is not None
+   156→    assert "empty" in result.error_message.lower()
+   169→        simulated_prompt_error="Claude CLI execution failed",
+   186→    assert result.error_message is not None
+   187→    assert "failed" in result.error_message.lower()
+  </tool_result>
+  <thinking>Now I have a complete picture. Let me also check the `FakePromptExecutor` to understand how it works, since the threading approach needs to work with it.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="12080" cache_read_input_tokens="64473" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12080}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the `FakePromptExecutor` and the `PROMPT_TIMEOUT_SECONDS` constant usage.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12080" cache_read_input_tokens="64473" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12080}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Ugmf5SEHyMY6uy9hWvfZ5X">
+    <param name="file_path">/Users/schrockn/code/erk/tests/fakes/prompt_executor.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12080" cache_read_input_tokens="64473" output_tokens="154" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12080, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ugmf5SEHyMY6uy9hWvfZ5X">
+     1→"""Fake implementation of PromptExecutor for testing.
+     2→
+     3→This fake enables testing prompt execution without
+     4→requiring the actual Claude CLI or using subprocess mocks.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from collections.abc import Iterator
+    10→from pathlib import Path
+    11→from typing import TYPE_CHECKING
+    12→
+    13→if TYPE_CHECKING:
+    14→    from erk_shared.context.types import PermissionMode
+    15→
+    16→from erk_shared.core.prompt_executor import (
+    17→    CommandResult,
+    18→    ErrorEvent,
+    19→    ExecutorEvent,
+    20→    IssueNumberEvent,
+    21→    NoOutputEvent,
+    22→    NoTurnsEvent,
+    23→    PrNumberEvent,
+    24→    ProcessErrorEvent,
+    25→    PromptExecutor,
+    26→    PromptResult,
+    27→    PrTitleEvent,
+    28→    PrUrlEvent,
+    29→    SpinnerUpdateEvent,
+    30→    TextEvent,
+
+... [405 lines omitted] ...
+
+    57→        # Test command failure
+    61→        ... except RuntimeError:
+    62→        ...     print("Command failed as expected")
+    82→        simulated_process_error: str | None = None,
+    85→        simulated_prompt_error: str | None = None,
+    93→            command_should_fail: Whether execute_command should raise RuntimeError
+   102→            simulated_process_error: Error message to simulate process startup failure
+   109→            simulated_prompt_error: Error message to return from execute_prompt() on failure.
+   110→                If set, execute_prompt() will return a failure result.
+   113→                tests the "empty response" failure mode where Claude produces JSON
+   127→        self._simulated_process_error = simulated_process_error
+   133→        self._simulated_prompt_error = simulated_prompt_error
+   176→            RuntimeError: If command_should_fail was set to True
+   180→        # Process error takes precedence (simulates Popen failure)
+   181→        if self._simulated_process_error is not None:
+   182→            yield ProcessErrorEvent(message=self._simulated_process_error)
+   196→            diag += "\n  Run 'claude' directly to see hook error messages"
+   202→            yield ErrorEvent(message=f"Claude command {command} failed (simulated failure)")
+   260→            RuntimeError: If command_should_fail was set to True
+   272→                error_message=f"Claude command {command} failed (simulated failure)",
+   283→            error_message=None,
+   304→            RuntimeError: If Claude CLI is not available
+   307→            raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
+   361→            PromptResult with simulated output or error
+   365→        if self._simulated_prompt_error is not None:
+   369→                error=self._simulated_prompt_error,
+   386→            error=None,
+  </tool_result>
+  <thinking>Now I have a complete understanding. Let me design the plan.
+
+Key insight from the code:
+
+1. `execute_prompt()` uses `subprocess.run()` which blocks completely - no progress output is possible
+2. The `CommitMessageGenerator.generate()` yields events but blocks during `execute_prompt()`
+3. `run_commit_message_generation()` consumes events synchronously
+4. The `FakePromptExecutor.execute_prompt()` returns immediately, so threading would work fine in tests
+
+The plan:
+
+**Modify `CommitMessageGenerator.generate()`** to:
+1. Run `execute_prompt()` in a background thread
+
+
+2. While waiting, yield `ProgressEvent` with elapsed time every ~3 seconds
+3. When the thread completes, continue with the result
+
+This is the cleanest approach because both `pr submit` and `pr rewrite` go through `CommitMessageGenerator`, so changes apply everywhere. The generator already yields `ProgressEvent`, making this a natural fit. Tests pass unmodified since `FakePromptExecutor` returns instantly before any timer fires. The user would see progress messages like "Analyzing changes with Claude..." followed by "Waiting for response..." at 3-second intervals.
+
+Now I need to think through edge cases: what happens if `execute_prompt` raises an exception in the thread, and how to handle the 120-second timeout so users understand the total wait time. I should also check where the imports are defined to make sure everything's properly set up.
+
+For the timer interval, 3 seconds feels right—it gives frequent enough feedback without being noisy. For a typical operation, users would see the initial message, then periodic "waiting" updates every 3 seconds until completion.
+
+Actually, looking at what the user asked for, they just want periodic signs of life so it doesn't look hung. I think 5-second intervals strike a better balance—less output clutter while still reassuring the user something's happening. I'll use a simple message like "Still generating..." with elapsed time to keep it clean. I'm thinking through the design for progress updates during Claude API calls. Rather than having the generator manage threading directly, I could add a method that yields progress events with elapsed time while the prompt executes in the background, keeping the threading logic encapsulated within the generator itself.
+
+Writing the threading implementation... Writing the progress loop...
+
+The approach handles both real and fake executors cleanly since the fake executor returns immediately, so no progress events fire during tests. I'm considering whether to add a test for the slow executor case, but that might be unnecessary for a simple progress display feature. Let me also verify whether the future annotations import affects anything here.
+
+I'll define a constant for the progress interval at 3 seconds and add defensive handling for edge cases where the result holder is empty. I'm also thinking about whether to show elapsed time in the success message, though the outer spinner already displays the total command time, so adding it might be redundant.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5769" cache_read_input_tokens="76553" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5769}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a complete understanding of the code. Let me design the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5769" cache_read_input_tokens="76553" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5769}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01PhxGULmygDJr1QMLNASmx8">
+    <param name="description">Design elapsed timer plan</param>
+    <param name="subagent_type">Plan</param>
+    <param name="prompt">Based on my exploration of the erk codebase, I need to design an implementation plan for a...[truncated 3405 chars]...threads
+
+Please provide a detailed implementation plan with the exact code changes needed.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5769" cache_read_input_tokens="76553" output_tokens="3443" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5769, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PhxGULmygDJr1QMLNASmx8">
+Now I have a thorough understanding of every piece. Let me produce the detailed implementation plan.
+
+---
+
+## Detailed Implementation Plan: Progress Indicators During PR Description Generation
+
+### 1. Problem Statement
+
+During commit message generation in `erk pr submit` (Phase 4) and `erk pr rewrite` (Phase 3), the `CommitMessageGenerator.generate()` method calls `self._executor.execute_prompt()` synchronously. This `subprocess.run()` call blocks for 6-120 seconds with no visible output, making the CLI appear hung. The user sees "Analyzing changes with Claude..." and then silence until completion.
+
+### 2. Approach Summary
+
+Modify `CommitMessageGenerator.generate()` to run `execute_prompt()` in a background thread while the main (generator) thread yields periodic `ProgressEvent` updates with elapsed time. This is a single-file change that benefits all three callers: `submit_pipeline.py`, `rewrite_cmd.py`, and `update_pr_description.py`.
+
+### 3. Why This Approach Is Ideal
+
+- **Single change point**: `CommitMessageGenerator` is the only file that needs modification.
+- **Three callers benefit automatically**: `submit_pipeline.py`, `rewrite_cmd.py`, and `update_pr_description.py` all call `run_commit_message_generation()` which iterates the generator, so all three get progress indicators for free.
+- **Existing pattern**: The generator already yields `ProgressEvent` objects, and `render_progress()` in `shared.py` already renders them. No consumer changes needed.
+- **Tests work unchanged**: `FakePromptExecutor.execute_prompt()` returns instantly, so the background thread will complete before the first `_PROGRESS_INTERVAL_SECONDS` timer fires. Zero extra `ProgressEvent` objects will be yielded, making all existing assertions continue to pass without modification.
+- **No ABC/interface changes**: `PromptExecutor.execute_prompt()` signature is unchanged. Threading is purely an implementation detail of the generator.
+
+### 4. Exact Code Changes
+
+**File: `/Users/schrockn/code/erk/src/erk/core/commit_message_generator.py`**
+
+#### 4a. Add imports (after `from pathlib import Path`, line 14)
+
+Add two new imports:
+
+
+... [224 lines omitted] ...
+
+        prompt_error_holder: list[BaseException] = []
+            except BaseException as exc:
+                prompt_error_holder.append(exc)
+        # Check for exceptions from the thread
+        if prompt_error_holder:
+                    error_message=f"Prompt execution error: {prompt_error_holder[0]}",
+                    error_message="Prompt execution produced no result",
+Threads cannot return values. Using a list as a holder (`prompt_result_holder: list[PromptResult] = []`) is the standard Python pattern for capturing results from threads without introducing `concurrent.futures`, which would be heavier. The LBYL checks after the thread ensure we handle both empty-list and error-list cases.
+**Why `BaseException` catch instead of `Exception`?**
+`subprocess.TimeoutExpired` is a subclass of `Exception`, but using `BaseException` is safer for a background thread to ensure nothing leaks uncaught. However, `KeyboardInterrupt` and `SystemExit` are `BaseException` subclasses too. In this case, since the thread is a daemon thread, `KeyboardInterrupt` will terminate the process anyway, and catching `BaseException` ensures we capture everything the thread might throw without using try/except for control flow in the main thread.
+**Note on LBYL compliance**: The main thread uses LBYL checks (`if prompt_error_holder:` and `if not prompt_result_holder:`) rather than try/except for control flow. The `try/except` in `_run_prompt` is inside the thread and is the only way to capture thread exceptions -- this is not "EAFP control flow" but rather necessary exception capture for cross-thread communication.
+**Low risk**: The change is entirely contained within `CommitMessageGenerator.generate()`. The threading pattern is simple (start thread, poll with timeout, collect result). The existing tests verify all behavior that matters (prompt construction, result parsing, error handling). The only new behavior is yielding additional `ProgressEvent` objects during long waits, which consumers already handle.
+- Thread raises exception: captured in `prompt_error_holder`, yielded as `CompletionEvent` with error
+- Thread produces no result (shouldn't happen, but LBYL): yielded as `CompletionEvent` with error
+  </tool_result>
+  <thinking>Now I have all the information I need. Let me write the final plan to the plan file and then call ExitPlanMode.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="9385" cache_read_input_tokens="82322" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9385}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me write the plan file.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="9385" cache_read_input_tokens="82322" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9385}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01DB1rsikvWH74inNwx9kmzP">
+    <param name="file_path">/Users/schrockn/.claude/plans/unified-hatching-dream.md</param>
+    <param name="content"># Add Progress Indicator During PR Description Generation
+
+## Context
+
+During `erk pr subm...[truncated 2307 chars]...t` on a branch with changes — verify "Still waiting..." messages appear during generation
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9385" cache_read_input_tokens="82322" output_tokens="822" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9385, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DB1rsikvWH74inNwx9kmzP">
+File created successfully at: /Users/schrockn/.claude/plans/unified-hatching-dream.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01MsPibV55zKJd5asa6cV94A">
+    <param name="plan"># Add Progress Indicator During PR Description Generation
+
+## Context
+
+During `erk pr subm...[truncated 2307 chars]...t` on a branch with changes — verify "Still waiting..." messages appear during generation
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="861" cache_read_input_tokens="91707" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 861, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MsPibV55zKJd5asa6cV94A">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/unified-hatching-dream.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Add Progress Indicator During PR Description Generation
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR on new branch" - Create a new branch, save plan as draft PR, and stop. Does NOT proceed to implementation.
+  2. "Create a plan PR on the current branch" - Save plan as a PR on the current branch and stop. Does NOT proceed to implementation.
+  3. "Just implement on the current branch without creating a PR." - Implement directly on the current branch without saving a plan PR.
+  4. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR on new branch':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Create a plan PR on the current branch':
+  1. Run /erk:plan-save --current-branch
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     This converts the current branch into the plan PR branch
+     instead of creating a new branch.
+
+... [16 lines omitted] ...
+  </tool_result>
+  <thinking>The hook is telling me to display the plan and ask the user what they want to do with it. Let me follow the instructions.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="824" cache_read_input_tokens="92568" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 824}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Here's the plan:
+
+---
+
+# Add Progress Indicator During PR Description Generation
+
+## Context
+
+During `erk pr submit` Phase 4 ("Generating PR description") and `erk pr rewrite` Phase 3, the `execute_prompt()` call to Claude CLI blocks for 6-120 seconds with zero visible output, making the command appear hung. The user sees "Analyzing changes with Claude..." then silence until completion.
+
+## Approach
+
+Modify `CommitMessageGenerator.generate()` to run `execute_prompt()` in a background thread, yielding periodic `ProgressEvent` with elapsed time while waiting. This is a single-file change — both `pr submit` and `pr rewrite` consume the generator through `run_commit_message_generation()` which already renders `ProgressEvent` objects.
+
+### Output before:
+```
+   Analyzing changes with Claude...
+   [silence for 6+ seconds]
+   PR description generated
+```
+
+### Output after:
+```
+   Analyzing changes with Claude...
+   Still waiting... (3s)
+   Still waiting... (6s)
+   PR description generated
+```
+
+## Changes
+
+### `src/erk/core/commit_message_generator.py` (sole file modified)
+
+1. Add imports: `threading`, `time`
+2. Add constant: `_PROGRESS_INTERVAL_SECONDS = 3.0`
+3. Add `PromptResult` import
+4. Replace synchronous `execute_prompt()` block with threaded version that yields elapsed time events
+
+### No other files change — tests pass unchanged since `FakePromptExecutor` returns instantly.
+
+## Verification
+
+1. `uv run pytest tests/core/test_commit_message_generator.py`
+2. `uv run pytest tests/commands/pr/`
+3. Manual: `erk pr submit` — verify "Still waiting..." messages appear
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="824" cache_read_input_tokens="92568" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 824}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01DyybcPwQRb82ThgJ4GLGyT">
+    <param name="questions">[{'question': '📋 Add Progress Indicator During PR Description Generation\nCurrent context:...[truncated 594 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="824" cache_read_input_tokens="92568" output_tokens="730" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 824, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DyybcPwQRb82ThgJ4GLGyT">
+User has answered your questions: "📋 Add Progress Indicator During PR Description Generation
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR on new branch". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_011ChYazkXFSR41QJ4kv7xsm">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1014" cache_read_input_tokens="93392" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1014, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011ChYazkXFSR41QJ4kv7xsm">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="ceecd5aa-7a14-4273-a5b1-d3f490aeea7f" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "ceecd5aa-7a14-4273-a5b1-d3f490aeea7f" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true** (new-wt recommended → "In new wt" listed first):
+
+```
+OR exit Claude Code first, then run one of:
+
+Implement plan #&lt;plan_number&gt;:
+  In new wt:        source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+  In plan br:       source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+
+Checkout plan #&lt;plan_number&gt;:
+  In new wt:  erk br co --new-slot --for-plan &lt;plan_number&gt;
+  In plan br: erk br co --for-plan &lt;plan_number&gt;
+
+Dispatch to queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false** (same slot recommended → "Here" listed first):
+
+```
+OR exit Claude Code first, then run one of:
+
+Implement plan #&lt;plan_number&gt;:
+  In plan br:       source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+
+Checkout plan #&lt;plan_number&gt;:
+  In plan br: erk br co --for-plan &lt;plan_number&gt;
+  In new wt:  erk br co --new-slot --for-plan &lt;plan_number&gt;
+
+Dispatch to queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout plan #&lt;plan_number&gt;:  erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to queue:             erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "ceecd5aa-7a14-4273-a5b1-d3f490aeea7f" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "ceecd5aa-7a14-4273-a5b1-d3f490aeea7f" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "ceecd5aa-7a14-4273-a5b1-d3f490aeea7f" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>The user chose "Create a plan PR on new branch" and the /erk:plan-save skill has been loaded. Let me follow the instructions step by step.
+
+Step 1: Parse Arguments - No special flags passed.
+Step 2: Generate Branch Slug from the plan title "Add Progress Indicator During PR Description Generation"
+Step 3: Generate Plan Summary
+Step 4: Run the save command</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2868" cache_read_input_tokens="94406" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2868}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me follow the plan-save steps.
+
+**Step 1: Parse Arguments** — No flags passed. `PLAN_TYPE_FLAG` and `OBJECTIVE_FLAG` are empty.
+
+**Step 2: Generate Branch Slug** — From title "Add Progress Indicator During PR Description Generation": `add-submit-progress-indicator`
+
+**Step 3: Generate Plan Summary** — Modifies CommitMessageGenerator to run the Claude CLI prompt execution in a background thread, yielding periodic elapsed-time progress events so that erk pr submit and erk pr rewrite no longer appear hung during AI description generation.
+
+**Step 4: Run Save Command**</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2868" cache_read_input_tokens="94406" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2868}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LpV6GFzV6YmPoZTkJRWkK2">
+    <param name="command">erk exec plan-save --format json --session-id="ceecd5aa-7a14-4273-a5b1-d3f490aeea7f" --bra...[truncated 181 chars]... erk pr submit and erk pr rewrite no longer appear hung during AI description generation."</param>
+    <param name="description">Save plan as draft PR on new branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2868" cache_read_input_tokens="94406" output_tokens="460" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2868, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LpV6GFzV6YmPoZTkJRWkK2">
+{"success": true, "plan_number": 8662, "plan_url": "https://github.com/dagster-io/erk/pull/8662", "title": "[erk-plan] Add Progress Indicator During PR Description Generation", "branch_name": "plnd/add-submit-progress-indica-03-03-0551", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/ceecd5aa-7a14-4273-a5b1-d3f490aeea7f/plan_snapshots/000001-a1382a64"}
+  </tool_result>
+  <thinking>No objective link, so skip Steps 5 and 6.
+
+Step 7: Display Results. On trunk (master), so "In new wt" is recommended.
+
+Let me also check if we're on trunk to determine the slot options order. We are on master, so on_trunk = true.
+
+Now let me push the planning session (Step 5 at the bottom).</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="624" cache_read_input_tokens="97274" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 624}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Step 5 (session push):**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="624" cache_read_input_tokens="97274" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 624}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019KrtVjASZthoSUpwT1fGBH">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="624" cache_read_input_tokens="97274" output_tokens="194" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 624, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019KrtVjASZthoSUpwT1fGBH">
+SESSION_ID=ceecd5aa-7a14-4273-a5b1-d3f490aeea7f
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/ceecd5aa-7a14-4273-a5b1-d3f490aeea7f.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Kz3BcqHFkRQqz5Snfdf4sE">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 58 chars]...4273-a5b1-d3f490aeea7f" --stage planning --source local --plan-id 8662 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1490" cache_read_input_tokens="97898" output_tokens="212" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1490, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Kz3BcqHFkRQqz5Snfdf4sE">
+{"uploaded": true, "plan_id": 8662, "session_branch": "async-learn/8662", "session_id": "ceecd5aa-7a14-4273-a5b1-d3f490aeea7f", "stage": "planning", "files": ["planning-ceecd5aa-7a14-4273-a5b1-d3f490aeea7f-ceecd5aa-7a14-4273-a5b1-d3f490aeea7f-part1.xml", "planning-ceecd5aa-7a14-4273-a5b1-d3f490aeea7f-ceecd5aa-7a14-4273-a5b1-d3f490aeea7f-part2.xml"]}
+  </tool_result>
+  <assistant>Plan "[erk-plan] Add Progress Indicator During PR Description Generation" saved as draft PR #8662
+
+URL: https://github.com/dagster-io/erk/pull/8662
+
+---
+
+**Next steps:**
+
+View PR: https://github.com/dagster-io/erk/pull/8662
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+Implement plan #8662:
+  In new wt:        `source "$(erk br co --new-slot --for-plan 8662 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --new-slot --for-plan 8662 --script)" &amp;&amp; erk implement -d`
+  In plan br:       `source "$(erk br co --for-plan 8662 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --for-plan 8662 --script)" &amp;&amp; erk implement -d`
+
+Checkout plan #8662:
+  In new wt:  `erk br co --new-slot --for-plan 8662`
+  In plan br: `erk br co --for-plan 8662`
+
+Dispatch to queue: `erk pr dispatch 8662`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="422" cache_read_input_tokens="99388" output_tokens="330" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 422, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>

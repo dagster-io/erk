@@ -1,0 +1,1149 @@
+<session>
+  <meta branch="plnd/add-submit-progress-indica-03-03-0551" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 12. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="c9607040-c25a-4244-84dc-9d5bf9bcbe25" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="c9607040-c25a-4244-84dc-9d5bf9bcbe25" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="c9607040-c25a-4244-84dc-9d5bf9bcbe25" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="c9607040-c25a-4244-84dc-9d5bf9bcbe25" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**CRITICAL**: Never delete the impl directory - leave for user review (no auto-commit).
+
+### Step 12: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 13: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement` which is the plan implementation workflow. Let me follow the steps outlined in the command.
+
+First, I need to check the current state. The branch is `plnd/add-submit-progress-indica-03-03-0551` which looks like a plan branch. Let me run Step 1 to set up the implementation.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="13130" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13130}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation from the current plan branch...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="13130" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13130}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Uo2h6jCMh1wgjfYsKQNAg7">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Run setup-impl to auto-detect plan from branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="13130" cache_read_input_tokens="19113" output_tokens="244" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13130, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Uo2h6jCMh1wgjfYsKQNAg7">
+Found existing impl dir for plan #8662, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/.erk/impl-context/plnd--add-submit-progress-indica-03-03-0551", "plan_number": 8662, "plan_url": "https://github.com/dagster-io/erk/pull/8662", "branch": "plnd/add-submit-progress-indica-03-03-0551", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8662, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Good, impl directory is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="421" cache_read_input_tokens="32243" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 421}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015DQpTxgGueg8Lp3wEkvesy">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/.erk/impl-context/plnd--add-submit-progress-indica-03-03-0551/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="421" cache_read_input_tokens="32243" output_tokens="122" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 421, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015DQpTxgGueg8Lp3wEkvesy">
+     1→# Add Progress Indicator During PR Description Generation
+     2→
+     3→## Context
+     4→
+     5→During `erk pr submit` Phase 4 ("Generating PR description") and `erk pr rewrite` Phase 3, the `execute_prompt()` call to Claude CLI blocks for 6-120 seconds with zero visible output, making the command appear hung. The user sees "Analyzing changes with Claude..." then silence until completion.
+     6→
+     7→## Approach
+     8→
+     9→Modify `CommitMessageGenerator.generate()` to run `execute_prompt()` in a background thread, yielding periodic `ProgressEvent` with elapsed time while waiting. This is a single-file change — both `pr submit` and `pr rewrite` consume the generator through `run_commit_message_generation()` which already renders `ProgressEvent` objects.
+    10→
+    11→### Output before:
+    12→```
+    13→   Analyzing changes with Claude...
+    14→   [silence for 6+ seconds]
+    15→   PR description generated
+    16→```
+    17→
+    18→### Output after:
+    19→```
+    20→   Analyzing changes with Claude...
+    21→   Still waiting... (3s)
+    22→   Still waiting... (6s)
+    23→   PR description generated
+    24→```
+    25→
+    26→## Changes
+    27→
+    28→### `src/erk/core/commit_message_generator.py` (sole file modified)
+    29→
+    30→1. **Add imports**: `import threading` and `import time`
+
+... [21 lines omitted] ...
+
+    34→   - Define inner `_run_prompt()` that captures result/exception into holder lists
+    37→   - After thread completes: LBYL check for errors/empty results, then continue with existing result-handling code
+  </tool_result>
+  <thinking>Now let me understand the plan:
+
+1. Single file change to `src/erk/core/commit_message_generator.py`
+2. Add threading to make `execute_prompt()` non-blocking
+3. Yield `ProgressEvent` with elapsed time while waiting
+4. No other files need changes
+
+Let me read the source file first to understand the current implementation.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="982" cache_read_input_tokens="32664" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 982}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the source file and understand the current implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="982" cache_read_input_tokens="32664" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 982}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015oCy7WtzkxZAnwdUtJAjRG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/core/commit_message_generator.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="982" cache_read_input_tokens="32664" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 982}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015oCy7WtzkxZAnwdUtJAjRG">
+     1→"""Commit message generation via Claude CLI.
+     2→
+     3→This module provides commit message generation for PR submissions,
+     4→using Claude CLI to analyze diffs and generate descriptive messages.
+     5→
+     6→The commit message prompt is loaded from the shared prompt file at:
+     7→packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md
+     8→"""
+     9→
+    10→from __future__ import annotations
+    11→
+    12→from collections.abc import Generator
+    13→from dataclasses import dataclass
+    14→from pathlib import Path
+    15→from typing import TYPE_CHECKING
+    16→
+    17→from erk.core.prompt_executor import PromptExecutor
+    18→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+    19→from erk_shared.gateway.gt.prompts import get_commit_message_prompt
+    20→
+    21→if TYPE_CHECKING:
+    22→    from erk.core.plan_context_provider import PlanContext
+    23→
+    24→# Feature flag: Use --system-prompt to replace Claude Code's default system prompt
+    25→# When True: More deterministic, no Claude Code behaviors (passes system prompt separately)
+    26→# When False: Legacy behavior (system prompt concatenated with user prompt)
+    27→USE_SYSTEM_PROMPT_REPLACEMENT = True
+    28→
+    29→
+    30→@dataclass(frozen=True)
+
+... [317 lines omitted] ...
+
+    59→        error_message: Error description if generation failed
+    65→    error_message: str | None
+   108→                    error_message=f"Diff file not found: {request.diff_file}",
+   121→                    error_message="Diff file is empty",
+   175→                    error_message=result.error or "Claude CLI execution failed",
+   189→                error_message=None,
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01QtcE16g4Bi84qinDMgAgNR">
+    <param name="pattern">ProgressEvent</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/core</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="982" cache_read_input_tokens="32664" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 982}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QtcE16g4Bi84qinDMgAgNR">
+src/erk/core/commit_message_generator.py:18:from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+src/erk/core/commit_message_generator.py:87:    ) -&gt; Generator[ProgressEvent | CompletionEvent[CommitMessageResult]]:
+src/erk/core/commit_message_generator.py:97:            ProgressEvent for status updates
+src/erk/core/commit_message_generator.py:101:        yield ProgressEvent("Reading diff file...")
+src/erk/core/commit_message_generator.py:127:        yield ProgressEvent(f"Diff loaded ({diff_size:,} chars)", style="success")
+src/erk/core/commit_message_generator.py:130:        yield ProgressEvent("Analyzing changes with Claude...")
+src/erk/core/commit_message_generator.py:183:        yield ProgressEvent("PR description generated", style="success")
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GfYXNAXJgyNsJmTjsgwC1U">
+    <param name="pattern">render_progress|run_commit_message_generation</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/commands/pr/shared.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="982" cache_read_input_tokens="32664" output_tokens="483" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 982, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GfYXNAXJgyNsJmTjsgwC1U">
+&lt;tool_use_error&gt;Path does not exist: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/commands/pr/shared.py. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Qu5GwgN9bzseTq63TWCoMQ">
+    <param name="pattern">run_commit_message_generation|render_progress</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4664" cache_read_input_tokens="33646" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4664}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qu5GwgN9bzseTq63TWCoMQ">
+Found 4 files
+src/erk/cli/commands/pr/submit_pipeline.py
+src/erk/cli/commands/pr/shared.py
+src/erk/cli/commands/pr/rewrite_cmd.py
+src/erk/cli/commands/exec/scripts/update_pr_description.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01FM9NSrdBg3mqHU2bjrVdpZ">
+    <param name="pattern">class PromptResult</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/core/prompt_executor.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4664" cache_read_input_tokens="33646" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4664}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FM9NSrdBg3mqHU2bjrVdpZ">
+No matches found
+  </tool_result>
+  <tool_use name="Glob" id="toolu_018GSGnmPewbUCuhuuHcXqRS">
+    <param name="pattern">tests/core/test_commit_message_generator*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4664" cache_read_input_tokens="33646" output_tokens="328" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4664, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018GSGnmPewbUCuhuuHcXqRS">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/tests/core/test_commit_message_generator.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SAv2nKwNe2NXWqJQSUd8wZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/core/prompt_executor.py</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="641" cache_read_input_tokens="38310" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 641}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SAv2nKwNe2NXWqJQSUd8wZ">
+     1→"""Claude CLI prompt execution implementation.
+     2→
+     3→This module provides the ClaudePromptExecutor implementation and re-exports
+     4→ABC and types from erk_shared.core.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import json
+    10→import logging
+    11→import os
+    12→import shutil
+    13→import subprocess
+    14→import sys
+    15→import threading
+    16→from collections.abc import Iterator
+    17→from pathlib import Path
+    18→from typing import TYPE_CHECKING
+    19→
+    20→if TYPE_CHECKING:
+    21→    from erk_shared.context.types import PermissionMode
+    22→
+    23→from erk_shared.context.types import permission_mode_to_claude
+    24→from erk_shared.core.prompt_executor import (
+    25→    CommandResult,  # noqa: F401 - re-exported for erk.cli.output
+    26→    ErrorEvent,
+    27→    ExecutorEvent,
+    28→    IssueNumberEvent,
+    29→    NoOutputEvent,
+    30→    NoTurnsEvent,
+
+... [20 lines omitted] ...
+
+    32→    ProcessErrorEvent,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UajuguEXw8cPbVQgBRPgDs">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/tests/core/test_commit_message_generator.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="641" cache_read_input_tokens="38310" output_tokens="183" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 641, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UajuguEXw8cPbVQgBRPgDs">
+     1→"""Tests for CommitMessageGenerator."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.core.commit_message_generator import (
+     6→    CommitMessageGenerator,
+     7→    CommitMessageRequest,
+     8→    CommitMessageResult,
+     9→)
+    10→from erk.core.plan_context_provider import PlanContext
+    11→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+    12→from tests.fakes.prompt_executor import FakePromptExecutor
+    13→
+    14→
+    15→def _consume_generator(
+    16→    generator: CommitMessageGenerator, request: CommitMessageRequest
+    17→) -&gt; tuple[CommitMessageResult, list[ProgressEvent]]:
+    18→    """Consume generator and return result with collected progress events."""
+    19→    progress_events: list[ProgressEvent] = []
+    20→    result: CommitMessageResult | None = None
+    21→
+    22→    for event in generator.generate(request):
+    23→        if isinstance(event, ProgressEvent):
+    24→            progress_events.append(event)
+    25→        elif isinstance(event, CompletionEvent):
+    26→            result = event.result
+    27→
+    28→    if result is None:
+    29→        raise AssertionError("Generator did not yield CompletionEvent")
+    30→
+
+... [500 lines omitted] ...
+
+    61→    assert result.error_message is None
+   129→    assert result.error_message is not None
+   130→    assert "not found" in result.error_message.lower()
+   155→    assert result.error_message is not None
+   156→    assert "empty" in result.error_message.lower()
+   169→        simulated_prompt_error="Claude CLI execution failed",
+   186→    assert result.error_message is not None
+   187→    assert "failed" in result.error_message.lower()
+  </tool_result>
+  <thinking>Now I have a clear picture of the plan and the code. Let me create the task list and implement.
+
+The plan is straightforward:
+1. Modify `src/erk/core/commit_message_generator.py` to run `execute_prompt()` in a background thread
+2. Yield `ProgressEvent` with elapsed time while waiting
+3. Run existing tests to verify nothing breaks
+
+Let me also check the `PromptResult` type since the plan mentions importing it.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="12212" cache_read_input_tokens="38951" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12212}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture. Let me set up the tasks and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12212" cache_read_input_tokens="38951" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12212}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01WkM51dCSJEsBXGxfGDcn9V">
+    <param name="subject">Add threaded progress indicator to CommitMessageGenerator.generate()</param>
+    <param name="description">Modify the generate() method to run execute_prompt() in a background thread, yielding ProgressEvent with elapsed time every 3 seconds while waiting.</param>
+    <param name="activeForm">Implementing progress indicator</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12212" cache_read_input_tokens="38951" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12212}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WkM51dCSJEsBXGxfGDcn9V">
+Task #1 created successfully: Add threaded progress indicator to CommitMessageGenerator.generate()
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_014inNDPbqF6bqMA7MgVzJCk">
+    <param name="subject">Run existing tests to verify no regressions</param>
+    <param name="description">Run tests/core/test_commit_message_generator.py and tests/commands/pr/ to ensure all existing tests pass unchanged.</param>
+    <param name="activeForm">Running tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12212" cache_read_input_tokens="38951" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12212}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014inNDPbqF6bqMA7MgVzJCk">
+Task #2 created successfully: Run existing tests to verify no regressions
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01JFLkEn9sok6YZx1ZgVnHwX">
+    <param name="command">erk exec impl-signal started --session-id="c9607040-c25a-4244-84dc-9d5bf9bcbe25" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12212" cache_read_input_tokens="38951" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12212}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JFLkEn9sok6YZx1ZgVnHwX">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8662
+}
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_0187P8Ug4d8WXHfYa476qckP">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="623" cache_read_input_tokens="51163" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 623, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0187P8Ug4d8WXHfYa476qckP">
+Updated task #1 status
+  </tool_result>
+  <assistant>Now let me implement the change. The plan calls for replacing the synchronous `execute_prompt()` block (lines 132-167) with a threaded version.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="51786" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01D5iqjwQsk7hghew7F1Y1Qt">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/core/commit_message_generator.py</param>
+    <param name="old_string">from __future__ import annotations
+
+from collections.abc import Generator
+from dataclasses...[truncated 158 chars]...onEvent, ProgressEvent
+from erk_shared.gateway.gt.prompts import get_commit_message_prompt</param>
+    <param name="new_string">from __future__ import annotations
+
+import threading
+import time
+from collections.abc impo...[truncated 201 chars]...onEvent, ProgressEvent
+from erk_shared.gateway.gt.prompts import get_commit_message_prompt</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="51786" output_tokens="362" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 90, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01D5iqjwQsk7hghew7F1Y1Qt">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/core/commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the progress interval constant:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="440" cache_read_input_tokens="51876" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 440}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01QbrV7uPQh14mQr1CRQkGL5">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/core/commit_message_generator.py</param>
+    <param name="old_string"># Feature flag: Use --system-prompt to replace Claude Code's default system prompt</param>
+    <param name="new_string">_PROGRESS_INTERVAL_SECONDS = 3.0
+
+# Feature flag: Use --system-prompt to replace Claude Code's default system prompt</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="440" cache_read_input_tokens="51876" output_tokens="186" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 440, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QbrV7uPQh14mQr1CRQkGL5">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/core/commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <assistant>Now replace the synchronous `execute_prompt()` block with the threaded version:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="264" cache_read_input_tokens="52316" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 264}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015k3tP9FpbRRQbCALXwN5at">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/core/commit_message_generator.py</param>
+    <param name="old_string">        # Execute prompt via Claude CLI
+        if USE_SYSTEM_PROMPT_REPLACEMENT:
+        ...[truncated 1314 chars]...rompt=None,
+                dangerous=False,
+            )
+
+        if not result.success:</param>
+    <param name="new_string">        # Execute prompt via Claude CLI in a background thread so we can
+        # yield p...[truncated 2641 chars]...   )
+            return
+
+        result = result_holder[0]
+
+        if not result.success:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="264" cache_read_input_tokens="52316" output_tokens="1192" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 264, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015k3tP9FpbRRQbCALXwN5at">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/core/commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <assistant>Let me verify the file looks correct:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1251" cache_read_input_tokens="52580" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1251}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BYuiwCpEySVXUkp97VPMNr">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/core/commit_message_generator.py</param>
+    <param name="limit">100</param>
+    <param name="offset">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1251" cache_read_input_tokens="52580" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1251, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BYuiwCpEySVXUkp97VPMNr">
+     1→"""Commit message generation via Claude CLI.
+     2→
+     3→This module provides commit message generation for PR submissions,
+     4→using Claude CLI to analyze diffs and generate descriptive messages.
+     5→
+     6→The commit message prompt is loaded from the shared prompt file at:
+     7→packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md
+     8→"""
+     9→
+    10→from __future__ import annotations
+    11→
+    12→import threading
+    13→import time
+    14→from collections.abc import Generator
+    15→from dataclasses import dataclass
+    16→from pathlib import Path
+    17→from typing import TYPE_CHECKING
+    18→
+    19→from erk.core.prompt_executor import PromptExecutor, PromptResult
+    20→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+    21→from erk_shared.gateway.gt.prompts import get_commit_message_prompt
+    22→
+    23→if TYPE_CHECKING:
+    24→    from erk.core.plan_context_provider import PlanContext
+    25→
+    26→_PROGRESS_INTERVAL_SECONDS = 3.0
+    27→
+    28→# Feature flag: Use --system-prompt to replace Claude Code's default system prompt
+    29→# When True: More deterministic, no Claude Code behaviors (passes system prompt separately)
+    30→# When False: Legacy behavior (system prompt concatenated with user prompt)
+
+... [70 lines omitted] ...
+
+    63→        error_message: Error description if generation failed
+    69→    error_message: str | None
+  </tool_result>
+  <tool_use name="Read" id="toolu_014x4R11kiG3AL7WzwDH5Wco">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/core/commit_message_generator.py</param>
+    <param name="offset">100</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1274" cache_read_input_tokens="53831" output_tokens="127" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1274, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014x4R11kiG3AL7WzwDH5Wco">
+   100→        Yields:
+   101→            ProgressEvent for status updates
+   102→            CompletionEvent with CommitMessageResult on completion
+   103→        """
+   104→        # LBYL: Check diff file exists
+   105→        yield ProgressEvent("Reading diff file...")
+   106→        if not request.diff_file.exists():
+   107→            yield CompletionEvent(
+   108→                CommitMessageResult(
+   109→                    success=False,
+   110→                    title=None,
+   111→                    body=None,
+   112→                    error_message=f"Diff file not found: {request.diff_file}",
+   113→                )
+   114→            )
+   115→            return
+   116→
+   117→        # Read diff content
+   118→        diff_content = request.diff_file.read_text(encoding="utf-8")
+   119→        if not diff_content.strip():
+   120→            yield CompletionEvent(
+   121→                CommitMessageResult(
+   122→                    success=False,
+   123→                    title=None,
+   124→                    body=None,
+   125→                    error_message="Diff file is empty",
+   126→                )
+   127→            )
+   128→            return
+   129→
+
+... [90 lines omitted] ...
+
+   139→        error_holder: list[Exception] = []
+   178→            except Exception as exc:  # noqa: BLE001
+   179→                error_holder.append(exc)
+   191→        if error_holder:
+   197→                    error_message=f"Prompt execution error: {error_holder[0]}",
+   208→                    error_message="Prompt execution returned no result",
+  </tool_result>
+  <assistant>The code looks correct. Now let me mark the first task complete and run tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1505" cache_read_input_tokens="55105" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1505}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_0158UKGbCRKXd4CtiFgWKouz">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1505" cache_read_input_tokens="55105" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1505}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0158UKGbCRKXd4CtiFgWKouz">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01FZ4KA3xfL9z3cPCTtfcnGB">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1505" cache_read_input_tokens="55105" output_tokens="143" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1505, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FZ4KA3xfL9z3cPCTtfcnGB">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01B1wAL55iobCoMtuBhnmYqR">
+    <param name="description">Run commit message generator tests</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run pytest for the commit message generator tests and report results:
+
+```
+uv run pytest tests/core/test_commit_message_generator.py -v
+```</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="56610" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 216}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Rq87Wh8rWruyvN5Mv4dYsw">
+    <param name="description">Run PR command tests</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run pytest for the PR command tests and report results:
+
+```
+uv run pytest tests/commands/pr/ -v
+```</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="56610" output_tokens="232" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 216, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01B1wAL55iobCoMtuBhnmYqR">
+pytest passed: 15 tests passed in 0.51s
+
+All tests in the commit message generator test suite are passing.
+agentId: af2f28f62cae54ab7 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13641
+tool_uses: 1
+duration_ms: 3413&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_01Rq87Wh8rWruyvN5Mv4dYsw">
+pytest passed: 227 tests in the PR command suite passed in 1.15 seconds. All tests across the PR command modules completed successfully.
+agentId: ae743087bfd21cfff (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14080
+tool_uses: 1
+duration_ms: 3649&lt;/usage&gt;
+  </tool_result>
+  <assistant>All tests pass. Let me mark the test task complete and proceed with final steps.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="471" cache_read_input_tokens="56826" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 471}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01JDRGaNmYtihznZSRqMQXxg">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="471" cache_read_input_tokens="56826" output_tokens="88" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 471, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JDRGaNmYtihznZSRqMQXxg">
+Updated task #2 status
+  </tool_result>
+  <assistant>All tests pass (15 commit message generator tests + 227 PR command tests). Now let me signal completion and submit.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="106" cache_read_input_tokens="57297" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 106}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LCTBQLq7c85FqagrK5ybwR">
+    <param name="command">erk exec impl-signal ended --session-id="c9607040-c25a-4244-84dc-9d5bf9bcbe25" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="106" cache_read_input_tokens="57297" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 106}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013xTmN8j2usVhvZrwGJt8pY">
+    <param name="command">erk exec upload-impl-session --session-id="c9607040-c25a-4244-84dc-9d5bf9bcbe25" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="106" cache_read_input_tokens="57297" output_tokens="242" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 106, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LCTBQLq7c85FqagrK5ybwR">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8662
+}
+  </tool_result>
+  <tool_result tool="toolu_013xTmN8j2usVhvZrwGJt8pY">
+{"uploaded": true, "plan_id": 8662}
+  </tool_result>
+  <assistant>Now let me check for CI instructions and run CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="342" cache_read_input_tokens="57403" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 342}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UGrghz9As8ng3mhEmFmENL">
+    <param name="command">test -f /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/.erk/prompt-hooks/post-plan-implement-ci.md &amp;&amp; echo "exists" || echo "not found"</param>
+    <param name="description">Check for post-plan-implement CI hook</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="342" cache_read_input_tokens="57403" output_tokens="145" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 342, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UGrghz9As8ng3mhEmFmENL">
+exists
+  </tool_result>
+  <tool_use name="Read" id="toolu_01THRs2PEioLvMi95eiiy8jT">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="57745" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 158, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01THRs2PEioLvMi95eiiy8jT">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01HRS4zcbNoGAQyjcZW9M5Ta">
+    <param name="skill">ci-iteration</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="57903" output_tokens="54" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 163, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HRS4zcbNoGAQyjcZW9M5Ta">
+Launching skill: ci-iteration
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/.claude/skills/ci-iteration
+
+# CI Iteration
+
+## Overview
+
+Run the specified CI target and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
+
+## Sub-Agent Policy
+
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  &lt;- MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+**FORBIDDEN**:
+
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
+- Giving sub-agents prompts like "fix issues" or "iterate until passing"
+
+**REQUIRED**:
+
+- Sub-agents run ONE command and report results
+- Parent agent decides what to fix based on reports
+
+## Core Workflow
+
+### 1. Initial Run
+
+Use the devrun agent to run the specified make target from the repository root:
+
+```
+Task tool with:
+- subagent_type: devrun
+- description: "Run [make target] from repo root"
+- prompt: "Change to repository root and execute: [make target]"
+```
+
+### 2. Parse Failures
+
+Analyze the output to identify which check(s) failed:
+
+- **Ruff lint failures**: "ruff check" errors
+- **Format failures**: "ruff format --check" or files needing reformatting
+- **Prettier failures**: Markdown files needing formatting
+- **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
+- **ty failures**: Type errors with file paths and line numbers
+- **Test failures**: pytest failures with test names and assertion errors
+
+### 3. Apply Targeted Fixes
+
+Based on failure type, apply appropriate fixes:
+
+| Failure Type | Fix Command                                 |
+| ------------ | ------------------------------------------- |
+| Ruff lint    | `make fix` via devrun                       |
+| Ruff format  | `make format` via devrun                    |
+| Prettier     | `make prettier` via devrun                  |
+| Sync-Kit     | `erk sync` directly                         |
+| MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
+| ty           | Edit files to fix type annotations          |
+| Tests        | Read and edit source/test files             |
+
+### 4. Verify and Repeat
+
+After applying fixes, run the make target again via devrun. Continue the cycle: run -&gt; identify failures -&gt; fix -&gt; verify.
+
+## Iteration Control
+
+**Safety Limits:**
+
+- **Maximum iterations**: 10 attempts
+- **Stuck detection**: If the same error appears 3 times in a row, stop
+- **Progress tracking**: Use TodoWrite to show iteration progress
+
+## Progress Reporting
+
+Use TodoWrite to track progress:
+
+```
+Iteration 1: Fixing lint errors
+Iteration 2: Fixing format errors
+Iteration 3: Fixing type errors in src/erk/cli/commands/switch.py
+Iteration 4: All checks passed
+```
+
+## When to Stop
+
+**SUCCESS**: Stop when the make target exits with code 0 (all checks passed)
+
+**STUCK**: Stop and report to user if:
+
+1. You've completed 10 iterations without success
+2. The same error persists after 3 fix attempts
+3. You encounter an error you cannot automatically fix
+
+## Reporting Formats
+
+### Success Format
+
+```markdown
+## Finalization Status: SUCCESS
+
+All CI checks passed after N iteration(s):
+
+(check) **Lint (ruff check)**: PASSED
+
+(check) **Format (ruff format --check)**: PASSED
+
+(check) **Prettier**: PASSED
+
+(check) **AGENTS.md Standard (md-check)**: PASSED
+
+(check) **ty**: PASSED
+
+(check) **Tests**: PASSED
+
+(check) **Sync-Kit (erk check)**: PASSED
+
+The code is ready for commit/PR.
+```
+
+**IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
+
+### Stuck Format
+
+```markdown
+## Finalization Status: STUCK
+
+I was unable to resolve the following issue after N attempts:
+
+**Check**: [lint/format/prettier/md-check/ty/test]
+
+**Error**:
+[Exact error message]
+
+**File**: [file path if applicable]
+
+**Attempted Fixes**:
+
+1. [What you tried first]
+2. [What you tried second]
+3. [What you tried third]
+
+**Next Steps**:
+[Suggest what needs to be done manually]
+```
+
+## Guidelines
+
+1. **Be systematic**: Fix one type of error at a time
+2. **Run full CI**: Always run the full make target, not individual checks
+3. **Use devrun agent**: Always use the Task tool with devrun agent for ALL make commands
+4. **Run from repo root**: Always ensure make commands execute from repository root
+5. **Track progress**: Use TodoWrite for every iteration
+6. **Don't guess**: Read files before making changes
+7. **Follow standards**: Adhere to AGENTS.md coding standards
+8. **Fail gracefully**: Report clearly when stuck
+9. **Be efficient**: Use targeted fixes (don't reformat everything for one lint error)
+
+## Example Flow
+
+```
+Iteration 1:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 5 lint errors, 2 files need formatting
+- Fix: Use Task tool with devrun agent to run make fix, then make format from repo root
+- Result: 3 lint errors remain
+
+Iteration 2:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 3 lint errors (imports)
+- Fix: Edit files to fix import issues
+- Result: All lint/format pass, 2 type errors
+
+Iteration 3:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 2 ty errors in switch.py:45 and switch.py:67
+- Fix: Add type annotations
+- Result: All checks pass
+
+SUCCESS
+```
+
+## Important Reminders
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>
+
+Let me run fast-ci to validate the changes.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1699" cache_read_input_tokens="58066" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1699}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01NzvjdmdUfFbBfHnizuHJZK">
+    <param name="description">Run fast-ci from repo root</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Change to repository root /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63 and execute: make fast-ci</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1699" cache_read_input_tokens="58066" output_tokens="146" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1699, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NzvjdmdUfFbBfHnizuHJZK">
+The `make fast-ci` command failed with exit code 2 due to a type checking error in the ty (type checker). Here's the summary:
+
+**Passing Checks:**
+- Lint: All checks passed
+- Format check: 1635 files already formatted
+- Prettier check: All matched files use Prettier code style
+- Markdown check: AGENTS.md and CLAUDE.md files properly paired
+- Exec reference check: OK
+
+**Type Checking (ty) - FAILED:**
+Multiple `invalid-argument-type` errors in `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/core/commit_message_generator.py` at line 177:
+
+```python
+result_holder.append(self._executor.execute_prompt(**prompt_args))
+```
+
+The issue is that `prompt_args` contains values of type `str | Unknown | None | Path | bool`, but the `execute_prompt` method expects:
+- `prompt`: `str`
+- `tools`: `list[str] | None`
+- `cwd`: `Path | None`
+- `system_prompt`: `str | None`
+- `dangerous`: `bool`
+
+The unpacking of `prompt_args` is passing incompatible types to these parameters.
+
+**Test Results - PASSED:**
+- Main tests: 5552 passed in 11.03s
+- erk-dev tests: 136 passed in 2.68s
+- erk-statusline tests: 115 passed in 0.67s
+- erkbot tests: 114 passed in 2.71s
+
+... [6 lines omitted] ...
+
+The type checking failure is blocking the CI, even though all tests pass.
+  </tool_result>
+  <thinking>The type checker doesn't like the `**prompt_args` unpacking because the `dict()` constructor creates `dict[str, str | None | Path | bool | list[str] | None]` which loses the individual type information. I need to avoid using `**kwargs` and instead call `execute_prompt` directly in both branches, but still run it in the thread. Let me restructure the code to avoid the dict unpacking.
+
+The simplest fix is to not use a dict at all, and instead call execute_prompt directly inside the thread function for each branch.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="608" cache_read_input_tokens="59765" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 608}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The type checker doesn't like `**prompt_args` since the dict loses type specificity. Let me fix this by calling `execute_prompt` directly in each branch instead of using dict unpacking.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="608" cache_read_input_tokens="59765" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 608}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01H6aj86fJxaAUWYG6TKQKKV">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/core/commit_message_generator.py</param>
+    <param name="old_string">        # Execute prompt via Claude CLI in a background thread so we can
+        # yield p...[truncated 1534 chars]...         except Exception as exc:  # noqa: BLE001
+                error_holder.append(exc)</param>
+    <param name="new_string">        # Execute prompt via Claude CLI in a background thread so we can
+        # yield p...[truncated 1914 chars]...         except Exception as exc:  # noqa: BLE001
+                error_holder.append(exc)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="608" cache_read_input_tokens="59765" output_tokens="1177" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 608, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H6aj86fJxaAUWYG6TKQKKV">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63/src/erk/core/commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <assistant>Now re-run CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1365" cache_read_input_tokens="60373" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1365}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01NZ9YbuTXZBjHVXzNU2Xf46">
+    <param name="description">Run fast-ci after type fix</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Change to repository root /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-63 and execute: make fast-ci</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1365" cache_read_input_tokens="60373" output_tokens="140" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1365, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NZ9YbuTXZBjHVXzNU2Xf46">
+make passed: All CI checks completed successfully
+
+**Summary:**
+- **Lint**: All checks passed
+- **Format Check**: 1635 files already formatted
+- **Prettier**: All files use correct code style
+- **Markdown**: All CLAUDE.md and AGENTS.md files properly paired (0 violations)
+- **Exec Reference**: Up to date
+- **Type Checking (ty)**: All checks passed
+- **Unit Tests**:
+  - erk: 5552 passed in 9.21s
+  - erk-dev: 136 passed in 5.59s
+  - erk-statusline: 115 passed in 1.07s
+  - erkbot: 114 passed in 1.11s
+
+All CI stages passed with no failures.
+agentId: ace1859ae068a2f33 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14584
+tool_uses: 1
+duration_ms: 29451&lt;/usage&gt;
+  </tool_result>
+  <assistant>All CI checks pass. Let me submit the PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="386" cache_read_input_tokens="61738" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 386}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0144yf3G9PKQ2bw9bkYj7S7N">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="386" cache_read_input_tokens="61738" output_tokens="135" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 386, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0144yf3G9PKQ2bw9bkYj7S7N">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015CE1sMCMcYKigRh94UHC59">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal lifecycle transition to submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="45658" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 45658}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MG3Y9RRARrJYfixEVDRnd6">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="45658" cache_read_input_tokens="16613" output_tokens="159" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 45658, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015CE1sMCMcYKigRh94UHC59">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8662
+}
+  </tool_result>
+  <tool_result tool="toolu_01MG3Y9RRARrJYfixEVDRnd6">
+
+  </tool_result>
+  <assistant>Plan execution complete.
+
+**Summary**: Modified `src/erk/core/commit_message_generator.py` to run `execute_prompt()` in a background thread during PR description generation. While the prompt executes, the generator now yields `ProgressEvent("Still waiting... (Ns)")` every 3 seconds, so `erk pr submit` and `erk pr rewrite` no longer appear hung during the 6-120 second Claude CLI call.
+
+**Changes made (single file)**:
+- Added `threading` and `time` imports, plus `PromptResult` type import
+- Added `_PROGRESS_INTERVAL_SECONDS = 3.0` constant
+- Replaced synchronous `execute_prompt()` call with a threaded version that yields periodic progress events
+
+**Verification**: All 5,917 tests pass across all packages, plus lint/format/type checks clean.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="252" cache_read_input_tokens="62271" output_tokens="204" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 252, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+</session>
