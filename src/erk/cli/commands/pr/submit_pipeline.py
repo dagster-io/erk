@@ -194,15 +194,10 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
 def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
     """Remove .erk/impl-context/ if present and git-tracked.
 
-    Skipped for plan branches (plnd/*) where impl-context IS the PR content.
-
     Inserted after prepare_state (which discovers plan_id) and before commit_wip
     (which adds implementation changes). The cleanup commit is local-only; the
     push happens later in push_and_create_pr.
     """
-    if state.branch_name.startswith(PLANNED_PR_TITLE_PREFIX):
-        return state
-
     if not impl_context_exists(state.repo_root):
         return state
 

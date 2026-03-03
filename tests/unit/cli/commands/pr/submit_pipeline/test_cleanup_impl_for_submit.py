@@ -70,8 +70,8 @@ def test_noop_when_not_tracked(tmp_path: Path) -> None:
     assert impl_dir.exists()
 
 
-def test_noop_for_plan_branch(tmp_path: Path) -> None:
-    """Plan branches (plnd/*) keep .erk/impl-context/ — it IS their PR content."""
+def test_cleans_up_plan_branch(tmp_path: Path) -> None:
+    """Plan branches (plnd/*) also get .erk/impl-context/ cleaned up on submit."""
     impl_dir = tmp_path / ".erk" / "impl-context"
     impl_dir.mkdir(parents=True)
     (impl_dir / "plan.md").write_text("# Plan\n", encoding="utf-8")
@@ -85,9 +85,9 @@ def test_noop_for_plan_branch(tmp_path: Path) -> None:
     result = cleanup_impl_for_submit(ctx, state)
 
     assert isinstance(result, SubmitState)
-    assert result is state
-    assert impl_dir.exists()
-    assert len(fake_git.commits) == 0
+    assert not impl_dir.exists()
+    assert len(fake_git.commits) == 1
+    assert "impl-context" in fake_git.commits[0].message
 
 
 def test_removes_tracked_impl_context(tmp_path: Path) -> None:
