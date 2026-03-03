@@ -1,0 +1,1148 @@
+<session>
+  <meta branch="plnd/ensure-plan-header-dispatc-03-02-1835" />
+  <meta model="claude-opus-4-6" />
+  <user>Implement the following plan:
+
+# Extract generic metadata block primitives
+
+## Context
+
+Renaming `inject_metadata_block_before_footer` to `add_metadata_block` and adding `has_metadata_block` predicate. These are proper primitives for the metadata system. Most changes are already applied mid-implementation.
+
+## Already Done
+
+- `core.py`: Added `add_metadata_block()` and `has_metadata_block()`
+- `planned_pr.py`: Updated imports and usage
+- `entity_store/state.py`: Updated to use `has_metadata_block`
+
+## Remaining Changes
+
+### 1. Update `submit_pipeline.py`
+
+**File:** `src/erk/cli/commands/pr/submit_pipeline.py`
+
+- Add `has_metadata_block` to imports
+- Replace `find_metadata_block(existing_pr_body, "plan-header") is None` with `not has_metadata_block(existing_pr_body, "plan-header")`
+
+### 2. Update test file
+
+**File:** `tests/unit/gateways/github/metadata_blocks/test_block_injection.py`
+
+- Rename all `inject_metadata_block_before_footer` → `add_metadata_block`
+
+## Verification
+
+1. Run `pytest tests/unit/gateways/github/metadata_blocks/`
+2. Run `pytest tests/unit/cli/commands/pr/test_metadata_helpers.py`
+3. Run `make fast-ci`
+
+
+If you need specific details from before exiting plan mode (like exact code snippets, error messages, or content you generated), read the full transcript at: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-61/ab29339c-22f0-4029-97a4-fbffad90be06.jsonl</user>
+  <thinking>Let me implement the remaining changes from the plan. I need to:
+
+1. Update `submit_pipeline.py` - add `has_metadata_block` to imports and replace the `find_metadata_block` usage
+2. Update test file - rename `inject_metadata_block_before_footer` → `add_metadata_block`
+
+Let me read the files first.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="7749" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7749}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll read the files that need changes in parallel.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7749" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7749}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01P5bBViR4Tx3PSfoe6Pcp5A">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/cli/commands/pr/submit_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7749" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7749}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01P5bBViR4Tx3PSfoe6Pcp5A">
+     1→"""Linear pipeline for PR submission.
+     2→
+     3→Replaces the dual-path branching orchestration with a sequence of plain
+     4→functions transforming a frozen SubmitState dataclass.
+     5→
+     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+     7→"""
+     8→
+     9→import dataclasses
+    10→import sys
+    11→import uuid
+    12→from collections.abc import Callable
+    13→from dataclasses import dataclass
+    14→from functools import cache
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.pr.shared import (
+    20→    assemble_pr_body,
+    21→    echo_plan_context_status,
+    22→    maybe_advance_lifecycle_to_impl,
+    23→    recover_plan_header,
+    24→    run_commit_message_generation,
+    25→)
+    26→from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
+    27→from erk.cli.ensure import UserFacingCliError
+    28→from erk.core.commit_message_generator import CommitMessageGenerator
+    29→from erk.core.context import ErkContext
+    30→from erk.core.plan_context_provider import PlanContext, PlanContextProvider
+
+... [1021 lines omitted] ...
+
+    31→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+   114→class SubmitError:
+   115→    """Error result from a pipeline step."""
+   118→    error_type: str
+   127→SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
+   130→def prepare_state(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   143→        return SubmitError(
+   145→            error_type="no_branch",
+   159→        except ValueError as e:
+   160→            return SubmitError(
+   162→                error_type="issue_linkage_mismatch",
+   193→def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   213→def commit_wip(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   223→def capture_existing_pr_body(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   235→def push_and_create_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   250→def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   257→    # but the first submit attempt failed before pushing.
+   271→            return SubmitError(
+   273→                error_type="remote_diverged",
+   303→    except RuntimeError as e:
+   304→        error_str = str(e)
+   305→        if "restack" in error_str.lower():
+   306→            return SubmitError(
+   308→                error_type="graphite_restack_required",
+   317→        return SubmitError(
+   319→            error_type="graphite_submit_failed",
+   320→            message=f"Graphite submit failed: {e}",
+   332→        return SubmitError(
+   334→            error_type="pr_not_found",
+   363→def _core_submit_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   371→        return SubmitError(
+   373→            error_type="github_auth_failed",
+   383→        return SubmitError(
+   385→            error_type="no_commits",
+   403→        if isinstance(pull_result, PullRebaseError):
+   404→            return SubmitError(
+   406→                error_type="rebase_failed",
+   408→                    f"Failed to rebase '{state.branch_name}' on origin.\n"
+   409→                    f"Error: {pull_result.message}\n\n"
+   419→        return SubmitError(
+   421→            error_type="branch_diverged",
+   440→    if isinstance(push_result, PushError):
+   442→            return SubmitError(
+   444→                error_type="branch_diverged",
+   453→        raise UserFacingCliError(push_result.message)
+   463→                return SubmitError(
+   465→                    error_type="parent_branch_no_pr",
+   541→def extract_diff(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   548→        return SubmitError(
+   550→            error_type="no_base_branch",
+   580→def fetch_plan_context(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   599→def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   606→        return SubmitError(
+   608→            error_type="no_diff_file",
+   609→            message="Failed to extract diff for AI analysis",
+   629→        return SubmitError(
+   631→            error_type="ai_generation_failed",
+   632→            message=f"Failed to generate message: {msg_result.error_message}",
+   645→def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   689→    except RuntimeError as e:
+   690→        error_msg = str(e).lower()
+   691→        if "nothing to submit" in error_msg or "no changes" in error_msg:
+   695→        return SubmitError(
+   697→            error_type="graphite_enhance_failed",
+   698→            message=f"Graphite enhancement failed: {e}",
+   715→def finalize_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   722→        return SubmitError(
+   724→            error_type="no_pr_number",
+   791→        except OSError as e:
+   793→                click.echo(click.style(f"   Failed to clean up diff file: {e}", dim=True))
+   837→def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   863→                f"   Warning: Objective #{objective_id} not found, skipping node linking",
+   901→            except ValueError:
+   955→def run_push_and_create_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   960→        except Exception as e:
+   962→            return SubmitError(
+   964→                error_type="unhandled_exception",
+   965→                message=f"Unexpected error in {step_name}: {e}",
+   969→        if isinstance(result, SubmitError):
+   992→def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   993→    """Run the submit pipeline, returning final state or first error."""
+   997→        except Exception as e:
+   999→            return SubmitError(
+  1001→                error_type="unhandled_exception",
+  1002→                message=f"Unexpected error in {step_name}: {e}",
+  1006→        if isinstance(result, SubmitError):
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DAutTg93cf3kNkeW5kv6Cb">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_block_injection.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7749" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7749}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DAutTg93cf3kNkeW5kv6Cb">
+     1→"""Tests for inject_metadata_block_before_footer."""
+     2→
+     3→from erk_shared.gateway.github.metadata.core import inject_metadata_block_before_footer
+     4→
+     5→
+     6→def test_inject_before_footer_separator() -&gt; None:
+     7→    """Block is injected before the footer when body has \\n---\\n separator."""
+     8→    body = "# Plan\n\nContent here\n---\n\nFooter content"
+     9→    block = "&lt;!-- block --&gt;"
+    10→
+    11→    result = inject_metadata_block_before_footer(body, block)
+    12→
+    13→    assert result == "# Plan\n\nContent here\n\n&lt;!-- block --&gt;\n---\n\nFooter content"
+    14→
+    15→
+    16→def test_inject_appended_when_no_footer() -&gt; None:
+    17→    """Block is appended when body has no footer separator."""
+    18→    body = "# Plan\n\nContent here"
+    19→    block = "&lt;!-- block --&gt;"
+    20→
+    21→    result = inject_metadata_block_before_footer(body, block)
+    22→
+    23→    assert result == "# Plan\n\nContent here\n\n&lt;!-- block --&gt;"
+    24→
+    25→
+    26→def test_inject_uses_last_separator() -&gt; None:
+    27→    """When multiple --- separators exist, injection happens before the last one."""
+    28→    body = "# Plan\n---\nMiddle section\n---\n\nFooter"
+    29→    block = "&lt;!-- block --&gt;"
+    30→
+
+... [11 lines omitted] ...
+  </tool_result>
+  <thinking>Let me first check the current state of core.py to see what's already been done.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="22959" cache_read_input_tokens="26862" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 22959}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me also check what's already been done in `core.py`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="22959" cache_read_input_tokens="26862" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 22959}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RSZbnen9engCiMsqecMhWj">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="22959" cache_read_input_tokens="26862" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 22959}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RSZbnen9engCiMsqecMhWj">
+     1→"""Core operations for creating, rendering, and parsing metadata blocks."""
+     2→
+     3→import logging
+     4→import re
+     5→from typing import Any
+     6→
+     7→import yaml
+     8→
+     9→from erk_shared.gateway.github.metadata.registry import BlockCategory, get_block_type
+    10→from erk_shared.gateway.github.metadata.schemas import (
+    11→    ImplementationStatusSchema,
+    12→    ObjectiveHeaderSchema,
+    13→    PlanSchema,
+    14→    SubmissionQueuedSchema,
+    15→    WorkflowStartedSchema,
+    16→    WorktreeCreationSchema,
+    17→)
+    18→from erk_shared.gateway.github.metadata.types import (
+    19→    MetadataBlock,
+    20→    MetadataBlockError,
+    21→    MetadataBlockSchema,
+    22→    MetadataParseResult,
+    23→    RawMetadataBlock,
+    24→)
+    25→from erk_shared.output.next_steps import format_next_steps_markdown
+    26→
+    27→logger = logging.getLogger(__name__)
+    28→
+    29→
+    30→def create_metadata_block(
+
+... [859 lines omitted] ...
+
+    48→        ValueError: If schema validation fails
+    61→    &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    81→    return f"""&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   158→        status: Current status (pending, in_progress, complete, failed)
+   376→    &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   387→        raise ValueError("plan-body block must have 'content' field")
+   391→    return f"""&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   533→        ValueError: If body format is invalid or YAML parsing fails
+   544→        raise ValueError("Body does not match expected &lt;details&gt; structure")
+   548→    # Parse YAML (strict - raises on error)
+   551→    except yaml.YAMLError as e:
+   552→        raise ValueError(f"Failed to parse YAML content: {e}") from e
+   555→        raise ValueError(f"YAML content is not a dict, got {type(data).__name__}")
+   568→    Errors are collected in the result rather than logged silently.
+   574→        MetadataParseResult with parsed blocks, content blocks, and any errors
+   577→    errors: list[MetadataBlockError] = []
+   596→        except ValueError as e:
+   597→            errors.append(MetadataBlockError(key=raw_block.key, message=str(e)))
+   602→        errors=tuple(errors),
+   685→        ValueError: If block not found
+   693→        rf"(?:&lt;!-- WARNING: Machine-generated\. Manual edits may break erk tooling\. --&gt;\n)*"
+   700→        raise ValueError(f"Metadata block '{key}' not found in body")
+   768→    &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   778→    return f"""&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   873→        ValueError: If objective-header block not found or invalid
+   877→        raise ValueError("objective-header block not found in issue body")
+  </tool_result>
+  <thinking>Now I have a clear picture. Let me make the two remaining changes:
+
+1. In `submit_pipeline.py` line 741: Replace `find_metadata_block(existing_pr_body, "plan-header") is None` with `not has_metadata_block(existing_pr_body, "plan-header")`, and add `has_metadata_block` to the imports.
+
+2. In `test_block_injection.py`: Rename all `inject_metadata_block_before_footer` → `add_metadata_block`.
+
+Let me also check if there's still an `inject_metadata_block_before_footer` in core.py or if it's been removed already.
+
+
+I can see that core.py has `add_metadata_block` at line 705 and the old function name is gone, so I'm ready to proceed with the edits.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="10172" cache_read_input_tokens="49821" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10172}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I can see what needs to be done. Let me make both changes in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10172" cache_read_input_tokens="49821" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10172}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014Pm17K2tHmHWFzBGSo6gXk">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">from erk_shared.gateway.github.metadata.core import (
+    extract_metadata_value,
+    extract_raw_metadata_blocks,
+    find_metadata_block,
+    replace_metadata_block_in_body,
+)</param>
+    <param name="new_string">from erk_shared.gateway.github.metadata.core import (
+    extract_metadata_value,
+    extract_raw_metadata_blocks,
+    has_metadata_block,
+    replace_metadata_block_in_body,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10172" cache_read_input_tokens="49821" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10172}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014Pm17K2tHmHWFzBGSo6gXk">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018UQaXxN6Yd7Uue4zsPtC8z">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">    header_missing = find_metadata_block(existing_pr_body, "plan-header") is None</param>
+    <param name="new_string">    header_missing = not has_metadata_block(existing_pr_body, "plan-header")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10172" cache_read_input_tokens="49821" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10172}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018UQaXxN6Yd7Uue4zsPtC8z">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01HqtM6dFdf6qGbU4Q3MpXHi">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_block_injection.py</param>
+    <param name="old_string">"""Tests for inject_metadata_block_before_footer."""
+
+from erk_shared.gateway.github.metadata.core import inject_metadata_block_before_footer</param>
+    <param name="new_string">"""Tests for add_metadata_block."""
+
+from erk_shared.gateway.github.metadata.core import add_metadata_block</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10172" cache_read_input_tokens="49821" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10172}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HqtM6dFdf6qGbU4Q3MpXHi">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_block_injection.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01MZFLiFDyFYkhEkATsSyy3C">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_block_injection.py</param>
+    <param name="old_string">    result = inject_metadata_block_before_footer(body, block)</param>
+    <param name="new_string">    result = add_metadata_block(body, block)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10172" cache_read_input_tokens="49821" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10172}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MZFLiFDyFYkhEkATsSyy3C">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_block_injection.py has been updated. All occurrences of '    result = inject_metadata_block_before_footer(body, block)' were successfully replaced with '    result = add_metadata_block(body, block)'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BUY7fwbszuTZFFJzEB8YGk">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_block_injection.py</param>
+    <param name="old_string">    result = inject_metadata_block_before_footer("", "&lt;!-- block --&gt;")</param>
+    <param name="new_string">    result = add_metadata_block("", "&lt;!-- block --&gt;")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10172" cache_read_input_tokens="49821" output_tokens="1143" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10172, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BUY7fwbszuTZFFJzEB8YGk">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/tests/unit/gateways/github/metadata_blocks/test_block_injection.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the verification tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1758" cache_read_input_tokens="59993" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1758}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_015D7kvtHsth8kjNNuv299AC">
+    <param name="description">Run metadata block tests</param>
+    <param name="prompt">Run these two test commands and report results:
+1. `uv run pytest tests/unit/gateways/gith...[truncated 26 chars]...s/unit/cli/commands/pr/test_metadata_helpers.py -v`
+
+Just report pass/fail and any errors.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1758" cache_read_input_tokens="59993" output_tokens="172" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1758, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015D7kvtHsth8kjNNuv299AC">
+Both test suites passed:
+
+**Test 1: `uv run pytest tests/unit/gateways/github/metadata_blocks/ -v`**
+- **Status: PASSED**
+- 147 tests passed in 0.09s
+- All test files in the metadata_blocks directory passed successfully
+
+**Test 2: `uv run pytest tests/unit/cli/commands/pr/test_metadata_helpers.py -v`**
+- **Status: PASSED**
+- 7 tests passed in 0.49s
+- All metadata helper tests passed successfully
+agentId: a8019a8411e29a3d6 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14758
+tool_uses: 2
+duration_ms: 15547&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 154 tests pass. Now let me run `make fast-ci`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="374" cache_read_input_tokens="61751" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 374}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01TMRDLGrqkmCBm6wbR8JeZh">
+    <param name="description">Run make fast-ci</param>
+    <param name="prompt">Run `make fast-ci` and report the results. Just report pass/fail and any errors.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="374" cache_read_input_tokens="61751" output_tokens="131" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 374, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TMRDLGrqkmCBm6wbR8JeZh">
+**make fast-ci PASSED**
+
+All checks passed successfully:
+- Lint: All checks passed
+- Format check: 1634 files already formatted
+- Prettier: All files properly formatted
+- Markdown: All CLAUDE.md/AGENTS.md files valid
+- Exec reference: Up to date
+- Type checking (ty): All checks passed
+- Unit tests: 5536 passed (erk) + 136 passed (erk-dev) + 115 passed (erk-statusline) + 114 passed (erkbot)
+
+Total: 5901 tests passed, 0 failures.
+agentId: a9045550fe3fe3a54 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14536
+tool_uses: 1
+duration_ms: 32176&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 5901 tests pass. The plan changes are complete:
+
+1. **`submit_pipeline.py`**: Replaced `find_metadata_block` import with `has_metadata_block`, and changed `find_metadata_block(...) is None` to `not has_metadata_block(...)`
+2. **`test_block_injection.py`**: Renamed all `inject_metadata_block_before_footer` references to `add_metadata_block`
+
+---
+
+Now regarding your follow-up about centralizing and cataloging metadata block types — I see there's already a `registry.py` with `BlockCategory` and `get_block_type`. Let me look at the current state of hardcoded block key strings across the codebase.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="339" cache_read_input_tokens="62125" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 339}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018JUxSzPW2vuHtMajBW3NRi">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/packages/erk-shared/src/erk_shared/gateway/github/metadata/registry.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="339" cache_read_input_tokens="62125" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 339}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018JUxSzPW2vuHtMajBW3NRi">
+     1→"""Block type registry for metadata block categorization.
+     2→
+     3→Provides a central registry of all known metadata block types, categorized
+     4→as either YAML (structured data parsed as YAML) or CONTENT (raw content
+     5→like markdown that should not be YAML-parsed).
+     6→"""
+     7→
+     8→from dataclasses import dataclass
+     9→from enum import Enum
+    10→
+    11→from erk_shared.gateway.github.metadata.schemas import (
+    12→    ImplementationStatusSchema,
+    13→    ObjectiveHeaderSchema,
+    14→    PlanHeaderSchema,
+    15→    PlanRetrySchema,
+    16→    PlanSchema,
+    17→    SubmissionQueuedSchema,
+    18→    WorkflowStartedSchema,
+    19→    WorktreeCreationSchema,
+    20→)
+    21→from erk_shared.gateway.github.metadata.types import MetadataBlockSchema
+    22→
+    23→
+    24→class BlockCategory(Enum):
+    25→    """Category of a metadata block determining how it should be parsed."""
+    26→
+    27→    YAML = "yaml"
+    28→    CONTENT = "content"
+    29→
+    30→
+
+... [139 lines omitted] ...
+  </tool_result>
+  <tool_use name="Agent" id="toolu_015m18ioTUMZSEWe4PMaJCZu">
+    <param name="description">Find hardcoded block key strings</param>
+    <param name="prompt">Search the codebase for hardcoded metadata block key strings used with metadata block func...[truncated 540 chars]...e, the line, and the hardcoded string used. Be thorough — I want to know every usage site.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="339" cache_read_input_tokens="62125" output_tokens="553" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 339, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015m18ioTUMZSEWe4PMaJCZu">
+Perfect! Now I have all the information I need. Let me compile a comprehensive report of all the hardcoded metadata block key strings:
+
+## Summary Report: Hardcoded Metadata Block Key Strings
+
+I've thoroughly searched the codebase for all hardcoded metadata block key strings passed to metadata functions. Here is the complete inventory organized by file:
+
+### **erk-shared/gateway/github/metadata/core.py**
+| Line | Function | String | Usage |
+|------|----------|--------|-------|
+| 656 | extract_metadata_value (docstring example) | `"erk-implementation-status"` | Example in docstring |
+| 817 | find_metadata_block | `"objective-header"` | Extract objective_comment_id |
+| 833 | extract_metadata_value | `"objective-header"` | Extract slug field |
+| 875 | find_metadata_block | `"objective-header"` | Update objective_comment_id |
+| 888 | replace_metadata_block_in_body | `"objective-header"` | Update objective_comment_id |
+
+### **erk-shared/gateway/github/metadata/plan_header.py**
+Lines 380, 399, 414, 434, 450, 466, 494, 511, 535, 552, 576, 593, 619, 637, 649, 681, 701, 713, 741, 758, 770, 786, 802, 818, 834, 865, 883, 895, 911, 927, 943, 977, 996, 1008, 1028, 1055, 1074, 1107, 1127, 1139, 1155, 1171, 1191, 1207, 1226, 1260, 1281, 1305, 1323, 1335, 1358, 1371
+- **Function**: find_metadata_block / replace_metadata_block_in_body
+- **String**: `"plan-header"` (used 56 times)
+
+### **erk-shared/gateway/github/metadata/tripwire_candidates.py**
+| Line | Function | String | Usage |
+|------|----------|--------|-------|
+| 119 | find_metadata_block | `"tripwire-candidates"` (via TRIPWIRE_CANDIDATES_KEY constant) | Extract candidates data |
+
+### **erk-shared/entity_store/state.py**
+Passes `key` parameter dynamically (no hardcoded strings)
+
+### **erk-shared/plan_store/planned_pr.py**
+| Line | Function | String | Usage |
+
+... [89 lines omitted] ...
+  </tool_result>
+  <thinking>Good. Now I have a clear picture of the situation:
+
+1. There's already a `registry.py` with `_BLOCK_TYPE_REGISTRY` that catalogs all block types with their categories and schemas
+2. But the *keys* are still hardcoded strings scattered across ~12 files
+3. The user wants to centralize these into constants
+
+The natural approach is to add string constants to `registry.py` (or a separate `keys.py` / `constants.py`) and then replace all the hardcoded strings with those constants.
+
+Looking at the registry, the keys are:
+- `"plan-header"`
+
+
+- `"plan-body"`
+- `"objective-header"`
+- `"objective-body"`
+- `"objective-roadmap"`
+- `"erk-plan"`
+- `"erk-worktree-creation"`
+- `"erk-implementation-status"`
+- `"workflow-started"`
+- `"submission-queued"`
+- `"plan-retry"`
+- `"impl-started"`
+- `"impl-ended"`
+- `"learn-invoked"`
+- `"tripwire-candidates"`
+- `"planning-session-prompts"`
+- `"dispatch-metadata"` (possibly missing from the registry)
+
+This is a substantial refactor touching a dozen or more files, so I should get into planning mode and have the user sign off on the approach before diving into the implementation work.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4308" cache_read_input_tokens="62464" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4308}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I have a clear picture. There's already a `registry.py` with `_BLOCK_TYPE_REGISTRY` cataloging all block types, but the actual key strings are still hardcoded across ~12 files (56 occurrences of `"plan-header"` alone).
+
+The natural approach: add string constants to the registry module and replace all hardcoded strings. This is a large mechanical refactor across many files. Let me enter plan mode.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4308" cache_read_input_tokens="62464" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4308}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="EnterPlanMode" id="toolu_01RGgj8bbYCW5Wc4RLgHLrtv">
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4308" cache_read_input_tokens="62464" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4308}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RGgj8bbYCW5Wc4RLgHLrtv">
+Entered plan mode. You should now focus on exploring the codebase and designing an implementation approach.
+
+In plan mode, you should:
+1. Thoroughly explore the codebase to understand existing patterns
+2. Identify similar features and architectural approaches
+3. Consider multiple approaches and their trade-offs
+4. Use AskUserQuestion if you need to clarify the approach
+5. Design a concrete implementation strategy
+6. When ready, use ExitPlanMode to present your plan for approval
+
+Remember: DO NOT write or edit any files yet. This is a read-only exploration and planning phase.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Y2dM2R5CQDncDHPUSptYei">
+    <param name="file_path">/Users/schrockn/.claude/plans/shimmying-sleeping-toucan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2062" cache_read_input_tokens="66772" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2062, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Y2dM2R5CQDncDHPUSptYei">
+     1→# Extract generic metadata block primitives
+     2→
+     3→## Context
+     4→
+     5→Renaming `inject_metadata_block_before_footer` to `add_metadata_block` and adding `has_metadata_block` predicate. These are proper primitives for the metadata system. Most changes are already applied mid-implementation.
+     6→
+     7→## Already Done
+     8→
+     9→- `core.py`: Added `add_metadata_block()` and `has_metadata_block()`
+    10→- `planned_pr.py`: Updated imports and usage
+    11→- `entity_store/state.py`: Updated to use `has_metadata_block`
+    12→
+    13→## Remaining Changes
+    14→
+    15→### 1. Update `submit_pipeline.py`
+    16→
+    17→**File:** `src/erk/cli/commands/pr/submit_pipeline.py`
+    18→
+    19→- Add `has_metadata_block` to imports
+    20→- Replace `find_metadata_block(existing_pr_body, "plan-header") is None` with `not has_metadata_block(existing_pr_body, "plan-header")`
+    21→
+    22→### 2. Update test file
+    23→
+    24→**File:** `tests/unit/gateways/github/metadata_blocks/test_block_injection.py`
+    25→
+    26→- Rename all `inject_metadata_block_before_footer` → `add_metadata_block`
+    27→
+    28→## Verification
+    29→
+    30→1. Run `pytest tests/unit/gateways/github/metadata_blocks/`
+
+... [3 lines omitted] ...
+  </tool_result>
+  <thinking>The previous plan was for the rename task which is now done. The new task is about centralizing hardcoded metadata block key strings into constants. Let me explore the codebase more to understand how `tripwire_candidates.py` already handles this (since the explore agent mentioned it uses a `TRIPWIRE_CANDIDATES_KEY` constant), and also understand the schemas' `get_key()` pattern.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="650" cache_read_input_tokens="68834" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 650}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The previous plan is complete. This is a new task. Let me explore the existing patterns for key constants and the schema `get_key()` method.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="650" cache_read_input_tokens="68834" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 650}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01W6wj1NjfjiFyvSTBEUyX9B">
+    <param name="description">Explore metadata key patterns</param>
+    <param name="prompt">I need to understand how metadata block keys are currently managed. Please explore:
+
+1. Lo...[truncated 670 chars]...ER_KEY`, `BLOCK_KEY`, etc.) in the metadata package.
+
+Report what you find for each point.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="650" cache_read_input_tokens="68834" output_tokens="478" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 650, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01W6wj1NjfjiFyvSTBEUyX9B">
+Perfect! Now I have all the information I need. Let me create a comprehensive report.
+
+## Report: Metadata Block Key Management
+
+Based on my exploration of the codebase, here's what I found:
+
+### 1. **Schema Classes and Their `get_key()` Methods**
+
+In `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`, all schema classes return their metadata block keys via `get_key()`:
+
+- **ImplementationStatusSchema** → `"erk-implementation-status"`
+- **WorktreeCreationSchema** → `"erk-worktree-creation"`
+- **PlanSchema** → `"erk-plan"`
+- **SubmissionQueuedSchema** → `"submission-queued"`
+- **WorkflowStartedSchema** → `"workflow-started"`
+- **PlanRetrySchema** → `"plan-retry"`
+- **PlanHeaderSchema** → `"plan-header"`
+- **ObjectiveHeaderSchema** → `"objective-header"`
+
+### 2. **TRIPWIRE_CANDIDATES_KEY Constant**
+
+In `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/packages/erk-shared/src/erk_shared/gateway/github/metadata/tripwire_candidates.py`, line 22:
+
+```python
+TRIPWIRE_CANDIDATES_KEY = "tripwire-candidates"
+```
+
+This constant is used in:
+- `render_tripwire_candidates_comment()` (line 97) - passing to `MetadataBlock(key=TRIPWIRE_CANDIDATES_KEY, ...)`
+- `extract_tripwire_candidates_from_comments()` (line 119) - to find the block in comments
+
+... [65 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a clear picture. The registry already has all the keys cataloged in `_BLOCK_TYPE_REGISTRY`, but there are no importable constants. Let me think about the approach:
+
+**Option A**: Add constants to `registry.py` like `PLAN_HEADER = "plan-header"` and use them in the registry dict + export them
+**Option B**: Create a dedicated `keys.py` module with all the string constants
+**Option C**: Make the `BlockTypeInfo` instances accessible as constants (e.g., `PLAN_HEADER = _BLOCK_TYPE_REGISTRY["plan-header"]`) and access `.key` on them
+
+
+I'm realizing the user wants to centralize the metadata block types and eliminate hardcoded strings throughout the codebase. Looking at the frequency of usage, `"plan-header"` appears around 56 times, making a bulk mechanical rename the most practical solution, though I'd need to use a tool like libcst to handle this at scale.
+
+My approach would be to define string constants in `registry.py` for each block type, use those constants within the registry itself, then systematically replace all hardcoded occurrences across the codebase. For the naming convention, I should follow the existing pattern I see in the codebase to keep things consistent.
+
+Defining the constants...
+
+I'm debating where to place these keys—either in `registry.py` as the central catalog or in a separate `keys.py` module to avoid circular imports. Since keys are just string constants and `registry.py` already serves as the catalog, I think keeping them there makes the most sense without introducing any import issues.
+
+Now I need to decide on scope: should I update all files or focus on the most critical production files and skip test files with inline strings? Given that the user explicitly asked for this, I should go ahead with the full approach. The real challenge is execution—with 56 occurrences of "plan-header" alone, this is a lot of mechanical replacement, but since each file needs both an import added and multiple string literals swapped out, I'll need to handle this with more precision than a simple rename tool would provide.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1848" cache_read_input_tokens="69484" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1848}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1848" cache_read_input_tokens="69484" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1848}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01CwM7aCq7iXDZKhjYgp2PTs">
+    <param name="file_path">/Users/schrockn/.claude/plans/shimmying-sleeping-toucan.md</param>
+    <param name="content"># Centralize metadata block key constants
+
+## Context
+
+Metadata block keys (e.g., `"plan-h...[truncated 3538 chars]...teways/github/metadata_blocks/`
+2. `pytest tests/unit/cli/commands/pr/`
+3. `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1848" cache_read_input_tokens="69484" output_tokens="2602" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1848, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CwM7aCq7iXDZKhjYgp2PTs">
+The file /Users/schrockn/.claude/plans/shimmying-sleeping-toucan.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01Djf8jk2VEgUaS5rdL47zo9">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests'}, {'tool': 'Bash', 'prompt': 'run make fast-ci'}]</param>
+    <param name="plan"># Centralize metadata block key constants
+
+## Context
+
+Metadata block keys (e.g., `"plan-h...[truncated 3538 chars]...teways/github/metadata_blocks/`
+2. `pytest tests/unit/cli/commands/pr/`
+3. `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2722" cache_read_input_tokens="71332" output_tokens="91" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2722, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Djf8jk2VEgUaS5rdL47zo9">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/shimmying-sleeping-toucan.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Centralize metadata block key constants
+Current context: (wt:erk-slot-61) (br:plnd/ensure-plan-header-dispatc-03-02-1835) (pr:#8627)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/ensu"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 9b71200f-f206-473b-a3cb-532e962cc9c9 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+     (no PR tracking - this is for small PR iterations)
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Centralize metadata block key constants
+
+## Context
+
+Metadata block keys (e.g., `"plan-header"`, `"objective-header"`) are hardcoded strings scattered across ~12 production files with ~70+ occurrences. The registry (`registry.py`) already catalogs all block types but doesn't expose importable constants. This creates a maintenance risk — typos in strings are invisible, and discovering valid keys requires reading the registry.
+
+## Approach
+
+Add string constants to `registry.py` alongside the existing `_BLOCK_TYPE_REGISTRY`, then replace all hardcoded strings across the codebase with imports of these constants.
+
+### 1. Add constants to `registry.py`
+
+**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/registry.py`
+
+Add constants following the existing `TRIPWIRE_CANDIDATES_KEY` convention from `tripwire_candidates.py`:
+
+```python
+PLAN_HEADER_KEY = "plan-header"
+PLAN_BODY_KEY = "plan-body"
+OBJECTIVE_HEADER_KEY = "objective-header"
+OBJECTIVE_BODY_KEY = "objective-body"
+OBJECTIVE_ROADMAP_KEY = "objective-roadmap"
+ERK_PLAN_KEY = "erk-plan"
+ERK_WORKTREE_CREATION_KEY = "erk-worktree-creation"
+ERK_IMPLEMENTATION_STATUS_KEY = "erk-implementation-status"
+WORKFLOW_STARTED_KEY = "workflow-started"
+SUBMISSION_QUEUED_KEY = "submission-queued"
+PLAN_RETRY_KEY = "plan-retry"
+IMPL_STARTED_KEY = "impl-started"
+IMPL_ENDED_KEY = "impl-ended"
+LEARN_INVOKED_KEY = "learn-invoked"
+TRIPWIRE_CANDIDATES_KEY = "tripwire-candidates"
+PLANNING_SESSION_PROMPTS_KEY = "planning-session-prompts"
+```
+
+Also update `_BLOCK_TYPE_REGISTRY` to use these constants as both dict keys and in `BlockTypeInfo.key`.
+
+### 2. Update `tripwire_candidates.py` to import from registry
+
+Remove local constant and import from `registry` instead.
+
+### 3. Update `schemas.py` `get_key()` methods
+
+Each schema's `get_key()` returns a hardcoded string. Update to import and return the corresponding constant.
+
+### 4. Replace hardcoded strings in ~14 production files
+
+Key files: `plan_header.py` (~56 uses of `"plan-header"`), `core.py`, `planned_pr.py`, `conversion.py`, `impl_events.py`, `impl_folder.py`, `submit_pipeline.py`, `shared.py`, `check_cmd.py`, etc.
+
+### 5. Update test files
+
+Replace hardcoded key strings in test files with imported constants for consistency.
+
+## Verification
+
+1. `pytest tests/unit/gateways/github/metadata_blocks/`
+2. `pytest tests/unit/cli/commands/pr/`
+3. `make fast-ci`
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="698" cache_read_input_tokens="74054" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 698}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01DD1r5mb9hjuknhDhT7vu9J">
+    <param name="questions">[{'question': '📋 Centralize metadata block key constants\nCurrent context: (wt:erk-slot-61...[truncated 481 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="698" cache_read_input_tokens="74054" output_tokens="1008" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 698, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DD1r5mb9hjuknhDhT7vu9J">
+User has answered your questions: "📋 Centralize metadata block key constants
+Current context: (wt:erk-slot-61) (br:plnd/ensure-plan-header-dispatc-03-02-1835) (pr:#8627)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01176HHKWJxKu1ArX8W4zVNx">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="59266" cache_read_input_tokens="16613" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 59266, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01176HHKWJxKu1ArX8W4zVNx">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="9b71200f-f206-473b-a3cb-532e962cc9c9" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "9b71200f-f206-473b-a3cb-532e962cc9c9" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "9b71200f-f206-473b-a3cb-532e962cc9c9" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "9b71200f-f206-473b-a3cb-532e962cc9c9" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "9b71200f-f206-473b-a3cb-532e962cc9c9" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me execute the plan save steps.
+
+**Step 1: Parse Arguments** — No flags provided, so standalone plan.
+
+**Step 2: Generate Branch Slug** — From title "Centralize metadata block key constants": `centralize-metadata-block-keys`
+
+**Step 3: Generate Plan Summary** — Metadata block keys like "plan-header" and "objective-header" are hardcoded strings scattered across 12+ production files. This plan adds importable constants to the existing registry module and replaces all inline string literals, improving discoverability and preventing typos.
+
+**Step 4: Run Save Command**</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2605" cache_read_input_tokens="75879" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2605}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013K3D2N4gPppxQkRFYiy6q1">
+    <param name="command">erk exec plan-save --format json --session-id="9b71200f-f206-473b-a3cb-532e962cc9c9" --bra...[truncated 219 chars]... and replaces all inline string literals, improving discoverability and preventing typos."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2605" cache_read_input_tokens="75879" output_tokens="366" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2605, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013K3D2N4gPppxQkRFYiy6q1">
+{"success": true, "plan_number": 8634, "plan_url": "https://github.com/dagster-io/erk/pull/8634", "title": "[erk-plan] Centralize metadata block key constants", "branch_name": "plnd/centralize-metadata-block-03-02-1324", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/.erk/scratch/sessions/9b71200f-f206-473b-a3cb-532e962cc9c9/plan_snapshots/000001-baeaf02b"}
+  </tool_result>
+  <assistant>Plan saved. No objective link — skipping Steps 5 and 6.
+
+**Step 5: Push Planning Session**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="732" cache_read_input_tokens="78484" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 732}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BBqkPMko4np3MvhJUkQRkw">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="732" cache_read_input_tokens="78484" output_tokens="113" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 732, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BBqkPMko4np3MvhJUkQRkw">
+SESSION_ID=9b71200f-f206-473b-a3cb-532e962cc9c9
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-61/9b71200f-f206-473b-a3cb-532e962cc9c9.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SpCYVBCxiQeMSojnnEr1mR">
+    <param name="command">erk exec push-session \
+    --session-file "/Users/schrockn/.claude/projects/-Users-schroc...[truncated 122 chars]...\
+    --stage planning \
+    --source local \
+    --plan-id 8634 \
+    2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="220" cache_read_input_tokens="79216" output_tokens="236" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 220, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SpCYVBCxiQeMSojnnEr1mR">
+{"uploaded": true, "plan_id": 8634, "session_branch": "async-learn/8634", "session_id": "9b71200f-f206-473b-a3cb-532e962cc9c9", "stage": "planning", "files": ["planning-9b71200f-f206-473b-a3cb-532e962cc9c9-9b71200f-f206-473b-a3cb-532e962cc9c9.xml"]}
+  </tool_result>
+  <assistant>**Step 7: Display Results**
+
+Plan "Centralize metadata block key constants" saved as draft PR #8634
+URL: https://github.com/dagster-io/erk/pull/8634
+
+Next steps:
+
+View PR: https://github.com/dagster-io/erk/pull/8634
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: `erk br co --for-plan 8634`
+    Implement: `source "$(erk br co --for-plan 8634 --script)" &amp;&amp; erk implement --dangerous`
+
+  New slot:
+    Local: `erk br co --new-slot --for-plan 8634`
+    Implement: `source "$(erk br co --new-slot --for-plan 8634 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8634`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="367" cache_read_input_tokens="79436" output_tokens="254" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 367, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;bash-input&gt;gt pr&lt;/bash-input&gt;</user>
+  <user>&lt;bash-stdout&gt;https://app.graphite.dev/github/pr/dagster-io/erk/8627&lt;/bash-stdout&gt;&lt;bash-stderr&gt;&lt;/bash-stderr&gt;</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
