@@ -447,6 +447,22 @@ wheels = [
 ]
 
 [[package]]
+name = "claude-agent-sdk"
+version = "0.1.45"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "anyio" },
+    { name = "mcp" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/46/e2/c5d5c4743ece496492a930bb75b878c830a9a9878ae3327b2d292647a8fa/claude_agent_sdk-0.1.45.tar.gz", hash = "sha256:97c1e981431b5af1e08c34731906ab8d4a58fe0774a04df0ea9587dcabc85151", size = 62436, upload-time = "2026-03-03T17:21:08.595Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/20/29/a28b6dfac54dfceddaa47e16c2b9cb61cc2ace4b4a1de064ab6d76debcbd/claude_agent_sdk-0.1.45-py3-none-macosx_11_0_arm64.whl", hash = "sha256:26a5cc60c3a394f5b814f6b2f67650819cbcd38c405bbdc11582b3e097b3a770", size = 57761380, upload-time = "2026-03-03T17:20:55.066Z" },
+    { url = "https://files.pythonhosted.org/packages/aa/7c/a803cc6e40de8b13cc822c66fd96c96d88f994983c2622d80cb8b708bb30/claude_agent_sdk-0.1.45-py3-none-manylinux_2_17_aarch64.whl", hash = "sha256:decc741b53e0b2c10a64fd84c15acca1102077d9f99941c54905172cd95160c9", size = 73402101, upload-time = "2026-03-03T17:20:58.604Z" },
+    { url = "https://files.pythonhosted.org/packages/32/51/bdb9832728189673c60c605854c2153e17dce384a64a6dc88cdbb254ce86/claude_agent_sdk-0.1.45-py3-none-manylinux_2_17_x86_64.whl", hash = "sha256:7d48dcf4178c704e4ccbf3f1f4ebf20b3de3f03d0592086c1f3abd16b8ca441e", size = 74091498, upload-time = "2026-03-03T17:21:02.332Z" },
+    { url = "https://files.pythonhosted.org/packages/13/37/02e60d7f93aedc8f63f9404cbf2a48bf5d47c27ccb9c0a0f03c803882fa5/claude_agent_sdk-0.1.45-py3-none-win_amd64.whl", hash = "sha256:d1cf34995109c513d8daabcae7208edc260b553b53462a9ac06a7c40e240a288", size = 75784070, upload-time = "2026-03-03T17:21:05.573Z" },
+]
+
+[[package]]
 name = "click"
 version = "8.3.1"
 source = { registry = "https://pypi.org/simple" }
@@ -719,6 +735,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "claude-agent-sdk" },
     { name = "erk-dev" },
     { name = "libcst" },
     { name = "mkdocs" },
@@ -726,6 +743,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
+    { name = "pytest-timeout" },
     { name = "pytest-xdist" },
     { name = "ruff" },
     { name = "ty" },
@@ -753,6 +771,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "claude-agent-sdk", specifier = ">=0.1.45" },
     { name = "erk-dev", editable = "packages/erk-dev" },
     { name = "libcst", specifier = ">=1.8.6" },
     { name = "mkdocs", specifier = ">=1.6.0" },
@@ -760,6 +779,7 @@ dev = [
     { name = "pytest", specifier = ">=8.0.0" },
     { name = "pytest-asyncio", specifier = ">=0.23.0" },
     { name = "pytest-cov", specifier = ">=5.0.0" },
+    { name = "pytest-timeout", specifier = ">=2.4.0" },
     { name = "pytest-xdist", specifier = ">=3.8.0" },
     { name = "ruff", specifier = ">=0.5.0" },
     { name = "ty", specifier = ">=0.0.1a7" },
@@ -2191,6 +2211,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/5e/f7/c933acc76f5208b3b00089573cf6a2bc26dc80a8aece8f52bb7d6b1855ca/pytest_cov-7.0.0.tar.gz", hash = "sha256:33c97eda2e049a0c5298e91f519302a1334c26ac65c1a483d6206fd458361af1", size = 54328, upload-time = "2025-09-09T10:57:02.113Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ee/49/1377b49de7d0c1ce41292161ea0f721913fa8722c19fb9c1e3aa0367eecb/pytest_cov-7.0.0-py3-none-any.whl", hash = "sha256:3b8e9558b16cc1479da72058bdecf8073661c7f57f7d3c5f22a1c23507f2d861", size = 22424, upload-time = "2025-09-09T10:57:00.695Z" },
+]
+
+[[package]]
+name = "pytest-timeout"
+version = "2.4.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/ac/82/4c9ecabab13363e72d880f2fb504c5f750433b2b6f16e99f4ec21ada284c/pytest_timeout-2.4.0.tar.gz", hash = "sha256:7e68e90b01f9eff71332b25001f85c75495fc4e3a836701876183c4bcfd0540a", size = 17973, upload-time = "2025-05-05T19:44:34.99Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/fa/b6/3127540ecdf1464a00e5a01ee60a1b09175f6913f0644ac748494d9c4b21/pytest_timeout-2.4.0-py3-none-any.whl", hash = "sha256:c42667e5cdadb151aeb5b26d114aff6bdf5a907f176a007a30b940d3d865b5c2", size = 14382, upload-time = "2025-05-05T19:44:33.502Z" },
 ]
 
 [[package]]

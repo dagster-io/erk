@@ -49,6 +49,8 @@ dev = [
     "ty>=0.0.1a7",
     "mkdocs>=1.6.0",
     "mkdocs-material>=9.5.0",
+    "claude-agent-sdk>=0.1.45",
+    "pytest-timeout>=2.4.0",
 ]
 
 [build-system]
@@ -127,6 +129,7 @@ addopts = "-q"
 testpaths = ["tests", "packages/erk-dev/tests", "packages/erk-statusline/tests"]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+markers = ["e2e: end-to-end tests requiring Claude API access"]
 filterwarnings = [
     "ignore:codecs.open\\(\\) is deprecated:DeprecationWarning:frontmatter",
 ]
