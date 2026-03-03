@@ -332,6 +332,56 @@ class TestFindInactiveSlot:
 
         assert result is None
 
+    def test_reuses_slot_with_only_untracked_files(self, tmp_path: Path) -> None:
+        """Slot with only untracked files (e.g. .erk/bin/) should be reused."""
+        repo_root = tmp_path / "repo"
+        wt1_path = tmp_path / "worktrees" / "erk-slot-01"
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=wt1_path, branch="feature-a"),
+                ]
+            },
+            # Only untracked files — no staged or modified
+            file_statuses={wt1_path: ([], [], [".erk/bin/activate"])},
+        )
+        state = PoolState.test(pool_size=4)
+
+        result = find_inactive_slot(state, git, repo_root)
+
+        assert result is not None
+        slot_name, worktree_path = result
+        assert slot_name == "erk-slot-01"
+        assert worktree_path == wt1_path
+
+    def test_skips_slot_with_staged_changes_and_untracked(self, tmp_path: Path) -> None:
+        """Slot with staged+untracked should be skipped; next slot with only untracked returned."""
+        repo_root = tmp_path / "repo"
+        wt1_path = tmp_path / "worktrees" / "erk-slot-01"
+        wt2_path = tmp_path / "worktrees" / "erk-slot-02"
+        git = FakeGit(
+            worktrees={
+                repo_root: [
+                    WorktreeInfo(path=wt1_path, branch="feature-a"),
+                    WorktreeInfo(path=wt2_path, branch="feature-b"),
+                ]
+            },
+            file_statuses={
+                # Slot 1: staged changes AND untracked — should be skipped
+                wt1_path: (["staged.py"], [], [".erk/bin/activate"]),
+                # Slot 2: only untracked — should be returned
+                wt2_path: ([], [], [".erk/bin/activate"]),
+            },
+        )
+        state = PoolState.test(pool_size=4)
+
+        result = find_inactive_slot(state, git, repo_root)
+
+        assert result is not None
+        slot_name, worktree_path = result
+        assert slot_name == "erk-slot-02"
+        assert worktree_path == wt2_path
+
 
 class TestIsSlotInitialized:
     """Tests for is_slot_initialized function."""
