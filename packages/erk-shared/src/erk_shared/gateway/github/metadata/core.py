@@ -365,7 +365,7 @@ def create_plan_body_block(plan_content: str) -> MetadataBlock:
         plan_content: The full plan markdown content
 
     Returns:
-        MetadataBlock with key PLAN_BODY_KEY
+        MetadataBlock with key BlockKeys.PLAN_BODY
     """
     data = {
         "content": plan_content,
