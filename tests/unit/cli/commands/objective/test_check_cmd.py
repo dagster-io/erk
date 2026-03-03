@@ -161,8 +161,8 @@ def test_missing_objective_label_fails() -> None:
     assert "erk-objective label" in result.output
 
 
-def test_malformed_roadmap_fails() -> None:
-    """Test that a body with no roadmap tables fails."""
+def test_roadmap_free_objective_passes() -> None:
+    """Test that a body with no roadmap block passes as roadmap-free."""
     body = """# Objective: No Roadmap
 
 This objective has no roadmap tables.
@@ -177,9 +177,34 @@ This objective has no roadmap tables.
         obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
     )
 
-    assert result.exit_code == 1
-    assert "[FAIL]" in result.output
-    assert "Roadmap parses successfully" in result.output
+    assert result.exit_code == 0
+    assert "[PASS]" in result.output
+    assert "no roadmap" in result.output
+
+
+def test_roadmap_free_objective_json_output() -> None:
+    """Test JSON output for a roadmap-free objective."""
+    body = """# Objective: No Roadmap
+
+This objective has no roadmap tables.
+"""
+    issue = _make_issue(350, "Objective: No Roadmap JSON", body)
+    fake_gh = FakeGitHubIssues(issues={350: issue})
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["350", "--json-output"],
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+
+    assert output["success"] is True
+    assert output["phases"] == []
+    assert output["summary"] == {}
+    assert output["validation_errors"] == []
 
 
 def test_done_step_without_pr_fails() -> None:

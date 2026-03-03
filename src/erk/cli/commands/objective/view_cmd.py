@@ -17,6 +17,9 @@ from erk.cli.github_parsing import parse_issue_identifier
 from erk.core.context import ErkContext
 from erk.core.display_utils import format_relative_time
 from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.metadata.core import (
+    extract_raw_metadata_blocks,
+)
 from erk_shared.gateway.github.metadata.dependency_graph import (
     DependencyGraph,
     ObjectiveNode,
@@ -29,6 +32,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     parse_v2_roadmap,
     serialize_phases,
 )
+from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.output.output import user_output
 
 
@@ -196,14 +200,20 @@ def view_objective(ctx: ErkContext, objective_ref: str, *, json_mode: bool) -> N
         )
 
     # Parse roadmap from issue body (v2 format only)
-    v2_result = parse_v2_roadmap(issue.body)
-    if v2_result is None:
-        raise UserFacingCliError(
-            "This objective uses a legacy format that is no longer supported. "
-            "To migrate, open Claude Code and use /erk:objective-create to "
-            "recreate this objective with the same content."
-        )
-    phases, _validation_errors = v2_result
+    raw_blocks = extract_raw_metadata_blocks(issue.body)
+    has_roadmap_block = any(b.key == BlockKeys.OBJECTIVE_ROADMAP for b in raw_blocks)
+
+    if has_roadmap_block:
+        v2_result = parse_v2_roadmap(issue.body)
+        if v2_result is None:
+            raise UserFacingCliError(
+                "This objective uses a legacy format that is no longer supported. "
+                "To migrate, open Claude Code and use /erk:objective-create to "
+                "recreate this objective with the same content."
+            )
+        phases, _validation_errors = v2_result
+    else:
+        phases = []
 
     # Build graph and compute summary statistics
     graph = build_graph(phases)
