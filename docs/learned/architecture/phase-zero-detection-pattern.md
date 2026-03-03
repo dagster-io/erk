@@ -53,11 +53,11 @@ The `/erk:pr-address` command uses Phase 0 detection with a two-step cascade to 
 
 ### Label-Based: Plan Review Mode
 
-PR labels applied by automated workflows (`erk exec plan-create-review-pr`) signal that the PR is a plan review. Detection uses `gh pr view --json labels`.
+PR labels applied by the plan review workflow signal that the PR is a plan review. Detection uses `gh pr view --json labels`.
 
 ### File-Based: Plan File Mode
 
-Plan-only PRs (created by `erk exec plan-save`) have `.erk/impl-context/plan.md` committed to the branch. Detection uses `git ls-files --error-unmatch`.
+Plan-only PRs (created by the plan save workflow) have `.erk/impl-context/plan.md` committed to the branch. Detection uses `git ls-files --error-unmatch`.
 
 This is a distinct mode from Plan Review Mode — it targets a different file (`.erk/impl-context/plan.md` vs `PLAN-REVIEW-{issue}.md`) and uses a simpler push workflow (no issue sync, no graphite submit).
 
