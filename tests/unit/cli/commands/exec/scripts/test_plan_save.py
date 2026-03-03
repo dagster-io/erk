@@ -694,3 +694,75 @@ def test_planned_pr_without_session_xml_dir_backward_compat(
     assert len(committed_files) == 2
     assert f"{IMPL_CONTEXT_DIR}/plan.md" in committed_files
     assert f"{IMPL_CONTEXT_DIR}/ref.json" in committed_files
+
+
+# --- --current-branch flag tests ---
+
+
+def test_current_branch_skips_branch_creation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """--current-branch uses current branch directly without creating a new one."""
+    fake_git = FakeGit(current_branches={tmp_path: "my-feature-branch"})
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save,
+        ["--format", "json", "--current-branch"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert output["branch_name"] == "my-feature-branch"
+    # No new branches should be created
+    assert len(fake_git.created_branches) == 0
+
+
+def test_current_branch_does_not_require_branch_slug(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """--current-branch does not require --branch-slug."""
+    fake_git = FakeGit(current_branches={tmp_path: "my-feature-branch"})
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    runner = CliRunner()
+
+    # No --branch-slug provided, but --current-branch should make that OK
+    result = runner.invoke(
+        plan_save,
+        ["--format", "json", "--current-branch"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    assert output["success"] is True
+
+
+def test_current_branch_sets_base_to_trunk(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """--current-branch sets the PR base to trunk."""
+    fake_git = FakeGit(
+        current_branches={tmp_path: "my-feature-branch"},
+        trunk_branches={tmp_path: "master"},
+    )
+    fake_github = FakeGitHub()
+    ctx = _planned_pr_context(
+        tmp_path=tmp_path,
+        fake_git=fake_git,
+        fake_github=fake_github,
+        monkeypatch=monkeypatch,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save,
+        ["--format", "json", "--current-branch"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    # PR base should be trunk
+    assert len(fake_github.created_prs) == 1
+    assert fake_github.created_prs[0][3] == "master"
