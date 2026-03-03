@@ -354,15 +354,18 @@ def _dispatch_planned_pr_plan(
 
 
 def _detect_plan_number_from_context(
+    ctx: ErkContext,
     repo: RepoContext,
     *,
     branch_name: str | None,
 ) -> int | None:
     """Detect plan PR number from local context when no argument given.
 
-    Uses resolve_impl_dir() for unified discovery across .erk/impl-context/ directories.
+    Uses resolve_impl_dir() for unified discovery across .erk/impl-context/ directories,
+    then falls back to GitHub API lookup (matching implement and land commands).
 
     Args:
+        ctx: Erk context (for plan backend access)
         repo: Repository context
         branch_name: Current git branch name, or None
 
@@ -374,6 +377,11 @@ def _detect_plan_number_from_context(
         plan_ref = read_plan_ref(impl_dir)
         if plan_ref is not None and plan_ref.plan_id.isdigit():
             return int(plan_ref.plan_id)
+
+    if branch_name is not None:
+        plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
+        if plan_id is not None and plan_id.isdigit():
+            return int(plan_id)
 
     return None
 
@@ -455,7 +463,7 @@ def pr_dispatch(
 
     # If no arguments given, try to auto-detect from context
     if not plan_numbers:
-        detected = _detect_plan_number_from_context(repo, branch_name=original_branch)
+        detected = _detect_plan_number_from_context(ctx, repo, branch_name=original_branch)
         if detected is None:
             user_output(
                 click.style("Error: ", fg="red")
