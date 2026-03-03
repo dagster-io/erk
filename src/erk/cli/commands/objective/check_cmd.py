@@ -14,6 +14,7 @@ from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.metadata.core import (
     find_metadata_block,
+    has_metadata_block,
 )
 from erk_shared.gateway.github.metadata.dependency_graph import (
     DependencyGraph,
@@ -103,11 +104,30 @@ def validate_objective(
     else:
         checks.append((False, "Issue has erk-objective label"))
 
-    # Check 2: Roadmap parses successfully
+    # Check 2: Roadmap
     phases, validation_errors = parse_roadmap(issue.body)
+    has_roadmap = has_metadata_block(issue.body, BlockKeys.OBJECTIVE_ROADMAP)
+
+    if not has_roadmap:
+        # No roadmap block — valid roadmap-free objective
+        checks.append((True, "Roadmap: none (objective has no roadmap)"))
+        # Skip checks 3-7 (all roadmap-dependent)
+        failed_count = sum(1 for passed, _ in checks if not passed)
+        return ObjectiveValidationSuccess(
+            passed=failed_count == 0,
+            checks=checks,
+            failed_count=failed_count,
+            graph=DependencyGraph(nodes=()),
+            summary={},
+            next_node=None,
+            validation_errors=[],
+            issue_body=issue.body,
+        )
+
     if phases:
         checks.append((True, "Roadmap parses successfully"))
     else:
+        # Block exists but failed to parse
         checks.append((False, f"Roadmap parses successfully ({'; '.join(validation_errors)})"))
         failed_count = sum(1 for passed, _ in checks if not passed)
         return ObjectiveValidationSuccess(
@@ -283,10 +303,13 @@ def _output_human(result: ObjectiveValidationResult, issue_number: int) -> None:
 
     if result.passed:
         summary = result.summary
-        user_output(
-            click.style("Objective validation passed", fg="green")
-            + f" ({summary.get('done', 0)}/{summary.get('total_nodes', 0)} done)"
-        )
+        if summary:
+            user_output(
+                click.style("Objective validation passed", fg="green")
+                + f" ({summary.get('done', 0)}/{summary.get('total_nodes', 0)} done)"
+            )
+        else:
+            user_output(click.style("Objective validation passed", fg="green"))
         raise SystemExit(0)
     else:
         check_word = "checks" if result.failed_count > 1 else "check"

@@ -197,7 +197,7 @@ def test_view_objective_missing_label() -> None:
 
 
 def test_view_objective_empty_roadmap() -> None:
-    """Test view with empty roadmap rejects as legacy format."""
+    """Test view with no roadmap block shows as roadmap-free objective."""
     issue = _make_issue(400, "Objective: Empty", OBJECTIVE_EMPTY_ROADMAP)
     fake_gh = FakeGitHubIssues(issues={400: issue})
     runner = CliRunner()
@@ -210,8 +210,8 @@ def test_view_objective_empty_roadmap() -> None:
             obj=test_ctx,
         )
 
-        assert result.exit_code == 1
-        assert "legacy format" in result.output
+        assert result.exit_code == 0
+        assert "No roadmap data found" in result.output
 
 
 def test_view_objective_displays_summary() -> None:
@@ -343,8 +343,8 @@ def test_view_objective_pr_column() -> None:
         assert "#125" in output
 
 
-def test_view_objective_legacy_format_rejected() -> None:
-    """Test that table-only objective body is rejected as legacy format."""
+def test_view_objective_table_only_shows_as_roadmap_free() -> None:
+    """Test that table-only objective body (no metadata block) shows as roadmap-free."""
     issue = _make_issue(1000, "Objective: Legacy", OBJECTIVE_LEGACY_TABLE)
     fake_gh = FakeGitHubIssues(issues={1000: issue})
     runner = CliRunner()
@@ -357,9 +357,8 @@ def test_view_objective_legacy_format_rejected() -> None:
             obj=test_ctx,
         )
 
-        assert result.exit_code == 1
-        assert "legacy format" in result.output
-        assert "erk:objective-create" in result.output
+        assert result.exit_code == 0
+        assert "No roadmap data found" in result.output
 
 
 def test_view_objective_v1_schema_rejected() -> None:

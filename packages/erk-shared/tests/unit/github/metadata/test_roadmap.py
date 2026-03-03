@@ -160,12 +160,11 @@ steps:
 
 
 def test_parse_roadmap_no_metadata_block() -> None:
-    """Test parsing body with no metadata block returns legacy format error."""
+    """Test parsing body with no metadata block returns empty (roadmap-free)."""
     phases, errors = parse_roadmap("No roadmap here.")
 
     assert phases == []
-    assert len(errors) == 1
-    assert "legacy format" in errors[0]
+    assert errors == []
 
 
 def test_parse_roadmap_invalid_frontmatter() -> None:

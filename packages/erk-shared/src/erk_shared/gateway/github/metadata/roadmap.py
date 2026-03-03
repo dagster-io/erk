@@ -464,19 +464,20 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
     raw_blocks = extract_raw_metadata_blocks(body)
     matching_blocks = [block for block in raw_blocks if block.key == BlockKeys.OBJECTIVE_ROADMAP]
 
-    if matching_blocks:
-        roadmap_block = matching_blocks[0]
-        try:
-            steps = parse_roadmap_frontmatter(roadmap_block.body)
-        except ValueError:
-            steps = None
+    if not matching_blocks:
+        # No objective-roadmap block at all — valid roadmap-free objective
+        return ([], [])
 
-        if steps is not None:
-            phases = group_nodes_by_phase(steps)
-            phases = enrich_phase_names(body, phases)
-            return (phases, [])
+    # Block exists — try to parse it
+    roadmap_block = matching_blocks[0]
+    steps = parse_roadmap_frontmatter(roadmap_block.body)
 
-    # No valid v2 metadata block found — legacy format or missing
+    if steps is not None:
+        phases = group_nodes_by_phase(steps)
+        phases = enrich_phase_names(body, phases)
+        return (phases, [])
+
+    # Block exists but failed to parse — legacy/broken format
     return ([], [_LEGACY_FORMAT_ERROR])
 
 

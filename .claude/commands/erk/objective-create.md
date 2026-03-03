@@ -297,7 +297,7 @@ Once approved:
    ```
    Objective #<number> created
    URL: <issue-url>
-   Roadmap validation: clean
+   Roadmap validation: clean (or "none (objective has no roadmap)" if no roadmap)
 
    Next steps:
    - Use /local:objective-view <number> to view the dependency graph
