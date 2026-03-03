@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Skip impl-context cleanup for plan PRs in submit pipeline"
+  "plan_id": "8636",
+  "url": "https://github.com/dagster-io/erk/pull/8636",
+  "created_at": "2026-03-03T02:20:05.601515",
+  "synced_at": "2026-03-03T02:20:05.601515",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
