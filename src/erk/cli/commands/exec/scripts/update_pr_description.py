@@ -117,7 +117,7 @@ def _execute_update_description(ctx: ErkContext, *, debug: bool, session_id: str
 
     commit_messages = ctx.git.commit.get_commit_messages_since(cwd, discovery.parent_branch)
 
-    msg_gen = CommitMessageGenerator(ctx.prompt_executor)
+    msg_gen = CommitMessageGenerator(ctx.prompt_executor, time=ctx.time)
     msg_result = run_commit_message_generation(
         generator=msg_gen,
         diff_file=diff_file,

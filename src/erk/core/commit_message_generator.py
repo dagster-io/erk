@@ -9,8 +9,8 @@ packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md
 
 from __future__ import annotations
 
+import logging
 import threading
-import time
 from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
@@ -19,9 +19,12 @@ from typing import TYPE_CHECKING
 from erk.core.prompt_executor import PromptExecutor, PromptResult
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt
+from erk_shared.gateway.time.abc import Time
 
 if TYPE_CHECKING:
     from erk.core.plan_context_provider import PlanContext
+
+logger = logging.getLogger(__name__)
 
 _PROGRESS_INTERVAL_SECONDS = 3.0
 
@@ -76,14 +79,16 @@ class CommitMessageGenerator:
     testability. In tests, inject FakePromptExecutor with simulated_prompt_output.
     """
 
-    def __init__(self, executor: PromptExecutor, model: str = "haiku") -> None:
+    def __init__(self, executor: PromptExecutor, *, time: Time, model: str = "haiku") -> None:
         """Initialize generator with executor.
 
         Args:
             executor: Prompt executor for prompt execution
+            time: Time abstraction for monotonic clock
             model: Model to use for generation (default "haiku" for speed/cost)
         """
         self._executor = executor
+        self._time = time
         self._model = model
 
     def generate(
@@ -178,16 +183,17 @@ class CommitMessageGenerator:
                         )
                     )
             except Exception as exc:  # noqa: BLE001
+                logger.debug("Prompt execution failed", exc_info=True)
                 error_holder.append(exc)
 
         thread = threading.Thread(target=_run_prompt, daemon=True)
-        start_time = time.monotonic()
+        start_time = self._time.monotonic()
         thread.start()
 
         while thread.is_alive():
             thread.join(timeout=_PROGRESS_INTERVAL_SECONDS)
             if thread.is_alive():
-                elapsed = int(time.monotonic() - start_time)
+                elapsed = int(self._time.monotonic() - start_time)
                 yield ProgressEvent(f"Still waiting... ({elapsed}s)")
 
         if error_holder:
