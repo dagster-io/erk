@@ -843,6 +843,26 @@ def test_render_deferred_deletion_commands_special_characters(tmp_path: Path) ->
     assert "gt delete -f --no-interactive feature/add-login" in commands[1]
 
 
+def test_render_deferred_deletion_commands_root_worktree_skips_cleanup(tmp_path: Path) -> None:
+    """Test that root worktree skips worktree cleanup commands."""
+    worktree_path = tmp_path / "repo"
+    worktree_path.mkdir(parents=True)
+    main_repo_root = worktree_path
+
+    commands = render_deferred_deletion_commands(
+        worktree_path=worktree_path,
+        branch="feature-branch",
+        slot_name=None,
+        is_graphite_managed=True,
+        main_repo_root=main_repo_root,
+        is_root_worktree=True,
+    )
+
+    # Root worktree: only branch deletion, no worktree removal
+    assert len(commands) == 1
+    assert commands[0] == "gt delete -f --no-interactive feature-branch"
+
+
 def test_get_slot_name_for_worktree_returns_slot_name(tmp_path: Path) -> None:
     """Test get_slot_name_for_worktree returns slot name for assigned worktree."""
     worktree_path = tmp_path / "worktrees" / "erk-slot-01"
