@@ -351,39 +351,33 @@ def build_blocking_message(
 
     save_cmd = "/erk:plan-save"
 
-    lines.extend(
-        [
-            "",
-            "If user chooses 'Create a plan PR on new branch':",
-            f"  1. Run {save_cmd}",
-            "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
-            "     Stay in plan mode and let the user exit manually if desired.",
-            "",
-            "If user chooses 'Create a plan PR on the current branch':",
-            f"  1. Run {save_cmd} --current-branch",
-            "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
-            "     This converts the current branch into the plan PR branch",
-            "     instead of creating a new branch.",
-            "",
-            "If user chooses 'Just implement on the current branch without creating a PR.':",
-            "  1. Create implement-now marker:",
-            f"     erk exec marker create --session-id {session_id} \\",
-            "       exit-plan-mode-hook.implement-now",
-            "  2. Call ExitPlanMode",
-            "  3. After exiting plan mode, implement the changes directly on the current branch.",
-            "     Do NOT run 'erk exec setup-impl' or create a new branch.",
-        ]
-        + (
-            [
-                f"     Read the plan from: {plan_file_path}",
-            ]
-            if plan_file_path is not None
-            else []
-        )
-        + [
-            "     Implement changes, run CI, and optionally 'erk pr submit' when done.",
-        ]
+    implement_now_lines = [
+        "",
+        "If user chooses 'Create a plan PR on new branch':",
+        f"  1. Run {save_cmd}",
+        "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
+        "     Stay in plan mode and let the user exit manually if desired.",
+        "",
+        "If user chooses 'Create a plan PR on the current branch':",
+        f"  1. Run {save_cmd} --current-branch",
+        "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
+        "     This converts the current branch into the plan PR branch",
+        "     instead of creating a new branch.",
+        "",
+        "If user chooses 'Just implement on the current branch without creating a PR.':",
+        "  1. Create implement-now marker:",
+        f"     erk exec marker create --session-id {session_id} \\",
+        "       exit-plan-mode-hook.implement-now",
+        "  2. Call ExitPlanMode",
+        "  3. After exiting plan mode, implement the changes directly on the current branch.",
+        "     Do NOT run 'erk exec setup-impl' or create a new branch.",
+    ]
+    if plan_file_path is not None:
+        implement_now_lines.append(f"     Read the plan from: {plan_file_path}")
+    implement_now_lines.append(
+        "     Implement changes, run CI, and optionally 'erk pr submit' when done.",
     )
+    lines.extend(implement_now_lines)
 
     if plan_file_path is not None:
         if is_terminal_editor(editor):
