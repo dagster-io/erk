@@ -107,13 +107,9 @@ When the PR's diff consists of a git-tracked `.erk/impl-context/plan.md`, `/erk:
 
 #### How it's triggered
 
-Phase 0 checks if `.erk/impl-context/plan.md` is git-tracked:
+<!-- Source: .claude/commands/erk/pr-address.md, Phase 0 section -->
 
-```bash
-git ls-files --error-unmatch .erk/impl-context/plan.md >/dev/null 2>&1
-```
-
-If the file is tracked, Plan File Mode activates. This check runs after the `erk-plan-review` label check, so label-based Plan Review Mode takes priority if both conditions are present.
+Phase 0 uses a file-based detection check (see Phase 0 in `pr-address.md`) to determine if `.erk/impl-context/plan.md` is git-tracked. If the file is tracked, Plan File Mode activates. This check runs after the `erk-plan-review` label check, so label-based Plan Review Mode takes priority if both conditions are present.
 
 See [Phase 0 Detection Pattern](../architecture/phase-zero-detection-pattern.md) for the detection mechanism.
 
