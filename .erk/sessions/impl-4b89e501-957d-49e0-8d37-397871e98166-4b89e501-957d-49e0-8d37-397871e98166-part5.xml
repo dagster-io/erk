@@ -1,0 +1,116 @@
+<session>
+  <meta source="agent-a553eb3" />
+  <meta branch="plnd/consolidate-learn-docs-03-03-0431" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Search for and verify these source code facts for documentation purposes. Do NOT modify any files. Report what you find:
+
+1. Find `packages/erk-statusline/src/erk_statusline/statusline.py` around lines 565-574 - look for check run deduplication logic in `_fetch_check_runs()`. Report the exact dedup algorithm.
+2. Find tests at `packages/erk-statusline/tests/test_statusline.py` around lines 1076-1135 for dedup test cases. Report how many test cases cover deduplication.
+
+Report findings concisely.</user>
+  <assistant>I'll search for these specific files and examine the deduplication logic and tests.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15086" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15086, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ATYrD2v2tjxeWyWhuAB2pv">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="offset">565</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15086" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15086, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PeBBEkhCEpkH7FTnYxpPGY">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/tests/test_statusline.py</param>
+    <param name="offset">1076</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15086" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15086, 'ephemeral_1h_input_tokens': 0}" output_tokens="236" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ATYrD2v2tjxeWyWhuAB2pv">
+   565→        # Deduplicate by name - GitHub returns multiple runs per check name
+   566→        # from reruns/superseded workflows. Keep first (most recent) per name.
+   567→        seen_names: set[str] = set()
+   568→        deduplicated: list[dict[str, str]] = []
+   569→        for ctx in check_contexts:
+   570→            name = ctx.get("name", "")
+   571→            if name not in seen_names:
+   572→                seen_names.add(name)
+   573→                deduplicated.append(ctx)
+   574→        check_contexts = deduplicated
+   575→
+   576→        _logger.debug(
+   577→            "Check runs fetched: %s/%s ref=%s in %.2fs -&gt; %d checks",
+   578→            owner,
+   579→            repo,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01PeBBEkhCEpkH7FTnYxpPGY">
+  1076→class TestFetchCheckRunsDeduplication:
+  1077→    """Test that _fetch_check_runs deduplicates by check name."""
+  1078→
+  1079→    @patch("erk_statusline.statusline.subprocess.run")
+  1080→    def test_keeps_most_recent_run_per_name(self, mock_run: MagicMock) -&gt; None:
+  1081→        """Two runs with same name, different conclusions - keeps first (most recent)."""
+  1082→        check_runs_response = {
+  1083→            "check_runs": [
+  1084→                {"name": "ci/test", "status": "completed", "conclusion": "success"},
+  1085→                {"name": "ci/test", "status": "completed", "conclusion": "cancelled"},
+  1086→            ]
+  1087→        }
+  1088→        mock_run.return_value = MagicMock(returncode=0, stdout=json.dumps(check_runs_response))
+  1089→
+  1090→        result = _fetch_check_runs(
+  1091→            owner="owner", repo="repo", ref="sha123", cwd="/cwd", timeout=1.5
+  1092→        )
+  1093→
+  1094→        assert len(result) == 1
+  1095→        assert result[0]["name"] == "ci/test"
+  1096→        assert result[0]["conclusion"] == "SUCCESS"
+  1097→
+  1098→    @patch("erk_statusline.statusline.subprocess.run")
+  1099→    def test_deduplicates_with_mixed_unique_and_duplicate(self, mock_run: MagicMock) -&gt; None:
+  1100→        """Three runs: two dupes + one unique - returns 2 check contexts."""
+  1101→        check_runs_response = {
+  1102→            "check_runs": [
+  1103→                {"name": "ci/test", "status": "completed", "conclusion": "success"},
+  1104→                {"name": "ci/lint", "status": "completed", "conclusion": "success"},
+  1105→                {"name": "ci/test", "status": "completed", "conclusion": "failure"},
+
+... [45 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! I found both sections. Here are the findings:
+
+## Findings
+
+### 1. Deduplication Algorithm (lines 565-574)
+
+The exact dedup algorithm in `_fetch_check_runs()`:
+
+```python
+# Deduplicate by name - GitHub returns multiple runs per check name
+# from reruns/superseded workflows. Keep first (most recent) per name.
+seen_names: set[str] = set()
+deduplicated: list[dict[str, str]] = []
+for ctx in check_contexts:
+    name = ctx.get("name", "")
+    if name not in seen_names:
+        seen_names.add(name)
+        deduplicated.append(ctx)
+check_contexts = deduplicated
+```
+
+**Algorithm**: Maintains an insertion-ordered dedupe using a set of seen names. Keeps the first occurrence of each check name (most recent) and discards subsequent duplicates.
+
+### 2. Deduplication Test Cases (lines 1076-1135)
+
+There are **3 test cases** covering deduplication in `TestFetchCheckRunsDeduplication`:
+
+1. **`test_keeps_most_recent_run_per_name`** (lines 1080-1096) — Two runs with same name but different conclusions; verifies first (most recent) is kept
+2. **`test_deduplicates_with_mixed_unique_and_duplicate`** (lines 1099-1117) — Three runs with mixed duplicates and unique names; verifies 2 distinct check names returned
+3. **`test_all_unique_names_unchanged`** (lines 1120-1135) — Three runs all with unique names; verifies no dedup occurs (all 3 returned)
+
+**File paths:**
+- `/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py` (lines 565-574)
+- `/home/runner/work/erk/erk/packages/erk-statusline/tests/test_statusline.py` (lines 1076-1135)</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1865" cache_read_input_tokens="15086" cache_creation="{'ephemeral_5m_input_tokens': 1865, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

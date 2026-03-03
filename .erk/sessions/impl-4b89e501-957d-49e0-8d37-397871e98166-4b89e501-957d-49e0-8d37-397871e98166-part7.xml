@@ -1,0 +1,157 @@
+<session>
+  <meta source="agent-aaf6844" />
+  <meta branch="plnd/consolidate-learn-docs-03-03-0431" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Search for and verify these source code facts for documentation purposes. Do NOT modify any files. Report what you find:
+
+1. Find `src/erk/capabilities/skills/bundled.py` or similar path - look for `is_required_bundled_skill()` and the frozenset of 5 required skills
+2. Find `list_optional_capabilities()` in the capabilities registry
+3. List the 5 bundled skills marked as required
+
+If paths don't match exactly, search broadly for these symbols.
+
+Report findings concisely.</user>
+  <assistant>I'll search for these symbols and paths to document the source code facts you're asking about.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15069" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15069, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01XUY4biz7aUQdp34YzJAALm">
+    <param name="pattern">**/bundled.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15069" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15069, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01JxeuwGAkb1CGcLHZiWDgpy">
+    <param name="pattern">is_required_bundled_skill</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15069" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15069, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01TEBA1egRycGbqBQpRw8AQb">
+    <param name="pattern">list_optional_capabilities</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15069" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15069, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XUY4biz7aUQdp34YzJAALm">
+/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py
+  </tool_result>
+  <tool_result tool="toolu_01JxeuwGAkb1CGcLHZiWDgpy">
+Found 2 files
+tests/unit/core/test_capabilities.py
+src/erk/capabilities/skills/bundled.py
+  </tool_result>
+  <tool_result tool="toolu_01TEBA1egRycGbqBQpRw8AQb">
+Found 5 files
+src/erk/core/capabilities/registry.py
+src/erk/cli/commands/init/capability/add_cmd.py
+src/erk/cli/commands/init/capability/list_cmd.py
+src/erk/cli/commands/init/capability/remove_cmd.py
+src/erk/cli/commands/init/main.py
+  </tool_result>
+  <assistant>Now let me read the bundled.py file and the registry to find the details:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="454" cache_read_input_tokens="15069" cache_creation="{'ephemeral_5m_input_tokens': 454, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QaYVyzF5f7PCMDjZzNhyC6">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="454" cache_read_input_tokens="15069" cache_creation="{'ephemeral_5m_input_tokens': 454, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019pHUN63PNrAMAwE3bKXdR8">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/capabilities/registry.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="454" cache_read_input_tokens="15069" cache_creation="{'ephemeral_5m_input_tokens': 454, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QaYVyzF5f7PCMDjZzNhyC6">
+     1→"""Bundled skill capabilities — cached factory.
+     2→
+     3→All simple skill capabilities (those that only need a name and description)
+     4→are registered here. The dict is created lazily via a cached function to
+     5→avoid module-import-time allocation.
+     6→
+     7→Skills with custom install/uninstall logic (like learned-docs) are NOT here;
+     8→they have their own capability classes.
+     9→"""
+    10→
+    11→from functools import cache
+    12→
+    13→from erk.core.capabilities.codex_portable import codex_portable_skills
+    14→from erk.core.capabilities.skill_capability import SkillCapability
+    15→from erk_shared.context.types import AgentBackend
+    16→
+    17→_REQUIRED_BUNDLED_SKILLS: frozenset[str] = frozenset(
+    18→    {
+    19→        "erk-diff-analysis",
+    20→        "erk-exec",
+    21→        "objective",
+    22→        "pr-operations",
+    23→        "pr-feedback-classifier",
+    24→    }
+    25→)
+    26→
+    27→
+    28→@cache
+    29→def bundled_skills() -&gt; dict[str, str]:
+    30→    """Return the bundled skills dict. Cached to avoid re-creation."""
+
+... [59 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_019pHUN63PNrAMAwE3bKXdR8">
+     1→"""Capability registry - hardcoded list of all capabilities."""
+     2→
+     3→from functools import cache
+     4→
+     5→from erk.capabilities.agents.devrun import DevrunAgentCapability
+     6→from erk.capabilities.code_reviews_system import CodeReviewsSystemCapability
+     7→from erk.capabilities.erk_bash_permissions import ErkBashPermissionsCapability
+     8→from erk.capabilities.hooks import HooksCapability
+     9→from erk.capabilities.learned_docs import LearnedDocsCapability
+    10→from erk.capabilities.reminders.devrun import DevrunReminderCapability
+    11→from erk.capabilities.reminders.dignified_python import DignifiedPythonReminderCapability
+    12→from erk.capabilities.reminders.explore_docs import ExploreDocsReminderCapability
+    13→from erk.capabilities.reminders.tripwires import TripwiresReminderCapability
+    14→from erk.capabilities.reviews.dignified_code_simplifier import (
+    15→    DignifiedCodeSimplifierReviewDefCapability,
+    16→)
+    17→from erk.capabilities.reviews.dignified_python import DignifiedPythonReviewDefCapability
+    18→from erk.capabilities.reviews.tripwires import TripwiresReviewDefCapability
+    19→from erk.capabilities.ruff_format import RuffFormatCapability
+    20→from erk.capabilities.skills.bundled import create_bundled_skill_capabilities
+    21→from erk.capabilities.statusline import StatuslineCapability
+    22→from erk.capabilities.workflows.erk_impl import ErkImplWorkflowCapability
+    23→from erk.capabilities.workflows.learn import LearnWorkflowCapability
+    24→from erk.capabilities.workflows.one_shot import OneShotWorkflowCapability
+    25→from erk.capabilities.workflows.pr_address import PrAddressWorkflowCapability
+    26→from erk.capabilities.workflows.pr_rebase import PrRebaseWorkflowCapability
+    27→from erk.core.capabilities.base import Capability
+    28→from erk_shared.context.types import AgentBackend
+    29→
+    30→
+
+... [120 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! I've found all the information you requested. Here's my report:
+
+## Findings
+
+**1. File location:** `/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py`
+
+**2. Required bundled skills (frozenset):**
+The `_REQUIRED_BUNDLED_SKILLS` frozenset at lines 17-25 contains exactly 5 required skills:
+```python
+_REQUIRED_BUNDLED_SKILLS: frozenset[str] = frozenset(
+    {
+        "erk-diff-analysis",
+        "erk-exec",
+        "objective",
+        "pr-operations",
+        "pr-feedback-classifier",
+    }
+)
+```
+
+**3. Function `is_required_bundled_skill()`:**
+Defined at lines 47-49, it returns `True` if a skill name is in `_REQUIRED_BUNDLED_SKILLS`.
+
+**4. Function `list_optional_capabilities()`:**
+Located in `/home/runner/work/erk/erk/src/erk/core/capabilities/registry.py` at lines 85-94. It returns all capabilities where `required=False`, sorted alphabetically by name.
+
+**Summary of 5 Required Skills:**
+1. `erk-diff-analysis` - Code diff analysis for commit messages
+2. `erk-exec` - Erk exec subcommand reference
+3. `objective` - Objective tracking and management
+4. `pr-operations` - Pull request operations
+5. `pr-feedback-classifier` - PR feedback classification</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3457" cache_read_input_tokens="15523" cache_creation="{'ephemeral_5m_input_tokens': 3457, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,270 @@
+<session>
+  <meta source="agent-a31c330" />
+  <meta branch="plnd/consolidate-learn-docs-03-03-0431" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Search for and verify these source code facts for documentation purposes. Do NOT modify any files. Report what you find:
+
+1. Find `LlmCaller` ABC - check `packages/erk-shared/src/erk_shared/core/llm_caller.py` or similar
+2. Find `AnthropicLlmCaller` at `src/erk/core/fast_llm.py` - report its interface and discriminated union returns
+3. Find context integration at `src/erk/core/context.py` around lines 644-692
+4. Find branch slug generator at `src/erk/core/branch_slug_generator.py` - check for `BRANCH_SLUG_SYSTEM_PROMPT` and `_postprocess_slug()`
+
+Report findings concisely.</user>
+  <assistant>I'll search for these source code facts systematically. Let me start by locating these files and examining their contents.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15132" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15132, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01FKo2PGg1MnoQRR5CFXz2H5">
+    <param name="pattern">**/llm_caller.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15132" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15132, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Cx3EGsW543v1xE5NABXJVi">
+    <param name="pattern">**/fast_llm.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15132" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15132, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01NJ9bDeTjay4R9UD3qK6Bc4">
+    <param name="pattern">**/context.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15132" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15132, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01PH4J7qnexDkyWqG4CgsQeb">
+    <param name="pattern">**/branch_slug_generator.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15132" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15132, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Cx3EGsW543v1xE5NABXJVi">
+/home/runner/work/erk/erk/src/erk/core/fast_llm.py
+  </tool_result>
+  <tool_result tool="toolu_01PH4J7qnexDkyWqG4CgsQeb">
+/home/runner/work/erk/erk/src/erk/core/branch_slug_generator.py
+  </tool_result>
+  <tool_result tool="toolu_01FKo2PGg1MnoQRR5CFXz2H5">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/llm_caller.py
+  </tool_result>
+  <tool_result tool="toolu_01NJ9bDeTjay4R9UD3qK6Bc4">
+/home/runner/work/erk/erk/packages/erk-dev/src/erk_dev/context.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py
+/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/context.py
+/home/runner/work/erk/erk/src/erk/core/context.py
+/home/runner/work/erk/erk/tests/fakes/context.py
+  </tool_result>
+  <assistant>Good, all files are found. Now let me read each one to extract the requested information.</assistant>
+  <usage input_tokens="57" cache_creation_input_tokens="524" cache_read_input_tokens="15132" cache_creation="{'ephemeral_5m_input_tokens': 524, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01B2qYeTDieh1VeJBkzQgdJF">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/llm_caller.py</param>
+  </tool_use>
+  <usage input_tokens="57" cache_creation_input_tokens="524" cache_read_input_tokens="15132" cache_creation="{'ephemeral_5m_input_tokens': 524, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01F8wNiWNY2AvyxdAUaKAMDL">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/fast_llm.py</param>
+  </tool_use>
+  <usage input_tokens="57" cache_creation_input_tokens="524" cache_read_input_tokens="15132" cache_creation="{'ephemeral_5m_input_tokens': 524, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WXUHuRpd9sWc5YgXTnzipW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/context.py</param>
+    <param name="offset">640</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="57" cache_creation_input_tokens="524" cache_read_input_tokens="15132" cache_creation="{'ephemeral_5m_input_tokens': 524, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01F61vX6smL9jswpwEAsrJmH">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/branch_slug_generator.py</param>
+  </tool_use>
+  <usage input_tokens="57" cache_creation_input_tokens="524" cache_read_input_tokens="15132" cache_creation="{'ephemeral_5m_input_tokens': 524, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B2qYeTDieh1VeJBkzQgdJF">
+     1→"""LLM caller ABC and discriminated union result types.
+     2→
+     3→Defines the interface for lightweight LLM calls (e.g., slug generation)
+     4→and the non-ideal state types returned when calls fail.
+     5→"""
+     6→
+     7→from abc import ABC, abstractmethod
+     8→from dataclasses import dataclass
+     9→
+    10→
+    11→@dataclass(frozen=True)
+    12→class LlmResponse:
+    13→    text: str
+    14→
+    15→
+    16→@dataclass(frozen=True)
+    17→class NoApiKey:
+    18→    message: str
+    19→
+    20→    @property
+    21→    def error_type(self) -&gt; str:
+    22→        return "no-api-key"
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class LlmCallFailed:
+    27→    message: str
+    28→
+    29→    @property
+    30→    def error_type(self) -&gt; str:
+
+... [14 lines omitted] ...
+
+    31→        return "llm-call-failed"
+    36→    def call(self, prompt: str, *, system_prompt: str) -&gt; LlmResponse | NoApiKey | LlmCallFailed:
+  </tool_result>
+  <tool_result tool="toolu_01F8wNiWNY2AvyxdAUaKAMDL">
+     1→"""Fast LLM calls via Anthropic SDK.
+     2→
+     3→For lightweight operations (slug generation) where spawning a full
+     4→Claude CLI subprocess is too slow.
+     5→"""
+     6→
+     7→import logging
+     8→import os
+     9→
+    10→from anthropic import Anthropic, APIError
+    11→
+    12→from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey
+    13→
+    14→logger = logging.getLogger(__name__)
+    15→
+    16→
+    17→class AnthropicLlmCaller(LlmCaller):
+    18→    def call(self, prompt: str, *, system_prompt: str) -&gt; LlmResponse | NoApiKey | LlmCallFailed:
+    19→        api_key = os.environ.get("ANTHROPIC_API_KEY")
+    20→        if api_key is None:
+    21→            logger.warning("ANTHROPIC_API_KEY environment variable not set")
+    22→            return NoApiKey(message="ANTHROPIC_API_KEY environment variable not set")
+    23→        try:
+    24→            client = Anthropic(api_key=api_key)
+    25→            response = client.messages.create(
+    26→                model="claude-haiku-4-5-20251001",
+    27→                max_tokens=50,
+    28→                system=system_prompt,
+    29→                messages=[{"role": "user", "content": prompt}],
+    30→            )
+
+... [10 lines omitted] ...
+
+    32→        except APIError as exc:
+    33→            logger.warning("LLM call failed: %s", exc)
+    34→            return LlmCallFailed(message=str(exc))
+  </tool_result>
+  <tool_result tool="toolu_01WXUHuRpd9sWc5YgXTnzipW">
+   640→            graphite_branch_ops = DryRunGraphiteBranchOps(graphite_branch_ops)
+   641→        github = DryRunGitHub(github)
+   642→
+   643→    # 10. Create LLM caller for lightweight operations (slug generation)
+   644→    from erk.core.fast_llm import AnthropicLlmCaller
+   645→
+   646→    llm_caller = AnthropicLlmCaller()
+   647→
+   648→    # 11. Create claude installation and prompt executor
+   649→    from erk_shared.gateway.agent_docs.dry_run import DryRunAgentDocs
+   650→    from erk_shared.gateway.agent_launcher.real import RealAgentLauncher
+   651→    from erk_shared.gateway.claude_installation.real import RealClaudeInstallation
+   652→
+   653→    real_claude_installation: ClaudeInstallation = RealClaudeInstallation()
+   654→    real_agent_launcher: AgentLauncher = RealAgentLauncher()
+   655→    real_agent_docs: AgentDocs = RealAgentDocs()
+   656→    if dry_run:
+   657→        real_agent_docs = DryRunAgentDocs(real_agent_docs)
+   658→    prompt_executor = create_prompt_executor(
+   659→        global_config=global_config,
+   660→        console=console,
+   661→    )
+   662→
+   663→    # 12. Create package info
+   664→    from erk.artifacts.paths import ErkPackageInfo
+   665→
+   666→    package_info = ErkPackageInfo.from_project_dir(cwd)
+   667→
+   668→    # 13. Create context with all values
+   669→    return ErkContext(
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01F61vX6smL9jswpwEAsrJmH">
+     1→"""Branch slug generation via LLM inference.
+     2→
+     3→This module provides branch name slug generation using a fast LLM call
+     4→to distill plan titles into meaningful 2-4 word slugs before they
+     5→enter the branch naming pipeline.
+     6→
+     7→Follows the CommitMessageGenerator pattern from src/erk/core/commit_message_generator.py.
+     8→"""
+     9→
+    10→from __future__ import annotations
+    11→
+    12→from dataclasses import dataclass
+    13→
+    14→from erk_shared.core.prompt_executor import PromptExecutor
+    15→from erk_shared.naming import sanitize_worktree_name
+    16→
+    17→BRANCH_SLUG_SYSTEM_PROMPT = """\
+    18→You are a branch name slug generator. Given a title, return ONLY a concise
+    19→2-4 word slug using lowercase letters and hyphens. No explanation.
+    20→
+    21→Rules:
+    22→- Use 2-4 hyphenated words (e.g., "fix-auth-session", "add-plan-validation")
+    23→- Capture the distinctive essence, not generic words
+    24→- Drop filler words: "the", "a", "for", "and", "implementation", "plan"
+    25→- Prefer verbs: add, fix, refactor, update, consolidate, extract, migrate
+    26→- Never exceed 30 characters total
+    27→- Output ONLY the slug, nothing else"""
+    28→
+    29→
+    30→@dataclass(frozen=True)
+
+... [127 lines omitted] ...
+
+    37→        error_message: Error description if generation failed
+    42→    error_message: str | None
+    65→            BranchSlugResult with success status and slug or error
+    80→                error_message=result.error or "LLM execution failed",
+    88→                error_message=f"Invalid LLM output: {result.output!r}",
+    94→            error_message=None,
+   135→    """Generate a slug from title, falling back to raw title on failure.
+   138→    or the raw title on failure (so sanitize_worktree_name handles it downstream).
+   145→        LLM-generated slug on success, raw title on failure
+  </tool_result>
+  <assistant>Perfect! I've found and verified all the requested source code facts. Here's the concise report:
+
+## Source Code Facts Report
+
+### 1. LlmCaller ABC
+**Location:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/llm_caller.py`
+
+- Defines abstract `call()` method with signature:
+  ```python
+  def call(self, prompt: str, *, system_prompt: str) -&gt; LlmResponse | NoApiKey | LlmCallFailed
+  ```
+- Returns a discriminated union of three frozen dataclass types:
+  - `LlmResponse(text: str)` - successful response
+  - `NoApiKey(message: str)` with `error_type = "no-api-key"`
+  - `LlmCallFailed(message: str)` with `error_type = "llm-call-failed"`
+
+### 2. AnthropicLlmCaller Implementation
+**Location:** `/home/runner/work/erk/erk/src/erk/core/fast_llm.py`
+
+- Concrete class implementing `LlmCaller`
+- Checks for `ANTHROPIC_API_KEY` environment variable, returns `NoApiKey` if missing
+- Creates Anthropic client and calls `client.messages.create()`
+- Model: `claude-haiku-4-5-20251001`, max_tokens: 50
+- Catches `APIError` and returns `LlmCallFailed`
+- Returns `LlmResponse` with stripped text on success
+
+### 3. Context Integration (lines 644-692)
+**Location:** `/home/runner/work/erk/erk/src/erk/core/context.py`
+
+- Line 644: Imports `AnthropicLlmCaller` from `erk.core.fast_llm`
+- Line 646: Instantiates `llm_caller = AnthropicLlmCaller()`
+- Line 692: Passes `llm_caller=llm_caller` to `ErkContext` constructor
+- Also creates PromptExecutor at lines 658-661
+- Integrates as part of larger context creation workflow (steps 10-13)
+
+### 4. Branch Slug Generator
+**Location:** `/home/runner/work/erk/erk/src/erk/core/branch_slug_generator.py`
+
+- `BRANCH_SLUG_SYSTEM_PROMPT` (lines 17-27): System prompt for 2-4 word slugs with lowercase/hyphens, max 30 chars
+- `BranchSlugGenerator` class takes `PromptExecutor` in `__init__`
+- `generate()` method calls executor with the system prompt, returns `BranchSlugResult` dataclass
+- `_postprocess_slug()` function (lines 98-131):
+  - Strips whitespace
+  - Strips quotes/backticks
+  - Runs through `sanitize_worktree_name()`
+  - Validates 2+ hyphenated words
+  - Validates max 30 characters
+  - Returns validated slug or `None`
+- Convenience function `generate_branch_slug()` returns LLM slug on success, raw title on failure</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4366" cache_read_input_tokens="15656" cache_creation="{'ephemeral_5m_input_tokens': 4366, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

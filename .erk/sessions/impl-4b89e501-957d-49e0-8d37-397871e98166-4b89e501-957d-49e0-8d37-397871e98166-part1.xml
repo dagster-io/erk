@@ -1,0 +1,1166 @@
+<session>
+  <meta branch="plnd/consolidate-learn-docs-03-03-0431" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8642&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 12. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8642` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**CRITICAL**: Never delete the impl directory - leave for user review (no auto-commit).
+
+### Step 12: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 13: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8642.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28128" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28128, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01MXjHzu2m5S48aSCfNXRW5v">
+    <param name="command">erk exec setup-impl --issue 8642</param>
+    <param name="description">Set up implementation for plan #8642</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28128" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28128, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MXjHzu2m5S48aSCfNXRW5v">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--consolidate-learn-docs-03-03-0431", "plan_number": 8642, "plan_url": "https://github.com/dagster-io/erk/pull/8642", "branch": "plnd/consolidate-learn-docs-03-03-0431", "plan_title": "[erk-learn] Plan: Consolidated Documentation from 12 erk-learn Plans", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8642, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/consolidate-learn-docs-03-03-0431', syncing with remote...
+  </tool_result>
+  <assistant>Good, setup is complete. Let me read the plan to understand what needs to be done.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="28128" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01BL8AFpZgxq5G3cfuc2vPk6">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--consolidate-learn-docs-03-03-0431/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="28128" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BL8AFpZgxq5G3cfuc2vPk6">
+     1→# Plan: Consolidated Documentation from 12 erk-learn Plans
+     2→
+     3→&gt; **Consolidates:** #8638, #8630, #8625, #8621, #8620, #8615, #8612, #8611, #8610, #8604, #8603, #8601
+     4→
+     5→## Context
+     6→
+     7→Twelve erk-learn plans accumulated from recent implementation sessions (all from 2026-03-02). Each captures documentation opportunities discovered during feature implementation. Many overlap (e.g., 3 plans covering dispatch ref handling). This consolidated plan merges, deduplicates, and prioritizes all documentation work into a single actionable plan.
+     8→
+     9→## Source Plans
+    10→
+    11→| # | Title | Items Merged | Status |
+    12→|---|-------|-------------|--------|
+    13→| #8638 | Let uv auto-discover Python version and fix flaky timestamp tests | 3 items | New docs + updates |
+    14→| #8630 | Loosen Pydantic version constraints to &gt;=2.0 | 1 item | Minor update |
+    15→| #8625 | Always run `uv sync` in worktree activation scripts | 0 items | **FULLY DOCUMENTED** - drop |
+    16→| #8621 | Deduplicate statusline checks and refactor dispatch ref handling | 2 items | New doc + update |
+    17→| #8620 | Add --ref-current and --ref support to all dispatch commands | 0 items | **Merged into #8621/#8610** |
+    18→| #8615 | Fix skills not bundled to claude path in wheel installs | 2 items | Fix outdated docs |
+    19→| #8612 | Mark 5 bundled skills as required and hide from user-facing lists | 1 item | Update existing doc |
+    20→| #8611 | Fast slug generation via Anthropic SDK | 2 items | Update existing docs |
+    21→| #8610 | Add `--ref` CLI option to workflow dispatch commands | 0 items | **Merged into #8621** |
+    22→| #8604 | Detect and execute from existing impl-context directory | 2 items | New doc + update |
+    23→| #8603 | Reclassify CLI help groups for workflow, launch, and one-shot | 1 item | Update existing doc |
+    24→| #8601 | Add LBYL check for existing branch before creating PR | 0 items | **Already documented** - drop |
+    25→
+    26→## Overlap Analysis
+    27→
+    28→- **#8610, #8620, #8621** all cover dispatch ref handling. Merged into a single documentation effort covering `resolve_dispatch_ref()`, `--ref-current`, and statusline dedup.
+    29→- **#8615, #8612** both cover bundled skills. Kept separate since they address different docs.
+    30→- **#8625** is fully documented in `docs/learned/erk/workspace-activation.md` - nothing to do.
+
+... [199 lines omitted] ...
+
+    31→- **#8601** is well-covered by existing `lbyl-gateway-pattern.md` and `discriminated-union-error-handling.md` - nothing to do.
+    43→- Document detached HEAD error handling for `--ref-current`
+   106→- Explain discriminated union returns: `LlmResponse | NoApiKey | LlmCallFailed`
+   139→4. Error cases and recovery steps
+   198→- **#8601** (LBYL branch check): Covered by `docs/learned/architecture/lbyl-gateway-pattern.md` and `docs/learned/architecture/discriminated-union-error-handling.md`
+  </tool_result>
+  <assistant>Now let me set up my todo list and understand the scope. This is a documentation-focused plan with 10 steps. Let me first check which files already exist that need to be updated.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4733" cache_read_input_tokens="28474" cache_creation="{'ephemeral_5m_input_tokens': 4733, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01At29tmb5BZzBsXkmxZZJrj">
+    <param name="todos">[{'content': 'Step 1: Update dispatch ref documentation (dispatch-ref-config.md)', 'status...[truncated 1439 chars]...nc and CI'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4733" cache_read_input_tokens="28474" cache_creation="{'ephemeral_5m_input_tokens': 4733, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01At29tmb5BZzBsXkmxZZJrj">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me signal started and read the existing files I need to update, all in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="559" cache_read_input_tokens="33207" cache_creation="{'ephemeral_5m_input_tokens': 559, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01RCf8Vjy1pVbDiNADBSYXrg">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="559" cache_read_input_tokens="33207" cache_creation="{'ephemeral_5m_input_tokens': 559, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RCf8Vjy1pVbDiNADBSYXrg">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CjkbV8tCxz1Nbdg7U8cFss">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/dispatch-ref-config.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="190" cache_read_input_tokens="33766" cache_creation="{'ephemeral_5m_input_tokens': 190, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01BsqKb56MNoGcMdnKDzAqTR">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-statusline.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="190" cache_read_input_tokens="33766" cache_creation="{'ephemeral_5m_input_tokens': 190, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01T5qie79CP8sNj6mR9rH4mV">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/integrations/bundled-artifacts.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="190" cache_read_input_tokens="33766" cache_creation="{'ephemeral_5m_input_tokens': 190, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01RKoNWmNdu17XGe4wKDF8tv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/integrations/codex/codex-skills-system.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="190" cache_read_input_tokens="33766" cache_creation="{'ephemeral_5m_input_tokens': 190, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01LezgJ4ep9o8xsMiksMMX7P">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/capability-system.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="190" cache_read_input_tokens="33766" cache_creation="{'ephemeral_5m_input_tokens': 190, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017wFZbLeiN4woQe1AhngAZG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/inference-hoisting.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="190" cache_read_input_tokens="33766" cache_creation="{'ephemeral_5m_input_tokens': 190, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01AzCcMshdt4yZxgB8QLDzNW">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/one-shot-workflow.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="190" cache_read_input_tokens="33766" cache_creation="{'ephemeral_5m_input_tokens': 190, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01XorZ3BZPkkRChDaWNVi4Xv">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/command-organization.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="190" cache_read_input_tokens="33766" cache_creation="{'ephemeral_5m_input_tokens': 190, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01C3Hm2V14JpWietvGMUMzmT">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/configuration/schema-driven-config.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="190" cache_read_input_tokens="33766" cache_creation="{'ephemeral_5m_input_tokens': 190, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CjkbV8tCxz1Nbdg7U8cFss">
+     1→---
+     2→title: dispatch_ref Configuration
+     3→read_when:
+     4→  - "configuring which branch workflow_dispatch targets"
+     5→  - "working with .erk/config.toml dispatch settings"
+     6→  - "debugging workflow dispatch targeting the wrong branch"
+     7→  - "using --ref CLI option to override dispatch branch per run"
+     8→tripwires:
+     9→  - action: "assuming dispatch_ref is project-level config"
+    10→    warning: "dispatch_ref is repo-level config (.erk/config.toml), overridable at local level (.erk/config.local.toml). It is not project-level."
+    11→---
+    12→
+    13→# dispatch_ref Configuration
+    14→
+    15→Override the default branch used for GitHub Actions `workflow_dispatch` events. By default, erk dispatches workflows against the repository's default branch (usually `master`). The `dispatch_ref` config allows targeting a different branch.
+    16→
+    17→## Configuration
+    18→
+    19→Top-level key in `.erk/config.toml`:
+    20→
+    21→```toml
+    22→dispatch_ref = "my-custom-branch"
+    23→```
+    24→
+    25→Can be overridden per-user in `.erk/config.local.toml`:
+    26→
+    27→```toml
+    28→dispatch_ref = "my-dev-branch"
+    29→```
+    30→
+
+... [54 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01BsqKb56MNoGcMdnKDzAqTR">
+     1→---
+     2→title: erk-statusline Architecture Guide
+     3→read_when:
+     4→  - "modifying the Claude Code status line"
+     5→  - "adding new status indicators to the statusline"
+     6→  - "understanding how statusline fetches GitHub data"
+     7→  - "working with Token/TokenSeq patterns"
+     8→  - "debugging statusline performance"
+     9→last_audited: "2026-02-05 14:19 PT"
+    10→audit_result: edited
+    11→---
+    12→
+    13→# erk-statusline Architecture Guide
+    14→
+    15→The erk-statusline package provides a custom status line for Claude Code, displaying git context, PR status, and CI checks.
+    16→
+    17→## Package Structure
+    18→
+    19→The package lives at `packages/erk-statusline/`. Source modules are in `src/erk_statusline/` and tests in `tests/`. Entry point: `erk_statusline.statusline:main`.
+    20→
+    21→Key modules:
+    22→
+    23→- `statusline.py` -- Core logic: data fetching, label building, `main()`
+    24→- `colored_tokens.py` -- Token/TokenSeq pattern for colored output (see module docstring for full API)
+    25→- `context.py` -- `StatuslineContext` with gateway dependency injection
+    26→
+    27→## Token/TokenSeq Pattern
+    28→
+    29→The statusline uses an immutable token system for building colored terminal output. See the module docstring in `colored_tokens.py` for full API documentation and usage examples.
+    30→
+
+... [107 lines omitted] ...
+
+    62→- Error fallback to defaults (never crashes)
+   121→1. **Never crash:** Errors fallback to defaults, showing partial info
+  </tool_result>
+  <tool_result tool="toolu_01T5qie79CP8sNj6mR9rH4mV">
+     1→---
+     2→title: Bundled Artifact Portability
+     3→read_when:
+     4→  - classifying a new skill as portable vs Claude-only
+     5→  - adding or modifying force-include entries in pyproject.toml
+     6→  - debugging why editable installs resolve to unexpected artifact paths
+     7→  - understanding the artifact sync and health detection systems
+     8→tripwires:
+     9→  - action: "adding a skill to codex_portable_skills() without verifying it works outside Claude Code"
+    10→    warning: "Portable skills must not use hooks, TodoWrite, EnterPlanMode, AskUserQuestion, or session log paths. Check against the portability classification table before adding."
+    11→  - action: "adding a force-include entry in pyproject.toml without updating codex_portable.py"
+    12→    warning: "The portability registry and pyproject.toml force-include must stay in sync. A skill mapped to erk/data/codex/ must appear in codex_portable_skills()."
+    13→  - action: "creating a .codex/ directory in the erk repo"
+    14→    warning: "There is no .codex/ directory in the erk repo. All skills live in .claude/skills/ regardless of portability. The build and sync systems handle remapping."
+    15→last_audited: "2026-02-17 16:00 PT"
+    16→audit_result: clean
+    17→---
+    18→
+    19→# Bundled Artifact Portability
+    20→
+    21→Erk bundles `.claude/` and `.github/` artifacts into the wheel so `erk artifact sync` can install them into external projects. A subset of these artifacts are "portable" — they work with any AI coding agent, not just Claude Code. This document explains the portability classification, the dual-path bundling architecture, and why certain design choices were made.
+    22→
+    23→## Why Two Bundle Targets?
+    24→
+    25→&lt;!-- Source: pyproject.toml:60-87 --&gt;
+    26→
+    27→The `force-include` section in `pyproject.toml` maps source artifacts to two different wheel locations: `erk/data/claude/` for Claude-only artifacts, and `erk/data/codex/` for portable skills.
+    28→
+    29→This split exists because portable skills get installed to whichever agent directory the target project uses (`.claude/`, `.codex/`, etc.), while Claude-only artifacts always go to `.claude/`. Without separate bundle targets, the sync system couldn't distinguish which artifacts to copy where.
+    30→
+
+... [68 lines omitted] ...
+
+    45→**Why this matters**: Installing a skill that calls `TodoWrite` into a non-Claude project causes runtime failures. The registry prevents `erk artifact sync` from copying incompatible skills.
+  </tool_result>
+  <tool_result tool="toolu_01RKoNWmNdu17XGe4wKDF8tv">
+     1→---
+     2→title: Codex Skills System
+     3→read_when:
+     4→  - "porting erk skills to Codex"
+     5→  - "implementing dual-target skill installation"
+     6→  - "understanding why Codex requires frontmatter that Claude doesn't"
+     7→  - "translating Claude slash commands for Codex execution"
+     8→tripwires:
+     9→  - action: "assuming Codex custom prompts are the current approach"
+    10→    warning: "Custom prompts (~/.codex/prompts/*.md) are the older mechanism, deprecated in favor of skills. Target .codex/skills/ instead."
+    11→  - action: "installing skills only to .claude/skills/ when Codex support is needed"
+    12→    warning: "Erk has a dual-target architecture. See get_bundled_codex_dir() in artifacts/paths.py and codex_portable_skills() in codex_portable.py for the portability registry."
+    13→  - action: "assuming all erk skills are portable to Codex"
+    14→    warning: "Only skills in codex_portable_skills() are portable. Skills that depend on Claude-specific features (hooks, session logs, commands) are in claude_only_skills()."
+    15→last_audited: "2026-02-08 13:55 PT"
+    16→audit_result: clean
+    17→---
+    18→
+    19→# Codex Skills System
+    20→
+    21→Research verified against `codex-rs/core/src/skills/` in the [Codex repository](https://github.com/openai/codex). Research date: February 2, 2026.
+    22→
+    23→## Three Design Axes Where Claude and Codex Skills Diverge
+    24→
+    25→Both systems use `SKILL.md` as the entry point, but they diverge on three axes that drive all of erk's dual-target design decisions:
+    26→
+    27→**1. Frontmatter is mandatory in Codex** because Codex uses progressive disclosure — only metadata loads at startup (~50 tokens per skill), with the full body loaded on invocation. Claude loads everything into context at startup, so frontmatter is optional. This means every erk skill needs `name` and `description` frontmatter even though Claude doesn't require it, because omitting frontmatter silently breaks Codex discovery.
+    28→
+    29→**2. Codex has a richer scope model** — four resolution levels (repo, user, system, admin) vs Claude's two (repo, user). Erk only targets repo scope currently, so this doesn't affect installation, but it matters if erk ever ships user-level skills.
+    30→
+
+... [135 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01LezgJ4ep9o8xsMiksMMX7P">
+     1→---
+     2→title: Capability System Architecture
+     3→read_when:
+     4→  - "creating new erk init capabilities"
+     5→  - "understanding how erk init works"
+     6→  - "adding installable features"
+     7→  - "working with capability tracking in state.toml"
+     8→  - "understanding how erk doctor filters artifacts by installed capabilities"
+     9→  - "working with backend-aware capability filtering"
+    10→last_audited: "2026-02-17 00:00 PT"
+    11→audit_result: edited
+    12→---
+    13→
+    14→# Capability System Architecture
+    15→
+    16→The capability system enables optional features to be installed via `erk init capability add &lt;name&gt;`.
+    17→
+    18→## Core Components
+    19→
+    20→### Base Class
+    21→
+    22→All capabilities inherit from the `Capability` ABC in `src/erk/core/capabilities/base.py`.
+    23→
+    24→See the base class for the complete interface including:
+    25→
+    26→- Required properties: `name`, `description`, `scope`, `installation_check_description`, `artifacts`, `managed_artifacts`
+    27→- Required methods: `is_installed()`, `install()`, `uninstall()`
+    28→- Optional: `required` property (default `False`), `preflight()` method
+    29→
+    30→### Registry
+
+... [149 lines omitted] ...
+
+   147→**CLI filtering** in `capability add` (`src/erk/cli/commands/init/capability/add_cmd.py`): Capabilities that don't support the current backend are skipped with a warning message.
+  </tool_result>
+  <tool_result tool="toolu_017wFZbLeiN4woQe1AhngAZG">
+     1→---
+     2→title: Inference Hoisting Pattern
+     3→last_audited: "2026-02-23 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - adding LLM calls to an exec script
+     7→  - calling PromptExecutor from a CLI command or exec script
+     8→  - working with BranchSlugGenerator or generate_branch_slug
+     9→  - adding --branch-slug or similar pre-computed value flags to exec commands
+    10→  - understanding why exec scripts must be deterministic
+    11→  - refactoring nested LLM calls out of exec scripts
+    12→  - working with plan summary generation or --summary flags
+    13→tripwires:
+    14→  - action: "calling PromptExecutor, generate_branch_slug, or BranchSlugGenerator from an exec script"
+    15→    warning: "Exec scripts must be deterministic. LLM calls belong in the skill layer (.claude/commands/*.md). Hoist: generate the value in the skill, pass it via --flag to the exec script. Read inference-hoisting.md."
+    16→    pattern: "PromptExecutor|generate_branch_slug|BranchSlugGenerator"
+    17→    score: 9
+    18→  - action: "adding LLM-dependent logic inside a Click @command function in exec/scripts/"
+    19→    warning: "Inference hoisting violation: exec scripts run as subprocesses; they cannot nest LLM calls within a Claude Code session. Move reasoning to the calling skill."
+    20→---
+    21→
+    22→# Inference Hoisting Pattern
+    23→
+    24→## Why This Pattern Exists
+    25→
+    26→Exec scripts are Python subprocesses that run to completion without Claude Code context. They cannot invoke the Claude CLI via `PromptExecutor.execute_prompt()` — attempting to do so inside a Claude Code session creates a nested LLM call that deadlocks or fails.
+    27→
+    28→The skill layer (`.claude/commands/*.md`) is the orchestration boundary. Skills run inside Claude Code with full reasoning capability. They can generate values through LLM inference before invoking exec scripts.
+    29→
+    30→**The original bug**: `plan_save.py` and `setup_impl_from_pr.py` called `generate_branch_slug(executor, title)`, which invoked `PromptExecutor.execute_prompt()` to ask Claude for a branch slug. When these scripts ran inside a Claude Code session (via `/erk:plan-save`), the nested Claude subprocess locked up. The fix moved slug generation into the skill layer, passing the pre-generated slug via `--branch-slug`.
+
+... [132 lines omitted] ...
+
+    46→  5. Uses the pre-computed value; errors with remediation instructions if missing
+    69→Each script accepts a `--branch-slug` Click option. When provided, it uses the pre-generated slug directly. When missing, the script exits with a clear error message and remediation instructions directing the caller to generate a slug in the skill layer.
+    85→## Error Handling
+    87→When `--branch-slug` is not provided, exec scripts exit with a clear error message and remediation instructions. They do **not** silently fall back to a sanitized title. This follows the [agent backpressure gates](agent-backpressure-gates.md) philosophy: silent transformation masks mistakes and prevents the agent from learning.
+    89→The error message directs callers to generate a slug in the skill layer (e.g., plan-save.md Step 1.5) and pass it via `--branch-slug`. For direct CLI invocation, pass `--branch-slug` explicitly.
+    97→3. **Add a `--flag` to the exec script** — add it as a Click option; if missing, emit a clear error message with remediation instructions explaining how to generate the value
+   140→### Deterministic Exception: `land_learn.py`
+  </tool_result>
+  <tool_result tool="toolu_01AzCcMshdt4yZxgB8QLDzNW">
+     1→---
+     2→title: One-Shot Workflow
+     3→last_audited: "2026-02-24 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "working with erk one-shot dispatch"
+     7→  - "understanding how plans are autonomously created and implemented"
+     8→  - "debugging one-shot workflow failures"
+     9→  - "integrating objectives with one-shot dispatch"
+    10→tripwires:
+    11→  - action: "adding dry-run support to one-shot commands"
+    12→    warning: "One-shot dry-run mode must NOT create skeleton issues"
+    13→  - action: "modifying register-one-shot-plan exit behavior"
+    14→    warning: "register-one-shot-plan uses best-effort: exit 0 if any operation succeeds"
+    15→  - action: "adding post-dispatch operations without matching dispatch_cmd.py pattern"
+    16→    warning: "dispatch_one_shot() and _dispatch_planned_pr_plan() in dispatch_cmd.py must stay synchronized. Both use write_dispatch_metadata() + create_submission_queued_block(). Changes to one must be mirrored in the other."
+    17→  - action: "writing post-dispatch operations without try/except guards"
+    18→    warning: "Post-dispatch operations (metadata write, queued comment) are best-effort. Wrap in try/except with user-visible warnings. See write_dispatch_metadata() and create_submission_queued_block() in one_shot_dispatch.py."
+    19→  - action: "editing plan body content in plan creation, replan, or one-shot dispatch"
+    20→    warning: "One-shot metadata block preservation: the metadata block in the plan body (HTML comment with erk:metadata-block markers) must survive all edits. Never strip or overwrite HTML comment blocks that contain erk:metadata-block markers."
+    21→    score: 9
+    22→---
+    23→
+    24→# One-Shot Workflow
+    25→
+    26→The one-shot workflow enables fully autonomous planning and implementation from a single CLI command. It dispatches a GitHub Actions workflow that creates a plan and implements it without human intervention.
+    27→
+    28→## End-to-End Pipeline
+    29→
+    30→```
+
+... [142 lines omitted] ...
+
+   104→`src/erk/cli/commands/exec/scripts/register_one_shot_plan.py` performs four independent operations that `erk pr submit` normally handles at submit time. Each operation is best-effort -- failures are logged but don't block others:
+   111→The command outputs JSON results for each operation with success/error details.
+   124→The CLI write is the primary source; CI registration fills gaps when the CLI couldn't complete (e.g., network failure during dispatch).
+  </tool_result>
+  <tool_result tool="toolu_01XorZ3BZPkkRChDaWNVi4Xv">
+     1→---
+     2→title: CLI Command Organization
+     3→last_audited: "2026-02-16 04:53 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "organizing CLI commands"
+     7→  - "understanding command structure"
+     8→  - "designing command hierarchies"
+     9→---
+    10→
+    11→# CLI Command Organization
+    12→
+    13→## Design Philosophy: Plan-Oriented Interface
+    14→
+    15→Erk's CLI is organized around the principle that **plans are the dominant noun** in the user's workflow. This design decision prioritizes ergonomics for the most common operations while maintaining clarity through consistent grouping patterns.
+    16→
+    17→### Core Principle: Plan as First-Class Citizen
+    18→
+    19→Plans represent implementation work to be done. Since users interact with plans more frequently than they manipulate worktrees or stacks directly, plan-related commands are placed at the top level for minimal keystrokes and maximum discoverability.
+    20→
+    21→**Top-level plan commands:**
+    22→
+    23→```bash
+    24→erk dash          # Display plan dashboard
+    25→erk implement     # Implement a plan in current directory
+    26→erk prepare       # Create a worktree from a plan issue
+    27→
+    28→# Plan submission operations are under `erk pr`:
+    29→erk pr dispatch   # Submit a plan for remote execution
+    30→
+
+... [381 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01C3Hm2V14JpWietvGMUMzmT">
+     1→---
+     2→title: Schema-Driven Config System
+     3→read_when:
+     4→  - adding new configuration options to erk
+     5→  - modifying config CLI commands (get, set, list, keys)
+     6→  - understanding why config commands don't need manual field lists
+     7→tripwires:
+     8→  - action: "adding a new config option without defining it in a Pydantic schema"
+     9→    warning: "All config keys must be defined in schema.py with proper ConfigLevel. The schema is the single source of truth — CLI commands discover fields via Pydantic introspection, so manual lists are unnecessary and will diverge."
+    10→last_audited: "2026-02-17 09:00 PT"
+    11→audit_result: edited
+    12→---
+    13→
+    14→# Schema-Driven Config System
+    15→
+    16→## Why Schema-Driven?
+    17→
+    18→Erk's config system uses Pydantic schemas as the **single source of truth** for all configuration metadata. The alternative — maintaining separate lists of field names, descriptions, and validation rules in CLI commands — leads to drift when fields are added or renamed. Instead, `erk config keys`, `erk config list`, `erk config get`, and `erk config set` all introspect the schema at runtime.
+    19→
+    20→This means adding a new config option is a **one-place change** (the schema) rather than updating multiple CLI command files.
+    21→
+    22→## ConfigLevel: Where a Key Can Live
+    23→
+    24→&lt;!-- Source: packages/erk-shared/src/erk_shared/config/schema.py, ConfigLevel --&gt;
+    25→
+    26→Every field carries a `ConfigLevel` that controls which config files can set it:
+    27→
+    28→| Level         | Meaning                          | Why This Level Exists                                                          |
+    29→| ------------- | -------------------------------- | ------------------------------------------------------------------------------ |
+    30→| `GLOBAL_ONLY` | Only `~/.erk/config.toml`        | Settings that are inherently user-wide (e.g., `erk_root`, permission modes)    |
+
+... [57 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I've read all the files that need updating. Now let me also verify some source code references to ensure accuracy before writing documentation. Let me start implementing the steps.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="25583" cache_read_input_tokens="33956" cache_creation="{'ephemeral_5m_input_tokens': 25583, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01HdyynrPwNKYKMQXHShUAWq">
+    <param name="todos">[{'content': 'Step 1: Update dispatch ref documentation (dispatch-ref-config.md)', 'status...[truncated 1443 chars]...nc and CI'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="25583" cache_read_input_tokens="33956" cache_creation="{'ephemeral_5m_input_tokens': 25583, 'ephemeral_1h_input_tokens': 0}" output_tokens="514" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HdyynrPwNKYKMQXHShUAWq">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me verify the source code references the plan mentions, in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="556" cache_read_input_tokens="59539" cache_creation="{'ephemeral_5m_input_tokens': 556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_017EafL7p5mA2Nz1sWDWi9Tp">
+    <param name="description">Verify dispatch ref sources</param>
+    <param name="prompt">Search for and verify these source code facts for documentation purposes. Do NOT modify an...[truncated 311 chars]...4. Check for `--ref-current` flag in the ref_resolution module
+
+Report findings concisely.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="556" cache_read_input_tokens="59539" cache_creation="{'ephemeral_5m_input_tokens': 556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01BTgbd2FcU4LTmFq8xWLbnv">
+    <param name="description">Verify statusline dedup source</param>
+    <param name="prompt">Search for and verify these source code facts for documentation purposes. Do NOT modify an...[truncated 299 chars]...up test cases. Report how many test cases cover deduplication.
+
+Report findings concisely.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="556" cache_read_input_tokens="59539" cache_creation="{'ephemeral_5m_input_tokens': 556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01PM3RwNivksPct3QgPaK4gu">
+    <param name="description">Verify bundled artifacts sources</param>
+    <param name="prompt">Search for and verify these source code facts for documentation purposes. Do NOT modify an...[truncated 272 chars]...if any force-include entries still reference `erk/data/codex/`
+
+Report findings concisely.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="556" cache_read_input_tokens="59539" cache_creation="{'ephemeral_5m_input_tokens': 556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01AvunYtGr8xkPAiUZKEQiuf">
+    <param name="description">Verify capability system sources</param>
+    <param name="prompt">Search for and verify these source code facts for documentation purposes. Do NOT modify an...[truncated 275 chars]...f paths don't match exactly, search broadly for these symbols.
+
+Report findings concisely.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="556" cache_read_input_tokens="59539" cache_creation="{'ephemeral_5m_input_tokens': 556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01QZve1CLuJkcv8tMnGuDPWm">
+    <param name="description">Verify LlmCaller sources</param>
+    <param name="prompt">Search for and verify these source code facts for documentation purposes. Do NOT modify an...[truncated 379 chars]...heck for `BRANCH_SLUG_SYSTEM_PROMPT` and `_postprocess_slug()`
+
+Report findings concisely.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="556" cache_read_input_tokens="59539" cache_creation="{'ephemeral_5m_input_tokens': 556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01Xbr6iANJ5zeMZA2MAKkmu2">
+    <param name="description">Verify implement cmd and time sources</param>
+    <param name="prompt">Search for and verify these source code facts for documentation purposes. Do NOT modify an...[truncated 490 chars]...nes 721-801 for worktree naming with `now: datetime` parameter
+
+Report findings concisely.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="556" cache_read_input_tokens="59539" cache_creation="{'ephemeral_5m_input_tokens': 556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01ADVHumSdEgTwpXW3XMpTAu">
+    <param name="description">Verify help formatter sources</param>
+    <param name="prompt">Search for and verify these source code facts for documentation purposes. Do NOT modify an...[truncated 276 chars]...`src/erk/cli/commands/one_shot.py` - is `hidden=True` removed?
+
+Report findings concisely.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="556" cache_read_input_tokens="59539" cache_creation="{'ephemeral_5m_input_tokens': 556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017EafL7p5mA2Nz1sWDWi9Tp">
+Async agent launched successfully.
+agentId: a03c890 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01BTgbd2FcU4LTmFq8xWLbnv">
+Async agent launched successfully.
+agentId: a553eb3 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01PM3RwNivksPct3QgPaK4gu">
+Async agent launched successfully.
+agentId: aecaf64 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01AvunYtGr8xkPAiUZKEQiuf">
+Async agent launched successfully.
+agentId: aaf6844 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01QZve1CLuJkcv8tMnGuDPWm">
+Async agent launched successfully.
+agentId: a31c330 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01Xbr6iANJ5zeMZA2MAKkmu2">
+Async agent launched successfully.
+agentId: ad9357e (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01ADVHumSdEgTwpXW3XMpTAu">
+Async agent launched successfully.
+agentId: abfd86e (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>Let me collect the results from the background agents to ensure accuracy before making edits.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3432" cache_read_input_tokens="60095" cache_creation="{'ephemeral_5m_input_tokens': 3432, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01MV5wxc1vsKDRGgJyLahw9h">
+    <param name="task_id">a03c890</param>
+    <param name="block">True</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3432" cache_read_input_tokens="60095" cache_creation="{'ephemeral_5m_input_tokens': 3432, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01EHjVkMLzGVW8hBcxFYvyZw">
+    <param name="task_id">a553eb3</param>
+    <param name="block">True</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3432" cache_read_input_tokens="60095" cache_creation="{'ephemeral_5m_input_tokens': 3432, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01Gu4oJyweGBugGXWqwBdD7b">
+    <param name="task_id">aecaf64</param>
+    <param name="block">True</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3432" cache_read_input_tokens="60095" cache_creation="{'ephemeral_5m_input_tokens': 3432, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01XwMDbvCvBhtacry9HbA8wB">
+    <param name="task_id">aaf6844</param>
+    <param name="block">True</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3432" cache_read_input_tokens="60095" cache_creation="{'ephemeral_5m_input_tokens': 3432, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01C6B6uPxUxTJJrfuX5WucMq">
+    <param name="task_id">a31c330</param>
+    <param name="block">True</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3432" cache_read_input_tokens="60095" cache_creation="{'ephemeral_5m_input_tokens': 3432, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01YM2EDg8Kn6m3gDiwsuNrfL">
+    <param name="task_id">ad9357e</param>
+    <param name="block">True</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3432" cache_read_input_tokens="60095" cache_creation="{'ephemeral_5m_input_tokens': 3432, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01NDRrhWAxM4QXQpY3nzvbgB">
+    <param name="task_id">abfd86e</param>
+    <param name="block">True</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3432" cache_read_input_tokens="60095" cache_creation="{'ephemeral_5m_input_tokens': 3432, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NDRrhWAxM4QXQpY3nzvbgB">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;abfd86e&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/help_formatter.py","offset":244,"limit":35}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py"}
+
+--- RESULT ---
+Perfect! Here are the findings:
+
+## Verification Results
+
+**1. Command classification in help_formatter.py (lines 244-278):** ✅ CONFIRMED
+
+- **Top-Level Commands** (lines 244-257): Both `launch` and `one-shot` are present
+- **Command Groups** (lines 258-278): `workflow` is classified as a command group
+- Classification is exactly as expected: `launch` and `one-shot` are top-level, `workflow` is in groups
+
+**2. `one-shot.py` - `hidden=True` status:** ✅ CONFIRMED REMOVED
+
+- The `@click.command("one-shot")` decorator (line 29) does **not** have `hidden=True`
+- The command is fully visible in the CLI
+- All options and arguments are properly declared (lines 30-74)
+
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01EHjVkMLzGVW8hBcxFYvyZw">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a553eb3&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py","offset":565,"limit":15}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-statusline/tests/test_statusline.py","offset":1076,"limit":70}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-statusline/tests/test_statusline.py","offset":1076,"limit":70}
+
+--- RESULT ---
+Perfect! I found both sections. Here are the findings:
+
+## Findings
+
+### 1. Deduplication Algorithm (lines 565-574)
+
+The exact dedup algorithm in `_fetch_check_runs()`:
+
+```python
+# Deduplicate by name - GitHub returns multiple runs per check name
+# from reruns/superseded workflows. Keep first (most recent) per name.
+seen_names: set[str] = set()
+deduplicated: list[dict[str, str]] = []
+for ctx in check_contexts:
+    name = ctx.get("name", "")
+    if name not in seen_names:
+
+... [19 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01XwMDbvCvBhtacry9HbA8wB">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;aaf6844&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Glob] {"pattern":"**/bundled.py"}
+[Tool: Grep] {"pattern":"is_required_bundled_skill","type":"py"}
+[Tool: Grep] {"pattern":"list_optional_capabilities","type":"py"}
+[Tool: Grep] {"pattern":"list_optional_capabilities","type":"py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/core/capabilities/registry.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/core/capabilities/registry.py"}
+
+--- RESULT ---
+Perfect! I've found all the information you requested. Here's my report:
+
+## Findings
+
+**1. File location:** `/home/runner/work/erk/erk/src/erk/capabilities/skills/bundled.py`
+
+**2. Required bundled skills (frozenset):**
+The `_REQUIRED_BUNDLED_SKILLS` frozenset at lines 17-25 contains exactly 5 required skills:
+```python
+_REQUIRED_BUNDLED_SKILLS: frozenset[str] = frozenset(
+    {
+        "erk-diff-analysis",
+
+... [21 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01YM2EDg8Kn6m3gDiwsuNrfL">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;ad9357e&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/implement.py","offset":400,"limit":30}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/implement.py","offset":44,"limit":60}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/abc.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py","offset":721,"limit":85}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py","offset":721,"limit":85}
+
+--- RESULT ---
+Perfect. All requested source code facts found. Here's my concise report:
+
+## Source Code Facts Verification
+
+**1. Auto-detection strategies in implement.py (lines 400-423)**
+- Located and verified
+- **Strategy 1 (resolve_impl_dir)**: Lines 404-407 check `.erk/impl-context/` in current directory
+- **Strategy 2 (extract_plan_from_current_branch)**: Lines 425-428 extract plan number from GitHub PR branch name
+- Both strategies feed into `_execute()` call at line 412
+
+**2. Shared _execute() function (lines 44-103)**
+- Located and verified
+- Signature accepts: ctx, repo, submit, dangerous, script, no_interactive, verbose, model, executor
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Gu4oJyweGBugGXWqwBdD7b">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;aecaf64&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/pyproject.toml"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/artifacts/paths.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/artifacts/paths.py"}
+[Tool: Grep] {"pattern":"codex","path":"/home/runner/work/erk/erk/pyproject.toml"}
+[Tool: Grep] {"pattern":"codex","path":"/home/runner/work/erk/erk/pyproject.toml"}
+[Tool: Grep] {"pattern":"codex","path":"/home/runner/work/erk/erk/pyproject.toml","output_mode":"content","-n":true}
+[Tool: Grep] {"pattern":"codex","path":"/home/runner/work/erk/erk/pyproject.toml","output_mode":"content","-n":true}
+[Tool: Bash] {"command":"grep -n \"erk/data/codex\" /home/runner/work/erk/erk/pyproject.toml","description":"Search for any remaining erk/data/codex references"}
+[Tool: Bash] {"command":"grep -n \"erk/data/codex\" /home/runner/work/erk/erk/pyproject.toml","description":"Search for any remaining erk/data/codex references"}
+
+--- RESULT ---
+Excellent. Here are my findings:
+
+## Verification Report
+
+**1. pyproject.toml force-include entries:**
+- **Status: YES** - All force-include entries have been updated to map to `erk/data/claude/` instead of `erk/data/codex/`
+- Lines 65-79 show all skill and command force-include entries now point to `erk/data/claude/` paths
+- Comment on line 66 confirms: "Skills (bundled to claude path; codex backend falls back to claude path at runtime)"
+
+**2. src/erk/artifacts/paths.py get_bundled_codex_dir():**
+
+... [11 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01C6B6uPxUxTJJrfuX5WucMq">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a31c330&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Glob] {"pattern":"**/llm_caller.py"}
+[Tool: Glob] {"pattern":"**/fast_llm.py"}
+[Tool: Glob] {"pattern":"**/context.py"}
+[Tool: Glob] {"pattern":"**/branch_slug_generator.py"}
+[Tool: Glob] {"pattern":"**/branch_slug_generator.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/llm_caller.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/core/fast_llm.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/core/context.py","offset":640,"limit":60}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/core/branch_slug_generator.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/core/branch_slug_generator.py"}
+
+--- RESULT ---
+Perfect! I've found and verified all the requested source code facts. Here's the concise report:
+
+## Source Code Facts Report
+
+### 1. LlmCaller ABC
+**Location:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/llm_caller.py`
+
+- Defines abstract `call()` method with signature:
+  ```python
+
+... [41 lines omitted] ...
+
+  def call(self, prompt: str, *, system_prompt: str) -&gt; LlmResponse | NoApiKey | LlmCallFailed
+  - `NoApiKey(message: str)` with `error_type = "no-api-key"`
+  - `LlmCallFailed(message: str)` with `error_type = "llm-call-failed"`
+- Catches `APIError` and returns `LlmCallFailed`
+- Convenience function `generate_branch_slug()` returns LLM slug on success, raw title on failure
+  </tool_result>
+  <tool_result tool="toolu_01MV5wxc1vsKDRGgJyLahw9h">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;a03c890&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/src/erk/cli/commands/ref_resolution.py"}
+[Tool: Glob] {"pattern":"tests/unit/cli/commands/test_ref_resolution.py"}
+[Tool: Grep] {"pattern":"resolve_dispatch_ref|ref_resolution","type":"py","glob":"src/erk/cli/commands/*.py"}
+[Tool: Grep] {"pattern":"resolve_dispatch_ref|ref_resolution","type":"py","glob":"src/erk/cli/commands/*.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/unit/cli/commands/test_ref_resolution.py"}
+[Tool: Grep] {"pattern":"@click\\.command|def (launch|one_shot|pr_dispatch|workflow_smoke_test|objective_plan)","type":"py","glob":"src/erk/cli/commands/*.py","output_mode":"content","head_limit":50}
+[Tool: Grep] {"pattern":"--ref-current|ref_current.*bool","type":"py","glob":"src/erk/cli/commands/*.py","output_mode":"files_with_matches"}
+[Tool: Grep] {"pattern":"--ref-current|ref_current.*bool","type":"py","glob":"src/erk/cli/commands/*.py","output_mode":"files_with_matches"}
+[Tool: Grep] {"pattern":"resolve_dispatch_ref","type":"py","output_mode":"content","context":3}
+[Tool: Grep] {"pattern":"resolve_dispatch_ref","type":"py","output_mode":"content","context":3}
+[Tool: Grep] {"pattern":"resolve_dispatch_ref","type":"py","output_mode":"content","path":"/home/runner/work/erk/erk"}
+[Tool: Grep] {"pattern":"resolve_dispatch_ref","type":"py","output_mode":"content","path":"/home/runner/work/erk/erk"}
+[Tool: Bash] {"command":"grep -A 2 \"@click.command\" src/erk/cli/commands/launch_cmd.py | head -5","description":"Verify launch command definition"}
+[Tool: Bash] {"command":"grep -A 2 \"@click.command\" src/erk/cli/commands/one_shot.py | head -5","description":"Verify one-shot command definition"}
+[Tool: Bash] {"command":"grep -A 2 \"@click.command\" src/erk/cli/commands/pr/dispatch_cmd.py | head -5","description":"Verify pr dispatch command definition"}
+[Tool: Bash] {"command":"grep -A 2 \"@click.command\\|def workflow_smoke_test_cmd\\|def objective_plan_cmd\\|def plan_cmd\" src/erk/cli/commands/doctor_workflow.py | head -10","description":"Verify doctor_workflow and objective commands"}
+[Tool: Bash] {"command":"grep -A 2 \"@click.command\\|def workflow_smoke_test_cmd\\|def objective_plan_cmd\\|def plan_cmd\" src/erk/cli/commands/doctor_workflow.py | head -10","description":"Verify doctor_workflow and objective commands"}
+[Tool: Bash] {"command":"grep -B 5 \"def plan_cmd\\|def objective_plan_cmd\" src/erk/cli/commands/objective/plan_cmd.py | grep -E \"@click.command|def (plan_cmd|objective_plan_cmd)\"","description":"Find objective plan command definition"}
+[Tool: Bash] {"command":"grep \"def.*_cmd\\|@click.command\" src/erk/cli/commands/objective/plan_cmd.py | head -20","description":"Get command and function names in objective plan_cmd"}
+[Tool: Bash] {"command":"grep \"def.*_cmd\\|@click.command\" src/erk/cli/commands/objective/plan_cmd.py | head -20","description":"Get command and function names in objective plan_cmd"}
+[Tool: Bash] {"command":"grep -n \"\\-\\-ref-current\" src/erk/cli/commands/*.py src/erk/cli/commands/**/*.py 2&gt;/dev/null | head -20","description":"Find all --ref-current flag declarations"}
+
+... [65 lines omitted] ...
+
+- Raises `UsageError` if `--ref-current` is used with detached HEAD
+1. `test_mutual_exclusion_error()` - Both flags raises UsageError
+3. `test_ref_current_detached_head_error()` - Detached HEAD raises UsageError
+  </tool_result>
+  <assistant>All verifications are complete. Now I have accurate source code references. Let me start implementing the documentation changes. I'll work through the steps systematically.
+
+**Step 1: Update dispatch ref documentation**</assistant>
+  <usage input_tokens="4801" cache_creation_input_tokens="2986" cache_read_input_tokens="63527" cache_creation="{'ephemeral_5m_input_tokens': 2986, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Cb735hQcTRegeCDTUT83zt">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/dispatch-ref-config.md</param>
+    <param name="old_string">---
+title: dispatch_ref Configuration
+read_when:
+  - "configuring which branch workflow_di...[truncated 307 chars]....toml), overridable at local level (.erk/config.local.toml). It is not project-level."
+---</param>
+    <param name="new_string">---
+title: dispatch_ref Configuration
+read_when:
+  - "configuring which branch workflow_di...[truncated 567 chars]...re mutually exclusive. resolve_dispatch_ref() raises UsageError if both are provided."
+---</param>
+  </tool_use>
+  <usage input_tokens="4801" cache_creation_input_tokens="2986" cache_read_input_tokens="63527" cache_creation="{'ephemeral_5m_input_tokens': 2986, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Cb735hQcTRegeCDTUT83zt">
+The file /home/runner/work/erk/erk/docs/learned/erk/dispatch-ref-config.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VGJyZoZUgmp8a19m2dyvGw">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/dispatch-ref-config.md</param>
+    <param name="old_string">## CLI `--ref` Override
+
+All three dispatch commands accept a `--ref` option for per-run b...[truncated 444 chars]...onfig. This enables testing workflow changes on a feature branch without modifying config.</param>
+    <param name="new_string">## CLI `--ref` Override
+
+All five dispatch commands accept a `--ref` option for per-run br...[truncated 1176 chars]...es a `UsageError` with a descriptive message, since there is no current branch to resolve.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5349" cache_read_input_tokens="66513" cache_creation="{'ephemeral_5m_input_tokens': 5349, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VGJyZoZUgmp8a19m2dyvGw">
+The file /home/runner/work/erk/erk/docs/learned/erk/dispatch-ref-config.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01XEZ8fdvY7VtD2KefEVNgyA">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/dispatch-ref-config.md</param>
+    <param name="old_string">## Call Sites
+
+`dispatch_ref` is consumed at 4 locations, all passing the resolved ref to ...[truncated 400 chars]...r-rewrite |
+| `erk launch --learn` | Triggering learn workflows                          |</param>
+    <param name="new_string">## Call Sites
+
+`dispatch_ref` is consumed at 5 locations, all using `resolve_dispatch_ref(...[truncated 631 chars]...
+| `erk objective plan --one-shot`| Dispatching objective-driven one-shot plans          |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1055" cache_read_input_tokens="71862" cache_creation="{'ephemeral_5m_input_tokens': 1055, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XEZ8fdvY7VtD2KefEVNgyA">
+The file /home/runner/work/erk/erk/docs/learned/erk/dispatch-ref-config.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me mark Step 1 complete and start Step 2.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="495" cache_read_input_tokens="72917" cache_creation="{'ephemeral_5m_input_tokens': 495, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01N2LS4a2RG9rj6bMefD7Kp9">
+    <param name="todos">[{'content': 'Step 1: Update dispatch ref documentation (dispatch-ref-config.md)', 'status...[truncated 1445 chars]...nc and CI'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="495" cache_read_input_tokens="72917" cache_creation="{'ephemeral_5m_input_tokens': 495, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01N2LS4a2RG9rj6bMefD7Kp9">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Step 2: Add statusline deduplication section**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="536" cache_read_input_tokens="73412" cache_creation="{'ephemeral_5m_input_tokens': 536, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Br99LEouNqJQwpA5UCVfte">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-statusline.md</param>
+    <param name="old_string">## Logging
+
+Logs go to `~/.erk/logs/statusline/{session-id}.log`. They are file-based to avoid polluting stderr, which would break the status line display.</param>
+    <param name="new_string">## Check Run Deduplication
+
+&lt;!-- Source: packages/erk-statusline/src/erk_statusline/status...[truncated 1063 chars]... They are file-based to avoid polluting stderr, which would break the status line display.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="536" cache_read_input_tokens="73412" cache_creation="{'ephemeral_5m_input_tokens': 536, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Br99LEouNqJQwpA5UCVfte">
+The file /home/runner/work/erk/erk/docs/learned/architecture/erk-statusline.md has been updated successfully.
+  </tool_result>
+</session>

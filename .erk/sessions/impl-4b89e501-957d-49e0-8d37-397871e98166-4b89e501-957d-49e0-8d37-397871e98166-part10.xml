@@ -1,0 +1,250 @@
+<session>
+  <meta source="agent-ad9357e" />
+  <meta branch="plnd/consolidate-learn-docs-03-03-0431" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Search for and verify these source code facts for documentation purposes. Do NOT modify any files. Report what you find:
+
+1. Find `src/erk/cli/commands/implement.py` around lines 400-423 for auto-detection strategies (resolve_impl_dir and extract_plan_from_current_branch)
+2. Find shared `_execute()` at lines 44-103
+3. Find time gateway ABC at `packages/erk-shared/src/erk_shared/gateway/time/abc.py`
+4. Find FakeTime at `packages/erk-shared/src/erk_shared/gateway/time/fake.py` - report the default datetime and sleep_calls tracking
+5. Check `packages/erk-shared/src/erk_shared/naming.py` around lines 721-801 for worktree naming with `now: datetime` parameter
+
+Report findings concisely.</user>
+  <assistant>I'll search for these source code facts efficiently across the codebase.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15155" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Ly6Vf16iHwUUDy6z6ZtFVr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+    <param name="offset">400</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15155" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HaFnF9RVmr7dGztU5ia6gm">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/implement.py</param>
+    <param name="offset">44</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15155" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PYg58Y41bn5pw6sKxLrSPL">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/abc.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15155" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013GxxeXD79SvBvvR78eVoHi">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/time/fake.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15155" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01H8iX9XuyqmYUxFekT2dGWV">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/naming.py</param>
+    <param name="offset">721</param>
+    <param name="limit">85</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15155" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15155, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ly6Vf16iHwUUDy6z6ZtFVr">
+   400→    # Auto-detect from impl-context or branch name when TARGET is omitted
+   401→    if target is None:
+   402→        current_branch = ctx.git.branch.get_current_branch(ctx.cwd)
+   403→
+   404→        # Strategy 1: Check existing .erk/impl-context/
+   405→        impl_dir = resolve_impl_dir(ctx.cwd, branch_name=current_branch)
+   406→        if impl_dir is not None and (impl_dir / "plan.md").exists():
+   407→            user_output(f"Auto-detected impl-context at {impl_dir.relative_to(ctx.cwd)}")
+   408→            if dry_run:
+   409→                user_output("Would execute implementation from existing impl-context")
+   410→                return
+   411→            repo = discover_repo_context(ctx, ctx.cwd)
+   412→            _execute(
+   413→                ctx,
+   414→                repo=repo,
+   415→                submit=submit,
+   416→                dangerous=dangerous,
+   417→                script=script,
+   418→                no_interactive=no_interactive,
+   419→                verbose=verbose,
+   420→                model=model,
+   421→                executor=ctx.prompt_executor,
+   422→            )
+   423→            return
+   424→
+   425→        # Strategy 2: Extract plan number from GitHub PR
+   426→        detected_plan = extract_plan_from_current_branch(ctx)
+   427→        if detected_plan is not None:
+   428→            target = detected_plan
+   429→            user_output(f"Auto-detected plan #{target} from branch")
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01HaFnF9RVmr7dGztU5ia6gm">
+    44→def _execute(
+    45→    ctx: ErkContext,
+    46→    *,
+    47→    repo: RepoContext,
+    48→    submit: bool,
+    49→    dangerous: bool,
+    50→    script: bool,
+    51→    no_interactive: bool,
+    52→    verbose: bool,
+    53→    model: str | None,
+    54→    executor: PromptExecutor,
+    55→) -&gt; None:
+    56→    """Execute implementation in current directory (impl-context must already exist).
+    57→
+    58→    Callers must handle dry-run before calling this function.
+    59→
+    60→    Args:
+    61→        ctx: Erk context
+    62→        repo: RepoContext from discover_repo_context
+    63→        submit: Whether to auto-submit PR after implementation
+    64→        dangerous: Whether to skip permission prompts
+    65→        script: Whether to output activation script
+    66→        no_interactive: Whether to execute non-interactively
+    67→        verbose: Whether to show raw output or filtered output
+    68→        model: Optional model name (haiku, sonnet, opus) to pass to Claude CLI
+    69→        executor: Prompt executor for command execution
+    70→    """
+    71→    branch = ctx.git.branch.get_current_branch(ctx.cwd) or "current"
+    72→
+    73→    if script:
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01PYg58Y41bn5pw6sKxLrSPL">
+     1→"""Time operations abstraction for testing.
+     2→
+     3→This module provides an ABC for time operations (sleep, now) to enable
+     4→fast tests that don't actually sleep and can use deterministic timestamps.
+     5→"""
+     6→
+     7→from abc import ABC, abstractmethod
+     8→from datetime import datetime
+     9→
+    10→
+    11→class Time(ABC):
+    12→    """Abstract time operations for dependency injection."""
+    13→
+    14→    @abstractmethod
+    15→    def sleep(self, seconds: float) -&gt; None:
+    16→        """Sleep for specified number of seconds.
+    17→
+    18→        Args:
+    19→            seconds: Number of seconds to sleep
+    20→        """
+    21→        ...
+    22→
+    23→    @abstractmethod
+    24→    def now(self) -&gt; datetime:
+    25→        """Get the current datetime.
+    26→
+    27→        Returns:
+    28→            Current datetime (timezone-naive for simplicity)
+    29→        """
+    30→        ...
+
+... [16 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_013GxxeXD79SvBvvR78eVoHi">
+     1→"""Fake Time implementation for testing.
+     2→
+     3→FakeTime is an in-memory implementation that tracks sleep() calls without
+     4→actually sleeping, returns a configurable current time, and provides
+     5→deterministic monotonic clock values from a configured sequence.
+     6→"""
+     7→
+     8→from collections.abc import Sequence
+     9→from datetime import datetime
+    10→
+    11→from erk_shared.gateway.time.abc import Time
+    12→
+    13→# Default fixed time for deterministic tests: 2024-01-15 14:30:00
+    14→DEFAULT_FAKE_TIME = datetime(2024, 1, 15, 14, 30, 0)
+    15→
+    16→
+    17→class FakeTime(Time):
+    18→    """In-memory fake implementation that tracks calls without sleeping.
+    19→
+    20→    This class has NO public setup methods. All state is provided via constructor
+    21→    or captured during execution.
+    22→    """
+    23→
+    24→    def __init__(
+    25→        self,
+    26→        current_time: datetime | None = None,
+    27→        monotonic_values: Sequence[float] | None = None,
+    28→    ) -&gt; None:
+    29→        """Create FakeTime with empty call tracking and optional fixed time.
+    30→
+
+... [61 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01H8iX9XuyqmYUxFekT2dGWV">
+   721→def ensure_unique_worktree_name_with_date(
+   722→    base_name: str, worktrees_dir: Path, git_ops, *, now: datetime
+   723→) -&gt; str:
+   724→    """Ensure unique worktree name with datetime suffix and smart versioning.
+   725→
+   726→    Adds datetime suffix in format -YY-MM-DD-HHMM to the base name.
+   727→    If a worktree with that name exists, increments numeric suffix starting at 2 AFTER the datetime.
+   728→    Uses LBYL pattern: checks via git_ops.worktree.path_exists() before operations.
+   729→
+   730→    This function is used for plan-derived worktrees where multiple worktrees may be
+   731→    created from the same plan, requiring datetime-based disambiguation.
+   732→
+   733→    Args:
+   734→        base_name: Sanitized worktree base name (without datetime suffix)
+   735→        worktrees_dir: Directory containing worktrees
+   736→        git_ops: Git operations interface for checking path existence
+   737→        now: Datetime to use for the suffix. Callers should pass ctx.time.now()
+   738→             for testability.
+   739→
+   740→    Returns:
+   741→        Guaranteed unique worktree name with datetime suffix
+   742→
+   743→    Examples:
+   744→        First time: "my-feature" → "my-feature-25-11-08-1430"
+   745→        Duplicate: "my-feature" → "my-feature-25-11-08-1430-2"
+   746→        Next minute: "my-feature" → "my-feature-25-11-08-1431"
+   747→    """
+   748→    date_suffix = now.strftime(WORKTREE_DATE_SUFFIX_FORMAT)
+   749→    candidate_name = f"{base_name}-{date_suffix}"
+   750→
+
+... [60 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect. All requested source code facts found. Here's my concise report:
+
+## Source Code Facts Verification
+
+**1. Auto-detection strategies in implement.py (lines 400-423)**
+- Located and verified
+- **Strategy 1 (resolve_impl_dir)**: Lines 404-407 check `.erk/impl-context/` in current directory
+- **Strategy 2 (extract_plan_from_current_branch)**: Lines 425-428 extract plan number from GitHub PR branch name
+- Both strategies feed into `_execute()` call at line 412
+
+**2. Shared _execute() function (lines 44-103)**
+- Located and verified
+- Signature accepts: ctx, repo, submit, dangerous, script, no_interactive, verbose, model, executor
+- Handles three execution modes: script output, non-interactive, and interactive
+- Delegates to execute_non_interactive_mode() or execute_interactive_mode() based on flags
+
+**3. Time gateway ABC (packages/erk-shared/src/erk_shared/gateway/time/abc.py)**
+- Located and verified
+- Defines three abstract methods:
+  - `sleep(seconds: float) -&gt; None`
+  - `now() -&gt; datetime`
+  - `monotonic() -&gt; float` (for measuring elapsed time)
+
+**4. FakeTime implementation (packages/erk-shared/src/erk_shared/gateway/time/fake.py)**
+- Located and verified
+- **Default datetime**: `DEFAULT_FAKE_TIME = datetime(2024, 1, 15, 14, 30, 0)` (line 14)
+- **sleep_calls tracking**: `_sleep_calls: list[float]` property at lines 45-53, appends to list without actual sleeping
+- Constructor accepts optional `current_time` and `monotonic_values` parameters
+
+**5. Worktree naming with now parameter (packages/erk-shared/src/erk_shared/naming.py lines 721-801)**
+- Located and verified
+- `ensure_unique_worktree_name_with_date()`: lines 721-762, accepts `*, now: datetime` parameter
+- Generates datetime suffix in format `-YY-MM-DD-HHMM` using `now.strftime()`
+- Appends numeric counter (-2, -3, etc.) if collision detected
+- Documentation: "Callers should pass ctx.time.now() for testability"
+
+All facts confirmed. No file modifications performed.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4708" cache_read_input_tokens="15155" cache_creation="{'ephemeral_5m_input_tokens': 4708, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

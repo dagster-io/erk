@@ -1,0 +1,110 @@
+<session>
+  <meta source="agent-abfd86e" />
+  <meta branch="plnd/consolidate-learn-docs-03-03-0431" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Search for and verify these source code facts for documentation purposes. Do NOT modify any files. Report what you find:
+
+1. Find `src/erk/cli/help_formatter.py` around lines 244-278 for command classification lists (Top-Level Commands vs Command Groups)
+2. Check if `launch`, `one-shot`, and `workflow` are now classified: launch and one-shot at top level, workflow in groups
+3. Check `src/erk/cli/commands/one_shot.py` - is `hidden=True` removed?
+
+Report findings concisely.</user>
+  <assistant>I'll search for and verify these source code facts for you.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15078" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15078, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HXJoyJ6FCugLg1V2cBby4g">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/help_formatter.py</param>
+    <param name="offset">244</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15078" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15078, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013tBEJr6kyfaQpiZ6MAY7a9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15078" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15078, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HXJoyJ6FCugLg1V2cBby4g">
+   244→        top_level_commands = [
+   245→            "checkout",
+   246→            "dash",
+   247→            "delete",
+   248→            "doctor",
+   249→            "down",
+   250→            "implement",
+   251→            "land",
+   252→            "launch",
+   253→            "list",
+   254→            "one-shot",
+   255→            "up",
+   256→            "upgrade",
+   257→        ]
+   258→        command_groups = [
+   259→            "admin",
+   260→            "artifact",
+   261→            "branch",
+   262→            "cc",
+   263→            "completion",
+   264→            "config",
+   265→            "docs",
+   266→            "hook",
+   267→            "info",
+   268→            "md",
+   269→            "objective",
+   270→            "plan",
+   271→            "pr",
+   272→            "project",
+   273→            "run",
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_013tBEJr6kyfaQpiZ6MAY7a9">
+     1→"""Command to dispatch a task for fully autonomous remote execution.
+     2→
+     3→No local planning — the remote Claude explores the codebase, plans the change,
+     4→implements it, and creates a PR.
+     5→
+     6→Usage:
+     7→    erk one-shot "fix the import in config.py"
+     8→    erk one-shot --file prompt.md
+     9→    erk one-shot "add type hints to utils.py" --model opus
+    10→    erk one-shot "fix the typo in README.md" --dry-run
+    11→    erk one-shot "rename issue_number to plan_number in impl_init.py" --plan-only
+    12→"""
+    13→
+    14→from pathlib import Path
+    15→
+    16→import click
+    17→
+    18→from erk.cli.commands.implement_shared import normalize_model_name
+    19→from erk.cli.commands.one_shot_dispatch import (
+    20→    OneShotDispatchParams,
+    21→    dispatch_one_shot,
+    22→)
+    23→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    24→from erk.cli.ensure import Ensure
+    25→from erk.core.context import ErkContext
+    26→from erk_shared.output.output import user_output
+    27→
+    28→
+    29→@click.command("one-shot")
+    30→@click.argument("prompt", required=False, default=None)
+
+... [111 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Here are the findings:
+
+## Verification Results
+
+**1. Command classification in help_formatter.py (lines 244-278):** ✅ CONFIRMED
+
+- **Top-Level Commands** (lines 244-257): Both `launch` and `one-shot` are present
+- **Command Groups** (lines 258-278): `workflow` is classified as a command group
+- Classification is exactly as expected: `launch` and `one-shot` are top-level, `workflow` is in groups
+
+**2. `one-shot.py` - `hidden=True` status:** ✅ CONFIRMED REMOVED
+
+- The `@click.command("one-shot")` decorator (line 29) does **not** have `hidden=True`
+- The command is fully visible in the CLI
+- All options and arguments are properly declared (lines 30-74)
+
+**Summary:** Both facts are verified as correct. The command classification has been updated properly, and the `one-shot` command is no longer hidden.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2327" cache_read_input_tokens="15078" cache_creation="{'ephemeral_5m_input_tokens': 2327, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

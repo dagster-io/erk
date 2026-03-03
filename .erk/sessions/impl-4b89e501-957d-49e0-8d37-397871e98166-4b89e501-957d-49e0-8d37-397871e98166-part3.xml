@@ -1,0 +1,352 @@
+<session>
+  <meta source="agent-a03c890" />
+  <meta branch="plnd/consolidate-learn-docs-03-03-0431" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Search for and verify these source code facts for documentation purposes. Do NOT modify any files. Report what you find:
+
+1. Find `src/erk/cli/commands/ref_resolution.py` - report its contents and confirm it's the shared resolver
+2. Find all call sites that use ref_resolution or resolve_dispatch_ref - list all 5 dispatch commands
+3. Find tests at `tests/unit/cli/commands/test_ref_resolution.py` - count test functions
+4. Check for `--ref-current` flag in the ref_resolution module
+
+Report findings concisely.</user>
+  <assistant>I'll search for these files and verify the facts you need for documentation. Let me start with parallel searches.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15080" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15080, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0179wpHkcJpUCf158XyTEiZb">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/ref_resolution.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15080" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15080, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01S2UxTyt9KxRzvzpSXidV72">
+    <param name="pattern">tests/unit/cli/commands/test_ref_resolution.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15080" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15080, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_019ZJHrUzeyRqio6413J2wn6">
+    <param name="pattern">resolve_dispatch_ref|ref_resolution</param>
+    <param name="type">py</param>
+    <param name="glob">src/erk/cli/commands/*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15080" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 15080, 'ephemeral_1h_input_tokens': 0}" output_tokens="237" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0179wpHkcJpUCf158XyTEiZb">
+     1→"""Shared helper for resolving dispatch ref across multiple commands.
+     2→
+     3→This module provides a single point for handling --ref and --ref-current flag
+     4→resolution, ensuring consistent validation and error handling across all
+     5→dispatch commands (launch, one-shot, pr dispatch, workflow smoke-test, objective plan).
+     6→"""
+     7→
+     8→import click
+     9→
+    10→from erk.core.context import ErkContext
+    11→
+    12→
+    13→def resolve_dispatch_ref(
+    14→    ctx: ErkContext, *, dispatch_ref: str | None, ref_current: bool
+    15→) -&gt; str | None:
+    16→    """Resolve dispatch ref from flags and config.
+    17→
+    18→    Handles mutual exclusivity check and falls back to config default.
+    19→
+    20→    Args:
+    21→        ctx: ErkContext with git and local_config
+    22→        dispatch_ref: Value from --ref flag (None if not provided)
+    23→        ref_current: Value from --ref-current flag
+    24→
+    25→    Returns:
+    26→        The resolved ref (branch name) or None if using default
+    27→
+    28→    Raises:
+    29→        click.UsageError: If both --ref and --ref-current are provided,
+    30→            or if --ref-current is used with detached HEAD
+
+... [17 lines omitted] ...
+
+    33→        raise click.UsageError("--ref and --ref-current are mutually exclusive")
+    38→            raise click.UsageError("--ref-current requires being on a branch (not detached HEAD)")
+  </tool_result>
+  <tool_result tool="toolu_01S2UxTyt9KxRzvzpSXidV72">
+/home/runner/work/erk/erk/tests/unit/cli/commands/test_ref_resolution.py
+  </tool_result>
+  <tool_result tool="toolu_019ZJHrUzeyRqio6413J2wn6">
+Found 4 files
+src/erk/cli/commands/ref_resolution.py
+src/erk/cli/commands/one_shot.py
+src/erk/cli/commands/launch_cmd.py
+src/erk/cli/commands/doctor_workflow.py
+  </tool_result>
+  <assistant>Now let me get the test file and find all dispatch commands that use this resolver:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1034" cache_read_input_tokens="15080" cache_creation="{'ephemeral_5m_input_tokens': 1034, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LaWkT7VtLi1H9kAQxmf83L">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/test_ref_resolution.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1034" cache_read_input_tokens="15080" cache_creation="{'ephemeral_5m_input_tokens': 1034, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01WvMsEzEPXuxDWukGHBSbJP">
+    <param name="pattern">@click\.command|def (launch|one_shot|pr_dispatch|workflow_smoke_test|objective_plan)</param>
+    <param name="type">py</param>
+    <param name="glob">src/erk/cli/commands/*.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">50</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1034" cache_read_input_tokens="15080" cache_creation="{'ephemeral_5m_input_tokens': 1034, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01CrpK1zqkAt62zzBmEpxnSw">
+    <param name="pattern">--ref-current|ref_current.*bool</param>
+    <param name="type">py</param>
+    <param name="glob">src/erk/cli/commands/*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1034" cache_read_input_tokens="15080" cache_creation="{'ephemeral_5m_input_tokens': 1034, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LaWkT7VtLi1H9kAQxmf83L">
+     1→"""Tests for dispatch ref resolution logic."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import click
+     6→import pytest
+     7→
+     8→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+     9→from erk_shared.context.types import LoadedConfig
+    10→from erk_shared.gateway.git.fake import FakeGit
+    11→from tests.fakes.context import create_test_context
+    12→
+    13→
+    14→def test_mutual_exclusion_error() -&gt; None:
+    15→    """Both --ref and --ref-current raises UsageError."""
+    16→    ctx = create_test_context()
+    17→
+    18→    with pytest.raises(click.UsageError, match="mutually exclusive"):
+    19→        resolve_dispatch_ref(ctx, dispatch_ref="some-branch", ref_current=True)
+    20→
+    21→
+    22→def test_ref_current_returns_branch() -&gt; None:
+    23→    """--ref-current calls get_current_branch and returns it."""
+    24→    cwd = Path("/fake/repo")
+    25→    git = FakeGit(current_branches={cwd: "feature/my-branch"})
+    26→    ctx = create_test_context(git=git, cwd=cwd)
+    27→
+    28→    result = resolve_dispatch_ref(ctx, dispatch_ref=None, ref_current=True)
+    29→
+    30→    assert result == "feature/my-branch"
+
+... [44 lines omitted] ...
+
+    33→def test_ref_current_detached_head_error() -&gt; None:
+    34→    """--ref-current with detached HEAD raises UsageError."""
+    39→    with pytest.raises(click.UsageError, match="not detached HEAD"):
+  </tool_result>
+  <tool_result tool="toolu_01WvMsEzEPXuxDWukGHBSbJP">
+src/erk/cli/commands/launch_cmd.py:353:@click.command("launch")
+src/erk/cli/commands/launch_cmd.py:405:def launch(
+src/erk/cli/commands/implement.py:321:@click.command("implement", cls=CommandWithHiddenOptions)
+src/erk/cli/commands/log_cmd.py:84:@click.command("log")
+src/erk/cli/commands/status.py:17:@click.command("status")
+src/erk/cli/commands/down.py:9:@click.command("down", cls=GraphiteCommandWithHiddenOptions)
+src/erk/cli/commands/prepare_cwd_recovery.py:48:@click.command(
+src/erk/cli/commands/doctor_workflow.py:239:def workflow_smoke_test_cmd(
+src/erk/cli/commands/land_cmd.py:1469:@click.command("land", cls=CommandWithHiddenOptions)
+src/erk/cli/commands/up.py:9:@click.command("up", cls=GraphiteCommandWithHiddenOptions)
+src/erk/cli/commands/one_shot.py:29:@click.command("one-shot")
+src/erk/cli/commands/one_shot.py:76:def one_shot(
+src/erk/cli/commands/implement_shared.py:56:        @click.command("implement", cls=CommandWithHiddenOptions)
+
+[Showing results with pagination = limit: 50, offset: 0]
+  </tool_result>
+  <tool_result tool="toolu_01CrpK1zqkAt62zzBmEpxnSw">
+Found 4 files
+src/erk/cli/commands/ref_resolution.py
+src/erk/cli/commands/one_shot.py
+src/erk/cli/commands/launch_cmd.py
+src/erk/cli/commands/doctor_workflow.py
+  </tool_result>
+  <assistant>Now let me search for the specific dispatch commands that use this resolver:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="6134" cache_read_input_tokens="16114" cache_creation="{'ephemeral_5m_input_tokens': 6134, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HFgo9vUpX6Mgh1JByjjSoV">
+    <param name="pattern">resolve_dispatch_ref</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+    <param name="context">3</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6134" cache_read_input_tokens="16114" cache_creation="{'ephemeral_5m_input_tokens': 6134, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HFgo9vUpX6Mgh1JByjjSoV">
+&lt;tool_use_error&gt;InputValidationError: Grep failed due to the following issue:
+An unexpected parameter `context` was provided&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Let me correct that:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="215" cache_read_input_tokens="22248" cache_creation="{'ephemeral_5m_input_tokens': 215, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01UjduS5LBcJ4jRVeR8GDYby">
+    <param name="pattern">resolve_dispatch_ref</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="215" cache_read_input_tokens="22248" cache_creation="{'ephemeral_5m_input_tokens': 215, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UjduS5LBcJ4jRVeR8GDYby">
+tests/unit/cli/commands/test_ref_resolution.py:8:from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+tests/unit/cli/commands/test_ref_resolution.py:19:        resolve_dispatch_ref(ctx, dispatch_ref="some-branch", ref_current=True)
+tests/unit/cli/commands/test_ref_resolution.py:28:    result = resolve_dispatch_ref(ctx, dispatch_ref=None, ref_current=True)
+tests/unit/cli/commands/test_ref_resolution.py:40:        resolve_dispatch_ref(ctx, dispatch_ref=None, ref_current=True)
+tests/unit/cli/commands/test_ref_resolution.py:47:    result = resolve_dispatch_ref(ctx, dispatch_ref="my-custom-ref", ref_current=False)
+tests/unit/cli/commands/test_ref_resolution.py:57:    result = resolve_dispatch_ref(ctx, dispatch_ref=None, ref_current=False)
+tests/unit/cli/commands/test_ref_resolution.py:66:    result = resolve_dispatch_ref(ctx, dispatch_ref=None, ref_current=False)
+src/erk/cli/commands/launch_cmd.py:18:from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+src/erk/cli/commands/launch_cmd.py:470:    ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
+src/erk/cli/commands/objective/plan_cmd.py:22:from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+src/erk/cli/commands/objective/plan_cmd.py:270:    ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
+src/erk/cli/commands/objective/plan_cmd.py:750:    ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
+src/erk/cli/commands/ref_resolution.py:13:def resolve_dispatch_ref(
+src/erk/cli/commands/doctor_workflow.py:15:from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+src/erk/cli/commands/doctor_workflow.py:309:    ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
+src/erk/cli/commands/one_shot.py:23:from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+src/erk/cli/commands/one_shot.py:134:    ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
+src/erk/cli/commands/pr/dispatch_cmd.py:13:from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+src/erk/cli/commands/pr/dispatch_cmd.py:431:    ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
+  </tool_result>
+  <assistant>Perfect! Now let me verify the commands by reading a couple of them to confirm they're dispatch commands:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1048" cache_read_input_tokens="22463" cache_creation="{'ephemeral_5m_input_tokens': 1048, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WnQQRsdLSbkJrQm9TEaNLu">
+    <param name="command">grep -A 2 "@click.command" src/erk/cli/commands/launch_cmd.py | head -5</param>
+    <param name="description">Verify launch command definition</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1048" cache_read_input_tokens="22463" cache_creation="{'ephemeral_5m_input_tokens': 1048, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RpabTok2e9j2Wvyv9sC8ds">
+    <param name="command">grep -A 2 "@click.command" src/erk/cli/commands/one_shot.py | head -5</param>
+    <param name="description">Verify one-shot command definition</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1048" cache_read_input_tokens="22463" cache_creation="{'ephemeral_5m_input_tokens': 1048, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XUSsckABbm2cSnFdxykbDT">
+    <param name="command">grep -A 2 "@click.command" src/erk/cli/commands/pr/dispatch_cmd.py | head -5</param>
+    <param name="description">Verify pr dispatch command definition</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1048" cache_read_input_tokens="22463" cache_creation="{'ephemeral_5m_input_tokens': 1048, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HqeuRivsaQk2JwsPQrLX3X">
+    <param name="command">grep -A 2 "@click.command\|def workflow_smoke_test_cmd\|def objective_plan_cmd\|def plan_cmd" src/erk/cli/commands/doctor_workflow.py | head -10</param>
+    <param name="description">Verify doctor_workflow and objective commands</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1048" cache_read_input_tokens="22463" cache_creation="{'ephemeral_5m_input_tokens': 1048, 'ephemeral_1h_input_tokens': 0}" output_tokens="463" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XUSsckABbm2cSnFdxykbDT">
+@click.command("dispatch")
+@click.argument("plan_numbers", type=int, nargs=-1, required=False)
+@click.option(
+  </tool_result>
+  <tool_result tool="toolu_01WnQQRsdLSbkJrQm9TEaNLu">
+@click.command("launch")
+@click.argument("workflow_name", type=str)
+@click.option(
+  </tool_result>
+  <tool_result tool="toolu_01HqeuRivsaQk2JwsPQrLX3X">
+def workflow_smoke_test_cmd(
+    ctx: ErkContext, wait: bool, verbose: bool, dispatch_ref: str | None, ref_current: bool
+) -&gt; None:
+  </tool_result>
+  <tool_result tool="toolu_01RpabTok2e9j2Wvyv9sC8ds">
+@click.command("one-shot")
+@click.argument("prompt", required=False, default=None)
+@click.option(
+  </tool_result>
+  <assistant>Now let me get the objective plan command info:</assistant>
+  <usage input_tokens="132" cache_creation_input_tokens="664" cache_read_input_tokens="23511" cache_creation="{'ephemeral_5m_input_tokens': 664, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01ENKrVDnMR7D4dE1W6NYAkv">
+    <param name="command">grep -B 5 "def plan_cmd\|def objective_plan_cmd" src/erk/cli/commands/objective/plan_cmd.py | grep -E "@click.command|def (plan_cmd|objective_plan_cmd)"</param>
+    <param name="description">Find objective plan command definition</param>
+  </tool_use>
+  <usage input_tokens="132" cache_creation_input_tokens="664" cache_read_input_tokens="23511" cache_creation="{'ephemeral_5m_input_tokens': 664, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JdJppbBoEM6VAASR6EYKKK">
+    <param name="command">grep "def.*_cmd\|@click.command" src/erk/cli/commands/objective/plan_cmd.py | head -20</param>
+    <param name="description">Get command and function names in objective plan_cmd</param>
+  </tool_use>
+  <usage input_tokens="132" cache_creation_input_tokens="664" cache_read_input_tokens="23511" cache_creation="{'ephemeral_5m_input_tokens': 664, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JdJppbBoEM6VAASR6EYKKK">
+@click.command("plan")
+  </tool_result>
+  <tool_result tool="toolu_01ENKrVDnMR7D4dE1W6NYAkv">
+
+  </tool_result>
+  <assistant>Good, now let me verify that the --ref-current flag exists in these commands:</assistant>
+  <usage input_tokens="37" cache_creation_input_tokens="533" cache_read_input_tokens="24175" cache_creation="{'ephemeral_5m_input_tokens': 533, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XV61n8qScD7YXBApCHSp7t">
+    <param name="command">grep -n "\-\-ref-current" src/erk/cli/commands/*.py src/erk/cli/commands/**/*.py 2&gt;/dev/null | head -20</param>
+    <param name="description">Find all --ref-current flag declarations</param>
+  </tool_use>
+  <usage input_tokens="37" cache_creation_input_tokens="533" cache_read_input_tokens="24175" cache_creation="{'ephemeral_5m_input_tokens': 533, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XV61n8qScD7YXBApCHSp7t">
+src/erk/cli/commands/doctor_workflow.py:233:    "--ref-current",
+src/erk/cli/commands/launch_cmd.py:399:    "--ref-current",
+src/erk/cli/commands/one_shot.py:70:    "--ref-current",
+src/erk/cli/commands/ref_resolution.py:3:This module provides a single point for handling --ref and --ref-current flag
+src/erk/cli/commands/ref_resolution.py:23:        ref_current: Value from --ref-current flag
+src/erk/cli/commands/ref_resolution.py:29:        click.UsageError: If both --ref and --ref-current are provided,
+src/erk/cli/commands/ref_resolution.py:30:            or if --ref-current is used with detached HEAD
+src/erk/cli/commands/ref_resolution.py:33:        raise click.UsageError("--ref and --ref-current are mutually exclusive")
+src/erk/cli/commands/ref_resolution.py:38:            raise click.UsageError("--ref-current requires being on a branch (not detached HEAD)")
+src/erk/cli/commands/objective/plan_cmd.py:523:    "--ref-current",
+src/erk/cli/commands/pr/dispatch_cmd.py:397:    "--ref-current",
+  </tool_result>
+  <assistant>Perfect! Now let me count the test functions:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="550" cache_read_input_tokens="24708" cache_creation="{'ephemeral_5m_input_tokens': 550, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019bAJvsFiPfYsjpS9R92DYX">
+    <param name="command">grep -c "^def test_" tests/unit/cli/commands/test_ref_resolution.py</param>
+    <param name="description">Count test functions in test_ref_resolution.py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="550" cache_read_input_tokens="24708" cache_creation="{'ephemeral_5m_input_tokens': 550, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019bAJvsFiPfYsjpS9R92DYX">
+6
+  </tool_result>
+  <assistant>Excellent! Now let me compile my findings:
+
+## Documentation Verification Report
+
+### 1. ref_resolution.py - Shared Resolver Confirmed
+
+**Location:** `/home/runner/work/erk/erk/src/erk/cli/commands/ref_resolution.py`
+
+**Purpose:** Single point for handling `--ref` and `--ref-current` flag resolution across dispatch commands.
+
+**Key Function:** `resolve_dispatch_ref(ctx: ErkContext, *, dispatch_ref: str | None, ref_current: bool) -&gt; str | None`
+
+**Behavior:**
+- Enforces mutual exclusivity of `--ref` and `--ref-current`
+- When `--ref-current` is used, returns current branch via `ctx.git.branch.get_current_branch()`
+- Raises `UsageError` if `--ref-current` is used with detached HEAD
+- Falls back to `ctx.local_config.dispatch_ref` if neither flag provided
+- Returns `None` if no explicit ref and no config default
+
+### 2. All 5 Dispatch Commands Using ref_resolution
+
+**Commands that call `resolve_dispatch_ref()`:**
+
+1. **launch** - `src/erk/cli/commands/launch_cmd.py` (command: "launch")
+2. **one-shot** - `src/erk/cli/commands/one_shot.py` (command: "one-shot")
+3. **pr dispatch** - `src/erk/cli/commands/pr/dispatch_cmd.py` (command: "dispatch")
+4. **workflow smoke-test** - `src/erk/cli/commands/doctor_workflow.py` (command: "workflow-smoke-test")
+5. **objective plan** - `src/erk/cli/commands/objective/plan_cmd.py` (command: "plan")
+
+### 3. Test Function Count
+
+**Location:** `/home/runner/work/erk/erk/tests/unit/cli/commands/test_ref_resolution.py`
+
+**Total test functions:** 6
+
+**Test coverage:**
+1. `test_mutual_exclusion_error()` - Both flags raises UsageError
+2. `test_ref_current_returns_branch()` - Returns current branch
+3. `test_ref_current_detached_head_error()` - Detached HEAD raises UsageError
+4. `test_explicit_ref_returned()` - Explicit --ref returns directly
+5. `test_falls_back_to_config()` - Falls back to config.dispatch_ref
+6. `test_falls_back_to_none_when_no_config()` - Returns None when no config
+
+### 4. --ref-current Flag Confirmed
+
+**Flag declaration locations:**
+- `launch_cmd.py:399`
+- `one_shot.py:70`
+- `doctor_workflow.py:233`
+- `dispatch_cmd.py:397`
+- `plan_cmd.py:523`
+
+**Implementation in ref_resolution.py:**
+- Lines 32-39 handle `--ref-current` validation and execution
+- Parameter: `ref_current: bool` (line 14)
+- Mutual exclusivity check with `--ref` (line 32-33)
+- Detached HEAD detection via `ctx.git.branch.get_current_branch()` (line 36-38)
+
+All facts verified and confirmed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="266" cache_read_input_tokens="25258" cache_creation="{'ephemeral_5m_input_tokens': 266, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+</session>
