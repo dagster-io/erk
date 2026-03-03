@@ -1,4 +1,4 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Add print statement to `src/erk/__init__.py`"
+  "title": "Plan: Fix stacked plan checkout when local parent branch diverges from origin"
 }
