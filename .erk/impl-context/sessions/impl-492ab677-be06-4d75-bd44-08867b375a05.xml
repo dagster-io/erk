@@ -1,0 +1,1438 @@
+<session>
+  <meta branch="plnd/add-implement-current-bran-03-02-1535" />
+  <meta model="claude-sonnet-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 12. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="492ab677-be06-4d75-bd44-08867b375a05" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="492ab677-be06-4d75-bd44-08867b375a05" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="492ab677-be06-4d75-bd44-08867b375a05" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="492ab677-be06-4d75-bd44-08867b375a05" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**CRITICAL**: Never delete the impl directory - leave for user review (no auto-commit).
+
+### Step 12: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 13: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement`. Let me follow the instructions in the command. The command says to set up the implementation first by running `erk exec setup-impl` with no arguments (since no argument was passed).
+
+Let me start by running `erk exec setup-impl` to auto-detect from the existing impl directory, branch, or fail.
+
+Looking at the git status, I'm on branch `plnd/add-implement-current-bran-03-02-1535` with a clean working tree. The most recent commit is "Add plan: Add 'Implement on current branch' option to exit plan mode hook".
+
+Let me run `erk exec setup-impl` to set up the implementation.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="32309" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 32309}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="32309" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 32309}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01By7QjzXEkNT2HMJLmKtPoK">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Auto-detect and set up implementation environment</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="32309" cache_read_input_tokens="0" output_tokens="294" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 32309, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01By7QjzXEkNT2HMJLmKtPoK">
+Found existing impl dir for plan #8639, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.erk/impl-context/plnd--add-implement-current-bran-03-02-1535", "plan_number": 8639, "plan_url": "https://github.com/dagster-io/erk/pull/8639", "branch": "plnd/add-implement-current-bran-03-02-1535", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8639, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <thinking>Great, the setup worked. Now let me read the plan file.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="474" cache_read_input_tokens="32309" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 474}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Implementation environment ready, reading plan...</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="474" cache_read_input_tokens="32309" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 474}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QPeDv7FkUuqD6EQ5t92tfN">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.erk/impl-context/plnd--add-implement-current-bran-03-02-1535/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="474" cache_read_input_tokens="32309" output_tokens="145" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 474, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QPeDv7FkUuqD6EQ5t92tfN">
+     1→# Add "Implement on current branch" option to exit plan mode hook
+     2→
+     3→## Context
+     4→
+     5→When exiting plan mode, the hook presents 3 options: save as plan PR, skip PR and implement (which creates a new branch via `setup-impl`), or view/edit the plan. There's no option to implement directly on the current branch without creating a new branch. This is needed for cases where the branch was already created by another tool (e.g., `erk wt create`, manual branch creation).
+     6→
+     7→## Changes
+     8→
+     9→### 1. Modify `build_blocking_message()` in `exit_plan_mode_hook.py`
+    10→
+    11→**File:** `src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py`
+    12→
+    13→Add a new option 3 "Implement on current branch" and shift "View/Edit" to option 4. This gives exactly 4 options (AskUserQuestion max). Also clarify option 2's description to note it creates a new branch.
+    14→
+    15→**Option list becomes:**
+    16→```
+    17→1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop.
+    18→2. "New branch and implement" - Create a new branch in the current worktree and implement (for starting fresh).
+    19→3. "Implement on current branch" - Implement directly on the current branch without creating a new branch or worktree.
+    20→4. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+    21→```
+    22→
+    23→**Add instruction block for option 3:**
+    24→```
+    25→If user chooses 'Implement on current branch':
+    26→  1. Create implement-now marker:
+    27→     erk exec marker create --session-id {session_id} \
+    28→       exit-plan-mode-hook.implement-now
+    29→  2. Call ExitPlanMode
+    30→  3. After exiting plan mode, implement the changes directly on the current branch.
+
+... [33 lines omitted] ...
+  </tool_result>
+  <thinking>Good, I have the plan. Let me now create todo entries for each phase and then start implementing.
+
+The plan has 2 main changes:
+1. Modify `build_blocking_message()` in `exit_plan_mode_hook.py`
+2. Update tests in `test_exit_plan_mode_hook.py`
+
+Let me first signal that we're started, then implement.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1280" cache_read_input_tokens="32783" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1280}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_0151kWJpQRqVeiyPUgYBXfjx">
+    <param name="subject">Modify build_blocking_message() in exit_plan_mode_hook.py</param>
+    <param name="description">Add new option 3 "Implement on current branch" and shift "View/Edit" to option 4. Update option 2's description and instruction block label. Add instruction block for option 3.</param>
+    <param name="activeForm">Modifying exit_plan_mode_hook.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1280" cache_read_input_tokens="32783" output_tokens="260" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1280, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0151kWJpQRqVeiyPUgYBXfjx">
+Task #1 created successfully: Modify build_blocking_message() in exit_plan_mode_hook.py
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01Y7zrfN7arZvT4dhoB2trFk">
+    <param name="subject">Update tests in test_exit_plan_mode_hook.py</param>
+    <param name="description">Update TestBuildBlockingMessage tests for renamed option 2, add assertions for new option 3, and add new test_implement_on_current_branch_option_included test.</param>
+    <param name="activeForm">Updating tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="296" cache_read_input_tokens="34063" output_tokens="140" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 296, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Y7zrfN7arZvT4dhoB2trFk">
+Task #2 created successfully: Update tests in test_exit_plan_mode_hook.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Kfphjq85z1P95XmFc8qgpN">
+    <param name="command">erk exec impl-signal started --session-id="492ab677-be06-4d75-bd44-08867b375a05" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="173" cache_read_input_tokens="34359" output_tokens="112" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 173, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Kfphjq85z1P95XmFc8qgpN">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8639
+}
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_013cM48z7zzx594X8zBQu9fL">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="150" cache_read_input_tokens="34532" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 150, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013cM48z7zzx594X8zBQu9fL">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GHqRQwJtu5GaTCN9E7bUt6">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="34682" output_tokens="101" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 90, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GHqRQwJtu5GaTCN9E7bUt6">
+     1→#!/usr/bin/env python3
+     2→"""Exit Plan Mode Hook.
+     3→
+     4→Prompts user before exiting plan mode when a plan exists. This hook intercepts
+     5→the ExitPlanMode tool via PreToolUse lifecycle to ask whether to save to GitHub
+     6→or implement immediately.
+     7→
+     8→Exit codes:
+     9→    0: Success (allow exit - no plan, implement-now marker present, or no session)
+    10→    2: Block (plan exists, no implement-now marker - prompt user)
+    11→
+    12→This command is invoked via:
+    13→    erk exec exit-plan-mode-hook
+    14→
+    15→Marker File State Machine
+    16→=========================
+    17→
+    18→This hook uses marker files in .erk/scratch/sessions/&lt;session-id&gt;/ for state management.
+    19→Marker files are self-describing: their names indicate their purpose and their contents
+    20→explain their effect.
+    21→
+    22→Marker Files:
+    23→    exit-plan-mode-hook.implement-now.marker
+    24→        Created by: Agent (when user chooses "Implement now")
+    25→        Effect: Next ExitPlanMode call is ALLOWED (exit plan mode, proceed to implementation)
+    26→        Lifecycle: Deleted after being read by next hook invocation
+    27→
+    28→    exit-plan-mode-hook.plan-saved.marker
+    29→        Created by: /erk:plan-save command
+    30→        Effect: Next ExitPlanMode call is BLOCKED (remain in plan mode, session complete)
+
+... [762 lines omitted] ...
+
+   344→                f"⚠️  WARNING: Currently on '{current_branch}'. "
+  </tool_result>
+  <thinking>Now I have a good understanding of the existing code. Let me plan the changes needed:
+
+1. In `build_blocking_message()`, I need to:
+   - Change option 2 from `"Skip PR and implement here"` to `"New branch and implement"` 
+   - Add new option 3 `"Implement on current branch"`
+   - Move `"View/Edit the plan"` to option 4
+   - Update the instruction block for option 2 (change label from `'Skip PR and implement here'` to the new label)
+   - Add instruction block for option 3
+
+Let me look at the current options:
+
+
+1. "Create a plan PR" (Recommended)
+2. "Skip PR and implement here"
+3. "View/Edit the plan"
+
+I need to restructure these to:
+1. "Create a plan PR" (Recommended)
+2. "New branch and implement" - which creates a new branch in the current worktree for a fresh start
+3. "Implement on current branch" - which implements directly on the current branch without creating a new one
+4. "View/Edit the plan"
+
+I also need to check the tests since the option labels and their corresponding logic are changing, particularly making sure the "View/Edit" option still references the correct label in its loop condition.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="11391" cache_read_input_tokens="34772" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11391}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11391" cache_read_input_tokens="34772" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11391}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Y1Fq8PbMnqX887PYpKyTmg">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11391" cache_read_input_tokens="34772" output_tokens="533" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11391, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Y1Fq8PbMnqX887PYpKyTmg">
+&lt;persisted-output&gt;
+Output too large (51.7KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-60/492ab677-be06-4d75-bd44-08867b375a05/tool-results/toolu_01Y1Fq8PbMnqX887PYpKyTmg.txt
+
+Preview (first 2KB):
+     1→"""Unit tests for exit-plan-mode-hook command.
+     2→
+     3→This test file uses the pure logic extraction pattern. Most tests call the
+     4→`determine_exit_action()` pure function directly with no mocking required.
+     5→Only a few integration tests use CliRunner to verify the full hook works.
+     6→"""
+     7→
+     8→import json
+     9→from pathlib import Path
+    10→
+    11→from click.testing import CliRunner
+    12→
+    13→from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
+    14→    ExitAction,
+    15→    HookInput,
+    16→    abbreviate_for_header,
+    17→    build_blocking_message,
+    18→    determine_exit_action,
+    19→    exit_plan_mode_hook,
+    20→    extract_plan_title,
+    21→    is_terminal_editor,
+    22→)
+    23→from erk_shared.context.context import ErkContext
+    24→from erk_shared.context.testing import context_for_test
+    25→from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
+    26→from erk_shared.gateway.git.fake import FakeGit
+
+... [21 lines omitted] ...
+  </tool_result>
+  <thinking>Let me read the full test file to understand what all the relevant tests look like.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5410" cache_read_input_tokens="46163" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5410}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SckbUEHgK2qkRM2AhtB3qy">
+    <param name="file_path">/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-60/492ab677-be06-4d75-bd44-08867b375a05/tool-results/toolu_01Y1Fq8PbMnqX887PYpKyTmg.txt</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5410" cache_read_input_tokens="46163" output_tokens="174" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5410, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SckbUEHgK2qkRM2AhtB3qy">
+&lt;persisted-output&gt;
+Output too large (59.4KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-60/492ab677-be06-4d75-bd44-08867b375a05/tool-results/toolu_01SckbUEHgK2qkRM2AhtB3qy.txt
+
+Preview (first 2KB):
+     1→     1→"""Unit tests for exit-plan-mode-hook command.
+     2→     2→
+     3→     3→This test file uses the pure logic extraction pattern. Most tests call the
+     4→     4→`determine_exit_action()` pure function directly with no mocking required.
+     5→     5→Only a few integration tests use CliRunner to verify the full hook works.
+     6→     6→"""
+     7→     7→
+     8→     8→import json
+     9→     9→from pathlib import Path
+    10→    10→
+    11→    11→from click.testing import CliRunner
+    12→    12→
+    13→    13→from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
+    14→    14→    ExitAction,
+    15→    15→    HookInput,
+    16→    16→    abbreviate_for_header,
+    17→    17→    build_blocking_message,
+    18→    18→    determine_exit_action,
+    19→    19→    exit_plan_mode_hook,
+    20→    20→    extract_plan_title,
+    21→    21→    is_terminal_editor,
+    22→    22→)
+    23→    23→from erk_shared.context.context import ErkContext
+    24→    24→from erk_shared.context.testing import context_for_test
+    25→    25→from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
+    26→    26→from erk_shared.gateway.git.fake import FakeGit
+
+... [16 lines omitted] ...
+  </tool_result>
+  <thinking>The file is too large. Let me try reading specific sections of the test file to find the relevant tests.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="917" cache_read_input_tokens="51573" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 917}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01MpjS3rMfcoFxRxpQM8781U">
+    <param name="pattern">class TestBuildBlockingMessage|def test_contains_required_elements|def test_draft_pr_backend|def test_implement_on_current|def test_edit_plan_instructions|def test_view_edit"</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="917" cache_read_input_tokens="51573" output_tokens="242" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 917, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MpjS3rMfcoFxRxpQM8781U">
+369:class TestBuildBlockingMessage:
+372:    def test_contains_required_elements(self) -&gt; None:
+515:    def test_edit_plan_instructions_include_path(self) -&gt; None:
+533:    def test_edit_plan_instructions_omitted_when_no_path(self) -&gt; None:
+772:    def test_draft_pr_backend_shows_pr_language(self) -&gt; None:
+793:    def test_draft_pr_backend_omits_save_and_implement(self) -&gt; None:
+809:    def test_draft_pr_backend_omits_save_and_review(self) -&gt; None:
+825:    def test_draft_pr_backend_instruction_blocks(self) -&gt; None:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Q8bmExrGYsjTJgMKv37Lex">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="offset">369</param>
+    <param name="limit">250</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="430" cache_read_input_tokens="52490" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 430, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Q8bmExrGYsjTJgMKv37Lex">
+   369→class TestBuildBlockingMessage:
+   370→    """Tests for the pure build_blocking_message() function."""
+   371→
+   372→    def test_contains_required_elements(self) -&gt; None:
+   373→        """Message contains all required elements for draft-PR backend."""
+   374→        plan_path = Path("/home/user/.claude/plans/session-123.md")
+   375→        message = build_blocking_message(
+   376→            session_id="session-123",
+   377→            current_branch="feature-branch",
+   378→            plan_file_path=plan_path,
+   379→            plan_title=None,
+   380→            worktree_name=None,
+   381→            pr_number=None,
+   382→            plan_number=None,
+   383→            editor=None,
+   384→        )
+   385→        assert "PLAN SAVE PROMPT" in message
+   386→        assert "AskUserQuestion" in message
+   387→        assert "Create a plan PR" in message
+   388→        assert "(Recommended)" in message
+   389→        # "Skip PR and implement here" option
+   390→        assert "Skip PR and implement here" in message
+   391→        assert "small PR iterations" in message
+   392→        assert "/erk:plan-save" in message
+   393→        assert "Do NOT call ExitPlanMode" in message
+   394→        assert "erk exec marker create --session-id session-123" in message
+   395→        assert "exit-plan-mode-hook.implement-now" in message
+   396→        assert "If user chooses 'Create a plan PR':" in message
+   397→        assert "If user chooses 'Skip PR and implement here':" in message
+   398→
+
+... [225 lines omitted] ...
+
+   432→    def test_trunk_branch_main_shows_warning(self) -&gt; None:
+   433→        """Warning shown when on main branch."""
+   445→        assert "WARNING" in message
+   450→    def test_trunk_branch_master_shows_warning(self) -&gt; None:
+   451→        """Warning shown when on master branch."""
+   463→        assert "WARNING" in message
+   467→    def test_feature_branch_no_warning(self) -&gt; None:
+   468→        """No warning when on feature branch."""
+   480→        assert "WARNING" not in message
+   483→    def test_none_branch_no_warning(self) -&gt; None:
+   484→        """No warning when branch is None."""
+   496→        assert "WARNING" not in message
+  </tool_result>
+  <thinking>Now I need to see the `test_draft_pr_backend_instruction_blocks` test and a bit more context. Let me read from line 825 onwards.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3670" cache_read_input_tokens="52920" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3670}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017xadyHgWJpCJ3DCM9XKM3h">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="offset">619</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3670" cache_read_input_tokens="52920" output_tokens="187" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3670, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017xadyHgWJpCJ3DCM9XKM3h">
+   619→        assert 'header: "br:P4224-add"' in message
+   620→
+   621→    def test_includes_statusline_context_partial(self) -&gt; None:
+   622→        """Question includes partial statusline context when some fields are None."""
+   623→        plan_path = Path.home() / ".claude" / "plans" / "session-123.md"
+   624→        message = build_blocking_message(
+   625→            session_id="session-123",
+   626→            current_branch="feature-branch",
+   627→            plan_file_path=plan_path,
+   628→            plan_title=None,
+   629→            worktree_name="erk-slot-02",
+   630→            pr_number=None,
+   631→            plan_number=4224,
+   632→            editor=None,
+   633→        )
+   634→        # No title emoji
+   635→        assert "📋" not in message
+   636→        # Partial statusline context
+   637→        assert "(wt:erk-slot-02)" in message
+   638→        assert "(br:feature-branch)" in message
+   639→        assert "(pr:#" not in message  # No PR
+   640→        assert "(plan:#4224)" in message
+   641→
+   642→    def test_no_context_when_all_none(self) -&gt; None:
+   643→        """Question has no context when all context fields are None."""
+   644→        message = build_blocking_message(
+   645→            session_id="session-123",
+   646→            current_branch=None,
+   647→            plan_file_path=None,
+   648→            plan_title=None,
+
+... [75 lines omitted] ...
+
+   714→        # Should NOT have the TUI editor warning
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SGY4NYEb5cUsKJXWh3gqLg">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="offset">718</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1691" cache_read_input_tokens="56590" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1691, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SGY4NYEb5cUsKJXWh3gqLg">
+   718→    def test_none_editor_shows_run_instruction(self) -&gt; None:
+   719→        """When editor=None, message shows normal run instruction with fallback."""
+   720→        plan_path = Path("/home/user/.claude/plans/my-plan.md")
+   721→        message = build_blocking_message(
+   722→            session_id="session-123",
+   723→            current_branch="feature-branch",
+   724→            plan_file_path=plan_path,
+   725→            plan_title=None,
+   726→            worktree_name=None,
+   727→            pr_number=None,
+   728→            plan_number=None,
+   729→            editor=None,
+   730→        )
+   731→        assert "If user chooses 'View/Edit the plan':" in message
+   732→        assert f"${{EDITOR:-code}} {plan_path}" in message
+   733→        # Should NOT have the TUI editor warning
+   734→        assert "terminal-based editor" not in message
+   735→
+   736→    def test_display_plan_instruction_when_plan_file_path_provided(self) -&gt; None:
+   737→        """Message includes instruction to display plan when plan_file_path is provided."""
+   738→        plan_path = Path("/home/user/.claude/plans/my-plan.md")
+   739→        message = build_blocking_message(
+   740→            session_id="session-123",
+   741→            current_branch="feature-branch",
+   742→            plan_file_path=plan_path,
+   743→            plan_title="My Plan",
+   744→            worktree_name=None,
+   745→            pr_number=None,
+   746→            plan_number=None,
+   747→            editor=None,
+
+... [175 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a clear picture. Let me make the changes:
+
+### Source file changes (`exit_plan_mode_hook.py`)
+
+In `build_blocking_message()`, I need to:
+
+1. Update option 2: change `"Skip PR and implement here"` to `"New branch and implement"` with new description about creating a new branch
+2. Add option 3: `"Implement on current branch"` 
+3. Move `"View/Edit the plan"` to option 4
+4. Update the instruction block for option 2 (change `'Skip PR and implement here'` to `'New branch and implement'`)
+
+
+5. Add instruction block for option 3 (implement on current branch)
+
+Looking at the current options section, I can see the existing structure with the three options and their descriptions. I need to reorganize these to match the new flow where option 2 becomes the new branch option, option 3 is the current branch implementation, and option 4 is viewing/editing the plan.
+
+Adding instruction blocks for the new option 3... I'm restructuring the options to include a new "Implement on current branch" choice that skips branch creation entirely, and updating the instruction blocks accordingly—option 1 stays the same for creating a draft PR, option 2 becomes "New branch and implement" with updated wording, option 3 is the new direct implementation path that creates a marker and exits plan mode without running setup, and option 4 becomes the view/edit functionality.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3128" cache_read_input_tokens="58281" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3128}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have all the information I need. Let me implement Phase 1:
+
+**Phase 1: Modify `build_blocking_message()` in `exit_plan_mode_hook.py`**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3128" cache_read_input_tokens="58281" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3128}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Gyu2cXU33gfevLPgx4aBBj">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="old_string">    lines.extend(
+        [
+            '  1. "Create a plan PR" (Recommended) - Create a ...[truncated 271 chars]...dit the plan" - Open plan in editor to review or modify before deciding.',
+        ]
+    )</param>
+    <param name="new_string">    lines.extend(
+        [
+            '  1. "Create a plan PR" (Recommended) - Create a ...[truncated 386 chars]...dit the plan" - Open plan in editor to review or modify before deciding.',
+        ]
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3128" cache_read_input_tokens="58281" output_tokens="1378" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3128, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Gyu2cXU33gfevLPgx4aBBj">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the instruction blocks - change option 2's label and add option 3:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="63025" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 63025}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NVgTqWjV9PYxTLVVymirG2">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="old_string">    lines.extend(
+        [
+            "",
+            "If user chooses 'Create a plan PR...[truncated 581 chars]...y",
+            "     (no PR tracking - this is for small PR iterations)",
+        ]
+    )</param>
+    <param name="new_string">    lines.extend(
+        [
+            "",
+            "If user chooses 'Create a plan PR...[truncated 1334 chars]...    Implement changes, run CI, and optionally 'erk pr submit' when done.",
+        ]
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="63025" cache_read_input_tokens="0" output_tokens="775" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 63025, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NVgTqWjV9PYxTLVVymirG2">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the "View/Edit" instruction blocks to reference option 4 (they currently say "loop until Save, Implement, or Incremental"):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="861" cache_read_input_tokens="63025" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 861}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YL7NZNyjvRnTk4sv9VgHaA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="offset">370</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="861" cache_read_input_tokens="63025" output_tokens="169" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 861, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YL7NZNyjvRnTk4sv9VgHaA">
+   370→            "If user chooses 'Implement on current branch':",
+   371→            "  1. Create implement-now marker:",
+   372→            f"     erk exec marker create --session-id {session_id} \\",
+   373→            "       exit-plan-mode-hook.implement-now",
+   374→            "  2. Call ExitPlanMode",
+   375→            "  3. After exiting plan mode, implement the changes directly on the current branch.",
+   376→            "     Do NOT run 'erk exec setup-impl' or create a new branch.",
+   377→        ]
+   378→        + (
+   379→            [
+   380→                f"     Read the plan from: {plan_file_path}",
+   381→            ]
+   382→            if plan_file_path is not None
+   383→            else []
+   384→        )
+   385→        + [
+   386→            "     Implement changes, run CI, and optionally 'erk pr submit' when done.",
+   387→        ]
+   388→    )
+   389→
+   390→    if plan_file_path is not None:
+   391→        if is_terminal_editor(editor):
+   392→            # TUI editors can't run inside Claude Code
+   393→            editor_name = Path(editor).name if editor else "your editor"
+   394→            lines.extend(
+   395→                [
+   396→                    "",
+   397→                    "If user chooses 'View/Edit the plan':",
+   398→                    f"  1. Tell user: '{editor_name} is a terminal-based editor that cannot",
+   399→                    "     run inside Claude Code. Please open the plan in a separate terminal:'",
+
+... [25 lines omitted] ...
+  </tool_result>
+  <thinking>The "loop until" text doesn't need to change since it still references the same general concept (Save, Implement, or Incremental). The plan doesn't say to update this text. Let me check the plan again:
+
+&gt; - `test_edit_plan_instructions_include_path`: The "loop until" text may reference the new option name
+
+The plan says "may reference" - it's optional. The current text is "loop until user chooses Save, Implement, or Incremental" which is still valid. I'll leave this as is.
+
+Now I need to verify the changes to the source file are correct. Let me read the relevant section.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="949" cache_read_input_tokens="63886" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 949}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The source changes look good. Now let me verify the full updated `build_blocking_message` function looks correct:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="949" cache_read_input_tokens="63886" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 949}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QuruW7NX3uUDcWXQdRVCaN">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="offset">305</param>
+    <param name="limit">115</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="949" cache_read_input_tokens="63886" output_tokens="317" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 949, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QuruW7NX3uUDcWXQdRVCaN">
+   305→
+   306→    # Instruct agent to display the plan so the user can review it
+   307→    if plan_file_path is not None:
+   308→        lines.extend(
+   309→            [
+   310→                "DISPLAY PLAN: Before asking the question below, read the plan file and display",
+   311→                f"its contents to the user with proper markdown formatting: {plan_file_path}",
+   312→                "",
+   313→            ]
+   314→        )
+   315→
+   316→    lines.extend(
+   317→        [
+   318→            "PLAN SAVE PROMPT",
+   319→            "",
+   320→            "A plan exists for this session but has not been saved.",
+   321→            "",
+   322→            "Use AskUserQuestion to ask the user:",
+   323→            f'  question: "{question_text}"',
+   324→            f'  header: "{header}"',
+   325→            "",
+   326→            "IMPORTANT: Present options in this exact order:",
+   327→        ]
+   328→    )
+   329→
+   330→    lines.extend(
+   331→        [
+   332→            '  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan '
+   333→            "and stop. Does NOT proceed to implementation.",
+   334→            '  2. "New branch and implement" - Create a new branch in the current worktree '
+
+... [90 lines omitted] ...
+
+   346→                f"⚠️  WARNING: Currently on '{current_branch}'. "
+  </tool_result>
+  <thinking>The source file changes look good. Now let me update the tests. I need to:
+
+1. Update `test_contains_required_elements`: 
+   - Remove: `assert "Skip PR and implement here" in message`
+   - Add: `assert "New branch and implement" in message`
+   - Add: `assert "Implement on current branch" in message`
+   - Update: `assert "If user chooses 'Skip PR and implement here':" in message` → `assert "If user chooses 'New branch and implement':" in message`
+
+2. Update `test_draft_pr_backend_shows_pr_language`:
+   - Remove: `assert "Skip PR and implement here" in message`
+   - Add: `assert "New branch and implement" in message`
+
+3. Update `test_draft_pr_backend_instruction_blocks`:
+   - Remove: `assert "If user chooses 'Skip PR and implement here':" in message`
+   - Add: `assert "If user chooses 'New branch and implement':" in message`
+   - Add: `assert "If user chooses 'Implement on current branch':" in message`
+
+4. Add a new test for the current branch implementation option. Now I'll apply these changes to the test file.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1935" cache_read_input_tokens="64835" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1935}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Source changes are correct. Now Phase 2: update the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1935" cache_read_input_tokens="64835" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1935}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01S6zHyXVpAPbDP25EBT8b6M">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1935" cache_read_input_tokens="64835" output_tokens="394" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1935, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S6zHyXVpAPbDP25EBT8b6M">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_017q553ZE5tykC9upHtDcsjX">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="404" cache_read_input_tokens="66770" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 404, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017q553ZE5tykC9upHtDcsjX">
+Updated task #2 status
+  </tool_result>
+  <assistant>Update `test_contains_required_elements` - replace "Skip PR" with "New branch" references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="67174" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VRdR2LSMVV8S7XkdPFwMmk">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string">        assert "PLAN SAVE PROMPT" in message
+        assert "AskUserQuestion" in message
+ ...[truncated 496 chars]...PR':" in message
+        assert "If user chooses 'Skip PR and implement here':" in message</param>
+    <param name="new_string">        assert "PLAN SAVE PROMPT" in message
+        assert "AskUserQuestion" in message
+ ...[truncated 668 chars]...t':" in message
+        assert "If user chooses 'Implement on current branch':" in message</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="67174" output_tokens="557" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 90, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VRdR2LSMVV8S7XkdPFwMmk">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <assistant>Update `test_draft_pr_backend_shows_pr_language`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="644" cache_read_input_tokens="67264" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 644}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01E23QdEz46n2BU1kBGkRecD">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string">        assert "Create a plan PR" in message
+        assert "(Recommended)" in message
+   ...[truncated 164 chars]...e plan as a GitHub issue" not in message
+        assert "Do not save issue" not in message</param>
+    <param name="new_string">        assert "Create a plan PR" in message
+        assert "(Recommended)" in message
+   ...[truncated 218 chars]...e plan as a GitHub issue" not in message
+        assert "Do not save issue" not in message</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="644" cache_read_input_tokens="67264" output_tokens="347" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 644, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01E23QdEz46n2BU1kBGkRecD">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <assistant>Update `test_draft_pr_backend_instruction_blocks`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="415" cache_read_input_tokens="67908" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 415}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KKmVtrZohcsiPwgEcPsy85">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string">        assert "If user chooses 'Create a plan PR':" in message
+        assert "If user ch...[truncated 311 chars]...t in message
+        assert "If user chooses 'Save and submit for review':" not in message</param>
+    <param name="new_string">        assert "If user chooses 'Create a plan PR':" in message
+        assert "If user ch...[truncated 462 chars]...t in message
+        assert "If user chooses 'Skip PR and implement here':" not in message</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="415" cache_read_input_tokens="67908" output_tokens="464" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 415, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KKmVtrZohcsiPwgEcPsy85">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the new `test_implement_on_current_branch_option_included` test. I'll add it after `test_edit_plan_option_included`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="532" cache_read_input_tokens="68323" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 532}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VxKR8n95xoDmo2Y5zXFLkc">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="offset">499</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="532" cache_read_input_tokens="68323" output_tokens="174" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 532, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VxKR8n95xoDmo2Y5zXFLkc">
+   499→        assert "WARNING" not in message
+   500→        assert "trunk branch" not in message
+   501→
+   502→    def test_edit_plan_option_included(self) -&gt; None:
+   503→        """Third option 'View/Edit the plan' is included in message."""
+   504→        plan_path = Path("/home/user/.claude/plans/session-123.md")
+   505→        message = build_blocking_message(
+   506→            session_id="session-123",
+   507→            current_branch="feature-branch",
+   508→            plan_file_path=plan_path,
+   509→            plan_title=None,
+   510→            worktree_name=None,
+   511→            pr_number=None,
+   512→            plan_number=None,
+   513→            editor=None,
+   514→        )
+   515→        assert "View/Edit the plan" in message
+   516→        assert "Open plan in editor" in message
+   517→
+   518→    def test_edit_plan_instructions_include_path(self) -&gt; None:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VNsd147m4Ru6YbDhC3Svmp">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+    <param name="old_string">    def test_edit_plan_option_included(self) -&gt; None:
+        """Third option 'View/Edit t...[truncated 470 chars]...lan in editor" in message
+
+    def test_edit_plan_instructions_include_path(self) -&gt; None:</param>
+    <param name="new_string">    def test_edit_plan_option_included(self) -&gt; None:
+        """Fourth option 'View/Edit ...[truncated 1404 chars]...erk pr submit" in message
+
+    def test_edit_plan_instructions_include_path(self) -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="532" cache_read_input_tokens="68855" output_tokens="771" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 532, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VNsd147m4Ru6YbDhC3Svmp">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the tests to verify everything passes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="839" cache_read_input_tokens="69387" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 839}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01JWjv6k2D6g3Mq5MPmDnP4g">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run exit plan mode hook tests</param>
+    <param name="prompt">Run the following command and report the results:
+uv run pytest tests/unit/cli/commands/ex...[truncated 50 chars]...es (pass/fail), any assertion errors, and whether the test suite passed or failed overall.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="839" cache_read_input_tokens="69387" output_tokens="172" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 839, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JWjv6k2D6g3Mq5MPmDnP4g">
+pytest passed: 76 passed in 0.52s
+
+All tests in the exit_plan_mode_hook test file passed successfully. The test suite includes 76 test cases covering the hook functionality.
+agentId: a43c66f3667e4b040 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13720
+tool_uses: 1
+duration_ms: 4302&lt;/usage&gt;
+  </tool_result>
+  <thinking>All 76 tests passed. Let me mark task 2 as completed and proceed with the remaining steps.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="453" cache_read_input_tokens="70226" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 453}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01QdyiozLa9CRid7rGkPhqxs">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="453" cache_read_input_tokens="70226" output_tokens="108" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 453, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QdyiozLa9CRid7rGkPhqxs">
+Updated task #2 status
+  </tool_result>
+  <assistant>All 76 tests pass. Now signaling completion and running CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="128" cache_read_input_tokens="70679" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 128}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RpvrhEQkmNZk3dp7kuP1ho">
+    <param name="command">erk exec impl-signal ended --session-id="492ab677-be06-4d75-bd44-08867b375a05" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="128" cache_read_input_tokens="70679" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 128, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RpvrhEQkmNZk3dp7kuP1ho">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8639
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Fq1e2H7JN5TwvjceXJxokA">
+    <param name="command">erk exec upload-impl-session --session-id="492ab677-be06-4d75-bd44-08867b375a05" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="166" cache_read_input_tokens="70807" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 166, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Fq1e2H7JN5TwvjceXJxokA">
+{"uploaded": true, "plan_id": 8639}
+  </tool_result>
+  <tool_use name="Skill" id="toolu_014LJ7DhWXnEGEeCwARL7PQ3">
+    <param name="skill">local:py-fast-ci</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="139" cache_read_input_tokens="70973" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 139, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014LJ7DhWXnEGEeCwARL7PQ3">
+Launching skill: local:py-fast-ci
+  </tool_result>
+  <user>You are an implementation finalizer for rapid Python-focused development feedback. Your task is to run `make py-fast-ci` and iteratively fix any issues until all CI checks pass successfully.
+
+## Your Mission
+
+Run the Python-only fast CI pipeline (`make py-fast-ci`) from the repository root and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**py-fast-ci vs fast-ci**: The `py-fast-ci` target runs Python checks (lint, format, ty, pytest), skipping markdown and documentation checks. Use this when you're iterating on Python code and don't want to wait for prettier/markdown validation. Use `/fast-ci` when you need the full fast CI pipeline including all checks.
+
+## CI Pipeline (make py-fast-ci)
+
+The `make py-fast-ci` target runs these checks in order:
+
+1. **lint** - Ruff linting checks
+2. **format** - Python formatting check (ruff format --check)
+3. **ty** - Type checking
+4. **test-unit-erk** - Pytest unit tests for erk
+5. **test-erk-dev** - Pytest tests for erk-dev
+
+**Skipped** (compared to fast-ci):
+
+- Prettier check (markdown formatting)
+- Markdown check (AGENTS.md compliance)
+- Docs validate/sync
+
+## Iteration Process
+
+Load the `ci-iteration` skill for the iterative fix workflow.
+
+## Fail-Fast Workflow
+
+This command uses a two-phase approach to fail fast on Python code quality issues:
+
+1. **Phase 1 (Fail-Fast)**: Run `make lint format ty` together (ruff lint + ruff format + type checking). If ANY fails, stop immediately to fix issues before proceeding to test runs.
+2. **Phase 2 (Test Runs)**: Only after phase 1 passes, run `make test-unit-erk test-erk-dev`.
+
+This ensures that syntax/formatting and type errors are caught and fixed first, providing rapid feedback without waiting for test execution.
+
+## Begin Now
+
+Start by using the Task tool with the devrun agent to run the fail-fast phase (`make lint format ty`) from the repository root. If that passes, proceed with test targets (`make test-unit-erk test-erk-dev`). Track your progress with TodoWrite and report your final status clearly.
+
+**Remember**:
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <thinking>The skill is asking me to run `make py-fast-ci` in phases. Let me start with phase 1 (lint, format, ty) using the devrun agent.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="707" cache_read_input_tokens="71112" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 707}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01EyT5vN5Hitb7UQYJq8oMWv">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run lint format ty checks</param>
+    <param name="prompt">Run the following command from the repository root /Users/schrockn/.erk/repos/erk/worktree...[truncated 112 chars]...rt all output including any errors, warnings, and whether the command succeeded or failed.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="707" cache_read_input_tokens="71112" output_tokens="243" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 707, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EyT5vN5Hitb7UQYJq8oMWv">
+Perfect! Here's the full output of the command:
+
+## Summary
+
+**Command:** `make lint format-check ty`
+
+**Exit Code:** 0 (Success)
+
+**Output:**
+
+```
+uv run ruff check
+All checks passed!
+
+uv run ruff format --check
+1633 files already formatted
+
+uv run ty check
+All checks passed!
+```
+
+All three checks passed successfully:
+- **ruff lint** - No linting issues found
+- **ruff format-check** - All 1633 files are properly formatted
+- **ty type check** - No type checking errors found
+agentId: a6d40723c06f243bd (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 17046
+tool_uses: 4
+duration_ms: 8539&lt;/usage&gt;
+  </tool_result>
+  <assistant>Phase 1 passes. Now running tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="447" cache_read_input_tokens="71819" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 447}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01JSZeharyZtRd6N9psLBAr3">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run unit tests for erk and erk-dev</param>
+    <param name="prompt">Run the following command from the repository root and report the full output:
+
+cd /Users/...[truncated 72 chars]...t all test outcomes, any failures with full error details, and the final pass/fail status.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="447" cache_read_input_tokens="71819" output_tokens="191" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 447, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JSZeharyZtRd6N9psLBAr3">
+## Test Results
+
+**Status: All tests passed**
+
+- **test-unit-erk**: 5530 tests passed in 11.89s
+- **test-erk-dev**: 136 tests passed in 2.45s
+- **Total**: 5666 tests passed
+
+Both test suites completed successfully with no failures.
+agentId: af9def6bdafcdc723 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14314
+tool_uses: 1
+duration_ms: 17043&lt;/usage&gt;
+  </tool_result>
+  <assistant>All CI checks pass. Submitting the PR:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="72266" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 334}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01GihzpKjkkuJXg9MArKP5Gn">
+    <param name="skill">erk:pr-submit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="72266" output_tokens="69" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 334, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GihzpKjkkuJXg9MArKP5Gn">
+Launching skill: erk:pr-submit
+  </tool_result>
+  <user># Submit PR
+
+Automatically create a git commit with a helpful summary message and submit the current branch as a pull request.
+
+**Note:** This command squashes commits and rebases the stack. If you prefer a simpler workflow that preserves your commit history, use `/erk:git-pr-push` instead.
+
+## Usage
+
+```bash
+# Invoke the command (description argument is optional but recommended)
+/erk:pr-submit "Add user authentication feature"
+
+# Without argument (will analyze changes automatically)
+/erk:pr-submit
+```
+
+## Implementation
+
+This command uses a three-step flow to avoid nested Claude subprocess calls:
+
+1. **Push + create PR** (no AI) via `erk exec push-and-create-pr`
+2. **Gather context** via `erk exec get-pr-context` (returns JSON)
+3. **Generate title + body** natively (you are the agent — no subprocess)
+4. **Apply description** via `erk exec set-pr-description`
+
+### Step 1: Push and Create PR
+
+```bash
+erk exec push-and-create-pr
+```
+
+This pushes the branch, creates/finds the PR via Graphite, but skips AI description generation. The PR is created with a placeholder title. Outputs JSON with `pr.number` and `pr.url`.
+
+If this fails (exit code 1), display the error from the JSON output and stop.
+
+### Step 2: Get PR Context
+
+```bash
+erk exec get-pr-context
+```
+
+This outputs JSON to stdout with:
+
+- `branch.current` and `branch.parent`
+- `pr.number` and `pr.url`
+- `diff_file` path to the diff content
+- `commit_messages` array
+- `plan_context` (nullable) with `plan_id`, `plan_content`, `objective_summary`
+
+Parse the JSON output. If this fails, display the error and stop.
+
+### Step 3: Generate Title and Body
+
+1. Read the diff file from the `diff_file` path in the JSON
+2. Load the `erk-diff-analysis` skill for the commit message prompt format
+3. Consider the `commit_messages` and `plan_context` from the JSON
+4. If the user provided a `` argument, use it to guide the description
+5. Generate a PR title (first line) and body following the diff analysis format
+
+### Step 4: Apply Description
+
+Write the generated body to a temp file, then apply:
+
+```bash
+erk exec set-pr-description --title "&lt;generated title&gt;" --body-file "&lt;temp file path&gt;"
+```
+
+If this fails, display the error and stop.
+
+### Step 5: Link PR to Objective (if applicable)
+
+If `ref.json` exists in `.erk/impl-context/&lt;branch&gt;/` and contains `objective_id`:
+
+```bash
+erk exec objective-link-pr --pr-number &lt;pr_number&gt;
+```
+
+Where `&lt;pr_number&gt;` is the PR number from Step 1. If this fails, warn but continue -- PR creation succeeded.
+
+### Step 6: Report Results
+
+Report:
+
+- PR URL (from step 2 JSON)
+- Success message
+
+### Refresh Status Line
+
+After reporting results, output the following to trigger a status line refresh:
+
+```
+🔄 Status line refreshed
+```
+
+## Error Handling
+
+If any step fails, display the error and stop. Do NOT attempt to auto-resolve errors. Let the user fix issues and re-run.
+
+Common errors:
+
+- Authentication issues (Graphite/GitHub)
+- Merge conflicts
+- No commits to submit
+- No PR found for branch
+</user>
+  <thinking>Let me follow the steps in the skill to submit the PR.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="924" cache_read_input_tokens="72600" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 924}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JfDTV9AC6qSMZvJRK5FW1J">
+    <param name="command">erk exec push-and-create-pr 2&gt;&amp;1</param>
+    <param name="description">Push branch and create PR via Graphite</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="924" cache_read_input_tokens="72600" output_tokens="147" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 924, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JfDTV9AC6qSMZvJRK5FW1J">
+{
+  "success": true,
+  "branch": "plnd/add-implement-current-bran-03-02-1535",
+  "pr": {
+    "number": 8639,
+    "url": "https://github.com/dagster-io/erk/pull/8639",
+    "was_created": true
+  },
+  "graphite_url": "https://app.graphite.com/github/pr/dagster-io/erk/8639",
+  "plan_id": "8639"
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01BC66JF94XM1rX7qrjmrh55">
+    <param name="command">erk exec get-pr-context 2&gt;&amp;1</param>
+    <param name="description">Get PR context JSON for description generation</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="370" cache_read_input_tokens="73524" output_tokens="86" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 370, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BC66JF94XM1rX7qrjmrh55">
+{
+  "branch": {
+    "current": "plnd/add-implement-current-bran-03-02-1535",
+    "parent": "master"
+  },
+  "pr": {
+    "number": 8639,
+    "url": "https://github.com/dagster-io/erk/pull/8639"
+  },
+  "diff_file": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.erk/scratch/sessions/f0e314da-36c9-4eff-a1db-2bff40eab65d/pr-diff-0709f9d0.diff",
+  "commit_messages": [
+    "Add plan: Add \"Implement on current branch\" option to exit plan mode hook",
+    "Remove .erk/impl-context/ before submission",
+    "WIP: Prepare for PR submission"
+  ],
+  "plan_context": {
+    "plan_id": "8639",
+    "plan_content": "# Add \"Implement on current branch\" option to exit plan mode hook\n\n## Context\n\nWhen exiting plan mode, the hook presents 3 options: save as plan PR, skip PR and implement (which creates a new branch via `setup-impl`), or view/edit the plan. There's no option to implement directly on the current branch without creating a new branch. This is needed for cases where the branch was already created by another tool (e.g., `erk wt create`, manual branch creation).\n\n## Changes\n\n### 1. Modify `build_blocking_message()` in `exit_plan_mode_hook.py`\n\n**File:** `src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py`\n\nAdd a new option 3 \"Implement on current branch\" and shift \"View/Edit\" to option 4. This gives exactly 4 options (AskUserQuestion max). Also clarify option 2's description to note it creates a new branch.\n\n**Option list becomes:**\n```\n1. \"Create a plan PR\" (Recommended) - Create a draft PR with the plan and stop.\n2. \"New branch and implement\" - Create a new branch in the current worktree and implement (for starting fresh).\n3. \"Implement on current branch\" - Implement directly on the current branch without creating a new branch or worktree.\n4. \"View/Edit the plan\" - Open plan in editor to review or modify before deciding.\n```\n\n**Add instruction block for option 3:**\n```\nIf user chooses 'Implement on current branch':\n  1. Create implement-now marker:\n     erk exec marker create --session-id {session_id} \\\n       exit-plan-mode-hook.implement-now\n  2. Call ExitPlanMode\n  3. After exiting plan mode, implement the changes directly on the current branch.\n     Do NOT run 'erk exec setup-impl' or create a new branch.\n     Read the plan from: {plan_file_path}\n     Implement changes, run CI, and optionally 'erk pr submit' when done.\n```\n\nThe new option reuses the existing `implement-now` marker - no new marker type needed. The difference from option 2 is purely in the agent instructions after ExitPlanMode (no `setup-impl`, no branch creation).\n\n**Also update option 2's instruction block label** from `'Skip PR and implement here'` to match the new label.\n\n### 2. Update tests\n\n**File:** `tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py`\n\nUpdate `TestBuildBlockingMessage` tests that assert on message content:\n\n- `test_contains_required_elements`: Update assertions for renamed option 2 and add assertions for new option 3 (\"Implement on current branch\")\n- `test_draft_pr_backend_instruction_blocks`: Update instruction block label assertions\n- Add new test `test_implement_on_current_branch_option_included`: Verify the new option text and instruction block appear in the message\n- Update `test_edit_plan_instructions_include_path`: The \"loop until\" text may reference the new option name\n\nNo changes needed to `TestDetermineExitAction` - the pure logic uses the same `implement-now` marker for both options 2 and 3.\n\n## Verification\n\n1. Run unit tests: `uv run pytest tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py`\n2. Run ty type checking on the modified file\n3. Manually test: enter plan mode, create a plan, call ExitPlanMode, verify 4 options appear\n",
+    "objective_summary": null
+  }
+}
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01CmJA25tqCyHZvQ9qqtNtSR">
+    <param name="skill">erk-diff-analysis</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1280" cache_read_input_tokens="73894" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1280, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CmJA25tqCyHZvQ9qqtNtSR">
+Launching skill: erk-diff-analysis
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.claude/skills/erk-diff-analysis
+
+# Diff Analysis
+
+This skill provides the commit message generation prompt used by PR submission commands.
+
+## When to Use
+
+Only load this skill when:
+
+- Explicitly requested by name (`erk-diff-analysis`)
+- Invoked by commands like `/erk:git-pr-push`
+
+## Usage
+
+Load `references/commit-message-prompt.md` when analyzing a diff, then apply its principles to generate output.
+
+## Key Principles
+
+- Be concise and strategic - focus on significant changes
+- Use component-level descriptions - reference modules/components, not individual functions
+- Highlight breaking changes prominently
+- Note test coverage patterns
+- Use relative paths from repository root
+</user>
+  <thinking>Let me read the commit message prompt file and the diff file.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="275" cache_read_input_tokens="75174" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 275}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RkqBWEK1nCD3hGGJ9GaQfN">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.claude/skills/erk-diff-analysis/references/commit-message-prompt.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="275" cache_read_input_tokens="75174" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 275}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RkqBWEK1nCD3hGGJ9GaQfN">
+     1→You are a commit message generator. Analyze the provided git diff and return ONLY a commit message.
+     2→
+     3→## Analysis Principles
+     4→
+     5→Analyze the diff following these principles:
+     6→
+     7→- **Be concise and strategic** - focus on significant changes
+     8→- **Use component-level descriptions** - reference modules/components, not individual functions
+     9→- **Highlight breaking changes prominently**
+    10→- **Note test coverage patterns**
+    11→- **Use relative paths from repository root**
+    12→
+    13→## Level of Detail
+    14→
+    15→- Focus on architectural and component-level impact
+    16→- Keep "Key Changes" to 3-5 major items
+    17→- Group related changes together
+    18→- Skip minor refactoring, formatting, or trivial updates
+    19→
+    20→## Output Format
+    21→
+    22→```
+    23→[Clear one-line PR title describing the change]
+    24→
+    25→[2-3 sentence summary explaining what changed and why. State what the branch does (feature/fix/refactor) and highlight key changes briefly.]
+    26→
+    27→## Files Changed
+    28→
+    29→&lt;details&gt;
+    30→&lt;summary&gt;Files Changed&lt;/summary&gt;
+
+... [59 lines omitted] ...
+
+    69→[Only if there are breaking changes, security concerns, or important warnings - 1-2 bullets max]
+  </tool_result>
+  <tool_use name="Read" id="toolu_01F9bowidUge7ZThVrCs8roR">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.erk/scratch/sessions/f0e314da-36c9-4eff-a1db-2bff40eab65d/pr-diff-0709f9d0.diff</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="275" cache_read_input_tokens="75174" output_tokens="235" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 275, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01F9bowidUge7ZThVrCs8roR">
+     1→diff --git a/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py b/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py
+     2→index e1a2e651e..2852d8da6 100644
+     3→--- a/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py
+     4→+++ b/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py
+     5→@@ -331,9 +331,11 @@ def build_blocking_message(
+     6→         [
+     7→             '  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan '
+     8→             "and stop. Does NOT proceed to implementation.",
+     9→-            '  2. "Skip PR and implement here" - Skip creating a PR, implement directly '
+    10→-            "in current worktree (for small PR iterations that don't need PR tracking).",
+    11→-            '  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.',
+    12→+            '  2. "New branch and implement" - Create a new branch in the current worktree '
+    13→+            "and implement (for starting fresh).",
+    14→+            '  3. "Implement on current branch" - Implement directly on the current branch '
+    15→+            "without creating a new branch or worktree.",
+    16→+            '  4. "View/Edit the plan" - Open plan in editor to review or modify before deciding.',
+    17→         ]
+    18→     )
+    19→ 
+    20→@@ -357,13 +359,31 @@ def build_blocking_message(
+    21→             "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
+    22→             "     Stay in plan mode and let the user exit manually if desired.",
+    23→             "",
+    24→-            "If user chooses 'Skip PR and implement here':",
+    25→+            "If user chooses 'New branch and implement':",
+    26→             "  1. Create implement-now marker (skip PR creation):",
+    27→             f"     erk exec marker create --session-id {session_id} \\",
+    28→             "       exit-plan-mode-hook.implement-now",
+    29→             "  2. Call ExitPlanMode",
+    30→             "  3. After exiting plan mode, implement the changes directly",
+
+... [116 lines omitted] ...
+  </tool_result>
+  <assistant>Now generating the PR title and body, then applying it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3874" cache_read_input_tokens="75449" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3874}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GbnLSYSPzSt3JhdujadLwB">
+    <param name="command">cat &gt; /tmp/pr-body-8639.md &lt;&lt; 'EOF'
+Add "Implement on current branch" option to exit plan ...[truncated 1579 chars]... via `erk wt create`) without forcing a redundant branch-creation step.
+EOF
+echo "Written"</param>
+    <param name="description">Write PR body to temp file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3874" cache_read_input_tokens="75449" output_tokens="582" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3874, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GbnLSYSPzSt3JhdujadLwB">
+Written
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01S6gxDsFXm9BvSFPMuWcUzX">
+    <param name="command">erk exec set-pr-description --title 'Add "Implement on current branch" option to exit plan mode hook' --body-file /tmp/pr-body-8639.md 2&gt;&amp;1</param>
+    <param name="description">Apply PR title and body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="60869" cache_read_input_tokens="19034" output_tokens="118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 60869, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S6gxDsFXm9BvSFPMuWcUzX">
+PR #8639 updated: Add "Implement on current branch" option to exit plan mode hook
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DWazzAxed1PJPNgzbGXLVy">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true &amp;&amp; erk pr check --stage=impl 2&gt;&amp;1</param>
+    <param name="description">Signal submitted and validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="151" cache_read_input_tokens="79903" output_tokens="103" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 151, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DWazzAxed1PJPNgzbGXLVy">
+{
+  "success": false,
+  "event": "submitted",
+  "error_type": "no-plan-reference",
+  "message": "No plan reference found"
+}
+Checking PR #8639 for branch plnd/add-implement-current-bran-03-02-1535...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>All checks pass. PR is submitted.
+
+---
+
+**PR #8639**: https://github.com/dagster-io/erk/pull/8639
+
+**Summary of changes:**
+
+- `exit_plan_mode_hook.py`: Added option 3 "Implement on current branch" to the exit plan mode prompt, shifted "View/Edit" to option 4, renamed option 2 from "Skip PR and implement here" to "New branch and implement" for clarity. The new option includes an instruction block that tells the agent to implement on the current branch without running `setup-impl`.
+- `test_exit_plan_mode_hook.py`: Updated 4 existing tests for the renamed option 2, added `test_implement_on_current_branch_option_included` to verify the new option. All 76 tests pass.
+
+🔄 Status line refreshed</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="219" cache_read_input_tokens="80054" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 219}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>

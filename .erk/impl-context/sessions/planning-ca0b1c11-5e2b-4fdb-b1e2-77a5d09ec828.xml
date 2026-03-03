@@ -1,0 +1,862 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>In the copy that the user receives on the exit, exiting plan mode, or when we present what to do with the plan and we say "Save the plan PR", etc. etc., I want to provide an option that will implement the created plan in place. Right now the options are to create a new work tree and new branch, create a Create a new planche on the same work tree but I want the option to just do the work on the current branch. Let's say it already existed, created by some other tool. How do we do that? </user>
+  <thinking>The user is asking about modifying the plan mode exit behavior in erk. Specifically, when exiting plan mode, there are options presented to the user about what to do with the plan (save as PR, implement in new worktree, implement on new branch in same worktree). They want to add an option to implement the plan on the current branch (in-place), for cases where the branch was already created by some other tool.
+
+Let me explore the codebase to understand how the plan mode exit flow works, what options are currently presented, and where the code lives.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="13425" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13425}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01R3h9paybpbaue8pPBvLaoo">
+    <param name="description">Explore plan mode exit flow</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 804 chars]...d commands.
+
+Be very thorough - trace the full flow from plan mode exit to implementation.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="13425" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13425}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01FponEBsiBibkVwebdZghM8">
+    <param name="description">Explore plan implementation options</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 700 chars]...ode that handles the different implementation strategies (worktree vs branch vs in-place).</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="13425" cache_read_input_tokens="16613" output_tokens="775" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13425, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01R3h9paybpbaue8pPBvLaoo">
+I now have a thorough understanding of the entire flow. Let me compile the comprehensive answer for you.
+
+---
+
+## Plan Mode Exit Flow in Erk - Complete Analysis
+
+### 1. How the Hook is Triggered
+
+The hook is a `PreToolUse` hook configured in `/Users/schrockn/code/erk/.claude/settings.json`:
+
+```json
+{
+  "matcher": "ExitPlanMode",
+  "hooks": [
+    {
+      "type": "command",
+      "command": "command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
+    }
+  ]
+}
+```
+
+Whenever Claude Code is about to call the `ExitPlanMode` tool, this hook intercepts it.
+
+---
+
+### 2. The Hook Implementation - Where Options Are Presented
+
+**File:** `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py`
+
+
+... [184 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01FponEBsiBibkVwebdZghM8">
+Now I have a comprehensive understanding of all the implementation paths. Here is a thorough report:
+
+---
+
+## Implementation Options in Erk: Comprehensive Analysis
+
+### 1. WHERE Plans Are Implemented (Environment Strategies)
+
+There are **two distinct approaches** for setting up the implementation environment, used by different commands:
+
+#### Approach A: Implement In The Current Worktree (New Branch in Same Worktree)
+
+Used by `erk implement` and `/erk:plan-implement`.
+
+**This is "implement in place"** — no new git worktree directory is created. Instead:
+1. A new branch is created from the current branch (or trunk)
+2. The new branch is checked out in the **current worktree directory**
+3. `.erk/impl-context/&lt;branch&gt;/` is created with `plan.md`, `ref.json`, etc.
+4. Claude runs `/erk:plan-implement` in the **current working directory**
+
+Key code: `/Users/schrockn/code/erk/src/erk/cli/commands/implement.py` — `_implement_from_issue()` calls `create_impl_folder(worktree_path=ctx.cwd, ...)` and then `_execute()` which runs Claude in `ctx.cwd`.
+
+**There is NO worktree isolation** in the `erk implement` command. It stays in the current directory. The "worktree isolation" pattern is handled by the separate `erk wt create` command, which creates a new worktree directory.
+
+#### Approach B: Create a New Git Worktree (Separate Directory)
+
+Used by `erk wt create` with various plan flags:
+
+```bash
+erk wt create --from-plan 2521    # Create new worktree + impl folder from GitHub plan
+
+... [96 lines omitted] ...
+
+| 4 | None found | Return `{"error": "no_plan_found"}` and exit 1 |
+  </tool_result>
+  <thinking>Now I have a thorough understanding of the flow. Let me read the critical files to understand exactly what's in the exit plan mode hook to plan the changes needed.
+
+The user wants to add an option to implement the plan on the current branch (in-place), without creating a new worktree or new branch. Currently:
+
+1. "Create a plan PR" - saves as draft PR, stops
+2. "Skip PR and implement here" - implements in current worktree but this seems to already be the current branch?
+3. "View/Edit the plan" - lets you edit the plan
+
+Wait, let me re-read. The user says "I want the option to just do the work on the current branch" - but option 2 "Skip PR and implement here" says "implement directly in current worktree". Is this already implementing on the current branch?
+
+
+Looking at the flow more carefully, option 2 creates an `implement-now.marker` and exits plan mode, which should allow Claude to implement changes directly in the current worktree without PR tracking. But the `/erk:plan-implement` command runs `erk exec setup-impl` which creates a new branch, so I need to check the exit_plan_mode_hook.py code directly to see what option 2 actually does versus what the exploration agent described.
+
+The user's scenario is different though—they want an option where a branch already exists (created externally), and they just want to implement on it without any additional branch creation. Let me examine the exit_plan_mode_hook.py to understand the current implementation options in detail.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="35317" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 35317}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the key files to understand the exact current behavior before designing the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="35317" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 35317}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AyXYr9xKZva59MMQM669Kt">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="35317" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 35317}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AyXYr9xKZva59MMQM669Kt">
+     1→#!/usr/bin/env python3
+     2→"""Exit Plan Mode Hook.
+     3→
+     4→Prompts user before exiting plan mode when a plan exists. This hook intercepts
+     5→the ExitPlanMode tool via PreToolUse lifecycle to ask whether to save to GitHub
+     6→or implement immediately.
+     7→
+     8→Exit codes:
+     9→    0: Success (allow exit - no plan, implement-now marker present, or no session)
+    10→    2: Block (plan exists, no implement-now marker - prompt user)
+    11→
+    12→This command is invoked via:
+    13→    erk exec exit-plan-mode-hook
+    14→
+    15→Marker File State Machine
+    16→=========================
+    17→
+    18→This hook uses marker files in .erk/scratch/sessions/&lt;session-id&gt;/ for state management.
+    19→Marker files are self-describing: their names indicate their purpose and their contents
+    20→explain their effect.
+    21→
+    22→Marker Files:
+    23→    exit-plan-mode-hook.implement-now.marker
+    24→        Created by: Agent (when user chooses "Implement now")
+    25→        Effect: Next ExitPlanMode call is ALLOWED (exit plan mode, proceed to implementation)
+    26→        Lifecycle: Deleted after being read by next hook invocation
+    27→
+    28→    exit-plan-mode-hook.plan-saved.marker
+    29→        Created by: /erk:plan-save command
+    30→        Effect: Next ExitPlanMode call is BLOCKED (remain in plan mode, session complete)
+
+... [762 lines omitted] ...
+
+   344→                f"⚠️  WARNING: Currently on '{current_branch}'. "
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CwGm19tmdoWdXjB1KQNDr5">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/plan-implement.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="35317" cache_read_input_tokens="0" output_tokens="654" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 35317, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CwGm19tmdoWdXjB1KQNDr5">
+     1→---
+     2→description: Implement a plan from GitHub, file path, current branch, or current .erk/impl-context/ folder
+     3→argument-hint: "[&lt;plan-number-or-url-or-path&gt;]"
+     4→---
+     5→
+     6→# /erk:plan-implement
+     7→
+     8→Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+     9→
+    10→This is the primary implementation workflow - it orchestrates:
+    11→
+    12→1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+    13→2. Executing the implementation
+    14→3. Running CI and submitting the PR
+    15→
+    16→## Prerequisites
+    17→
+    18→- Must be in a git repository managed by erk
+    19→- GitHub CLI (`gh`) must be authenticated
+    20→- One of:
+    21→  - A plan number, URL, or file path argument
+    22→  - An existing impl directory under `.erk/impl-context/`
+    23→  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+    24→  - A plan in `~/.claude/plans/` (from plan mode)
+    25→
+    26→## Usage
+    27→
+    28→```bash
+    29→/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+    30→/erk:plan-implement 2521               # Fetch and implement plan #2521
+
+... [205 lines omitted] ...
+
+    92→If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+   115→If this fails, display the error and stop.
+  </tool_result>
+  <thinking>Now I have a clear picture of the current state. Let me understand exactly what the user wants:
+
+Current options when exiting plan mode:
+1. "Create a plan PR" (Recommended) - saves as draft PR, stops. Does NOT implement.
+2. "Skip PR and implement here" - creates implement-now marker, calls ExitPlanMode, then implements "directly in current worktree". But what does this mean for `/erk:plan-implement`?
+
+When option 2 is chosen, the hook allows ExitPlanMode. Then the user is "implementing the changes directly" - but the `/erk:plan-implement` command (if called) would run `erk exec setup-impl` which creates a new branch.
+
+
+The "Skip PR and implement here" flow is described as being for small iterations without PR tracking, but I'm realizing there's ambiguity here: does it actually skip branch creation entirely, or does it just skip the PR step? Looking at how `setup-impl` works in auto-detect mode, it would either find an existing impl context or create a new branch, so the user seems to be asking for a way to implement directly in the current branch without any of that machinery. The key difference is that the new option should skip `setup-impl` entirely and implement directly on the current branch without any branch creation, whereas the existing "Skip PR and implement here" still goes through `setup-impl` which might create a new branch anyway. So I need to think about whether we can just pass a flag to `setup-impl` to prevent branch creation, or if we need a completely separate code path that loads the plan and runs implementation directly. I'm realizing the fallback logic might undermine the intent here—when setup-impl can't find an existing context or plan branch, it saves the plan to GitHub and creates a branch anyway, which defeats the purpose of skipping PR tracking. The real issue is whether the agent even calls `plan-implement` after ExitPlanMode for the "Skip PR" option, or if there's a different code path I'm missing in the hook instructions. So the user wants a clearer third option that explicitly handles in-place implementation on the current branch without any branch creation or GitHub operations. I need to figure out how to pass the right flags to `setup-impl` to skip the branch creation step and just read the plan file directly for implementation. the plan file, implementing the changes directly on the current branch without needing to set up a new worktree or call `setup-impl`. I'll add this as option 3 with clear instructions for the agent to create a marker, exit plan mode, and then proceed with implementation from the plan file's current location.
+
+Now I'm reconsidering whether option 2 ("Skip PR and implement here") already covers this use case or if it needs clarification. The user specifically wants an explicit option to work on the current branch, so adding a distinct option 3 makes sense to avoid ambiguity about what the existing options actually do. Looking at what the user actually wants: they need a way to implement directly on a branch that already exists, without any branch creation or setup-impl step. Option 2 is supposed to do this but the description around "small PR iterations" is muddying the waters. I should add a clearer third option that explicitly skips setup-impl and implements in-place on the current branch. I'm realizing the core issue is that option 2's wording is ambiguous about whether it creates a branch or not. The cleanest fix is to clarify option 2 with explicit instructions: implement directly from the plan file without running setup-impl, making it clear this happens in-place on the current branch with no new branch creation. I don't need to add a new marker type since `implement-now` already signals that ExitPlanMode is allowed—the actual behavior difference (whether to run setup-impl or skip it) gets communicated through the blocking message instructions themselves. For testing, the `determine_exit_action` function stays unchanged, but I'll need to check if there are snapshot or content tests for `build_blocking_message` that will need updates.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="15074" cache_read_input_tokens="35317" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15074}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the existing tests for the hook to understand the test patterns.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="15074" cache_read_input_tokens="35317" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15074}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Uu6GtrQfiaYFoeZwxDLwun">
+    <param name="pattern">tests/**/exit_plan_mode*</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="15074" cache_read_input_tokens="35317" output_tokens="3450" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15074, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Uu6GtrQfiaYFoeZwxDLwun">
+No files found
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XdpUPAvabPf2rW6B6UJtHN">
+    <param name="command">find /Users/schrockn/code/erk/tests -name "*exit*plan*" -o -name "*plan*mode*" 2&gt;/dev/null | head -20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3405" cache_read_input_tokens="50391" output_tokens="94" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3405, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XdpUPAvabPf2rW6B6UJtHN">
+/Users/schrockn/code/erk/tests/unit/core/test_health_checks_exit_plan_hook.py
+/Users/schrockn/code/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NERKobu7yWmf3hVerELuAW">
+    <param name="file_path">/Users/schrockn/code/erk/tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="174" cache_read_input_tokens="53796" output_tokens="88" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 174, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NERKobu7yWmf3hVerELuAW">
+&lt;persisted-output&gt;
+Output too large (51.7KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn-code-erk/ca0b1c11-5e2b-4fdb-b1e2-77a5d09ec828/tool-results/toolu_01NERKobu7yWmf3hVerELuAW.txt
+
+Preview (first 2KB):
+     1→"""Unit tests for exit-plan-mode-hook command.
+     2→
+     3→This test file uses the pure logic extraction pattern. Most tests call the
+     4→`determine_exit_action()` pure function directly with no mocking required.
+     5→Only a few integration tests use CliRunner to verify the full hook works.
+     6→"""
+     7→
+     8→import json
+     9→from pathlib import Path
+    10→
+    11→from click.testing import CliRunner
+    12→
+    13→from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
+    14→    ExitAction,
+    15→    HookInput,
+    16→    abbreviate_for_header,
+    17→    build_blocking_message,
+    18→    determine_exit_action,
+    19→    exit_plan_mode_hook,
+    20→    extract_plan_title,
+    21→    is_terminal_editor,
+    22→)
+    23→from erk_shared.context.context import ErkContext
+    24→from erk_shared.context.testing import context_for_test
+    25→from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
+    26→from erk_shared.gateway.git.fake import FakeGit
+
+... [21 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have enough information to design the plan. Let me understand the full picture:
+
+**Current state:**
+- `build_blocking_message()` in `exit_plan_mode_hook.py` presents 3 options:
+  1. "Create a plan PR" (Recommended) - saves as draft PR, stops
+  2. "Skip PR and implement here" - creates implement-now marker, calls ExitPlanMode, then "implement changes directly (no PR tracking - this is for small PR iterations)"
+  3. "View/Edit the plan" - open editor, loop back
+
+**The user's request:**
+- Add an option to implement on the **current branch** - without creating a new branch, worktree, or PR. For the case where the branch was already set up by another tool.
+  
+The issue is that option 2's description is unclear and misleading, and when the agent calls `/erk:plan-implement`, it triggers `erk exec setup-impl` which creates a new branch anyway. I need to either clarify or add an option that explicitly prevents branch creation and tells the agent to read the plan directly and implement changes on the current branch without running setup-impl.
+
+Now I'm thinking through how to restructure the options. The function currently supports 3 options, and I could add a 4th since AskUserQuestion allows 2-4 options. The cleaner approach would be to reorganize them as: "Create a plan PR" (recommended), "Implement on current branch" (the new in-place option), and "View/Edit the plan" — which means either removing or clarifying the existing "Skip PR and implement here" option to distinguish between creating a branch versus implementing directly on the current branch.
+
+I'm weighing two approaches: either modify the existing option to explicitly say "implement on current branch without setup-impl," or add a new option while keeping the old one for users who want to skip the PR but still create a branch. The second approach gives more flexibility but adds complexity, so I'm leaning toward Option A for clarity. or they might be describing options from a different command. But looking at the exit plan mode hook, I think the user's mental model is that option 1 saves a plan for later implementation in a new worktree, option 2 creates a new branch in the current worktree, and they want a third option to skip the branch creation entirely and work directly on the current branch. Option 2 does create a new branch, so adding an in-place option makes sense.
+
+I should add a new option 3 labeled "Implement on current branch" that skips the branch setup step and implements directly, positioned between the current option 2 and the view/edit options. This keeps option 2's semantics intact while giving users the ability to implement without creating a new branch when their branch is already prepared.
+
+Now I'm checking the constraint on AskUserQuestion - it has a maximum of 4 options, so I can fit all four: the plan PR option, skip PR and implement, the new in-place implementation option, and view/edit the plan.
+
+I need to update `exit_plan_mode_hook.py` to add the third option and its handling logic, then review the test file to understand how `build_blocking_message()` is tested so I can add coverage for the new option.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4913" cache_read_input_tokens="53970" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4913}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read more of the test file to understand test patterns for `build_blocking_message`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4913" cache_read_input_tokens="53970" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4913}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Buc5sKU4maPsrCB4M1cpGU">
+    <param name="file_path">/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/ca0b1c11-5e2b-4fdb-b1e2-77a5d09ec828/tool-results/toolu_01NERKobu7yWmf3hVerELuAW.txt</param>
+    <param name="offset">1</param>
+    <param name="limit">300</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4913" cache_read_input_tokens="53970" output_tokens="1876" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4913, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Buc5sKU4maPsrCB4M1cpGU">
+     1→     1→"""Unit tests for exit-plan-mode-hook command.
+     2→     2→
+     3→     3→This test file uses the pure logic extraction pattern. Most tests call the
+     4→     4→`determine_exit_action()` pure function directly with no mocking required.
+     5→     5→Only a few integration tests use CliRunner to verify the full hook works.
+     6→     6→"""
+     7→     7→
+     8→     8→import json
+     9→     9→from pathlib import Path
+    10→    10→
+    11→    11→from click.testing import CliRunner
+    12→    12→
+    13→    13→from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
+    14→    14→    ExitAction,
+    15→    15→    HookInput,
+    16→    16→    abbreviate_for_header,
+    17→    17→    build_blocking_message,
+    18→    18→    determine_exit_action,
+    19→    19→    exit_plan_mode_hook,
+    20→    20→    extract_plan_title,
+    21→    21→    is_terminal_editor,
+    22→    22→)
+    23→    23→from erk_shared.context.context import ErkContext
+    24→    24→from erk_shared.context.testing import context_for_test
+    25→    25→from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
+    26→    26→from erk_shared.gateway.git.fake import FakeGit
+    27→    27→
+    28→    28→# ============================================================================
+    29→    29→# Pure Logic Tests for determine_exit_action() - NO MOCKING REQUIRED
+    30→    30→# ============================================================================
+
+... [270 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CU7hHmxxRKzsKLoW9Rcq4Q">
+    <param name="file_path">/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/ca0b1c11-5e2b-4fdb-b1e2-77a5d09ec828/tool-results/toolu_01NERKobu7yWmf3hVerELuAW.txt</param>
+    <param name="offset">300</param>
+    <param name="limit">300</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="36348" cache_read_input_tokens="30038" output_tokens="167" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 36348, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CU7hHmxxRKzsKLoW9Rcq4Q">
+   300→   300→
+   301→   301→    def test_sublime_is_not_terminal_editor(self) -&gt; None:
+   302→   302→        """subl (Sublime Text) is not a terminal editor."""
+   303→   303→        assert is_terminal_editor("subl") is False
+   304→   304→
+   305→   305→    def test_none_is_not_terminal_editor(self) -&gt; None:
+   306→   306→        """None returns False."""
+   307→   307→        assert is_terminal_editor(None) is False
+   308→   308→
+   309→   309→    def test_full_path_vim_is_terminal_editor(self) -&gt; None:
+   310→   310→        """Full path like /usr/bin/vim is recognized as terminal editor."""
+   311→   311→        assert is_terminal_editor("/usr/bin/vim") is True
+   312→   312→
+   313→   313→    def test_full_path_nvim_is_terminal_editor(self) -&gt; None:
+   314→   314→        """Full path like /opt/homebrew/bin/nvim is recognized as terminal editor."""
+   315→   315→        assert is_terminal_editor("/opt/homebrew/bin/nvim") is True
+   316→   316→
+   317→   317→    def test_full_path_code_is_not_terminal_editor(self) -&gt; None:
+   318→   318→        """Full path like /usr/local/bin/code is not a terminal editor."""
+   319→   319→        assert is_terminal_editor("/usr/local/bin/code") is False
+   320→   320→
+   321→   321→
+   322→   322→# ============================================================================
+   323→   323→# Pure Logic Tests for abbreviate_for_header() - NO MOCKING REQUIRED
+   324→   324→# ============================================================================
+   325→   325→
+   326→   326→
+   327→   327→class TestAbbreviateForHeader:
+   328→   328→    """Tests for the pure abbreviate_for_header() function."""
+   329→   329→
+
+... [270 lines omitted] ...
+
+   432→   432→    def test_trunk_branch_main_shows_warning(self) -&gt; None:
+   433→   433→        """Warning shown when on main branch."""
+   445→   445→        assert "WARNING" in message
+   450→   450→    def test_trunk_branch_master_shows_warning(self) -&gt; None:
+   451→   451→        """Warning shown when on master branch."""
+   463→   463→        assert "WARNING" in message
+   467→   467→    def test_feature_branch_no_warning(self) -&gt; None:
+   468→   468→        """No warning when on feature branch."""
+   480→   480→        assert "WARNING" not in message
+   483→   483→    def test_none_branch_no_warning(self) -&gt; None:
+   484→   484→        """No warning when branch is None."""
+   496→   496→        assert "WARNING" not in message
+  </tool_result>
+  <tool_use name="Read" id="toolu_014mX4REn1QDKDt42rQE9YGT">
+    <param name="file_path">/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/ca0b1c11-5e2b-4fdb-b1e2-77a5d09ec828/tool-results/toolu_01NERKobu7yWmf3hVerELuAW.txt</param>
+    <param name="offset">598</param>
+    <param name="limit">400</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5257" cache_read_input_tokens="66386" output_tokens="167" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5257, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014mX4REn1QDKDt42rQE9YGT">
+   598→   598→    def test_includes_statusline_context_with_all_fields(self) -&gt; None:
+   599→   599→        """Question includes statusline-style context with all fields."""
+   600→   600→        plan_path = Path.home() / ".claude" / "plans" / "session-123.md"
+   601→   601→        message = build_blocking_message(
+   602→   602→            session_id="session-123",
+   603→   603→            current_branch="P4224-add-feature",
+   604→   604→            plan_file_path=plan_path,
+   605→   605→            plan_title="Add Feature X",
+   606→   606→            worktree_name="erk-slot-02",
+   607→   607→            pr_number=4230,
+   608→   608→            plan_number=4224,
+   609→   609→            editor=None,
+   610→   610→        )
+   611→   611→        # Title should be present
+   612→   612→        assert "📋 Add Feature X" in message
+   613→   613→        # Statusline-style context should be present
+   614→   614→        assert "(wt:erk-slot-02)" in message
+   615→   615→        assert "(br:P4224-add-feature)" in message
+   616→   616→        assert "(pr:#4230)" in message
+   617→   617→        assert "(plan:#4224)" in message
+   618→   618→        # Header should include branch context (truncated to 9 chars)
+   619→   619→        assert 'header: "br:P4224-add"' in message
+   620→   620→
+   621→   621→    def test_includes_statusline_context_partial(self) -&gt; None:
+   622→   622→        """Question includes partial statusline context when some fields are None."""
+   623→   623→        plan_path = Path.home() / ".claude" / "plans" / "session-123.md"
+   624→   624→        message = build_blocking_message(
+   625→   625→            session_id="session-123",
+   626→   626→            current_branch="feature-branch",
+   627→   627→            plan_file_path=plan_path,
+
+... [370 lines omitted] ...
+
+   714→   714→        # Should NOT have the TUI editor warning
+   733→   733→        # Should NOT have the TUI editor warning
+  </tool_result>
+  <thinking>Now I have a thorough understanding. Let me design the plan.
+
+**Summary of changes:**
+
+1. **`exit_plan_mode_hook.py` - `build_blocking_message()`**: Add a new option "Implement on current branch" between the existing "Skip PR and implement here" and "View/Edit the plan". This gives 4 options total (the AskUserQuestion max). The instructions for this option tell the agent to:
+   - Create the implement-now marker (same as option 2)
+   - Call ExitPlanMode
+   - After exit, implement directly from the plan file without running `erk exec setup-impl`
+   - No new branch creation, no worktree creation
+
+2. **Test updates**: Update tests that assert on the message content (test_contains_required_elements, test_draft_pr_backend_instruction_blocks, etc.) to include the new option.
+
+Actually, I'm realizing the design is simpler than I initially thought. Both "Skip PR and implement here" and "Implement on current branch" use the same `implement-now` marker, so the hook logic doesn't need to change at all—the difference is purely in what instructions the agent receives through the blocking message text.
+
+But now I'm looking at the constraint: we already have 3 options, and adding a 4th would hit the AskUserQuestion max of 4. That's technically fine, but I'm wondering if there's a better way to structure this. Options 2 and 4 are doing similar things—both skip the PR and implement—just with different branching behavior. Maybe instead of adding a new option, I should replace option 2 with the new one, since "implement here" already captures what the user wants.
+
+Actually, wait—the user was explicit that they want an *additional* option. And looking back at what they described, they mentioned two existing implementation approaches (new work tree with branch, new branch on same work tree), and now they want a third for the current branch. That's different from what I'm seeing in the current hook options, so I think they might be mixing up the plan-save flow with the skip-PR flow. Let me clarify what they're actually asking for.
+
+The user sees the options as: save a plan for later implementation, create a branch in the current work tree, and now they want to implement directly on the current branch without creating a branch at all. That would be a third implementation path, and with the view/edit option, we'd have exactly four options total—which is the right amount.
+
+Let me update the descriptions to make this clearer. Option 2 should explicitly mention creating a new branch so it's distinct from option 3, which skips that step entirely and works on the current branch as-is.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="7232" cache_read_input_tokens="71643" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7232}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a thorough understanding of the code. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7232" cache_read_input_tokens="71643" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7232}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_019RZFMXfUqfBfxrRhnSjGRB">
+    <param name="file_path">/Users/schrockn/.claude/plans/stateless-questing-valley.md</param>
+    <param name="content"># Add "Implement on current branch" option to exit plan mode hook
+
+## Context
+
+When exitin...[truncated 2918 chars]...Manually test: enter plan mode, create a plan, call ExitPlanMode, verify 4 options appear
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7232" cache_read_input_tokens="71643" output_tokens="2241" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7232, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019RZFMXfUqfBfxrRhnSjGRB">
+File created successfully at: /Users/schrockn/.claude/plans/stateless-questing-valley.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01CuKxzrPeq3ruHJRfCKySYY">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run pytest on exit_plan_mode_hook tests'}, {'tool': 'Bash', 'prompt': 'run ty type checker'}, {'tool': 'Bash', 'prompt': 'run ruff linter'}]</param>
+    <param name="plan"># Add "Implement on current branch" option to exit plan mode hook
+
+## Context
+
+When exitin...[truncated 2918 chars]...Manually test: enter plan mode, create a plan, call ExitPlanMode, verify 4 options appear
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2258" cache_read_input_tokens="78875" output_tokens="117" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2258, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CuKxzrPeq3ruHJRfCKySYY">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/stateless-questing-valley.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Add "Implement on current branch" option to exit plan mode hook
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id ca0b1c11-5e2b-4fdb-b1e2-77a5d09ec828 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <thinking>The hook intercepted ExitPlanMode and is showing the plan save prompt. This is the very behavior we're trying to modify! The hook is presenting the current 3 options. Let me follow the hook's instructions and present the options to the user using AskUserQuestion. But I'm in plan mode and the plan IS the one about modifying this hook.
+
+The user wants to implement this plan, so I need to present the options. Since we're on master and modifying the hook itself, option 2 "Skip PR and implement here" would be most appropriate. Or the user might want to save the plan PR first.
+
+Let me present the options as instructed by the hook.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="836" cache_read_input_tokens="81133" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 836}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Here's the plan:
+
+**Add "Implement on current branch" option to exit plan mode hook**
+
+The change is focused on `build_blocking_message()` in `exit_plan_mode_hook.py` - adding a 4th option between the existing "Skip PR and implement here" and "View/Edit the plan". The new option reuses the existing `implement-now` marker; the difference is purely in the agent instructions (no `setup-impl`, no branch creation). Tests will be updated to cover the new option text.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="836" cache_read_input_tokens="81133" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 836}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01PrwxXm5P7Phum4gRbmotJP">
+    <param name="questions">[{'question': '📋 Add "Implement on current branch" option to exit plan mode hook\nCurrent ...[truncated 447 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="836" cache_read_input_tokens="81133" output_tokens="510" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 836, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PrwxXm5P7Phum4gRbmotJP">
+User has answered your questions: "📋 Add "Implement on current branch" option to exit plan mode hook
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_017jhyV9XmKMQXNbHLZqhgu9">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="593" cache_read_input_tokens="81969" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 593, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017jhyV9XmKMQXNbHLZqhgu9">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="ca0b1c11-5e2b-4fdb-b1e2-77a5d09ec828" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "ca0b1c11-5e2b-4fdb-b1e2-77a5d09ec828" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "ca0b1c11-5e2b-4fdb-b1e2-77a5d09ec828" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "ca0b1c11-5e2b-4fdb-b1e2-77a5d09ec828" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "ca0b1c11-5e2b-4fdb-b1e2-77a5d09ec828" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>The user chose "Create a plan PR" so I need to follow the plan-save skill instructions. Let me:
+
+1. Generate a branch slug from the plan title "Add 'Implement on current branch' option to exit plan mode hook"
+2. Generate a plan summary
+3. Run the save command
+
+Branch slug: "add-implement-current-branch" (4 words, 28 chars)
+
+Plan summary: Adds a fourth option to the exit plan mode hook's AskUserQuestion dialog that allows implementing a plan directly on the current branch without creating a new branch or worktree. This is useful when the branch was already set up by another tool. The change modifies build_blocking_message() and updates associated tests.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2630" cache_read_input_tokens="82562" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2630}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me save the plan as a draft PR.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2630" cache_read_input_tokens="82562" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2630}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QuyqjgCn6zAgwoGL7zFdHh">
+    <param name="command">erk exec plan-save --format json --session-id="ca0b1c11-5e2b-4fdb-b1e2-77a5d09ec828" --bra...[truncated 225 chars]...y set up by another tool. Modifies build_blocking_message() and updates associated tests."</param>
+    <param name="description">Save plan as draft PR on GitHub</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2630" cache_read_input_tokens="82562" output_tokens="409" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2630, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QuyqjgCn6zAgwoGL7zFdHh">
+{"success": true, "plan_number": 8639, "plan_url": "https://github.com/dagster-io/erk/pull/8639", "title": "[erk-plan] Add \"Implement on current branch\" option to exit plan mode hook", "branch_name": "plnd/add-implement-current-bran-03-02-1535", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/ca0b1c11-5e2b-4fdb-b1e2-77a5d09ec828/plan_snapshots/000001-e5f8cd00"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01F12irq7m2YgbCDuGo1zcuC">
+    <param name="command">erk exec upload-impl-session --session-id "ca0b1c11-5e2b-4fdb-b1e2-77a5d09ec828" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="786" cache_read_input_tokens="85192" output_tokens="140" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 786, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01F12irq7m2YgbCDuGo1zcuC">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan saved as draft PR #8639.
+
+**Plan "Add "Implement on current branch" option to exit plan mode hook" saved as draft PR #8639**
+URL: https://github.com/dagster-io/erk/pull/8639
+
+**Next steps:**
+
+View PR: https://github.com/dagster-io/erk/pull/8639
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: `erk br co --new-slot --for-plan 8639`
+    Implement: `source "$(erk br co --new-slot --for-plan 8639 --script)" &amp;&amp; erk implement --dangerous`
+
+  Same slot:
+    Local: `erk br co --for-plan 8639`
+    Implement: `source "$(erk br co --for-plan 8639 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8639`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="167" cache_read_input_tokens="85978" output_tokens="264" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 167, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
