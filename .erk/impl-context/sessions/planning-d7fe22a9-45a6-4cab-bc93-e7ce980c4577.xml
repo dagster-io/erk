@@ -1,0 +1,1475 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>I want to build an erk MCP server. The purpose is to interact with a slackbot that can interact with erk to do things like one shots, to-do planning, to get information out of it, to launch jobs, etc. Effectively we want to be able to provide as many of the capabilities that are currently accessible via something like erk- but to a slack or chat interface. Let's start to ideate on this </user>
+  <thinking>The user wants to ideate on building an MCP (Model Context Protocol) server for erk. This would allow a Slack bot (or other chat interface) to interact with erk's capabilities - things like one-shot planning, job launching, information retrieval, etc.
+
+This is a brainstorming/ideation conversation, not an implementation task yet. Let me think about what I know and what would be useful to discuss.
+
+Let me first understand the current erk capabilities and architecture to inform the ideation. I should look at what erk can do today, and think about how to expose that via MCP.
+
+Let me explore the codebase a bit to understand the current CLI structure and capabilities.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="9994" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9994}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Great topic. Let me explore the current erk capabilities and architecture to ground the ideation properly.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="9994" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9994}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01WDYZk2UxEikFUk6RyfepCm">
+    <param name="description">Explore erk CLI and capabilities</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 552 chars]...ives, etc.)
+
+Be thorough - enumerate the full CLI command tree and the gateway interfaces.</param>
+    <param name="model">sonnet</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9994" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9994}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Y6o9oeDX1KKqJbTeiqeneY">
+    <param name="description">Research MCP server patterns</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 470 chars]...arch broadly for "mcp", "server", "api", "fastapi", "flask", "webhook", "remote" patterns.</param>
+    <param name="model">sonnet</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9994" cache_read_input_tokens="19113" output_tokens="739" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9994, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WDYZk2UxEikFUk6RyfepCm">
+I now have a comprehensive understanding of the codebase. Let me compile the full report.
+
+---
+
+## Erk Architecture: Complete Reference for MCP Server Planning
+
+### 1. Full CLI Command Tree
+
+**Top-Level Commands:**
+
+```
+erk [global: --debug]
+├── dash                    # Interactive TUI plan dashboard (alias for erk pr list --tui)
+├── implement &lt;target&gt;      # Implement plan in current dir (alias: impl)
+│   OPTIONS: --dry-run, --submit, --dangerous, --no-interactive, --script, --yolo, --verbose, --model
+│   TARGET: plan number, GitHub URL, path to .md file, or auto-detect
+├── land                    # Land (merge) current PR
+├── launch                  # Launch a new plan/session
+├── one-shot &lt;prompt&gt;       # Dispatch fully autonomous remote task
+│   OPTIONS: --file, --model, --dry-run, --plan-only, --slug, --ref, --ref-current
+├── up                      # Navigate to parent branch in stack
+├── down                    # Navigate to child branch in stack
+├── doctor                  # Diagnose erk environment issues
+├── prepare-cwd-recovery    # Prepare fallback directory (internal)
+│
+├── pr                      # Plan &amp; PR management
+│   ├── create              # Create plan as draft PR from markdown
+│   │   OPTIONS: --file/-f, --title/-t, --label/-l, --summary
+│   ├── dispatch [NUMS...]  # Dispatch plans for remote AI implementation via GH Actions
+│   │   OPTIONS: --base, --ref, --ref-current
+
+... [289 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Y6o9oeDX1KKqJbTeiqeneY">
+I now have a thorough picture of the codebase. Here is the complete findings report:
+
+---
+
+## MCP and Server Infrastructure Search Results
+
+### 1. MCP (Model Context Protocol) References
+
+**No MCP server infrastructure exists in the codebase.** The only MCP reference found is in the Codex JSONL format documentation, which describes the `mcp_tool_call` item type emitted by OpenAI's Codex CLI when it invokes MCP tools. This is a third-party format reference, not code that erk owns or operates.
+
+Relevant files:
+- `/Users/schrockn/code/erk/docs/learned/integrations/codex/codex-jsonl-format.md` — Documents `mcp_tool_call` as a Codex item type (line 82: `"mcp_tool_call" | MCP tool invocation | server, tool, arguments, result, error, status`)
+- `/Users/schrockn/code/erk/src/erk/core/codex_output_parser.py` and `tests/unit/core/test_codex_output_parser.py` — The Codex output parser handles `mcp_tool_call` events by logging them at debug level, mapping to `ToolEvent`
+
+The `agentclientprotocol.com` domain found in `.claude/settings.local.json` is from a past user prompt stored in a session log, not a code dependency.
+
+### 2. HTTP Client Infrastructure (Not a Server — Client Only)
+
+The project has an HTTP **client** abstraction (not a server) in `erk-shared`:
+
+**Files:**
+- `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/http/abc.py` — `HttpClient` ABC with `get`, `get_list`, `post`, `patch`, `graphql` methods
+- `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/http/real.py` — `RealHttpClient` using `httpx` (the only HTTP library dependency; see `erk-shared/pyproject.toml`: `httpx&gt;=0.27.0`)
+- `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/http/fake.py` — `FakeHttpClient` for testing
+- `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/http/dry_run.py` — `DryRunHttpClient` no-op wrapper
+- `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/http/printing.py` — `PrintingHttpClient` verbose wrapper
+- `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/http/auth.py` — GitHub token retrieval via `gh auth token`
+
+This HTTP client targets GitHub's REST API (`api.github.com`) and GraphQL endpoint. It is used by the TUI for fast in-process API calls without subprocess overhead. Base URL is hardcoded to GitHub API.
+
+
+... [54 lines omitted] ...
+  </tool_result>
+  <thinking>This is excellent. Now I have a comprehensive picture of erk's architecture. Let me also look at the existing erkbot package since that's the existing Slack integration, which is very relevant to this discussion.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="19899" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19899}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me also look at the existing erkbot package since that's directly relevant.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="19899" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19899}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JJy87s5isdJVKHm3ndHbCy">
+    <param name="command">ls -la /Users/schrockn/code/erk/packages/erkbot/src/erkbot/</param>
+    <param name="description">List erkbot package structure</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="19899" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19899}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JJy87s5isdJVKHm3ndHbCy">
+total 120
+-rw-r--r--@  1 schrockn  staff     22 Feb 24 11:28 __init__.py
+drwxr-xr-x@ 16 schrockn  staff    512 Mar  2 12:17 .
+drwxr-xr-x@  3 schrockn  staff     96 Feb 24 11:28 ..
+drwxr-xr-x@  7 schrockn  staff    224 Mar  2 12:17 agent
+-rw-r--r--@  1 schrockn  staff   3863 Feb 24 13:46 agent_handler.py
+-rw-r--r--@  1 schrockn  staff    521 Feb 24 13:46 app.py
+-rw-r--r--@  1 schrockn  staff   1828 Feb 24 19:01 cli.py
+-rw-r--r--@  1 schrockn  staff   1004 Feb 24 17:49 config.py
+-rw-r--r--@  1 schrockn  staff   1235 Feb 24 13:46 emoji.py
+-rw-r--r--@  1 schrockn  staff    770 Feb 24 13:46 models.py
+-rw-r--r--@  1 schrockn  staff   1127 Feb 24 13:46 parser.py
+-rw-r--r--@  1 schrockn  staff   1028 Feb 24 19:01 prompts.py
+drwxr-xr-x@  5 schrockn  staff    160 Mar  2 12:17 resources
+-rw-r--r--@  1 schrockn  staff   3180 Feb 24 19:01 runner.py
+-rw-r--r--@  1 schrockn  staff  12598 Feb 24 19:01 slack_handlers.py
+-rw-r--r--@  1 schrockn  staff   3812 Feb 24 15:17 utils.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PrWaJzhJQvjqfd8ANPUaT6">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erkbot/pyproject.toml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="19899" cache_read_input_tokens="16613" output_tokens="231" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 19899, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PrWaJzhJQvjqfd8ANPUaT6">
+     1→[project]
+     2→name = "erkbot"
+     3→version = "0.1.0"
+     4→description = "Add your description here"
+     5→readme = "README.md"
+     6→authors = [
+     7→    { name = "Colton Padden", email = "colton@dagsterlabs.com" }
+     8→]
+     9→requires-python = "&gt;=3.11"
+    10→dependencies = [
+    11→    "aiohttp&gt;=3.7.3",
+    12→    "claude-agent-sdk&gt;=0.1.0",
+    13→    "erk&gt;=0.7.4",
+    14→    "erk-shared",
+    15→    "pydantic&gt;=2.0",
+    16→    "pydantic-settings&gt;=2.0",
+    17→    "python-dotenv&gt;=1.0.1",
+    18→    "slack-bolt&gt;=1.21.2",
+    19→]
+    20→
+    21→[project.scripts]
+    22→erkbot = "erkbot.cli:main"
+    23→
+    24→[tool.uv.sources]
+    25→erk = { workspace = true }
+    26→erk-shared = { workspace = true }
+    27→
+    28→[build-system]
+    29→requires = ["uv_build&gt;=0.9.27,&lt;0.10.0"]
+    30→build-backend = "uv_build"
+
+... [13 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NJ2CiaynVsq2K3jhN1X8YW">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erkbot/src/erkbot/agent/bot.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1325" cache_read_input_tokens="36512" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1325}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NJ2CiaynVsq2K3jhN1X8YW">
+     1→from collections.abc import AsyncIterator
+     2→from dataclasses import dataclass
+     3→from pathlib import Path
+     4→
+     5→from claude_agent_sdk import ClaudeAgentOptions, query
+     6→
+     7→from erkbot.agent.events import AgentEvent
+     8→from erkbot.agent.stream import stream_agent_events
+     9→
+    10→
+    11→@dataclass(frozen=True)
+    12→class ErkBot:
+    13→    model: str
+    14→    max_turns: int
+    15→    cwd: Path
+    16→    system_prompt: str
+    17→    permission_mode: str
+    18→
+    19→    async def chat_stream(self, *, prompt: str) -&gt; AsyncIterator[AgentEvent]:
+    20→        options = ClaudeAgentOptions(
+    21→            model=self.model,
+    22→            max_turns=self.max_turns,
+    23→            cwd=str(self.cwd),
+    24→            system_prompt=self.system_prompt,
+    25→            permission_mode=self.permission_mode,  # type: ignore[arg-type]
+    26→        )
+    27→        messages = query(prompt=prompt, options=options)
+    28→        async for event in stream_agent_events(messages=messages):
+    29→            yield event
+    30→
+  </tool_result>
+  <tool_use name="Read" id="toolu_017HVivE9DMjLQwV5X3FiKjX">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erkbot/src/erkbot/slack_handlers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1325" cache_read_input_tokens="36512" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1325}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017HVivE9DMjLQwV5X3FiKjX">
+     1→from __future__ import annotations
+     2→
+     3→import asyncio
+     4→import logging
+     5→from collections import deque
+     6→from typing import TYPE_CHECKING, Any
+     7→
+     8→from slack_sdk.errors import SlackApiError
+     9→
+    10→from erk_shared.gateway.time.abc import Time
+    11→from erkbot.agent_handler import run_agent_background
+    12→from erkbot.config import Settings
+    13→from erkbot.models import (
+    14→    ChatCommand,
+    15→    OneShotCommand,
+    16→    OneShotMissingMessageCommand,
+    17→    PlanListCommand,
+    18→    QuoteCommand,
+    19→)
+    20→from erkbot.parser import parse_erk_command
+    21→from erkbot.runner import run_erk_plan_list, stream_erk_one_shot
+    22→from erkbot.utils import (
+    23→    build_one_shot_progress_text,
+    24→    chunk_for_slack,
+    25→    extract_one_shot_links,
+    26→    extract_slack_message_ts,
+    27→    load_quote_text,
+    28→    tail_output_lines,
+    29→)
+    30→
+
+... [288 lines omitted] ...
+
+    45→        except SlackApiError as exc:
+    46→            ignored_errors = {"already_reacted", "missing_scope", "not_reactable"}
+    47→            if exc.response.get("error") not in ignored_errors:
+    56→        except SlackApiError:
+    57→            logger.warning("slack_send failed: channel=%s text=%s", channel, text[:200])
+   110→                except SlackApiError as exc:
+   113→                        error_code = exc.response.get("error") if exc.response else "unknown_error"
+   120→                                f"({error_code}); streaming new output in replies."
+   182→        logger.warning(
+   183→            "one-shot failed: channel=%s exit_code=%d timed_out=%s",
+   193→            text=f"`erk one-shot` failed (exit {result.exit_code}){timeout_suffix}",
+   198→                max_lines=settings.one_shot_failure_tail_lines,
+   224→                else f"`erk pr list` failed (exit {result.exit_code}):"
+   274→                logger.warning(
+   289→                logger.warning("reply: command=one-shot rejected=no_channel")
+  </tool_result>
+  <tool_use name="Read" id="toolu_0181z4xByqBFVTfsidSX8bAy">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erkbot/src/erkbot/agent_handler.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1325" cache_read_input_tokens="36512" output_tokens="206" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1325, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0181z4xByqBFVTfsidSX8bAy">
+     1→from typing import Any
+     2→
+     3→from slack_sdk.errors import SlackApiError
+     4→
+     5→from erk_shared.gateway.time.abc import Time
+     6→from erkbot.agent.bot import ErkBot
+     7→from erkbot.agent.events import TextDelta, ToolEnd, ToolStart
+     8→from erkbot.emoji import add_result_emoji, remove_eyes_emoji
+     9→from erkbot.utils import chunk_for_slack, extract_slack_message_ts
+    10→
+    11→
+    12→def _build_progress_display(*, text: str, tool_active: bool) -&gt; str:
+    13→    state = "🤖 Thinking..." if tool_active else "🤖 Responding..."
+    14→    if not text:
+    15→        return state
+    16→    # Show last 2000 chars to keep Slack message reasonable
+    17→    truncated = text[-2000:] if len(text) &gt; 2000 else text
+    18→    return f"{state}\n\n```{truncated}```"
+    19→
+    20→
+    21→async def run_agent_background(
+    22→    *,
+    23→    client: Any,
+    24→    channel: str,
+    25→    reply_thread_ts: str | None,
+    26→    source_ts: str,
+    27→    prompt: str,
+    28→    bot: ErkBot,
+    29→    time: Time,
+    30→    progress_update_interval_seconds: float,
+
+... [76 lines omitted] ...
+
+    63→                except SlackApiError:
+    64→                    pass  # Best-effort progress update; failure is non-fatal
+    71→            except SlackApiError:
+    72→                pass  # Best-effort status update; failure is non-fatal
+    81→                except SlackApiError:
+    82→                    pass  # Best-effort response post; failure is non-fatal
+    90→            except SlackApiError:
+    91→                pass  # Best-effort fallback message; failure is non-fatal
+    94→    except Exception:
+    98→                text="🤖 Agent encountered an error.",
+   101→        except SlackApiError:
+   102→            pass  # Best-effort error report; failure is non-fatal
+  </tool_result>
+  <thinking>Now I have a good picture. Let me synthesize what I've learned and ideate on the MCP server design.
+
+Key observations:
+1. **erkbot already exists** as a Slack bot using `slack-bolt` + `claude-agent-sdk`. It currently supports: `pr list`, `one-shot`, `chat`, and `quote` commands.
+2. **erkbot shells out** to `erk` CLI for `one-shot` and `pr list` operations, and uses Claude Agent SDK for `chat`.
+3. **No MCP server exists** in the codebase.
+4. **Erk has rich CLI and gateway infrastructure** with ABC patterns, fakes, etc.
+
+
+5. **MCP (Model Context Protocol)** is Anthropic's protocol for exposing tools, resources, and prompts to LLMs.
+
+So the idea is to build an MCP server that wraps erk's capabilities as a more general-purpose interface. This would let Claude access erk operations directly through tools and resources, making it accessible from Slack or any chat interface that supports MCP. The flow would be: Slack message → erkbot → Claude with MCP server access → erk operations.
+
+The advantage over the current erkbot approach is that Claude could intelligently decide which erk tools to use based on natural language, rather than erkbot having to parse specific commands. I'm thinking through what the core tool surface should look like—things like listing and viewing plans, creating plans from markdown, launching one-shot tasks, dispatching plans for remote execution, managing objectives, checking PR status, and listing worktrees.
+
+Now I'm considering the supporting resources like dashboard data, plan content, and objective roadmaps, plus some key architectural questions: whether the MCP server should shell out to the erk CLI or use the Python API directly, how to handle authentication, managing long-running operations, and whether the system should maintain state or stay stateless.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="6316" cache_read_input_tokens="37837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6316}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a full picture. Here's my thinking on an erk MCP server:
+
+---
+
+## Current State
+
+**erkbot already exists** (`packages/erkbot/`) as a Slack bot with three modes:
+- `pr list` → shells out to `erk pr list`
+- `one-shot &lt;msg&gt;` → shells out to `erk one-shot`
+- `chat &lt;msg&gt;` → Claude Agent SDK with streaming
+
+It's command-oriented — users type structured commands, not natural language (except `chat`).
+
+## What an MCP Server Changes
+
+The fundamental shift: instead of parsing user commands and routing to hardcoded handlers, you expose erk's capabilities as **tools that an LLM can compose**. A user says "what's the status of my plans?" and Claude decides to call `plan_list`, then maybe `pr_check_status` on the interesting ones, then summarizes.
+
+This turns erkbot from a command dispatcher into an **agent with erk superpowers**.
+
+## Proposed Tool Surface
+
+Grouped by what makes sense for a chat interface:
+
+### Tier 1 — Read-Only, High-Value (ship first)
+
+| Tool | Description | Backing |
+|------|-------------|---------|
+| `plan_list` | List plans with filters (state, labels, user) | `erk pr list --json` / `erk exec dash-data` |
+| `plan_view` | View plan content and metadata | `erk pr view &lt;n&gt;` / `erk exec get-plan-info` |
+| `plan_status` | CI checks, review threads, merge readiness | `erk exec get-pr-view` + check runs |
+| `objective_list` | List objectives | `erk objective list` |
+| `objective_view` | View objective with roadmap | `erk objective view &lt;n&gt; --json-output` |
+| `run_list` | List recent workflow runs | `erk run list` |
+| `run_logs` | View logs for a specific run | `erk run logs` |
+| `worktree_list` | List active worktrees | `erk wt list` |
+
+### Tier 2 — Write Operations (add next)
+
+| Tool | Description | Backing |
+|------|-------------|---------|
+| `one_shot` | Launch autonomous remote task | `erk one-shot` |
+| `plan_create` | Create plan from markdown text | `erk pr create` |
+| `plan_dispatch` | Dispatch plan for remote impl | `erk pr dispatch` |
+| `plan_close` | Close a plan | `erk pr close` |
+| `plan_replan` | Replan an existing plan | `erk pr replan` |
+
+### Tier 3 — Advanced / Later
+
+| Tool | Description |
+|------|-------------|
+| `objective_create` | Create a new objective |
+| `pr_address` | Trigger PR review addressing |
+| `pr_rebase` | Trigger conflict resolution |
+| `plan_implement` | Kick off implementation |
+
+## Key Design Questions
+
+**1. Implementation strategy: CLI subprocess vs Python API?**
+
+- **Subprocess** (`erk pr list`, etc.): Simple, uses the same code paths users run locally, but parsing stdout is fragile and you lose structured data.
+- **Python API** (import erk's gateways directly): Structured data, no parsing, but you're coupling tightly to erk internals and need to set up the gateway stack (Context object, config, etc.).
+- **Hybrid**: Use `erk exec` scripts that already output JSON (like `dash-data`, `get-plan-info`) as the bridge. Many exec scripts were designed exactly for machine consumption.
+
+I'd lean **hybrid** — use `erk exec` JSON scripts where they exist, add new ones where they don't, and keep the MCP server thin.
+
+**2. Where does the MCP server run?**
+
+- **Local** (alongside Claude Code): User runs it, connects to Claude Code as an MCP server. Good for personal use.
+- **Hosted** (on a server/VM): The Slack bot connects Claude to it. Good for team use.
+- **Both**: Same server code, different deployment contexts.
+
+For the Slack bot use case, it needs to run somewhere persistent — same machine as erkbot, or erkbot itself hosts it.
+
+**3. How does erkbot connect to it?**
+
+Two architectures:
+
+```
+Option A: erkbot IS the MCP consumer
+  Slack → erkbot → Claude Agent SDK (with MCP tools) → erk MCP server → erk
+
+Option B: erkbot uses MCP server directly  
+  Slack → erkbot → MCP server → erk
+  (no LLM in the loop for structured commands)
+```
+
+Option A is more powerful — the LLM can compose tools, handle ambiguity, and give rich responses. Option B is faster for known operations.
+
+**Best answer**: Option A for `chat` mode, Option B as a fast path for known commands like `pr list`.
+
+**4. Long-running operations**
+
+`one-shot` and `dispatch` can take minutes. The MCP tool should:
+- Return immediately with a job/run ID
+- Provide a separate `run_status` / `run_logs` tool for polling
+- erkbot handles the UX of progress updates (it already does this well)
+
+**5. Auth context**
+
+The MCP server runs in a context where `gh auth token` works and erk is configured. For hosted deployment, this means the server process needs GitHub credentials — same requirement erkbot already has.
+
+## Recommended Architecture
+
+```
+┌─────────┐     ┌──────────┐     ┌──────────────┐     ┌─────────┐
+│  Slack   │────▶│  erkbot  │────▶│ Claude Agent  │────▶│ erk MCP │
+│  Users   │◀────│  (bolt)  │◀────│  SDK / API    │◀────│ Server  │
+└─────────┘     └──────────┘     └──────────────┘     └─────────┘
+                                                            │
+                                                      ┌─────┴─────┐
+                                                      │ erk exec  │
+                                                      │ commands  │
+                                                      └───────────┘
+```
+
+The MCP server is a separate process (`packages/erk-mcp/`) that:
+- Implements the MCP protocol (using the `mcp` Python SDK)
+- Each tool maps to an `erk exec` command or a small composition of them
+- Returns structured JSON responses
+- Runs in the same environment as erk (git repo, gh auth, etc.)
+
+## What Do You Want to Dig Into?
+
+Some directions from here:
+- **Prototype the MCP server** with 2-3 tools to validate the architecture
+- **Design the tool schemas** in detail (parameters, return types)
+- **Figure out the erkbot integration** — how to wire Claude Agent SDK to MCP tools
+- **Evaluate the `mcp` Python SDK** to understand what we're building on
+
+What's most interesting to you?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6316" cache_read_input_tokens="37837" output_tokens="2329" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6316, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>* i want to delete erkbot. we will be using a third party slackbot thing in another repo. we are only doing the mcp
+* let's use fastmcp. codebase is here /Users/schrockn/code/githubs/fastmcp
+* let's start iwth - Local (alongside Claude Code): User runs it, connects to Claude Code as an MCP server. Good for personal use.
+*   one-shot and dispatch can take minutes. The MCP tool should: return immediately with a job/run ID
+
+
+- Prototype the MCP server with 2-3 tools to validate the architecture</user>
+  <thinking>The user wants to:
+1. Delete erkbot package
+2. Build an MCP server using FastMCP (codebase at /Users/schrockn/code/githubs/fastmcp)
+3. Start with local deployment (alongside Claude Code)
+4. Long-running ops return immediately with job IDs
+5. Prototype with 2-3 tools
+
+Let me first explore FastMCP to understand the API, then plan the implementation.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="30238" cache_read_input_tokens="16542" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 30238}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="EnterPlanMode" id="toolu_0183MVURqrS6amHdUS9UV5wC">
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="30238" cache_read_input_tokens="16542" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 30238}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0183MVURqrS6amHdUS9UV5wC">
+Entered plan mode. You should now focus on exploring the codebase and designing an implementation approach.
+
+In plan mode, you should:
+1. Thoroughly explore the codebase to understand existing patterns
+2. Identify similar features and architectural approaches
+3. Consider multiple approaches and their trade-offs
+4. Use AskUserQuestion if you need to clarify the approach
+5. Design a concrete implementation strategy
+6. When ready, use ExitPlanMode to present your plan for approval
+
+Remember: DO NOT write or edit any files yet. This is a read-only exploration and planning phase.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_011GLJKzKikeoMhhq5eyo69t">
+    <param name="description">Explore FastMCP API and patterns</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 550 chars]...y quickstart docs. Be thorough - I need to understand the API well enough to design tools.</param>
+    <param name="model">sonnet</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="31729" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31729}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01MeTrFhmmsyedwRkCMhYj4a">
+    <param name="description">Explore erk exec JSON commands</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 580 chars]...d src/erk/exec/ for these implementations. I need parameter signatures and output formats.</param>
+    <param name="model">sonnet</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="31729" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31729}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01ShvykVxfg6aH6hasexcp35">
+    <param name="description">Explore erkbot for deletion scope</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 523 chars]...ct.toml
+
+I need to know everything that needs to change when we delete the erkbot package.</param>
+    <param name="model">sonnet</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="31729" cache_read_input_tokens="16613" output_tokens="895" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 31729, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ShvykVxfg6aH6hasexcp35">
+Here is the complete picture of everything that references `erkbot` and would need to change for deletion.
+
+---
+
+## Full Scope of erkbot Package Deletion
+
+### 1. The Package Directory (delete entirely)
+
+**`/Users/schrockn/code/erk/packages/erkbot/`** — the entire directory tree:
+
+- 17 source files under `src/erkbot/`
+- 19 test files under `tests/`
+- `pyproject.toml`, `Makefile`, `README.md`, `SETUP.md`
+
+The package declares one entrypoint script: `erkbot = "erkbot.cli:main"`.
+
+Its dependencies are: `aiohttp`, `claude-agent-sdk`, `erk` (workspace), `erk-shared` (workspace), `pydantic`, `pydantic-settings`, `python-dotenv`, `slack-bolt`.
+
+---
+
+### 2. Root `pyproject.toml` — workspace membership
+
+**File:** `/Users/schrockn/code/erk/pyproject.toml`
+
+The workspace uses a glob: `members = ["packages/*"]`. Because erkbot lives at `packages/erkbot/`, it is picked up automatically. **No explicit member entry to remove** — but note that `erkbot` is NOT listed in `[tool.uv.sources]` (only `erk-dev`, `erk-shared`, `erk-statusline` are). So once the directory is gone, the workspace will stop including it automatically. No line-level edit needed in the workspace config, though you may want to verify the glob doesn't error on an empty packages directory (it won't — the other three packages remain).
+
+Also note: `[tool.ty.src]` does NOT include `packages/erkbot/src` — so no ty change needed.
+
+---
+
+
+... [70 lines omitted] ...
+
+| 463 | `needs.erkbot-tests.result == 'failure'` in the `autofix` job's `if:` condition |
+| `/Users/schrockn/code/erk/docs/learned/conventions.md` | One sentence noting Pydantic `Field()` exception for `packages/erkbot/src/erkbot/config.py` |
+| `/Users/schrockn/code/erk/docs/learned/cli/tripwires.md` | One tripwire warning about `erkbot` as downstream CLI consumer |
+| `/Users/schrockn/code/erk/docs/learned/cli/command-rename-checklist.md` | Same warning as tripwires |
+  </tool_result>
+  <tool_result tool="toolu_01MeTrFhmmsyedwRkCMhYj4a">
+I now have all the information needed for a comprehensive report. Here is the complete analysis:
+
+---
+
+## JSON-Capable `erk exec` Commands and Related Commands
+
+### 1. `erk exec dash-data`
+
+**File:** `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/dash_data.py`
+
+**Parameters:**
+```
+--state     open|closed          (default: open)
+--label     LABEL                (multiple, default: erk-pr, erk-plan)
+--limit     N                    (int, optional)
+--show-prs/--no-show-prs        (default: True)
+--show-runs/--no-show-runs      (default: False)
+--run-state STATE               (optional)
+--creator   USER                (optional)
+```
+
+**Output JSON shape:**
+```json
+{
+  "success": true,
+  "count": 3,
+  "plans": [
+    {
+      "plan_id": 123,
+      "plan_url": "https://github.com/...",
+
+... [288 lines omitted] ...
+
+Error output (exit 1): `{"success": false, "error": "Could not determine repository owner/name"}`
+**Error output** (to stderr, exit 1):
+{"success": false, "error": "plan_not_found", "message": "Plan #42 not found"}
+**Error output** (exit 1):
+{"success": false, "error": "PR not found"}
+{"success": false, "error": "Could not detect current branch"}
+--run-state queued|in_progress|success|failure|cancelled
+  </tool_result>
+  <tool_result tool="toolu_011GLJKzKikeoMhhq5eyo69t">
+I now have a comprehensive understanding of FastMCP. Here is my full report:
+
+---
+
+# FastMCP API Reference Report
+
+## 1. Creating an MCP Server
+
+**Minimal pattern:**
+
+```python
+from fastmcp import FastMCP
+
+mcp = FastMCP("My Server")
+```
+
+**Full constructor signature** (`/Users/schrockn/code/githubs/fastmcp/src/fastmcp/server/server.py`, line 219):
+
+```python
+FastMCP(
+    name: str | None = None,
+    instructions: str | None = None,
+    *,
+    version: str | None = None,
+    website_url: str | None = None,
+    icons: list[mcp.types.Icon] | None = None,
+    auth: AuthProvider | None = None,
+    middleware: Sequence[Middleware] | None = None,
+    providers: Sequence[Provider] | None = None,
+    transforms: Sequence[Transform] | None = None,
+
+... [410 lines omitted] ...
+
+    on_duplicate: Literal["warn", "error", "replace", "ignore"] | None = None,
+    mask_error_details: bool | None = None,
+    await ctx.warning("warning message")
+    await ctx.error("error message")
+@mcp.tool(timeout=30.0)  # Raises McpError after 30 seconds
+**Error handling:** Raise standard Python exceptions from tools; FastMCP catches them and returns proper MCP error responses. Use `mask_error_details=True` on `FastMCP()` to hide internal details from clients.
+  </tool_result>
+  <thinking>Excellent. Now I have a very comprehensive understanding of:
+
+1. FastMCP API - how to define tools, run servers, integrate with Claude Code
+2. Erk's JSON-capable exec commands - dash-data, get-plan-info, get-pr-view
+3. Erkbot deletion scope - everything that needs to change
+
+Let me now think about the right 2-3 tools to prototype with:
+
+Good candidates for an initial prototype:
+1. `plan_list` - backed by `erk exec dash-data` (already JSON)
+2. `plan_view` - backed by `erk exec get-plan-info --include-body` (already JSON)
+
+
+3. `one_shot` - backed by `erk one-shot` (needs wrapping, but high value)
+
+For one-shot, since it's long-running, I need to handle this differently than the synchronous commands. The tool should shell out to `erk one-shot` and return immediately with the PR number and run ID rather than waiting for completion, which aligns with what the user wants for long-running operations.
+
+Actually, `erk one-shot` itself completes fairly quickly—around 10-20 seconds to create the branch, open the PR, and dispatch the GitHub Actions workflow. The lengthy part is the actual implementation running in GH Actions afterward. So I could run it synchronously and return the PR number and run URL, which would still give the user what they need without blocking indefinitely. But since the user explicitly asked for immediate returns with job IDs for long-running operations, I should probably start the subprocess without waiting for it to finish, or at least make sure the tool returns the run URL right away so they can track progress.
+
+Let me think through what `erk one-shot` actually does: it generates a branch slug via an LLM call, creates the branch, opens a draft PR, and triggers the workflow—all of that takes 10-30 seconds. The implementation itself happens asynchronously in GitHub Actions. So the tool can block for those 10-30 seconds and return the structured results with the PR and run IDs. That's reasonable.
+
+Now I'm planning the package structure for the MCP tool.
+
+Setting up the project layout with `fastmcp` and the `erk` workspace as dependencies, then defining the three core tools: `plan_list` to fetch open plans, `plan_view` to get details on a specific plan, and `one_shot` to trigger the workflow and return the PR/run URLs.
+
+I'm deciding between using subprocess calls versus a Python API—since this is a prototype running locally alongside Claude Code, subprocess is probably the simpler approach.
+
+For the MCP configuration, I'll add it to `.mcp.json` at the project root so Claude Code can discover it, and I'll reference the local `fastmcp` installation from the codebase.
+
+For the prototype, I'm settling on three tools: `plan_list` and `plan_view` for read-only operations using the existing JSON output, and `one_shot` for write operations since it demonstrates the full pattern—the command itself handles the dispatch synchronously while the actual work runs async in GitHub Actions.
+
+I'm thinking the MCP package should live in `packages/erk-mcp/` within the monorepo structure, which keeps it organized alongside the other workspace packages.
+
+Now I need to figure out the Claude Code configuration and testing approach. For the MCP server setup, I'd configure it in `.mcp.json` to run the Python module through uv's workspace system. I'm also wondering whether I should ask the user about their approach to handling erkbot deletion, depending on what's in scope.
+
+Actually, the user was pretty explicit about wanting to delete erkbot, so that's settled. Let me structure the plan: delete the erkbot package, create the new erk-mcp package with the three tools, set up the Claude Code MCP integration, and verify everything works.
+
+For the `one_shot` tool, I need to handle parsing the output from the command—it returns PR and run URLs that I can extract using the existing parsing logic from erkbot.
+
+Since we're removing erkbot, I'll need to implement the parsing myself, but it's straightforward regex. I could also have the erk command output JSON directly, but for a prototype, simple text parsing works fine. Actually, I could call the Python API directly since we're in the same process, but subprocess keeps the MCP layer clean and simple. Let me stick with that approach.
+
+Now I need to think through the `one_shot` command carefully—understanding exactly what it does and how to integrate it properly.</thinking>
+  <usage input_tokens="5256" cache_creation_input_tokens="5014" cache_read_input_tokens="48342" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5014}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good exploration. Let me now design the implementation plan.</assistant>
+  <usage input_tokens="5256" cache_creation_input_tokens="5014" cache_read_input_tokens="48342" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5014}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01JVnrefK2KrAXQWW52b2tid">
+    <param name="description">Plan MCP server implementation</param>
+    <param name="subagent_type">Plan</param>
+    <param name="prompt">I need to design an implementation plan for two tasks:
+
+1. **Delete the erkbot package** f...[truncated 3079 chars]...ool is a subprocess call to an erk command that returns parsed JSON or structured results.</param>
+    <param name="model">sonnet</param>
+  </tool_use>
+  <usage input_tokens="5256" cache_creation_input_tokens="5014" cache_read_input_tokens="48342" output_tokens="3167" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5014, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JVnrefK2KrAXQWW52b2tid">
+Now I have a thorough picture of the codebase. Let me produce the comprehensive implementation plan.
+
+---
+
+## Implementation Plan: Delete erkbot + Create erk-mcp
+
+### Summary of Findings
+
+**Erkbot deletion scope:**
+- `packages/erkbot/` directory — fully self-contained, no imports from it exist outside the package
+- `Makefile`: 3 targets to remove or trim (`test-erkbot`, `slackbot`, and erkbot lines in `py-fast-ci`/`fast-ci`/`all-ci`)
+- `.github/workflows/ci.yml`: `erkbot-tests` job (lines 164-173), its reference in `ci-summarize.needs` (line 448), and the `erkbot-tests.result` condition in `ci-summarize.if` (line 463). Note: `erkbot-tests` does NOT appear in the `autofix` job's `needs` — the autofix `needs` list already excludes it.
+- `docs/learned/`: 2 files to delete entirely (`integrations/erkbot/erkbot-architecture.md`, `integrations/erkbot/agent-event-system.md`), 1 subdirectory to remove (`integrations/erkbot/`), plus ~8 files needing erkbot mentions cleaned up
+
+**erk-mcp package structure:** Follow `erk-statusline` as the closest analog — hatchling build backend, `src/erk_mcp/` layout, `__init__.py` + `__main__.py` + a single server module. No `erk-shared` dependency needed for a thin subprocess wrapper.
+
+---
+
+### Part 1: Delete the erkbot Package
+
+#### Step 1.1 — Delete `packages/erkbot/` directory
+
+Remove the entire tree:
+
+```
+packages/erkbot/
+```
+
+This is the complete erkbot package. No other package imports from it. The root `pyproject.toml` uses `members = ["packages/*"]` glob, so uv will stop discovering it automatically once the directory is gone.
+
+
+... [440 lines omitted] ...
+
+**Edit `ci-summarize.if`** — remove the `erkbot-tests.result` failure condition (line 463):
+       needs.integration-tests.result == 'failure' ||
+       needs.erkbot-tests.result == 'failure')
+       needs.integration-tests.result == 'failure')
+**Edit `docs/learned/conventions.md`** — remove line 224 (the Pydantic `Field()` exception note that specifically cites `packages/erkbot/src/erkbot/config.py` as the example). The rule about Pydantic settings classes remains valid, but the erkbot-specific citation should be dropped or generalized.
+**Edit `docs/learned/cli/tripwires.md`** — line 135 references erkbot as a concrete example of a broken downstream package. Remove the erkbot-specific citation, keep the general warning about downstream packages.
+**Subprocess approach:** The tools shell out to `erk` CLI using `subprocess.run(check=False)` with explicit returncode checking — the LBYL graceful pattern from the subprocess-wrappers doc, since we want to return structured errors back to the MCP caller rather than raising exceptions that FastMCP might not surface cleanly.
+**No `run_subprocess_with_context`:** That wrapper is scoped to `src/erk/` and `packages/erk-shared/`. Since `erk-mcp` does NOT depend on `erk-shared`, we use bare `subprocess.run(check=False)` with returncode inspection — the documented LBYL exception pattern.
+            "error": f"erk exec dash-data failed (exit {returncode})",
+            "error": f"erk exec get-plan-info failed (exit {returncode})",
+            "error": f"erk one-shot failed (exit {returncode})",
+**`state` parameter default:** `state: str | None = None` uses a default of `None` which technically violates "no default parameter values." For MCP tools this is a pragmatic exception: the FastMCP schema generation needs `None` as the default to mark the parameter as optional in the MCP tool schema. If the project wants strict compliance, an alternative is to split into `plan_list_all()` and `plan_list_by_state(state: str)`, but that's overly complicated for a prototype.
+1. Run `uv sync` from repo root — verify no resolution errors about missing erkbot package
+2. Run `make py-fast-ci` — verify erkbot lines are gone, no failures from missing targets
+6. Run `make lint` / `make ty` — verify no type errors in the new package (may need `packages/erk-mcp/src` added to `[tool.ty.src]`)
+  </tool_result>
+  <assistant>
+
+Let me check a few details before finalizing the plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="14455" cache_read_input_tokens="53356" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14455}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UUsh6g1a9ukFohoosN2tsG">
+    <param name="file_path">/Users/schrockn/code/erk/Makefile</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14455" cache_read_input_tokens="53356" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14455}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UUsh6g1a9ukFohoosN2tsG">
+     1→.PHONY: format-check lint prettier prettier-check ty upgrade-ty test test-erkbot py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check slackbot
+     2→
+     3→prettier:
+     4→	prettier --write '**/*.md' --ignore-path .gitignore
+     5→
+     6→prettier-check:
+     7→	prettier --check '**/*.md' --ignore-path .gitignore
+     8→
+     9→format-check:
+    10→	uv run ruff format --check
+    11→
+    12→lint:
+    13→	uv run ruff check
+    14→
+    15→fix:
+    16→	uv run ruff check --fix --unsafe-fixes
+    17→	uv run ruff format
+    18→	prettier --write '**/*.md' --ignore-path .gitignore
+    19→
+    20→ty:
+    21→	uv run ty check
+    22→
+    23→upgrade-ty:
+    24→	uv remove ty --group dev &amp;&amp; uv add --dev ty
+    25→
+    26→# === Package-specific test targets ===
+    27→
+    28→test-erkbot:
+    29→	cd packages/erkbot &amp;&amp; uv run pytest tests/ -x -q
+    30→
+
+... [149 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UehYYwuByStSMf8X37iQ7v">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/ci.yml</param>
+    <param name="limit">50</param>
+    <param name="offset">155</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14455" cache_read_input_tokens="53356" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14455}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UehYYwuByStSMf8X37iQ7v">
+   155→    timeout-minutes: 45
+   156→    steps:
+   157→      - uses: actions/checkout@v4
+   158→      - uses: ./.github/actions/setup-python-uv
+   159→      - uses: ./.github/actions/setup-graphite
+   160→      - uses: ./.github/actions/setup-prettier
+   161→      - name: Run integration tests
+   162→        run: make test-integration
+   163→
+   164→  erkbot-tests:
+   165→    needs: [check-submission, fix-formatting]
+   166→    if: github.event.pull_request.draft != true &amp;&amp; needs.check-submission.outputs.skip == 'false'
+   167→    runs-on: ubuntu-latest
+   168→    timeout-minutes: 15
+   169→    steps:
+   170→      - uses: actions/checkout@v4
+   171→      - uses: ./.github/actions/setup-python-uv
+   172→      - name: Run erkbot tests
+   173→        run: make test-erkbot
+   174→
+   175→  # === Autofix (runs after ALL checks) ===
+   176→  autofix:
+   177→    needs:
+   178→      [
+   179→        format,
+   180→        lint,
+   181→        fix-formatting,
+   182→        docs-check,
+   183→        ty,
+   184→        unit-tests,
+
+... [20 lines omitted] ...
+
+   196→      (needs.format.result == 'failure' ||
+   197→       needs.lint.result == 'failure' ||
+   198→       needs.fix-formatting.result == 'failure' ||
+   199→       needs.docs-check.result == 'failure' ||
+   200→       needs.ty.result == 'failure')
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PPi6PNTyhMtKmdSjRxfVSj">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/ci.yml</param>
+    <param name="limit">30</param>
+    <param name="offset">440</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="14455" cache_read_input_tokens="53356" output_tokens="260" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 14455, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PPi6PNTyhMtKmdSjRxfVSj">
+   440→      [
+   441→        format,
+   442→        lint,
+   443→        fix-formatting,
+   444→        docs-check,
+   445→        ty,
+   446→        unit-tests,
+   447→        integration-tests,
+   448→        erkbot-tests,
+   449→      ]
+   450→    if: |
+   451→      vars.CLAUDE_ENABLED != 'false' &amp;&amp;
+   452→      always() &amp;&amp;
+   453→      (github.event_name == 'pull_request') &amp;&amp;
+   454→      (github.event.pull_request.draft != true) &amp;&amp;
+   455→      !contains(github.event.pull_request.labels.*.name, 'erk-plan-review') &amp;&amp;
+   456→      (needs.format.result == 'failure' ||
+   457→       needs.lint.result == 'failure' ||
+   458→       needs.fix-formatting.result == 'failure' ||
+   459→       needs.docs-check.result == 'failure' ||
+   460→       needs.ty.result == 'failure' ||
+   461→       needs.unit-tests.result == 'failure' ||
+   462→       needs.integration-tests.result == 'failure' ||
+   463→       needs.erkbot-tests.result == 'failure')
+   464→    runs-on: ubuntu-latest
+   465→    timeout-minutes: 10
+   466→    steps:
+   467→      - uses: actions/checkout@v4
+   468→      - uses: ./.github/actions/setup-python-uv
+   469→      - name: Install erk
+  </tool_result>
+  <thinking>Good, I now have the exact lines for the CI and Makefile changes. The Plan agent noted the autofix job doesn't reference erkbot, but looking at lines 440-463, there's a second job (around line 435-469) that does reference `erkbot-tests` in both its `needs` and `if` condition. Let me check what job this is.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="4389" cache_read_input_tokens="67811" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4389}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KbmnM1nHNqvNjYPdXNDHvf">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/ci.yml</param>
+    <param name="limit">15</param>
+    <param name="offset">430</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4389" cache_read_input_tokens="67811" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4389}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KbmnM1nHNqvNjYPdXNDHvf">
+   430→        env:
+   431→          GH_TOKEN: ${{ github.token }}
+   432→        run: |
+   433→          erk exec ci-verify-autofix \
+   434→            --original-sha "${{ github.sha }}" \
+   435→            --repo "${{ github.repository }}"
+   436→
+   437→  # === CI Failure Summarization (Haiku) ===
+   438→  ci-summarize:
+   439→    needs:
+   440→      [
+   441→        format,
+   442→        lint,
+   443→        fix-formatting,
+   444→        docs-check,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CSLDwBCLVSSytLEdmkEbHv">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-statusline/pyproject.toml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4389" cache_read_input_tokens="67811" output_tokens="264" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4389, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CSLDwBCLVSSytLEdmkEbHv">
+     1→[project]
+     2→name = "erk-statusline"
+     3→version = "0.9.4"
+     4→description = "Custom status line for Claude Code with robbyrussell theme style"
+     5→readme = "README.md"
+     6→requires-python = "&gt;=3.11"
+     7→dependencies = [
+     8→    "erk-shared",
+     9→]
+    10→
+    11→[project.scripts]
+    12→erk-statusline = "erk_statusline.statusline:main"
+    13→
+    14→[build-system]
+    15→requires = ["hatchling"]
+    16→build-backend = "hatchling.build"
+    17→
+    18→[tool.hatch.build.targets.wheel]
+    19→packages = ["src/erk_statusline"]
+    20→
+  </tool_result>
+  <assistant>Good — the second job referencing erkbot is `ci-summarize` (line 437). Now let me check if an `.mcp.json` already exists.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="790" cache_read_input_tokens="72200" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 790}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01TuFbi2yt8YVfTDniVvSEvv">
+    <param name="pattern">.mcp.json</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="790" cache_read_input_tokens="72200" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 790}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RqZr6Sz36R2hNmpFqHXQpu">
+    <param name="file_path">/Users/schrockn/code/erk/pyproject.toml</param>
+    <param name="limit">30</param>
+    <param name="offset">105</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="790" cache_read_input_tokens="72200" output_tokens="208" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 790, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RqZr6Sz36R2hNmpFqHXQpu">
+   105→[tool.ruff.lint]
+   106→select = [
+   107→    "E",   # pycodestyle errors
+   108→    "F",   # pyflakes
+   109→    "I",   # isort (import sorting)
+   110→    "UP",  # pyupgrade
+   111→    "B",   # flake8-bugbear
+   112→]
+   113→
+   114→[tool.ruff.lint.isort]
+   115→known-first-party = ["erk", "erk_dev", "erk_shared", "erk_statusline"]
+   116→
+   117→[tool.ty.src]
+   118→include = ["src", "packages/erk-dev/src", "packages/erk-shared/src", "packages/erk-statusline/src"]
+   119→exclude = [".claude/skills/"]
+   120→
+   121→[tool.ty.environment]
+   122→python-version = "3.11"
+   123→python = ".venv"
+   124→
+   125→[tool.pytest.ini_options]
+   126→addopts = "-q"
+   127→testpaths = ["tests", "packages/erk-dev/tests", "packages/erk-statusline/tests"]
+   128→asyncio_mode = "auto"
+   129→asyncio_default_fixture_loop_scope = "function"
+   130→filterwarnings = [
+   131→    "ignore:codecs.open\\(\\) is deprecated:DeprecationWarning:frontmatter",
+   132→]
+   133→
+  </tool_result>
+  <tool_result tool="toolu_01TuFbi2yt8YVfTDniVvSEvv">
+No files found
+  </tool_result>
+  <assistant>Now I have all the details I need. Let me write the plan.</assistant>
+  <usage input_tokens="422" cache_creation_input_tokens="242" cache_read_input_tokens="72990" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 242}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01VNg4BAvw7QM4hNnfDqL9C7">
+    <param name="file_path">/Users/schrockn/.claude/plans/nifty-sauteeing-thunder.md</param>
+    <param name="content"># Plan: Delete erkbot + Create erk-mcp Server
+
+## Context
+
+erkbot (the Slack bot package) ...[truncated 3755 chars]...ols
+4. Test `plan_list` tool via Claude Code
+5. Test `plan_view` with a known plan number
+</param>
+  </tool_use>
+  <usage input_tokens="422" cache_creation_input_tokens="242" cache_read_input_tokens="72990" output_tokens="1451" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 242, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VNg4BAvw7QM4hNnfDqL9C7">
+File created successfully at: /Users/schrockn/.claude/plans/nifty-sauteeing-thunder.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_018Q7FGuM9DAxxHPki6TLhYS">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'delete erkbot package directory'}, {'tool': 'Bash', 'prompt':...[truncated 103 chars]...sh', 'prompt': 'create package directories'}, {'tool': 'Bash', 'prompt': 'run CI checks'}]</param>
+    <param name="plan"># Plan: Delete erkbot + Create erk-mcp Server
+
+## Context
+
+erkbot (the Slack bot package) ...[truncated 3755 chars]...ols
+4. Test `plan_list` tool via Claude Code
+5. Test `plan_view` with a known plan number
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2256" cache_read_input_tokens="73232" output_tokens="152" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2256, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018Q7FGuM9DAxxHPki6TLhYS">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/nifty-sauteeing-thunder.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Delete erkbot + Create erk-mcp Server
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR on new branch" - Create a new branch, save plan as draft PR, and stop. Does NOT proceed to implementation.
+  2. "Create a plan PR on the current branch" - Save plan as a PR on the current branch and stop. Does NOT proceed to implementation.
+  3. "Just implement on the current branch without creating a PR." - Implement directly on the current branch without saving a plan PR.
+  4. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR on new branch':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Create a plan PR on the current branch':
+  1. Run /erk:plan-save --current-branch
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     This converts the current branch into the plan PR branch
+     instead of creating a new branch.
+
+... [16 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HiimS2WA74asUbhNBuppgJ">
+    <param name="file_path">/Users/schrockn/.claude/plans/nifty-sauteeing-thunder.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="953" cache_read_input_tokens="75488" output_tokens="76" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 953, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HiimS2WA74asUbhNBuppgJ">
+     1→# Plan: Delete erkbot + Create erk-mcp Server
+     2→
+     3→## Context
+     4→
+     5→erkbot (the Slack bot package) is being replaced by a third-party Slack bot in another repo. We're building an MCP server instead, so erk's capabilities can be exposed to any MCP client — starting with Claude Code locally. This prototype validates the architecture with 3 tools: `plan_list`, `plan_view`, and `one_shot`.
+     6→
+     7→## Part 1: Delete erkbot
+     8→
+     9→### 1a. Delete the package directory
+    10→- `rm -rf packages/erkbot/`
+    11→
+    12→### 1b. Edit `Makefile`
+    13→- Line 1: Remove `test-erkbot` and `slackbot` from `.PHONY`
+    14→- Lines 28-29: Delete `test-erkbot:` target
+    15→- Line 92: Remove erkbot line from `py-fast-ci`
+    16→- Line 108: Remove erkbot line from `fast-ci`
+    17→- Line 126: Remove erkbot line from `all-ci`
+    18→- Lines 168-171: Delete `# === Slackbot ===` section and `slackbot:` target
+    19→
+    20→### 1c. Edit `.github/workflows/ci.yml`
+    21→- Lines 164-173: Delete `erkbot-tests:` job
+    22→- Line 448: Remove `erkbot-tests,` from `ci-summarize.needs`
+    23→- Line 463: Remove `needs.erkbot-tests.result == 'failure' ||` from `ci-summarize.if`
+    24→
+    25→### 1d. Edit `pyproject.toml`
+    26→- Line 115: Add `"erk_mcp"` to `known-first-party` in `[tool.ruff.lint.isort]`
+    27→
+    28→### 1e. Clean up docs
+    29→- Delete: `docs/learned/integrations/erkbot/` (2 files + directory)
+    30→- Delete: `docs/learned/integrations/erkbot-agent-config.md`
+
+... [81 lines omitted] ...
+
+   107→2. `make py-fast-ci` — confirms erkbot lines removed, no CI failures
+  </tool_result>
+  <assistant>Here's the plan:
+
+## Plan: Delete erkbot + Create erk-mcp Server
+
+**Context**: erkbot is being replaced by a third-party Slack bot. We're building an MCP server so erk's capabilities can be exposed to any MCP client — starting with Claude Code locally. Prototype with 3 tools: `plan_list`, `plan_view`, `one_shot`.
+
+**Part 1 — Delete erkbot**: Remove `packages/erkbot/`, clean up Makefile (6 edits), CI workflow (3 edits), and ~10 docs files.
+
+**Part 2 — Create erk-mcp**: New `packages/erk-mcp/` with FastMCP server. Three tools backed by subprocess calls to `erk exec` commands. Configure via `.mcp.json` at repo root for Claude Code stdio transport.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1791" cache_read_input_tokens="76441" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1791}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01GrPbH9nDnFAL56SCQ1Hj76">
+    <param name="questions">[{'question': '📋 Plan: Delete erkbot + Create erk-mcp Server\nCurrent context: (wt:erk) (b...[truncated 582 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1791" cache_read_input_tokens="76441" output_tokens="458" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1791, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GrPbH9nDnFAL56SCQ1Hj76">
+User has answered your questions: "📋 Plan: Delete erkbot + Create erk-mcp Server
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="we are deleting erkbot separately" user notes: we are deleting erkbot separately. You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>The user wants to handle erkbot deletion separately and focus on just the erk-mcp creation. Let me update the plan to remove the erkbot deletion parts and ask again.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="662" cache_read_input_tokens="78232" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 662}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Got it — removing the erkbot deletion from scope. Let me update the plan to focus only on creating the erk-mcp package.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="662" cache_read_input_tokens="78232" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 662}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_0153VpFVy8BsifmjKTEHCTsX">
+    <param name="file_path">/Users/schrockn/.claude/plans/nifty-sauteeing-thunder.md</param>
+    <param name="content"># Plan: Create erk-mcp Server
+
+## Context
+
+Build an MCP server so erk's capabilities can b...[truncated 1490 chars]...m erk MCP server appears with 3 tools
+3. Test `plan_list` and `plan_view` via Claude Code
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="662" cache_read_input_tokens="78232" output_tokens="761" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 662, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0153VpFVy8BsifmjKTEHCTsX">
+The file /Users/schrockn/.claude/plans/nifty-sauteeing-thunder.md has been updated successfully.
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_019KQZNhKLy9oiUAhqg3TrGg">
+    <param name="questions">[{'question': '📋 Plan: Create erk-mcp Server\nCurrent context: (wt:erk) (br:master)\n\nWha...[truncated 566 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="903" cache_read_input_tokens="78894" output_tokens="258" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 903, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019KQZNhKLy9oiUAhqg3TrGg">
+User has answered your questions: "📋 Plan: Create erk-mcp Server
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR on new branch". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01Ki44QYNT9YueqVYLwFGikt">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="336" cache_read_input_tokens="79797" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 336, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ki44QYNT9YueqVYLwFGikt">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="d7fe22a9-45a6-4cab-bc93-e7ce980c4577" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "d7fe22a9-45a6-4cab-bc93-e7ce980c4577" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "d7fe22a9-45a6-4cab-bc93-e7ce980c4577" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "d7fe22a9-45a6-4cab-bc93-e7ce980c4577" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "d7fe22a9-45a6-4cab-bc93-e7ce980c4577" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <user>[Request interrupted by user]</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/fast&lt;/command-name&gt;
+            &lt;command-message&gt;fast&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;[38;2;255;120;20m↯[39m Fast mode ON · $30/$150 per Mtok&lt;/local-command-stdout&gt;</user>
+  <user>continue</user>
+  <user>[Request interrupted by user]</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/extra-usage&lt;/command-name&gt;
+            &lt;command-message&gt;extra-usage&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Login successful&lt;/local-command-stdout&gt;</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/fast&lt;/command-name&gt;
+            &lt;command-message&gt;fast&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;[38;2;255;120;20m↯[39m Fast mode ON · $30/$150 per Mtok&lt;/local-command-stdout&gt;</user>
+  <user>continue</user>
+  <thinking>The user wants me to continue with the plan-save process. Let me execute the steps from the skill instructions.
+
+Step 1: Parse Arguments - No special flags were passed.
+Step 2: Generate Branch Slug from the plan title "Create erk-mcp Server"
+Step 3: Generate Plan Summary
+Step 4: Run the save command</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="83474" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 83474, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <assistant>Continuing with plan-save.
+
+**Branch slug:** `create-erk-mcp-server`
+
+**Summary:** Builds a FastMCP-based MCP server package (erk-mcp) that exposes erk capabilities as MCP tools for Claude Code. Prototype includes plan_list, plan_view, and one_shot tools backed by subprocess calls to erk CLI commands.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="83474" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 83474, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Bash" id="toolu_019d51794zcG62LoCBETVqkb">
+    <param name="command">erk exec plan-save --format json --session-id="d7fe22a9-45a6-4cab-bc93-e7ce980c4577" --bra...[truncated 154 chars]... plan_list, plan_view, and one_shot tools backed by subprocess calls to erk CLI commands."</param>
+    <param name="description">Save plan as draft PR on new branch</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="83474" cache_read_input_tokens="0" output_tokens="387" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 83474}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_019d51794zcG62LoCBETVqkb">
+{"success": true, "plan_number": 8660, "plan_url": "https://github.com/dagster-io/erk/pull/8660", "title": "[erk-plan] Plan: Create erk-mcp Server", "branch_name": "plnd/create-erk-mcp-server-03-03-0534", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/d7fe22a9-45a6-4cab-bc93-e7ce980c4577/plan_snapshots/000001-06901682"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FkRY9u4aRgLVxVKwWU4NUD">
+    <param name="command">erk exec upload-impl-session --session-id "d7fe22a9-45a6-4cab-bc93-e7ce980c4577" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="563" cache_read_input_tokens="83474" output_tokens="139" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 563}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01FkRY9u4aRgLVxVKwWU4NUD">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan saved successfully.
+
+**Plan "Create erk-mcp Server" saved as draft PR #8660**
+URL: https://github.com/dagster-io/erk/pull/8660
+
+Next steps:
+
+View PR: https://github.com/dagster-io/erk/pull/8660
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: `erk br co --new-slot --for-plan 8660`
+    Implement: `source "$(erk br co --new-slot --for-plan 8660 --script)" &amp;&amp; erk implement --dangerous`
+
+  Same slot:
+    Local: `erk br co --for-plan 8660`
+    Implement: `source "$(erk br co --for-plan 8660 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8660`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1367" cache_read_input_tokens="84037" output_tokens="251" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1367}" inference_geo="" iterations="[]" speed="fast" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
