@@ -23,14 +23,20 @@ After saving a plan, erk displays next-steps commands to the user. The formattin
 
 Takes `plan_number: int` and `url: str`.
 
-| Property                          | Returns                                                                                 |
-| --------------------------------- | --------------------------------------------------------------------------------------- |
-| `view`                            | URL string                                                                              |
-| `checkout`                        | `erk br co --for-plan {plan_number}`                                                    |
-| `dispatch`                        | `erk pr dispatch {plan_number}`                                                         |
-| `checkout_and_implement`          | `source "$(erk br co --for-plan {N} --script)" && erk implement --dangerous`            |
-| `checkout_new_slot`               | `erk br co --new-slot --for-plan {plan_number}`                                         |
-| `checkout_new_slot_and_implement` | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement --dangerous` |
+| Property                     | Returns                                                                        |
+| ---------------------------- | ------------------------------------------------------------------------------ |
+| `view`                       | URL string                                                                     |
+| `checkout`                   | `erk br co --for-plan {plan_number}`                                           |
+| `dispatch`                   | `erk pr dispatch {plan_number}`                                                |
+| `checkout_new_slot`          | `erk br co --new-slot --for-plan {plan_number}`                                |
+| `implement_new_br`           | `source "$(erk br co --for-plan {N} --script)" && erk implement`               |
+| `implement_new_br_dangerous` | `source "$(erk br co --for-plan {N} --script)" && erk implement -d`            |
+| `implement_new_wt`           | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement`    |
+| `implement_new_wt_dangerous` | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement -d` |
+
+## Hierarchical Output Format
+
+The plain-text formatter (`format_plan_next_steps_plain`) produces a hierarchical format with three sections: "Implement plan" (with branch/worktree and dangerous variants), "Checkout plan" (branch/worktree), and "Dispatch to queue".
 
 ## Shell Activation Pattern
 
