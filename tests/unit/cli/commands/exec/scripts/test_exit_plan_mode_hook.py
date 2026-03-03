@@ -980,6 +980,26 @@ class TestBuildBlockingMessage:
         assert "If user chooses 'Create a plan PR on the current branch':" in message
         assert "/erk:plan-save --current-branch" in message
 
+    def test_current_branch_option_hidden_on_trunk(self) -> None:
+        """Option 'Create a plan PR on the current branch' hidden when on master."""
+        plan_path = Path("/home/user/.claude/plans/session-123.md")
+        message = build_blocking_message(
+            session_id="session-123",
+            current_branch="master",
+            branch_has_commits=False,
+            plan_file_path=plan_path,
+            plan_title=None,
+            worktree_name=None,
+            pr_number=None,
+            plan_number=None,
+            editor=None,
+        )
+        assert "Create a plan PR on the current branch" not in message
+        assert "/erk:plan-save --current-branch" not in message
+        # Other options should still be present
+        assert "Create a plan PR on new branch" in message
+        assert "Just implement on the current branch without creating a PR." in message
+
     def test_options_renumbered_when_current_branch_option_hidden(self) -> None:
         """Options are renumbered correctly when option 2 is hidden."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
