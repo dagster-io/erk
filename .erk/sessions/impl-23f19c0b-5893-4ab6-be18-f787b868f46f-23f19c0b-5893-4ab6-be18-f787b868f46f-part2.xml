@@ -1,0 +1,201 @@
+<session>
+  <meta branch="plnd/roadmap-free-objectives-03-03-0518" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01Cvdiu4iZiYDjPizkWoXZB7">
+     1→"""Command to fetch and display a single objective."""
+     2→
+     3→import json
+     4→from datetime import datetime
+     5→
+     6→import click
+     7→from rich.cells import cell_len
+     8→from rich.console import Console
+     9→from rich.markup import escape
+    10→from rich.table import Table
+    11→from rich.text import Text
+    12→
+    13→from erk.cli.alias import alias
+    14→from erk.cli.core import discover_repo_context
+    15→from erk.cli.ensure import UserFacingCliError
+    16→from erk.cli.github_parsing import parse_issue_identifier
+    17→from erk.core.context import ErkContext
+    18→from erk.core.display_utils import format_relative_time
+    19→from erk_shared.gateway.github.issues.types import IssueNotFound
+    20→from erk_shared.gateway.github.metadata.dependency_graph import (
+    21→    DependencyGraph,
+    22→    ObjectiveNode,
+    23→    build_graph,
+    24→    compute_graph_summary,
+    25→    find_graph_next_node,
+    26→)
+    27→from erk_shared.gateway.github.metadata.core import (
+    28→    extract_raw_metadata_blocks,
+    29→)
+    30→from erk_shared.gateway.github.metadata.roadmap import (
+
+... [15 lines omitted] ...
+  </tool_result>
+  <assistant>The imports from `erk_shared.gateway.github.metadata` are out of order. `core` should come before `dependency_graph` alphabetically:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="708" cache_read_input_tokens="103649" cache_creation="{'ephemeral_5m_input_tokens': 708, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_013xcYcr1katHxogDZkZtGRU">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/view_cmd.py</param>
+    <param name="old_string">from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.g...[truncated 315 chars]...ap,
+    serialize_phases,
+)
+from erk_shared.gateway.github.metadata.types import BlockKeys</param>
+    <param name="new_string">from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.g...[truncated 315 chars]...ap,
+    serialize_phases,
+)
+from erk_shared.gateway.github.metadata.types import BlockKeys</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="708" cache_read_input_tokens="103649" cache_creation="{'ephemeral_5m_input_tokens': 708, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013xcYcr1katHxogDZkZtGRU">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/objective/view_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me re-run the lint check to confirm:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="802" cache_read_input_tokens="104357" cache_creation="{'ephemeral_5m_input_tokens': 802, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01FvcoSrGjqrAvH1BZhonrzW">
+    <param name="description">Run ruff lint check on view_cmd</param>
+    <param name="prompt">Run `uv run ruff check src/erk/cli/commands/objective/view_cmd.py` and report results. Do NOT modify any files.</param>
+    <param name="subagent_type">devrun</param>
+    <param name="model">haiku</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="802" cache_read_input_tokens="104357" cache_creation="{'ephemeral_5m_input_tokens': 802, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FvcoSrGjqrAvH1BZhonrzW">
+**ruff passed**: All checks passed for /home/runner/work/erk/erk/src/erk/cli/commands/objective/view_cmd.py
+
+The file passes all ruff linting checks with no violations found.
+agentId: a25b8f4 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Lint passes. Let me also quickly re-run the affected tests to make sure the import reorder didn't break anything:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="250" cache_read_input_tokens="105159" cache_creation="{'ephemeral_5m_input_tokens': 250, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01UvqmwW1sMsxe23FbC6GniZ">
+    <param name="description">Re-run view_cmd tests</param>
+    <param name="prompt">Run `uv run pytest tests/unit/cli/commands/objective/test_view_cmd.py tests/unit/cli/commands/objective/test_check_cmd.py -v --tb=short` and report results. Do NOT modify any files.</param>
+    <param name="subagent_type">devrun</param>
+    <param name="model">haiku</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="250" cache_read_input_tokens="105159" cache_creation="{'ephemeral_5m_input_tokens': 250, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UvqmwW1sMsxe23FbC6GniZ">
+pytest passed: 47 tests passed in 0.86s
+
+All tests in the objective view and check command test suites passed successfully:
+- `tests/unit/cli/commands/objective/test_view_cmd.py`: 24 tests passed
+- `tests/unit/cli/commands/objective/test_check_cmd.py`: 23 tests passed
+agentId: a3f2f2a (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All 47 tests pass. Now let me signal completion and submit the PR.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="589" cache_read_input_tokens="105409" cache_creation="{'ephemeral_5m_input_tokens': 589, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01TjSVVv3BXYf7qVRxQuMXkx">
+    <param name="command">erk exec impl-signal ended --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation ended</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="589" cache_read_input_tokens="105409" cache_creation="{'ephemeral_5m_input_tokens': 589, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01Pwo7wtBiu8xHgzapQiofau">
+    <param name="command">erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="589" cache_read_input_tokens="105409" cache_creation="{'ephemeral_5m_input_tokens': 589, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TjSVVv3BXYf7qVRxQuMXkx">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8657
+}
+  </tool_result>
+  <tool_result tool="toolu_01Pwo7wtBiu8xHgzapQiofau">
+{"uploaded": false, "reason": "push_session_failed"}
+  </tool_result>
+  <assistant>Now submit the PR:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="575" cache_read_input_tokens="105998" cache_creation="{'ephemeral_5m_input_tokens': 575, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01XGv5taSYs3ZdvGMa2uYKbq">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk pipeline</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="575" cache_read_input_tokens="105998" cache_creation="{'ephemeral_5m_input_tokens': 575, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XGv5taSYs3ZdvGMa2uYKbq">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #8657 found (already exists)
+
+Phase 2: Getting diff
+
+Phase 3: Fetching plan context
+   Incorporating plan #8657
+
+Phase 4: Generating PR description
+   Reading diff file...
+   Diff loaded (11,695 chars)
+   Analyzing changes with Claude...
+   PR description generated
+
+Phase 5: Graphite enhancement
+
+Phase 6: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+   Plan lifecycle stage updated to impl
+
+✅ PR submitted
+
+  Action:      Updated PR #8657
+  Branch:      plnd/roadmap-free-objectives-03-03-0518 → master
+
+... [3 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01S5q79cuZCRSDZmWW7yPerH">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="381" cache_read_input_tokens="106573" cache_creation="{'ephemeral_5m_input_tokens': 381, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01W6uvNtkGiuMLKkpxDvdFkJ">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="381" cache_read_input_tokens="106573" cache_creation="{'ephemeral_5m_input_tokens': 381, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01S5q79cuZCRSDZmWW7yPerH">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8657
+}
+  </tool_result>
+  <tool_result tool="toolu_01W6uvNtkGiuMLKkpxDvdFkJ">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01Qjcoi8oY2AH2AtBvvDG9Fq">
+    <param name="todos">[{'content': 'Fix parse_roadmap() to return ([], []) when no block exists', 'status': 'com...[truncated 1114 chars]...ontent': 'Run tests and CI', 'status': 'completed', 'activeForm': 'Running tests and CI'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="514" cache_read_input_tokens="106954" cache_creation="{'ephemeral_5m_input_tokens': 514, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Qjcoi8oY2AH2AtBvvDG9Fq">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan execution complete. Here's a summary of the changes:
+
+**PR #8657**: https://github.com/dagster-io/erk/pull/8657
+
+### Changes Made
+
+**Core fix — `roadmap.py`**: `parse_roadmap()` now returns `([], [])` when no `objective-roadmap` metadata block exists (valid roadmap-free objective), and only returns the legacy format error when a block exists but fails to parse.
+
+**`check_cmd.py`**: `validate_objective()` uses `has_metadata_block()` to detect whether a roadmap block exists. If absent, it passes with "Roadmap: none (objective has no roadmap)" and skips all roadmap-dependent checks (3-7). `_output_human()` handles empty summary without the "(0/0 done)" suffix.
+
+**`view_cmd.py`**: Uses `extract_raw_metadata_blocks()` to check for block presence before calling `parse_v2_roadmap()`. No block = empty phases (existing "No roadmap data found" display path). Block exists but unparseable = legacy error (unchanged).
+
+**Tests updated**:
+- `test_roadmap.py`: `test_parse_roadmap_no_metadata_block` now asserts `errors == []`
+- `test_check_cmd.py`: Renamed `test_malformed_roadmap_fails` → `test_roadmap_free_objective_passes` (exit_code 0, PASS), added `test_roadmap_free_objective_json_output`
+- `test_view_cmd.py`: `test_view_objective_empty_roadmap` now expects exit_code 0 + "No roadmap data found"; `test_view_objective_legacy_format_rejected` → `test_view_objective_table_only_shows_as_roadmap_free` (exit_code 0)
+
+**`objective-create.md`**: Updated success reporting to document the no-roadmap case.
+
+All 47 objective tests pass. CI lint and type checks clean.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="107468" cache_creation="{'ephemeral_5m_input_tokens': 454, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
