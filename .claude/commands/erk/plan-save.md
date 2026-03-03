@@ -180,12 +180,12 @@ OR exit Claude Code first, then run one of:
 Implement plan #<plan_number>:
   In new wt:        source "$(erk br co --new-slot --for-plan <plan_number> --script)" && erk implement
     (dangerously):  source "$(erk br co --new-slot --for-plan <plan_number> --script)" && erk implement -d
-  In plan br:       source "$(erk br co --for-plan <plan_number> --script)" && erk implement
+  In current wt:       source "$(erk br co --for-plan <plan_number> --script)" && erk implement
     (dangerously):  source "$(erk br co --for-plan <plan_number> --script)" && erk implement -d
 
 Checkout plan #<plan_number>:
   In new wt:  erk br co --new-slot --for-plan <plan_number>
-  In plan br: erk br co --for-plan <plan_number>
+  In current wt: erk br co --for-plan <plan_number>
 
 Dispatch to queue: erk pr dispatch <plan_number>
 ```
@@ -196,13 +196,13 @@ If **on trunk = false** (same slot recommended → "Here" listed first):
 OR exit Claude Code first, then run one of:
 
 Implement plan #<plan_number>:
-  In plan br:       source "$(erk br co --for-plan <plan_number> --script)" && erk implement
+  In current wt:       source "$(erk br co --for-plan <plan_number> --script)" && erk implement
     (dangerously):  source "$(erk br co --for-plan <plan_number> --script)" && erk implement -d
   In new wt:        source "$(erk br co --new-slot --for-plan <plan_number> --script)" && erk implement
     (dangerously):  source "$(erk br co --new-slot --for-plan <plan_number> --script)" && erk implement -d
 
 Checkout plan #<plan_number>:
-  In plan br: erk br co --for-plan <plan_number>
+  In current wt: erk br co --for-plan <plan_number>
   In new wt:  erk br co --new-slot --for-plan <plan_number>
 
 Dispatch to queue: erk pr dispatch <plan_number>
