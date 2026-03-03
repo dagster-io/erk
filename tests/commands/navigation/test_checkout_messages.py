@@ -77,6 +77,7 @@ def test_message_case_1_already_on_target_branch_in_current_worktree() -> None:
                 script=True,
                 is_newly_created=False,
                 worktrees=worktrees,
+                force_script_activation=False,
             )
         assert exc_info.value.code == 0
 
@@ -137,6 +138,7 @@ def test_message_case_2_switched_to_existing_worktree_standard_naming() -> None:
                 script=True,
                 is_newly_created=False,
                 worktrees=worktrees,
+                force_script_activation=False,
             )
         assert exc_info.value.code == 0
 
@@ -198,6 +200,7 @@ def test_message_case_2_switched_to_existing_worktree_nonstandard_naming() -> No
                 script=True,
                 is_newly_created=False,
                 worktrees=worktrees,
+                force_script_activation=False,
             )
         assert exc_info.value.code == 0
 
@@ -258,6 +261,7 @@ def test_message_case_3_switched_and_checked_out_branch() -> None:
                 script=True,
                 is_newly_created=False,
                 worktrees=worktrees,
+                force_script_activation=False,
             )
         assert exc_info.value.code == 0
 
@@ -320,6 +324,7 @@ def test_message_case_4_switched_to_newly_created_worktree() -> None:
                 script=True,
                 is_newly_created=True,
                 worktrees=worktrees,
+                force_script_activation=False,
             )
         assert exc_info.value.code == 0
 
@@ -376,6 +381,7 @@ def test_message_colorization_applied() -> None:
                 script=True,
                 is_newly_created=False,
                 worktrees=worktrees,
+                force_script_activation=False,
             )
         assert exc_info.value.code == 0
 
@@ -441,6 +447,7 @@ def test_message_non_script_mode_case_1() -> None:
                     script=False,
                     is_newly_created=False,
                     worktrees=worktrees,
+                    force_script_activation=False,
                 )
         finally:
             sys.stderr = old_stderr
@@ -508,6 +515,7 @@ def test_message_non_script_mode_case_4() -> None:
                     script=False,
                     is_newly_created=True,
                     worktrees=worktrees,
+                    force_script_activation=False,
                 )
         finally:
             sys.stderr = old_stderr
@@ -517,3 +525,55 @@ def test_message_non_script_mode_case_4() -> None:
         # Verify message was written to stderr
         assert "Switched to new worktree" in output
         assert "new-feature" in output
+
+
+def test_force_script_activation_overrides_interactive_mode() -> None:
+    """Test that force_script_activation=True causes script output even when script=False.
+
+    This covers the stack-in-place case, where the branch is being stacked in an
+    existing slot. The activation script should be emitted automatically so shell
+    integration can pick it up without a manual copy-paste step.
+    """
+    from click.testing import CliRunner
+
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        work_dir = env.erk_root / env.cwd.name
+        feature_wt = work_dir / "feature-1"
+
+        git_ops = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main"),
+                    WorktreeInfo(path=feature_wt, branch="feature-1"),
+                ]
+            },
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+        )
+
+        test_ctx = env.build_context(git=git_ops, cwd=env.cwd)
+
+        worktrees = [
+            WorktreeInfo(path=env.cwd, branch="main"),
+            WorktreeInfo(path=feature_wt, branch="feature-1"),
+        ]
+
+        # script=False but force_script_activation=True — should behave as script mode
+        with pytest.raises(SystemExit) as exc_info:
+            _perform_checkout(
+                ctx=test_ctx,
+                repo_root=env.cwd,
+                target_worktree=WorktreeInfo(path=feature_wt, branch="feature-1"),
+                branch="feature-1",
+                script=False,
+                is_newly_created=False,
+                worktrees=worktrees,
+                force_script_activation=True,
+            )
+        assert exc_info.value.code == 0
+
+        # Activation script should have been written (script mode path)
+        assert env.script_writer.last_script is not None
+        assert "Switched to worktree" in env.script_writer.last_script.content
