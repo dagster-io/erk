@@ -42,7 +42,7 @@ This is the primary implementation workflow - it orchestrates:
 - `gh pr ready` — bypasses lifecycle tracking
 - `gh pr close` / `gh pr merge`
 
-All PR operations are handled by `erk pr submit` in Step 12. It automatically:
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
 
 - Generates the PR title and body
 - Preserves the plan-header metadata block
@@ -182,14 +182,22 @@ erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2>/dev/null || 
 
 This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
 
-### Step 11: Run CI Iteratively
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
 
 1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
 2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
 
-**CRITICAL**: Never delete the impl directory - leave for user review (no auto-commit).
-
-### Step 12: Submit PR
+### Step 13: Submit PR
 
 Push the branch and create or update the PR using the Graphite-aware submit pipeline:
 
@@ -214,7 +222,7 @@ erk pr check --stage=impl
 This validates PR submission readiness including implementation-specific checks
 (e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
 
-### Step 13: Output Format
+### Step 14: Output Format
 
 - **Start**: "Setting up implementation..." or "Fetching plan #X..."
 - **After setup**: "Implementation environment ready, reading plan..."
