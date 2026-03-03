@@ -198,13 +198,11 @@ field(default_factory=list)
 
 Property names should match user-facing output labels. When the CLI displays a label like "Checkout:", the corresponding property should be named `checkout`, not an internal-only term.
 
-**Example:** The `prepare` to `checkout` rename in `next_steps.py`:
+**Example:** Property naming in `next_steps.py`:
 
-- Properties were renamed from `prepare` to `checkout`, `checkout_and_implement`, `checkout_new_slot`, `checkout_new_slot_and_implement`
-- The output label "Checkout:" matches the property name
-- The constant `CHECKOUT_SLASH_COMMAND` value intentionally remains `"/erk:prepare"` because the slash command `/erk:prepare` still exists
+<!-- Source: packages/erk-shared/src/erk_shared/output/next_steps.py, IssueNextSteps -->
 
-**Source:** `packages/erk-shared/src/erk_shared/output/next_steps.py`
+See `IssueNextSteps` and `PlannedPRNextSteps` in `packages/erk-shared/src/erk_shared/output/next_steps.py` — property names like `checkout`, `implement_new_br` match their output labels "Checkout plan:", "Implement plan:".
 
 ## String Method Preferences
 

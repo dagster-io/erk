@@ -5,8 +5,10 @@ plan save state within a session. They are distinct from worktree-scoped
 markers in markers.py.
 
 Markers:
-    exit-plan-mode-hook.plan-saved.marker: Signals plan was saved to GitHub
+    exit-plan-mode-hook.plan-saved.marker: Signals plan was saved to GitHub.
+        Content: plan number on first line. Triggers Step 2 "what next?" prompt.
     plan-saved-issue.marker: Stores the issue/PR number of the saved plan
+        (persists for session deduplication, not consumed by hook).
 """
 
 from pathlib import Path
@@ -14,22 +16,48 @@ from pathlib import Path
 from erk_shared.scratch.scratch import get_scratch_dir
 
 
-def create_plan_saved_marker(session_id: str, repo_root: Path) -> None:
+def create_plan_saved_marker(session_id: str, repo_root: Path, plan_number: int) -> None:
     """Create marker file to indicate plan was saved to GitHub.
+
+    The plan number is stored on the first line so the hook can read it
+    when building the Step 2 "what next?" prompt.
 
     Args:
         session_id: The session ID for the scratch directory.
         repo_root: The repository root path.
+        plan_number: The plan PR number.
     """
     marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
     marker_file = marker_dir / "exit-plan-mode-hook.plan-saved.marker"
     marker_file.write_text(
-        "Created by: exit-plan-mode-hook (via /erk:plan-save)\n"
+        f"{plan_number}\n"
+        "Created by: /erk:plan-save\n"
         "Trigger: Plan was successfully saved to GitHub\n"
-        "Effect: Next ExitPlanMode call will be BLOCKED (remain in plan mode, session complete)\n"
+        "Effect: Next ExitPlanMode call will be BLOCKED with Step 2 prompt\n"
         "Lifecycle: Deleted after being read by next hook invocation\n",
         encoding="utf-8",
     )
+
+
+def read_plan_saved_marker(session_id: str, repo_root: Path) -> int | None:
+    """Read plan number from the plan-saved marker.
+
+    Args:
+        session_id: The session ID for the scratch directory.
+        repo_root: The repository root path.
+
+    Returns:
+        The plan number if marker exists and first line is a valid integer, None otherwise.
+    """
+    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+    marker_file = marker_dir / "exit-plan-mode-hook.plan-saved.marker"
+    if not marker_file.exists():
+        return None
+    content = marker_file.read_text(encoding="utf-8").strip()
+    first_line = content.split("\n")[0].strip()
+    if not first_line.isdigit():
+        return None
+    return int(first_line)
 
 
 def create_plan_saved_issue_marker(session_id: str, repo_root: Path, plan_number: int) -> None:

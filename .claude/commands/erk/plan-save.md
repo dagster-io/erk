@@ -29,7 +29,7 @@ The plan is saved using the configured backend:
 
 ### Step 1: Parse Arguments
 
-Check `$ARGUMENTS` for the `--plan-type` and `--objective` flags:
+Check `$ARGUMENTS` for the `--plan-type`, `--objective`, and `--current-branch` flags:
 
 ```
 If $ARGUMENTS contains "--plan-type=<type>":
@@ -44,6 +44,11 @@ If $ARGUMENTS contains "--objective=<number>":
   - Set OBJECTIVE_FLAG to "--objective=<number>"
 Else:
   - Set OBJECTIVE_FLAG to empty string
+
+If $ARGUMENTS contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
 ```
 
 ### Step 2: Generate Branch Slug
@@ -76,7 +81,15 @@ Guidelines:
 
 ### Step 4: Run Save Command
 
-Run this command with the session ID, branch slug, summary, and optional flags:
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
 
 ```bash
 erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
@@ -155,11 +168,7 @@ Display: `Updated objective #<objective-issue> roadmap: node <step_id> → plan 
 
 Display: `Plan already saved as #<plan_number> (duplicate skipped)`
 
-If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
-
-If `branch_name` is absent, display only: `View PR: <plan_url>`
-
-Return immediately (skip Steps 5, 6 above if not already executed).
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
 
 **Otherwise, on success**, display:
 
@@ -168,66 +177,10 @@ Plan "<title>" saved as draft PR #<plan_number>
 URL: <issue_url>
 ```
 
-**Slot options block:**
-
-The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
-
-If **on trunk = true** (new-wt recommended → "In new wt" listed first):
-
-```
-OR exit Claude Code first, then run one of:
-
-Implement plan #<plan_number>:
-  In new wt:        source "$(erk br co --new-slot --for-plan <plan_number> --script)" && erk implement
-    (dangerously):  source "$(erk br co --new-slot --for-plan <plan_number> --script)" && erk implement -d
-  In current wt:       source "$(erk br co --for-plan <plan_number> --script)" && erk implement
-    (dangerously):  source "$(erk br co --for-plan <plan_number> --script)" && erk implement -d
-
-Checkout plan #<plan_number>:
-  In new wt:  erk br co --new-slot --for-plan <plan_number>
-  In current wt: erk br co --for-plan <plan_number>
-
-Dispatch to queue: erk pr dispatch <plan_number>
-```
-
-If **on trunk = false** (same slot recommended → "Here" listed first):
-
-```
-OR exit Claude Code first, then run one of:
-
-Implement plan #<plan_number>:
-  In current wt:       source "$(erk br co --for-plan <plan_number> --script)" && erk implement
-    (dangerously):  source "$(erk br co --for-plan <plan_number> --script)" && erk implement -d
-  In new wt:        source "$(erk br co --new-slot --for-plan <plan_number> --script)" && erk implement
-    (dangerously):  source "$(erk br co --new-slot --for-plan <plan_number> --script)" && erk implement -d
-
-Checkout plan #<plan_number>:
-  In current wt: erk br co --for-plan <plan_number>
-  In new wt:  erk br co --new-slot --for-plan <plan_number>
-
-Dispatch to queue: erk pr dispatch <plan_number>
-```
-
-**Next steps block:**
-
-```
-Next steps:
-
-View PR: <plan_url>
-
-In Claude Code:
-  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
-
-OR exit Claude Code first, then run one of:
-  Checkout plan #<plan_number>:  erk br co --for-plan <plan_number>
-  Dispatch to queue:             erk pr dispatch <plan_number>
-```
-
 If objective was verified, also display: `Verified objective link: #<objective-number>`
 
-If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: <slot_name> → #<objective-number>`
-
-**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
 
 On failure, display the error message and suggest:
 
