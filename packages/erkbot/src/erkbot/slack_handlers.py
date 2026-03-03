@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 from collections import deque
 from typing import TYPE_CHECKING, Any
 
@@ -19,6 +20,11 @@ from erkbot.models import (
 )
 from erkbot.parser import parse_erk_command
 from erkbot.runner import run_erk_plan_list, stream_erk_one_shot
+from erkbot.suggested_replies import (
+    CHAT_SUGGESTED_REPLIES,
+    build_selected_reply_blocks,
+    build_suggested_replies_blocks,
+)
 from erkbot.utils import (
     build_one_shot_progress_text,
     chunk_for_slack,
@@ -265,6 +271,10 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
                     time=time,
                     progress_update_interval_seconds=settings.one_shot_progress_update_interval_seconds,
                     max_slack_code_block_chars=settings.max_slack_code_block_chars,
+                    enable_suggested_replies=settings.enable_suggested_replies,
+                    suggested_reply_blocks=build_suggested_replies_blocks(
+                        replies=CHAT_SUGGESTED_REPLIES
+                    ),
                 )
             )
             return
@@ -303,6 +313,76 @@ def register_handlers(app, *, settings: Settings, bot: ErkBot | None, time: Time
 
         logger.info("reply: channel=%s command=unknown", channel)
         await say(f"Hi <@{user}>. {SUPPORTED_COMMANDS_TEXT}", thread_ts=reply_thread_ts)
+
+    @app.action(re.compile(r"suggested_reply_.+"))
+    async def handle_suggested_reply(ack, body, client) -> None:  # type: ignore[no-untyped-def]
+        await ack()
+        action = body["actions"][0]
+        selected_label = action["text"]["text"]
+        user_id = body["user"]["id"]
+        channel = body["channel"]["id"]
+        message_ts = body["message"]["ts"]
+        thread_ts = body["message"].get("thread_ts")
+        value = action["value"]
+
+        logger.info(
+            "suggested_reply: user=%s channel=%s label=%s value=%s",
+            user_id,
+            channel,
+            selected_label,
+            value,
+        )
+
+        # Replace buttons with selection indicator
+        try:
+            await client.chat_update(
+                channel=channel,
+                ts=message_ts,
+                blocks=build_selected_reply_blocks(selected_label=selected_label, user_id=user_id),
+                text=f"<@{user_id}> selected: {selected_label}",
+            )
+        except SlackApiError:
+            pass  # Best-effort button replacement; failure is non-fatal
+
+        # Dispatch the command carried by the button value
+        command = parse_erk_command(value)
+        if isinstance(command, PlanListCommand):
+            result = await run_erk_plan_list()
+            status_line = (
+                "Result from `erk plan list`:"
+                if result.exit_code == 0
+                else f"`erk plan list` failed (exit {result.exit_code}):"
+            )
+            try:
+                await client.chat_postMessage(
+                    channel=channel, text=status_line, thread_ts=thread_ts
+                )
+                for chunk in chunk_for_slack(
+                    result.output, max_chars=settings.max_slack_code_block_chars
+                ):
+                    await client.chat_postMessage(
+                        channel=channel, text=f"```{chunk}```", thread_ts=thread_ts
+                    )
+            except SlackApiError:
+                pass  # Best-effort plan list response; failure is non-fatal
+        elif isinstance(command, ChatCommand) and bot is not None:
+            asyncio.create_task(
+                run_agent_background(
+                    client=client,
+                    channel=channel,
+                    reply_thread_ts=thread_ts,
+                    source_ts=message_ts,
+                    prompt=command.message,
+                    bot=bot,
+                    time=time,
+                    progress_update_interval_seconds=settings.one_shot_progress_update_interval_seconds,
+                    max_slack_code_block_chars=settings.max_slack_code_block_chars,
+                    enable_suggested_replies=settings.enable_suggested_replies,
+                    suggested_reply_blocks=build_suggested_replies_blocks(
+                        replies=CHAT_SUGGESTED_REPLIES
+                    ),
+                )
+            )
 
     @app.message("ping")
     async def handle_ping(message, say, client) -> None:  # type: ignore[no-untyped-def]
