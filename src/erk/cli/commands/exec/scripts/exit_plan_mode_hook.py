@@ -329,13 +329,13 @@ def build_blocking_message(
 
     lines.extend(
         [
-            '  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan '
-            "and stop. Does NOT proceed to implementation.",
-            '  2. "New branch and implement" - Create a new branch in the current worktree '
-            "and implement (for starting fresh).",
-            '  3. "Implement on current branch" - Implement directly on the current branch '
-            "without creating a new branch or worktree.",
-            '  4. "View/Edit the plan" - Open plan in editor to review or modify before deciding.',
+            '  1. "Create a plan PR on new branch" - Create a new branch, save plan as '
+            "draft PR, and stop. Does NOT proceed to implementation.",
+            '  2. "Create a plan PR on the current branch" - Save plan as a PR on the '
+            "current branch and stop. Does NOT proceed to implementation.",
+            '  3. "Just implement on the current branch without creating a PR." - Implement '
+            "directly on the current branch without saving a plan PR.",
+            '  4. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.',
         ]
     )
 
@@ -354,20 +354,18 @@ def build_blocking_message(
     lines.extend(
         [
             "",
-            "If user chooses 'Create a plan PR':",
+            "If user chooses 'Create a plan PR on new branch':",
             f"  1. Run {save_cmd}",
             "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
             "     Stay in plan mode and let the user exit manually if desired.",
             "",
-            "If user chooses 'New branch and implement':",
-            "  1. Create implement-now marker (skip PR creation):",
-            f"     erk exec marker create --session-id {session_id} \\",
-            "       exit-plan-mode-hook.implement-now",
-            "  2. Call ExitPlanMode",
-            "  3. After exiting plan mode, implement the changes directly",
-            "     (no PR tracking - this is for small PR iterations)",
+            "If user chooses 'Create a plan PR on the current branch':",
+            f"  1. Run {save_cmd} --current-branch",
+            "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
+            "     This converts the current branch into the plan PR branch",
+            "     instead of creating a new branch.",
             "",
-            "If user chooses 'Implement on current branch':",
+            "If user chooses 'Just implement on the current branch without creating a PR.':",
             "  1. Create implement-now marker:",
             f"     erk exec marker create --session-id {session_id} \\",
             "       exit-plan-mode-hook.implement-now",
@@ -394,7 +392,7 @@ def build_blocking_message(
             lines.extend(
                 [
                     "",
-                    "If user chooses 'View/Edit the plan':",
+                    "If user chooses 'View/Edit the Plan':",
                     f"  1. Tell user: '{editor_name} is a terminal-based editor that cannot",
                     "     run inside Claude Code. Please open the plan in a separate terminal:'",
                     f"     {editor} {plan_file_path}",
@@ -406,7 +404,7 @@ def build_blocking_message(
             lines.extend(
                 [
                     "",
-                    "If user chooses 'View/Edit the plan':",
+                    "If user chooses 'View/Edit the Plan':",
                     f"  1. Run: ${{EDITOR:-code}} {plan_file_path}",
                     "  2. After user confirms they're done editing, ask the same question again",
                     "     (loop until user chooses Save, Implement, or Incremental)",

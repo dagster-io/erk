@@ -13,6 +13,7 @@ Save the current session's plan to GitHub with session context.
 /erk:plan-save                           # Standalone plan
 /erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
 /erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
 ```
 
 Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=<number>` to override the marker or provide the link when no marker exists (e.g., during replan).
@@ -46,6 +47,8 @@ Else:
 ```
 
 ### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
 
 Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
 

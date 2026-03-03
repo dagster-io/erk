@@ -122,6 +122,7 @@ def _save_as_planned_pr(
     node_ids: tuple[str, ...] | None,
     summary: str | None,
     session_xml_dir: Path | None,
+    current_branch_flag: bool,
 ) -> None:
     """Save plan as a planned PR.
 
@@ -141,6 +142,7 @@ def _save_as_planned_pr(
         node_ids: Objective roadmap node IDs to associate with this plan
         summary: AI-generated summary for the PR description (None coerced to empty string)
         session_xml_dir: Directory containing session XML files to embed in the PR diff
+        current_branch_flag: When True, use the current branch directly instead of creating a new one.
     """
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
@@ -170,44 +172,56 @@ def _save_as_planned_pr(
             )
         raise SystemExit(2)
 
-    if not branch_slug:
-        click.echo(
-            "Error: --branch-slug is required. "
-            "Generate a slug in the calling skill (e.g., plan-save.md Step 1.5) "
-            "and pass it via --branch-slug.",
-            err=True,
-        )
-        raise SystemExit(1)
-    slug = branch_slug
-    now = require_time(ctx).now()
-    branch_name = generate_planned_pr_branch_name(
-        slug,
-        now,
-        objective_id=objective_issue,
-    )
-
-    # Determine base branch: use current branch if on a feature branch, otherwise trunk
-    branch_manager = require_branch_manager(ctx)
     trunk = git.branch.detect_trunk_branch(repo_root)
-    current_branch = git.branch.get_current_branch(repo_root)
+    branch_manager = require_branch_manager(ctx)
 
-    if (
-        current_branch is not None
-        and current_branch != trunk
-        and not current_branch.startswith("learn/")
-        and git.branch.branch_exists_on_remote(repo_root, "origin", current_branch)
-    ):
-        # Stack plan branch on current feature branch for natural Graphite stacking
-        base_branch = current_branch
-        create_result = branch_manager.create_branch(repo_root, branch_name, current_branch)
-    else:
-        # On trunk or detached HEAD: create from origin/trunk
+    if current_branch_flag:
+        # Use the current branch directly — no new branch creation
+        current_branch = git.branch.get_current_branch(repo_root)
+        if current_branch is None:
+            click.echo("Error: --current-branch requires a checked-out branch.", err=True)
+            raise SystemExit(1)
+        branch_name = current_branch
         base_branch = trunk
-        git.remote.fetch_branch(repo_root, "origin", trunk)
-        create_result = branch_manager.create_branch(repo_root, branch_name, f"origin/{trunk}")
-    if isinstance(create_result, BranchAlreadyExists):
-        click.echo(f"Error: {create_result.message}", err=True)
-        raise SystemExit(1) from None
+    else:
+        if not branch_slug:
+            click.echo(
+                "Error: --branch-slug is required. "
+                "Generate a slug in the calling skill (e.g., plan-save.md Step 1.5) "
+                "and pass it via --branch-slug.",
+                err=True,
+            )
+            raise SystemExit(1)
+        slug = branch_slug
+        now = require_time(ctx).now()
+        branch_name = generate_planned_pr_branch_name(
+            slug,
+            now,
+            objective_id=objective_issue,
+        )
+
+        # Determine base branch: use current branch if on a feature branch, otherwise trunk
+        current_branch = git.branch.get_current_branch(repo_root)
+
+        if (
+            current_branch is not None
+            and current_branch != trunk
+            and not current_branch.startswith("learn/")
+            and git.branch.branch_exists_on_remote(repo_root, "origin", current_branch)
+        ):
+            # Stack plan branch on current feature branch for natural Graphite stacking
+            base_branch = current_branch
+            create_result = branch_manager.create_branch(repo_root, branch_name, current_branch)
+        else:
+            # On trunk or detached HEAD: create from origin/trunk
+            base_branch = trunk
+            git.remote.fetch_branch(repo_root, "origin", trunk)
+            create_result = branch_manager.create_branch(
+                repo_root, branch_name, f"origin/{trunk}"
+            )
+        if isinstance(create_result, BranchAlreadyExists):
+            click.echo(f"Error: {create_result.message}", err=True)
+            raise SystemExit(1) from None
 
     # Build ref.json data
     ref_data: dict[str, str | int | list[str] | None] = {
@@ -342,6 +356,7 @@ def _save_plan_via_planned_pr(
     objective: int | None,
     summary: str | None,
     session_xml_dir: Path | None,
+    current_branch_flag: bool,
 ) -> None:
     """Handle planned-PR backend: dedup check, plan extraction, validation, and save.
 
@@ -357,6 +372,7 @@ def _save_plan_via_planned_pr(
         objective: Objective issue number from CLI flag (overrides session marker)
         summary: Optional AI-generated summary for the PR description
         session_xml_dir: Directory containing session XML files to embed in the PR diff
+        current_branch_flag: When True, use current branch instead of creating a new one.
     """
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
@@ -449,6 +465,7 @@ def _save_plan_via_planned_pr(
         node_ids=node_ids,
         summary=summary,
         session_xml_dir=session_xml_dir,
+        current_branch_flag=current_branch_flag,
     )
 
 
@@ -510,6 +527,13 @@ def _save_plan_via_planned_pr(
     default=None,
     help="Directory containing session XML files to embed in the PR diff",
 )
+@click.option(
+    "--current-branch",
+    "current_branch_flag",
+    is_flag=True,
+    default=False,
+    help="Use the current branch directly instead of creating a new plnd/ branch",
+)
 @click.pass_context
 def plan_save(
     ctx: click.Context,
@@ -524,6 +548,7 @@ def plan_save(
     objective: int | None,
     summary: str | None,
     session_xml_dir: Path | None,
+    current_branch_flag: bool,
 ) -> None:
     """Save plan as a draft PR."""
     _save_plan_via_planned_pr(
@@ -538,4 +563,5 @@ def plan_save(
         objective=objective,
         summary=summary,
         session_xml_dir=session_xml_dir,
+        current_branch_flag=current_branch_flag,
     )
