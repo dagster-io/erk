@@ -376,9 +376,7 @@ def test_generate_passes_system_prompt_separately(tmp_path: Path) -> None:
     diff_file = tmp_path / "test.diff"
     diff_file.write_text("diff --git a/file.py b/file.py\n-old\n+new", encoding="utf-8")
 
-    caller = RecordingLlmCaller(
-        LlmResponse(text="Add new feature\n\nThis adds a new feature.")
-    )
+    caller = RecordingLlmCaller(LlmResponse(text="Add new feature\n\nThis adds a new feature."))
     generator = CommitMessageGenerator(caller, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,

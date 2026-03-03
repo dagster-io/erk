@@ -34,6 +34,8 @@ class RecordingLlmCaller(LlmCaller):
     ) -> LlmResponse | NoApiKey | LlmCallFailed:
         self.calls.append((prompt, system_prompt, max_tokens))
         return self._response
+
+
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
@@ -210,7 +212,9 @@ def test_pr_submit_fails_when_graphite_not_authenticated() -> None:
             pr_details={123: pr_details},
             pr_bases={123: "main"},
         )
-        executor = FakeLlmCaller(response=LlmResponse(text="Add feature\n\nThis adds a new feature."))
+        executor = FakeLlmCaller(
+            response=LlmResponse(text="Add feature\n\nThis adds a new feature.")
+        )
 
         ctx = build_workspace_test_context(
             env,
@@ -472,7 +476,9 @@ def test_pr_submit_fails_when_pr_update_fails() -> None:
             pr_update_should_succeed=False,
         )
 
-        executor = FakeLlmCaller(response=LlmResponse(text="Add feature\n\nThis adds a new feature."))
+        executor = FakeLlmCaller(
+            response=LlmResponse(text="Add feature\n\nThis adds a new feature.")
+        )
 
         ctx = build_workspace_test_context(
             env,
@@ -562,7 +568,9 @@ def test_pr_submit_success(tmp_path: Path) -> None:
             pr_bases={123: "main"},
         )
 
-        executor = FakeLlmCaller(response=LlmResponse(text="Add awesome feature\n\nThis PR adds an awesome new feature."))
+        executor = FakeLlmCaller(
+            response=LlmResponse(text="Add awesome feature\n\nThis PR adds an awesome new feature.")
+        )
 
         ctx = build_workspace_test_context(
             env,
@@ -1137,7 +1145,9 @@ def test_pr_submit_fails_when_parent_branch_has_no_pr() -> None:
             prs={},  # No PRs exist
         )
 
-        executor = FakeLlmCaller(response=LlmResponse(text="Add feature\n\nThis adds a new feature."))
+        executor = FakeLlmCaller(
+            response=LlmResponse(text="Add feature\n\nThis adds a new feature.")
+        )
 
         ctx = build_workspace_test_context(
             env,

@@ -39,6 +39,8 @@ class RecordingLlmCaller(LlmCaller):
     ) -> LlmResponse | NoApiKey | LlmCallFailed:
         self.calls.append((prompt, system_prompt, max_tokens))
         return self._response
+
+
 from tests.test_utils.env_helpers import ErkIsolatedFsEnv, erk_isolated_fs_env
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
 
