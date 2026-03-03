@@ -168,59 +168,20 @@ Plan "<title>" saved as draft PR #<plan_number>
 URL: <issue_url>
 ```
 
-**Slot options block:**
-
-The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
-
-If **on trunk = true** (new-wt recommended → "In new wt" listed first):
-
-```
-OR exit Claude Code first, then run one of:
-
-Implement plan #<plan_number>:
-  In new wt:        source "$(erk br co --new-slot --for-plan <plan_number> --script)" && erk implement
-    (dangerously):  source "$(erk br co --new-slot --for-plan <plan_number> --script)" && erk implement -d
-  In plan br:       source "$(erk br co --for-plan <plan_number> --script)" && erk implement
-    (dangerously):  source "$(erk br co --for-plan <plan_number> --script)" && erk implement -d
-
-Checkout plan #<plan_number>:
-  In new wt:  erk br co --new-slot --for-plan <plan_number>
-  In plan br: erk br co --for-plan <plan_number>
-
-Dispatch to queue: erk pr dispatch <plan_number>
-```
-
-If **on trunk = false** (same slot recommended → "Here" listed first):
-
-```
-OR exit Claude Code first, then run one of:
-
-Implement plan #<plan_number>:
-  In plan br:       source "$(erk br co --for-plan <plan_number> --script)" && erk implement
-    (dangerously):  source "$(erk br co --for-plan <plan_number> --script)" && erk implement -d
-  In new wt:        source "$(erk br co --new-slot --for-plan <plan_number> --script)" && erk implement
-    (dangerously):  source "$(erk br co --new-slot --for-plan <plan_number> --script)" && erk implement -d
-
-Checkout plan #<plan_number>:
-  In plan br: erk br co --for-plan <plan_number>
-  In new wt:  erk br co --new-slot --for-plan <plan_number>
-
-Dispatch to queue: erk pr dispatch <plan_number>
-```
-
 **Next steps block:**
 
 ```
-Next steps:
+Implement plan #<plan_number>:
+  In new br:        source "$(erk br co --for-plan <plan_number> --script)" && erk implement
+    (dangerously):  source "$(erk br co --for-plan <plan_number> --script)" && erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan <plan_number> --script)" && erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan <plan_number> --script)" && erk implement -d
 
-View PR: <plan_url>
+Checkout plan #<plan_number>:
+  In new br:  erk br co --for-plan <plan_number>
+  In new wt:  erk br co --new-slot --for-plan <plan_number>
 
-In Claude Code:
-  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
-
-OR exit Claude Code first, then run one of:
-  Checkout plan #<plan_number>:  erk br co --for-plan <plan_number>
-  Dispatch to queue:             erk pr dispatch <plan_number>
+Dispatch to queue: erk pr dispatch <plan_number>
 ```
 
 If objective was verified, also display: `Verified objective link: #<objective-number>`
