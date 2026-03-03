@@ -1380,3 +1380,68 @@ def test_up_delete_current_slot_aware_unassigns_slot() -> None:
         assert "gt delete -f --no-interactive feature-1" in script_content
         # Should NOT contain git worktree remove for slots
         assert "git worktree remove" not in script_content
+
+
+def test_up_worktree_branch_mismatch() -> None:
+    """Test up command when worktree exists at expected path but has different branch checked out.
+
+    This simulates the scenario where a user ran `git checkout other-branch` inside
+    a worktree that was originally created for feature-2. The worktree directory
+    still exists at the feature-2 path, but has a different branch checked out.
+    Running `erk up` should navigate to that worktree and include a `git checkout`
+    command to switch to the correct branch.
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Worktree at feature-2 path has "other-branch" checked out (mismatch)
+        feature_2_path = repo_dir / "worktrees" / "feature-2"
+        worktrees_list = [
+            WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+            WorktreeInfo(
+                path=repo_dir / "worktrees" / "feature-1", branch="feature-1", is_root=False
+            ),
+            WorktreeInfo(path=feature_2_path, branch="other-branch", is_root=False),
+        ]
+
+        git_ops = FakeGit(
+            worktrees={env.cwd: worktrees_list},
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+        )
+
+        # Set up stack: main -> feature-1 -> feature-2
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
+                ),
+                "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
+            }
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, repo=repo, use_graphite=True
+        )
+
+        result = runner.invoke(cli, ["up", "--script"], obj=test_ctx, catch_exceptions=False)
+
+        assert result.exit_code == 0
+        script_path = Path(result.stdout.strip())
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+        # Should navigate to the worktree at the feature-2 path
+        assert str(feature_2_path) in script_content
+        # Should include git checkout to switch to the correct branch
+        assert "git checkout feature-2" in script_content
