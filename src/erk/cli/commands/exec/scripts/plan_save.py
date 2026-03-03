@@ -56,6 +56,7 @@ from erk_shared.plan_utils import get_title_tag_from_labels
 from erk_shared.scratch.plan_snapshots import PlanSnapshot, snapshot_plan_for_session
 from erk_shared.scratch.session_markers import (
     create_plan_saved_branch_marker,
+    create_plan_saved_current_branch_marker,
     create_plan_saved_issue_marker,
     create_plan_saved_marker,
     get_existing_saved_branch,
@@ -253,6 +254,17 @@ def _save_as_planned_pr(
         files=files,
         message=f"Add plan: {title}",
     )
+
+    # When saving on the current branch, the git plumbing commit advanced HEAD
+    # but left the working tree and index unchanged. Write files to disk and
+    # stage them so git status is clean.
+    if current_branch_flag:
+        for rel_path, content in files.items():
+            abs_path = repo_root / rel_path
+            abs_path.parent.mkdir(parents=True, exist_ok=True)
+            abs_path.write_text(content, encoding="utf-8")
+        git.commit.stage_files(repo_root, list(files.keys()), force=True)
+
     git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
 
     # Build metadata — base_ref_name sets the PR base ref
@@ -303,7 +315,10 @@ def _save_as_planned_pr(
     # Create markers and snapshot
     snapshot_result: PlanSnapshot | None = None
     if session_id is not None:
-        create_plan_saved_marker(session_id, repo_root)
+        if current_branch_flag:
+            create_plan_saved_current_branch_marker(session_id, repo_root, plan_number)
+        else:
+            create_plan_saved_marker(session_id, repo_root)
         create_plan_saved_issue_marker(session_id, repo_root, plan_number)
         create_plan_saved_branch_marker(session_id, repo_root, branch_name)
 

@@ -13,6 +13,7 @@ from click.testing import CliRunner
 from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
     ExitAction,
     HookInput,
+    _gather_inputs,
     abbreviate_for_header,
     build_blocking_message,
     determine_exit_action,
@@ -22,6 +23,7 @@ from erk.cli.commands.exec.scripts.exit_plan_mode_hook import (
 )
 from erk_shared.context.context import ErkContext
 from erk_shared.context.testing import context_for_test
+from erk_shared.gateway.branch_manager.fake import FakeBranchManager
 from erk_shared.gateway.claude_installation.fake import FakeClaudeInstallation
 from erk_shared.gateway.git.fake import FakeGit
 
@@ -123,12 +125,11 @@ class TestDetermineExitAction:
         assert result.delete_incremental_plan_marker is True
         assert result.delete_plan_saved_marker is False  # Not touched
 
-    def test_plan_saved_marker_blocks_and_preserves(self) -> None:
-        """Plan-saved marker blocks exit but preserves the marker.
+    def test_plan_saved_marker_blocks_and_cleans_up(self) -> None:
+        """Plan-saved marker blocks exit to suppress dialog and deletes the marker.
 
-        The marker is preserved so subsequent ExitPlanMode calls continue to block
-        with "session complete" instead of prompting the user again (which would
-        cause duplicate plan creation if the agent ignores the block).
+        The BLOCK suppresses the "Ready to code?" dialog. The marker is deleted
+        so the planning session is fully cleaned up.
         """
         result = determine_exit_action(
             HookInput.for_test(
@@ -137,8 +138,8 @@ class TestDetermineExitAction:
             )
         )
         assert result.action == ExitAction.BLOCK
-        assert "Plan PR already created" in result.message
-        assert result.delete_plan_saved_marker is False
+        assert "Plan PR saved" in result.message
+        assert result.delete_plan_saved_marker is True
         assert result.delete_implement_now_marker is False
 
     def test_plan_saved_marker_message_uses_draft_pr_language(self) -> None:
@@ -150,7 +151,48 @@ class TestDetermineExitAction:
             )
         )
         assert result.action == ExitAction.BLOCK
-        assert "Plan PR already created" in result.message
+        assert "Plan PR saved" in result.message
+
+    def test_plan_saved_current_branch_blocks_with_implement_prompt(self) -> None:
+        """Plan-saved-current-branch marker blocks with implement-now prompt."""
+        result = determine_exit_action(
+            HookInput.for_test(
+                plan_saved_current_branch_marker_exists=True,
+                plan_saved_current_branch_plan_number=42,
+                plan_file_path=Path("/some/plan.md"),
+            )
+        )
+        assert result.action == ExitAction.BLOCK
+        assert "#42" in result.message
+        assert "Implement now" in result.message
+        assert "impl-context" in result.message
+        assert result.delete_plan_saved_current_branch_marker is True
+        assert result.delete_plan_saved_marker is False
+        assert result.delete_implement_now_marker is False
+
+    def test_plan_saved_current_branch_deletes_marker(self) -> None:
+        """Plan-saved-current-branch marker is deleted after being read."""
+        result = determine_exit_action(
+            HookInput.for_test(
+                plan_saved_current_branch_marker_exists=True,
+                plan_saved_current_branch_plan_number=99,
+            )
+        )
+        assert result.action == ExitAction.BLOCK
+        assert result.delete_plan_saved_current_branch_marker is True
+
+    def test_implement_now_takes_precedence_over_current_branch_saved(self) -> None:
+        """Implement-now marker takes precedence over plan-saved-current-branch."""
+        result = determine_exit_action(
+            HookInput.for_test(
+                implement_now_marker_exists=True,
+                plan_saved_current_branch_marker_exists=True,
+                plan_saved_current_branch_plan_number=42,
+            )
+        )
+        assert result.action == ExitAction.ALLOW
+        assert result.delete_implement_now_marker is True
+        assert result.delete_plan_saved_current_branch_marker is False
 
     def test_no_plan_file_allows_exit(self) -> None:
         """No plan file allows exit."""
@@ -183,7 +225,7 @@ class TestDetermineExitAction:
         assert result.delete_objective_context_marker is True
 
     def test_plan_saved_deletes_objective_context_marker_when_present(self) -> None:
-        """Plan-saved marker deletes objective-context marker but preserves plan-saved marker."""
+        """Plan-saved marker blocks exit and deletes both markers."""
         result = determine_exit_action(
             HookInput.for_test(
                 plan_saved_marker_exists=True,
@@ -193,9 +235,9 @@ class TestDetermineExitAction:
             )
         )
         assert result.action == ExitAction.BLOCK
-        # Plan-saved marker is preserved (see test_plan_saved_marker_blocks_and_preserves)
-        assert result.delete_plan_saved_marker is False
-        # But objective-context marker is deleted (one-time use)
+        # Plan-saved marker is deleted (session complete)
+        assert result.delete_plan_saved_marker is True
+        # Objective-context marker is also deleted (one-time use)
         assert result.delete_objective_context_marker is True
 
 
@@ -370,7 +412,7 @@ class TestBuildBlockingMessage:
     """Tests for the pure build_blocking_message() function."""
 
     def test_contains_required_elements(self) -> None:
-        """Message contains all required elements for draft-PR backend."""
+        """Message contains all required elements for the new menu."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
             session_id="session-123",
@@ -385,23 +427,19 @@ class TestBuildBlockingMessage:
         )
         assert "PLAN SAVE PROMPT" in message
         assert "AskUserQuestion" in message
-        assert "Create a plan PR on new branch" in message
-        assert "Create a plan PR on the current branch" in message
-        assert "Just implement on the current branch without creating a PR." in message
+        assert "Implement here" in message
+        assert "Save plan as draft PR" in message
+        assert "Save plan on current branch" in message
         assert "View/Edit the Plan" in message
         assert "/erk:plan-save" in message
-        assert "Do NOT call ExitPlanMode" in message
+        assert "Call ExitPlanMode" in message
         assert "erk exec marker create --session-id session-123" in message
         assert "exit-plan-mode-hook.implement-now" in message
-        assert "If user chooses 'Create a plan PR on new branch':" in message
-        assert "If user chooses 'Create a plan PR on the current branch':" in message
-        assert (
-            "If user chooses 'Just implement on the current branch "
-            "without creating a PR.':" in message
-        )
+        assert "If user chooses 'Implement here':" in message
+        assert "If user chooses 'Save plan as draft PR':" in message
 
     def test_current_branch_option_uses_current_branch_flag(self) -> None:
-        """Option 2 passes --current-branch to plan-save command."""
+        """Save plan on current branch passes --current-branch to plan-save command."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
             session_id="session-123",
@@ -414,22 +452,22 @@ class TestBuildBlockingMessage:
             plan_number=None,
             editor=None,
         )
-        # Extract the option 2 instruction block
+        # Extract the instruction block
         lines = message.split("\n")
-        option2_start = None
-        option2_end = None
+        option_start = None
+        option_end = None
         for i, line in enumerate(lines):
-            if "If user chooses 'Create a plan PR on the current branch':" in line:
-                option2_start = i
-            elif option2_start is not None and line.startswith("If user chooses"):
-                option2_end = i
+            if "If user chooses 'Save plan on current branch':" in line:
+                option_start = i
+            elif option_start is not None and line.startswith("If user chooses"):
+                option_end = i
                 break
-        assert option2_start is not None, "Option 2 instruction block not found"
-        if option2_end is None:
-            option2_end = len(lines)
-        option2_block = "\n".join(lines[option2_start:option2_end])
-        assert "/erk:plan-save --current-branch" in option2_block
-        assert "converts the current branch into the plan PR branch" in option2_block
+        assert option_start is not None, "Save plan on current branch instruction block not found"
+        if option_end is None:
+            option_end = len(lines)
+        option_block = "\n".join(lines[option_start:option_end])
+        assert "/erk:plan-save --current-branch" in option_block
+        assert "converts the current branch into the plan PR branch" in option_block
 
     def test_includes_header_instruction(self) -> None:
         """Message includes header instruction for AskUserQuestion."""
@@ -554,8 +592,8 @@ class TestBuildBlockingMessage:
         assert "View/Edit the Plan" in message
         assert "Open plan in editor" in message
 
-    def test_implement_on_current_branch_option_included(self) -> None:
-        """Option 'Just implement' is included with instruction block."""
+    def test_implement_here_option_included(self) -> None:
+        """Option 'Implement here' is included with instruction block."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
             session_id="session-123",
@@ -568,12 +606,8 @@ class TestBuildBlockingMessage:
             plan_number=None,
             editor=None,
         )
-        assert "Just implement on the current branch without creating a PR." in message
-        assert "without saving a plan PR" in message
-        assert (
-            "If user chooses 'Just implement on the current branch "
-            "without creating a PR.':" in message
-        )
+        assert "Implement here" in message
+        assert "If user chooses 'Implement here':" in message
         assert "Do NOT run 'erk exec setup-impl' or create a new branch" in message
         assert f"Read the plan from: {plan_path}" in message
         assert "erk pr submit" in message
@@ -614,8 +648,8 @@ class TestBuildBlockingMessage:
         assert "View/Edit the Plan" in message
         assert "If user chooses 'View/Edit the Plan':" not in message
 
-    def test_objective_issue_included_in_save_command(self) -> None:
-        """Save command never includes --objective-issue (flag removed)."""
+    def test_save_command_no_objective_issue(self) -> None:
+        """Save command does not include --objective-issue."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
             session_id="session-123",
@@ -628,24 +662,6 @@ class TestBuildBlockingMessage:
             plan_number=None,
             editor=None,
         )
-        assert "/erk:plan-save" in message
-        assert "--objective-issue" not in message
-
-    def test_save_command_without_objective_issue(self) -> None:
-        """Save command is plain when objective_issue is None."""
-        plan_path = Path("/home/user/.claude/plans/session-123.md")
-        message = build_blocking_message(
-            session_id="session-123",
-            current_branch="feature-branch",
-            branch_has_commits=False,
-            plan_file_path=plan_path,
-            plan_title=None,
-            worktree_name=None,
-            pr_number=None,
-            plan_number=None,
-            editor=None,
-        )
-        # Should have /erk:plan-save but not --objective-issue
         assert "/erk:plan-save" in message
         assert "--objective-issue" not in message
 
@@ -849,8 +865,8 @@ class TestBuildBlockingMessage:
         # Should still have the save prompt
         assert "PLAN SAVE PROMPT" in message
 
-    def test_draft_pr_backend_shows_pr_language(self) -> None:
-        """Draft PR backend uses plan PR options instead of 'Save the plan'."""
+    def test_new_menu_options(self) -> None:
+        """New menu has correct 4 options when branch has no commits."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
             session_id="session-123",
@@ -863,16 +879,13 @@ class TestBuildBlockingMessage:
             plan_number=None,
             editor=None,
         )
-        assert "Create a plan PR on new branch" in message
-        assert "Create a plan PR on the current branch" in message
-        assert "Just implement on the current branch without creating a PR." in message
-        assert "View/Edit the Plan" in message
-        # Should NOT contain github-backend language
-        assert "Save plan as a GitHub issue" not in message
-        assert "Do not save issue" not in message
+        assert '  1. "Save plan as draft PR"' in message
+        assert '  2. "Implement here"' in message
+        assert '  3. "Save plan on current branch"' in message
+        assert '  4. "View/Edit the Plan"' in message
 
-    def test_draft_pr_backend_omits_save_and_implement(self) -> None:
-        """Draft PR backend does not include 'Save plan and implement here' option."""
+    def test_old_options_not_present(self) -> None:
+        """Old menu options are no longer present."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
             session_id="session-123",
@@ -885,11 +898,13 @@ class TestBuildBlockingMessage:
             plan_number=None,
             editor=None,
         )
-        assert "Save plan and implement here" not in message
-        assert "Save to GitHub, then immediately implement" not in message
+        assert "Create a plan PR on new branch" not in message
+        assert "Create a plan PR on the current branch" not in message
+        assert "Just implement on the current branch without creating a PR." not in message
+        assert "Save and dispatch" not in message
 
-    def test_draft_pr_backend_omits_save_and_review(self) -> None:
-        """Draft PR backend does not include 'Save and submit for review' option."""
+    def test_instruction_blocks_use_new_labels(self) -> None:
+        """Instruction blocks use new option labels."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
             session_id="session-123",
@@ -902,39 +917,17 @@ class TestBuildBlockingMessage:
             plan_number=None,
             editor=None,
         )
-        assert "Save and submit for review" not in message
-        assert "review PR for inline feedback" not in message
-
-    def test_draft_pr_backend_instruction_blocks(self) -> None:
-        """Draft PR backend uses correct instruction block labels."""
-        plan_path = Path("/home/user/.claude/plans/session-123.md")
-        message = build_blocking_message(
-            session_id="session-123",
-            current_branch="feature-branch",
-            branch_has_commits=False,
-            plan_file_path=plan_path,
-            plan_title=None,
-            worktree_name=None,
-            pr_number=None,
-            plan_number=None,
-            editor=None,
-        )
-        assert "If user chooses 'Create a plan PR on new branch':" in message
-        assert "If user chooses 'Create a plan PR on the current branch':" in message
-        assert (
-            "If user chooses 'Just implement on the current branch "
-            "without creating a PR.':" in message
-        )
+        assert "If user chooses 'Implement here':" in message
+        assert "If user chooses 'Save plan as draft PR':" in message
+        assert "If user chooses 'Save plan on current branch':" in message
         assert "If user chooses 'View/Edit the Plan':" in message
-        # Should NOT contain github-backend instruction labels
-        assert "If user chooses 'Save the plan':" not in message
-        assert "If user chooses 'Do not save issue and implement here':" not in message
-        assert "If user chooses 'Save plan and implement here':" not in message
-        assert "If user chooses 'Save and submit for review':" not in message
-        assert "If user chooses 'Skip PR and implement here':" not in message
+        # Old labels absent
+        assert "If user chooses 'Create a plan PR on new branch':" not in message
+        assert "If user chooses 'Create a plan PR on the current branch':" not in message
+        assert "If user chooses 'Save and dispatch':" not in message
 
     def test_current_branch_option_hidden_when_branch_has_commits(self) -> None:
-        """Option 'Create a plan PR on the current branch' hidden when branch has commits."""
+        """Option 'Save plan on current branch' hidden when branch has commits."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
             session_id="session-123",
@@ -948,21 +941,18 @@ class TestBuildBlockingMessage:
             editor=None,
         )
         # Option should NOT be present
-        assert "Create a plan PR on the current branch" not in message
-        assert "If user chooses 'Create a plan PR on the current branch':" not in message
+        assert "Save plan on current branch" not in message
+        assert "If user chooses 'Save plan on current branch':" not in message
         assert "/erk:plan-save --current-branch" not in message
         # Other options should still be present
-        assert "Create a plan PR on new branch" in message
-        assert "Just implement on the current branch without creating a PR." in message
+        assert "Save plan as draft PR" in message
+        assert "Implement here" in message
         assert "View/Edit the Plan" in message
-        assert "If user chooses 'Create a plan PR on new branch':" in message
-        assert (
-            "If user chooses 'Just implement on the current branch "
-            "without creating a PR.':" in message
-        )
+        assert "If user chooses 'Save plan as draft PR':" in message
+        assert "If user chooses 'Implement here':" in message
 
     def test_current_branch_option_shown_when_no_commits(self) -> None:
-        """Option 'Create a plan PR on the current branch' shown when branch has no commits."""
+        """Option 'Save plan on current branch' shown when branch has no commits."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
             session_id="session-123",
@@ -976,8 +966,8 @@ class TestBuildBlockingMessage:
             editor=None,
         )
         # Option should be present
-        assert "Create a plan PR on the current branch" in message
-        assert "If user chooses 'Create a plan PR on the current branch':" in message
+        assert "Save plan on current branch" in message
+        assert "If user chooses 'Save plan on current branch':" in message
         assert "/erk:plan-save --current-branch" in message
 
     def test_current_branch_option_hidden_on_trunk(self) -> None:
@@ -994,14 +984,14 @@ class TestBuildBlockingMessage:
             plan_number=None,
             editor=None,
         )
-        assert "Create a plan PR on the current branch" not in message
+        assert "Save plan on current branch" not in message
         assert "/erk:plan-save --current-branch" not in message
         # Other options should still be present
-        assert "Create a plan PR on new branch" in message
-        assert "Just implement on the current branch without creating a PR." in message
+        assert "Save plan as draft PR" in message
+        assert "Implement here" in message
 
     def test_options_renumbered_when_current_branch_option_hidden(self) -> None:
-        """Options are renumbered correctly when option 2 is hidden."""
+        """Options are renumbered correctly when current branch option is hidden."""
         plan_path = Path("/home/user/.claude/plans/session-123.md")
         message = build_blocking_message(
             session_id="session-123",
@@ -1015,8 +1005,8 @@ class TestBuildBlockingMessage:
             editor=None,
         )
         # With branch_has_commits=True, should be 3 options numbered 1-3
-        assert '  1. "Create a plan PR on new branch"' in message
-        assert '  2. "Just implement on the current branch without creating a PR."' in message
+        assert '  1. "Save plan as draft PR"' in message
+        assert '  2. "Implement here"' in message
         assert '  3. "View/Edit the Plan"' in message
         # Should NOT have option 4
         assert "  4." not in message
@@ -1058,12 +1048,11 @@ class TestHookIntegration:
         assert "Implement-now marker found" in result.output
         assert not implement_now_marker.exists()  # Marker deleted
 
-    def test_plan_saved_marker_flow(self, tmp_path: Path) -> None:
-        """Verify plan-saved marker blocks exit but is preserved for subsequent calls.
+    def test_plan_saved_marker_flow_blocks_and_cleans_up(self, tmp_path: Path) -> None:
+        """Verify plan-saved marker blocks exit (suppressing dialog) and deletes the marker.
 
-        The marker is preserved so subsequent ExitPlanMode calls continue to block
-        with "session complete" instead of prompting the user again (which would
-        cause duplicate plan creation if the agent ignores the block).
+        The BLOCK suppresses the "Ready to code?" dialog. The marker is deleted
+        so the planning session is fully cleaned up.
         """
         runner = CliRunner()
         session_id = "session-abc123"
@@ -1083,9 +1072,9 @@ class TestHookIntegration:
         stdin_data = json.dumps({"session_id": session_id})
         result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
 
-        assert result.exit_code == 2  # Block
-        assert "Plan PR already created" in result.output
-        assert plan_saved_marker.exists()  # Marker preserved for subsequent calls
+        assert result.exit_code == 2
+        assert "Plan PR saved" in result.output
+        assert not plan_saved_marker.exists()  # Marker deleted after session ends
 
     def test_incremental_plan_marker_flow(self, tmp_path: Path) -> None:
         """Verify incremental-plan marker is deleted and exit is allowed."""
@@ -1165,7 +1154,7 @@ class TestHookIntegration:
         assert not objective_context_marker.exists()  # Also deleted
 
     def test_objective_context_marker_deleted_on_plan_saved(self, tmp_path: Path) -> None:
-        """Verify objective-context marker is deleted but plan-saved marker preserved."""
+        """Verify both plan-saved and objective-context markers are deleted on plan-saved."""
         runner = CliRunner()
         session_id = "session-abc123"
 
@@ -1186,10 +1175,10 @@ class TestHookIntegration:
         stdin_data = json.dumps({"session_id": session_id})
         result = runner.invoke(exit_plan_mode_hook, input=stdin_data, obj=ctx)
 
-        assert result.exit_code == 2  # Block
-        assert "Plan PR already created" in result.output
-        assert plan_saved_marker.exists()  # Marker preserved
-        assert not objective_context_marker.exists()  # But objective marker deleted
+        assert result.exit_code == 2
+        assert "Plan PR saved" in result.output
+        assert not plan_saved_marker.exists()  # Marker deleted
+        assert not objective_context_marker.exists()  # Objective marker also deleted
 
     def test_branch_manager_used_for_pr_lookup(self, tmp_path: Path) -> None:
         """Verify branch_manager is created and used correctly for PR lookups.
@@ -1247,3 +1236,101 @@ class TestHookIntegration:
         assert "PLAN SAVE PROMPT" in result.output
         # Verify the branch context is included in the output
         assert "(br:feature-branch)" in result.output
+
+
+class TestGatherInputsParentBranch:
+    """Tests that _gather_inputs uses Graphite stack parent for commit detection."""
+
+    def test_uses_graphite_parent_for_commit_counting(self, tmp_path: Path) -> None:
+        """When Graphite parent exists, count commits ahead of parent, not trunk.
+
+        In a Graphite stack, a branch may have 0 commits ahead of its stack parent
+        but many commits ahead of trunk (because the parent itself has commits).
+        The hook should use the stack parent to determine branch_has_commits.
+        """
+        session_id = "session-abc123"
+        plan_slug = "test-plan"
+
+        # Create .erk/ to mark as managed project
+        (tmp_path / ".erk").mkdir()
+
+        # Create plan file so needs_blocking_message is True
+        plans_dir = tmp_path / ".claude" / "plans"
+        plans_dir.mkdir(parents=True)
+        plan_file = plans_dir / f"{plan_slug}.md"
+        plan_file.write_text("# Test Plan\n\nContent", encoding="utf-8")
+
+        claude_installation = FakeClaudeInstallation.for_test(
+            plans_dir_path=plans_dir,
+            session_slugs={session_id: [plan_slug]},
+            plans={plan_slug: "# Test Plan\n\nContent"},
+        )
+
+        # FakeGit: 0 commits ahead of parent-branch, 5 ahead of main
+        git = FakeGit(
+            current_branches={tmp_path: "feature-branch"},
+            commits_ahead={
+                (tmp_path, "parent-branch"): 0,
+                (tmp_path, "main"): 5,
+            },
+        )
+
+        # FakeBranchManager with parent configured
+        branch_manager = FakeBranchManager(
+            parent_branches={"feature-branch": "parent-branch"},
+        )
+
+        hook_input = _gather_inputs(
+            session_id=session_id,
+            repo_root=tmp_path,
+            github_planning_enabled=True,
+            claude_installation=claude_installation,
+            git=git,
+            branch_manager=branch_manager,
+            global_config=None,
+        )
+
+        # Should use parent-branch (0 commits ahead), not main (5 commits ahead)
+        assert hook_input.branch_has_commits is False
+
+    def test_falls_back_to_trunk_when_no_parent(self, tmp_path: Path) -> None:
+        """When no Graphite parent exists, fall back to trunk for commit counting."""
+        session_id = "session-abc123"
+        plan_slug = "test-plan"
+
+        # Create .erk/ to mark as managed project
+        (tmp_path / ".erk").mkdir()
+
+        # Create plan file so needs_blocking_message is True
+        plans_dir = tmp_path / ".claude" / "plans"
+        plans_dir.mkdir(parents=True)
+        plan_file = plans_dir / f"{plan_slug}.md"
+        plan_file.write_text("# Test Plan\n\nContent", encoding="utf-8")
+
+        claude_installation = FakeClaudeInstallation.for_test(
+            plans_dir_path=plans_dir,
+            session_slugs={session_id: [plan_slug]},
+            plans={plan_slug: "# Test Plan\n\nContent"},
+        )
+
+        # FakeGit: 3 commits ahead of main (trunk)
+        git = FakeGit(
+            current_branches={tmp_path: "feature-branch"},
+            commits_ahead={(tmp_path, "main"): 3},
+        )
+
+        # FakeBranchManager with NO parent configured (plain Git mode)
+        branch_manager = FakeBranchManager()
+
+        hook_input = _gather_inputs(
+            session_id=session_id,
+            repo_root=tmp_path,
+            github_planning_enabled=True,
+            claude_installation=claude_installation,
+            git=git,
+            branch_manager=branch_manager,
+            global_config=None,
+        )
+
+        # Should fall back to trunk (main, 3 commits ahead)
+        assert hook_input.branch_has_commits is True

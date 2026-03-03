@@ -30,6 +30,13 @@ Marker Files:
         Effect: Next ExitPlanMode call is BLOCKED (remain in plan mode, session complete)
         Lifecycle: Deleted after being read by next hook invocation
 
+    exit-plan-mode-hook.plan-saved-current-branch.marker
+        Created by: /erk:plan-save --current-branch command
+        Effect: Next ExitPlanMode call is BLOCKED with implement-now prompt
+        Content: First line is the plan PR number
+        Lifecycle: Deleted after being read by next hook invocation
+        Purpose: When plan was saved on the current branch, offer to implement immediately
+
     incremental-plan.marker
         Created by: /local:incremental-plan-mode command (via `erk exec marker create --session-id`)
         Effect: Next ExitPlanMode call is ALLOWED, skipping the save prompt entirely
@@ -40,7 +47,8 @@ State Transitions:
     1. No marker files + plan exists → BLOCK with prompt
     2. implement-now marker exists → ALLOW (delete marker)
     3. incremental-plan marker exists → ALLOW (delete marker, skip save prompt)
-    4. plan-saved marker exists → BLOCK with "session complete" message (delete marker)
+    4. plan-saved-current-branch marker exists → BLOCK with implement-now prompt (delete marker)
+    5. plan-saved marker exists → BLOCK with "session complete" message (delete marker)
 """
 
 import os
@@ -60,7 +68,10 @@ from erk_shared.gateway.git.abc import Git
 from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
 from erk_shared.scratch.scratch import get_scratch_dir
-from erk_shared.scratch.session_markers import read_objective_context_marker
+from erk_shared.scratch.session_markers import (
+    read_objective_context_marker,
+    read_plan_saved_current_branch_marker,
+)
 
 # Known terminal-based editors that cannot run inside Claude Code
 TERMINAL_EDITORS = frozenset(
@@ -129,6 +140,8 @@ class HookInput:
     github_planning_enabled: bool
     implement_now_marker_exists: bool
     plan_saved_marker_exists: bool
+    plan_saved_current_branch_marker_exists: bool
+    plan_saved_current_branch_plan_number: int | None
     incremental_plan_marker_exists: bool
     objective_context_marker_exists: bool
     objective_id: int | None  # Objective issue number if marker exists
@@ -149,6 +162,8 @@ class HookInput:
         github_planning_enabled: bool = True,
         implement_now_marker_exists: bool = False,
         plan_saved_marker_exists: bool = False,
+        plan_saved_current_branch_marker_exists: bool = False,
+        plan_saved_current_branch_plan_number: int | None = None,
         incremental_plan_marker_exists: bool = False,
         objective_context_marker_exists: bool = False,
         objective_id: int | None = None,
@@ -167,6 +182,7 @@ class HookInput:
         - session_id: "test-session"
         - github_planning_enabled: True
         - All marker exists flags: False
+        - plan_saved_current_branch_plan_number: None
         - objective_issue: None
         - plan_file_path: None
         - plan_title: None
@@ -182,6 +198,8 @@ class HookInput:
             github_planning_enabled=github_planning_enabled,
             implement_now_marker_exists=implement_now_marker_exists,
             plan_saved_marker_exists=plan_saved_marker_exists,
+            plan_saved_current_branch_marker_exists=plan_saved_current_branch_marker_exists,
+            plan_saved_current_branch_plan_number=plan_saved_current_branch_plan_number,
             incremental_plan_marker_exists=incremental_plan_marker_exists,
             objective_context_marker_exists=objective_context_marker_exists,
             objective_id=objective_id,
@@ -204,6 +222,7 @@ class HookOutput:
     message: str
     delete_implement_now_marker: bool = False
     delete_plan_saved_marker: bool = False
+    delete_plan_saved_current_branch_marker: bool = False
     delete_incremental_plan_marker: bool = False
     delete_objective_context_marker: bool = False
 
@@ -335,22 +354,21 @@ def build_blocking_message(
 
     option_num = 1
     lines.append(
-        f'  {option_num}. "Create a plan PR on new branch" - Create a new branch, save plan as '
-        "draft PR, and stop. Does NOT proceed to implementation."
+        f'  {option_num}. "Save plan as draft PR" - Create a new branch, save plan as '
+        "draft PR, and stop."
+    )
+    option_num += 1
+    lines.append(
+        f'  {option_num}. "Implement here" - Implement directly on the current branch '
+        "without saving a plan PR."
     )
     option_num += 1
     if not branch_has_commits and current_branch not in ("master", "main"):
         lines.append(
-            f'  {option_num}. "Create a plan PR on the current branch" - Save plan as a PR on the '
-            "current branch and stop. Does NOT proceed to implementation."
+            f'  {option_num}. "Save plan on current branch" - Save plan as PR on the '
+            "current branch and stop."
         )
         option_num += 1
-    lines.append(
-        f'  {option_num}. "Just implement on the current branch without '
-        'creating a PR." - Implement directly on the current branch '
-        "without saving a plan PR."
-    )
-    option_num += 1
     lines.append(
         f'  {option_num}. "View/Edit the Plan" - Open plan in editor to '
         "review or modify before deciding."
@@ -361,7 +379,7 @@ def build_blocking_message(
             [
                 "",
                 f"⚠️  WARNING: Currently on '{current_branch}'. "
-                "We strongly discourage editing directly on the trunk branch. "
+                "We strongly discourage implementing directly on the trunk branch. "
                 "Consider saving the plan and implementing in a dedicated worktree instead.",
             ]
         )
@@ -371,28 +389,15 @@ def build_blocking_message(
     lines.extend(
         [
             "",
-            "If user chooses 'Create a plan PR on new branch':",
+            "If user chooses 'Save plan as draft PR':",
             f"  1. Run {save_cmd}",
-            "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
-            "     Stay in plan mode and let the user exit manually if desired.",
+            "  2. Call ExitPlanMode to end the planning session.",
         ]
     )
 
-    if not branch_has_commits and current_branch not in ("master", "main"):
-        lines.extend(
-            [
-                "",
-                "If user chooses 'Create a plan PR on the current branch':",
-                f"  1. Run {save_cmd} --current-branch",
-                "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
-                "     This converts the current branch into the plan PR branch",
-                "     instead of creating a new branch.",
-            ]
-        )
-
     implement_now_lines = [
         "",
-        "If user chooses 'Just implement on the current branch without creating a PR.':",
+        "If user chooses 'Implement here':",
         "  1. Create implement-now marker:",
         f"     erk exec marker create --session-id {session_id} \\",
         "       exit-plan-mode-hook.implement-now",
@@ -406,6 +411,18 @@ def build_blocking_message(
         "     Implement changes, run CI, and optionally 'erk pr submit' when done.",
     )
     lines.extend(implement_now_lines)
+
+    if not branch_has_commits and current_branch not in ("master", "main"):
+        lines.extend(
+            [
+                "",
+                "If user chooses 'Save plan on current branch':",
+                f"  1. Run {save_cmd} --current-branch",
+                "  2. Call ExitPlanMode to end the planning session.",
+                "     This converts the current branch into the plan PR branch",
+                "     instead of creating a new branch.",
+            ]
+        )
 
     if plan_file_path is not None:
         if is_terminal_editor(editor):
@@ -467,15 +484,53 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
             delete_incremental_plan_marker=True,
         )
 
+    # Plan-saved-current-branch marker present (user chose "Save plan on current branch")
+    # Block exit with implement-now prompt — .erk/impl-context/ is populated and ready
+    if hook_input.plan_saved_current_branch_marker_exists:
+        plan_num = hook_input.plan_saved_current_branch_plan_number
+        plan_label = f"#{plan_num}" if plan_num is not None else ""
+        session_id = hook_input.session_id
+        saved_msg_lines = [
+            f"Plan saved as PR {plan_label} on the current branch.",
+            ".erk/impl-context/ is populated and ready for implementation.",
+            "",
+            "Use AskUserQuestion to ask the user:",
+            f'  question: "Plan {plan_label} saved. Implement now?"',
+            '  header: "Implement?"',
+            "",
+            "Options:",
+            '  1. "Implement now" - Implement the plan on this branch.',
+            '  2. "Done" - End the session without implementing.',
+            "",
+            "If user chooses 'Implement now':",
+            "  1. Create implement-now marker:",
+            f"     erk exec marker create --session-id {session_id} \\",
+            "       exit-plan-mode-hook.implement-now",
+            "  2. Call ExitPlanMode",
+            "  3. After exiting plan mode, implement from .erk/impl-context/plan.md",
+            "",
+            "If user chooses 'Done':",
+            "  Session complete. Do NOT call ExitPlanMode again.",
+        ]
+        return HookOutput(
+            ExitAction.BLOCK,
+            "\n".join(saved_msg_lines),
+            delete_plan_saved_current_branch_marker=True,
+            delete_objective_context_marker=hook_input.objective_context_marker_exists,
+        )
+
     # Plan-saved marker present (user chose "Save to GitHub" / "Create a plan PR")
-    # IMPORTANT: Do NOT delete the marker - keep it so subsequent ExitPlanMode calls
-    # continue to block with "session complete" instead of prompting again
+    # Block exit to suppress "Ready to code?" dialog - planning session is complete
     if hook_input.plan_saved_marker_exists:
-        saved_msg = "✅ Plan PR already created. Session complete - no further action needed."
+        saved_msg = (
+            "✅ Plan PR saved. Planning session complete. "
+            "Do NOT call ExitPlanMode again — plan mode stays on "
+            "to prevent accidental edits. Session is done."
+        )
         return HookOutput(
             ExitAction.BLOCK,
             saved_msg,
-            delete_plan_saved_marker=False,
+            delete_plan_saved_marker=True,
             delete_objective_context_marker=hook_input.objective_context_marker_exists,
         )
 
@@ -537,6 +592,23 @@ def _get_plan_saved_marker_path(session_id: str, repo_root: Path) -> Path:
     """
     scratch_dir = get_scratch_dir(session_id, repo_root=repo_root)
     return scratch_dir / "exit-plan-mode-hook.plan-saved.marker"
+
+
+def _get_plan_saved_current_branch_marker_path(session_id: str, repo_root: Path) -> Path:
+    """Get plan-saved-current-branch marker path in .erk/scratch/sessions/<session_id>/.
+
+    This marker indicates the plan was saved on the current branch, so the
+    hook should offer to implement immediately rather than ending the session.
+
+    Args:
+        session_id: The session ID to build the path for
+        repo_root: Path to the git repository root
+
+    Returns:
+        Path to plan-saved-current-branch marker file
+    """
+    scratch_dir = get_scratch_dir(session_id, repo_root=repo_root)
+    return scratch_dir / "exit-plan-mode-hook.plan-saved-current-branch.marker"
 
 
 def _get_incremental_plan_marker_path(session_id: str, repo_root: Path) -> Path:
@@ -675,12 +747,21 @@ def _gather_inputs(
     # Determine marker existence
     implement_now_marker_exists = False
     plan_saved_marker_exists = False
+    plan_saved_current_branch_marker_exists = False
+    plan_saved_current_branch_plan_number: int | None = None
     incremental_plan_marker_exists = False
     objective_context_marker_exists = False
     objective_id: int | None = None
     if session_id is not None:
         implement_now_marker_exists = _get_implement_now_marker_path(session_id, repo_root).exists()
         plan_saved_marker_exists = _get_plan_saved_marker_path(session_id, repo_root).exists()
+        plan_saved_current_branch_marker_exists = _get_plan_saved_current_branch_marker_path(
+            session_id, repo_root
+        ).exists()
+        if plan_saved_current_branch_marker_exists:
+            plan_saved_current_branch_plan_number = read_plan_saved_current_branch_marker(
+                session_id, repo_root
+            )
         marker_path = _get_incremental_plan_marker_path(session_id, repo_root)
         incremental_plan_marker_exists = marker_path.exists()
         objective_context_marker_exists = _get_objective_context_marker_path(
@@ -711,6 +792,7 @@ def _gather_inputs(
         and not implement_now_marker_exists
         and not incremental_plan_marker_exists
         and not plan_saved_marker_exists
+        and not plan_saved_current_branch_marker_exists
     )
     # Get EDITOR env var for TUI detection
     editor: str | None = None
@@ -723,9 +805,13 @@ def _gather_inputs(
             int(plan_ref.plan_id) if plan_ref is not None and plan_ref.plan_id.isdigit() else None
         )
         editor = os.environ.get("EDITOR")
-        # Detect if branch has commits ahead of trunk
+        # Detect if branch has commits ahead of its parent
         trunk_branch = git.branch.detect_trunk_branch(repo_root)
-        commits_ahead = git.analysis.count_commits_ahead(repo_root, trunk_branch)
+        # Use Graphite stack parent if available, otherwise trunk
+        parent_branch = (
+            branch_manager.get_parent_branch(repo_root, current_branch) if current_branch else None
+        ) or trunk_branch
+        commits_ahead = git.analysis.count_commits_ahead(repo_root, parent_branch)
         branch_has_commits = commits_ahead > 0
         # Only lookup PR if we have a branch
         if current_branch is not None:
@@ -736,6 +822,8 @@ def _gather_inputs(
         github_planning_enabled=github_planning_enabled,
         implement_now_marker_exists=implement_now_marker_exists,
         plan_saved_marker_exists=plan_saved_marker_exists,
+        plan_saved_current_branch_marker_exists=plan_saved_current_branch_marker_exists,
+        plan_saved_current_branch_plan_number=plan_saved_current_branch_plan_number,
         incremental_plan_marker_exists=incremental_plan_marker_exists,
         objective_context_marker_exists=objective_context_marker_exists,
         objective_id=objective_id,
@@ -765,6 +853,9 @@ def _execute_result(
     if result.delete_plan_saved_marker and session_id:
         _get_plan_saved_marker_path(session_id, repo_root).unlink()
 
+    if result.delete_plan_saved_current_branch_marker and session_id:
+        _get_plan_saved_current_branch_marker_path(session_id, repo_root).unlink()
+
     if result.delete_incremental_plan_marker and session_id:
         _get_incremental_plan_marker_path(session_id, repo_root).unlink()
 
@@ -773,7 +864,11 @@ def _execute_result(
 
     # Snapshot plan whenever a plan exists and user made a decision
     # (implement-now or plan-saved, but NOT when blocking to prompt)
-    user_made_decision = result.delete_implement_now_marker or result.delete_plan_saved_marker
+    user_made_decision = (
+        result.delete_implement_now_marker
+        or result.delete_plan_saved_marker
+        or result.delete_plan_saved_current_branch_marker
+    )
     if hook_input.plan_file_path is not None and session_id is not None and user_made_decision:
         snapshot_plan_for_session(
             session_id=session_id,

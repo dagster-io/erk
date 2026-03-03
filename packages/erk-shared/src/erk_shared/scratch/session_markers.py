@@ -112,6 +112,54 @@ def create_plan_saved_branch_marker(session_id: str, repo_root: Path, branch_nam
     marker_file.write_text(branch_name, encoding="utf-8")
 
 
+def create_plan_saved_current_branch_marker(
+    session_id: str, repo_root: Path, plan_number: int
+) -> None:
+    """Create marker indicating plan was saved on the current branch.
+
+    Unlike the regular plan-saved marker (which signals "session complete"),
+    this marker signals that the plan was saved on the current branch and
+    .erk/impl-context/ is populated, so the user should be offered the
+    option to implement immediately.
+
+    Args:
+        session_id: The session ID for the scratch directory.
+        repo_root: The repository root path.
+        plan_number: The plan PR number.
+    """
+    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+    marker_file = marker_dir / "exit-plan-mode-hook.plan-saved-current-branch.marker"
+    marker_file.write_text(
+        f"{plan_number}\n"
+        "Created by: plan-save --current-branch\n"
+        "Trigger: Plan was saved on the current branch\n"
+        "Effect: Next ExitPlanMode call will be BLOCKED with implement-now prompt\n"
+        "Lifecycle: Deleted after being read by next hook invocation\n",
+        encoding="utf-8",
+    )
+
+
+def read_plan_saved_current_branch_marker(session_id: str, repo_root: Path) -> int | None:
+    """Read plan number from the plan-saved-current-branch marker.
+
+    Args:
+        session_id: The session ID for the scratch directory.
+        repo_root: The repository root path.
+
+    Returns:
+        The plan number if marker exists and first line is a valid integer, None otherwise.
+    """
+    marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
+    marker_file = marker_dir / "exit-plan-mode-hook.plan-saved-current-branch.marker"
+    if not marker_file.exists():
+        return None
+    content = marker_file.read_text(encoding="utf-8").strip()
+    first_line = content.split("\n")[0].strip()
+    if not first_line.isdigit():
+        return None
+    return int(first_line)
+
+
 def get_existing_saved_branch(session_id: str, repo_root: Path) -> str | None:
     """Check if this session already saved a plan and return the branch name.
 

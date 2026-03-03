@@ -766,3 +766,57 @@ def test_current_branch_sets_base_to_trunk(tmp_path: Path, monkeypatch: pytest.M
     # PR base should be trunk
     assert len(fake_github.created_prs) == 1
     assert fake_github.created_prs[0][3] == "master"
+
+
+def test_current_branch_writes_files_to_working_tree(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """--current-branch writes impl-context files to disk and stages them."""
+    fake_git = FakeGit(current_branches={tmp_path: "my-feature-branch"})
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save,
+        ["--format", "json", "--current-branch"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    # Files should exist on disk
+    plan_file = tmp_path / IMPL_CONTEXT_DIR / "plan.md"
+    ref_file = tmp_path / IMPL_CONTEXT_DIR / "ref.json"
+    assert plan_file.exists(), "plan.md should be written to working tree"
+    assert ref_file.exists(), "ref.json should be written to working tree"
+    assert "Feature Plan" in plan_file.read_text(encoding="utf-8")
+    # Files should be staged
+    assert f"{IMPL_CONTEXT_DIR}/plan.md" in fake_git.staged_files
+    assert f"{IMPL_CONTEXT_DIR}/ref.json" in fake_git.staged_files
+
+
+def test_current_branch_creates_current_branch_marker(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """--current-branch creates plan-saved-current-branch marker, not regular plan-saved."""
+    fake_git = FakeGit(current_branches={tmp_path: "my-feature-branch"})
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    runner = CliRunner()
+    session_id = "current-branch-session"
+
+    result = runner.invoke(
+        plan_save,
+        ["--format", "json", "--current-branch", "--session-id", session_id],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+    # Current-branch marker should exist
+    current_branch_marker = marker_dir / "exit-plan-mode-hook.plan-saved-current-branch.marker"
+    assert current_branch_marker.exists(), "plan-saved-current-branch marker should exist"
+    # Regular plan-saved marker should NOT exist
+    regular_marker = marker_dir / "exit-plan-mode-hook.plan-saved.marker"
+    assert not regular_marker.exists(), "regular plan-saved marker should NOT exist"
+    # Issue and branch markers should still exist
+    assert (marker_dir / "plan-saved-issue.marker").exists()
+    assert (marker_dir / "plan-saved-branch.marker").exists()
