@@ -112,7 +112,7 @@ select = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["erk", "erk_dev", "erk_shared", "erk_statusline"]
+known-first-party = ["erk", "erk_dev", "erk_mcp", "erk_shared", "erk_statusline"]
 
 [tool.ty.src]
 include = ["src", "packages/erk-dev/src", "packages/erk-shared/src", "packages/erk-statusline/src"]

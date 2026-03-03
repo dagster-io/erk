@@ -129,7 +129,7 @@ class RealGraphite(Graphite):
         while current in branch_info:
             ancestors.append(current)
             parent = branch_info[current]["parent"]
-            if parent is None or parent not in branch_info:
+            if not isinstance(parent, str) or parent not in branch_info:
                 break
             current = parent
 

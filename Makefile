@@ -1,4 +1,4 @@
-.PHONY: format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check
+.PHONY: format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check mcp mcp-dev
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -161,6 +161,14 @@ docs-deploy:
 
 pull_master:
 	git -C /Users/schrockn/code/erk pull origin master
+
+# === MCP Server ===
+
+mcp:
+	uv run --package erk-mcp erk-mcp
+
+mcp-dev:
+	uv run --package erk-mcp fastmcp dev inspector packages/erk-mcp/src/erk_mcp/server.py:mcp
 
 clear_impl_context:
 	rm -rf .impl
