@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Delete erkbot package"
+  "plan_id": "8658",
+  "url": "https://github.com/dagster-io/erk/pull/8658",
+  "created_at": "2026-03-03T05:26:41.990978",
+  "synced_at": "2026-03-03T05:26:41.990978",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
