@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Move `uv sync` outside VIRTUAL_ENV guard in activation scripts"
+}
