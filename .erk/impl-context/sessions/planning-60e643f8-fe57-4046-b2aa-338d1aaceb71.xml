@@ -1,0 +1,749 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>➜  erk git:(master) source "$(erk br co --new-slot --for-plan 8639 --script)" &amp;&amp; erk implement --dangerous -m s
+Using existing branch: plnd/add-implement-current-bran-03-02-1535
+✓ Assigned plnd/add-implement-current-bran-03-02-1535 to erk-slot-60
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-60/.envrc
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-60/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60
+-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60/.venv (3.13.1)
+Activated: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60
+direnv: export +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT ~PATH
+Prepared plan #8639 at /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-60
+Auto-detected impl-context at .erk/impl-context/plnd--add-implement-current-bran-03-02-1535
+Launching Claude...
+
+Instead of saying "using existing branch", in this case can we say that we are switching or checking out the plan branch? I want to make sure that the user knows that this is totally deliberate and expected 
+
+Feel free to provide your own suggestions </user>
+  <thinking>The user wants to change the message "Using existing branch: plnd/add-implement-current-bran-03-02-1535" to something clearer that communicates the branch already exists and we're deliberately checking it out/switching to it. Let me find where this message is generated in the codebase.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="11466" cache_read_input_tokens="19113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11466}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01QZkMiNWArTQ5kvyDsJo5J5">
+    <param name="description">Find "Using existing branch" message</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 305 chars]...I need to understand the full flow of `erk br co --new-slot --for-plan &lt;number&gt; --script`.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11466" cache_read_input_tokens="19113" output_tokens="295" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11466, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QZkMiNWArTQ5kvyDsJo5J5">
+Perfect! Now I have a comprehensive understanding. Let me create a summary document with the findings:
+
+## Summary: "Using existing branch" Message Flow
+
+I found the "Using existing branch" message in **two locations** within the codebase, both following the same pattern for handling `--for-plan` option:
+
+### 1. **`src/erk/cli/commands/branch/checkout_cmd.py` (Line 519)**
+
+```python
+# At line 518-523 in _branch_checkout_impl():
+if branch_exists_locally:
+    user_output(f"Using existing branch: {branch}")
+else:
+    ctx.git.remote.fetch_branch(repo.root, "origin", branch)
+    ctx.branch_manager.create_tracking_branch(repo.root, branch, f"origin/{branch}")
+    user_output(f"Created tracking branch: {branch}")
+```
+
+### 2. **`src/erk/cli/commands/branch/create_cmd.py` (Line 170)**
+
+```python
+# At line 169-177 in branch_create():
+if branch_exists_locally:
+    user_output(f"Using existing branch: {branch_name}")
+else:
+    # Branch only on remote — fetch and create local tracking branch
+    ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+    ctx.branch_manager.create_tracking_branch(
+        repo.root, branch_name, f"origin/{branch_name}"
+    )
+
+... [95 lines omitted] ...
+
+- Extract plan warnings (e.g., if plan is not OPEN)
+- Error if `--new-slot` was requested (can't create slot for existing branch)
+- Error handling with ambiguity resolution
+  </tool_result>
+  <thinking>Now I understand the flow. The message "Using existing branch" appears in two files:
+
+1. `src/erk/cli/commands/branch/checkout_cmd.py` (line 519)
+2. `src/erk/cli/commands/branch/create_cmd.py` (line 170)
+
+The user's scenario is `erk br co --for-plan 8639`, which goes through checkout_cmd.py. When the plan's branch already exists locally, it says "Using existing branch: {branch}". The user wants this to be clearer - communicating that we're deliberately switching to an existing plan branch.
+
+Let me read the specific code around these messages to propose a good replacement.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1929" cache_read_input_tokens="30579" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1929}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the relevant code to craft the right message.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1929" cache_read_input_tokens="30579" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1929}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019gC5rvYb5aTYh9AGFMsadx">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">505</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1929" cache_read_input_tokens="30579" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1929}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019gC5rvYb5aTYh9AGFMsadx">
+   505→    assert branch is not None
+   506→
+   507→    # If --for-plan, handle branch creation/tracking before checkout
+   508→    if setup is not None:
+   509→        trunk = ctx.git.branch.detect_trunk_branch(repo.root)
+   510→        if trunk is None:
+   511→            user_output("Error: Could not detect trunk branch.")
+   512→            raise SystemExit(1) from None
+   513→
+   514→        local_branches = ctx.git.branch.list_local_branches(repo.root)
+   515→        branch_exists_locally = branch in local_branches
+   516→
+   517→        # Plan branch was created by plan-save
+   518→        if branch_exists_locally:
+   519→            user_output(f"Using existing branch: {branch}")
+   520→        else:
+   521→            ctx.git.remote.fetch_branch(repo.root, "origin", branch)
+   522→            ctx.branch_manager.create_tracking_branch(repo.root, branch, f"origin/{branch}")
+   523→            user_output(f"Created tracking branch: {branch}")
+   524→        # Use base_ref_name from plan metadata (set by plan-save via the draft PR)
+   525→        # to determine the correct Graphite parent, instead of guessing from current branch
+   526→        base_ref = plan.metadata.get("base_ref_name") if plan is not None else None
+   527→        parent_branch = base_ref if isinstance(base_ref, str) else trunk
+   528→        # Defer track_branch until after worktree is created — for stacked plans
+   529→        # (parent != trunk), we need to rebase first so gt track succeeds
+   530→
+   531→    # Get all worktrees
+   532→    worktrees = ctx.git.worktree.list_worktrees(repo.root)
+   533→
+   534→    # Find worktrees containing the target branch
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UyXYU8U4d6Ks8RrwXGVQQo">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/branch/create_cmd.py</param>
+    <param name="offset">160</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1929" cache_read_input_tokens="30579" output_tokens="397" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1929, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UyXYU8U4d6Ks8RrwXGVQQo">
+   160→        user_output("Error: Could not detect trunk branch.")
+   161→        raise SystemExit(1) from None
+   162→
+   163→    # Check if branch already exists
+   164→    local_branches = ctx.git.branch.list_local_branches(repo.root)
+   165→    branch_exists_locally = branch_name in local_branches
+   166→
+   167→    if setup is not None:
+   168→        # Plan branch was created by plan-save, so it's expected to exist
+   169→        if branch_exists_locally:
+   170→            user_output(f"Using existing branch: {branch_name}")
+   171→        else:
+   172→            # Branch only on remote — fetch and create local tracking branch
+   173→            ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+   174→            ctx.branch_manager.create_tracking_branch(
+   175→                repo.root, branch_name, f"origin/{branch_name}"
+   176→            )
+   177→            user_output(f"Created tracking branch: {branch_name}")
+   178→        ctx.branch_manager.track_branch(repo.root, branch_name, trunk)
+   179→    else:
+   180→        # Standard path: branch must NOT already exist
+   181→        if branch_exists_locally:
+   182→            user_output(
+   183→                f"Error: Branch '{branch_name}' already exists.\n"
+   184→                "Use `erk br assign` to assign an existing branch to a slot."
+  </tool_result>
+  <thinking>Now I understand both locations. The comment on line 517/168 says "Plan branch was created by plan-save" which gives good context.
+
+For the checkout case (`erk br co --for-plan`), the user is checking out an existing plan branch. The message "Using existing branch" is ambiguous - it could sound like a fallback or warning. The user wants it to clearly communicate "we found your plan's branch and are checking it out."
+
+Some options:
+1. "Checking out plan branch: {branch}" 
+2. "Switching to plan branch: {branch}"
+3. "Found plan branch: {branch}" 
+
+
+4. "Resuming plan branch: {branch}"
+
+I think "Checking out plan branch: {branch}" is clean and clear for both contexts (checkout_cmd and create_cmd). But in create_cmd, "checking out" might not be the right verb since create_cmd is about creating branches. The real issue is that when `--for-plan` is used and the branch exists locally, the user needs to know this is expected behavior - the branch was created by plan-save, not a fallback. For checkout_cmd, "Checking out plan branch: {branch}" works well, but I need to figure out what makes sense for create_cmd.
+
+Looking back at the user's request, they specifically asked for "switching" or "checking out" language in the `erk br co` flow. The message appears before the actual checkout happens, so it's really just confirming we found the branch. Maybe "Found existing plan branch: {branch}" captures both the discovery and the intent better than a verb that implies action hasn't happened yet.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1317" cache_read_input_tokens="32508" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1317}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I can see both locations. The change is straightforward. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1317" cache_read_input_tokens="32508" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1317}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01KFV7dvwis8BF92qXHqoiZp">
+    <param name="file_path">/Users/schrockn/.claude/plans/vast-crafting-moler.md</param>
+    <param name="content"># Plan: Improve "Using existing branch" message for `--for-plan` flows
+
+## Context
+
+When r...[truncated 995 chars]...essage
+- Run `erk br create --for-plan &lt;plan-number&gt;` same scenario — confirm new message
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1317" cache_read_input_tokens="32508" output_tokens="1077" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1317, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KFV7dvwis8BF92qXHqoiZp">
+File created successfully at: /Users/schrockn/.claude/plans/vast-crafting-moler.md
+  </tool_result>
+  <assistant>Two one-line changes, both in the `--for-plan` code path where the branch existing locally is expected (it was created by `plan-save`).
+
+Proposed new message: **"Checking out plan branch: {branch}"** — makes it clear this is a deliberate action on a known plan branch, not a fallback.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1202" cache_read_input_tokens="33825" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1202}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_018Jz3asGokuAa12RYAfR5T6">
+    <param name="plan"># Plan: Improve "Using existing branch" message for `--for-plan` flows
+
+## Context
+
+When r...[truncated 995 chars]...essage
+- Run `erk br create --for-plan &lt;plan-number&gt;` same scenario — confirm new message
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1202" cache_read_input_tokens="33825" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1202}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018Jz3asGokuAa12RYAfR5T6">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/vast-crafting-moler.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Improve "Using existing branch" message for `--for-plan` flows
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR" (Recommended) - Create a draft PR with the plan and stop. Does NOT proceed to implementation.
+  2. "Skip PR and implement here" - Skip creating a PR, implement directly in current worktree (for small PR iterations that don't need PR tracking).
+  3. "View/Edit the plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Skip PR and implement here':
+  1. Create implement-now marker (skip PR creation):
+     erk exec marker create --session-id 60e643f8-fe57-4046-b2aa-338d1aaceb71 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Improve "Using existing branch" message for `--for-plan` flows
+
+## Context
+
+When running `erk br co --for-plan &lt;number&gt;`, the message "Using existing branch: {branch}" is ambiguous — it could sound like a fallback or warning. Since the branch was deliberately created by `plan-save`, the message should convey that we're intentionally checking it out.
+
+## Changes
+
+Two files, one-line change each:
+
+### 1. `src/erk/cli/commands/branch/checkout_cmd.py` (line 519)
+
+```python
+# Before:
+user_output(f"Using existing branch: {branch}")
+
+# After:
+user_output(f"Checking out plan branch: {branch}")
+```
+
+### 2. `src/erk/cli/commands/branch/create_cmd.py` (line 170)
+
+```python
+# Before:
+user_output(f"Using existing branch: {branch_name}")
+
+# After:
+user_output(f"Checking out plan branch: {branch_name}")
+```
+
+Both messages are gated behind `if setup is not None` (i.e., `--for-plan` was used), so this only affects plan workflows where the branch existing is expected behavior.
+
+## Verification
+
+- Run `erk br co --for-plan &lt;plan-number&gt;` for a plan whose branch already exists locally — confirm new message
+- Run `erk br create --for-plan &lt;plan-number&gt;` same scenario — confirm new message
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="19166" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19166}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01DR3Nxws3c7hwZa49RY5Bn7">
+    <param name="questions">[{'question': '📋 Plan: Improve "Using existing branch" message for `--for-plan` flows\nCur...[truncated 452 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="19166" cache_read_input_tokens="16613" output_tokens="592" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 19166, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DR3Nxws3c7hwZa49RY5Bn7">
+User has answered your questions: "📋 Plan: Improve "Using existing branch" message for `--for-plan` flows
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01DK18MHEqX4EwxvJAsGEyHB">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="787" cache_read_input_tokens="35779" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 787, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DK18MHEqX4EwxvJAsGEyHB">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="60e643f8-fe57-4046-b2aa-338d1aaceb71" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "60e643f8-fe57-4046-b2aa-338d1aaceb71" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "60e643f8-fe57-4046-b2aa-338d1aaceb71" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "60e643f8-fe57-4046-b2aa-338d1aaceb71" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "60e643f8-fe57-4046-b2aa-338d1aaceb71" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>Let me follow the plan-save skill instructions step by step.
+
+### Step 1: Parse Arguments
+No arguments were passed, so:
+- PLAN_TYPE_FLAG = empty
+- OBJECTIVE_FLAG = empty
+
+### Step 2: Generate Branch Slug
+The plan title is "Improve "Using existing branch" message for `--for-plan` flows"
+
+Branch slug: "improve-existing-branch-msg" — that's good, under 30 chars, descriptive.
+
+### Step 3: Generate Plan Summary
+I need a 2-3 sentence summary.
+
+### Step 4: Run the save command
+
+Let me proceed.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2701" cache_read_input_tokens="36566" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2701}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Step 1: Parse Arguments** — No flags passed. PLAN_TYPE_FLAG and OBJECTIVE_FLAG are both empty.
+
+**Step 2: Branch Slug** — From title "Improve 'Using existing branch' message for --for-plan flows":
+`BRANCH_SLUG = "improve-plan-branch-msg"`
+
+**Step 3: Plan Summary** — "Changes the ambiguous 'Using existing branch' message to 'Checking out plan branch' in the --for-plan checkout flow. This makes it clear the branch was deliberately created by plan-save and we are intentionally switching to it."
+
+**Step 4: Run save command.**</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2701" cache_read_input_tokens="36566" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2701}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DFM3hUApu7FerLtVnXT4Yo">
+    <param name="command">erk exec plan-save --format json --session-id="60e643f8-fe57-4046-b2aa-338d1aaceb71" --bra...[truncated 160 chars]...he branch was deliberately created by plan-save and we are intentionally switching to it."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2701" cache_read_input_tokens="36566" output_tokens="517" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2701, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DFM3hUApu7FerLtVnXT4Yo">
+{"success": true, "plan_number": 8640, "plan_url": "https://github.com/dagster-io/erk/pull/8640", "title": "[erk-plan] Plan: Improve \"Using existing branch\" message for `--for-plan` flows", "branch_name": "plnd/improve-plan-branch-msg-03-02-1541", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/60e643f8-fe57-4046-b2aa-338d1aaceb71/plan_snapshots/000001-c738c6c5"}
+  </tool_result>
+  <thinking>The save was successful. No objective_issue, so skip steps 5 and 6.
+
+Now Step 7: Display results.
+
+plan_number: 8640
+plan_url: https://github.com/dagster-io/erk/pull/8640
+title: [erk-plan] Plan: Improve "Using existing branch" message for `--for-plan` flows
+branch_name: plnd/improve-plan-branch-msg-03-02-1541
+
+On trunk? The user is on master, so yes, on trunk = true.
+
+Let me also do Step 5 (the second Step 5 - push planning session).</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="681" cache_read_input_tokens="39267" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 681}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AzRCMJBgHFGyqnXuATtqPU">
+    <param name="command">erk exec upload-impl-session --session-id "60e643f8-fe57-4046-b2aa-338d1aaceb71" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="681" cache_read_input_tokens="39267" output_tokens="301" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 681, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AzRCMJBgHFGyqnXuATtqPU">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan **"Improve "Using existing branch" message for `--for-plan` flows"** saved as draft PR **#8640**
+
+URL: https://github.com/dagster-io/erk/pull/8640
+
+**Next steps:**
+
+View PR: https://github.com/dagster-io/erk/pull/8640
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: `erk br co --new-slot --for-plan 8640`
+    Implement: `source "$(erk br co --new-slot --for-plan 8640 --script)" &amp;&amp; erk implement --dangerous`
+
+  Same slot:
+    Local: `erk br co --for-plan 8640`
+    Implement: `source "$(erk br co --for-plan 8640 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8640`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="39948" output_tokens="258" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 325, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "60e643f8-fe57-4046-b2aa-338d1aaceb71" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>
+
+The most recent plan in this conversation is **#8640**.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="41009" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 41009}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AgxjKCa2uWpGU3qX76j8yZ">
+    <param name="command">erk pr dispatch 8640</param>
+    <param name="description">Dispatch plan #8640 for remote implementation</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="41009" cache_read_input_tokens="0" output_tokens="117" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 41009, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AgxjKCa2uWpGU3qX76j8yZ">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8640...
+
+✓ All 1 plan(s) validated
+
+  #8640: [erk-plan] Plan: Improve "Using existing branch" message for `--for-plan` flows
+
+Dispatching PR #8640...
+
+Fetching plan content...
+Syncing branch: plnd/improve-plan-branch-msg-03-02-1541
+Committing plan to branch...
+✓ Branch pushed to remote
+
+Dispatching workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+  Waiting for workflow run... (attempt 3/11)
+  Waiting for workflow run... (attempt 4/11)
+  Waiting for workflow run... (attempt 5/11)
+  Waiting for workflow run... (attempt 6/11)
+✓ Workflow dispatched.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01MH5KGEJXJ12R4uM23UyUvV">
+    <param name="command">erk exec marker delete --session-id "60e643f8-fe57-4046-b2aa-338d1aaceb71" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker for this session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6680" cache_read_input_tokens="35027" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6680, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MH5KGEJXJ12R4uM23UyUvV">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Plan **#8640** dispatched successfully for remote implementation.
+
+- **Plan**: https://github.com/dagster-io/erk/pull/8640
+- **Workflow**: https://github.com/dagster-io/erk/actions/runs/22601049702</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="145" cache_read_input_tokens="41707" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 145}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+</session>
