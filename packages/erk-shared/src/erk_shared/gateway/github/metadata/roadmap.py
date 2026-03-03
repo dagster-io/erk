@@ -470,10 +470,7 @@ def parse_roadmap(body: str) -> tuple[list[RoadmapPhase], list[str]]:
 
     # Block exists — try to parse it
     roadmap_block = matching_blocks[0]
-    try:
-        steps = parse_roadmap_frontmatter(roadmap_block.body)
-    except ValueError:
-        steps = None
+    steps = parse_roadmap_frontmatter(roadmap_block.body)
 
     if steps is not None:
         phases = group_nodes_by_phase(steps)
