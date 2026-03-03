@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Add Active Workflow Run Indicator to Statusline"
+}
