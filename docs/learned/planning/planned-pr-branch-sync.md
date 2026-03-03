@@ -86,15 +86,9 @@ Both paths call the same three-step sequence: `fetch_branch()` → `create_track
 
 PR #7697 added the missing `pull_rebase()` call to the submit path. Without it, the submit path would attempt to push commits onto a branch that had diverged from remote, causing non-fast-forward push failures.
 
-## Issue-Based Plan Branching
+## Legacy Branch Naming
 
-For comparison, issue-based plans (legacy) generate fresh branch names:
-
-<!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py, setup_impl_from_pr -->
-
-Calls `generate_issue_branch_name()` with the issue number, plan title, timestamp, and optional objective ID. Branch names follow the pattern `P{issue}-{slugified-title}-{timestamp}`. This is the legacy format; current plans use `plnd/` prefix.
-
-If already on a branch matching the expected pattern (for legacy plans, `P{issue_number}-*`), the existing branch is reused.
+Legacy plans used the `P{number}-{slugified-title}-{timestamp}` branch pattern. Current plans use the `plnd/` prefix.
 
 ## Auto-Force Push for Plan Implementation Branches
 

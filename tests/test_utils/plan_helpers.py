@@ -244,9 +244,9 @@ def create_backend_from_issues(
 ) -> tuple[PlannedPRBackend, FakeGitHub, FakeGitHubIssues]:
     """Create a PlannedPRBackend from IssueInfo data.
 
-    Migration helper: converts issue-based test data to PR-based data
-    for PlannedPRBackend. The FakeGitHubIssues is also created so tests
-    that need comment access (same API for PRs and issues) still work.
+    Converts test data to PR-based data for PlannedPRBackend.
+    The FakeGitHubIssues is also created so tests that need comment
+    access (same API for PRs and issues) still work.
 
     Args:
         issues: Mapping of issue_number -> IssueInfo

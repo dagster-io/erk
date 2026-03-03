@@ -289,7 +289,7 @@ New branch would be: plnd/feature-01-15-1600
 Use existing branch 'plnd/feature-01-12-1430'? [Y/n]
 ```
 
-**Note:** Legacy issue-based plans may still use the `P{issue_number}-*` pattern. Current plans use the `plnd/` prefix.
+**Note:** Legacy plans may still use the `P{number}-*` pattern. Current plans use the `plnd/` prefix.
 
 **User options:**
 
@@ -1082,16 +1082,7 @@ See [Stacked PR Indicator](../tui/stacked-pr-indicator.md) for the full detectio
 
 ## Planned PR Lifecycle
 
-Planned-PR-backed plans differ from issue-based plans in their storage model and branch creation timing. Instead of a separate plan issue and implementation PR, planned-PR plans evolve through lifecycle stages within a single PR.
-
-**Key differences from issue-based plans:**
-
-| Aspect               | Issue-Based            | Planned PR                  |
-| -------------------- | ---------------------- | --------------------------- |
-| Plan storage         | GitHub issue body      | Draft PR body               |
-| Branch creation      | At implementation time | At plan-save time           |
-| Plan/PR relationship | Separate entities      | Same entity                 |
-| `Closes #N` footer   | Links plan issue to PR | Not used (self-referential) |
+Plans evolve through lifecycle stages within a single draft PR.
 
 **Lifecycle stages:** Plan Creation (Stage 1) → Implementation (Stage 2) → Review & Merge (Stage 3)
 

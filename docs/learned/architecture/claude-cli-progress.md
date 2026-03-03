@@ -176,7 +176,7 @@ for event in executor.execute_command_streaming(...):
 **Key Benefits**:
 
 - **Type safety**: Pattern matching with exhaustiveness checking
-- **No string conversion**: `PrNumberEvent.number` and `IssueNumberEvent.number` are proper `int`
+- **No string conversion**: `PrNumberEvent.number` and `PlanNumberEvent.number` are proper `int`
 - **Self-documenting**: `PrUrlEvent(url=...)` vs stringly-typed events
 - **IDE support**: Autocomplete and refactoring work correctly
 

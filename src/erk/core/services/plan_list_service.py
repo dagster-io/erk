@@ -370,10 +370,9 @@ class RealPlanListService(PlanListService):
             skip_workflow_runs: If True, skip fetching workflow runs (for performance)
             creator: Filter by creator username (e.g., "octocat"). If provided,
                 only issues created by this user are returned.
-            exclude_labels: Labels to exclude from results (unused for issue-based
-                plans — label filtering is handled server-side by GraphQL)
-            http_client: HTTP client (unused for issue-based plans, accepted
-                for interface consistency)
+            exclude_labels: Labels to exclude from results (label filtering
+                is handled server-side by GraphQL)
+            http_client: HTTP client (accepted for interface consistency)
 
         Returns:
             PlanListData containing plans, PR linkages, and workflow runs

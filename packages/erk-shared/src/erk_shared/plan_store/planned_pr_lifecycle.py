@@ -1,8 +1,6 @@
 """Draft PR Lifecycle.
 
-Draft PRs serve as the backing store for plans when the plan backend is
-"github-draft-pr". Unlike issue-based plans (where the plan issue and
-implementation PR are separate), planned-PR-backed plans evolve through
+Draft PRs serve as the backing store for plans. Plans evolve through
 lifecycle stages within a single PR.
 
 Branch Files
@@ -17,14 +15,10 @@ when implementation begins. ``ref.json`` carries plan reference metadata
 Stages
 ------
 
-0. One-Shot Dispatch (optional, UNIMPLEMENTED for planned_pr backend)
-   Currently one-shot uses issue-based storage: it creates a skeleton plan
-   issue, creates a draft PR referencing it, and dispatches to GitHub Actions
-   for remote planning + implementation. Adapting one-shot to the draft_pr
-   backend would mean the draft PR IS the plan (no separate issue), and the
-   workflow would update the PR body through stages 1-3 below.
-
-   Status: Not yet implemented. One-shot continues to use issue-based storage.
+0. One-Shot Dispatch (optional)
+   One-shot creates a draft PR plan and dispatches to GitHub Actions
+   for remote planning + implementation. The workflow updates the
+   PR body through stages 1-3 below.
 
 1. Plan Creation
    ``plan_save`` / ``PlannedPRBackend.create_plan()`` creates a draft PR.

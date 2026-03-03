@@ -2,7 +2,7 @@
 title: Plan ID Semantics
 read_when:
   - "calling github.get_pr() or github.get_issue() with a plan_id"
-  - "writing code that handles both issue-based and planned-PR plans"
+  - "writing code that handles plan IDs"
   - "debugging 404 errors when fetching plan metadata"
 tripwires:
   - action: "calling gh issue view with a plan_id from PlannedPRBackend"

@@ -48,7 +48,7 @@ from erk_shared.naming import (
     generate_planned_pr_branch_name,
     validate_plan_title,
 )
-from erk_shared.output.next_steps import format_planned_pr_next_steps_plain
+from erk_shared.output.next_steps import format_plan_next_steps_plain
 from erk_shared.plan_store.plan_content import extract_title_from_plan, resolve_plan_content
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 from erk_shared.plan_store.planned_pr_lifecycle import IMPL_CONTEXT_DIR
@@ -324,9 +324,7 @@ def _save_as_planned_pr(
         if snapshot_result is not None:
             click.echo(f"Archived: {snapshot_result.snapshot_dir}")
         click.echo()
-        click.echo(
-            format_planned_pr_next_steps_plain(plan_number, branch_name=branch_name, url=result.url)
-        )
+        click.echo(format_plan_next_steps_plain(plan_number, url=result.url))
     else:
         output_data: dict[str, str | int | bool | None] = {
             "success": True,

@@ -114,7 +114,7 @@ def validate_plan_format(
             error_msg = str(e).split("\n")[0]
             checks.append((False, f"plan-header validation failed: {error_msg}"))
 
-    # Detect format: draft-PR (body has original-plan section) vs issue-based (comment)
+    # Detect format: draft-PR (body has original-plan section)
     if has_original_plan_section(issue_body):
         # Draft-PR format: plan content is in the body
         plan_content = extract_plan_content(issue_body)

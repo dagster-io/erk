@@ -136,7 +136,7 @@ Rules triggered by matching actions in code.
 
 **grepping only for the error message text** → Read [Source Investigation Over Trial-and-Error](debugging-patterns.md) first. Also grep for function names extracted from the error (e.g., 'checkout_footer' from 'Missing checkout footer'). Validator function names are more stable search targets than error message strings.
 
-**hardcoding next-steps command strings instead of using the dataclass properties** → Read [Next Steps Output Formatting](next-steps-output.md) first. Use IssueNextSteps or PlannedPRNextSteps dataclasses from erk_shared.output.next_steps. They are the single source of truth for command formatting.
+**hardcoding next-steps command strings instead of using the dataclass properties** → Read [Next Steps Output Formatting](next-steps-output.md) first. Use PlanNextSteps dataclass from erk_shared.output.next_steps. It is the single source of truth for command formatting.
 
 **implementing PR body generation with checkout footers** → Read [Plan Lifecycle](lifecycle.md) first. HTML `<details>` tags will fail `has_checkout_footer_for_pr()` validation. Use plain text backtick format: `` `gh pr checkout <number>` ``
 

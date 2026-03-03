@@ -274,8 +274,7 @@ def assemble_pr_body(
         header: Existing PR header to preserve (may be empty)
         existing_pr_body: Full PR body captured before gt submit overwrites it.
             Used to extract plan-header metadata block. When the extracted block
-            is non-empty, uses original-plan details format instead of
-            issue-based plan details format.
+            is non-empty, uses original-plan details format.
         recovered_plan_header: Fallback plan-header block recovered from the plan
             backend, used when the plan-header is missing from existing_pr_body.
 

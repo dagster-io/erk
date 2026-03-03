@@ -1,7 +1,7 @@
 """Tests for setup-impl consolidated exec command.
 
 Tests the auto-detection paths: --file setup, no-plan-found error,
-and issue-based setup via _handle_issue_setup.
+and PR-based setup via _handle_issue_setup.
 """
 
 import json

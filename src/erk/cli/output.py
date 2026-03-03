@@ -22,9 +22,9 @@ if TYPE_CHECKING:
 from erk.core.prompt_executor import (
     CommandResult,
     ErrorEvent,
-    IssueNumberEvent,
     NoOutputEvent,
     NoTurnsEvent,
+    PlanNumberEvent,
     PrNumberEvent,
     ProcessErrorEvent,
     PromptExecutor,
@@ -219,7 +219,7 @@ def stream_command_with_feedback(
                 pr_number = num  # Already int, no conversion needed
             case PrTitleEvent(title=title):
                 pr_title = title
-            case IssueNumberEvent(number=num):
+            case PlanNumberEvent(number=num):
                 plan_number = num  # Already int, no conversion needed
             case ErrorEvent(message=msg):
                 click.echo(click.style(f"  ! {msg}", fg="red"), err=True)
@@ -355,7 +355,7 @@ def stream_rebase(
                 click.echo(click.style(f"   {msg}", fg="red"))
                 error_message = msg
                 success = False
-            case PrUrlEvent() | PrNumberEvent() | PrTitleEvent() | IssueNumberEvent():
+            case PrUrlEvent() | PrNumberEvent() | PrTitleEvent() | PlanNumberEvent():
                 pass  # PR metadata not relevant for rebase
 
     # Check for no-work-events failure mode
@@ -472,7 +472,7 @@ def stream_reconcile_with_remote(
                 click.echo(click.style(f"   {msg}", fg="red"))
                 error_message = msg
                 success = False
-            case PrUrlEvent() | PrNumberEvent() | PrTitleEvent() | IssueNumberEvent():
+            case PrUrlEvent() | PrNumberEvent() | PrTitleEvent() | PlanNumberEvent():
                 pass  # PR metadata not relevant for reconcile-with-remote
 
     # Check for no-work-events failure mode
