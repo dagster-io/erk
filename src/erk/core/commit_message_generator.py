@@ -9,17 +9,21 @@ packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md
 
 from __future__ import annotations
 
+import threading
+import time
 from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from erk.core.prompt_executor import PromptExecutor
+from erk.core.prompt_executor import PromptExecutor, PromptResult
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt
 
 if TYPE_CHECKING:
     from erk.core.plan_context_provider import PlanContext
+
+_PROGRESS_INTERVAL_SECONDS = 3.0
 
 # Feature flag: Use --system-prompt to replace Claude Code's default system prompt
 # When True: More deterministic, no Claude Code behaviors (passes system prompt separately)
@@ -129,42 +133,86 @@ class CommitMessageGenerator:
         # Build prompt with context
         yield ProgressEvent("Analyzing changes with Claude...")
 
-        # Execute prompt via Claude CLI
-        if USE_SYSTEM_PROMPT_REPLACEMENT:
-            # Use --system-prompt flag for more deterministic behavior
-            user_prompt = self._build_user_prompt(
-                diff_content=diff_content,
-                current_branch=request.current_branch,
-                parent_branch=request.parent_branch,
-                commit_messages=request.commit_messages,
-                plan_context=request.plan_context,
+        # Execute prompt via Claude CLI in a background thread so we can
+        # yield progress events while waiting.
+        result_holder: list[PromptResult] = []
+        error_holder: list[Exception] = []
+
+        def _run_prompt() -> None:
+            try:
+                if USE_SYSTEM_PROMPT_REPLACEMENT:
+                    user_prompt = self._build_user_prompt(
+                        diff_content=diff_content,
+                        current_branch=request.current_branch,
+                        parent_branch=request.parent_branch,
+                        commit_messages=request.commit_messages,
+                        plan_context=request.plan_context,
+                    )
+                    result_holder.append(
+                        self._executor.execute_prompt(
+                            user_prompt,
+                            model=self._model,
+                            tools=None,
+                            cwd=request.repo_root,
+                            system_prompt=get_commit_message_prompt(request.repo_root),
+                            dangerous=False,
+                        )
+                    )
+                else:
+                    legacy_prompt = self._build_prompt(
+                        diff_content=diff_content,
+                        current_branch=request.current_branch,
+                        parent_branch=request.parent_branch,
+                        repo_root=request.repo_root,
+                        commit_messages=request.commit_messages,
+                        plan_context=request.plan_context,
+                    )
+                    result_holder.append(
+                        self._executor.execute_prompt(
+                            legacy_prompt,
+                            model=self._model,
+                            tools=None,
+                            cwd=request.repo_root,
+                            system_prompt=None,
+                            dangerous=False,
+                        )
+                    )
+            except Exception as exc:  # noqa: BLE001
+                error_holder.append(exc)
+
+        thread = threading.Thread(target=_run_prompt, daemon=True)
+        start_time = time.monotonic()
+        thread.start()
+
+        while thread.is_alive():
+            thread.join(timeout=_PROGRESS_INTERVAL_SECONDS)
+            if thread.is_alive():
+                elapsed = int(time.monotonic() - start_time)
+                yield ProgressEvent(f"Still waiting... ({elapsed}s)")
+
+        if error_holder:
+            yield CompletionEvent(
+                CommitMessageResult(
+                    success=False,
+                    title=None,
+                    body=None,
+                    error_message=f"Prompt execution error: {error_holder[0]}",
+                )
             )
-            result = self._executor.execute_prompt(
-                user_prompt,
-                model=self._model,
-                tools=None,
-                cwd=request.repo_root,
-                system_prompt=get_commit_message_prompt(request.repo_root),
-                dangerous=False,
+            return
+
+        if not result_holder:
+            yield CompletionEvent(
+                CommitMessageResult(
+                    success=False,
+                    title=None,
+                    body=None,
+                    error_message="Prompt execution returned no result",
+                )
             )
-        else:
-            # Legacy: system prompt concatenated with user prompt
-            prompt = self._build_prompt(
-                diff_content=diff_content,
-                current_branch=request.current_branch,
-                parent_branch=request.parent_branch,
-                repo_root=request.repo_root,
-                commit_messages=request.commit_messages,
-                plan_context=request.plan_context,
-            )
-            result = self._executor.execute_prompt(
-                prompt,
-                model=self._model,
-                tools=None,
-                cwd=request.repo_root,
-                system_prompt=None,
-                dangerous=False,
-            )
+            return
+
+        result = result_holder[0]
 
         if not result.success:
             yield CompletionEvent(
