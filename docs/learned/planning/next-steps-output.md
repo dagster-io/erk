@@ -23,31 +23,31 @@ After saving a plan, erk displays next-steps commands to the user. The formattin
 
 For issue-based plans. Takes `plan_number: int` and `url: str`.
 
-| Property                     | Returns                                                                          |
-| ---------------------------- | -------------------------------------------------------------------------------- |
-| `view`                       | URL string                                                                       |
-| `checkout`                   | `erk br co --for-plan {N}`                                                       |
-| `dispatch`                   | `erk pr dispatch {N}`                                                            |
-| `checkout_new_slot`          | `erk br co --new-slot --for-plan {N}`                                            |
-| `implement_new_br`           | `source "$(erk br co --for-plan {N} --script)" && erk implement`                 |
-| `implement_new_br_dangerous` | `source "$(erk br co --for-plan {N} --script)" && erk implement -d`              |
-| `implement_new_wt`           | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement`      |
-| `implement_new_wt_dangerous` | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement -d`   |
+| Property                     | Returns                                                                        |
+| ---------------------------- | ------------------------------------------------------------------------------ |
+| `view`                       | URL string                                                                     |
+| `checkout`                   | `erk br co --for-plan {N}`                                                     |
+| `dispatch`                   | `erk pr dispatch {N}`                                                          |
+| `checkout_new_slot`          | `erk br co --new-slot --for-plan {N}`                                          |
+| `implement_new_br`           | `source "$(erk br co --for-plan {N} --script)" && erk implement`               |
+| `implement_new_br_dangerous` | `source "$(erk br co --for-plan {N} --script)" && erk implement -d`            |
+| `implement_new_wt`           | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement`    |
+| `implement_new_wt_dangerous` | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement -d` |
 
 ### `PlannedPRNextSteps`
 
 For draft-PR plans. Takes `pr_number: int`, `branch_name: str`, and `url: str`.
 
-| Property                     | Returns                                                                          |
-| ---------------------------- | -------------------------------------------------------------------------------- |
-| `view`                       | URL string                                                                       |
-| `checkout`                   | `erk br co --for-plan {N}`                                                       |
-| `dispatch`                   | `erk pr dispatch {N}`                                                            |
-| `checkout_new_slot`          | `erk br co --new-slot --for-plan {N}`                                            |
-| `implement_new_br`           | `source "$(erk br co --for-plan {N} --script)" && erk implement`                 |
-| `implement_new_br_dangerous` | `source "$(erk br co --for-plan {N} --script)" && erk implement -d`              |
-| `implement_new_wt`           | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement`      |
-| `implement_new_wt_dangerous` | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement -d`   |
+| Property                     | Returns                                                                        |
+| ---------------------------- | ------------------------------------------------------------------------------ |
+| `view`                       | URL string                                                                     |
+| `checkout`                   | `erk br co --for-plan {N}`                                                     |
+| `dispatch`                   | `erk pr dispatch {N}`                                                          |
+| `checkout_new_slot`          | `erk br co --new-slot --for-plan {N}`                                          |
+| `implement_new_br`           | `source "$(erk br co --for-plan {N} --script)" && erk implement`               |
+| `implement_new_br_dangerous` | `source "$(erk br co --for-plan {N} --script)" && erk implement -d`            |
+| `implement_new_wt`           | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement`    |
+| `implement_new_wt_dangerous` | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement -d` |
 
 ## Hierarchical Output Format
 
