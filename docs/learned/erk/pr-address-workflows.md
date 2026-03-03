@@ -101,6 +101,32 @@ The git push updates the PR, but doesn't update the issue. Running `erk exec pla
 
 See [PR-Based Plan Review Workflow](../planning/pr-review-workflow.md) for the complete plan review process.
 
+### Plan File Mode
+
+When the PR's diff consists of a git-tracked `.erk/impl-context/plan.md`, `/erk:pr-address` automatically enters **Plan File Mode**. This mode handles feedback on plan-only PRs (created by the plan save workflow).
+
+#### How it's triggered
+
+<!-- Source: .claude/commands/erk/pr-address.md, Phase 0 section -->
+
+Phase 0 uses a file-based detection check (see Phase 0 in `pr-address.md`) to determine if `.erk/impl-context/plan.md` is git-tracked. If the file is tracked, Plan File Mode activates. This check runs after the `erk-plan-review` label check, so label-based Plan Review Mode takes priority if both conditions are present.
+
+See [Phase 0 Detection Pattern](../architecture/phase-zero-detection-pattern.md) for the detection mechanism.
+
+#### How it differs from Plan Review Mode
+
+| Aspect             | Plan Review Mode                    | Plan File Mode                          |
+| ------------------ | ----------------------------------- | --------------------------------------- |
+| **Trigger**        | `erk-plan-review` label             | Git-tracked `.erk/impl-context/plan.md` |
+| **File modified**  | `PLAN-REVIEW-{issue}.md`            | `.erk/impl-context/plan.md`             |
+| **Sync mechanism** | Git push + plan sync to issue       | Git push only (no issue sync)           |
+| **PR description** | Updated via `update-pr-description` | Skipped (plan PRs have own format)      |
+| **Push method**    | Graphite submit                     | `git push` directly                     |
+
+#### Behavioral constraint
+
+The key constraint in Plan File Mode: all feedback is interpreted as "modify the plan text". When a reviewer says "add a step for X", you add text to the plan _describing_ step X — you do NOT actually implement X.
+
 ## Remote Workflow: erk launch pr-address
 
 The `erk launch pr-address` command triggers a GitHub Actions workflow to address comments without local checkout.

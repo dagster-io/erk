@@ -23,11 +23,103 @@ Fetches unresolved PR review comments AND PR discussion comments from the curren
 
 ## Agent Instructions
 
+> **Plan mode**: If plan mode is active, exit it first (press `Escape`). This command manages its own execution flow and needs to make edits directly.
+
 > **Prerequisite**: Load `pr-operations` skill first for command reference.
 
 > **CRITICAL: Use ONLY `erk exec` Commands**
 >
 > See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+### Phase 0: Mode Detection
+
+Determine the execution mode before any work begins:
+
+1. **Check for `erk-plan-review` label**:
+
+   ```bash
+   gh pr view --json labels -q '.labels[].name' | grep -q '^erk-plan-review$'
+   ```
+
+   If found → **Plan Review Mode** (existing behavior, see Plan Review Mode section in pr-address-workflows docs)
+
+2. **Check if `.erk/impl-context/plan.md` is git-tracked**:
+
+   ```bash
+   git ls-files --error-unmatch .erk/impl-context/plan.md >/dev/null 2>&1
+   ```
+
+   If found → **Plan File Mode** (see below — skip Phases 1-6 entirely)
+
+3. **Neither** → **Code Review Mode** (continue to Phase 1)
+
+---
+
+### Plan File Mode
+
+> **CRITICAL**: In Plan File Mode, you are editing a _document_ — the plan. When a reviewer says "make the language about X more emphatic" or "add a step for Y", you modify the plan _text_. You do NOT make changes to any files described in the plan.
+
+This mode activates when `.erk/impl-context/plan.md` is git-tracked (plan-only PRs). It is a **complete alternative flow** — Phases 1-6 are skipped entirely.
+
+#### PF-1: Classify Feedback
+
+Use the same Task-based classifier as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr <number> if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Handle errors and empty comments the same way as Phase 1.
+
+#### PF-2: Display Plan
+
+Show the batched execution plan from the classifier output, same format as Phase 2.
+
+#### PF-3: Execute by Batch
+
+For each batch, follow the same structure as Phase 3 with these constraints:
+
+- **ONLY edit `.erk/impl-context/plan.md`** (and `ref.json` if feedback targets it)
+- **Interpret all feedback as "modify the plan text"** — NEVER execute changes the plan describes
+- If a reviewer says "add a step to do X", add text to the plan describing step X. Do NOT actually do X.
+- Use `git add -f .erk/impl-context/plan.md` for commits (directory is gitignored)
+
+Commit messages follow the same batch format:
+
+```bash
+git add -f .erk/impl-context/plan.md
+git commit -m "Address plan review comments (batch N/M)
+
+- <summary of comment 1>
+- <summary of comment 2>"
+```
+
+#### PF-4: Resolve Threads
+
+Same as Phase 4 — resolve all threads via `erk exec resolve-review-threads`.
+
+#### PF-5: Push
+
+Push directly — plan PRs don't use graphite submit:
+
+```bash
+git push
+```
+
+#### PF-6: Done
+
+Skip `update-pr-description` and `upload-impl-session` — plan PRs have their own formatting and lifecycle.
+
+Report the final summary in the same format as Phase 4's final summary, then stop.
+
+---
 
 ### Phase 1: Classify Feedback
 

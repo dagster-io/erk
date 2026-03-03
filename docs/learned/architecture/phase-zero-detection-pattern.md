@@ -45,7 +45,21 @@ This creates a decision tree at the entry point rather than conditionals scatter
 
 <!-- Source: .claude/commands/erk/pr-address.md, Phase 0 section -->
 
-The `/erk:pr-address` command uses Phase 0 detection to determine which workflow to follow based on PR labels. Phase 0 checks for mode-determining labels and branches the entire execution flow accordingly.
+The `/erk:pr-address` command uses Phase 0 detection with a two-step cascade to determine which workflow to follow:
+
+1. **Label-based detection** — checks for `erk-plan-review` label → Plan Review Mode
+2. **File-based detection** — checks if `.erk/impl-context/plan.md` is git-tracked → Plan File Mode
+3. **Default** → Code Review Mode (Phases 1-6)
+
+### Label-Based: Plan Review Mode
+
+PR labels applied by the plan review workflow signal that the PR is a plan review. Detection uses `gh pr view --json labels`.
+
+### File-Based: Plan File Mode
+
+Plan-only PRs (created by the plan save workflow) have `.erk/impl-context/plan.md` committed to the branch. Detection uses `git ls-files --error-unmatch`.
+
+This is a distinct mode from Plan Review Mode — it targets a different file (`.erk/impl-context/plan.md` vs `PLAN-REVIEW-{issue}.md`) and uses a simpler push workflow (no issue sync, no graphite submit).
 
 ### Why This Works
 
@@ -54,6 +68,8 @@ The `/erk:pr-address` command uses Phase 0 detection to determine which workflow
 **Complete separation**: The command document has distinct sections for each mode. Anyone reading the command knows exactly which phases run in which mode without tracking conditionals.
 
 **No mode leakage**: Each mode's phases never see another mode's context or logic.
+
+**Ordered cascade**: Label check runs first (higher priority), then file check, then default. The order matters because a PR could theoretically match both, but label-based mode is the intended signal from the plan review workflow.
 
 ## Detection Mechanisms
 
