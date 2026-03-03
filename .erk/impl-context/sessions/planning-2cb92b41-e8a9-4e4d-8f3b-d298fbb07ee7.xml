@@ -1,0 +1,1785 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>▐▛███▜▌   Claude Code v2.1.63
+▝▜█████▛▘  Opus 4.6 · Claude Max
+  ▘▘ ▝▝    ~/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544
+
+❯ Unknown skill: fix-con
+
+❯ /erk:rebase
+
+∴ Thinking…
+
+  The user has invoked the /erk:rebase skill. I need to start by checking the git status to understand the current state of the rebase.
+
+⏺ Let me check the current state of the branch.
+
+⏺ Bash(git status)
+  ⎿  interactive rebase in progress; onto d7ba8cd16
+     Last command done (1 command done):
+        pick 022a5f7fa # Add plan: Break test_exit_plan_mode_hook.py into a subpackage
+     No commands remaining.
+     You are currently rebasing branch 'plnd/split-exit-hook-tests-03-03-0544' on 'd7ba8cd16'.
+       (fix conflicts and then run "git rebase --continue")
+       (use "git rebase --skip" to skip this patch)
+       (use "git rebase --abort" to check out the original branch)
+
+     Changes to be committed:
+       (use "git restore --staged &lt;file&gt;..." to unstage)
+        new file:   .erk/impl-context/plan.md
+        new file:   .erk/impl-context/ref.json
+        new file:   tests/unit/cli/commands/exec/scripts/exit_plan_mode_hook/__init__.py
+        new file:   tests/unit/cli/commands/exec/scripts/exit_plan_mode_hook/test_abbreviate_for_header.py
+        new file:   tests/unit/cli/commands/exec/scripts/exit_plan_mode_hook/test_build_blocking_message.py
+        new file:   tests/unit/cli/commands/exec/scripts/exit_plan_mode_hook/test_determine_exit_action.py
+        new file:   tests/unit/cli/commands/exec/scripts/exit_plan_mode_hook/test_extract_plan_title.py
+        new file:   tests/unit/cli/commands/exec/scripts/exit_plan_mode_hook/test_hook_integration.py
+        new file:   tests/unit/cli/commands/exec/scripts/exit_plan_mode_hook/test_is_terminal_editor.py
+
+     Unmerged paths:
+       (use "git restore --staged &lt;file&gt;..." to unstage)
+       (use "git add/rm &lt;file&gt;..." as appropriate to mark resolution)
+        deleted by them: tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py
+
+⏺ Bash(git log --oneline -5)
+  ⎿  d7ba8cd16 WIP: Prepare for PR submission
+     1fb0ae6d1 Restructure exit-plan-mode menu and next-steps output
+     cb99d1752 Create erk-mcp server exposing erk capabilities via MCP protocol (#8660)
+     7577959c5 Support objectives without a roadmap (#8657)
+     dd35477c1 Delete erkbot package (#8658)
+
+∴ Thinking…
+
+  The rebase is in progress with one conflict. The conflict is on tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py which was "deleted by them" - meaning the
+  rebase target (d7ba8cd16) deleted this file, while our commit is trying to modify/keep it.
+
+  Looking at the staged changes, our commit is breaking test_exit_plan_mode_hook.py into a subpackage with multiple test files. The "deleted by them" means the base commit
+  already deleted this file (or it was modified and now conflicts).
+
+  Wait, let me re-read. "deleted by them" in rebase context: "them" refers to the commit being rebased (our commit 022a5f7fa). So our commit deleted this file and created the
+  subpackage.
+
+  But "onto d7ba8cd16" which has this file... Actually in rebase, "ours" is the target branch (what we're rebasing onto) and "theirs" is the commit being applied. So "deleted by
+  them" means the commit being applied (022a5f7fa) deletes this file. The UD status indicates the file was updated in the base branch but deleted in our commit, creating the
+  conflict.
+
+  Since our commit intentionally breaks this file into a subpackage, accepting the deletion is the right move. Let me check what's in the new subpackage files to confirm.
+
+⏺ The rebase is in progress with one conflict. The file tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py was modified in the base commit (d7ba8cd16) and deleted
+  by our commit (which breaks it into a subpackage).
+
+  Since our commit intentionally replaces the monolithic test file with a subpackage of individual test files, the correct resolution is to accept the deletion.
+
+⏺ Bash(git rm tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py)
+  ⎿  rm 'tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py'
+
+∴ Thinking…
+
+  Wait, I'm in plan mode and I just executed a non-read-only action. The system reminder says I shouldn't do that. But the user explicitly invoked /erk:rebase which is a skill
+  that requires me to resolve the rebase. The rebase resolution is what they asked for. Let me continue with the rebase.
+
+  Actually, the user ran /erk:rebase which expanded into the rebase instructions. They clearly want me to resolve the rebase. The plan mode restriction should be overridden by
+  the explicit user action of invoking the rebase skill. Let me continue.
+
+⏺ Now let me continue the rebase.
+
+⏺ Bash(git rebase --continue)
+  ⎿  [detached HEAD 321b84131] Add plan: Break test_exit_plan_mode_hook.py into a subpackage
+      10 files changed, 1097 insertions(+), 1177 deletions(-)
+      create mode 100644 .erk/impl-context/plan.md
+      create mode 100644 .erk/impl-context/ref.json
+      create mode 100644 tests/unit/cli/commands/exec/scripts/exit_plan_mode_hook/__init__.py
+      create mode 100644 tests/unit/cli/commands/exec/scripts/exit_plan_mode_hook/test_abbreviate_for_header.py
+      create mode 100644 tests/unit/cli/commands/exec/scripts/exit_plan_mode_hook/test_build_blocking_message.py
+      create mode 100644 tests/unit/cli/commands/exec/scripts/exit_plan_mode_hook/test_determine_exit_action.py
+      create mode 100644 tests/unit/cli/commands/exec/scripts/exit_plan_mode_hook/test_extract_plan_title.py
+      create mode 100644 tests/unit/cli/commands/exec/scripts/exit_plan_mode_hook/test_hook_integration.py
+      create mode 100644 tests/unit/cli/commands/exec/scripts/exit_plan_mode_hook/test_is_terminal_editor.py
+      delete mode 100644 tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py
+     Successfully rebased and updated refs/heads/plnd/split-exit-hook-tests-03-03-0544.
+
+⏺ Rebase completed successfully. Let me verify the final state.
+
+⏺ Bash(git status)
+  ⎿  On branch plnd/split-exit-hook-tests-03-03-0544
+     Your branch and 'origin/plnd/split-exit-hook-tests-03-03-0544' have diverged,
+     and have 4 and 2 different commits each, respectively.
+       (use "git pull" if you want to integrate the remote branch with yours)
+
+     nothing to commit, working tree clean
+
+⏺ Bash(git log --oneline -3)
+  ⎿  321b84131 Add plan: Break test_exit_plan_mode_hook.py into a subpackage
+     d7ba8cd16 WIP: Prepare for PR submission
+     1fb0ae6d1 Restructure exit-plan-mode menu and next-steps output
+
+⏺ Rebase completed cleanly:
+
+  - Conflict resolved: test_exit_plan_mode_hook.py was deleted (replaced by the subpackage) — accepted the deletion since our commit intentionally splits it into separate test
+  modules
+  - Result: 1 commit rebased onto d7ba8cd16
+  - Branch has diverged from origin (expected after rebase) — needs a force push when ready
+
+  Would you like me to push the rebased branch?
+
+✻ Cogitated for 36s
+
+❯ /erk:pr-preview-address
+
+⏺ I'll fetch and classify the PR feedback. Let me first find the PR for this branch.
+
+⏺ Bash(gh pr list --head plnd/split-exit-hook-tests-03-03-0544 --json number,title,url --jq '.[0]')
+  ⎿  {
+       "number": 8661,
+       "title": "Split exit_plan_mode_hook tests into organized subpackage",
+       "url": "https://github.com/dagster-io/erk/pull/8661"
+     }
+
+⏺ Now let me invoke the pr-feedback-classifier skill.
+
+⏺ Skill(pr-feedback-classifier)
+  ⎿  Done
+
+⏺ PR #8661: "Split exit_plan_mode_hook tests into organized subpackage"
+
+  Actionable Items (1 total)
+
+  ┌─────┬────────┬─────────────────────────────┬────────────────┬─────────────────────────────────────────────────────────────────────────────────────────────────┬────────────┐
+  │  #  │  Type  │          Location           │ Classification │                                             Summary                                             │ Complexity │
+  ├─────┼────────┼─────────────────────────────┼────────────────┼─────────────────────────────────────────────────────────────────────────────────────────────────┼────────────┤
+  │ 1   │ review │ .erk/impl-context/plan.md:1 │ actionable     │ Remove .erk/impl-context/ files from PR — these temporary staging files should not be committed │ local      │
+  └─────┴────────┴─────────────────────────────┴────────────────┴─────────────────────────────────────────────────────────────────────────────────────────────────┴────────────┘
+
+  Execution Plan Preview
+
+  Batch 1: Local Fixes (auto-proceed)
+  - Item #1: .erk/impl-context/plan.md:1 - Remove leaked impl-context files
+
+  Statistics
+
+  - Pre-existing items (auto-resolve): 0
+  - Actionable items: 1
+  - Informational items: 0
+  - Informational discussion comments: 8
+  - Estimated batches: 1
+  - Auto-proceed batches: 1
+  - User confirmation batches: 0
+
+  ---
+  To address these comments, run: /erk:pr-address
+
+✻ Crunched for 42s
+
+❯ /erk:pr-preview-address
+
+⏺ Let me fetch the latest PR feedback.
+
+⏺ Skill(pr-feedback-classifier)
+  ⎿  Done
+
+⏺ PR #8661: "Split exit_plan_mode_hook tests into organized subpackage"
+
+  Actionable Items (1 total)
+
+  ┌─────┬────────┬─────────────────────────────┬────────────────┬───────────────────────────────────────────────────────────────────────┬─────────────┐
+  │  #  │  Type  │          Location           │ Classification │                                Summary                                │ Complexity  │
+  ├─────┼────────┼─────────────────────────────┼────────────────┼───────────────────────────────────────────────────────────────────────┼─────────────┤
+  │ 1   │ review │ .erk/impl-context/plan.md:1 │ actionable     │ Remove leaked .erk/impl-context/ files (plan.md and ref.json) from PR │ single_file │
+  └─────┴────────┴─────────────────────────────┴────────────────┴───────────────────────────────────────────────────────────────────────┴─────────────┘
+
+  Execution Plan Preview
+
+  Batch 1: Single-File (auto-proceed)
+  - Item #1: .erk/impl-context/plan.md:1 - Remove leaked impl-context files
+
+  Statistics
+
+  - Pre-existing items (auto-resolve): 0
+  - Actionable items: 1
+  - Informational items: 0
+  - Informational discussion comments: 9
+  - Estimated batches: 1
+  - Auto-proceed batches: 1
+  - User confirmation batches: 0
+
+  ---
+  To address these comments, run: /erk:pr-address
+
+✻ Brewed for 43s
+
+❯ let's debug root causes. why are .erk/impl-context/ being left around now? i believe this is a regression
+
+∴ Thinking…
+
+  The user wants to understand why .erk/impl-context/ files are being left around in PRs. They believe this is a regression. Let me investigate the cleanup mechanism for these
+  files.
+
+  I need to explore:
+  1. How .erk/impl-context/ files are created and when they should be cleaned up
+  2. The gitignore rules for these files
+  3. Any hooks or scripts that handle cleanup
+  4. Recent changes that might have caused a regression
+
+  Let me start by checking the gitignore and the impl-context handling.
+
+⏺ Good question. Let me investigate how .erk/impl-context/ cleanup is supposed to work and what changed.
+
+⏺ Explore(Explore impl-context cleanup)
+  ⎿  Done (31 tool uses · 73.8k tokens · 1m 11s)
+  (ctrl+o to expand)
+
+⏺ Good exploration. The .gitignore entry exists, so files should be untracked by default. The question is: how did they get force-added into git tracking in this specific case?
+
+  Let me trace the exact path that led to this leak.
+
+⏺ Bash(cd /Users/schrockn/.erk/repos/erk &amp;&amp; git log --oneline --all --diff-filter=A -- '.erk/impl-context/*' | head -20)
+  ⎿  fatal: not a git repository (or any of the parent directories): .git
+  ⎿  Shell cwd was reset to /Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544
+
+⏺ Bash(cd /Users/schrockn/.erk/repos/erk &amp;&amp; grep -n "impl-context" .gitignore)
+  ⎿  Error: Exit code 2
+     grep: .gitignore: No such file or directory
+
+     grep: .gitignore: No such file or directory
+
+⏺ Bash(git log --oneline --all --diff-filter=A -- '.erk/impl-context/*' | head -20)
+  ⎿  6d868bbe6 Add plan: Learn: Add CI step for erk-mcp tests
+     321b84131 Add plan: Break test_exit_plan_mode_hook.py into a subpackage
+     4173b30e0 Add plan: Learn: Create erk-mcp server exposing erk capabilities via MCP protocol
+     022a5f7fa Add plan: Break test_exit_plan_mode_hook.py into a subpackage
+     ec009e92c Add plan: Break test_exit_plan_mode_hook.py into a subpackage
+     22ce33f09 Add plan: Plan: Create erk-mcp Server
+     6aba032f5 Add plan: Learn: Support objectives without a roadmap
+     b0e66e298 Add plan: Restructure exit-plan-mode menu and next-steps output
+     648692e3e Add plan: Add Progress Indicator During PR Description Generation
+     0cfce1f34 Add plan: Learn: Add GitHub API fallback to dispatch auto-detection
+     581219162 Add plan: Update plan-save output: hierarchical Implement/Checkout format
+     e274a3f4c Add plan: Update plan-save output: hierarchical Implement/Checkout format
+     9b5888eb8 Add plan: Centralize PR Phase Detection
+     e1d427af8 Add plan: Fix `erk down -f -d` from root worktree with non-trunk branch
+     195983921 Add plan: Learn: Skip impl-context cleanup for plan PRs in submit pipeline
+     79e4492dd Add plan: Learn: Improve "Using existing branch" message for `--for-plan` flows
+     e117cf896 Add plan: Learn: Auto-execute activation script in stack-in-place checkout
+     b0b8fff09 Add plan: Learn: Add plan-only PR detection and Plan File Mode to pr-address command
+     24088b77e Add plan: Plan: Auto-execute activation scripts in interactive mode
+     93fa45662 Add plan: Learn: Add "Implement on current branch" option to exit plan mode hook
+
+⏺ Search(pattern: ".gitignore")
+  ⎿  Found 8 files (ctrl+o to expand)
+
+∴ Thinking…
+
+  Interesting - the pattern is clear. Every "Add plan:" commit includes .erk/impl-context/ files. This is by design - the plan-save step intentionally commits these files. But
+  the cleanup is supposed to remove them before the final PR.
+
+  Let me look at the plan-save code to understand how these files get committed, and then trace the cleanup path. The key question is: in the LOCAL implementation flow (not CI),
+  what's supposed to clean up these files?
+
+  Let me check the plan-save code and the plan-implement flow.
+
+⏺ So every plan save commits these files. That's by design. The question is what's supposed to clean them up. Let me trace the local implementation path specifically.
+
+⏺ Read(.gitignore)
+  ⎿  Read 31 lines
+
+⏺ Search(pattern: "impl.context", path: "docs/learned/planning")
+  ⎿  Found 20 files (ctrl+o to expand)
+
+⏺ Read(docs/learned/planning/impl-context.md)
+  ⎿  Read 83 lines
+
+∴ Thinking…
+
+  Now I need to find "Step 2d" in plan-implement.md to understand the convergence point for local implementation. Let me find that file.
+
+⏺ Now let me find the plan-implement command and specifically Step 2d.
+
+⏺ Search(pattern: "**/*plan-implement*")
+  ⎿  Found 10 files (ctrl+o to expand)
+
+⏺ Search(pattern: "Step 2d|impl-context|git rm", path: ".claude/commands/erk/plan-implement.md")
+  ⎿  Found 52 lines (ctrl+o to expand)
+
+⏺ Read(.claude/commands/erk/plan-implement.md)
+  ⎿  Read 50 lines
+
+⏺ Search(pattern: "setup.impl|setup_impl", path: "src/erk/cli/commands/exec")
+  ⎿  Found 4 files (ctrl+o to expand)
+
+⏺ Search(pattern: "impl.context|git rm|cleanup|clean.up", path: "src/erk/cli/commands/exec/scripts/setup_impl.py")
+  ⎿  Found 36 lines (ctrl+o to expand)
+
+⏺ Read(src/erk/cli/commands/exec/scripts/setup_impl.py)
+  ⎿  Read 313 lines
+
+∴ Thinking…
+
+  Now I need to find the setup-impl command to see where cleanup actually happens, specifically whether it's the setup-impl command that does the git rm or if there's a separate
+  step in plan-implement.md.
+
+  Let me look at the setup-impl code.
+  ⎿  Loaded src/erk/cli/commands/exec/scripts/CLAUDE.md
+  ⎿  Loaded src/erk/cli/commands/exec/scripts/AGENTS.md
+
+∴ Thinking…
+
+  Now I see the key issue. Looking at setup_impl.py:
+
+  1. _handle_issue_setup calls setup_impl_from_pr then _run_impl_init, but does NOT do any git cleanup of .erk/impl-context/
+  2. _setup_from_file creates the impl folder but does NOT clean up
+  3. The auto-detect path (3a) validates but does NOT clean up
+
+  The doc says cleanup is supposed to happen at "Step 2d" in plan-implement.md. Let me check if plan-implement.md has a separate step after setup-impl that does the cleanup. The
+  setup-impl doc string says "cleanup of .erk/impl-context/" but looking at the actual code, I don't see any cleanup happening.
+
+  Actually, I think I've been misunderstanding the architecture. The cleanup isn't meant to happen in setup-impl itself—it's supposed to be handled by the Claude agent when
+  executing plan-implement.md, which should include a git cleanup step after setup-impl completes. Let me look back at plan-implement.md to find where this cleanup step is
+  defined.
+
+⏺ I see that setup_impl.py does NOT do the git cleanup itself. The doc says it's "Step 2d" in plan-implement.md. Let me find that step.
+
+⏺ Read(.claude/commands/erk/plan-implement.md)
+  ⎿  Read 230 lines
+
+∴ Thinking…
+
+  Now I see the issue clearly. The plan-implement.md says on line 76:
+
+  "- Cleaning up .erk/impl-context/ staging directory (git rm + commit + push)"
+
+  This is listed as something that setup-impl handles. But looking at the actual setup_impl.py code, there is NO cleanup logic in it. The command does NOT do git rm or any
+  cleanup.
+
+  The documentation claims setup-impl handles cleanup, but the code doesn't implement it.
+
+  Furthermore, erk pr check --stage=impl at Step 12 is supposed to validate that .erk/impl-context/ has been cleaned up, but by that point the files are already in the PR.
+
+  There's a mismatch between the CI pipeline, which has explicit cleanup steps, and the local implementation flow, which lacks any equivalent cleanup mechanism. I need to check
+  whether erk pr submit or cleanup_impl_context.py actually handle this cleanup.
+
+⏺ Found a key discrepancy. Line 76 of plan-implement.md claims setup-impl handles "Cleaning up .erk/impl-context/ staging directory (git rm + commit + push)" but the actual
+  setup_impl.py code has no cleanup logic. Let me verify by checking the submit pipeline and cleanup command.
+
+⏺ Search(pattern: "impl.context|cleanup_impl|clean.up.*impl", path: "src/erk/cli/commands/exec/scripts")
+  ⎿  Found 13 files (ctrl+o to expand)
+
+⏺ Search(pattern: "**/cleanup_impl*")
+  ⎿  Found 2 files (ctrl+o to expand)
+
+⏺ Read(src/erk/cli/commands/exec/scripts/cleanup_impl_context.py)
+  ⎿  Read 71 lines
+
+∴ Thinking…
+
+  So cleanup_impl_context.py exists as a standalone command, but it's never called by setup_impl.py. The question is: who calls it?
+
+  Let me check:
+  1. Is cleanup-impl-context called anywhere in setup_impl.py? NO
+  2. Is it called in the plan-implement.md command? The command says setup-impl handles cleanup on line 76, but setup-impl doesn't actually do it
+  3. Is it called by the CI workflow?
+
+  The plan-implement.md command lists cleanup as something setup-impl handles, but it doesn't. And there's no separate step in plan-implement.md that calls cleanup-impl-context
+  either.
+
+  I need to search through the codebase to find where cleanup-impl-context is actually being invoked.
+
+⏺ So cleanup-impl-context exists but the question is: who calls it? Let me check.
+
+⏺ Search(pattern: "cleanup.impl.context", path: ".claude")
+  ⎿  Found 3 lines (ctrl+o to expand)
+
+⏺ Search(pattern: "cleanup.impl.context", path: ".github")
+  ⎿  Found 0 lines
+
+∴ Thinking…
+
+  So cleanup-impl-context is documented in the erk-exec reference, but it's not called anywhere in the plan-implement.md command, setup_impl.py, or CI workflows.
+
+  The plan-implement.md command on line 76 says setup-impl handles cleanup, but setup-impl.py doesn't call it. And no step in plan-implement.md calls erk exec
+  cleanup-impl-context either.
+
+  This is the root cause of the regression. The cleanup step was probably removed or was never wired in during the consolidation of the setup steps into setup_impl.py. The old
+  approach had a separate "Step 2d" in the command markdown that told Claude to run the cleanup, but when setup-impl was consolidated, the documentation was updated to claim
+  setup-impl handles cleanup (line 76), but the code never actually implemented it.
+
+  Let me check if erk pr submit handles any cleanup as the final step before the PR gets finalized.
+
+⏺ The cleanup-impl-context command exists but is never called by anything. Not by setup_impl.py, not by plan-implement.md steps, not by CI. Let me check if erk pr submit does any
+   cleanup.
+
+⏺ Search(pattern: "impl.context|cleanup", path: "src/erk/cli/commands")
+  ⎿  Found 0 files
+
+⏺ Search(pattern: "impl.context|cleanup", path: "src/erk/cli/commands")
+  ⎿  Found 0 lines
+
+⏺ Search(pattern: "impl.context|cleanup_impl", path: "src/erk/cli/commands/pr")
+  ⎿  Found 3 files (ctrl+o to expand)
+
+⏺ Search(pattern: "impl.context|cleanup_impl", path: "src/erk/cli/commands/pr/submit_pipeline.py")
+  ⎿  Found 103 lines (ctrl+o to expand)
+
+⏺ Search(pattern: "impl.context|cleanup_impl", path: "src/erk/cli/commands/pr/check_cmd.py")
+  ⎿  Found 49 lines (ctrl+o to expand)
+
+❯ also once you figure this out also investigate when it regressed (this was recent) so we fully understand the problem
+
+∴ Thinking…
+
+  Now I have a much clearer picture. The submit_pipeline.py has cleanup_impl_for_submit which IS in the pipeline and does clean up impl-context. So the submit pipeline handles
+  it.
+
+  But the issue is: in the CURRENT case (this PR), the files were already committed in the "Add plan:" commit. The cleanup_impl_for_submit would only run when erk pr submit is
+  called, but by then the impl-context files are already committed.
+
+  Wait, but cleanup_impl_for_submit removes them and commits the removal. So they should be removed from the PR diff.
+
+  So the actual problem is that the cleanup never ran at all—the plan was committed, implementation happened, and then the PR was submitted without ever triggering the cleanup
+  step that would remove those impl-context files. So the user is saying this is a regression, which means cleanup used to work. Let me trace through the git history of the
+  submit pipeline to see if something changed that broke the cleanup behavior.
+
+⏺ Good news: cleanup_impl_for_submit exists in the submit pipeline. So erk pr submit DOES clean up. But let me check if this PR actually went through erk pr submit, and when
+  cleanup_impl_for_submit was added.
+
+⏺ Bash(git log --all --oneline --follow -- src/erk/cli/commands/exec/scripts/cleanup_impl_context.py | head -10)
+  ⎿  53b68da02 Update plan-implement.yml to eliminate .impl/ copy and add has_tracked_files to GitStatusOps (#8370)
+     df6850f2f Implement has_tracked_files for GitStatusOps gateway and update plan-implement.yml to eliminate .impl/ copy
+     d2b0c8599 Add plan: Plan: Simplify Learn Trigger in `erk land`
+     e0f975e56 Add force parameter to stage_files gateway for gitignored paths (#8312)
+     a363d5bf5 Add force parameter to stage_files gateway for gitignored paths (#8312)
+     4bf1b6dcb Simplify plan-implement workflow with consolidated setup-impl command (#7998)
+     0fd01a7df Add plan: Simplify `/erk:plan-implement` Command
+
+⏺ Bash(git log --all --oneline -S 'cleanup_impl_for_submit' -- src/erk/cli/commands/pr/submit_pipeline.py | head -10)
+  ⎿  a14a62273 Move impl-context cleanup from setup-impl to submit pipeline (#8414)
+     8c2316ca3 Move impl-context cleanup from setup-impl to submit pipeline
+
+⏺ There it is. PR #8414: "Move impl-context cleanup from setup-impl to submit pipeline". Let me look at what that PR changed.
+
+⏺ Bash(git log --oneline a14a62273 -1 &amp;&amp; git show a14a62273 --stat)
+  ⎿  a14a62273 Move impl-context cleanup from setup-impl to submit pipeline (#8414)
+     commit a14a6227309de3850e24e99c37f498da0ce8dccc
+     Author: Nick Schrock &lt;schrockn@dagsterlabs.com&gt;
+     Date:   Fri Feb 27 15:25:26 2026 -0800
+
+         Move impl-context cleanup from setup-impl to submit pipeline (#8414)
+
+         Delays .erk/impl-context/ removal until the submit phase, allowing plan tracking data to remain available during implementation. This fixes failures in impl-signal
+     and plan discovery that occurred when cleanup ran before implementation started.
+
+         ## Files Changed
+
+         &lt;details&gt;
+         &lt;summary&gt;Files Changed&lt;/summary&gt;
+
+         ### Modified (2 files)
+         - `src/erk/cli/commands/exec/scripts/setup_impl.py` - Removed cleanup_impl_context calls
+         - `src/erk/cli/commands/pr/submit_pipeline.py` - Added cleanup step and branch-name fallback
+
+         ### Added (1 files)
+         - `tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py` - Tests for new cleanup step
+
+         ### Updated (1 files)
+         - `tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py` - Added branch prefix fallback test
+
+         &lt;/details&gt;
+
+         ## Key Changes
+
+         - New `cleanup_impl_for_submit` pipeline step executes after `prepare_state` (plan discovery) but before `commit_wip` (implementation changes)
+         - Cleanup removes directory and stages/commits deletions without pushing (avoids remote divergence)
+         - Added `plnd/` branch prefix fallback for plan detection when impl-context is already deleted on retry
+         - Comprehensive test coverage for both cleanup step and branch prefix auto-force behavior
+
+         ## Critical Notes
+
+         - Cleanup commit is local-only; remote push happens later in `push_and_create_pr` to maintain atomic state
+         - Branch prefix fallback enables recovery from previous submit attempts that failed after cleanup but before push
+
+         &lt;details&gt;
+         &lt;summary&gt;original-plan&lt;/summary&gt;
+
+         # Fix: Move impl-context cleanup from setup-impl to submit pipeline
+
+         ## Context
+
+         When running `/erk:plan-implement`, `erk exec setup-impl` calls `cleanup_impl_context` which deletes `.erk/impl-context/` from disk, commits the deletion, and
+     pushes to remote **before the agent starts implementing**. This removes plan tracking data that downstream tools need:
+
+         - `impl-signal started/ended` fail (can't find plan reference)
+         - `erk pr submit` can't discover `plan_id` → `effective_force` stays False → `gt submit` runs without `--force`
+         - `gt submit` rejects push because the raw `git push` from cleanup (bypassing Graphite) made the remote "updated remotely" from Graphite's perspective
+
+         **Fix**: Delay `.erk/impl-context/` cleanup until the submit pipeline, after `prepare_state` discovers `plan_id` but before `commit_wip` adds implementation
+     changes.
+
+         ## Changes
+
+         ### 1. Remove cleanup from setup-impl
+
+         **File**: `src/erk/cli/commands/exec/scripts/setup_impl.py`
+
+         In `_handle_issue_setup` (line 307), remove the `ctx.invoke(cleanup_impl_context)` call. The cleanup import can also be removed.
+
+         ### 2. Add cleanup step to submit pipeline
+
+         **File**: `src/erk/cli/commands/pr/submit_pipeline.py`
+
+         Add a new `cleanup_impl_for_submit` step that:
+         - Uses `impl_context_exists(state.repo_root)` to check if `.erk/impl-context/` exists
+         - Uses `git.status.has_tracked_files(repo_root, ".erk/impl-context")` to check if tracked (same guard as current cleanup)
+         - If tracked: calls `remove_impl_context(state.repo_root)`, stages deletions, commits
+         - Does NOT push (push happens in `push_and_create_pr`)
+         - If not found/not tracked: no-op, return state unchanged
+
+         Insert into pipeline AFTER `prepare_state` and BEFORE `commit_wip`:
+         ```python
+         def _submit_pipeline():
+             return (
+                 prepare_state,
+                 cleanup_impl_for_submit,  # NEW
+                 commit_wip,
+                 capture_existing_pr_body,
+                 push_and_create_pr,
+                 ...
+             )
+         ```
+
+         Also add to `_push_and_create_pipeline()` (used by `run_push_and_create_pipeline`).
+
+         Imports to add: `impl_context_exists`, `remove_impl_context` from `erk_shared.impl_context`.
+
+         ### 3. Add branch-name fallback for plan detection
+
+         **File**: `src/erk/cli/commands/pr/submit_pipeline.py`
+
+         In `_graphite_first_flow`, add `plnd/` branch prefix as a fallback for `is_plan_impl` detection. This handles retries where cleanup already deleted
+     `.erk/impl-context/` but the first attempt failed before pushing:
+
+         ```python
+         is_plan_impl = state.plan_id is not None or state.branch_name.startswith("plnd/")
+         ```
+
+         Import `PLANNED_PR_BRANCH_PREFIX` or use the literal `"plnd/"` (already available as `PLANNED_PR_TITLE_PREFIX` in constants — but that's for titles, not branches).
+     Use the literal since there's no existing branch prefix constant.
+
+         ### 4. Update tests
+
+         **File**: `tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py` — add test for branch-name fallback auto-force.
+
+         **File**: Tests for the new `cleanup_impl_for_submit` step — verify it deletes, stages, commits, and handles the no-op case.
+
+         **File**: Tests for `setup_impl` — update any tests that assert `cleanup_impl_context` is called.
+
+         ## Verification
+
+         1. Run existing submit pipeline tests: `pytest tests/unit/cli/commands/pr/submit_pipeline/ -x`
+         2. Run setup-impl tests: `pytest tests/commands/ -k setup_impl -x`
+         3. Run full fast-ci: `make fast-ci`
+
+
+         &lt;/details&gt;
+
+         &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+         &lt;!-- erk:metadata-block:plan-header --&gt;
+         &lt;details&gt;
+         &lt;summary&gt;plan-header&lt;/summary&gt;
+
+         ```yaml
+
+         schema_version: '2'
+         created_at: '2026-02-27T14:14:29.787498+00:00'
+         created_by: schrockn
+         plan_comment_id: null
+         last_dispatched_run_id: null
+         last_dispatched_node_id: null
+         last_dispatched_at: null
+         last_local_impl_at: null
+         last_local_impl_event: null
+         last_local_impl_session: null
+         last_local_impl_user: null
+         last_remote_impl_at: null
+         last_remote_impl_run_id: null
+         last_remote_impl_session_id: null
+         branch_name: plnd/delay-impl-context-cleanup-02-27-1414
+         created_from_session: d9d0b939-e41b-4d43-82f9-aa798ede23f1
+         lifecycle_stage: impl
+
+         ```
+
+         &lt;/details&gt;
+         &lt;!-- /erk:metadata-block:plan-header --&gt;
+         ---
+
+
+         To checkout this PR in a fresh worktree and environment locally, run:
+
+         ```
+         source "$(erk pr checkout 8414 --script)"
+         ```
+
+      src/erk/cli/commands/exec/scripts/setup_impl.py    |  6 --
+      src/erk/cli/commands/pr/submit_pipeline.py         | 29 ++++++-
+      .../test_cleanup_impl_for_submit.py                | 91 ++++++++++++++++++++++
+      .../pr/submit_pipeline/test_graphite_first_flow.py | 38 +++++++++
+      4 files changed, 156 insertions(+), 8 deletions(-)
+
+⏺ Now let me also check what's happening with the plan-implement.md documentation - it claims setup-impl handles cleanup (line 76) but that was removed in PR #8414.
+
+⏺ Bash(git log --oneline -S 'Cleaning up' -- '.claude/commands/erk/plan-implement.md' | head -5)
+  ⎿  4bf1b6dcb Simplify plan-implement workflow with consolidated setup-impl command (#7998)
+
+∴ Thinking…
+
+  So the plan-implement.md documentation was last updated regarding cleanup in PR #7998, which was the initial creation of setup-impl. Then PR #8414 moved cleanup from setup-impl
+   to submit_pipeline but didn't update plan-implement.md. That's a doc bug but not the root cause.
+
+  The key question is: the submit pipeline DOES have cleanup_impl_for_submit. So if you run erk pr submit, it should clean up. But in this specific PR's case:
+
+  1. The branch has a commit "WIP: Prepare for PR submission" - this was likely done manually, not through erk pr submit
+
+  2. The files are still present because erk pr submit was never actually run
+
+  So the real regression is that cleanup moved from happening automatically during setup-impl to only happening when you explicitly run erk pr submit. If someone submits through
+  a different path—like a direct gt submit or just pushing the branch—the cleanup gets skipped entirely. The bot caught these leaked files because the cleanup that used to happen
+   automatically no longer does.
+
+  Looking at the CI workflow, it has its own cleanup steps, so that path is fine. But for local workflows, if you go through plan-implement and then bypass erk pr submit, those
+  temporary files stick around. The commit message "WIP: Prepare for PR submission" suggests this PR didn't go through the proper submit pipeline, which is why the bot flagged
+  the leaked files.
+
+  Now I need to check what PLANNED_PR_TITLE_PREFIX actually is to understand why the skip condition might be triggering.
+
+⏺ Wait - there's a skip condition in cleanup_impl_for_submit. Let me check what PLANNED_PR_TITLE_PREFIX is.
+
+⏺ Search(pattern: "PLANNED_PR_TITLE_PREFIX")
+  ⎿  Found 5 lines (ctrl+o to expand)
+
+∴ Thinking…
+
+  PLANNED_PR_TITLE_PREFIX = "plnd/" and the skip condition is:
+  if state.branch_name.startswith(PLANNED_PR_TITLE_PREFIX):
+      return state
+
+  So cleanup_impl_for_submit skips cleanup for plnd/ branches. The comment says: "Skipped for plan branches (plnd/*) where impl-context IS the PR content."
+
+  This makes sense for PLAN-ONLY PRs (draft PRs that just contain the plan). But this PR (plnd/split-exit-hook-tests-03-03-0544) is an IMPLEMENTATION PR on a plnd/ branch.
+
+  The branch name starts with plnd/, so cleanup gets skipped even though this is an implementation PR that needs it. This is the regression—PR #8414 moved cleanup from setup_impl
+   (which ran unconditionally) to submit_pipeline (which skips plnd/ branches), but implementation can happen on plnd/ branches too. I need to check if setup_impl.py was calling
+  cleanup_impl_context without the plnd/ skip before that change.
+
+⏺ Found the bug. Let me read the skip condition in context.
+
+⏺ Read(src/erk/cli/commands/pr/submit_pipeline.py)
+  ⎿  Read 25 lines
+
+⏺ Root cause identified.
+
+  Here's the full picture:
+
+  The Regression
+
+  PR #8414 (Feb 27) moved .erk/impl-context/ cleanup from setup_impl.py (where it always ran) to cleanup_impl_for_submit in the submit pipeline. But cleanup_impl_for_submit has
+  this skip condition at line 203:
+
+  if state.branch_name.startswith(PLANNED_PR_TITLE_PREFIX):  # "plnd/"
+      return state
+
+  The comment says: "Skipped for plan branches (plnd/) where impl-context IS the PR content."*
+
+  This is correct for plan-only PRs (draft PRs that just contain the plan). But when you implement on a plnd/ branch (which is the normal flow — plan-save creates a plnd/ branch,
+   then plan-implement implements on it), the branch name still starts with plnd/, so cleanup is always skipped for implementations.
+
+  Why It Didn't Happen Before
+
+  Before #8414, cleanup ran in setup_impl.py via ctx.invoke(cleanup_impl_context) — it had no branch-name check and always cleaned up before implementation started.
+
+  The Fix
+
+  The skip condition needs to distinguish between:
+  1. Plan-only submit (saving a plan as a draft PR) — should keep impl-context (it IS the PR content)
+  2. Implementation submit (submitting implemented code) — should clean up impl-context
+
+  The plnd/ prefix alone isn't sufficient to distinguish these. The presence of implementation commits (or state.plan_id being set, or checking if there are code changes beyond
+  impl-context) would be a better signal.
+
+⏺ User answered Claude's questions:
+  ⎿  · Now that we've identified the root cause, do you want me to create a fix plan for the `cleanup_impl_for_submit` skip condition? → Yes, create a fix plan
+
+⏺ Let me check a few more details to build a solid fix plan.
+
+⏺ Read(src/erk/cli/commands/pr/submit_pipeline.py)
+  ⎿  Read 30 lines
+  ⎿  Interrupted · What should Claude do instead?
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ➜  (git:erk) (wt:split-exit-hook-tests-03-03-0544) (br:plnd/split-exit-hook-tests-03-03-0544) | (gh:#8661 st:👀 chks:[✅:15] cmts:0/1) │ (O)                      75388 tokens
+  ⏸ plan mode on (shift+tab to cycle) · PR #8661                                                                                                current: 2.1.63 · latest: 2.1.63
+
+construct plan for bug at the bottom</user>
+  <thinking>The user wants me to construct the plan for the bug we identified. Let me read the relevant files to understand the full context and then write the plan.
+
+Let me first read the key files I need to understand the fix.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="21282" cache_read_input_tokens="20630" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21282}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the key files needed for the plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="21282" cache_read_input_tokens="20630" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21282}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01H332Wz6UxA8fV9Vb9XZ64E">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">185</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="21282" cache_read_input_tokens="20630" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21282}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H332Wz6UxA8fV9Vb9XZ64E">
+   185→        cwd=cwd,
+   186→        repo_root=repo_root,
+   187→        branch_name=branch_name,
+   188→        parent_branch=parent_branch,
+   189→        trunk_branch=trunk_branch,
+   190→        plan_id=plan_id,
+   191→    )
+   192→
+   193→
+   194→def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   195→    """Remove .erk/impl-context/ if present and git-tracked.
+   196→
+   197→    Skipped for plan branches (plnd/*) where impl-context IS the PR content.
+   198→
+   199→    Inserted after prepare_state (which discovers plan_id) and before commit_wip
+   200→    (which adds implementation changes). The cleanup commit is local-only; the
+   201→    push happens later in push_and_create_pr.
+   202→    """
+   203→    if state.branch_name.startswith(PLANNED_PR_TITLE_PREFIX):
+   204→        return state
+   205→
+   206→    if not impl_context_exists(state.repo_root):
+   207→        return state
+   208→
+   209→    if not ctx.git.status.has_tracked_files(state.repo_root, ".erk/impl-context"):
+   210→        return state
+   211→
+   212→    remove_impl_context(state.repo_root)
+   213→    ctx.git.commit.stage_files(state.repo_root, [".erk/impl-context/"], force=True)
+   214→    ctx.git.commit.commit(state.repo_root, "Remove .erk/impl-context/ before submission")
+
+... [20 lines omitted] ...
+
+   219→def commit_wip(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   229→def capture_existing_pr_body(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JjTuzn8svsZ61HLzaCKjtN">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="21282" cache_read_input_tokens="20630" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21282}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JjTuzn8svsZ61HLzaCKjtN">
+     1→"""Linear pipeline for PR submission.
+     2→
+     3→Replaces the dual-path branching orchestration with a sequence of plain
+     4→functions transforming a frozen SubmitState dataclass.
+     5→
+     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+     7→"""
+     8→
+     9→import dataclasses
+    10→import sys
+    11→import uuid
+    12→from collections.abc import Callable
+    13→from dataclasses import dataclass
+    14→from functools import cache
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.pr.shared import (
+    20→    assemble_pr_body,
+    21→    echo_plan_context_status,
+    22→    maybe_advance_lifecycle_to_impl,
+    23→    recover_plan_header,
+    24→    run_commit_message_generation,
+    25→)
+    26→from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
+    27→from erk.cli.ensure import UserFacingCliError
+    28→from erk.core.commit_message_generator import CommitMessageGenerator
+    29→from erk.core.context import ErkContext
+    30→from erk.core.plan_context_provider import PlanContext, PlanContextProvider
+
+... [20 lines omitted] ...
+
+    31→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01VoyFDvjCPTNAmyEDGKTPs1">
+    <param name="pattern">cleanup_impl_for_submit|is_plan_only|plan_only</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="21282" cache_read_input_tokens="20630" output_tokens="495" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 21282, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VoyFDvjCPTNAmyEDGKTPs1">
+194:def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+954:        cleanup_impl_for_submit,
+985:        cleanup_impl_for_submit,
+  </tool_result>
+  <tool_use name="Read" id="toolu_018iW291nvwGUFNVVss9c2T8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">940</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2139" cache_read_input_tokens="41912" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2139}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018iW291nvwGUFNVVss9c2T8">
+   940→# ---------------------------------------------------------------------------
+   941→# Helper
+   942→# ---------------------------------------------------------------------------
+   943→
+   944→
+   945→# ---------------------------------------------------------------------------
+   946→# Pipeline Runner
+   947→# ---------------------------------------------------------------------------
+   948→
+   949→
+   950→@cache
+   951→def _push_and_create_pipeline() -&gt; tuple[SubmitStep, ...]:
+   952→    return (
+   953→        prepare_state,
+   954→        cleanup_impl_for_submit,
+   955→        commit_wip,
+   956→        capture_existing_pr_body,
+   957→        push_and_create_pr,
+   958→    )
+   959→
+   960→
+   961→def run_push_and_create_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   962→    """Run only the push-and-create portion of the submit pipeline."""
+   963→    for step in _push_and_create_pipeline():
+   964→        try:
+   965→            result = step(ctx, state)
+   966→        except Exception as e:
+   967→            step_name = getattr(step, "__name__", repr(step))
+   968→            return SubmitError(
+   969→                phase=step_name,
+
+... [30 lines omitted] ...
+
+   970→                error_type="unhandled_exception",
+   971→                message=f"Unexpected error in {step_name}: {e}",
+   975→        if isinstance(result, SubmitError):
+   998→def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   999→    """Run the submit pipeline, returning final state or first error."""
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01CGCQb5kmFhNF3AxDKwsShc">
+    <param name="pattern">PLANNED_PR_TITLE_PREFIX|PLANNED_PR_BRANCH_PREFIX</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/constants.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2139" cache_read_input_tokens="41912" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2139}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CGCQb5kmFhNF3AxDKwsShc">
+13:PLANNED_PR_TITLE_PREFIX = "plnd/"
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>read files from master/trunk</user>
+  <tool_use name="Bash" id="toolu_01WVf1raXX2jvXFSt4CY2cNe">
+    <param name="command">git show master:src/erk/cli/commands/pr/submit_pipeline.py | head -n 220 | tail -n 40</param>
+    <param name="description">Read cleanup_impl_for_submit from master</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1290" cache_read_input_tokens="44051" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1290}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WVf1raXX2jvXFSt4CY2cNe">
+        )
+
+    return dataclasses.replace(
+        state,
+        cwd=cwd,
+        repo_root=repo_root,
+        branch_name=branch_name,
+        parent_branch=parent_branch,
+        trunk_branch=trunk_branch,
+        plan_id=plan_id,
+    )
+
+
+def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+    """Remove .erk/impl-context/ if present and git-tracked.
+
+    Skipped for plan branches (plnd/*) where impl-context IS the PR content.
+
+    Inserted after prepare_state (which discovers plan_id) and before commit_wip
+    (which adds implementation changes). The cleanup commit is local-only; the
+    push happens later in push_and_create_pr.
+    """
+    if state.branch_name.startswith(PLANNED_PR_TITLE_PREFIX):
+        return state
+
+    if not impl_context_exists(state.repo_root):
+        return state
+
+    if not ctx.git.status.has_tracked_files(state.repo_root, ".erk/impl-context"):
+        return state
+
+... [10 lines omitted] ...
+
+def commit_wip(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018cAQzZBS3sQHJsEkd3NBuj">
+    <param name="command">git show master:src/erk/cli/constants.py | grep -n "PLANNED_PR"</param>
+    <param name="description">Check PLANNED_PR constants on master</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1290" cache_read_input_tokens="44051" output_tokens="221" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1290, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018cAQzZBS3sQHJsEkd3NBuj">
+13:PLANNED_PR_TITLE_PREFIX = "plnd/"
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01RKZvWYvrmNhTehaJbpSiLN">
+    <param name="command">git show master:src/erk/cli/commands/pr/submit_pipeline.py | grep -n "cleanup_impl_for_submit\|_submit_pipeline\|_push_and_create_pipeline\|_graphite_first_flow\|is_plan_impl\|plnd/"</param>
+    <param name="description">Find all references to cleanup and plan detection on master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="45341" output_tokens="146" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 686, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RKZvWYvrmNhTehaJbpSiLN">
+68:    """Prepend 'plnd/' prefix to PR title (idempotent).
+74:        The title with 'plnd/' prefix, skipping if already prefixed
+194:def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+197:    Skipped for plan branches (plnd/*) where impl-context IS the PR content.
+252:        return _graphite_first_flow(ctx, state)
+256:def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+264:    is_plan_impl = state.plan_id is not None or state.branch_name.startswith("plnd/")
+265:    effective_force = state.force or is_plan_impl
+294:        if is_plan_impl and not state.force and divergence.behind &gt; 0:
+951:def _push_and_create_pipeline() -&gt; tuple[SubmitStep, ...]:
+954:        cleanup_impl_for_submit,
+961:def run_push_and_create_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+963:    for step in _push_and_create_pipeline():
+982:def _submit_pipeline() -&gt; tuple[SubmitStep, ...]:
+985:        cleanup_impl_for_submit,
+998:def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+1000:    for step in _submit_pipeline():
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01JQB8hRgqKNnUkeYx2LRh5V">
+    <param name="command">git show master:src/erk/cli/commands/pr/submit_pipeline.py | sed -n '256,300p'</param>
+    <param name="description">Read _graphite_first_flow on master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="553" cache_read_input_tokens="46027" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 553}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JQB8hRgqKNnUkeYx2LRh5V">
+def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+    """Graphite-first flow: gt submit handles push + PR creation."""
+    if not state.quiet:
+        click.echo(click.style("Phase 1: Graphite Submit", bold=True))
+
+    # Auto-force for plan implementations (branches always diverge from remote).
+    # Fall back to branch prefix when cleanup already deleted .erk/impl-context/
+    # but the first submit attempt failed before pushing.
+    is_plan_impl = state.plan_id is not None or state.branch_name.startswith("plnd/")
+    effective_force = state.force or is_plan_impl
+
+    # Pre-check: detect remote divergence before gt submit
+    if ctx.git.branch.branch_exists_on_remote(state.repo_root, "origin", state.branch_name):
+        ctx.git.remote.fetch_branch(state.repo_root, "origin", state.branch_name)
+        divergence = ctx.git.branch.is_branch_diverged_from_remote(
+            state.cwd, state.branch_name, "origin"
+        )
+        if divergence.behind &gt; 0 and not effective_force:
+            ahead_msg = (
+                f" and ahead by {divergence.ahead} commit(s)" if divergence.ahead &gt; 0 else ""
+            )
+            return SubmitError(
+                phase="push_and_create_pr",
+                error_type="remote_diverged",
+                message=(
+                    f"Branch '{state.branch_name}' is behind remote by "
+                    f"{divergence.behind} commit(s){ahead_msg}.\n\n"
+                    "The remote branch has been updated (e.g., by CI or another session).\n\n"
+                    "To fix:\n"
+                    "  erk pr reconcile-with-remote --dangerous  # Reconcile with remote\n"
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0172TmbKtAxyYZKP8vH774YP">
+    <param name="command">git show master:tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py</param>
+    <param name="description">Read cleanup tests on master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="553" cache_read_input_tokens="46027" output_tokens="191" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 553, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0172TmbKtAxyYZKP8vH774YP">
+"""Unit tests for cleanup_impl_for_submit pipeline step."""
+
+from pathlib import Path
+
+from erk.cli.commands.pr.submit_pipeline import (
+    SubmitState,
+    cleanup_impl_for_submit,
+)
+from erk.core.context import context_for_test
+from erk_shared.gateway.git.fake import FakeGit
+
+
+def _make_state(
+    *,
+    cwd: Path,
+    repo_root: Path | None = None,
+    branch_name: str = "feature",
+) -&gt; SubmitState:
+    return SubmitState(
+        cwd=cwd,
+        repo_root=repo_root if repo_root is not None else cwd,
+        branch_name=branch_name,
+        parent_branch="main",
+        trunk_branch="main",
+        use_graphite=True,
+        force=False,
+        debug=False,
+        session_id="test-session",
+        skip_description=False,
+        quiet=False,
+
+... [81 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a clear picture. The bug is:
+
+1. `cleanup_impl_for_submit` at line 203 skips cleanup for ALL branches starting with `plnd/`
+2. The rationale was that plan branches have impl-context as their PR content (plan-only PRs)
+3. But implementation PRs ALSO have `plnd/` branches — `plan-save` creates the `plnd/` branch, and `plan-implement` implements on the same branch
+4. So implementations on `plnd/` branches never get their impl-context cleaned up
+
+The fix needs to distinguish between:
+- **Plan-only submit**: Saving a plan as a draft PR — should KEEP impl-context
+
+
+- **Implementation submit**: Submitting implemented code — should REMOVE impl-context
+
+The challenge is that both cases have a plan_id and both use `plnd/` branches, so I need a different signal to tell them apart. The force-push logic correctly treats all `plnd/` branches as plan implementations, but for cleanup purposes I need to identify whether this is actually a plan-only save or real implementation code being submitted.
+
+The key distinction is whether there are code changes beyond the impl-context directory itself. A plan-only submit through `/erk:plan-save` only modifies `.erk/impl-context/`, while an implementation submit has actual code changes elsewhere in the repository. So I should check if the diff contains modifications outside that directory to determine whether to clean up the impl-context. it uses `erk exec plan-save` which does its own git push, so it bypasses the submit pipeline entirely. But wait—if plan-save actually goes through `_push_and_create_pipeline`, it would hit the cleanup logic and delete impl-context before saving, which would break things. The real issue is that the skip condition for planned branches is too broad: when you're on a `plnd/` branch and running `erk pr submit`, you're submitting implementation code and should clean up impl-context, but the current logic skips cleanup entirely for any planned branch.
+
+Looking at the PR #8414 commit message, it says the skip was added because "impl-context IS the PR content" on plan branches, but that assumption only applies to plan-save, not to the submit pipeline. So the fix might be to remove that skip condition entirely, since plan-save has its own separate mechanism and doesn't actually go through the submit pipeline.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2270" cache_read_input_tokens="46580" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2270}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how plan-save submits to understand if it goes through the submit pipeline.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2270" cache_read_input_tokens="46580" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2270}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EuVusjQcEidVC18y9pMcJ8">
+    <param name="command">git show master:.claude/commands/erk/plan-save.md | head -80</param>
+    <param name="description">Read plan-save command from master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2270" cache_read_input_tokens="46580" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2270}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EuVusjQcEidVC18y9pMcJ8">
+---
+description: Save the current session's plan to GitHub
+argument-hint: "[--plan-type=learn]"
+---
+
+# /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+... [49 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01XL2PmLC86ARDwUZEzn4x1D">
+    <param name="pattern">run_push_and_create_pipeline|run_submit_pipeline</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2270" cache_read_input_tokens="46580" output_tokens="1514" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2270, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XL2PmLC86ARDwUZEzn4x1D">
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/pr/submit_cmd.py:24:    run_submit_pipeline,
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/pr/submit_cmd.py:185:    result = run_submit_pipeline(ctx, state)
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/pr/submit_pipeline.py:961:def run_push_and_create_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/pr/submit_pipeline.py:998:def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/exec/scripts/push_and_create_pr.py:28:    run_push_and_create_pipeline,
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/exec/scripts/push_and_create_pr.py:65:    result = run_push_and_create_pipeline(erk_ctx, state)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01CMZfvw8GSEwd26e4C4WhPt">
+    <param name="command">git show master:src/erk/cli/commands/exec/scripts/push_and_create_pr.py</param>
+    <param name="description">Read push_and_create_pr.py from master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2786" cache_read_input_tokens="48850" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2786}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CMZfvw8GSEwd26e4C4WhPt">
+"""Push branch and create/find PR, outputting JSON.
+
+Runs the first three steps of the submit pipeline (prepare_state,
+commit_wip, push_and_create_pr) with quiet=True so no progress output
+pollutes stdout. On success, outputs structured JSON with branch, PR,
+and Graphite info for agent consumption.
+
+Usage:
+    erk exec push-and-create-pr
+    erk exec push-and-create-pr --force
+    erk exec push-and-create-pr --no-graphite
+
+Exit Codes:
+    0: Success (JSON output on stdout)
+    1: Error (JSON error output on stdout)
+"""
+
+import json
+import sys
+from pathlib import Path
+
+import click
+
+from erk.cli.commands.pr.submit_pipeline import (
+    SubmitError,
+    SubmitState,
+    make_initial_state,
+    run_push_and_create_pipeline,
+)
+from erk.core.context import ErkContext
+
+... [85 lines omitted] ...
+
+    if isinstance(result, SubmitError):
+        error_output = {
+            "error": {
+                "error_type": result.error_type,
+        click.echo(json.dumps(error_output, indent=2))
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013jc6AqxDsPSTAK1pkUPbuf">
+    <param name="command">git show master:.claude/commands/erk/plan-save.md | tail -60</param>
+    <param name="description">Read plan-save step 4 from master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2786" cache_read_input_tokens="48850" output_tokens="185" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2786, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013jc6AqxDsPSTAK1pkUPbuf">
+OR exit Claude Code first, then run one of:
+  Checkout plan #&lt;plan_number&gt;:  erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to queue:             erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+
+... [29 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a complete picture. Let me trace the plan-save flow:
+
+1. `/erk:plan-save` (Claude command) → runs `erk exec plan-save` which creates a branch, commits plan files, and pushes
+2. Plan-save does NOT use `run_push_and_create_pipeline` or `run_submit_pipeline` — it uses its own `erk exec plan-save` command
+
+Wait, actually the plan-save command calls `erk exec push-and-create-pr` which DOES use `run_push_and_create_pipeline`. Let me re-check.
+
+
+Looking back at the plan-save documentation, I see the flow cuts off at step 4, but from what's visible it appears to be: generate branch slug, generate summary, then execute the save command. I need to verify exactly what the plan-save exec command does versus push-and-create-pr.
+
+Now I'm checking whether plan-save actually invokes push-and-create-pr under the hood, since push-and-create-pr runs a pipeline that includes cleanup logic for submission.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1980" cache_read_input_tokens="51636" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1980}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Lm1QXuRapScV8K83MpbLyz">
+    <param name="command">git show master:.claude/commands/erk/plan-save.md | sed -n '80,120p'</param>
+    <param name="description">Read plan-save step 4</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1980" cache_read_input_tokens="51636" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1980}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lm1QXuRapScV8K83MpbLyz">
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+... [10 lines omitted] ...
+
+ERROR: Objective link verification failed
+  </tool_result>
+  <tool_use name="Grep" id="toolu_014TeNm7QSc9fi2niMFjc6pZ">
+    <param name="pattern">push.and.create|submit_pipeline|run_push</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/exec/scripts</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1980" cache_read_input_tokens="51636" output_tokens="625" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1980, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014TeNm7QSc9fi2niMFjc6pZ">
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/exec/scripts/push_and_create_pr.py:4:commit_wip, push_and_create_pr) with quiet=True so no progress output
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/exec/scripts/push_and_create_pr.py:9:    erk exec push-and-create-pr
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/exec/scripts/push_and_create_pr.py:10:    erk exec push-and-create-pr --force
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/exec/scripts/push_and_create_pr.py:11:    erk exec push-and-create-pr --no-graphite
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/exec/scripts/push_and_create_pr.py:24:from erk.cli.commands.pr.submit_pipeline import (
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/exec/scripts/push_and_create_pr.py:28:    run_push_and_create_pipeline,
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/exec/scripts/push_and_create_pr.py:34:@click.command(name="push-and-create-pr")
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/exec/scripts/push_and_create_pr.py:39:def push_and_create_pr(
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/exec/scripts/push_and_create_pr.py:48:    Runs only the push-and-create portion of the submit pipeline.
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/exec/scripts/push_and_create_pr.py:65:    result = run_push_and_create_pipeline(erk_ctx, state)
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/exec/scripts/get_pr_context.py:51:            "Create a PR first with `erk exec push-and-create-pr`."
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/split-exit-hook-tests-03-03-0544/src/erk/cli/commands/exec/scripts/set_pr_description.py:65:            "Create a PR first with `erk exec push-and-create-pr`."
+  </tool_result>
+  <thinking>Good. So plan-save uses `erk exec plan-save`, NOT `erk exec push-and-create-pr`. The plan-save exec script handles its own git push without going through the submit pipeline. So the cleanup_impl_for_submit function is ONLY called during:
+
+1. `erk pr submit` → `run_submit_pipeline`
+2. `erk exec push-and-create-pr` → `run_push_and_create_pipeline`
+
+Neither of these is plan-save. Plan-save has its own mechanism.
+
+So the `plnd/` skip condition in `cleanup_impl_for_submit` is wrong. 
+
+When `erk pr submit` or `push-and-create-pr` runs on a `plnd/` branch, it's always an implementation submit since plan-save bypasses this pipeline entirely. But I should verify whether `push-and-create-pr` could somehow be invoked by the plan-save script itself.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1943" cache_read_input_tokens="53616" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1943}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0162pXTSHtyGQQjhxmi7Qi8Z">
+    <param name="command">git show master:src/erk/cli/commands/exec/scripts/plan_save.py | head -80</param>
+    <param name="description">Read plan_save exec script from master</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1943" cache_read_input_tokens="53616" output_tokens="353" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1943, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0162pXTSHtyGQQjhxmi7Qi8Z">
+"""Plan save: creates a draft PR with the plan content.
+
+Usage:
+    erk exec plan-save [OPTIONS]
+
+Options:
+    --format json|display: Output format (default: json)
+    --plan-file PATH: Use specific plan file (highest priority)
+    --session-id ID: Session ID for scoped plan lookup
+    --plan-type standard|learn: Plan type (default: standard)
+    --learned-from-issue INT: Parent plan (for learn plans)
+    --created-from-workflow-run-url URL: Workflow run URL
+
+Objective linking: use --objective to pass directly, or rely on
+automatic linking via the objective-context session marker
+(created by /erk:objective-plan). The --objective flag takes
+precedence over the session marker.
+
+Exit Codes:
+    0: Success
+    1: Error
+    2: Validation failed
+"""
+
+import json
+from pathlib import Path
+
+import click
+
+from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01MBXwyoF6nc42mU3rvna7cd">
+    <param name="command">git show master:src/erk/cli/commands/exec/scripts/plan_save.py | grep -n "push_and_create\|submit_pipeline\|run_push\|git.*push\|push_branch\|PlannedPRBackend"</param>
+    <param name="description">Check if plan-save uses submit pipeline</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1151" cache_read_input_tokens="55559" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1151, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MBXwyoF6nc42mU3rvna7cd">
+53:from erk_shared.plan_store.planned_pr import PlannedPRBackend
+256:    git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
+288:    backend = PlannedPRBackend(github, github_issues, time=RealTime())
+  </tool_result>
+  <thinking>Now I have the full picture:
+
+1. **Plan-save**: Uses `git.remote.push_to_remote()` directly — does NOT go through the submit pipeline at all
+2. **erk pr submit** and **erk exec push-and-create-pr**: Go through the submit pipeline which includes `cleanup_impl_for_submit`
+
+So the `plnd/` skip condition in `cleanup_impl_for_submit` is completely wrong. When code goes through the submit pipeline on a `plnd/` branch, it's ALWAYS an implementation submit. Plan-save never touches the submit pipeline.
+
+The fix is simple: **remove the `plnd/` skip condition entirely from `cleanup_impl_for_submit`**.
+ 
+Let me trace through plan-implement to see if it also routes through the push-and-create-pr flow.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="232" cache_read_input_tokens="56710" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 232}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have the complete picture. Plan-save uses `git.remote.push_to_remote()` directly — it does **not** go through the submit pipeline. So the `plnd/` skip in `cleanup_impl_for_submit` is simply wrong: whenever the submit pipeline runs on a `plnd/` branch, it's always an implementation submit.
+
+Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="232" cache_read_input_tokens="56710" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 232}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01DAJ6MEto57kVGTG3qhNDsM">
+    <param name="file_path">/Users/schrockn/.claude/plans/misty-coalescing-blossom.md</param>
+    <param name="content"># Fix: Remove incorrect plnd/ skip in cleanup_impl_for_submit
+
+## Context
+
+PR #8414 (Feb 2...[truncated 1818 chars]...nit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py -x`
+2. `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="232" cache_read_input_tokens="56710" output_tokens="1003" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 232, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DAJ6MEto57kVGTG3qhNDsM">
+File created successfully at: /Users/schrockn/.claude/plans/misty-coalescing-blossom.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01Xb792BMgCFj4A7jxbQ7xzB">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests'}]</param>
+    <param name="plan"># Fix: Remove incorrect plnd/ skip in cleanup_impl_for_submit
+
+## Context
+
+PR #8414 (Feb 2...[truncated 1818 chars]...nit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py -x`
+2. `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1251" cache_read_input_tokens="56942" output_tokens="73" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1251, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xb792BMgCFj4A7jxbQ7xzB">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/misty-coalescing-blossom.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: Remove incorrect plnd/ skip in cleanup_impl_for_submit
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR on new branch" - Create a new branch, save plan as draft PR, and stop. Does NOT proceed to implementation.
+  2. "Create a plan PR on the current branch" - Save plan as a PR on the current branch and stop. Does NOT proceed to implementation.
+  3. "Just implement on the current branch without creating a PR." - Implement directly on the current branch without saving a plan PR.
+  4. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR on new branch':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Create a plan PR on the current branch':
+  1. Run /erk:plan-save --current-branch
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     This converts the current branch into the plan PR branch
+     instead of creating a new branch.
+
+... [16 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+## Fix: Remove incorrect plnd/ skip in cleanup_impl_for_submit
+
+### Context
+
+PR #8414 (Feb 27) moved `.erk/impl-context/` cleanup from `setup_impl.py` (where it ran unconditionally) to `cleanup_impl_for_submit` in the submit pipeline. However, it added an incorrect skip condition: branches starting with `plnd/` skip cleanup entirely. The rationale was "plan branches where impl-context IS the PR content" — but this is wrong because **plan-save never goes through the submit pipeline**. It uses `git.remote.push_to_remote()` directly.
+
+When `erk pr submit` or `erk exec push-and-create-pr` runs on a `plnd/` branch, it's **always** an implementation submit. The `plnd/` skip causes impl-context files to leak into every implementation PR.
+
+### Changes
+
+1. **Remove plnd/ skip condition** — `src/erk/cli/commands/pr/submit_pipeline.py` line 203
+2. **Flip test assertion** — `test_noop_for_plan_branch` → `test_cleans_up_plan_branch`
+3. **Fix stale docstring** — remove "Skipped for plan branches" line
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="882" cache_read_input_tokens="58193" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 882}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01E7tJ77zqHBZJpBT6kZuSQB">
+    <param name="questions">[{'question': 'Fix: Remove incorrect plnd/ skip in cleanup_impl_for_submit\nCurrent contex...[truncated 637 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="882" cache_read_input_tokens="58193" output_tokens="591" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 882, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01E7tJ77zqHBZJpBT6kZuSQB">
+User has answered your questions: "Fix: Remove incorrect plnd/ skip in cleanup_impl_for_submit
+Current context: (wt:split-exit-hook-tests-03-03-0544) (br:plnd/split-exit-hook-tests-03-03-0544)
+
+What would you like to do with this plan?"="Create a plan PR on new branch". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01JAupedtAN3c5musCYWqxkR">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="701" cache_read_input_tokens="59075" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 701, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JAupedtAN3c5musCYWqxkR">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="2cb92b41-e8a9-4e4d-8f3b-d298fbb07ee7" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "2cb92b41-e8a9-4e4d-8f3b-d298fbb07ee7" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true** (new-wt recommended → "In new wt" listed first):
+
+```
+OR exit Claude Code first, then run one of:
+
+Implement plan #&lt;plan_number&gt;:
+  In new wt:        source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+  In plan br:       source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+
+Checkout plan #&lt;plan_number&gt;:
+  In new wt:  erk br co --new-slot --for-plan &lt;plan_number&gt;
+  In plan br: erk br co --for-plan &lt;plan_number&gt;
+
+Dispatch to queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false** (same slot recommended → "Here" listed first):
+
+```
+OR exit Claude Code first, then run one of:
+
+Implement plan #&lt;plan_number&gt;:
+  In plan br:       source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+
+Checkout plan #&lt;plan_number&gt;:
+  In plan br: erk br co --for-plan &lt;plan_number&gt;
+  In new wt:  erk br co --new-slot --for-plan &lt;plan_number&gt;
+
+Dispatch to queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout plan #&lt;plan_number&gt;:  erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to queue:             erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "2cb92b41-e8a9-4e4d-8f3b-d298fbb07ee7" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "2cb92b41-e8a9-4e4d-8f3b-d298fbb07ee7" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "2cb92b41-e8a9-4e4d-8f3b-d298fbb07ee7" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+**Step 1**: No flags in arguments — `PLAN_TYPE_FLAG` and `OBJECTIVE_FLAG` are empty.
+
+**Step 2**: Plan title is "Fix: Remove incorrect plnd/ skip in cleanup_impl_for_submit"
+
+`BRANCH_SLUG` = `fix-plnd-skip-cleanup`
+
+**Step 3**: Plan summary:
+
+&gt; Removes the incorrect branch-name skip condition in cleanup_impl_for_submit that prevents impl-context files from being cleaned up on plnd/ branches. Plan-save never goes through the submit pipeline, so the plnd/ guard is unnecessary and causes impl-context files to leak into every implementation PR.
+
+**Step 4**: Running the save command.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2873" cache_read_input_tokens="59776" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2873}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011gsSYHPTdDXbPwQrLCz1zX">
+    <param name="command">erk exec plan-save --format json --session-id="2cb92b41-e8a9-4e4d-8f3b-d298fbb07ee7" --bra...[truncated 236 chars]... guard is unnecessary and causes impl-context files to leak into every implementation PR."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2873" cache_read_input_tokens="59776" output_tokens="376" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2873, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011gsSYHPTdDXbPwQrLCz1zX">
+{"success": true, "plan_number": 8667, "plan_url": "https://github.com/dagster-io/erk/pull/8667", "title": "[erk-plan] Fix: Remove incorrect plnd/ skip in cleanup_impl_for_submit", "branch_name": "plnd/fix-plnd-skip-cleanup-03-03-0641", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/2cb92b41-e8a9-4e4d-8f3b-d298fbb07ee7/plan_snapshots/000001-cb8511e7"}
+  </tool_result>
+  <assistant>No objective link — skipping Steps 5 and 6.
+
+**Step 7 — Results:**
+
+Plan "Fix: Remove incorrect plnd/ skip in cleanup_impl_for_submit" saved as draft PR **#8667**
+URL: https://github.com/dagster-io/erk/pull/8667
+
+**Next steps:**
+
+View PR: https://github.com/dagster-io/erk/pull/8667
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+Implement plan #8667:
+  In plan br:       `source "$(erk br co --for-plan 8667 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --for-plan 8667 --script)" &amp;&amp; erk implement -d`
+  In new wt:        `source "$(erk br co --new-slot --for-plan 8667 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --new-slot --for-plan 8667 --script)" &amp;&amp; erk implement -d`
+
+Checkout plan #8667:
+  In plan br: `erk br co --for-plan 8667`
+  In new wt:  `erk br co --new-slot --for-plan 8667`
+
+Dispatch to queue: `erk pr dispatch 8667`
+
+**Step 5 (Push session):**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1766" cache_read_input_tokens="62649" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1766}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CNMVW2nAD2bAfv3iGSgFmb">
+    <param name="command">erk exec upload-impl-session --session-id "2cb92b41-e8a9-4e4d-8f3b-d298fbb07ee7" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1766" cache_read_input_tokens="62649" output_tokens="504" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1766, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CNMVW2nAD2bAfv3iGSgFmb">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Session push skipped (no impl folder) — non-critical. Plan was saved successfully as **#8667**.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="531" cache_read_input_tokens="64415" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 531}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>

@@ -1,0 +1,863 @@
+<session>
+  <meta branch="plnd/fix-plnd-skip-cleanup-03-03-0641" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 12. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="7c96e5d9-df2a-407d-9295-ea79b2b5bd1c" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="7c96e5d9-df2a-407d-9295-ea79b2b5bd1c" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="7c96e5d9-df2a-407d-9295-ea79b2b5bd1c" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="7c96e5d9-df2a-407d-9295-ea79b2b5bd1c" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+**CRITICAL**: Never delete the impl directory - leave for user review (no auto-commit).
+
+### Step 12: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 13: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <thinking>The user has invoked `/erk:plan-implement` which is the plan implementation workflow. Let me follow the steps outlined in the command.
+
+First, I need to check the current state. The branch is `plnd/fix-plnd-skip-cleanup-03-03-0641`, which looks like a plan branch. Let me run `erk exec setup-impl` to auto-detect from the branch.
+
+Let me start with Step 1.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="15633" cache_read_input_tokens="17292" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15633}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation... Let me detect the plan from the current branch.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="15633" cache_read_input_tokens="17292" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15633}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015Q6MH1dR3VkDJQKVbQPLUp">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Auto-detect and set up implementation from current branch</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15633" cache_read_input_tokens="17292" output_tokens="264" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15633, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015Q6MH1dR3VkDJQKVbQPLUp">
+Found existing impl dir for plan #8667, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.erk/impl-context/plnd--fix-plnd-skip-cleanup-03-03-0641", "plan_number": 8667, "plan_url": "https://github.com/dagster-io/erk/pull/8667", "branch": "plnd/fix-plnd-skip-cleanup-03-03-0641", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8667, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Good, implementation environment is ready for plan #8667. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="442" cache_read_input_tokens="32925" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 442}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UF2Qfa5aqTpeVaRebq9G7K">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/.erk/impl-context/plnd--fix-plnd-skip-cleanup-03-03-0641/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="442" cache_read_input_tokens="32925" output_tokens="127" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 442, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UF2Qfa5aqTpeVaRebq9G7K">
+     1→# Fix: Remove incorrect plnd/ skip in cleanup_impl_for_submit
+     2→
+     3→## Context
+     4→
+     5→PR #8414 (Feb 27) moved `.erk/impl-context/` cleanup from `setup_impl.py` (where it ran unconditionally) to `cleanup_impl_for_submit` in the submit pipeline. However, it added an incorrect skip condition: branches starting with `plnd/` skip cleanup entirely. The rationale was "plan branches where impl-context IS the PR content" — but this is wrong because **plan-save never goes through the submit pipeline**. It uses `git.remote.push_to_remote()` directly.
+     6→
+     7→When `erk pr submit` or `erk exec push-and-create-pr` runs on a `plnd/` branch, it's **always** an implementation submit. The `plnd/` skip causes impl-context files to leak into every implementation PR.
+     8→
+     9→## Changes
+    10→
+    11→### 1. Remove plnd/ skip condition
+    12→
+    13→**File**: `src/erk/cli/commands/pr/submit_pipeline.py` (line 203)
+    14→
+    15→Remove the early-return block:
+    16→```python
+    17→# REMOVE these lines:
+    18→if state.branch_name.startswith(PLANNED_PR_TITLE_PREFIX):
+    19→    return state
+    20→```
+    21→
+    22→The remaining guards (impl-context doesn't exist, not tracked) are sufficient.
+    23→
+    24→If `PLANNED_PR_TITLE_PREFIX` is no longer used elsewhere in this file after removal, also remove the import.
+    25→
+    26→### 2. Update test
+    27→
+    28→**File**: `tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py`
+    29→
+    30→Update `test_noop_for_plan_branch` → rename to `test_cleans_up_plan_branch` and assert that cleanup **does** happen for `plnd/` branches (removes files, creates commit).
+
+... [17 lines omitted] ...
+  </tool_result>
+  <thinking>Clear plan. Let me create tasks, then implement. The plan has 3 changes:
+
+1. Remove plnd/ skip condition in submit_pipeline.py
+2. Update the test
+3. Fix stale docstring
+
+Let me read both files first, then create tasks and implement.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="906" cache_read_input_tokens="33367" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 906}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Implementation environment ready, reading plan...
+
+The plan fixes a bug where `plnd/` branches incorrectly skip `.erk/impl-context/` cleanup during submit, causing impl-context files to leak into implementation PRs. Three changes needed.
+
+Let me read the source files and load required context.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="906" cache_read_input_tokens="33367" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 906}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HYcvVppAJ1oQCobsrNzjZM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/src/erk/cli/commands/pr/submit_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="906" cache_read_input_tokens="33367" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 906}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HYcvVppAJ1oQCobsrNzjZM">
+     1→"""Linear pipeline for PR submission.
+     2→
+     3→Replaces the dual-path branching orchestration with a sequence of plain
+     4→functions transforming a frozen SubmitState dataclass.
+     5→
+     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+     7→"""
+     8→
+     9→import dataclasses
+    10→import sys
+    11→import uuid
+    12→from collections.abc import Callable
+    13→from dataclasses import dataclass
+    14→from functools import cache
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.pr.shared import (
+    20→    assemble_pr_body,
+    21→    echo_plan_context_status,
+    22→    maybe_advance_lifecycle_to_impl,
+    23→    recover_plan_header,
+    24→    run_commit_message_generation,
+    25→)
+    26→from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
+    27→from erk.cli.ensure import UserFacingCliError
+    28→from erk.core.commit_message_generator import CommitMessageGenerator
+    29→from erk.core.context import ErkContext
+    30→from erk.core.plan_context_provider import PlanContext, PlanContextProvider
+
+... [1027 lines omitted] ...
+
+    31→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+   115→class SubmitError:
+   116→    """Error result from a pipeline step."""
+   119→    error_type: str
+   128→SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
+   131→def prepare_state(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   144→        return SubmitError(
+   146→            error_type="no_branch",
+   160→        except ValueError as e:
+   161→            return SubmitError(
+   163→                error_type="issue_linkage_mismatch",
+   194→def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   219→def commit_wip(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   229→def capture_existing_pr_body(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   241→def push_and_create_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   256→def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   263→    # but the first submit attempt failed before pushing.
+   277→            return SubmitError(
+   279→                error_type="remote_diverged",
+   309→    except RuntimeError as e:
+   310→        error_str = str(e)
+   311→        if "restack" in error_str.lower():
+   312→            return SubmitError(
+   314→                error_type="graphite_restack_required",
+   323→        return SubmitError(
+   325→            error_type="graphite_submit_failed",
+   326→            message=f"Graphite submit failed: {e}",
+   338→        return SubmitError(
+   340→            error_type="pr_not_found",
+   369→def _core_submit_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   377→        return SubmitError(
+   379→            error_type="github_auth_failed",
+   389→        return SubmitError(
+   391→            error_type="no_commits",
+   409→        if isinstance(pull_result, PullRebaseError):
+   410→            return SubmitError(
+   412→                error_type="rebase_failed",
+   414→                    f"Failed to rebase '{state.branch_name}' on origin.\n"
+   415→                    f"Error: {pull_result.message}\n\n"
+   425→        return SubmitError(
+   427→            error_type="branch_diverged",
+   446→    if isinstance(push_result, PushError):
+   448→            return SubmitError(
+   450→                error_type="branch_diverged",
+   459→        raise UserFacingCliError(push_result.message)
+   469→                return SubmitError(
+   471→                    error_type="parent_branch_no_pr",
+   547→def extract_diff(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   554→        return SubmitError(
+   556→            error_type="no_base_branch",
+   586→def fetch_plan_context(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   605→def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   612→        return SubmitError(
+   614→            error_type="no_diff_file",
+   615→            message="Failed to extract diff for AI analysis",
+   635→        return SubmitError(
+   637→            error_type="ai_generation_failed",
+   638→            message=f"Failed to generate message: {msg_result.error_message}",
+   651→def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   695→    except RuntimeError as e:
+   696→        error_msg = str(e).lower()
+   697→        if "nothing to submit" in error_msg or "no changes" in error_msg:
+   701→        return SubmitError(
+   703→            error_type="graphite_enhance_failed",
+   704→            message=f"Graphite enhancement failed: {e}",
+   721→def finalize_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   728→        return SubmitError(
+   730→            error_type="no_pr_number",
+   797→        except OSError as e:
+   799→                click.echo(click.style(f"   Failed to clean up diff file: {e}", dim=True))
+   843→def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   869→                f"   Warning: Objective #{objective_id} not found, skipping node linking",
+   907→            except ValueError:
+   961→def run_push_and_create_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   966→        except Exception as e:
+   968→            return SubmitError(
+   970→                error_type="unhandled_exception",
+   971→                message=f"Unexpected error in {step_name}: {e}",
+   975→        if isinstance(result, SubmitError):
+   998→def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   999→    """Run the submit pipeline, returning final state or first error."""
+  1003→        except Exception as e:
+  1005→            return SubmitError(
+  1007→                error_type="unhandled_exception",
+  1008→                message=f"Unexpected error in {step_name}: {e}",
+  1012→        if isinstance(result, SubmitError):
+  </tool_result>
+  <tool_use name="Read" id="toolu_01ATPuvTNy9trZ1NoZGQTSWv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="906" cache_read_input_tokens="33367" output_tokens="325" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 906, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ATPuvTNy9trZ1NoZGQTSWv">
+     1→"""Unit tests for cleanup_impl_for_submit pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitState,
+     7→    cleanup_impl_for_submit,
+     8→)
+     9→from erk.core.context import context_for_test
+    10→from erk_shared.gateway.git.fake import FakeGit
+    11→
+    12→
+    13→def _make_state(
+    14→    *,
+    15→    cwd: Path,
+    16→    repo_root: Path | None = None,
+    17→    branch_name: str = "feature",
+    18→) -&gt; SubmitState:
+    19→    return SubmitState(
+    20→        cwd=cwd,
+    21→        repo_root=repo_root if repo_root is not None else cwd,
+    22→        branch_name=branch_name,
+    23→        parent_branch="main",
+    24→        trunk_branch="main",
+    25→        use_graphite=True,
+    26→        force=False,
+    27→        debug=False,
+    28→        session_id="test-session",
+    29→        skip_description=False,
+    30→        quiet=False,
+
+... [82 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a clear picture. Let me create the task list and implement all three changes. The plan is straightforward:
+
+1. Remove the `plnd/` skip condition (lines 203-204 in submit_pipeline.py)
+2. Update the docstring (lines 195-201)
+3. Update the test (lines 73-90 in test file)
+
+Let me also check if `PLANNED_PR_TITLE_PREFIX` is used elsewhere in the file after removing those lines.
+
+Looking at the file, `PLANNED_PR_TITLE_PREFIX` is used in:
+- Line 26: import
+- Line 76: `_add_planned_prefix` function
+
+
+- Line 203: the skip condition we're removing
+
+So after removing line 203, `PLANNED_PR_TITLE_PREFIX` is still used in `_add_planned_prefix` on line 76, so I should keep the import. I also notice that `_graphite_first_flow` uses `state.branch_name.startswith("plnd/")` on line 264 for auto-force detection, which is separate from this fix. Now I'll implement all three changes.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="20360" cache_read_input_tokens="34273" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 20360}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I have a clear picture. Let me create tasks and implement.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="20360" cache_read_input_tokens="34273" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 20360}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_013c9GEZfo45pBwweMnQMqiZ">
+    <param name="subject">Remove plnd/ skip condition in cleanup_impl_for_submit</param>
+    <param name="description">Remove the early-return block that skips cleanup for plnd/ branches (lines 203-204). Also update the docstring to remove the stale "Skipped for plan branches" line.</param>
+    <param name="activeForm">Removing plnd/ skip condition</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="20360" cache_read_input_tokens="34273" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 20360}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013c9GEZfo45pBwweMnQMqiZ">
+Task #1 created successfully: Remove plnd/ skip condition in cleanup_impl_for_submit
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01CK6Yc86Ha1HZaQEPVa3PJn">
+    <param name="subject">Update test to assert cleanup happens for plnd/ branches</param>
+    <param name="description">Rename test_noop_for_plan_branch to test_cleans_up_plan_branch and flip assertions to verify cleanup DOES happen.</param>
+    <param name="activeForm">Updating plan branch test</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="20360" cache_read_input_tokens="34273" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 20360}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CK6Yc86Ha1HZaQEPVa3PJn">
+Task #2 created successfully: Update test to assert cleanup happens for plnd/ branches
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01Gioy6Zeb8CQA58KCpTBPWv">
+    <param name="subject">Run tests to verify changes</param>
+    <param name="description">Run pytest on the test file and fast-ci to verify everything passes.</param>
+    <param name="activeForm">Running tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="20360" cache_read_input_tokens="34273" output_tokens="656" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 20360, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Gioy6Zeb8CQA58KCpTBPWv">
+Task #3 created successfully: Run tests to verify changes
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SRaFKoYBgdxiY517ZzVKqT">
+    <param name="command">erk exec impl-signal started --session-id="7c96e5d9-df2a-407d-9295-ea79b2b5bd1c" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="788" cache_read_input_tokens="54633" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 788, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SRaFKoYBgdxiY517ZzVKqT">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8667
+}
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01Bi5RwRiirwHWBTPX57tFnv">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="157" cache_read_input_tokens="55421" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 157, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Bi5RwRiirwHWBTPX57tFnv">
+Updated task #1 status
+  </tool_result>
+  <assistant>Now implementing. `PLANNED_PR_TITLE_PREFIX` is still used in `_add_planned_prefix` (line 76), so the import stays.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="55578" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_015q2eqnbb5z22XGbNVsZ5rU">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitEr...[truncated 381 chars]...D_PR_TITLE_PREFIX):
+        return state
+
+    if not impl_context_exists(state.repo_root):</param>
+    <param name="new_string">def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitEr...[truncated 219 chars]...pens later in push_and_create_pr.
+    """
+    if not impl_context_exists(state.repo_root):</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="55578" output_tokens="462" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 90, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015q2eqnbb5z22XGbNVsZ5rU">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01HmFioAXqrTAHgW4sLX5Z16">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="55668" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 542}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HmFioAXqrTAHgW4sLX5Z16">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01B1KvoWxGvciRVjhGRDQqiE">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="55668" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 542, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01B1KvoWxGvciRVjhGRDQqiE">
+Updated task #2 status
+  </tool_result>
+  <assistant>Now update the test - rename it and flip the assertions to verify cleanup happens on `plnd/` branches:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="56210" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01BK2nPN1eZ9byfn7TaNdQRe">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py</param>
+    <param name="old_string">def test_noop_for_plan_branch(tmp_path: Path) -&gt; None:
+    """Plan branches (plnd/*) keep ...[truncated 488 chars]... assert result is state
+    assert impl_dir.exists()
+    assert len(fake_git.commits) == 0</param>
+    <param name="new_string">def test_cleans_up_plan_branch(tmp_path: Path) -&gt; None:
+    """Plan branches (plnd/*) also...[truncated 523 chars]...assert len(fake_git.commits) == 1
+    assert "impl-context" in fake_git.commits[0].message</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="56210" output_tokens="670" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BK2nPN1eZ9byfn7TaNdQRe">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62/tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01JP7E775N1awHrVkDVWXhwF">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="759" cache_read_input_tokens="56408" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 759}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JP7E775N1awHrVkDVWXhwF">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01QtpT4zTUiDiR8kw1ycT7zH">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="759" cache_read_input_tokens="56408" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 759}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QtpT4zTUiDiR8kw1ycT7zH">
+Updated task #3 status
+  </tool_result>
+  <assistant>Now running the targeted tests first, then fast-ci.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="57167" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Ji543AM4EdSZDYJTWQSdtw">
+    <param name="description">Run cleanup_impl tests</param>
+    <param name="prompt">Run pytest on `tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py -x` and report results. Do NOT fix any errors.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="57167" output_tokens="147" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ji543AM4EdSZDYJTWQSdtw">
+pytest passed: 4 passed in 0.39s
+
+All tests in `tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py` passed successfully.
+agentId: af2234fe97b3d4773 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13485
+tool_uses: 1
+duration_ms: 4250&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 4 tests pass. Now let me run fast-ci.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="262" cache_read_input_tokens="57365" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 262}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_011xeQTQpWaXoALEANTdKWkk">
+    <param name="description">Run fast-ci checks</param>
+    <param name="prompt">Run `make fast-ci` and report results. Do NOT fix any errors.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="262" cache_read_input_tokens="57365" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 262, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011xeQTQpWaXoALEANTdKWkk">
+All make fast-ci checks passed successfully:
+
+**Lint:** All checks passed!
+**Format Check:** 1598 files already formatted
+**Prettier Check:** All matched files use Prettier code style!
+**Markdown Check:** AGENTS.md standard passed; all CLAUDE.md and AGENTS.md files properly paired (19 checked, 0 violations)
+**Exec Reference Check:** .claude/skills/erk-exec/reference.md is up to date
+**Type Checking (ty):** All checks passed!
+**Unit Tests (erk):** 5553 passed in 8.02s
+**Tests (erk-dev):** 136 passed in 2.76s
+**Tests (erk-statusline):** 115 passed in 0.68s
+**Tests (erk-mcp):** 10 passed
+
+All CI checks passed with no errors or failures.
+agentId: a88eb51b86fbbb907 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14668
+tool_uses: 2
+duration_ms: 26453&lt;/usage&gt;
+  </tool_result>
+  <assistant>All CI checks pass (5553 unit tests, lint, format, type checking).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="57627" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 397}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01AgjKy9NwAMwa3wjHFRQjYe">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="57627" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 397}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AgjKy9NwAMwa3wjHFRQjYe">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PS4mFp6tnbFH8Qx1tMK8Wm">
+    <param name="command">erk exec impl-signal ended --session-id="7c96e5d9-df2a-407d-9295-ea79b2b5bd1c" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="107" cache_read_input_tokens="58024" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 107}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EyAo1acKn6QyWffprH4U49">
+    <param name="command">erk exec upload-impl-session --session-id="7c96e5d9-df2a-407d-9295-ea79b2b5bd1c" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="107" cache_read_input_tokens="58024" output_tokens="223" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 107, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PS4mFp6tnbFH8Qx1tMK8Wm">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8667
+}
+  </tool_result>
+  <tool_result tool="toolu_01EyAo1acKn6QyWffprH4U49">
+{"uploaded": true, "plan_id": 8667}
+  </tool_result>
+  <assistant>Now submitting the PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="58131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 323}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XFFpH4msSsAHafhuJw8r1Z">
+    <param name="command">erk pr submit 2&gt;&amp;1</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="58131" output_tokens="105" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 323, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XFFpH4msSsAHafhuJw8r1Z">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0113DgJ1wXG9ybP1iYiEt3nr">
+    <param name="command">erk pr submit 2&gt;&amp;1</param>
+    <param name="description">Submit PR via erk (retry)</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="58587" cache_read_input_tokens="0" output_tokens="100" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 58587, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0113DgJ1wXG9ybP1iYiEt3nr">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01V64jFGdkkebMqq8mgyxRtq">
+    <param name="command">erk pr submit --debug 2&gt;&amp;1</param>
+    <param name="description">Submit PR with debug output</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="126" cache_read_input_tokens="58587" output_tokens="100" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 126, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V64jFGdkkebMqq8mgyxRtq">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012LkJPn3FLA7sCQBqgUsSxF">
+    <param name="command">git status &amp;&amp; git log --oneline -5</param>
+    <param name="description">Check git status and recent commits</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="383" cache_read_input_tokens="58454" output_tokens="83" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 383, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012LkJPn3FLA7sCQBqgUsSxF">
+On branch plnd/fix-plnd-skip-cleanup-03-03-0641
+Your branch and 'origin/plnd/fix-plnd-skip-cleanup-03-03-0641' have diverged,
+and have 1 and 1 different commits each, respectively.
+  (use "git pull" if you want to integrate the remote branch with yours)
+
+nothing to commit, working tree clean
+68f1ffdc9 Remove incorrect plnd/ skip in cleanup_impl_for_submit
+6193bdeff Remove .erk/impl-context/ before submission
+0418aab5a Add plan: Fix: Remove incorrect plnd/ skip in cleanup_impl_for_submit
+19bcdc8b2 Add CI step for erk-mcp tests (#8664)
+cb99d1752 Create erk-mcp server exposing erk capabilities via MCP protocol (#8660)
+  </tool_result>
+  <thinking>The branch has diverged from remote. The erk pr submit seems to have run silently. Let me check if there's a PR already, and then force-submit.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="58837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 301}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The branch has diverged (local has the impl commit, remote has the impl-context cleanup). Let me force submit.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="58837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 301}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017pEKt4xKMA7r4gv53pXbnv">
+    <param name="command">erk pr submit -f 2&gt;&amp;1</param>
+    <param name="description">Force submit PR via erk</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="301" cache_read_input_tokens="58837" output_tokens="178" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 301, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017pEKt4xKMA7r4gv53pXbnv">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016e9QsYwyJPmGtRhxWbthYZ">
+    <param name="command">erk pr submit -f --debug 2&gt;&amp;1; echo "EXIT: $?"</param>
+    <param name="description">Force submit PR with debug and exit code</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="204" cache_read_input_tokens="59138" output_tokens="112" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 204, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016e9QsYwyJPmGtRhxWbthYZ">
+Command running in background with ID: b1ddvr4ef. Output is being written to: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-62/tasks/b1ddvr4ef.output
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GS877QMKJw5Bq6BgezujM1">
+    <param name="file_path">/private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-62/tasks/b1ddvr4ef.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="534" cache_read_input_tokens="59342" output_tokens="98" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 534, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GS877QMKJw5Bq6BgezujM1">
+File does not exist. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-62.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01QEWNsjCR7iJPFTvswhAncc">
+    <param name="command">cat /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-62/tasks/b1ddvr4ef.output 2&gt;&amp;1 || echo "File not found"</param>
+    <param name="description">Read background task output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="59876" output_tokens="130" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 156, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QEWNsjCR7iJPFTvswhAncc">
+cat: /private/tmp/claude-501/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-62/tasks/b1ddvr4ef.output: No such file or directory
+File not found
+  </tool_result>
+  <tool_use name="TaskOutput" id="toolu_019T82E14qqYADta1GjYEZWR">
+    <param name="task_id">b1ddvr4ef</param>
+    <param name="block">False</param>
+    <param name="timeout">5000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="200" cache_read_input_tokens="60032" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 200, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019T82E14qqYADta1GjYEZWR">
+&lt;tool_use_error&gt;No task found with ID: b1ddvr4ef&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Csbv3uZ6vmU9LcxqMNMDf4">
+    <param name="command">gh pr view --json number,url,title,isDraft,state 2&gt;&amp;1</param>
+    <param name="description">Check current PR status</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="140" cache_read_input_tokens="60232" output_tokens="90" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 140, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Csbv3uZ6vmU9LcxqMNMDf4">
+{"isDraft":false,"number":8667,"state":"OPEN","title":"Remove incorrect plnd/ skip in cleanup_impl_for_submit","url":"https://github.com/dagster-io/erk/pull/8667"}
+  </tool_result>
+  <thinking>The PR exists and is open. The issue is that `erk pr submit` seems to produce no output. Let me check if the branch is pushed correctly now.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="60372" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 156}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>The PR is already open and published. Let me push the implementation changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="60372" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 156}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01U9UzkpeZMBF8MfaetcyBGX">
+    <param name="command">git push origin plnd/fix-plnd-skip-cleanup-03-03-0641 --force-with-lease 2&gt;&amp;1</param>
+    <param name="description">Force push with lease to update remote</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="156" cache_read_input_tokens="60372" output_tokens="171" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 156, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01U9UzkpeZMBF8MfaetcyBGX">
+Everything up-to-date
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FSAH1ypsLdA1uxNN7iBC9r">
+    <param name="command">git log --oneline origin/plnd/fix-plnd-skip-cleanup-03-03-0641 -3 2&gt;&amp;1</param>
+    <param name="description">Check remote branch commits</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="189" cache_read_input_tokens="60528" output_tokens="103" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 189, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FSAH1ypsLdA1uxNN7iBC9r">
+9e8bda210 Remove incorrect plnd/ skip in cleanup_impl_for_submit
+6193bdeff Remove .erk/impl-context/ before submission
+0418aab5a Add plan: Fix: Remove incorrect plnd/ skip in cleanup_impl_for_submit
+  </tool_result>
+  <thinking>Hmm, the remote shows a different commit hash (9e8bda210) than local (68f1ffdc9) but both have the same message. The branch has diverged. Let me check what's going on.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="178" cache_read_input_tokens="60717" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 178}" output_tokens="13" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013Q3iKS6gtx1RdyVMaPhs6u">
+    <param name="command">git log --oneline -3 &amp;&amp; echo "---" &amp;&amp; git log --oneline origin/plnd/fix-plnd-skip-cleanup-03-03-0641 -3</param>
+    <param name="description">Compare local and remote commits</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="178" cache_read_input_tokens="60717" output_tokens="179" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 178, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013Q3iKS6gtx1RdyVMaPhs6u">
+9e8bda210 Remove incorrect plnd/ skip in cleanup_impl_for_submit
+6193bdeff Remove .erk/impl-context/ before submission
+0418aab5a Add plan: Fix: Remove incorrect plnd/ skip in cleanup_impl_for_submit
+---
+9e8bda210 Remove incorrect plnd/ skip in cleanup_impl_for_submit
+6193bdeff Remove .erk/impl-context/ before submission
+0418aab5a Add plan: Fix: Remove incorrect plnd/ skip in cleanup_impl_for_submit
+  </tool_result>
+  <assistant>Local and remote are in sync. The `erk pr submit` did work (it pushed and updated the PR silently). Let me signal the lifecycle transition and run the post-submit checks.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="320" cache_read_input_tokens="60895" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 320}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01F4rny6UJp61F6DJu3wU8AG">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal lifecycle transition to submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="320" cache_read_input_tokens="60895" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 320}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F4rny6UJp61F6DJu3wU8AG">
+{
+  "success": false,
+  "event": "submitted",
+  "error_type": "no-plan-reference",
+  "message": "No plan reference found"
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013VLRte9JpS8Rg7HHDwadmK">
+    <param name="command">erk pr check --stage=impl 2&gt;&amp;1 || true</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="320" cache_read_input_tokens="60895" output_tokens="199" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 320, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013VLRte9JpS8Rg7HHDwadmK">
+Checking PR #8667 for branch plnd/fix-plnd-skip-cleanup-03-03-0641...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>All PR checks pass. Plan execution complete.
+
+**Summary of changes:**
+
+1. **`src/erk/cli/commands/pr/submit_pipeline.py`** — Removed the incorrect `plnd/` branch skip in `cleanup_impl_for_submit` (the `if state.branch_name.startswith(PLANNED_PR_TITLE_PREFIX): return state` block) and updated the docstring to remove the stale "Skipped for plan branches" line.
+
+2. **`tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py`** — Renamed `test_noop_for_plan_branch` to `test_cleans_up_plan_branch` and flipped assertions to verify that cleanup **does** happen for `plnd/` branches (files removed, commit created).
+
+PR #8667: https://github.com/dagster-io/erk/pull/8667</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="472" cache_read_input_tokens="61215" output_tokens="221" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 472, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>/local:statusline-refresh</user>
+  <user>&lt;local-command-stdout&gt;
+🔄 Status line refreshed
+&lt;/local-command-stdout&gt;</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+</session>
