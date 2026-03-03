@@ -1,0 +1,3051 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>▐▛███▜▌   Claude Code v2.1.63
+▝▜█████▛▘  Sonnet 4.6 · Claude API
+  ▘▘ ▝▝    /workspaces/erk
+
+❯ would there be advantages in reorganizing our learned docs as skills
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ would there be advantages in reorganizing our learned docs as skills or a set of skills
+
+● This is an interesting architectural question. Let me think through the trade-offs systematically.
+
+● Searched for 1 pattern, read 1 file (ctrl+o to expand)
+
+● 36 categories, 19 skills, 595 docs. That context matters. Here's my analysis:
+
+  ---
+  Advantages of Moving Learned Docs → Skills
+
+  1. Explicit loading semantics (biggest win)
+  Skills are invoked by name; docs require grep-based discovery. The current pattern is: "grep docs/learned/, read matches, then code." Skills skip the discovery step entirely.
+
+  2. Session persistence
+  Once a skill loads, it stays in context. Currently, relevant docs might need to be re-read across tool calls. Skills avoid re-reading the same content.
+
+  3. Hook-injectable
+  dignified-python is already auto-injected via PreToolUse hook when editing .py files. That pattern works well. Docs can't be injected this way — they require active reads.
+
+  4. Structured trigger conditions
+  Skills have documented "use when" conditions. Docs have read-when frontmatter, but the routing depends on the agent correctly grepping and matching.
+
+  ---
+  Disadvantages / Why the Current System Works
+
+  1. Scale mismatch
+  595 docs → you can't have 595 skills. Skills work at coarse granularity; docs/learned/ works at fine granularity. The category structure (36 categories) is already a reasonable
+   skill-level granularity, but that's still a lot of skills.
+
+  2. Docs are agent-generated; skills are curated
+  docs/learned/ is designed to be written and updated automatically by agents after implementation. Skills are handcrafted guidance. These have different epistemics — conflating
+  them loses the "auto-updated from experience" property.
+
+  3. Tripwires system is tightly coupled to docs
+  The tripwires index, category tripwires, and the routing tables all point at docs/learned/. Rebuilding that system around skills is significant work.
+
+  4. Grep discovery is actually powerful
+  The grep-first approach lets agents find very specific docs (e.g., "how does Path.home() work in exec scripts?") without loading an entire skill. A coarser skill would include
+  a lot of irrelevant content.
+
+  ---
+  Most Promising Hybrid Approaches
+
+  1. Category-level aggregate skills — One skill per major category (e.g., erk-testing, erk-architecture) that compiles the most important docs from that category. The category
+  tripwires files are already close to this.
+  2. Hook-injected category skills — When editing files in src/erk/gateway/, auto-inject the architecture skill. This exists partially already (dignified-python via PreToolUse).
+  3. Skills as curated distillations — Keep docs/learned/ as the raw "lessons learned" corpus, but have skills be opinionated summaries of the most important patterns. Skills
+  serve as the high-bandwidth entry point; docs serve as the reference.
+
+  ---
+  My Take
+
+  The main concrete gain would be eliminating the grep-then-read discovery overhead for the most common patterns. But the 595-doc corpus has too much detail to fit into skills
+  directly.
+
+  The best ROI is probably:
+  - Keep docs/learned/ as-is for fine-grained reference
+  - Convert the category tripwires files into loadable skills (they're already structured for this)
+  - Expand the hook injection pattern (currently only dignified-python) to more categories
+
+  Would you want to explore one of these directions more concretely?
+
+✻ Sautéed for 40s
+
+❯ - Convert the category tripwires files into loadable skills (they're already structured for this)
+
+   1. Category-level aggregate skills — One skill per major category (e.g., erk-testing, erk-architecture) that compiles the most important docs from that category. The
+  category
+    tripwires files are already close to this.
+  -----
+  category-based skills as well as "authoring skills" versus "reviewing skills" seem interesting approaches. plus with the ability to grep reference documentation
+
+● These are three interesting orthogonal axes. Let me think through each:
+
+  ---
+  Authoring vs. Reviewing Skills
+
+  This split maps cleanly onto what already exists:
+
+  Authoring skills → constructive guidance ("how to write X correctly")
+  - dignified-python, fake-driven-testing are already this shape
+  - Loaded when you're about to write code
+  - Content: patterns, canonical examples, what to do
+
+  Reviewing skills → critical guidance ("what to check for")
+  - The tripwires files are already reviewing content — they're lists of "stop and verify this"
+  - Loaded when you're auditing or reviewing code
+  - Content: common mistakes, smells, violations to look for
+  - The local:review and local:code-review commands would benefit most from these
+
+  The hook injection story becomes cleaner:
+  - PreToolUse on Edit/Write → inject authoring skill for that file's category
+  - PostToolUse or review commands → inject reviewing skill
+
+  Currently dignified-python does both — standards and code smells. Splitting those two concerns might make each more focused and token-efficient.
+
+  ---
+  Category-Based Skills with Grep Pointers
+
+  Rather than inlining all 595 docs into skills (impossible), skills could act as structured entry points with pointers:
+
+  # erk-testing skill
+
+  ## Core Patterns (always load)
+  [5-layer architecture summary, key rules]
+
+  ## Authoring Guidance
+  When writing a new fake, follow...
+
+  ## Reviewing Guidance
+  When reviewing tests, check for...
+
+  ## Deep Reference
+  For more detail, grep:
+  - docs/learned/testing/exec-script-testing.md  → exec script path patterns
+  - docs/learned/testing/testing.md              → test requirements
+  - docs/learned/testing/tripwires.md            → full tripwire list
+
+  The skill gives you the 20% of knowledge that covers 80% of situations, and explicitly routes you to the right doc when you need depth. This is better than the current "grep
+  everything and hope you find the right file" approach.
+
+  ---
+  Skills That Can Grep Reference Documentation
+
+  This points toward a more active pattern — a skill that doesn't just contain knowledge but also instructs the agent to search as part of its protocol:
+
+  ## How to Use This Skill
+
+  1. Read the core patterns below
+  2. Identify which subcategory applies to your task
+  3. Run: Grep(pattern="&lt;relevant-keyword&gt;", path="docs/learned/testing/", glob="*.md")
+  4. Read the matching file before writing code
+
+  This makes the skill an active workflow rather than a passive knowledge dump. It's essentially codifying the "grep docs/learned/ first" instruction that's currently buried in
+  AGENTS.md — but making it specific and actionable per-category rather than generic.
+
+  ---
+  How These Ideas Compose
+
+  The most coherent design would be:
+
+  ┌──────────────────────────────┬────────────────────────────────┬──────────────────────────────────┬─────────────────────────────┐
+  │          Skill Type          │          When Loaded           │             Contains             │          Points To          │
+  ├──────────────────────────────┼────────────────────────────────┼──────────────────────────────────┼─────────────────────────────┤
+  │ erk-testing (authoring)      │ PreToolUse on tests/           │ Core patterns, fake architecture │ Deep docs via grep protocol │
+  ├──────────────────────────────┼────────────────────────────────┼──────────────────────────────────┼─────────────────────────────┤
+  │ erk-testing (reviewing)      │ /review command                │ Tripwires, code smells           │ Same deep docs              │
+  ├──────────────────────────────┼────────────────────────────────┼──────────────────────────────────┼─────────────────────────────┤
+  │ erk-architecture (authoring) │ PreToolUse on src/erk/gateway/ │ ABC pattern, subprocess wrappers │ Architecture docs           │
+  └──────────────────────────────┴────────────────────────────────┴──────────────────────────────────┴─────────────────────────────┘
+
+  Or alternatively, a single erk-testing skill with clearly delineated ## Authoring and ## Reviewing sections — load once, use for both purposes.
+
+  ---
+  The most actionable next step would probably be picking one category (testing seems like a good candidate given fake-driven-testing already exists) and experimenting with:
+  1. Splitting fake-driven-testing into authoring vs. reviewing sections
+  2. Adding explicit grep-protocol pointers to docs/learned/testing/
+  3. Wiring the reviewing section to local:review
+
+  Want to try that as a concrete experiment?
+
+✻ Brewed for 38s
+
+❯ i think we should have better categories than that. e.g. when authoring in erk dash we should get tui skills
+
+● Right — the categories should be codebase domain areas, not abstract methodological categories. The injection trigger is "what subsystem are you editing?" not "are you
+  authoring or reviewing?"
+
+  The existing tripwires index already has the right shape. Looking at what has enough mass to justify a skill:
+
+● Bash(for dir in /workspaces/erk/docs/learned/*/; do
+        category=$(basename "$dir")…)
+  ⎿  architecture: 127 docs
+     planning: 73 docs
+     cli: 68 docs
+     … +26 lines (ctrl+o to expand)
+
+● Searched for 1 pattern (ctrl+o to expand)
+
+● Good picture. Here's the natural mapping:
+
+  ---
+  Domain-Based Skill → Path Trigger Mapping
+
+  ┌──────────────────┬───────────────────────────────────┬────────────────────────────────┬───────────┐
+  │      Skill       │        Inject When Editing        │        Existing Skill?         │ Doc Mass  │
+  ├──────────────────┼───────────────────────────────────┼────────────────────────────────┼───────────┤
+  │ erk-tui          │ src/erk/tui/                      │ No (textual exists separately) │ 34+7 docs │
+  ├──────────────────┼───────────────────────────────────┼────────────────────────────────┼───────────┤
+  │ erk-cli          │ src/erk/cli/                      │ No                             │ 68 docs   │
+  ├──────────────────┼───────────────────────────────────┼────────────────────────────────┼───────────┤
+  │ erk-architecture │ src/erk/gateway/, src/erk/ (core) │ No                             │ 127 docs  │
+  ├──────────────────┼───────────────────────────────────┼────────────────────────────────┼───────────┤
+  │ erk-testing      │ tests/                            │ fake-driven-testing (partial)  │ 41 docs   │
+  ├──────────────────┼───────────────────────────────────┼────────────────────────────────┼───────────┤
+  │ erk-planning     │ .erk/impl-context/                │ Yes                            │ 73 docs   │
+  ├──────────────────┼───────────────────────────────────┼────────────────────────────────┼───────────┤
+  │ erk-ci           │ .github/workflows/                │ No                             │ 45 docs   │
+  ├──────────────────┼───────────────────────────────────┼────────────────────────────────┼───────────┤
+  │ erk-sessions     │ ~/.claude/projects/               │ session-inspector (partial)    │ 17 docs   │
+  └──────────────────┴───────────────────────────────────┴────────────────────────────────┴───────────┘
+
+  The important insight here is that src/erk/tui/ is a perfect example: Textual has its own patterns that are completely orthogonal to CLI patterns. An agent editing erk dash
+  should get Textual widget patterns, reactive data flow, the TUI action system — not gateway or CLI patterns.
+
+  ---
+  Skill Composition vs. Monolithic Skills
+
+  For TUI specifically, the current split (tui/ + textual/) suggests there might be two layers:
+
+  - Framework layer (erk-textual): Textual-specific patterns (widgets, screens, reactive, CSS)
+  - Domain layer (erk-tui): How erk uses Textual — dash architecture, data flow, the view/widget hierarchy
+
+  An agent editing src/erk/tui/views/ needs both. One option: erk-tui imports/includes erk-textual as a dependency. Skills already support this via $skill-name references in
+  their content.
+
+  ---
+  The Hook Injection Pattern
+
+  The dignified-python injection shows the pattern works. Extending it:
+
+  # PreToolUse hook on Edit/Write
+  path = tool_input["file_path"]
+
+  if "src/erk/tui/" in path:
+      inject("erk-tui")
+  elif "src/erk/cli/" in path:
+      inject("erk-cli")
+  elif "src/erk/gateway/" in path:
+      inject("erk-architecture")
+  elif "tests/" in path:
+      inject("erk-testing")
+
+  Multiple skills could inject for a single file (e.g., a TUI test gets both erk-tui + erk-testing). The session-persistence property means the cost is paid once per session, not
+   per edit.
+
+  ---
+  What This Changes About Authoring vs. Reviewing
+
+  With domain skills, the authoring/reviewing split happens within each skill rather than as a top-level split:
+
+  # erk-tui skill
+
+  ## Authoring Patterns
+  [How to build TUI features correctly]
+
+  ## Reviewing / Tripwires
+  [What to check when auditing TUI code]
+
+  ## Deep Reference
+  Grep docs/learned/tui/ and docs/learned/textual/ for specifics
+
+  The domain is the primary axis; authoring/reviewing is a section within each domain skill.
+
+  ---
+  Does this framing make sense? The TUI case (erk-tui) seems like the most concrete place to start — it has a clear path trigger (src/erk/tui/), substantial docs, and a framework
+   dependency (textual) that makes the value of a dedicated skill most obvious.
+
+✻ Crunched for 43s
+
+❯ in general we should align to skills to what topics are ended together, but with composability. inspect prs historically and figure out a coherent proposal. tui again is a
+   perfect example, since there are a subset of prs that would benefit from the focus on that single skill
+
+● Explore(Analyze PR history for file co-occurrence clusters)
+  ⎿  Done (23 tool uses · 41.4k tokens · 2m 13s)
+  (ctrl+o to expand)
+
+● Good data. Here's the synthesis:
+
+  ---
+  Proposed Skill Architecture
+
+  What the co-occurrence data shows
+
+  The commit history validates the intuition clearly:
+
+  - TUI is genuinely isolated — only 4 commits in 70 crossed tui ↔ cli. It's the cleanest domain boundary in the codebase.
+  - CLI is the integration hub — touches everything; a CLI skill needs to be composable, not monolithic.
+  - Tests co-move with their src domain — 39/47 commits have both src and test changes. This means "inject both tui + testing when editing tests/tui/" rather than separate skill
+  invocations.
+  - .claude/ is never pure — hook/command work is always coupled to something else. No standalone automation skill makes sense; those patterns belong inside the domain skills.
+
+  ---
+  Tier Structure with Composability
+
+  Tier 1: Foundational (session-wide, always in context)
+  ├── dignified-python     → injected for all .py files (already works)
+  └── fake-driven-testing  → rename/enhance to erk-testing
+
+  Tier 2: Domain Skills (injected by file path via hook)
+  ├── erk-tui      → src/erk/tui/**        (most isolated; build this first)
+  ├── erk-cli      → src/erk/cli/**        (highest frequency)
+  └── erk-core     → src/erk/gateway/**,   (architecture + shared layer)
+                     packages/erk-shared/**
+
+  Tier 3: Workflow Skills (explicitly loaded per-task)
+  ├── erk-planning  (already exists)
+  ├── erk-ci        → .github/workflows/**
+  └── erk-sessions  → ~/.claude/projects/**
+
+  Composability rule: The hook injects all matching domain skills for a file path. Editing tests/tui/test_dash.py → injects erk-tui + erk-testing. The skills don't need to know
+  about each other; the hook handles composition.
+
+  ---
+  erk-tui as the first skill to build
+
+  The data makes a strong case:
+
+  ┌──────────────────────────────┬──────────────────────────────────────────────────────────────────────┐
+  │            Signal            │                               Evidence                               │
+  ├──────────────────────────────┼──────────────────────────────────────────────────────────────────────┤
+  │ Lowest cross-domain coupling │ Only 4/70 commits crossed tui ↔ cli                                  │
+  ├──────────────────────────────┼──────────────────────────────────────────────────────────────────────┤
+  │ Distinct framework           │ Textual is entirely different from Click; no overlap with erk-cli    │
+  ├──────────────────────────────┼──────────────────────────────────────────────────────────────────────┤
+  │ Solid doc mass               │ 34 tui + 7 textual = 41 docs to distill from                         │
+  ├──────────────────────────────┼──────────────────────────────────────────────────────────────────────┤
+  │ Clear path trigger           │ src/erk/tui/** is unambiguous                                        │
+  ├──────────────────────────────┼──────────────────────────────────────────────────────────────────────┤
+  │ Already has tripwires        │ tui/tripwires.md (59 tripwires) is ready to be the reviewing section │
+  └──────────────────────────────┴──────────────────────────────────────────────────────────────────────┘
+
+  Structure of erk-tui:
+
+  # erk-tui
+
+  ## Authoring: How to build TUI features
+  [Textual widget/screen patterns, reactive data, CSS, action system]
+  [erk-specific: how dash is structured, view hierarchy, data flow]
+
+  ## Reviewing: What to check
+  [Distilled from tui/tripwires.md — the 10 most critical tripwires]
+
+  ## Deep Reference
+  When you need more detail:
+  - Grep docs/learned/tui/ for specific widget patterns
+  - Grep docs/learned/textual/ for Textual framework specifics
+  - Read docs/learned/tui/tripwires.md for full tripwire list
+
+  ---
+  What this changes about the current system
+
+  ┌─────────────────────────────────────────────────┬─────────────────────────────────────────────────────────────────────────┐
+  │                     Current                     │                                Proposed                                 │
+  ├─────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+  │ Grep docs/learned/ → read matching files → code │ Hook auto-injects domain skill → code (with grep pointer for depth)     │
+  ├─────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+  │ Generic "architecture" skill                    │ Specific erk-core (gateway/shared), erk-cli, erk-tui                    │
+  ├─────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+  │ fake-driven-testing covers all of testing       │ erk-testing (foundational) + domain skill covers testing-in-that-domain │
+  ├─────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+  │ Tripwires loaded by agent discovery             │ Tripwires distilled into reviewing section of domain skill              │
+  ├─────────────────────────────────────────────────┼─────────────────────────────────────────────────────────────────────────┤
+  │ 595 docs discoverable but ungrouped             │ Skills as structured entry points, docs as deep reference corpus        │
+  └─────────────────────────────────────────────────┴─────────────────────────────────────────────────────────────────────────┘
+
+  ---
+  Proposed build order
+
+  1. erk-tui — cleanest domain, build it, wire the hook, use it on a real TUI task to validate the pattern
+  2. erk-testing (rename/enhance fake-driven-testing) — add domain-awareness (tui tests vs CLI tests)
+  3. erk-cli — higher complexity because CLI is the integration hub; benefit from patterns learned in #1
+  4. erk-core — distill from the 127 architecture docs, which are already the most comprehensive
+
+  Want to start with erk-tui?
+
+✻ Sautéed for 2m 32s
+
+❯ this might drive breaking up the architecture skill into subdomains. what would that look like
+
+● Read 2 files (ctrl+o to expand)
+
+● Bash(ls /workspaces/erk/docs/learned/architecture/ | sed 's/\.md$//' | sort)
+  ⎿  abc-convenience-methods
+     agent-backpressure-gates
+     agent-schema-enforcement
+     … +87 lines (ctrl+o to expand)
+
+● That's 127 docs in one bucket — way too coarse. Let me read enough to cluster them properly.
+
+● Bash(ls /workspaces/erk/docs/learned/architecture/ | sed 's/\.md$//' | sort | python3 -c "
+      import sys…)
+  ⎿  gateway-abc (16):
+       abc-convenience-methods
+       fake-mutation-tracking
+     … +85 lines (ctrl+o to expand)
+
+● Searched for 2 patterns (ctrl+o to expand)
+
+● Good picture now. The clusters map cleanly. Here's the breakdown:
+
+  ---
+  "Architecture" splits into 6 subdomains
+
+  The 127 docs cluster naturally along two axes: what layer (gateway, GitHub, Git, CLI, core) and what concern (cross-cutting patterns vs. domain-specific).
+
+  architecture/ (127 docs)
+  ├── gateway-abc     (16) → erk-gateway skill
+  ├── github          (13) → erk-github skill   ┐ compose with
+  ├── git-graphite     (8) → erk-git skill      ┘ erk-gateway
+  ├── pipeline-state  (12) → erk-core skill (or erk-pipeline)
+  ├── error-handling  (11) → move INTO dignified-python (foundational)
+  ├── cli-patterns    (12) → merge INTO erk-cli
+  ├── agent-claude    (15) → erk-agents skill
+  ├── core-foundations(10) → erk-core skill
+  ├── planning-impl   (10) → merge INTO erk-planning (already exists)
+  ├── pr-body          (3) → part of erk-cli or erk-github
+  └── other           (17) → scattered; most belong in above buckets
+
+  ---
+  The critical insight: error-handling belongs in dignified-python
+
+  The error-handling cluster (discriminated unions, backpressure gates, LBYL gateway pattern, validation patterns) is the most cross-cutting thing in the whole codebase. It
+  applies everywhere — TUI, CLI, gateway, pipeline. It currently lives in "architecture" where it's easy to miss.
+
+  These 11 docs should extend dignified-python, not live in a separate architecture skill. dignified-python is already always-injected for .py files — that's the right home for
+  universal correctness patterns.
+
+  ---
+  The composition model for gateway + integrations
+
+  The gateway ABC pattern + GitHub/Git-specific patterns have a clear composition relationship:
+
+  editing packages/erk-shared/src/.../github/real.py
+    → inject erk-gateway  (ABC pattern, 5-place implementation, fake-mutation-tracking)
+    → inject erk-github   (GitHub API quirks, rate limits, GraphQL patterns, parsing)
+
+  editing packages/erk-shared/src/.../git/real.py
+    → inject erk-gateway  (same)
+    → inject erk-git      (plumbing patterns, branch-manager, graphite quirks)
+
+  erk-gateway is the foundational skill (always load when touching packages/erk-shared/). erk-github and erk-git layer on top for domain-specific details.
+
+  ---
+  The agent/Claude integration cluster
+
+  15 docs about subprocess wrappers, claude-cli execution modes, prompt executor patterns, parallel agent patterns — this is its own coherent domain. It maps to code that calls
+  Claude (not code that runs as Claude). Inject when editing things like src/erk/capabilities/agents/ or files that use subprocess_wrappers.
+
+  ---
+  Full revised skill map
+
+  Layer 1: Foundational (always injected for .py files)
+  ├── dignified-python     ← extend with error-handling cluster (11 docs)
+  └── erk-testing          ← rename/enhance from fake-driven-testing
+
+  Layer 2: Domain skills (injected by file path)
+  ├── erk-tui              → src/erk/tui/**
+  ├── erk-cli              → src/erk/cli/**        ← absorb cli-patterns (12 docs)
+  ├── erk-gateway          → packages/erk-shared/** ← gateway-abc (16 docs)
+  ├── erk-core             → src/erk/core/**        ← core-foundations + pipeline-state
+  └── erk-agents           → src/erk/capabilities/agents/**, capabilities/** ← agent-claude (15 docs)
+
+  Layer 3: Integration skills (compose on top of erk-gateway)
+  ├── erk-github           → **/github/**            ← github cluster (13 docs)
+  └── erk-git              → **/git/**, **/graphite/** ← git-graphite (8 docs)
+
+  Layer 4: Workflow skills (explicitly loaded per-task)
+  ├── erk-planning         ← absorb planning-impl (10 docs) [already exists]
+  └── erk-ci               → .github/workflows/**
+
+  ---
+  What this means for the architecture/ docs folder
+
+  The folder itself could be retired as a top-level category once its docs migrate into the skills above. Or kept as a reference corpus that skills point into with grep pointers.
+   The key move is: the tripwires that are currently buried in architecture/tripwires.md get split into the appropriate domain skill's reviewing section — which is where they'd
+  actually get loaded.
+
+  The other bucket (17 docs like markers, multi-worktree-state, slot-pool-state-sync) are specialized enough that they belong in skills' deep-reference pointers rather than in a
+  skill's inline content.
+
+  ---
+  Want to start with erk-tui (most isolated, cleanest test case for the pattern) or dignified-python extension (highest leverage, touches everything)?
+
+✻ Sautéed for 1m 53s
+
+❯ ├── dignified-python     ← extend with error-handling cluster (11 docs)c
+
+  is a standalone skill mean to be used outside this projext and should be considered separately
+
+● Good catch — dignified-python should stay pure and general. Extending it with erk-specific error handling patterns would contaminate it.
+
+  That means the error-handling cluster needs its own home. Since it's cross-cutting across all erk code, it becomes a new foundational layer — erk-specific, not general:
+
+  Layer 0: Universal, project-agnostic
+  └── dignified-python          ← stays pure, general Python standards
+
+  Layer 1: Erk-foundational (injected for all erk .py files)
+  └── erk-patterns              ← NEW: absorb error-handling cluster
+      - discriminated union error handling
+      - backpressure gates
+      - LBYL gateway pattern
+      - validation patterns, type safety
+      - defense-in-depth enforcement
+
+  Layer 2: Domain skills (injected by file path)
+  ├── erk-tui       → src/erk/tui/**
+  ├── erk-cli       → src/erk/cli/**
+  ├── erk-gateway   → packages/erk-shared/**
+  ├── erk-core      → src/erk/core/**
+  └── erk-agents    → src/erk/capabilities/agents/**
+
+  Layer 3: Integration skills (compose with erk-gateway)
+  ├── erk-github    → **/github/**
+  └── erk-git       → **/git/**, **/graphite/**
+
+  Layer 4: Workflow skills (explicitly loaded)
+  ├── erk-planning  (exists)
+  └── erk-ci        → .github/workflows/**
+
+  erk-patterns is the erk-specific equivalent of dignified-python — always in context for erk code, covers the cross-cutting correctness patterns that apply regardless of which
+  subsystem you're touching. The hook injection rule becomes: "dignified-python for any .py; erk-patterns additionally for any .py inside this repo."
+
+  This also clarifies the separation: dignified-python answers "how do I write good Python?", erk-patterns answers "how does erk specifically handle errors, validation, and
+  correctness?".
+
+  Does erk-patterns feel like the right name, or something closer to erk-foundations?
+
+❯   ├── erk-core      → src/erk/core/**
+
+  this doesn't seem that helpful. different enough from "erk-patterns"
+
+● Right — src/erk/core/ is a grab-bag (plan_store, planner, services, codespace, health_checks, implementation_queue). It doesn't have a single identity the way tui/, cli/, or
+  packages/erk-shared/ do.
+
+  Looking at what erk-core would have held:
+
+  core-foundations cluster (ErkContext, GlobalConfig, shared package structure) — these are genuinely cross-cutting. They belong in erk-patterns, not a separate skill. An agent
+  touching any erk code might need to know how ErkContext is constructed or how to add a GlobalConfig field.
+
+  pipeline-state cluster (state threading, convergence points, linear pipelines, PR finalization paths) — this is about how erk constructs multi-step pipelines. That's the PR
+  submission flow, planning flows. It belongs in erk-planning, not a generic core skill.
+
+  So erk-core dissolves:
+
+  Layer 0: Universal
+  └── dignified-python
+
+  Layer 1: Erk-foundational (all erk .py files)
+  └── erk-patterns     ← error-handling cluster + core-foundations cluster
+                         (ErkContext, GlobalConfig, shared package patterns)
+
+  Layer 2: Domain skills (by file path)
+  ├── erk-tui          → src/erk/tui/**
+  ├── erk-cli          → src/erk/cli/**
+  ├── erk-gateway      → packages/erk-shared/**
+  └── erk-agents       → src/erk/capabilities/agents/**
+
+  Layer 3: Integration skills (compose with erk-gateway)
+  ├── erk-github       → **/github/**
+  └── erk-git          → **/git/**, **/graphite/**
+
+  Layer 4: Workflow skills (explicitly loaded)
+  ├── erk-planning     ← absorb pipeline-state cluster (12 docs)
+  └── erk-ci           → .github/workflows/**
+
+  Cleaner — every skill now has a clear identity. The specific subsystems in src/erk/core/ (plan_store, planner, codespace) are niche enough that they're better served by grep
+  pointers inside erk-planning than by a dedicated skill.
+
+❯ ok now the question is how to handle tripwires.
+
+● This is the hardest part of the redesign. Tripwires have a few tensions to resolve:
+
+  The core tension: Tripwires are auto-generated from frontmatter in individual docs. Skills are curated. You can't auto-generate a skill, and you can't curate a file that gets
+  regenerated.
+
+  The volume problem: architecture/tripwires.md has 181 rules. cli/tripwires.md has 86. Dumping the full list into a skill would make the skill useless — too large,
+  undifferentiated.
+
+  The timing problem: Tripwires are most valuable at write time (authoring), not just at review time. But the current system puts them in a file you have to actively seek out.
+
+  ---
+  Two-tier tripwire model
+
+  Tier 1: In-skill critical checks (curated, ~10 per domain)
+    → Lives inside the domain skill
+    → Loaded automatically at edit time via hook injection
+    → Hand-picked: "if you remember nothing else, remember these"
+    → These are NOT auto-generated — requires curation
+
+  Tier 2: Full tripwires file (comprehensive, auto-generated)
+    → Stays as docs/learned/&lt;category&gt;/tripwires.md
+    → Pointed to via grep protocol in the skill
+    → Loaded explicitly by /local:review
+    → Continues to be auto-generated from frontmatter
+
+  The skill says:
+
+  ## Critical Checks (top violations)
+  - Never access ctx.obj directly — use require_*() helpers
+  - All 5 places when adding gateway method: abc, real, fake, dry_run, printing
+  - ...8 more
+
+  ## Full Tripwires Reference
+  For comprehensive review: Read docs/learned/architecture/tripwires.md
+
+  ---
+  What this means for /local:review
+
+  The review command shifts from "hope the agent finds the right tripwires" to explicitly loading Tier 2 for the domains touched by the current PR:
+
+  /local:review
+    → detect which domains are modified (git diff --name-only)
+    → load full tripwires.md for each matching domain
+    → run against the diff
+
+  That's a much more reliable pattern than the current grep-and-discover approach.
+
+  ---
+  The curation problem
+
+  The hard question: who picks the Tier 1 critical checks for each domain skill?
+
+  Options:
+  1. Manual curation — someone reads the full tripwires list and selects the top 10. One-time cost, then maintained.
+  2. Frequency-based — look at which tripwires have been violated in the git history (PRs that fixed them). The most-violated ones are Tier 1.
+  3. Agent-synthesized — have an agent read the full tripwires list and propose the top 10, human approves.
+
+  Option 2 is the most principled — it grounds priority in actual evidence of what gets missed. Option 3 is the fastest path to a first draft.
+
+  ---
+  Universal tripwires stay ambient
+
+  The current universal-tripwires.md in AGENTS.md (loaded via @ include) stays as-is — those 6-8 rules are genuinely worth loading for every session. The category-level tripwires
+   are what get reorganized.
+
+  ---
+  Does the two-tier model feel right? The main decision is whether Tier 1 in-skill critical checks are worth the manual curation cost, or whether the grep pointer to the full
+  list is sufficient.
+
+✻ Cooked for 46s
+
+❯ "You can't auto-generate a skill," sure you can. they are just markdown files
+
+● Fair point — that was a false constraint. Skills are just markdown files in .claude/skills/. erk docs sync already auto-generates tripwires.md from frontmatter. It could
+  equally generate domain skills using the same source data.
+
+  So the pipeline becomes:
+
+  Individual doc frontmatter
+      ↓ (erk docs sync)
+  docs/learned/&lt;category&gt;/tripwires.md   ← already generated
+  .claude/skills/erk-&lt;category&gt;.md       ← new: also generated
+
+  Each doc's frontmatter already has tripwire (the checking rule) and read_when. You'd add one more field — something like summary or authoring_note — to provide the constructive
+   guidance, not just the "don't do X" rule. Then the skill template renders both sides:
+
+  # erk-tui
+
+  ## Authoring Patterns
+  [rendered from summary fields across tui/*.md docs]
+
+  ## Critical Checks
+  [rendered from tripwire fields, filtered/ranked by priority]
+
+  ## Deep Reference
+  Grep docs/learned/tui/ and docs/learned/textual/ for specifics
+
+  This changes the curation question entirely: instead of "who picks the top 10 tripwires", the question becomes "what frontmatter schema drives the skill template?" — which is a
+   one-time design decision, then maintained automatically.
+
+  The priority/ranking problem (181 architecture tripwires are not equally important) could be solved with a frontmatter field like priority: critical | high | normal that
+  controls what surfaces in the skill inline vs. the full reference file.
+
+  Does this change how you'd think about the erk docs sync command's scope?
+
+❯ maybe the right framing is an analogy to the openclaw tool, that continuosly builds skills up over time
+
+● That's a powerful reframe. I'm not familiar with openclaw specifically — can you say more? But the principle seems to be: the skill isn't a document someone authors once, it's
+  a living synthesis that accumulates from evidence over time.
+
+  Applied here, the analogy maps cleanly:
+
+  Agent works on TUI code
+      → learns a pattern, writes docs/learned/tui/some-pattern.md
+      → erk docs sync re-synthesizes erk-tui skill
+      → next agent working on TUI code gets the accumulated wisdom
+      → cycle repeats
+
+  docs/learned/ is already the accumulation layer — that part exists. The missing piece is the synthesis step: converting the growing corpus into a skill that's actually loaded
+  at the right moment.
+
+  This reframes several earlier design questions:
+
+  Curation problem dissolves — you don't curate the skill, you curate the frontmatter schema that drives synthesis. The skill content emerges from what agents actually learned.
+
+  Priority/ranking — falls out of evidence rather than opinion. A doc that multiple agents independently learned and wrote → higher weight in the synthesized skill.
+
+  Staleness — skills stay current because they're re-derived from the corpus, not maintained separately.
+
+  The architecture/tripwires split — erk docs sync generates both. Tripwires.md is the reviewing-formatted output; the domain skill is the authoring-formatted output of the same
+  source data.
+
+  The real design work then shifts to:
+  1. What frontmatter schema drives good skill synthesis? (currently: tripwire, read_when, title — what's missing?)
+  2. What does the skill template look like for each domain?
+  3. Does erk:learn write directly to individual docs and trigger re-synthesis, or is re-synthesis a separate step?
+
+  Is the openclaw analogy about the continuous feedback loop specifically, or also about how skills are structured?
+
+❯ research openclaw online
+
+● Web Search("openclaw AI agent skills tool")
+  ⎿  Did 1 search in 7s
+
+● Web Search("openclaw continuously builds skills agent learning")
+  ⎿  Did 1 search in 7s
+
+● Fetch(https://docs.openclaw.ai/tools/skills)
+  ⎿  Received 12.3KB (200 OK)
+
+● Fetch(https://playbooks.com/skills/openclaw/skills/self-improving-agent)
+  ⎿  Received 147.5KB (200 OK)
+
+● Here's what openclaw does that's directly relevant:
+
+  The promotion workflow is the key mechanism. It's not just "accumulate docs and regenerate skills." It has an evidence-based graduation threshold:
+
+  Recurring patterns meeting promotion criteria (recurrence count ≥3, across 2+ tasks, within 30 days) graduate into system-level guidance
+
+  Applied to erk:
+  docs/learned/tui/*.md accumulates over time
+      → pattern appears in 1 doc  → stays in deep reference only
+      → pattern appears in 3+ docs → promoted into erk-tui skill inline
+      → erk docs sync detects recurrence and synthesizes accordingly
+
+  This solves the curation problem elegantly — recurrence is the priority signal, not human judgment. The corpus itself votes on what's important by virtue of being learned
+  multiple times.
+
+  The openclaw learning files (LEARNINGS.md, ERRORS.md with timestamps and IDs) map almost exactly to erk's docs/learned/ corpus. The difference is erk doesn't have the promotion
+   step — it stops at docs/learned/ and never synthesizes up into skills.
+
+  What erk would need to add to erk docs sync:
+
+  1. Recurrence detection — scan docs across a category, identify overlapping patterns in tripwire and summary frontmatter fields
+  2. Promotion threshold — 3+ docs covering the same pattern → include inline in the skill; fewer → grep pointer only
+  3. Skill regeneration — output .claude/skills/erk-&lt;category&gt;.md alongside the existing tripwires.md
+
+  The openclaw self-improving-agent also has a See Also links pattern for connecting related entries — that maps to the cross-references already present in some erk docs.
+
+  The erk system is actually closer to openclaw's model than it might look: erk:learn is the capture step, docs/learned/ is the structured accumulation, erk docs sync is the
+  synthesis step. The missing link is just the recurrence-based promotion into skills.
+
+  Sources:
+  - https://docs.openclaw.ai/tools/skills
+  - https://playbooks.com/skills/openclaw/skills/self-improving-agent
+  - https://www.digitalocean.com/resources/articles/what-are-openclaw-skills
+
+✻ Crunched for 54s
+
+❯ does openclaw have terminoology we can borrow
+
+● Fetch(https://github.com/openclaw/openclaw/blob/main/docs/tools/creating-skills.md)
+  ⎿  Received 214KB (200 OK)
+
+● Fetch(https://www.digitalocean.com/resources/articles/what-are-openclaw-skills)
+  ⎿  Received 248.2KB (200 OK)
+
+● Fetch(https://playbooks.com/skills/openclaw/skills/self-improving-agent)
+  ⎿  Received 147.5KB (200 OK)
+
+● Fetch(https://github.com/openclaw/openclaw/blob/main/skills/coding-agent/SKILL.md)
+  ⎿  Received 255.7KB (200 OK)
+
+● The most transferable terminology:
+
+  Directly borrowable:
+
+  ┌───────────────────┬─────────────────────────────────────────────────┬──────────────────────────────────────────────────┐
+  │   OpenClaw term   │                     Meaning                     │                   Maps to erk                    │
+  ├───────────────────┼─────────────────────────────────────────────────┼──────────────────────────────────────────────────┤
+  │ Capture           │ Recording a learning as a structured entry      │ erk:learn writing to docs/learned/               │
+  ├───────────────────┼─────────────────────────────────────────────────┼──────────────────────────────────────────────────┤
+  │ Promotion         │ Elevating a pattern to permanent guidance       │ docs/learned/ → into a skill inline              │
+  ├───────────────────┼─────────────────────────────────────────────────┼──────────────────────────────────────────────────┤
+  │ Graduation        │ The moment a pattern crosses the threshold      │ When recurrence triggers skill inclusion         │
+  ├───────────────────┼─────────────────────────────────────────────────┼──────────────────────────────────────────────────┤
+  │ Pattern-Key       │ Frontmatter field for deduplication/recurrence  │ Missing from erk docs frontmatter — worth adding │
+  ├───────────────────┼─────────────────────────────────────────────────┼──────────────────────────────────────────────────┤
+  │ Recurrence-Count  │ How many times a pattern has been captured      │ Would drive the promotion threshold              │
+  ├───────────────────┼─────────────────────────────────────────────────┼──────────────────────────────────────────────────┤
+  │ promoted_to_skill │ Status value on a doc that made it into a skill │ Missing from erk's frontmatter schema            │
+  └───────────────────┴─────────────────────────────────────────────────┴──────────────────────────────────────────────────┘
+
+  The status lifecycle is particularly clean and worth borrowing:
+  (doc written) → pending → promoted → promoted_to_skill
+
+  Erk's docs currently have no lifecycle status — you can't tell from a doc whether its pattern has been distilled into a skill or is still only in the reference file.
+
+  Less transferable:
+  - LEARNINGS.md / ERRORS.md — openclaw uses append-only logs; erk uses one-doc-per-topic (better for deduplication, should keep)
+  - Entry ID format (LRN-20250115-001) — erk's descriptive filenames are cleaner
+  - Area tags (frontend/backend/infra) — erk's category folders serve this role
+
+  The key gap openclaw exposes in erk's frontmatter schema:
+
+  Erk docs currently have tripwire, read_when, title, category. What's missing to enable the promotion pipeline:
+  - pattern_key — canonical identifier so erk docs sync can detect when 3 docs cover the same pattern
+  - status: promoted_to_skill — marks that this doc's pattern has graduated into a skill
+
+  Adding those two fields to the frontmatter schema would be the minimal change needed to enable openclaw-style promotion in erk docs sync.
+
+  Sources:
+  - https://playbooks.com/skills/openclaw/skills/self-improving-agent
+  - https://docs.openclaw.ai/tools/skills
+
+✻ Worked for 48s
+
+❯ we have the entire openclaw codebase available at /workspaces/githubs/openclaw
+
+● Explore(Explore openclaw codebase skill system)
+  ⎿  Done (36 tool uses · 78.6k tokens · 1m 32s)
+  (ctrl+o to expand)
+
+● Important correction from reading the actual source: the self-improving / promotion / graduation system described in the web results is a community skill built on top of
+  openclaw, not openclaw core. The core has none of that machinery.
+
+  What openclaw core actually has — and what's worth borrowing:
+
+  ---
+  Real openclaw terminology (from the codebase)
+
+  Gating — load-time filtering of skills based on declarative conditions in frontmatter:
+  metadata: {"openclaw": {"requires": {"bins": ["gt"], "env": ["GITHUB_TOKEN"]}}}
+  Erk's hook-based injection is path-triggered; openclaw's gating is condition-triggered. Both are useful and composable.
+
+  always — skip all gating, always include in context:
+  metadata: {"openclaw": {"always": true}}
+  This maps cleanly to erk's foundational skills (dignified-python, erk-patterns) — they should have always: true equivalent.
+
+  Snapshot — the pre-computed compact representation of eligible skills injected into the system prompt. Openclaw computes this once per session and refreshes on SKILL.md
+  changes. Relevant to how erk hook-injects skills.
+
+  Managed skills vs workspace skills — ~/.openclaw/skills/ vs &lt;workspace&gt;/skills/. Erk has the equivalent in .claude/skills/ but doesn't distinguish user-managed from
+  workspace-managed. Worth adopting if erk ever ships bundled skills vs. project-specific skills.
+
+  Skill precedence — workspace &gt; managed &gt; bundled. The override model.
+
+  ---
+  What the community skill adds (not openclaw core)
+
+  The promotion/graduation/recurrence/pattern-key vocabulary came from the self-improving-agent community skill. That's useful design inspiration for erk's docs/learned/ → skill
+  pipeline, but it's not openclaw's own terminology — it's one team's approach built on the platform.
+
+  ---
+  Net takeaway for erk
+
+  The most directly applicable thing from openclaw core is gating as a first-class concept. Right now erk's skill injection is purely hook-based (file path triggers). Openclaw's
+  gating model suggests a richer declarative approach:
+
+  # erk-tui skill frontmatter
+  triggers:
+    paths: ["src/erk/tui/**"]       # path-based (current hook approach)
+    bins: ["textual"]               # binary-based gating
+    always: false
+
+  The promotion/graduation vocabulary is worth keeping as design language for the docs/learned/ → skill synthesis pipeline — it's a good conceptual model — but we'd be building
+  it ourselves, not borrowing an existing implementation.
+
+✻ Churned for 2m 17s
+
+❯ at minimum i like the language of  capture, gating, promootion etc
+
+  how do the mechanics of capture work in openclaw
+
+● Explore(Find capture mechanics in openclaw codebase)
+  ⎿  Done (39 tool uses · 82.2k tokens · 1m 9s)
+  (ctrl+o to expand)
+
+● Richer than expected. Here's what capture actually means mechanically in openclaw:
+
+  ---
+  Capture mechanics
+
+  Two-layer memory model:
+
+  memory/YYYY-MM-DD.md    ← append-only daily log (running context)
+  MEMORY.md               ← curated durable facts (always injected into context)
+
+  The agent writes to these files during a session. "Capture" = writing markdown to disk, not keeping it in the context window.
+
+  Three triggers for capture:
+  1. Agent decides something is worth remembering (autonomous)
+  2. User says "remember this" (explicit instruction)
+  3. Pre-compaction flush — when a session approaches token limits, openclaw fires a silent agentic turn:
+
+  {
+    "systemPrompt": "Session nearing compaction. Store durable memories now.",
+    "prompt": "Write any lasting notes to memory/YYYY-MM-DD.md; reply with NO_REPLY if nothing to store."
+  }
+
+  That third one is the most interesting — capture is triggered automatically at the end of the usable context, not just manually.
+
+  The Retain/Recall/Reflect pattern (from their research docs) adds structured tags:
+  ## Retain
+  - W @Peter: Currently in Marrakech        ← World fact
+  - B @user: Fixed crash by wrapping handlers ← Biographical/experience
+  - O(c=0.95) @user: Prefers concise replies  ← Opinion with confidence score
+
+  Recall does semantic + temporal search (recent memories weighted higher, 30-day half-life). Reflect is a scheduled job that promotes retained facts into entity summaries.
+
+  ---
+  How this maps to erk
+
+  ┌─────────────────────────┬──────────────────────────────────┬──────────────────────────────────────────┐
+  │        OpenClaw         │          Erk equivalent          │                   Gap                    │
+  ├─────────────────────────┼──────────────────────────────────┼──────────────────────────────────────────┤
+  │ Pre-compaction flush    │ erk:learn (manual post-session)  │ Erk's is manual; openclaw's is automatic │
+  ├─────────────────────────┼──────────────────────────────────┼──────────────────────────────────────────┤
+  │ memory/YYYY-MM-DD.md    │ No equivalent                    │ Erk has no session-scoped capture file   │
+  ├─────────────────────────┼──────────────────────────────────┼──────────────────────────────────────────┤
+  │ MEMORY.md               │ ~/.claude/projects/.../MEMORY.md │ Exists, same role                        │
+  ├─────────────────────────┼──────────────────────────────────┼──────────────────────────────────────────┤
+  │ Promote to durable      │ docs/learned/*.md                │ Exists, but not triggered from session   │
+  ├─────────────────────────┼──────────────────────────────────┼──────────────────────────────────────────┤
+  │ Reflect / retrospective │ erk:learn extraction             │ Partial match                            │
+  └─────────────────────────┴──────────────────────────────────┴──────────────────────────────────────────┘
+
+  The biggest mechanical gap: openclaw's pre-compaction flush means capture happens automatically before context is lost. Erk's erk:learn is invoked manually after the session,
+  which means learnings can be missed if the agent doesn't explicitly run it.
+
+  The Retain tag pattern is also interesting for erk — right now docs/learned/ docs have no structured taxonomy of what kind of learning they are (is this a corrective pattern?
+  an architectural decision? an API quirk?). That metadata would help the promotion/graduation pipeline prioritize what goes into skills.
+
+✻ Sautéed for 1m 51s
+
+❯ │ Pre-compaction flush    │ erk:learn (manual post-session)  │ Erk's is manual; openclaw's is automatic │
+
+
+  i want to keep this integrated into the workflow. erk land is the most common way to kick off learning
+
+
+  ----
+
+  "promotion" i think should promote to the content in a skill . what do you thin
+
+● Both points land well. Let me think through each:
+
+  ---
+  erk land as the capture trigger
+
+  This is better than openclaw's pre-compaction flush. Openclaw's flush is defensive — "don't lose context before it compacts." erk land is intentional — "work is complete,
+  synthesize what was learned." The PR diff + session history at land time is the cleanest possible input for learning extraction.
+
+  erk land
+    → lands PR (existing)
+    → erk:learn runs automatically   ← new integration
+    → writes to docs/learned/&lt;category&gt;/
+
+  The natural reflection point is work completion, not context pressure. And since erk land already knows the PR, it can scope the learning to exactly what changed — no guessing
+  about what the session covered.
+
+  ---
+  Promotion = inline in skill
+
+  Agree strongly. This makes promotion concrete and binary: either the pattern is in the skill's body, or it isn't. That's a clean definition.
+
+  Captured:  docs/learned/tui/some-pattern.md exists
+  Promoted:  that pattern's content appears inline in erk-tui skill
+
+  Promoted patterns are loaded automatically via hook injection — no agent action required. Unpromoted patterns live in the reference corpus, discoverable via grep but not
+  automatic.
+
+  ---
+  The full three-stage vocabulary
+
+  This gives you a clean pipeline with one word per stage:
+
+  CAPTURE  → erk:learn (triggered by erk land)
+             writes docs/learned/&lt;category&gt;/*.md
+
+  PROMOTE  → erk docs sync
+             recurrence threshold (or manual frontmatter flag)
+             writes pattern inline into .claude/skills/erk-&lt;category&gt;.md
+
+  GATE     → hook injection
+             loads the right skill(s) based on file path being edited
+             promoted patterns are now in context automatically
+
+  Three words, three stages, clear ownership of each transition. erk land owns the capture trigger. erk docs sync owns the promotion decision. The hook owns gating.
+
+  The only open question is what drives promotion: pure recurrence detection in erk docs sync, or an explicit frontmatter field (promote: true) that an agent or human sets after
+  reviewing a captured doc?
+
+✻ Worked for 37s
+
+❯ /erk:objective-create high-level objective. cover general principles and include all research. do not create roadmap
+
+● Based on our full conversation, let me propose the objective. Since you said no roadmap, this will be a perpetual objective with principles.
+
+● Bash(mkdir -p /workspaces/erk/.erk/scratch/sessions/9df04c28-2f1f-4372-83a6-23dcf64e5b89/)
+  ⎿  Done
+
+● Here's the proposed objective:
+
+  ---
+  Objective: Skill Architecture — Capture, Promote, Gate
+
+  Transform erk's docs/learned/ corpus into a living skill system where captured learnings are automatically promoted into domain-scoped skills, then gated into agent context at
+  the right moment. The system grows continuously as work is done, without manual curation.
+
+  Goal
+
+  Agents working in any erk subsystem automatically receive the right knowledge at the right time — domain patterns, critical tripwires, and architectural constraints — without
+  manual skill loading, grep-based discovery, or ambient AGENTS.md bloat. The skill system improves with every PR landed.
+
+  Design Decisions
+
+  - Domain-based skills, not category-based: Skills aligned to codebase areas (erk-tui, erk-cli, erk-gateway, etc.) determined by co-occurrence evidence from git history, not
+  intuition. Files edited together → one skill.
+  - dignified-python stays pure: It's a general Python standards skill usable outside this project. Erk-specific cross-cutting patterns live in erk-patterns instead.
+  - Three-stage pipeline: Capture → Promote → Gate: Vocabulary borrowed and adapted from openclaw's conceptual model. Each stage has clear ownership.
+  - erk land as capture trigger: erk:learn runs automatically after landing a PR — capture is integrated into the workflow milestone, not a manual step.
+  - Skills are auto-generated artifacts: erk docs sync generates domain skills from the docs/learned/ corpus, using the same source data that already generates tripwires.md.
+  Skills are not manually authored.
+  - Recurrence-based promotion: A pattern's presence in multiple docs is the promotion signal. Evidence, not opinion, determines what goes inline into a skill.
+  - Tripwires are two-tier: Critical tripwires are promoted inline into domain skills (loaded automatically). The full tripwires.md remains as deep reference, pointed to via grep
+   protocol in the skill.
+  - architecture/ is too broad: 127 docs across one category cannot function as a coherent skill. It maps to at least 6 subdomains aligned to actual source paths.
+
+  Principles
+
+  - Skills are generated outputs of the corpus, not the corpus itself
+  - Domain boundaries follow git co-occurrence, not directory naming conventions
+  - Capture happens at workflow milestones (land), not as a separate discipline
+  - Promotion is triggered by recurrence in the corpus, not by human prioritization
+  - The deep reference corpus (docs/learned/) always exists alongside skills — skills are the distillation, not the replacement
+  - Gate conditions (which skill loads when) are declarative and path-based, not implicit
+  - dignified-python and any other general skills remain general — erk-specific knowledge stays in erk-specific skills
+
+  Exploration Notes
+
+  Skill Map (proposed)
+
+  Layer 0: Universal, project-agnostic
+  └── dignified-python          (unchanged, stays pure)
+
+  Layer 1: Erk-foundational (injected for all erk .py files)
+  └── erk-patterns              error-handling cluster (11 docs):
+                                discriminated unions, backpressure gates,
+                                LBYL gateway pattern, validation patterns,
+                                ErkContext/GlobalConfig foundational patterns
+
+  Layer 2: Domain skills (injected by file path)
+  ├── erk-tui       → src/erk/tui/**
+  ├── erk-cli       → src/erk/cli/**
+  ├── erk-gateway   → packages/erk-shared/**
+  └── erk-agents    → src/erk/capabilities/agents/**
+
+  Layer 3: Integration skills (compose with erk-gateway)
+  ├── erk-github    → **/github/**
+  └── erk-git       → **/git/**, **/graphite/**
+
+  Layer 4: Workflow skills (explicitly loaded per-task)
+  ├── erk-planning  (exists — absorb pipeline-state cluster)
+  └── erk-ci        → .github/workflows/**
+
+  Co-occurrence Evidence (from git history, 70 commits)
+
+  - TUI is the most isolated domain: only 4 commits crossed tui ↔ cli in 70 commits. Cleanest domain boundary in the codebase.
+  - CLI is the integration hub: touches 101 files, pairs with everything. Highest frequency.
+  - Tests co-move with src: 39/47 commits include both src and test changes. Skills should load together by path, not separately.
+  - .claude/ is never pure: 0 commits touched only .claude/. Hook/command patterns belong inside domain skills.
+  - Most commits touch 2-3 domains: composability (multiple skills loading for one file) is the norm, not the exception.
+
+  architecture/ Subdomain Clustering (127 docs → 6 subdomains)
+
+  ┌──────────────────┬───────┬─────────────────────────────────────┐
+  │     Cluster      │ Count │               Maps to               │
+  ├──────────────────┼───────┼─────────────────────────────────────┤
+  │ gateway-abc      │ 16    │ erk-gateway skill                   │
+  ├──────────────────┼───────┼─────────────────────────────────────┤
+  │ github           │ 13    │ erk-github skill                    │
+  ├──────────────────┼───────┼─────────────────────────────────────┤
+  │ git-graphite     │ 8     │ erk-git skill                       │
+  ├──────────────────┼───────┼─────────────────────────────────────┤
+  │ error-handling   │ 11    │ erk-patterns skill (foundational)   │
+  ├──────────────────┼───────┼─────────────────────────────────────┤
+  │ cli-patterns     │ 12    │ erk-cli skill                       │
+  ├──────────────────┼───────┼─────────────────────────────────────┤
+  │ agent-claude     │ 15    │ erk-agents skill                    │
+  ├──────────────────┼───────┼─────────────────────────────────────┤
+  │ core-foundations │ 10    │ erk-patterns skill (foundational)   │
+  ├──────────────────┼───────┼─────────────────────────────────────┤
+  │ pipeline-state   │ 12    │ erk-planning skill (already exists) │
+  ├──────────────────┼───────┼─────────────────────────────────────┤
+  │ planning-impl    │ 10    │ erk-planning skill (already exists) │
+  ├──────────────────┼───────┼─────────────────────────────────────┤
+  │ pr-body          │ 3     │ deep reference only                 │
+  ├──────────────────┼───────┼─────────────────────────────────────┤
+  │ other            │ 17    │ deep reference only                 │
+  └──────────────────┴───────┴─────────────────────────────────────┘
+
+  Capture → Promote → Gate Pipeline
+
+  Capture (erk land → erk:learn):
+  - Session analysis runs automatically after PR is landed
+  - Writes to docs/learned/&lt;category&gt;/&lt;pattern&gt;.md
+  - Frontmatter: tripwire, read_when, pattern_key (new), capture_date (new)
+
+  Promote (erk docs sync):
+  - Scans docs corpus for recurrence (same pattern_key across 3+ docs)
+  - Includes promoted patterns inline in .claude/skills/erk-&lt;category&gt;.md
+  - Marks promoted docs with status: promoted_to_skill in frontmatter
+  - Also generates docs/learned/&lt;category&gt;/tripwires.md (existing behavior)
+
+  Gate (hook injection):
+  - PreToolUse on Edit/Write detects file path
+  - Injects matching domain skills into context
+  - Multiple skills compose (editing tests/tui/*.py → inject erk-tui + erk-testing)
+  - dignified-python + erk-patterns always inject for any .py
+
+  OpenClaw Research
+
+  OpenClaw's skill system (/workspaces/githubs/openclaw) is the closest reference point. Key findings:
+
+  - Core skill format: Directory with SKILL.md, YAML frontmatter, markdown body. Same shape as erk's .claude/skills/.
+  - Gating: metadata.openclaw.requires.bins/env/config — load-time filtering based on declarative conditions. More principled than erk's pure hook-based injection.
+  - always: true: Skip all gating, always include. Maps to erk-patterns/dignified-python — foundational skills that always load.
+  - Snapshot: Pre-computed compact skill list for system prompt. Openclaw refreshes this on SKILL.md file changes (250ms debounce).
+  - The self-improving-agent skill (community, not openclaw core): Introduced promotion/graduation/recurrence vocabulary. Patterns reaching recurrence threshold (≥3, across 2+
+  tasks, within 30 days) get elevated to system-level guidance. This is the model for erk's promotion pipeline.
+  - Pre-compaction flush: Openclaw fires a silent agentic turn before context compaction to flush memory. Erk's equivalent is erk land — a workflow milestone trigger rather than
+  a context-pressure trigger (more intentional).
+  - Memory architecture: MEMORY.md (always injected) + daily logs (on-demand search). Temporal decay on recall (30-day half-life). Retain/Recall/Reflect pattern for structured
+  tagging.
+
+  Frontmatter Schema Additions Needed
+
+  Current erk doc frontmatter: title, read_when, tripwire, category
+
+  Additions to enable the pipeline:
+  - pattern_key: canonical identifier for deduplication/recurrence detection across docs
+  - status: captured | promoted | promoted_to_skill — tracks graduation state
+  - priority: critical | high | normal — controls Tier 1 vs Tier 2 placement in skills (optional; recurrence may be sufficient)
+
+  Related Documentation
+
+  - Skills to load: dignified-python, erk-planning, learned-docs
+  - Docs: docs/learned/architecture/, docs/learned/tui/, docs/learned/cli/
+  - Reference codebase: /workspaces/githubs/openclaw
+
+  ---
+  Does this capture the session? I can adjust any section before creating the issue.
+
+✻ Baked for 1m 35s
+
+❯ yes
+
+● Write(.erk/scratch/sessions/9df04c28-2f1f-4372-83a6-23dcf64e5b89/objective-body.md)
+  ⎿  Wrote 127 lines to .erk/scratch/sessions/9df04c28-2f1f-4372-83a6-23dcf64e5b89/objective-body.md
+      1 # Objective: Skill Architecture — Capture, Promote, Gate
+      2
+      3 Transform erk's `docs/learned/` corpus into a living skill system where captured learnings are automatically promoted into domain-scoped skills, then gated into ag
+        ent context at the right moment. The system grows continuously as work is done, without manual curation.
+      4
+      5 ## Goal
+      6
+      7 Agents working in any erk subsystem automatically receive the right knowledge at the right time — domain patterns, critical tripwires, and architectural constraint
+        s — without manual skill loading, grep-based discovery, or ambient AGENTS.md bloat. The skill system improves with every PR landed.
+      8
+      9 ## Design Decisions
+     … +117 lines (ctrl+o to expand)
+
+● Bash(erk exec objective-save-to-issue --session-id=9df04c28-2f1f-4372-83a6-23dcf64e5b89 --slug=skill-capture-promote-gate --format=display --validate)
+  ⎿  Objective saved to GitHub issue #8655
+     Title: Objective: Skill Architecture — Capture, Promote, Gate
+     URL: https://github.com/dagster-io/erk/issues/8655
+     … +3 lines (ctrl+o to expand)
+
+● Bash(erk objective check 8655)
+  ⎿  Error: Exit code 1
+     Validating objective #8655...
+
+     [PASS] Issue has erk-objective label
+     [FAIL] Roadmap parses successfully (This objective uses a legacy format that is no longer supported. To migrate, open Claude Code and use /erk:objective-create to recreate
+     this objective with the same content.)
+
+     Objective validation failed (1 check failed)
+
+     Validating objective #8655...
+
+     … +4 lines (ctrl+o to see all)
+
+● Bash(echo '{"perpetual": true}' | erk exec objective-render-roadmap 2&gt;&amp;1 || echo '{"phases": []}' | erk exec objective-render-roadmap 2&gt;&amp;1)
+  ⎿  Error: Exit code 1
+     {"success": false, "error": "Missing required field: phases"}
+     {"success": false, "error": "Field 'phases' must not be empty"}
+
+     {"success": false, "error": "Missing required field: phases"}
+     {"success": false, "error": "Field 'phases' must not be empty"}
+
+● Bash(erk exec objective-render-roadmap --help 2&gt;&amp;1)
+  ⎿  Usage: erk exec objective-render-roadmap [OPTIONS]
+
+       Render a complete roadmap section from JSON input on stdin.
+     … +7 lines (ctrl+o to expand)
+
+● The validator doesn't yet support perpetual objectives — it expects a roadmap metadata block regardless. The issue is created (#8655) with the right content, but validation
+  will always fail for roadmap-free objectives.
+
+  Two options:
+
+  1. Accept the failure — the issue content is correct, the validation gap is a tooling limitation worth noting separately
+  2. Add a token roadmap — add a minimal roadmap section just to satisfy the validator, contradicting your "no roadmap" intent
+
+  Given you explicitly said no roadmap, I'd suggest option 1 and flag this as a tooling gap: the validator should recognize perpetual objectives (those with ## Principles instead
+   of ## Roadmap) as a valid format.
+
+  Objective #8655 created:
+  - URL: https://github.com/dagster-io/erk/issues/8655
+  - Title: Objective: Skill Architecture — Capture, Promote, Gate
+  - Validation: fails on roadmap check (known tooling gap for perpetual objectives)
+
+✻ Cogitated for 1m 41s
+
+❯ 2 and have the roadmap step "create a real roadmap"
+
+✳ Working…
+
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · esc to interrupt
+
+----
+
+look at botom of above session. i want to support objectives without a concrete roadmap. this would be higher level objectigve that requires more iteration before we can create a real roadmap</user>
+  <thinking>The user wants to support objectives without a concrete roadmap - "perpetual" or "high-level" objectives that need more iteration before a real roadmap can be created. Currently the objective validation (`erk objective check`) fails if there's no roadmap section.
+
+Let me understand the current state and plan how to support this.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="31509" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31509}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the objective validation and rendering system to understand what needs to change.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="31509" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31509}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_014TnqaBuv8FXghxN7DVXk7n">
+    <param name="description">Explore objective validation system</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on objectives.
+Read relevant ...[truncated 807 chars]... "roadmap" means in the objective system and all the places that parse/validate/render it.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="31509" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 31509}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_012Q1sUiPZS5ZZVsE2DLNK6E">
+    <param name="description">Explore objective issue format</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on objectives.
+Read relevant ...[truncated 621 chars]...he issue body is assembled
+
+Focus on the data format and schema, not the validation logic.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="31509" cache_read_input_tokens="16613" output_tokens="689" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 31509, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014TnqaBuv8FXghxN7DVXk7n">
+Now let me compile a comprehensive summary. I have gathered all the necessary information. Let me create a detailed report:
+
+## Summary: Objective Validation and Roadmap System in Erk
+
+Based on my thorough exploration of the codebase, here's the complete picture of the objective validation and roadmap system:
+
+### 1. **Objective Validation: `erk objective check`**
+
+**Location**: `/Users/schrockn/code/erk/src/erk/cli/commands/objective/check_cmd.py`
+
+The validation system is split into two layers:
+
+**Structural Validation (in parser)**:
+- Located in: `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`
+- Validates: Phase headers exist, tables parse, rows have correct columns
+- Returns: Warnings alongside extracted data (lenient parsing)
+
+**Semantic Validation (check command only)**:
+- Function: `validate_objective()` in `check_cmd.py`
+- Validates 7 specific checks:
+  1. Issue has `erk-objective` label (not `erk-plan`)
+  2. Roadmap parses successfully (v2 YAML format required)
+  3. Status/PR consistency (nodes with PR should be in_progress/done/planning/skipped)
+  4. No orphaned done statuses (done steps must have PR reference)
+  5. Phase numbering is sequential (catches copy-paste errors)
+  6. v2 format integrity (objective-header has objective_comment_id)
+  7. PR references use '#' prefix (e.g., "#7146" not "7146")
+
+**Returns**: `ObjectiveValidationResult` discriminated union:
+```python
+
+... [207 lines omitted] ...
+
+ObjectiveValidationResult = ObjectiveValidationSuccess | ObjectiveValidationError
+| `parse_roadmap(body)` | Parse YAML from metadata block | `(phases, validation_errors)` tuple (never None) |
+| `parse_v2_roadmap(body)` | Strict v2 parser | `(phases, errors) \| None` - returns None for non-v2 |
+| `validate_roadmap_frontmatter(data)` | Validate parsed YAML dict | `(steps, errors)` |
+**Deprecated**: Letter format — `1A.1`, `1B.2` (still supported but emits warning)
+  </tool_result>
+  <tool_result tool="toolu_012Q1sUiPZS5ZZVsE2DLNK6E">
+Perfect! Now I have all the information I need. Let me compile a comprehensive report.
+
+## Summary
+
+I've thoroughly explored the erk codebase and documentation to understand the concrete format of objective GitHub issues. Here's what I found:
+
+## Objective GitHub Issue Format
+
+### Two-Part Storage Strategy
+
+Objective issues use a **two-part storage model** where metadata lives in the issue body and content lives in the first comment:
+
+**Issue Body (Metadata Only):**
+1. `objective-header` metadata block
+2. `objective-roadmap` metadata block (optional, only if roadmap exists)
+
+**First Comment (Content):**
+3. `objective-body` metadata block containing the full objective description
+
+### Issue Body Structure
+
+**Objective-Header Metadata Block** (always present)
+
+```yaml
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- erk:metadata-block:objective-header --&gt;
+&lt;details&gt;
+&lt;summary&gt;objective-header&lt;/summary&gt;
+
+```yaml
+
+... [220 lines omitted] ...
+
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <thinking>Now I have a thorough understanding of the objective system. Let me read the key files to understand what specifically needs to change to support objectives without a roadmap.
+
+The key points:
+1. `erk objective check` has a validation that "Roadmap parses successfully" - this fails when there's no roadmap
+2. `objective-save-to-issue` creates the issue with optional `objective-roadmap` block
+3. The TUI (`erk dash`) shows objective progress (done_nodes/total_nodes, sparkline) - needs to handle 0 nodes gracefully
+4. The roadmap parser needs to handle the case where there's no roadmap block
+
+
+5. I need to examine the actual implementation files to see where these validations and parsing logic live so I can make the necessary changes.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="6175" cache_read_input_tokens="48122" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6175}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good foundation. Let me read the critical files to understand the exact changes needed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6175" cache_read_input_tokens="48122" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6175}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01UYYbgUdFx8xjXunZQq8g65">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/objective/check_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6175" cache_read_input_tokens="48122" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6175}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UYYbgUdFx8xjXunZQq8g65">
+     1→"""Validate an objective's format and roadmap consistency."""
+     2→
+     3→import json
+     4→from dataclasses import dataclass
+     5→from pathlib import Path
+     6→
+     7→import click
+     8→
+     9→from erk.cli.alias import alias
+    10→from erk.cli.core import discover_repo_context
+    11→from erk.cli.github_parsing import parse_issue_identifier
+    12→from erk.core.context import ErkContext, RepoContext
+    13→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    14→from erk_shared.gateway.github.issues.types import IssueNotFound
+    15→from erk_shared.gateway.github.metadata.core import (
+    16→    find_metadata_block,
+    17→)
+    18→from erk_shared.gateway.github.metadata.dependency_graph import (
+    19→    DependencyGraph,
+    20→    build_graph,
+    21→    compute_graph_summary,
+    22→    find_graph_next_node,
+    23→    phases_from_graph,
+    24→)
+    25→from erk_shared.gateway.github.metadata.roadmap import (
+    26→    parse_roadmap,
+    27→    serialize_phases,
+    28→)
+    29→from erk_shared.gateway.github.metadata.types import BlockKeys
+    30→from erk_shared.output.output import user_output
+
+... [269 lines omitted] ...
+
+    37→    """Validation completed (may have passed or failed checks).
+    42→        failed_count: Number of failed checks
+    43→        graph: Dependency graph of roadmap nodes (empty if parsing failed)
+    46→        validation_errors: Parser-level warnings from roadmap parsing
+    52→    failed_count: int
+    56→    validation_errors: list[str]
+    61→class ObjectiveValidationError:
+    64→    error: str
+    67→ObjectiveValidationResult = ObjectiveValidationSuccess | ObjectiveValidationError
+    90→        ObjectiveValidationError if unable to complete validation
+    97→        return ObjectiveValidationError(error=f"Issue #{issue_number} not found")
+   107→    phases, validation_errors = parse_roadmap(issue.body)
+   111→        checks.append((False, f"Roadmap parses successfully ({'; '.join(validation_errors)})"))
+   112→        failed_count = sum(1 for passed, _ in checks if not passed)
+   116→            failed_count=failed_count,
+   120→            validation_errors=validation_errors,
+   187→    failed_count = sum(1 for passed, _ in checks if not passed)
+   190→        passed=failed_count == 0,
+   192→        failed_count=failed_count,
+   196→        validation_errors=validation_errors,
+   234→    if isinstance(result, ObjectiveValidationError):
+   239→                    "error": result.error,
+   258→                "validation_errors": result.validation_errors,
+   269→    if isinstance(result, ObjectiveValidationError):
+   271→            click.style("Error: ", fg="red") + f"Failed to validate objective: {result.error}"
+   292→        check_word = "checks" if result.failed_count &gt; 1 else "check"
+   295→                f"Objective validation failed ({result.failed_count} {check_word} failed)", fg="red"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JRvddBUPDZXRD55p2YKA1V">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6175" cache_read_input_tokens="48122" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6175}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JRvddBUPDZXRD55p2YKA1V">
+     1→"""Shared parser, serializer, and data types for objective roadmap operations.
+     2→
+     3→This module provides:
+     4→- Data types: RoadmapNodeStatus, RoadmapNode, RoadmapPhase
+     5→- Parsing: parse_roadmap() (v2 frontmatter only)
+     6→- Frontmatter: validate, parse, group, update
+     7→- Utilities: compute_summary(), find_next_node(), serialize_phases()
+     8→
+     9→Previously split across objective_roadmap_shared.py and
+    10→objective_roadmap_frontmatter.py in the erk package. Consolidated
+    11→here to eliminate the circular dependency between erk_shared and erk.
+    12→"""
+    13→
+    14→import re
+    15→from collections.abc import Mapping
+    16→from dataclasses import dataclass, replace
+    17→from typing import Literal, cast
+    18→
+    19→import yaml
+    20→
+    21→from erk_shared.gateway.github.metadata.core import (
+    22→    extract_raw_metadata_blocks,
+    23→    parse_metadata_block_body,
+    24→)
+    25→from erk_shared.gateway.github.metadata.types import BlockKeys
+    26→
+    27→RoadmapNodeStatus = Literal["pending", "planning", "done", "in_progress", "blocked", "skipped"]
+    28→
+    29→
+    30→@dataclass(frozen=True)
+
+... [725 lines omitted] ...
+
+    66→        Tuple of (steps, errors). If validation succeeds,
+    67→        errors is empty. If validation fails, steps is None.
+    69→    errors: list[str] = []
+    74→        errors.append("Missing required field: schema_version")
+    75→        return None, errors
+    78→        errors.append(f"Unsupported schema_version: {schema_version}")
+    79→        return None, errors
+    87→        errors.append("Missing required field: nodes (or steps for v2)")
+    88→        return None, errors
+    90→        errors.append("Field 'steps' must be a list")
+    91→        return None, errors
+    97→            errors.append(f"Step {i} is not a mapping")
+    98→            return None, errors
+   105→                errors.append(f"Step {i} missing required field: {field}")
+   106→                return None, errors
+   118→            errors.append(f"Step {i} field 'id' must be a string")
+   119→            return None, errors
+   121→            errors.append(f"Step {i} field 'description' must be a string")
+   122→            return None, errors
+   124→            errors.append(f"Step {i} field 'status' must be a string")
+   125→            return None, errors
+   128→            errors.append(f"Step {i} field 'status' must be one of: {valid_statuses}")
+   129→            return None, errors
+   131→            errors.append(f"Step {i} field 'pr' must be a string or null")
+   132→            return None, errors
+   138→                errors.append(f"Step {i} field 'depends_on' must be a list or null")
+   139→                return None, errors
+   142→                    errors.append(f"Step {i} field 'depends_on' item {j} must be a string")
+   143→                    return None, errors
+   148→            errors.append(f"Step {i} field 'slug' must be a string or null")
+   149→            return None, errors
+   162→    return steps, errors
+   182→    except ValueError:
+   184→    steps, _errors = validate_roadmap_frontmatter(data)
+   191→        "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n"
+   423→        ``(phases, validation_errors)`` on success, or ``None`` when the
+   442→    steps, errors = validate_roadmap_frontmatter(data)
+   448→    return (phases, errors)
+   451→_LEGACY_FORMAT_ERROR = (
+   462→        (phases, validation_errors)
+   471→        except ValueError:
+   480→    return ([], [_LEGACY_FORMAT_ERROR])
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XJ2sUrW2siYASMye55hQHo">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/objective_save_to_issue.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6175" cache_read_input_tokens="48122" output_tokens="417" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6175, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XJ2sUrW2siYASMye55hQHo">
+     1→"""Save plan as objective GitHub issue.
+     2→
+     3→Usage:
+     4→    erk exec objective-save-to-issue [OPTIONS]
+     5→
+     6→This command extracts a plan and creates a GitHub issue with:
+     7→- erk-objective label only (NOT erk-plan - objectives are not plans)
+     8→- No title suffix
+     9→- Plan content directly in body (no metadata block)
+    10→- No commands section
+    11→
+    12→Options:
+    13→    --session-id ID: Session ID for scoped plan lookup
+    14→    --format: json (default) or display
+    15→    --validate: Run objective validation after creation
+    16→
+    17→Exit Codes:
+    18→    0: Success - objective issue created
+    19→    1: Error - no plan found, gh failure, etc.
+    20→"""
+    21→
+    22→import json
+    23→from pathlib import Path
+    24→from typing import Any, cast
+    25→
+    26→import click
+    27→
+    28→from erk.cli.commands.objective.check_cmd import (
+    29→    ObjectiveValidationError,
+    30→    ObjectiveValidationSuccess,
+
+... [227 lines omitted] ...
+
+   176→            click.echo("Error: No plan found in ~/.claude/plans/", err=True)
+   182→            click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
+   198→            click.echo(f"Error: {result.error}", err=True)
+   200→            click.echo(json.dumps({"success": False, "error": result.error}))
+   205→        raise RuntimeError("Unexpected: plan_number is None after success")
+   215→        if isinstance(validation_result, ObjectiveValidationError):
+   218→                "error": validation_result.error,
+   228→                "errors": validation_result.validation_errors,
+   239→                click.echo("Validation: FAILED")
+  </tool_result>
+  <thinking>Now let me also look at the `create_objective_issue` function to understand how the roadmap is handled during creation, and the TUI types to see how objectives without roadmaps would display.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="18016" cache_read_input_tokens="54297" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18016}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read a few more critical files to understand the full picture.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="18016" cache_read_input_tokens="54297" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18016}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01W9ZVEmuzPHuX9WdHVKMjbr">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py</param>
+    <param name="offset">1</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="18016" cache_read_input_tokens="54297" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18016}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W9ZVEmuzPHuX9WdHVKMjbr">
+     1→"""GitHub issue creation for objectives and label management.
+     2→
+     3→This module contains:
+     4→- create_objective_issue(): Create objective issues with roadmap metadata
+     5→- Label management utilities (definitions, ensuring labels exist)
+     6→- CreatePlanIssueResult: Result type shared by objective issue creation
+     7→
+     8→Plan creation now uses create_plan_draft_pr() from plan_store.create_plan_draft_pr.
+     9→"""
+    10→
+    11→from dataclasses import dataclass
+    12→from datetime import UTC
+    13→from pathlib import Path
+    14→
+    15→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    16→from erk_shared.gateway.github.metadata.core import (
+    17→    create_objective_header_block,
+    18→    extract_raw_metadata_blocks,
+    19→    format_objective_content_comment,
+    20→    render_metadata_block,
+    21→    update_objective_header_comment_id,
+    22→)
+    23→from erk_shared.gateway.github.metadata.roadmap import (
+    24→    parse_roadmap_frontmatter,
+    25→    render_objective_roadmap_block,
+    26→    render_roadmap_block_inner,
+    27→)
+    28→from erk_shared.gateway.github.metadata.types import BlockKeys
+    29→from erk_shared.gateway.github.types import BodyText
+    30→from erk_shared.gateway.time.abc import Time
+
+... [70 lines omitted] ...
+
+    62→        plan_number: Plan number if created (may be set even on failure if
+    63→            partial success - issue created but comment failed)
+    66→        error: Error message if failed, None if success
+    73→    error: str | None
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0185YDVzR5hYh2zTdXXapsWX">
+    <param name="pattern">create_objective_issue</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="18016" cache_read_input_tokens="54297" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 18016}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0185YDVzR5hYh2zTdXXapsWX">
+4:- create_objective_issue(): Create objective issues with roadmap metadata
+112:def create_objective_issue(
+  </tool_result>
+  <tool_use name="Grep" id="toolu_011nzsECLScNjYAW5zr3XcjL">
+    <param name="pattern">objective_done_nodes|objective_total_nodes|objective_progress</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="18016" cache_read_input_tokens="54297" output_tokens="430" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 18016, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011nzsECLScNjYAW5zr3XcjL">
+Found 3 files
+src/erk/tui/widgets/plan_table.py
+src/erk/tui/data/types.py
+src/erk/tui/screens/plan_detail_screen.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_019ziBBzMVD5E13Z6v68pMdu">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py</param>
+    <param name="offset">100</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2018" cache_read_input_tokens="72313" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2018}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019ziBBzMVD5E13Z6v68pMdu">
+   100→
+   101→    # Validate the block parses correctly
+   102→    steps = parse_roadmap_frontmatter(roadmap_block.body)
+   103→    if steps is None:
+   104→        return None
+   105→
+   106→    # Re-render to normalize format
+   107→    inner = render_roadmap_block_inner(steps)
+   108→
+   109→    return render_objective_roadmap_block(inner)
+   110→
+   111→
+   112→def create_objective_issue(
+   113→    github_issues: GitHubIssues,
+   114→    repo_root: Path,
+   115→    plan_content: str,
+   116→    *,
+   117→    time: Time,
+   118→    title: str | None,
+   119→    extra_labels: list[str] | None,
+   120→    slug: str | None,
+   121→) -&gt; CreatePlanIssueResult:
+   122→    """Create objective issue with v2 format: metadata body + content comment.
+   123→
+   124→    Objectives use the same pattern as plans:
+   125→    - Body: objective-header metadata block + objective-roadmap block (if roadmap exists)
+   126→    - First comment: objective content wrapped in objective-body metadata block
+   127→    - Labels: erk-objective (NOT erk-plan)
+   128→    - No title suffix, no commands section
+   129→
+
+... [90 lines omitted] ...
+
+   142→        Does NOT raise exceptions. All errors returned in result.
+   152→            error="Could not get GitHub username (gh CLI not authenticated?)",
+   168→                error=slug_result.message,
+   181→    label_errors = _ensure_labels_exist(github_issues, repo_root, labels)
+   182→    if label_errors:
+   188→            error=label_errors,
+   214→    except RuntimeError as e:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01ADDjBx2zTgwhxdM6hd83mC">
+    <param name="pattern">objective_done_nodes|objective_total_nodes|objective_progress_display</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2018" cache_read_input_tokens="72313" output_tokens="264" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2018, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ADDjBx2zTgwhxdM6hd83mC">
+/Users/schrockn/code/erk/src/erk/tui/widgets/plan_table.py-296-            return (
+/Users/schrockn/code/erk/src/erk/tui/widgets/plan_table.py-297-                plan_cell,
+/Users/schrockn/code/erk/src/erk/tui/widgets/plan_table.py-298-                row.objective_slug_display,
+src/erk/tui/widgets/plan_table.py:299:                row.objective_progress_display,
+/Users/schrockn/code/erk/src/erk/tui/widgets/plan_table.py-300-                Text(row.objective_state_display),
+/Users/schrockn/code/erk/src/erk/tui/widgets/plan_table.py-301-                row.objective_deps_display,
+/Users/schrockn/code/erk/src/erk/tui/widgets/plan_table.py-302-                deps_cell,
+--
+src/erk/tui/screens/plan_detail_screen.py-913-                with Container(classes="info-row"):
+/Users/schrockn/code/erk/src/erk/tui/screens/plan_detail_screen.py-914-                    yield Label("Objective", classes="info-label")
+/Users/schrockn/code/erk/src/erk/tui/screens/plan_detail_screen.py-915-                    display_text = (
+src/erk/tui/screens/plan_detail_screen.py:916:                        f"{self._row.objective_display} ({self._row.objective_progress_display})"
+src/erk/tui/screens/plan_detail_screen.py:917:                        if self._row.objective_progress_display != "-"
+/Users/schrockn/code/erk/src/erk/tui/screens/plan_detail_screen.py-918-                        else self._row.objective_display
+/Users/schrockn/code/erk/src/erk/tui/screens/plan_detail_screen.py-919-                    )
+src/erk/tui/screens/plan_detail_screen.py-920-                    if self._row.plan_url:
+--
+src/erk/tui/data/types.py-71-        objective_issue: Objective issue number. None if not linked to an objective.
+src/erk/tui/data/types.py-72-        objective_url: Full URL to the objective issue. None if no objective.
+src/erk/tui/data/types.py-73-        objective_display: Formatted display string (e.g., "#123" or "-").
+src/erk/tui/data/types.py:74:        objective_done_nodes: Count of done nodes in objective roadmap. 0 if no objective.
+src/erk/tui/data/types.py:75:        objective_total_nodes: Total nodes in objective roadmap. 0 if no objective.
+src/erk/tui/data/types.py:76:        objective_progress_display: Progress display (e.g., "3/7" or "-").
+src/erk/tui/data/types.py-77-        objective_slug_display: Slug or stripped title fallback (max 25 chars).
+src/erk/tui/data/types.py-78-        objective_state_display: Sparkline string (e.g., "✓✓✓▶▶○○○○").
+src/erk/tui/data/types.py-79-        objective_deps_display: Dep status of next node ("ready", "in progress", "-").
+--
+src/erk/tui/data/types.py-132-    objective_issue: int | None
+src/erk/tui/data/types.py-133-    objective_url: str | None
+src/erk/tui/data/types.py-134-    objective_display: str
+
+... [6 lines omitted] ...
+  </tool_result>
+  <thinking>Now let me understand the full picture. Looking at the key points:
+
+1. `validate_objective` in `check_cmd.py` line 106-122: Check 2 requires `phases` to be truthy (non-empty). If `parse_roadmap` returns empty phases (which it does when there's no roadmap block), it fails.
+
+2. `parse_roadmap` in `roadmap.py` line 458-480: When no `objective-roadmap` metadata block exists, returns `([], [_LEGACY_FORMAT_ERROR])`. This means objectives without roadmaps get the "legacy format" error.
+
+
+3. The issue creation in `plan_issues.py` handles roadmap-less objectives fine — it only adds the roadmap block if one exists. The TUI display would show "0/0" or "-" when there are no nodes. The real issue is that `parse_roadmap` treats a missing roadmap block as a legacy format error, and `validate_objective` rejects objectives with empty phases.
+
+The fix needs three parts: `parse_roadmap` should allow objectives without roadmap blocks, `validate_objective` should skip roadmap-dependent checks when there's no roadmap, and the TUI should handle roadmap-free objectives gracefully. I should also check what other commands consume objectives to make sure this change doesn't break anything else.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3019" cache_read_input_tokens="74331" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3019}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check what other objective commands and consumers exist, plus the objective-create skill to understand the creation flow.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3019" cache_read_input_tokens="74331" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3019}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PAAtSDtBULVfHnqtPm3e7c">
+    <param name="pattern">parse_roadmap|parse_v2_roadmap</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="glob">*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3019" cache_read_input_tokens="74331" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3019}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PAAtSDtBULVfHnqtPm3e7c">
+Found 13 files
+src/erk/cli/commands/objective/check_cmd.py
+src/erk/cli/commands/exec/scripts/update_objective_node.py
+src/erk/cli/commands/exec/scripts/objective_fetch_context.py
+src/erk/cli/commands/exec/scripts/migrate_objective_schema.py
+packages/erk-shared/src/erk_shared/gateway/github/plan_issues.py
+packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py
+packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py
+packages/erk-shared/tests/unit/github/metadata/test_roadmap_frontmatter.py
+tests/unit/cli/commands/exec/scripts/test_update_objective_node.py
+tests/unit/cli/commands/exec/scripts/test_objective_render_roadmap.py
+src/erk/cli/commands/objective/view_cmd.py
+packages/erk-shared/tests/unit/github/metadata/test_roadmap.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01D2kizgNVZYfJGgxMeeFopp">
+    <param name="pattern">objective_total_nodes|objective_done_nodes</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3019" cache_read_input_tokens="74331" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3019}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D2kizgNVZYfJGgxMeeFopp">
+Found 1 file
+src/erk/tui/data/types.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MR775sjMsoobeuQ1NRDZsL">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/objective-create.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3019" cache_read_input_tokens="74331" output_tokens="735" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3019, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MR775sjMsoobeuQ1NRDZsL">
+     1→---
+     2→description: Create a structured objective through guided conversation
+     3→---
+     4→
+     5→# /erk:objective-create
+     6→
+     7→Create a new objective through an interactive, guided process. You describe what you want to accomplish, and Claude proposes a structured objective for your approval.
+     8→
+     9→## Usage
+    10→
+    11→```bash
+    12→/erk:objective-create
+    13→```
+    14→
+    15→---
+    16→
+    17→## Agent Instructions
+    18→
+    19→### Step 1: Prompt for Description
+    20→
+    21→Ask the user to describe what they want to accomplish:
+    22→
+    23→```
+    24→What do you want to accomplish? Describe it however makes sense to you - goals,
+    25→constraints, design decisions you've already made, context about the codebase, etc.
+    26→
+    27→I'll structure it into a formal objective for your review.
+    28→```
+    29→
+    30→Wait for the user's response. They may provide:
+
+... [329 lines omitted] ...
+
+   351→## Error Cases
+   356→| Not authenticated            | Report GitHub auth error         |
+   357→| Issue creation fails         | Report API error, offer to retry |
+   358→| Plan file write fails        | Report error with path           |
+  </tool_result>
+  <thinking>Now I have a clear picture. Let me also check the view_cmd.py and the TUI data builder to understand how objectives are displayed.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5436" cache_read_input_tokens="77350" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5436}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the view command and the TUI data construction for objectives.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5436" cache_read_input_tokens="77350" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5436}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01X26GDGYtySyPta5DLAcciM">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/objective/view_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5436" cache_read_input_tokens="77350" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5436}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X26GDGYtySyPta5DLAcciM">
+     1→"""Command to fetch and display a single objective."""
+     2→
+     3→import json
+     4→from datetime import datetime
+     5→
+     6→import click
+     7→from rich.cells import cell_len
+     8→from rich.console import Console
+     9→from rich.markup import escape
+    10→from rich.table import Table
+    11→from rich.text import Text
+    12→
+    13→from erk.cli.alias import alias
+    14→from erk.cli.core import discover_repo_context
+    15→from erk.cli.ensure import UserFacingCliError
+    16→from erk.cli.github_parsing import parse_issue_identifier
+    17→from erk.core.context import ErkContext
+    18→from erk.core.display_utils import format_relative_time
+    19→from erk_shared.gateway.github.issues.types import IssueNotFound
+    20→from erk_shared.gateway.github.metadata.dependency_graph import (
+    21→    DependencyGraph,
+    22→    ObjectiveNode,
+    23→    build_graph,
+    24→    compute_graph_summary,
+    25→    find_graph_next_node,
+    26→)
+    27→from erk_shared.gateway.github.metadata.roadmap import (
+    28→    RoadmapPhase,
+    29→    parse_v2_roadmap,
+    30→    serialize_phases,
+
+... [344 lines omitted] ...
+
+   189→        raise UserFacingCliError(f"Issue #{issue_number} not found")
+   194→        raise UserFacingCliError(
+   201→        raise UserFacingCliError(
+   206→    phases, _validation_errors = v2_result
+  </tool_result>
+  <tool_use name="Grep" id="toolu_017sB2Xth8AxFVBb9TCe9Qc2">
+    <param name="pattern">objective_done_nodes|objective_total_nodes|objective_progress</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5436" cache_read_input_tokens="77350" output_tokens="281" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5436, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017sB2Xth8AxFVBb9TCe9Qc2">
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-786-            elif plan.title:
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-787-                stripped = plan.title.removeprefix("Objective: ")
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-788-                objective_slug_display = stripped[:25]
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-789-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-790-        # Parse roadmap for objective-specific fields
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:791:        objective_done_nodes = 0
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:792:        objective_total_nodes = 0
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:793:        objective_progress_display = "-"
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-794-        objective_state_display = "-"
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-795-        objective_deps_display = "-"
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-796-        objective_next_node_display = "-"
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-797-        objective_deps_plans: list[tuple[str, str]] = []
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-798-        if plan.body:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-799-            phases, _errors = parse_roadmap(plan.body)
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-800-            if phases:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-801-                graph = build_graph(phases)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-802-                summary = compute_graph_summary(graph)
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:803:                objective_done_nodes = summary["done"]
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:804:                objective_total_nodes = summary["total_nodes"]
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:805:                objective_progress_display = f"{objective_done_nodes}/{objective_total_nodes}"
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-806-                objective_state_display = build_state_sparkline(graph.nodes)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-807-                next_node = find_graph_next_node(graph, phases)
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-808-                if next_node is not None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-809-                    objective_next_node_display = next_node["id"]
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-810-                    min_status = graph.min_dep_status(next_node["id"])
+--
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-903-            learn_display=learn_display,
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-904-            learn_display_icon=learn_display_icon,
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-905-            objective_issue=objective_issue,
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py-906-            objective_url=objective_url,
+
+... [51 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a comprehensive picture. Let me also check the other consumers quickly.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="9225" cache_read_input_tokens="82786" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9225}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the remaining consumers to ensure I have all the touchpoints.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9225" cache_read_input_tokens="82786" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9225}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HGkN746WuYLrb16bZfG5X5">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9225" cache_read_input_tokens="82786" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9225}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HGkN746WuYLrb16bZfG5X5">
+     1→"""Fetch all context needed for objective-update-with-landed-pr in one call.
+     2→
+     3→Bundles objective, plan, PR details, and parsed roadmap context
+     4→into a single JSON blob, eliminating multiple sequential LLM turns for data
+     5→fetching and step matching.
+     6→
+     7→Usage:
+     8→    erk exec objective-fetch-context --pr 6517 --objective 6423 --branch plnd/...
+     9→    erk exec objective-fetch-context  # auto-discovers all arguments
+    10→
+    11→Output:
+    12→    JSON with {success, objective, plan, pr, roadmap} or {success, error}
+    13→
+    14→Exit Codes:
+    15→    0: Success - all data fetched
+    16→    1: Error - missing data or invalid arguments
+    17→"""
+    18→
+    19→import json
+    20→from pathlib import Path
+    21→
+    22→import click
+    23→
+    24→from erk_shared.context.helpers import (
+    25→    require_cwd,
+    26→    require_git,
+    27→    require_github,
+    28→    require_issues,
+    29→    require_plan_backend,
+    30→    require_repo_root,
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0176amgZ7FUYgpSQmNujjp46">
+    <param name="pattern">parse_roadmap|parse_v2_roadmap</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/update_objective_node.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9225" cache_read_input_tokens="82786" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9225}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0176amgZ7FUYgpSQmNujjp46">
+56-    extract_raw_metadata_blocks,
+57-    replace_metadata_block_in_body,
+58-)
+59-from erk_shared.gateway.github.metadata.roadmap import (
+60-    RoadmapNodeStatus,
+61:    parse_roadmap,
+62-    render_objective_roadmap_block,
+63-    rerender_comment_roadmap,
+64-    update_node_in_frontmatter,
+65-)
+66-from erk_shared.gateway.github.metadata.types import BlockKeys
+--
+122-    """Find the current PR value for a node in the roadmap body.
+123-
+124-    Returns:
+125-        (previous_pr, found)
+126-    """
+127:    phases, _ = parse_roadmap(body)
+128-    for phase in phases:
+129-        for step in phase.nodes:
+130-            if step.id == node_id:
+131-                return step.pr, True
+132-    return None, False
+--
+250-            )
+251-        )
+252-        raise SystemExit(0)
+253-
+254-    # Parse roadmap to validate it exists
+255:    phases, _ = parse_roadmap(issue.body)
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01AQS4CHZimMWAKHVkXc55N8">
+    <param name="pattern">parse_roadmap|parse_v2_roadmap</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9225" cache_read_input_tokens="82786" output_tokens="454" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9225, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AQS4CHZimMWAKHVkXc55N8">
+33-    find_graph_next_node,
+34-)
+35-from erk_shared.gateway.github.metadata.roadmap import (
+36:    parse_roadmap,
+37-)
+38-from erk_shared.gateway.github.metadata.schemas import (
+39-    LAST_LOCAL_IMPL_AT,
+--
+796-        objective_next_node_display = "-"
+797-        objective_deps_plans: list[tuple[str, str]] = []
+798-        if plan.body:
+799:            phases, _errors = parse_roadmap(plan.body)
+800-            if phases:
+801-                graph = build_graph(phases)
+802-                summary = compute_graph_summary(graph)
+  </tool_result>
+  <thinking>Now I have a complete picture. Let me also check the objective-list command/skill since that's important for display.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1754" cache_read_input_tokens="92011" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1754}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me look at how objectives are listed and the objective-list skill.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1754" cache_read_input_tokens="92011" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1754}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01A6yYEGj6odrMbC45Qd811C">
+    <param name="pattern">def objective_list|def list_objectives|erk-objective</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1754" cache_read_input_tokens="92011" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1754}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A6yYEGj6odrMbC45Qd811C">
+src/erk/cli/commands/init/main.py:357:    (erk-plan, erk-extraction, erk-objective) exist in that target repository.
+src/erk/cli/commands/init/main.py:364:    user_output("Erk uses labels (erk-plan, erk-extraction, erk-objective) to organize issues.")
+src/erk/cli/commands/objective/check_cmd.py:32:ERK_OBJECTIVE_LABEL = "erk-objective"
+src/erk/cli/commands/objective/check_cmd.py:78:    1. Issue exists and has erk-objective label
+src/erk/cli/commands/objective/check_cmd.py:99:    # Check 1: erk-objective label
+src/erk/cli/commands/objective/check_cmd.py:102:        checks.append((True, "Issue has erk-objective label"))
+src/erk/cli/commands/objective/check_cmd.py:104:        checks.append((False, "Issue has erk-objective label"))
+src/erk/cli/commands/objective/check_cmd.py:213:    Checks: erk-objective label, roadmap parsing, status/PR consistency,
+src/erk/cli/commands/objective/close_cmd.py:12:ERK_OBJECTIVE_LABEL = "erk-objective"
+src/erk/cli/commands/objective/close_cmd.py:25:    The issue must have the 'erk-objective' label and be in an open state.
+src/erk/cli/commands/objective/close_cmd.py:40:    # Validate issue has erk-objective label
+src/erk/cli/commands/objective/view_cmd.py:192:    # Verify erk-objective label
+src/erk/cli/commands/objective/view_cmd.py:193:    if "erk-objective" not in issue.labels:
+src/erk/cli/commands/objective/view_cmd.py:195:            f"Issue #{issue_number} is not an objective (missing erk-objective label)"
+src/erk/cli/commands/objective/list_cmd.py:19:def list_objectives(ctx: ErkContext) -&gt; None:
+src/erk/cli/commands/objective/list_cmd.py:20:    """List open objectives (GitHub issues with erk-objective label)."""
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:7:- erk-objective label only (NOT erk-plan - objectives are not plans)
+src/erk/cli/commands/exec/scripts/objective_save_to_issue.py:123:    Creates a GitHub issue with only the erk-objective label (NOT erk-plan).
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0113SYiCmnmhniwKzDkSsPts">
+    <param name="pattern">parse_roadmap|parse_v2_roadmap</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/objective_fetch_context.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1754" cache_read_input_tokens="92011" output_tokens="344" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1754, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0113SYiCmnmhniwKzDkSsPts">
+41-    compute_graph_summary,
+42-    find_graph_next_node,
+43-)
+44-from erk_shared.gateway.github.metadata.roadmap import (
+45-    group_nodes_by_phase,
+46:    parse_roadmap_frontmatter,
+47-    serialize_phases,
+48-)
+49-from erk_shared.gateway.github.metadata.types import BlockKeys
+50-from erk_shared.gateway.github.types import PRNotFound
+51-from erk_shared.objective_fetch_context_result import (
+--
+74-
+75-
+76-def _build_roadmap_context(objective_body: str, plan_id: str) -&gt; RoadmapContextDict:
+77-    """Parse roadmap from objective body.
+78-
+79:    Uses parse_roadmap_frontmatter() + group_nodes_by_phase() directly
+80:    (not parse_roadmap() which enriches phase names from markdown headers).
+81-    """
+82-    raw_blocks = extract_raw_metadata_blocks(objective_body)
+83-    matching_blocks = [block for block in raw_blocks if block.key == BlockKeys.OBJECTIVE_ROADMAP]
+84-
+85-    if not matching_blocks:
+86-        return _empty_roadmap()
+87-
+88:    steps = parse_roadmap_frontmatter(matching_blocks[0].body)
+89-    if steps is None:
+90-        return _empty_roadmap()
+91-
+
+... [2 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have the full picture. Let me design the implementation plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1559" cache_read_input_tokens="93765" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1559}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_017WicUguBhqsy5n6KCpz8s1">
+    <param name="description">Design roadmap-free objectives plan</param>
+    <param name="subagent_type">Plan</param>
+    <param name="prompt">Design an implementation plan for supporting objectives without a roadmap in the erk codeb...[truncated 5382 chars]... dataclasses
+- No default parameter values  
+- The discriminated union pattern for results</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1559" cache_read_input_tokens="93765" output_tokens="1696" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1559, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017WicUguBhqsy5n6KCpz8s1">
+Neither `extract_raw_metadata_blocks` nor `BlockKeys` is currently imported. These need to be added:
+
+```python
+from erk_shared.gateway.github.metadata.core import (
+    extract_raw_metadata_blocks,
+)
+from erk_shared.gateway.github.metadata.types import BlockKeys
+```
+
+The rest of `view_cmd.py` (lines 207-373) already handles the `phases` empty case correctly. Looking at lines 251-373:
+- Line 251: `if phases:` -- shows roadmap section
+- Lines 369-373: `else:` block -- shows "No roadmap data found" message
+
+So the display already handles empty phases. The only fix needed is in the guard clause at lines 198-206.
+
+**JSON output for roadmap-free objectives:** The `_display_json` function (line 125-160) receives `phases` and `graph`. For roadmap-free objectives, `phases=[]` and `graph=build_graph([])` which gives `DependencyGraph(nodes=())`. The JSON will show empty phases, empty graph nodes, and `is_complete: true`. This is acceptable.
+
+However, we need to handle the case where `phases` is empty in the JSON output path. Currently:
+
+```python
+    graph = build_graph(phases)  # line 209
+    summary = compute_graph_summary(graph)  # line 210
+```
+
+This works fine with empty phases -- `build_graph([])` produces an empty graph, and `compute_graph_summary` on an empty graph returns all zeros.
+
+#### Step 4: Update `_output_human` in `check_cmd.py` to display no-roadmap summary nicely
+
+**File:** `/Users/schrockn/code/erk/src/erk/cli/commands/objective/check_cmd.py`
+
+
+... [388 lines omitted] ...
+
+    """Test parsing body with no metadata block returns legacy format error."""
+    phases, errors = parse_roadmap("No roadmap here.")
+    assert len(errors) == 1
+    assert "legacy format" in errors[0]
+    """Test parsing body with no metadata block returns empty phases, no errors."""
+    phases, errors = parse_roadmap("No roadmap here.")
+    assert errors == []
+**6b. Test `parse_roadmap()` with broken metadata block still returns legacy error**
+Add a new test to ensure that when a block exists but is unparseable, the legacy error is still returned:
+def test_parse_roadmap_broken_block_returns_legacy_error() -&gt; None:
+    """Test that unparseable objective-roadmap block returns legacy format error."""
+    phases, errors = parse_roadmap(body)
+    assert len(errors) == 1
+    assert "legacy format" in errors[0]
+(Note: `test_parse_roadmap_invalid_frontmatter` at line 171 already covers the case where the block has invalid YAML inside `&lt;details&gt;`. And `test_parse_roadmap_legacy_format_returns_error` at line 196 covers the `---` format. Both of these have a block present, so they should still return the legacy error.)
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    assert output["validation_errors"] == []
+    assert result.exit_code == 0, f"Failed: {result.output}"
+The existing test `test_view_objective_empty_roadmap` at line 199-214 currently expects exit_code 1 and "legacy format" error. This must be updated:
+        assert result.exit_code == 0, f"Failed: {result.output}"
+        assert result.exit_code == 0, f"Failed: {result.output}"
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+This has the metadata block markers, so `has_roadmap_block` will be True. `parse_v2_roadmap` will be called, and since the block uses `---` format (not `&lt;details&gt;`), it will return None. So the legacy error will still be raised. Good -- this test remains correct.
+        ``(phases, validation_errors)`` on success, or ``None`` when the
+- `update_objective_node.py` -- Already correctly rejects empty phases (you cannot update a node without a roadmap). The error message "has no roadmap table" is accurate.
+1. **Semantic shift of `parse_roadmap` return value**: Any code that previously relied on `([], [_LEGACY_FORMAT_ERROR])` to mean "no roadmap at all" will now get `([], [])`. The main risk is code that checks `if not phases:` and assumes it means "broken objective." After the change, `not phases` could mean either "no roadmap" (valid) or "broken roadmap" (invalid). Callers should check `validation_errors` to distinguish.
+  </tool_result>
+  <thinking>Excellent — the Plan agent has done thorough work. Let me now synthesize this into a concrete plan file. Let me also read the existing test files to make sure I have the right fixtures and imports.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="6890" cache_read_input_tokens="95324" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6890}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the existing test files to confirm the fixtures and patterns.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6890" cache_read_input_tokens="95324" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6890}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YX2Lev3YsoCcgMHaL9DbEg">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/tests/unit/github/metadata/test_roadmap.py</param>
+    <param name="offset">155</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6890" cache_read_input_tokens="95324" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6890}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YX2Lev3YsoCcgMHaL9DbEg">
+   155→    assert phases[1].name == "Second Part"
+   156→
+   157→    assert phases[2].number == 2
+   158→    assert phases[2].suffix == ""
+   159→    assert phases[2].name == "Core"
+   160→
+   161→
+   162→def test_parse_roadmap_no_metadata_block() -&gt; None:
+   163→    """Test parsing body with no metadata block returns legacy format error."""
+   164→    phases, errors = parse_roadmap("No roadmap here.")
+   165→
+   166→    assert phases == []
+   167→    assert len(errors) == 1
+   168→    assert "legacy format" in errors[0]
+   169→
+   170→
+   171→def test_parse_roadmap_invalid_frontmatter() -&gt; None:
+   172→    """Test that invalid frontmatter in metadata block returns legacy format error."""
+   173→    body = """\
+   174→## Objective
+   175→
+   176→&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+   177→&lt;details&gt;
+   178→&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+   179→
+   180→```yaml
+   181→invalid: yaml: syntax [
+   182→```
+   183→
+   184→&lt;/details&gt;
+
+... [40 lines omitted] ...
+
+   188→    phases, errors = parse_roadmap(body)
+   190→    # Invalid YAML inside &lt;details&gt; → parse_roadmap_frontmatter returns None → legacy error
+   192→    assert len(errors) == 1
+   193→    assert "legacy format" in errors[0]
+   196→def test_parse_roadmap_legacy_format_returns_error() -&gt; None:
+   197→    """Test that legacy --- format metadata block returns legacy format error."""
+   216→    phases, errors = parse_roadmap(body)
+   220→    assert len(errors) == 1
+   221→    assert "legacy format" in errors[0]
+  </tool_result>
+  <tool_use name="Read" id="toolu_019jDxx3D48gC9QHw6e8sWAo">
+    <param name="file_path">/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6890" cache_read_input_tokens="95324" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6890}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019jDxx3D48gC9QHw6e8sWAo">
+     1→"""Unit tests for erk objective check command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.objective.check_cmd import (
+    10→    ObjectiveValidationError,
+    11→    ObjectiveValidationSuccess,
+    12→    check_objective,
+    13→    validate_objective,
+    14→)
+    15→from erk_shared.context.context import ErkContext
+    16→from erk_shared.gateway.github.fake import FakeGitHub
+    17→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    18→from erk_shared.gateway.github.issues.types import IssueInfo
+    19→
+    20→
+    21→def _make_issue(
+    22→    number: int,
+    23→    title: str,
+    24→    body: str,
+    25→    *,
+    26→    labels: list[str] | None = None,
+    27→) -&gt; IssueInfo:
+    28→    """Create a test IssueInfo."""
+    29→    now = datetime.now(UTC)
+    30→    return IssueInfo(
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01VpfQDF4dpftpaewY8rP3eb">
+    <param name="pattern">test_malformed_roadmap|test.*no.*roadmap|test.*empty.*roadmap</param>
+    <param name="path">/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6890" cache_read_input_tokens="95324" output_tokens="432" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6890, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VpfQDF4dpftpaewY8rP3eb">
+149-    )
+150-    fake_gh = FakeGitHubIssues(issues={200: issue})
+151-    runner = CliRunner()
+152-
+153-    result = runner.invoke(
+154-        check_objective,
+155-        ["200"],
+156-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+157-    )
+158-
+159-    assert result.exit_code == 1
+160-    assert "[FAIL]" in result.output
+161-    assert "erk-objective label" in result.output
+162-
+163-
+164:def test_malformed_roadmap_fails() -&gt; None:
+165-    """Test that a body with no roadmap tables fails."""
+166-    body = """# Objective: No Roadmap
+167-
+168-This objective has no roadmap tables.
+169-"""
+170-    issue = _make_issue(300, "Objective: No Roadmap", body)
+171-    fake_gh = FakeGitHubIssues(issues={300: issue})
+172-    runner = CliRunner()
+173-
+174-    result = runner.invoke(
+175-        check_objective,
+176-        ["300"],
+177-        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+178-    )
+
+... [1 lines omitted] ...
+  </tool_result>
+  <thinking>Let me also check the test file for view_cmd to understand the existing patterns.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="7435" cache_read_input_tokens="102214" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7435}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HaxWWzaqH9Lg61xGBQBGVt">
+    <param name="file_path">/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_check_cmd.py</param>
+    <param name="offset">160</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7435" cache_read_input_tokens="102214" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7435}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HaxWWzaqH9Lg61xGBQBGVt">
+   160→    assert "[FAIL]" in result.output
+   161→    assert "erk-objective label" in result.output
+   162→
+   163→
+   164→def test_malformed_roadmap_fails() -&gt; None:
+   165→    """Test that a body with no roadmap tables fails."""
+   166→    body = """# Objective: No Roadmap
+   167→
+   168→This objective has no roadmap tables.
+   169→"""
+   170→    issue = _make_issue(300, "Objective: No Roadmap", body)
+   171→    fake_gh = FakeGitHubIssues(issues={300: issue})
+   172→    runner = CliRunner()
+   173→
+   174→    result = runner.invoke(
+   175→        check_objective,
+   176→        ["300"],
+   177→        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+   178→    )
+   179→
+   180→    assert result.exit_code == 1
+   181→    assert "[FAIL]" in result.output
+   182→    assert "Roadmap parses successfully" in result.output
+   183→
+   184→
+   185→def test_done_step_without_pr_fails() -&gt; None:
+   186→    """Test that a done step without PR reference is flagged."""
+   187→    body = """\
+   188→# Objective: All Done
+   189→
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_014pDikwqNXkG7uSFhXjxC7Z">
+    <param name="pattern">test_view_objective_empty_roadmap|test_view.*legacy|OBJECTIVE_EMPTY</param>
+    <param name="path">/Users/schrockn/code/erk/tests/unit/cli/commands/objective/</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7435" cache_read_input_tokens="102214" output_tokens="298" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7435, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014pDikwqNXkG7uSFhXjxC7Z">
+tests/unit/cli/commands/objective/test_view_cmd.py-106-&lt;!-- /erk:metadata-block:objective-roadmap --&gt;
+/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_view_cmd.py-107-"""
+/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_view_cmd.py-108-
+tests/unit/cli/commands/objective/test_view_cmd.py:109:OBJECTIVE_EMPTY_ROADMAP = """# Objective: Empty
+/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_view_cmd.py-110-
+/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_view_cmd.py-111-No roadmap here.
+/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_view_cmd.py-112-"""
+--
+/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_view_cmd.py-196-        assert "erk-objective" in result.output
+/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_view_cmd.py-197-
+/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_view_cmd.py-198-
+tests/unit/cli/commands/objective/test_view_cmd.py:199:def test_view_objective_empty_roadmap() -&gt; None:
+/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_view_cmd.py-200-    """Test view with empty roadmap rejects as legacy format."""
+tests/unit/cli/commands/objective/test_view_cmd.py:201:    issue = _make_issue(400, "Objective: Empty", OBJECTIVE_EMPTY_ROADMAP)
+tests/unit/cli/commands/objective/test_view_cmd.py-202-    fake_gh = FakeGitHubIssues(issues={400: issue})
+/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_view_cmd.py-203-    runner = CliRunner()
+/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_view_cmd.py-204-
+--
+/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_view_cmd.py-343-        assert "#125" in output
+/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_view_cmd.py-344-
+/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_view_cmd.py-345-
+tests/unit/cli/commands/objective/test_view_cmd.py:346:def test_view_objective_legacy_format_rejected() -&gt; None:
+/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_view_cmd.py-347-    """Test that table-only objective body is rejected as legacy format."""
+tests/unit/cli/commands/objective/test_view_cmd.py-348-    issue = _make_issue(1000, "Objective: Legacy", OBJECTIVE_LEGACY_TABLE)
+tests/unit/cli/commands/objective/test_view_cmd.py-349-    fake_gh = FakeGitHubIssues(issues={1000: issue})
+  </tool_result>
+  <tool_use name="Read" id="toolu_019k15RjrqEeXZjFDHorXbxb">
+    <param name="file_path">/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="offset">199</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1816" cache_read_input_tokens="109649" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1816}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019k15RjrqEeXZjFDHorXbxb">
+   199→def test_view_objective_empty_roadmap() -&gt; None:
+   200→    """Test view with empty roadmap rejects as legacy format."""
+   201→    issue = _make_issue(400, "Objective: Empty", OBJECTIVE_EMPTY_ROADMAP)
+   202→    fake_gh = FakeGitHubIssues(issues={400: issue})
+   203→    runner = CliRunner()
+   204→
+   205→    with erk_inmem_env(runner) as env:
+   206→        test_ctx = env.build_context(issues=fake_gh)
+   207→        result = runner.invoke(
+   208→            view_objective,
+   209→            ["400"],
+   210→            obj=test_ctx,
+   211→        )
+   212→
+   213→        assert result.exit_code == 1
+   214→        assert "legacy format" in result.output
+   215→
+   216→
+   217→def test_view_objective_displays_summary() -&gt; None:
+   218→    """Test that summary section displays with correct stats."""
+   219→    issue = _make_issue(500, "Objective: Summary Test", OBJECTIVE_WITH_ROADMAP)
+   220→    fake_gh = FakeGitHubIssues(issues={500: issue})
+   221→    runner = CliRunner()
+   222→
+   223→    with erk_inmem_env(runner) as env:
+   224→        test_ctx = env.build_context(issues=fake_gh)
+   225→        result = runner.invoke(
+   226→            view_objective,
+   227→            ["500"],
+   228→            obj=test_ctx,
+  </tool_result>
+  <tool_use name="Read" id="toolu_013njqpYtMQsY6wcLSPkvXn6">
+    <param name="file_path">/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="offset">346</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1816" cache_read_input_tokens="109649" output_tokens="215" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1816, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013njqpYtMQsY6wcLSPkvXn6">
+   346→def test_view_objective_legacy_format_rejected() -&gt; None:
+   347→    """Test that table-only objective body is rejected as legacy format."""
+   348→    issue = _make_issue(1000, "Objective: Legacy", OBJECTIVE_LEGACY_TABLE)
+   349→    fake_gh = FakeGitHubIssues(issues={1000: issue})
+   350→    runner = CliRunner()
+   351→
+   352→    with erk_inmem_env(runner) as env:
+   353→        test_ctx = env.build_context(issues=fake_gh)
+   354→        result = runner.invoke(
+   355→            view_objective,
+   356→            ["1000"],
+   357→            obj=test_ctx,
+   358→        )
+   359→
+   360→        assert result.exit_code == 1
+   361→        assert "legacy format" in result.output
+   362→        assert "erk:objective-create" in result.output
+   363→
+   364→
+   365→def test_view_objective_v1_schema_rejected() -&gt; None:
+   366→    """Test that metadata block with schema_version 1 is rejected."""
+   367→    issue = _make_issue(1100, "Objective: V1", OBJECTIVE_V1_SCHEMA)
+   368→    fake_gh = FakeGitHubIssues(issues={1100: issue})
+   369→    runner = CliRunner()
+   370→
+   371→    with erk_inmem_env(runner) as env:
+   372→        test_ctx = env.build_context(issues=fake_gh)
+   373→        result = runner.invoke(
+   374→            view_objective,
+   375→            ["1100"],
+
+... [20 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have all the info I need. Let me also look at the OBJECTIVE_LEGACY_TABLE fixture and the V1 schema fixture.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1372" cache_read_input_tokens="111465" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1372}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MoMvFg3dYCihtoRVYwgQ6p">
+    <param name="file_path">/Users/schrockn/code/erk/tests/unit/cli/commands/objective/test_view_cmd.py</param>
+    <param name="offset">78</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1372" cache_read_input_tokens="111465" output_tokens="162" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1372, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MoMvFg3dYCihtoRVYwgQ6p">
+    78→&lt;!-- /erk:metadata-block:objective-roadmap --&gt;
+    79→"""
+    80→
+    81→OBJECTIVE_LEGACY_TABLE = """\
+    82→# Objective: Legacy Feature
+    83→
+    84→## Roadmap
+    85→
+    86→### Phase 1: Foundation
+    87→
+    88→| Node | Description | Status | Plan | PR |
+    89→|------|-------------|--------|------|-----|
+    90→| 1.1 | Setup infrastructure | done | - | #123 |
+    91→"""
+    92→
+    93→OBJECTIVE_V1_SCHEMA = """\
+    94→# Objective: V1 Schema
+    95→
+    96→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    97→&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+    98→---
+    99→schema_version: '1'
+   100→steps:
+   101→- id: '1.1'
+   102→  description: First step
+   103→  status: pending
+   104→  pr: null
+   105→---
+   106→&lt;!-- /erk:metadata-block:objective-roadmap --&gt;
+   107→"""
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Good — now I have the complete picture. Let me also check one thing: does `has_metadata_block` exist already or do I need to use `extract_raw_metadata_blocks` directly?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="608" cache_read_input_tokens="112837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 608}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01BDhJso7G2qiJGho6MbdFUJ">
+    <param name="pattern">def has_metadata_block|def find_metadata_block</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="608" cache_read_input_tokens="112837" output_tokens="197" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 608, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BDhJso7G2qiJGho6MbdFUJ">
+611:def find_metadata_block(text: str, key: str) -&gt; MetadataBlock | None:
+629:def has_metadata_block(text: str, key: str) -&gt; bool:
+  </tool_result>
+  <assistant>`has_metadata_block` already exists. Now I have everything. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="113445" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 254}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01NJLr8cM2S7zHTC7mw9D5HG">
+    <param name="file_path">/Users/schrockn/.claude/plans/synthetic-honking-clock.md</param>
+    <param name="content"># Plan: Support Objectives Without a Roadmap
+
+## Context
+
+When creating high-level objecti...[truncated 8972 chars]...erk objective list` and run `erk objective check` on it
+5. Run broader CI: `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="113445" output_tokens="2849" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 254, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NJLr8cM2S7zHTC7mw9D5HG">
+File created successfully at: /Users/schrockn/.claude/plans/synthetic-honking-clock.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01Ni3J5BkEUiJxUUQnKJrz9b">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests via devrun agent'}, {'tool': 'Bash', 'prompt': 'run make fast-ci via devrun agent'}, {'tool': 'Bash', 'prompt': 'run erk objective check to verify fix'}]</param>
+    <param name="plan"># Plan: Support Objectives Without a Roadmap
+
+## Context
+
+When creating high-level objecti...[truncated 8972 chars]...erk objective list` and run `erk objective check` on it
+5. Run broader CI: `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2884" cache_read_input_tokens="113699" output_tokens="120" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2884, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ni3J5BkEUiJxUUQnKJrz9b">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/synthetic-honking-clock.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Support Objectives Without a Roadmap
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR on new branch" - Create a new branch, save plan as draft PR, and stop. Does NOT proceed to implementation.
+  2. "Create a plan PR on the current branch" - Save plan as a PR on the current branch and stop. Does NOT proceed to implementation.
+  3. "Just implement on the current branch without creating a PR." - Implement directly on the current branch without saving a plan PR.
+  4. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR on new branch':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Create a plan PR on the current branch':
+  1. Run /erk:plan-save --current-branch
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     This converts the current branch into the plan PR branch
+     instead of creating a new branch.
+
+... [16 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_011kGm61HQmpq2yD6z8SEzJp">
+    <param name="file_path">/Users/schrockn/.claude/plans/synthetic-honking-clock.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1004" cache_read_input_tokens="116583" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1004, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011kGm61HQmpq2yD6z8SEzJp">
+     1→# Plan: Support Objectives Without a Roadmap
+     2→
+     3→## Context
+     4→
+     5→When creating high-level objectives that need more iteration before a concrete roadmap can be defined (e.g., the "Skill Architecture — Capture, Promote, Gate" objective from #8655), `erk objective check` fails because it conflates "no roadmap block" with "legacy format." The objective-create skill already documents "perpetual objectives" with Principles instead of Roadmap, but the validation and view infrastructure rejects them.
+     6→
+     7→**Goal:** Objectives without an `objective-roadmap` metadata block should be valid — they pass validation, display correctly in `erk objective view` and `erk dash`, and the tooling clearly distinguishes "no roadmap" from "broken/legacy roadmap."
+     8→
+     9→## Changes
+    10→
+    11→### 1. `parse_roadmap()` — distinguish "no roadmap" from "legacy format"
+    12→
+    13→**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`
+    14→
+    15→Currently line 464-480 returns the legacy error whenever no valid v2 block is found, even when no block exists at all.
+    16→
+    17→**Change:** When `matching_blocks` is empty (no `objective-roadmap` block in the body), return `([], [])` — valid, just no roadmap. Only return the legacy error when a block exists but fails to parse.
+    18→
+    19→```python
+    20→def parse_roadmap(body: str) -&gt; tuple[list[RoadmapPhase], list[str]]:
+    21→    raw_blocks = extract_raw_metadata_blocks(body)
+    22→    matching_blocks = [block for block in raw_blocks if block.key == BlockKeys.OBJECTIVE_ROADMAP]
+    23→
+    24→    if not matching_blocks:
+    25→        # No objective-roadmap block at all — valid roadmap-free objective
+    26→        return ([], [])
+    27→
+    28→    # Block exists — try to parse it
+    29→    roadmap_block = matching_blocks[0]
+    30→    try:
+
+... [182 lines omitted] ...
+
+    32→    except ValueError:
+    40→    # Block exists but failed to parse — legacy/broken format
+    41→    return ([], [_LEGACY_FORMAT_ERROR])
+    62→    phases, validation_errors = parse_roadmap(issue.body)
+    69→        failed_count = sum(1 for passed, _ in checks if not passed)
+    71→            passed=failed_count == 0,
+    73→            failed_count=failed_count,
+    77→            validation_errors=[],
+    82→        # Block exists but failed to parse
+    83→        checks.append((False, f"Roadmap parses successfully ({'; '.join(validation_errors)})"))
+   109→Currently `parse_v2_roadmap() → None` is treated as a fatal legacy error. Need to distinguish "no block" from "legacy block."
+   128→            raise UserFacingCliError(
+   133→        phases, _validation_errors = v2_result
+   145→- Change assertion: `assert errors == []` (was `len(errors) == 1`)
+   148→Tests `test_parse_roadmap_invalid_frontmatter` and `test_parse_roadmap_legacy_format_returns_error` stay unchanged — they have blocks that fail to parse, so still return legacy error.
+   160→- Assert `success: True`, `phases: []`, `summary: {}`, `validation_errors: []`
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01LZkoi2geTWk5qsW5MJnRYk">
+    <param name="questions">[{'question': '📋 Plan: Support Objectives Without a Roadmap\nCurrent context: (wt:erk) (br...[truncated 581 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3509" cache_read_input_tokens="117587" output_tokens="259" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3509, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LZkoi2geTWk5qsW5MJnRYk">
+User has answered your questions: "📋 Plan: Support Objectives Without a Roadmap
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR on new branch". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01S23n4RXUYLKPNzPfyRqUZt">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="449" cache_read_input_tokens="121096" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 449, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S23n4RXUYLKPNzPfyRqUZt">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="0a2e4c39-cd1b-4a40-a5a8-cf684a099a46" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "0a2e4c39-cd1b-4a40-a5a8-cf684a099a46" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "0a2e4c39-cd1b-4a40-a5a8-cf684a099a46" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "0a2e4c39-cd1b-4a40-a5a8-cf684a099a46" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "0a2e4c39-cd1b-4a40-a5a8-cf684a099a46" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+I'll save this plan as a draft PR on a new branch.
+
+**Branch slug:** `roadmap-free-objectives`
+
+**Plan summary:** Make objectives without a roadmap block valid by distinguishing "no roadmap" from "legacy/broken format" in parse_roadmap, validate_objective, and view_objective. This enables high-level objectives that need iteration before defining a concrete roadmap.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2673" cache_read_input_tokens="121545" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2673}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QYacDFTe5apAdwrbz3rhey">
+    <param name="command">erk exec plan-save --format json --session-id="0a2e4c39-cd1b-4a40-a5a8-cf684a099a46" --bra...[truncated 186 chars]...his enables high-level objectives that need iteration before defining a concrete roadmap."</param>
+    <param name="description">Save plan as draft PR on new branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2673" cache_read_input_tokens="121545" output_tokens="288" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2673, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QYacDFTe5apAdwrbz3rhey">
+{"success": true, "plan_number": 8657, "plan_url": "https://github.com/dagster-io/erk/pull/8657", "title": "[erk-plan] Plan: Support Objectives Without a Roadmap", "branch_name": "plnd/roadmap-free-objectives-03-03-0518", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/0a2e4c39-cd1b-4a40-a5a8-cf684a099a46/plan_snapshots/000001-c11c745b"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018vMYN7NqZdVLD2CfMc96hH">
+    <param name="command">erk exec upload-impl-session --session-id "0a2e4c39-cd1b-4a40-a5a8-cf684a099a46" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="563" cache_read_input_tokens="124218" output_tokens="142" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 563, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018vMYN7NqZdVLD2CfMc96hH">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan "Support Objectives Without a Roadmap" saved as draft PR #8657
+URL: https://github.com/dagster-io/erk/pull/8657
+
+Next steps:
+
+View PR: https://github.com/dagster-io/erk/pull/8657
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: `erk br co --new-slot --for-plan 8657`
+    Implement: `source "$(erk br co --new-slot --for-plan 8657 --script)" &amp;&amp; erk implement --dangerous`
+
+  Same slot:
+    Local: `erk br co --for-plan 8657`
+    Implement: `source "$(erk br co --for-plan 8657 --script)" &amp;&amp; erk implement --dangerous`
+
+  Dispatch to Queue: `erk pr dispatch 8657`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="169" cache_read_input_tokens="124781" output_tokens="245" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 169, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "0a2e4c39-cd1b-4a40-a5a8-cf684a099a46" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>
+
+The most recent plan is #8657. Dispatching it for remote implementation.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="109154" cache_read_input_tokens="16542" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 109154}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CWUNq2W1aDA2E4Hh6YgEe9">
+    <param name="command">erk pr dispatch 8657</param>
+    <param name="description">Dispatch plan #8657 for remote AI implementation</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="109154" cache_read_input_tokens="16542" output_tokens="122" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 109154, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CWUNq2W1aDA2E4Hh6YgEe9">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8657...
+
+✓ All 1 plan(s) validated
+
+  #8657: [erk-plan] Plan: Support Objectives Without a Roadmap
+
+Dispatching PR #8657...
+
+Fetching plan content...
+Syncing branch: plnd/roadmap-free-objectives-03-03-0518
+Committing plan to branch...
+✓ Branch pushed to remote
+
+Dispatching workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow dispatched.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+Dispatched plans:
+
+... [4 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Rnnm7oKNCfP96gDr7Zpopf">
+    <param name="command">erk exec marker delete --session-id "0a2e4c39-cd1b-4a40-a5a8-cf684a099a46" plan-saved-issue</param>
+    <param name="description">Clear session marker to allow new plans</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="459" cache_read_input_tokens="125696" output_tokens="117" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 459, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Rnnm7oKNCfP96gDr7Zpopf">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Plan #8657 dispatched successfully.
+
+- **Plan:** https://github.com/dagster-io/erk/pull/8657
+- **Workflow:** https://github.com/dagster-io/erk/actions/runs/22624880256
+
+The remote agent will implement the changes on the `plnd/roadmap-free-objectives-03-03-0518` branch. You can monitor progress via the workflow run link above.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="243" cache_read_input_tokens="126155" output_tokens="104" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 243, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
