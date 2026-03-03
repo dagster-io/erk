@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: Hide \"Create a plan PR on the current branch\" when on trunk"
+}
