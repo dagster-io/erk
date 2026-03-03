@@ -193,19 +193,17 @@ cd {wt}"""
     return f"""# {comment}
 {logging_helper}
 {cd_command}
+# Always sync deps (idempotent — handles branch switches in reused slots)
+if [ ! -d {venv_dir} ]; then
+  __erk_log "->" "Creating virtual environment..."
+fi
+uv sync --quiet
+uv pip install --no-deps --quiet -e . -e packages/erk-shared -e packages/erk-statusline
 # Skip activation if VIRTUAL_ENV already points to this worktree's .venv
 # (guards against double activation when direnv triggers on cd)
 if [ "$VIRTUAL_ENV" != "{worktree_path}/.venv" ]; then
   # Unset VIRTUAL_ENV to avoid conflicts with previous activations
   unset VIRTUAL_ENV
-  # Create venv if it doesn't exist
-  if [ ! -d {venv_dir} ]; then
-    __erk_log "->" "Creating virtual environment..."
-  fi
-  # Sync dependencies (creates venv if missing, installs new deps if lockfile changed)
-  uv sync --quiet
-  # Refresh workspace packages (no-deps = skip external packages)
-  uv pip install --no-deps --quiet -e . -e packages/erk-shared -e packages/erk-statusline
   if [ -f {venv_activate} ]; then
     . {venv_activate}
     __py_ver=$(python -c 'import sys; print(".".join(map(str, sys.version_info[:3])))')
