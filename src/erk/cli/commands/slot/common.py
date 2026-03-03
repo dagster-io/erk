@@ -176,8 +176,10 @@ def find_inactive_slot(
         slot_name = generate_slot_name(slot_num)
         if slot_name in managed_worktrees and slot_name not in assigned_slots:
             wt_path = managed_worktrees[slot_name]
-            # Skip slots with uncommitted changes
-            if git.status.has_uncommitted_changes(wt_path):
+            # Skip slots with staged or modified files (untracked files are
+            # irrelevant for branch switching safety — git leaves them untouched)
+            staged, modified, _untracked = git.status.get_file_status(wt_path)
+            if staged or modified:
                 continue
             return (slot_name, wt_path)
 
