@@ -142,7 +142,8 @@ def _save_as_planned_pr(
         node_ids: Objective roadmap node IDs to associate with this plan
         summary: AI-generated summary for the PR description (None coerced to empty string)
         session_xml_dir: Directory containing session XML files to embed in the PR diff
-        current_branch_flag: When True, use the current branch directly instead of creating a new one.
+        current_branch_flag: When True, use the current branch directly
+            instead of creating a new one.
     """
     repo_root = require_repo_root(ctx)
     cwd = require_cwd(ctx)
@@ -216,9 +217,7 @@ def _save_as_planned_pr(
             # On trunk or detached HEAD: create from origin/trunk
             base_branch = trunk
             git.remote.fetch_branch(repo_root, "origin", trunk)
-            create_result = branch_manager.create_branch(
-                repo_root, branch_name, f"origin/{trunk}"
-            )
+            create_result = branch_manager.create_branch(repo_root, branch_name, f"origin/{trunk}")
         if isinstance(create_result, BranchAlreadyExists):
             click.echo(f"Error: {create_result.message}", err=True)
             raise SystemExit(1) from None

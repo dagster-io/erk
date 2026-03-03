@@ -135,6 +135,7 @@ class HookInput:
     plan_file_path: Path | None  # Path to plan file if exists, None otherwise
     plan_title: str | None  # Title extracted from plan file for display
     current_branch: str | None
+    branch_has_commits: bool  # Whether branch has commits ahead of trunk
     worktree_name: str | None  # Directory name of current worktree
     pr_number: int | None  # PR number if exists for current branch
     plan_number: int | None  # Plan number from .erk/impl-context/plan-ref.json
@@ -154,6 +155,7 @@ class HookInput:
         plan_file_path: Path | None = None,
         plan_title: str | None = None,
         current_branch: str | None = "feature-branch",
+        branch_has_commits: bool = False,
         worktree_name: str | None = None,
         pr_number: int | None = None,
         plan_number: int | None = None,
@@ -169,6 +171,7 @@ class HookInput:
         - plan_file_path: None
         - plan_title: None
         - current_branch: "feature-branch"
+        - branch_has_commits: False
         - worktree_name: None
         - pr_number: None
         - plan_number: None
@@ -185,6 +188,7 @@ class HookInput:
             plan_file_path=plan_file_path,
             plan_title=plan_title,
             current_branch=current_branch,
+            branch_has_commits=branch_has_commits,
             worktree_name=worktree_name,
             pr_number=pr_number,
             plan_number=plan_number,
@@ -247,6 +251,7 @@ def build_blocking_message(
     *,
     session_id: str,
     current_branch: str | None,
+    branch_has_commits: bool,
     plan_file_path: Path | None,
     plan_title: str | None,
     worktree_name: str | None,
@@ -261,6 +266,7 @@ def build_blocking_message(
     Args:
         session_id: Claude session ID for marker creation commands.
         current_branch: Current git branch name.
+        branch_has_commits: Whether branch has commits ahead of trunk.
         plan_file_path: Path to the plan file, if it exists.
         plan_title: Title extracted from plan file, if available.
         worktree_name: Directory name of current worktree.
@@ -327,16 +333,27 @@ def build_blocking_message(
         ]
     )
 
-    lines.extend(
-        [
-            '  1. "Create a plan PR on new branch" - Create a new branch, save plan as '
-            "draft PR, and stop. Does NOT proceed to implementation.",
-            '  2. "Create a plan PR on the current branch" - Save plan as a PR on the '
-            "current branch and stop. Does NOT proceed to implementation.",
-            '  3. "Just implement on the current branch without creating a PR." - Implement '
-            "directly on the current branch without saving a plan PR.",
-            '  4. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.',
-        ]
+    option_num = 1
+    lines.append(
+        f'  {option_num}. "Create a plan PR on new branch" - Create a new branch, save plan as '
+        "draft PR, and stop. Does NOT proceed to implementation."
+    )
+    option_num += 1
+    if not branch_has_commits:
+        lines.append(
+            f'  {option_num}. "Create a plan PR on the current branch" - Save plan as a PR on the '
+            "current branch and stop. Does NOT proceed to implementation."
+        )
+        option_num += 1
+    lines.append(
+        f'  {option_num}. "Just implement on the current branch without '
+        'creating a PR." - Implement directly on the current branch '
+        "without saving a plan PR."
+    )
+    option_num += 1
+    lines.append(
+        f'  {option_num}. "View/Edit the Plan" - Open plan in editor to '
+        "review or modify before deciding."
     )
 
     if current_branch in ("master", "main"):
@@ -351,18 +368,29 @@ def build_blocking_message(
 
     save_cmd = "/erk:plan-save"
 
+    lines.extend(
+        [
+            "",
+            "If user chooses 'Create a plan PR on new branch':",
+            f"  1. Run {save_cmd}",
+            "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
+            "     Stay in plan mode and let the user exit manually if desired.",
+        ]
+    )
+
+    if not branch_has_commits:
+        lines.extend(
+            [
+                "",
+                "If user chooses 'Create a plan PR on the current branch':",
+                f"  1. Run {save_cmd} --current-branch",
+                "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
+                "     This converts the current branch into the plan PR branch",
+                "     instead of creating a new branch.",
+            ]
+        )
+
     implement_now_lines = [
-        "",
-        "If user chooses 'Create a plan PR on new branch':",
-        f"  1. Run {save_cmd}",
-        "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
-        "     Stay in plan mode and let the user exit manually if desired.",
-        "",
-        "If user chooses 'Create a plan PR on the current branch':",
-        f"  1. Run {save_cmd} --current-branch",
-        "  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.",
-        "     This converts the current branch into the plan PR branch",
-        "     instead of creating a new branch.",
         "",
         "If user chooses 'Just implement on the current branch without creating a PR.':",
         "  1. Create implement-now marker:",
@@ -464,6 +492,7 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
         build_blocking_message(
             session_id=hook_input.session_id,
             current_branch=hook_input.current_branch,
+            branch_has_commits=hook_input.branch_has_commits,
             plan_file_path=hook_input.plan_file_path,
             plan_title=hook_input.plan_title,
             worktree_name=hook_input.worktree_name,
@@ -671,6 +700,7 @@ def _gather_inputs(
 
     # Get current branch (only if we need to show the blocking message)
     current_branch: str | None = None
+    branch_has_commits = False
     worktree_name: str | None = None
     pr_number: int | None = None
     plan_number: int | None = None
@@ -693,6 +723,10 @@ def _gather_inputs(
             int(plan_ref.plan_id) if plan_ref is not None and plan_ref.plan_id.isdigit() else None
         )
         editor = os.environ.get("EDITOR")
+        # Detect if branch has commits ahead of trunk
+        trunk_branch = git.branch.detect_trunk_branch(repo_root)
+        commits_ahead = git.analysis.count_commits_ahead(repo_root, trunk_branch)
+        branch_has_commits = commits_ahead > 0
         # Only lookup PR if we have a branch
         if current_branch is not None:
             pr_number = _get_pr_number_for_branch(branch_manager, repo_root, current_branch)
@@ -708,6 +742,7 @@ def _gather_inputs(
         plan_file_path=plan_file_path,
         plan_title=plan_title,
         current_branch=current_branch,
+        branch_has_commits=branch_has_commits,
         worktree_name=worktree_name,
         pr_number=pr_number,
         plan_number=plan_number,

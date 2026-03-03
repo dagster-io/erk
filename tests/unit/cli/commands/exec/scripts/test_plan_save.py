@@ -741,9 +741,7 @@ def test_current_branch_does_not_require_branch_slug(
     assert output["success"] is True
 
 
-def test_current_branch_sets_base_to_trunk(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_current_branch_sets_base_to_trunk(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """--current-branch sets the PR base to trunk."""
     fake_git = FakeGit(
         current_branches={tmp_path: "my-feature-branch"},

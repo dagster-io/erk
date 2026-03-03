@@ -885,18 +885,19 @@ Save plan as a draft PR.
 
 **Options:**
 
-| Flag                              | Type      | Required | Default | Description                                                    |
-| --------------------------------- | --------- | -------- | ------- | -------------------------------------------------------------- |
-| `--format`                        | CHOICE    | No       | 'json'  | Output format: json (default) or display (formatted text)      |
-| `--plan-file`                     | PATH      | No       | -       | Path to specific plan file (highest priority)                  |
-| `--session-id`                    | TEXT      | No       | -       | Session ID for scoped plan lookup                              |
-| `--plan-type`                     | CHOICE    | No       | -       | Plan type: standard (default) or learn                         |
-| `--learned-from-issue`            | INTEGER   | No       | -       | Parent plan number (for learn plans)                           |
-| `--created-from-workflow-run-url` | TEXT      | No       | -       | GitHub Actions workflow run URL                                |
-| `--branch-slug`                   | TEXT      | No       | -       | Pre-generated branch slug (skips LLM call when provided)       |
-| `--objective`                     | INTEGER   | No       | -       | Objective issue number (overrides session marker)              |
-| `--summary`                       | TEXT      | No       | -       | AI-generated plan summary for PR description                   |
-| `--session-xml-dir`               | DIRECTORY | No       | -       | Directory containing session XML files to embed in the PR diff |
+| Flag                              | Type      | Required | Default | Description                                                            |
+| --------------------------------- | --------- | -------- | ------- | ---------------------------------------------------------------------- |
+| `--format`                        | CHOICE    | No       | 'json'  | Output format: json (default) or display (formatted text)              |
+| `--plan-file`                     | PATH      | No       | -       | Path to specific plan file (highest priority)                          |
+| `--session-id`                    | TEXT      | No       | -       | Session ID for scoped plan lookup                                      |
+| `--plan-type`                     | CHOICE    | No       | -       | Plan type: standard (default) or learn                                 |
+| `--learned-from-issue`            | INTEGER   | No       | -       | Parent plan number (for learn plans)                                   |
+| `--created-from-workflow-run-url` | TEXT      | No       | -       | GitHub Actions workflow run URL                                        |
+| `--branch-slug`                   | TEXT      | No       | -       | Pre-generated branch slug (skips LLM call when provided)               |
+| `--objective`                     | INTEGER   | No       | -       | Objective issue number (overrides session marker)                      |
+| `--summary`                       | TEXT      | No       | -       | AI-generated plan summary for PR description                           |
+| `--session-xml-dir`               | DIRECTORY | No       | -       | Directory containing session XML files to embed in the PR diff         |
+| `--current-branch`                | FLAG      | No       | -       | Use the current branch directly instead of creating a new plnd/ branch |
 
 ### plan-update
 
