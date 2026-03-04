@@ -310,4 +310,5 @@ def branch_create(
             force=False,
             config=config,
             copy=True,
+            same_worktree=False,
         )

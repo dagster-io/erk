@@ -106,10 +106,12 @@ def create_from_wt(ctx: ErkContext, branch: str, force: bool, script: bool) -> N
         worktree_path=result.worktree_path,
         post_create_commands=None,
     )
+    same_worktree = result.worktree_path.resolve() == ctx.cwd.resolve()
     print_activation_instructions(
         activation_script_path,
         source_branch=None,
         force=False,
         config=activation_config_activate_only(),
         copy=True,
+        same_worktree=same_worktree,
     )
