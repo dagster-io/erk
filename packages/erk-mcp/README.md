@@ -11,11 +11,11 @@ uv run erk-mcp
 
 ### Options
 
-| Flag | Env var | Default | Description |
-|------|---------|---------|-------------|
-| `--transport` | — | `streamable-http` | Transport: `streamable-http` or `stdio` |
-| `--host` | `ERK_MCP_HOST` | `0.0.0.0` | Bind address |
-| `--port` | `ERK_MCP_PORT` | `9000` | Port |
+| Flag          | Env var        | Default           | Description                             |
+| ------------- | -------------- | ----------------- | --------------------------------------- |
+| `--transport` | —              | `streamable-http` | Transport: `streamable-http` or `stdio` |
+| `--host`      | `ERK_MCP_HOST` | `0.0.0.0`         | Bind address                            |
+| `--port`      | `ERK_MCP_PORT` | `9000`            | Port                                    |
 
 ```bash
 uv run erk-mcp --port 8080
