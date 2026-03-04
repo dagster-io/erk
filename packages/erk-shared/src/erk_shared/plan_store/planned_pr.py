@@ -370,7 +370,7 @@ class PlannedPRBackend(PlanBackend):
         # Add labels with retry on transient errors
         if labels:
             label_result = add_labels_resilient(
-                self._github, self._time, repo_root, pr_number, labels
+                self._github, time=self._time, repo_root=repo_root, pr_number=pr_number, labels=labels
             )
             if not label_result.success:
                 _logger.warning(
