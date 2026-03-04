@@ -150,6 +150,44 @@ This is the correct boundary: hoist when the value requires LLM reasoning; compu
 - `create-pr-from-session` — summary generated in skill layer
 - `pr create` — no longer calls `PlanSummaryGenerator` internally
 
+## LlmCaller: Direct SDK Calls in Dispatch Layer
+
+<!-- Source: packages/erk-shared/src/erk_shared/core/llm_caller.py -->
+<!-- Source: src/erk/core/fast_llm.py -->
+
+While `PromptExecutor` runs full reasoning through the Claude CLI (and must be hoisted to the skill layer), `LlmCaller` provides lightweight, direct Anthropic SDK calls that **can** run inside exec scripts and CLI commands. This is a separate pattern from inference hoisting.
+
+### LlmCaller ABC
+
+`LlmCaller` at `packages/erk-shared/src/erk_shared/core/llm_caller.py` defines a single abstract method:
+
+```python
+def call(self, prompt: str, *, system_prompt: str) -> LlmResponse | NoApiKey | LlmCallFailed
+```
+
+Returns a discriminated union of three frozen dataclasses:
+
+- `LlmResponse(text: str)` — successful response
+- `NoApiKey(message: str)` — no `ANTHROPIC_API_KEY` environment variable
+- `LlmCallFailed(message: str)` — API error during the call
+
+### AnthropicLlmCaller
+
+`AnthropicLlmCaller` at `src/erk/core/fast_llm.py` implements the ABC using the Anthropic Python SDK. It uses `claude-haiku-4-5-20251001` with `max_tokens=50` for fast, cheap inference.
+
+**Performance:** ~200ms with an API key vs ~5s for a `PromptExecutor` subprocess call (25x improvement).
+
+### When to Use Which
+
+| Pattern          | Mechanism             | Use When                                                                      |
+| ---------------- | --------------------- | ----------------------------------------------------------------------------- |
+| `PromptExecutor` | Claude CLI subprocess | Full reasoning in skill layer; must be hoisted out of exec scripts            |
+| `LlmCaller`      | Direct Anthropic SDK  | Lightweight inference (slug generation, classification) in dispatch/CLI layer |
+
+### Context Integration
+
+`AnthropicLlmCaller` is instantiated during context creation at `src/erk/core/context.py:644-692` and stored as `ctx.llm_caller`. The branch slug generator and other dispatch-layer callers access it through the context.
+
 ## Related Documentation
 
 - [Parameter Threading Pattern](parameter-threading-pattern.md) — Step-by-step guide for threading parameters through skill → command → exec layers

@@ -5,9 +5,12 @@ read_when:
   - "working with .erk/config.toml dispatch settings"
   - "debugging workflow dispatch targeting the wrong branch"
   - "using --ref CLI option to override dispatch branch per run"
+  - "using --ref-current to dispatch against current branch"
 tripwires:
   - action: "assuming dispatch_ref is project-level config"
     warning: "dispatch_ref is repo-level config (.erk/config.toml), overridable at local level (.erk/config.local.toml). It is not project-level."
+  - action: "passing both --ref and --ref-current to a dispatch command"
+    warning: "--ref and --ref-current are mutually exclusive. resolve_dispatch_ref() raises UsageError if both are provided."
 ---
 
 # dispatch_ref Configuration
@@ -42,30 +45,48 @@ Config loading reads `dispatch_ref` from TOML data, converting to `str` if prese
 
 ## CLI `--ref` Override
 
-All three dispatch commands accept a `--ref` option for per-run branch override:
+All five dispatch commands accept a `--ref` option for per-run branch override:
 
 ```bash
 erk one-shot "fix the auth bug" --ref my-feature-branch
 erk launch pr-address --pr 123 --ref my-feature-branch
 erk pr dispatch 456 --ref my-feature-branch
+erk workflow smoke-test --ref my-feature-branch
+erk objective plan 42 --one-shot --ref my-feature-branch
 ```
 
 **Priority chain:** `--ref` CLI flag > config `dispatch_ref` > repository default branch
 
-<!-- Source: src/erk/cli/commands/launch_cmd.py, one_shot.py, pr/dispatch_cmd.py -->
+<!-- Source: src/erk/cli/commands/ref_resolution.py -->
 
-Each command resolves the ref once before dispatching by checking the CLI flag first, falling back to config. This enables testing workflow changes on a feature branch without modifying config.
+All five commands use the shared `resolve_dispatch_ref()` function at `src/erk/cli/commands/ref_resolution.py` to resolve the ref once before dispatching.
+
+## CLI `--ref-current` Convenience Flag
+
+All five dispatch commands also accept `--ref-current` to dispatch against the currently checked-out branch:
+
+```bash
+erk one-shot "fix the auth bug" --ref-current
+erk launch pr-address --pr 123 --ref-current
+```
+
+This is a shorthand for `--ref $(git branch --show-current)`. It reads the current branch via `ctx.git.branch.get_current_branch()`.
+
+**Mutual exclusivity:** `--ref` and `--ref-current` cannot be used together. `resolve_dispatch_ref()` raises `UsageError` if both are provided.
+
+**Detached HEAD:** Using `--ref-current` in a detached HEAD state raises a `UsageError` with a descriptive message, since there is no current branch to resolve.
 
 ## Call Sites
 
-`dispatch_ref` is consumed at 4 locations, all passing the resolved ref to `github.trigger_workflow(ref=ref)`:
+`dispatch_ref` is consumed at 5 locations, all using `resolve_dispatch_ref()` from `src/erk/cli/commands/ref_resolution.py` and passing the resolved ref to `github.trigger_workflow(ref=ref)`:
 
-| Command              | Context                                             |
-| -------------------- | --------------------------------------------------- |
-| `erk pr dispatch`    | Dispatching plans for remote implementation         |
-| `erk one-shot`       | Triggering one-shot workflows                       |
-| `erk launch`         | Triggering pr-fix-conflicts, pr-address, pr-rewrite |
-| `erk launch --learn` | Triggering learn workflows                          |
+| Command                         | Context                                             |
+| ------------------------------- | --------------------------------------------------- |
+| `erk pr dispatch`               | Dispatching plans for remote implementation         |
+| `erk one-shot`                  | Triggering one-shot workflows                       |
+| `erk launch`                    | Triggering pr-fix-conflicts, pr-address, pr-rewrite |
+| `erk workflow smoke-test`       | Testing workflow dispatch connectivity              |
+| `erk objective plan --one-shot` | Dispatching objective-driven one-shot plans         |
 
 ## Gateway Integration
 

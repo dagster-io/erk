@@ -31,7 +31,7 @@ See the base class for the complete interface including:
 
 The registry in `src/erk/core/capabilities/registry.py` maintains a cached tuple of all capability instances.
 
-**Key functions:** `get_capability(name)`, `list_capabilities()`, `list_required_capabilities()`, `get_managed_artifacts()`, `is_capability_managed(name, type)`
+**Key functions:** `get_capability(name)`, `list_capabilities()`, `list_required_capabilities()`, `list_optional_capabilities()`, `get_managed_artifacts()`, `is_capability_managed(name, type)`
 
 #### Registry Splice Pattern
 
@@ -115,6 +115,24 @@ Capability classes should call tracking functions during `install()` and `uninst
 | Example      | hooks                      | dignified-python, workflows |
 
 Required capabilities don't need tracking—they're always installed and always checked.
+
+**Registry functions:** `list_required_capabilities()` returns capabilities where `required=True`. `list_optional_capabilities()` (at `src/erk/core/capabilities/registry.py:85-94`) returns capabilities where `required=False`, sorted alphabetically by name.
+
+### Required Bundled Skills
+
+<!-- Source: src/erk/capabilities/skills/bundled.py:17-25 -->
+
+Five bundled skills are marked as required via the `_REQUIRED_BUNDLED_SKILLS` frozenset in `src/erk/capabilities/skills/bundled.py`:
+
+| Skill                    | Purpose                                |
+| ------------------------ | -------------------------------------- |
+| `erk-diff-analysis`      | Code diff analysis for commit messages |
+| `erk-exec`               | Erk exec subcommand reference          |
+| `objective`              | Objective tracking and management      |
+| `pr-operations`          | Pull request operations                |
+| `pr-feedback-classifier` | PR feedback classification             |
+
+The `is_required_bundled_skill(name)` helper at `src/erk/capabilities/skills/bundled.py:47-49` checks membership. Required skills are excluded from user-facing lists like `erk init capability list` since they are always installed.
 
 ## CLI Commands
 

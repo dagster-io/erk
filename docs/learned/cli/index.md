@@ -36,6 +36,7 @@
 - **[exec-script-schema-patterns.md](exec-script-schema-patterns.md)** — writing an exec script that produces JSON consumed by another script, debugging silent filtering failures in exec script pipelines, adding new fields to exec script JSON output
 - **[fast-path-pattern.md](fast-path-pattern.md)** — implementing CLI commands that can skip expensive operations, adding fast path optimization to existing commands, understanding when to invoke Claude vs complete locally
 - **[help-text-formatting.md](help-text-formatting.md)** — Writing CLI command docstrings, Adding Examples sections to Click commands, Formatting bulleted lists in help text
+- **[implement-command.md](implement-command.md)** — running erk implement without arguments, auto-detecting plans from current branch, understanding how erk implement selects which plan to execute
 - **[incomplete-command-removal.md](incomplete-command-removal.md)** — removing a workflow command or CLI entry, deprecating or deleting a command from erk, cleaning up dead references after removing a feature
 - **[land-learn-integration.md](land-learn-integration.md)** — modifying the erk land command's learn workflow, debugging session discovery during land, working with session reporting in the land pipeline, learn plan creation, session discovery, empty learn plan
 - **[learn-command-conditional-pipeline.md](learn-command-conditional-pipeline.md)** — modifying the erk learn command flow, adding session discovery logic to learn workflow, understanding how preprocessed materials bypass session discovery

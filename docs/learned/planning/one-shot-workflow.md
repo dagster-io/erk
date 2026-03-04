@@ -148,6 +148,30 @@ One-shot dispatch and `erk pr submit` both push branches and create PRs, but one
 
 The dispatch function commits directly to the target branch using git plumbing (`commit_files_to_branch`) without checking out any branch. The user's working tree and HEAD remain untouched throughout the dispatch.
 
+## Slug Generation
+
+<!-- Source: src/erk/core/branch_slug_generator.py -->
+
+Branch slugs for one-shot branches are generated using `ctx.llm_caller.call()` with a dedicated system prompt at `src/erk/core/branch_slug_generator.py:17-27`. The prompt instructs the LLM to produce 2-4 hyphenated lowercase words (max 30 characters) that capture the essence of the task.
+
+### Generation Flow
+
+1. `BranchSlugGenerator.generate()` calls `ctx.llm_caller.call()` with `BRANCH_SLUG_SYSTEM_PROMPT`
+2. Response passes through `_postprocess_slug()` at `src/erk/core/branch_slug_generator.py:98-131`:
+   - Strips whitespace, quotes, backticks
+   - Runs through `sanitize_worktree_name()` for character validation
+   - Validates 2+ hyphenated words and max 30 characters
+3. Returns `BranchSlugResult` with the validated slug
+
+### Fallback Behavior
+
+When the API key is missing or the LLM call fails, `generate_branch_slug()` falls back to `sanitize_worktree_name()` applied to the raw title. This produces a functional but less descriptive slug.
+
+### Call Sites
+
+- `src/erk/cli/commands/one_shot_dispatch.py:207-222` — one-shot dispatch
+- `src/erk/cli/commands/objective/plan_cmd.py:46-65` — objective plan dispatch
+
 ## Source Code References
 
 | File                                                          | Key Components                                                                                    |

@@ -56,6 +56,8 @@ Rules triggered by matching actions in code.
 
 **adding user-interactive steps (confirmations, prompts) without CI detection** → Read [CI-Aware Commands](ci-aware-commands.md) first. Commands with user interaction must check `in_github_actions()` and skip prompts in CI. Interactive prompts hang indefinitely in GitHub Actions workflows.
 
+**assuming erk implement always requires a plan number argument** → Read [Implement Command](implement-command.md) first. erk implement supports auto-detection from .erk/impl-context/ and from branch PRs. Read this doc first.
+
 **calling an external tool that overwrites state without capturing it first** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. Save state BEFORE calling external tools that may overwrite it. Reference: capture_existing_pr_body() in submit_pipeline.py captures the PR body before gt submit overwrites it.
 
 **calling gh or git directly from a slash command** → Read [Slash Command to Exec Migration](slash-command-exec-migration.md) first. Use an erk exec script instead. Direct CLI calls bypass gateways, making the logic untestable and unreusable.
