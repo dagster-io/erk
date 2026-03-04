@@ -46,16 +46,9 @@ See [Shell Activation Pattern](../cli/shell-activation-pattern.md) for the full 
 
 ## `PlanNumberEvent`
 
-<!-- Source: packages/erk-shared/src/erk_shared/core/prompt_executor.py -->
+<!-- Source: packages/erk-shared/src/erk_shared/core/prompt_executor.py, PlanNumberEvent -->
 
-`PlanNumberEvent` is a typed event emitted by the prompt executor when Claude's output contains a plan number. It replaced the older `IssueNumberEvent` type:
-
-```python
-@dataclass(frozen=True)
-class PlanNumberEvent:
-    """Plan number."""
-    number: int
-```
+`PlanNumberEvent` is a typed event emitted by the prompt executor when Claude's output contains a plan number. See `PlanNumberEvent` in `packages/erk-shared/src/erk_shared/core/prompt_executor.py` for the frozen dataclass definition.
 
 `PlanNumberEvent.number` is a proper `int` (no string conversion needed). Contrast with `PrNumberEvent` which carries the PR number for created/updated PRs — both are in `erk_shared.core.prompt_executor` and are part of the `ExecutorEvent` union.
 

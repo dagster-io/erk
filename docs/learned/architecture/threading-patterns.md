@@ -13,40 +13,9 @@ When a generator-based operation needs to yield progress while a blocking call (
 
 ## The Pattern
 
-<!-- Source: src/erk/core/commit_message_generator.py:142-197 -->
+<!-- Source: src/erk/core/commit_message_generator.py, CommitMessageGenerator.generate -->
 
-```python
-import threading
-
-result_holder: list[PromptResult] = []
-error_holder: list[Exception] = []
-
-def _run_prompt() -> None:
-    try:
-        result_holder.append(self._executor.execute_prompt(...))
-    except Exception as exc:  # noqa: BLE001
-        error_holder.append(exc)
-
-thread = threading.Thread(target=_run_prompt, daemon=True)
-start_time = self._time.monotonic()
-thread.start()
-
-while thread.is_alive():
-    thread.join(timeout=_PROGRESS_INTERVAL_SECONDS)
-    if thread.is_alive():
-        elapsed = int(self._time.monotonic() - start_time)
-        yield ProgressEvent(f"Still waiting... ({elapsed}s)")
-
-if error_holder:
-    yield CompletionEvent(CommitMessageResult(
-        success=False,
-        error_message=f"Prompt execution error: {error_holder[0]}",
-        ...
-    ))
-    return
-
-result = result_holder[0]
-```
+See `CommitMessageGenerator.generate()` in `src/erk/core/commit_message_generator.py` for the reference implementation. The method demonstrates the full pattern: holder list setup, daemon thread launch, polling loop with progress ticks, and error checking after join.
 
 ### Key Design Decisions
 

@@ -20,7 +20,7 @@ packages/erk-mcp/
 ├── pyproject.toml           # Package definition, depends on fastmcp>=2.0
 └── src/erk_mcp/
     ├── __init__.py
-    ├── __main__.py          # Entry point: calls create_mcp().run()
+    ├── __main__.py          # Entry point: parses --transport/--host/--port, calls create_mcp().run()
     └── server.py            # Tool definitions and _run_erk() wrapper
 ```
 
@@ -28,22 +28,9 @@ The package depends on [FastMCP](https://github.com/jlowin/fastmcp) (`fastmcp>=2
 
 ## The `_run_erk()` Wrapper
 
-All tools delegate to the erk CLI via `_run_erk()`:
+<!-- Source: packages/erk-mcp/src/erk_mcp/server.py, _run_erk -->
 
-```python
-def _run_erk(args: list[str]) -> subprocess.CompletedProcess[str]:
-    """Run an erk CLI command and return the result."""
-    result = subprocess.run(
-        ["erk", *args],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if result.returncode != 0:
-        stderr = result.stderr.strip()
-        raise RuntimeError(f"erk {' '.join(args)} failed (exit {result.returncode}): {stderr}")
-    return result
-```
+All tools delegate to the erk CLI via `_run_erk()`. See `_run_erk()` in `packages/erk-mcp/src/erk_mcp/server.py` for the implementation.
 
 Non-zero exit codes raise `RuntimeError` with the stderr message. MCP clients receive this as a tool error.
 
@@ -89,16 +76,9 @@ This uses `uv run` to execute the `erk-mcp` entry point, which calls `create_mcp
 
 ## Makefile Targets
 
-```makefile
-mcp:
-    uv run --package erk-mcp erk-mcp
+<!-- Source: Makefile, mcp/mcp-dev/test-erk-mcp targets -->
 
-mcp-dev:
-    uv run --package erk-mcp fastmcp dev inspector packages/erk-mcp/src/erk_mcp/server.py:mcp
-
-test-erk-mcp:
-    cd packages/erk-mcp && uv run pytest tests/ -x -q
-```
+See the `mcp`, `mcp-dev`, and `test-erk-mcp` targets in `Makefile` for current definitions.
 
 - `make mcp` — Run the MCP server (production mode, stdio transport)
 - `make mcp-dev` — Run with FastMCP inspector for interactive testing
@@ -106,17 +86,8 @@ test-erk-mcp:
 
 ## CI Job
 
-The `erk-mcp-tests` job runs in Tier 3 (parallel validation), depending on `check-submission` and `fix-formatting`:
+<!-- Source: .github/workflows/ci.yml, erk-mcp-tests job -->
 
-```yaml
-erk-mcp-tests:
-  needs: [check-submission, fix-formatting]
-  runs-on: ubuntu-latest
-  steps:
-    - uses: actions/checkout@v4
-    - uses: ./.github/actions/setup-python-uv
-    - name: Run erk-mcp tests
-      run: make test-erk-mcp
-```
+The `erk-mcp-tests` job runs in Tier 3 (parallel validation), depending on `check-submission` and `fix-formatting`. See the `erk-mcp-tests` job in `.github/workflows/ci.yml` for the current definition.
 
 See [CI Job Ordering Strategy](../ci/job-ordering-strategy.md) for the full Tier 3 validation job list.
