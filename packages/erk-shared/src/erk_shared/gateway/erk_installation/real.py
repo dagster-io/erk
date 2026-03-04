@@ -140,8 +140,9 @@ class RealErkInstallation(ErkInstallation):
         doc["use_graphite"] = config.use_graphite
         doc["shell_setup_complete"] = config.shell_setup_complete
         doc["github_planning"] = config.github_planning
-        _key = "require_dangerous_flag_for_implicitly_dangerous_operations"
-        doc[_key] = getattr(config, _key)
+        doc["require_dangerous_flag_for_implicitly_dangerous_operations"] = (
+            config.require_dangerous_flag_for_implicitly_dangerous_operations
+        )
         doc["show_hidden_commands"] = config.show_hidden_commands
         doc["prompt_learn_on_land"] = config.prompt_learn_on_land
         doc["shell_integration"] = config.shell_integration
