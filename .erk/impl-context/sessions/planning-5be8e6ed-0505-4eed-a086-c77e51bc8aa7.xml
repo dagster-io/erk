@@ -1,0 +1,678 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>Claude Code command that will run and rename the current CMUX workspace after the current branch in context </user>
+  <thinking>The user wants me to create a Claude Code slash command that will rename the current CMUX workspace to match the current git branch name. Let me explore the codebase to understand:
+
+1. How CMUX workspaces work and how to rename them
+2. Existing command patterns in the project
+3. The current branch detection approach
+
+Let me start by exploring these areas.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="10068" cache_read_input_tokens="20641" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10068}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll explore the codebase to understand CMUX workspace management and existing command patterns.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="10068" cache_read_input_tokens="20641" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10068}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_016im9nA9ysRwHJvP3ao6YzD">
+    <param name="description">Explore CMUX workspace commands</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 412 chars]...tent
+
+Check .claude/skills/ for a cmux skill, and look at any docs about cmux integration.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10068" cache_read_input_tokens="20641" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10068}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01WHuWNEJ7P2niN8UvxxJ8m4">
+    <param name="description">Explore existing command patterns</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 411 chars]...with git branches or workspace management. Look at the command-creator skill if available.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10068" cache_read_input_tokens="20641" output_tokens="553" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10068, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016im9nA9ysRwHJvP3ao6YzD">
+Excellent! Now I have comprehensive information. Let me create a summary document for the user.
+
+## Summary: CMUX Workspace Management
+
+Based on my search of the erk codebase, here's a comprehensive guide to how CMUX workspaces work:
+
+### 1. **Rename a CMUX Workspace via CLI**
+
+```bash
+cmux rename-workspace [--workspace &lt;ref&gt;] &lt;title&gt;
+```
+
+**Parameters:**
+- `--workspace &lt;ref&gt;` (optional): The workspace to rename. If omitted, targets the current workspace via `$CMUX_WORKSPACE_ID`
+- `&lt;title&gt;` (positional): The new name for the workspace
+
+**Example:**
+```bash
+# Rename current workspace
+cmux rename-workspace "my-workspace"
+
+# Rename specific workspace (by ref)
+cmux rename-workspace --workspace "workspace:0" "feature-branch"
+
+# Rename by UUID
+cmux rename-workspace --workspace "A1B2C3D4-..." "testing"
+```
+
+**In erk context** (from `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/cmux_sync_workspace.py`):
+```bash
+
+... [99 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01WHuWNEJ7P2niN8UvxxJ8m4">
+Perfect! Now I have comprehensive information. Let me compile my findings into a clear report:
+
+## Claude Code Slash Commands - Patterns &amp; Structure Report
+
+Based on my exploration of `/Users/schrockn/code/erk/.claude/commands/`, here's a comprehensive overview of the patterns used in this project:
+
+### Directory Organization
+
+Commands are organized into two namespaces:
+- **`/local:` commands**: `.claude/commands/local/` - Project-specific utilities (audit-scan, tasks-clear, fast-ci, etc.)
+- **`/erk:` commands**: `.claude/commands/erk/` - Core erk workflow commands (pr-list, plan-save, land, rebase, etc.)
+
+### Frontmatter Structure
+
+All commands use YAML frontmatter with these key fields:
+
+```yaml
+---
+description: Brief one-line description shown in help
+context: fork              # Optional: execution context (fork for parallel agents)
+agent: general-purpose     # Optional: agent type for delegation
+model: haiku              # Optional: model override (defaults to current)
+argument-hint: "[args]"   # Optional: shows expected arguments in help
+allowed-tools: Bash, Read # Optional: restricts tools for read-only commands
+---
+```
+
+**Tool Restriction Pattern** (for safe read-only commands):
+- Format: Comma-separated string (note: agents use different YAML list format)
+- Common read-only set: `Read, Glob, Grep, AskUserQuestion, Task`
+
+... [164 lines omitted] ...
+
+- Shows error handling pattern
+- Suggests fallback commands on failure
+- Parse response structure (success, value, error_type fields)
+- Use decision logic to branch on success/failure
+#### 7. **Error Handling Philosophy**
+- **Report errors clearly**: Show user what went wrong
+- **Suggest alternatives**: `/erk:git-pr-push` as fallback for submit failures
+  </tool_result>
+  <thinking>Now I have a good understanding of both CMUX workspace management and command patterns. Let me design this command:
+
+The command needs to:
+1. Get the current git branch name
+2. Rename the current CMUX workspace to that branch name
+
+Key details:
+- `cmux rename-workspace &lt;title&gt;` - renames current workspace (uses `$CMUX_WORKSPACE_ID` automatically)
+- `git branch --show-current` or `git rev-parse --abbrev-ref HEAD` - gets current branch
+- Commands go in `.claude/commands/local/` with kebab-case naming
+- Simple commands can be very minimal
+
+
+- This is straightforward - just need to capture the branch name and pass it to the rename command.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3927" cache_read_input_tokens="30709" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3927}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>This is a straightforward command. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3927" cache_read_input_tokens="30709" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3927}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_014EjZj4m2ZLQycEW7U8Txk3">
+    <param name="file_path">/Users/schrockn/.claude/plans/splendid-prancing-lovelace.md</param>
+    <param name="content"># Plan: Create `/local:workspace-rename` command
+
+## Context
+
+When working in CMUX workspa...[truncated 1156 chars]...orkspace on a feature branch
+- Confirm the workspace tab/label updates to the branch name
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3927" cache_read_input_tokens="30709" output_tokens="629" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3927, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014EjZj4m2ZLQycEW7U8Txk3">
+File created successfully at: /Users/schrockn/.claude/plans/splendid-prancing-lovelace.md
+  </tool_result>
+  <assistant>Simple command — gets the current branch and passes it to `cmux rename-workspace`. The command will live at `.claude/commands/local/workspace-rename.md`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="766" cache_read_input_tokens="34636" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 766}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01D9bhfCWVpmwEZioqedyDCH">
+    <param name="plan"># Plan: Create `/local:workspace-rename` command
+
+## Context
+
+When working in CMUX workspa...[truncated 1156 chars]...orkspace on a feature branch
+- Confirm the workspace tab/label updates to the branch name
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="766" cache_read_input_tokens="34636" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 766, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01D9bhfCWVpmwEZioqedyDCH">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/splendid-prancing-lovelace.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Create `/local:workspace-rename` command
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR on new branch" - Create a new branch, save plan as draft PR, and stop. Does NOT proceed to implementation.
+  2. "Just implement on the current branch without creating a PR." - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR on new branch':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Just implement on the current branch without creating a PR.':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 5be8e6ed-0505-4eed-a086-c77e51bc8aa7 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+
+... [9 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_011rbqUX7ZrvdFFUHjeERLFs">
+    <param name="file_path">/Users/schrockn/.claude/plans/splendid-prancing-lovelace.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="766" cache_read_input_tokens="35402" output_tokens="76" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 766, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011rbqUX7ZrvdFFUHjeERLFs">
+     1→# Plan: Create `/local:workspace-rename` command
+     2→
+     3→## Context
+     4→
+     5→When working in CMUX workspaces, the workspace name often doesn't match the current git branch. This command provides a quick way to rename the current CMUX workspace to match the current branch name.
+     6→
+     7→## Implementation
+     8→
+     9→Create a single file: `.claude/commands/local/workspace-rename.md`
+    10→
+    11→The command will:
+    12→1. Get the current branch via `git branch --show-current`
+    13→2. Run `cmux rename-workspace "&lt;branch&gt;"` (omitting `--workspace` targets the current workspace via `$CMUX_WORKSPACE_ID`)
+    14→3. Confirm the rename to the user
+    15→
+    16→Structure follows the minimal command pattern — no frontmatter complexity needed since this is a simple two-step bash operation.
+    17→
+    18→## File to create
+    19→
+    20→**`.claude/commands/local/workspace-rename.md`**
+    21→
+    22→```markdown
+    23→---
+    24→description: Rename current CMUX workspace to the current git branch name
+    25→allowed-tools: Bash
+    26→---
+    27→
+    28→Run the following two commands sequentially:
+    29→
+    30→1. Get the current git branch name:
+
+... [17 lines omitted] ...
+  </tool_result>
+  <assistant>## Plan: Create `/local:workspace-rename` command
+
+### Context
+
+When working in CMUX workspaces, the workspace name often doesn't match the current git branch. This command provides a quick way to rename the current CMUX workspace to match the current branch name.
+
+### Implementation
+
+Create a single file: `.claude/commands/local/workspace-rename.md`
+
+The command will:
+1. Get the current branch via `git branch --show-current`
+2. Run `cmux rename-workspace "&lt;branch&gt;"` (omitting `--workspace` targets the current workspace via `$CMUX_WORKSPACE_ID`)
+3. Confirm the rename to the user
+
+### File to create
+
+**`.claude/commands/local/workspace-rename.md`** — minimal command with `allowed-tools: Bash`, two sequential bash calls, confirmation message.
+
+### Verification
+
+- Run `/local:workspace-rename` in a CMUX workspace on a feature branch
+- Confirm the workspace tab/label updates to the branch name</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="590" cache_read_input_tokens="36168" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 590}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01EvhzN3PHj8NUqXuLdU5z4Z">
+    <param name="questions">[{'question': 'Plan: Create `/local:workspace-rename` command\nCurrent context: (wt:erk) (...[truncated 426 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="590" cache_read_input_tokens="36168" output_tokens="434" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 590, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EvhzN3PHj8NUqXuLdU5z4Z">
+User has answered your questions: "Plan: Create `/local:workspace-rename` command
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="call it cmux-workspace-rename" user notes: call it cmux-workspace-rename. You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>The user wants to rename it to `cmux-workspace-rename` and wants to implement directly. Let me update the plan and then ask again about implementation approach.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="20227" cache_read_input_tokens="17292" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 20227}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Got it — renaming to `/local:cmux-workspace-rename`. Let me update the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="20227" cache_read_input_tokens="17292" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 20227}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01W21buEiX4c71UqDQMnn54P">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/splendid-prancing-lovelace.md</param>
+    <param name="old_string"># Plan: Create `/local:workspace-rename` command
+
+## Context
+
+When working in CMUX workspa...[truncated 149 chars]...me.
+
+## Implementation
+
+Create a single file: `.claude/commands/local/workspace-rename.md`</param>
+    <param name="new_string"># Plan: Create `/local:cmux-workspace-rename` command
+
+## Context
+
+When working in CMUX wo...[truncated 159 chars]...## Implementation
+
+Create a single file: `.claude/commands/local/cmux-workspace-rename.md`</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="20227" cache_read_input_tokens="17292" output_tokens="352" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 20227, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01W21buEiX4c71UqDQMnn54P">
+The file /Users/schrockn/.claude/plans/splendid-prancing-lovelace.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017xz5qiLTvp5NjUtvtMejJf">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/splendid-prancing-lovelace.md</param>
+    <param name="old_string">**`.claude/commands/local/workspace-rename.md`**</param>
+    <param name="new_string">**`.claude/commands/local/cmux-workspace-rename.md`**</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="37519" output_tokens="145" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 413, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017xz5qiLTvp5NjUtvtMejJf">
+The file /Users/schrockn/.claude/plans/splendid-prancing-lovelace.md has been updated successfully.
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01KiRHUDrUaEk9dffJveR25t">
+    <param name="questions">[{'question': 'Plan: Create `/local:cmux-workspace-rename` command\nCurrent context: (wt:e...[truncated 431 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="206" cache_read_input_tokens="37932" output_tokens="220" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 206, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KiRHUDrUaEk9dffJveR25t">
+User has answered your questions: "Plan: Create `/local:cmux-workspace-rename` command
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR on new branch". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_012xKRGXiQc3dKroyyvbCHTm">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="300" cache_read_input_tokens="38138" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 300, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012xKRGXiQc3dKroyyvbCHTm">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="5be8e6ed-0505-4eed-a086-c77e51bc8aa7" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "5be8e6ed-0505-4eed-a086-c77e51bc8aa7" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true** (new-wt recommended → "In new wt" listed first):
+
+```
+OR exit Claude Code first, then run one of:
+
+Implement plan #&lt;plan_number&gt;:
+  In new wt:        source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+  In current wt:       source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+
+Checkout plan #&lt;plan_number&gt;:
+  In new wt:  erk br co --new-slot --for-plan &lt;plan_number&gt;
+  In current wt: erk br co --for-plan &lt;plan_number&gt;
+
+Dispatch to queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false** (same slot recommended → "Here" listed first):
+
+```
+OR exit Claude Code first, then run one of:
+
+Implement plan #&lt;plan_number&gt;:
+  In current wt:       source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+
+Checkout plan #&lt;plan_number&gt;:
+  In current wt: erk br co --for-plan &lt;plan_number&gt;
+  In new wt:  erk br co --new-slot --for-plan &lt;plan_number&gt;
+
+Dispatch to queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout plan #&lt;plan_number&gt;:  erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to queue:             erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "5be8e6ed-0505-4eed-a086-c77e51bc8aa7" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "5be8e6ed-0505-4eed-a086-c77e51bc8aa7" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "5be8e6ed-0505-4eed-a086-c77e51bc8aa7" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>The user chose to save the plan as a PR on a new branch. The skill has been loaded with detailed instructions. Let me follow the steps:
+
+1. Parse arguments - no special flags
+2. Generate branch slug from plan title
+3. Generate plan summary
+4. Run save command
+5-7. Handle results
+
+Let me start:
+
+**Step 1**: No arguments passed, so PLAN_TYPE_FLAG and OBJECTIVE_FLAG are empty.
+
+**Step 2**: The plan title is "Create `/local:cmux-workspace-rename` command". Branch slug: "add-cmux-workspace-rename" (that's 25 chars, good)
+
+
+**Step 3**: I've got the summary ready - it describes a Claude Code slash command that detects the current git branch and renames the CMUX workspace to match it. Now I'll execute the save command and handle whatever results come back.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2961" cache_read_input_tokens="38438" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2961}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Step 1: Parse Arguments** — No flags passed. PLAN_TYPE_FLAG and OBJECTIVE_FLAG are empty.
+
+**Step 2: Generate Branch Slug** — From title "Create `/local:cmux-workspace-rename` command": `add-cmux-workspace-rename`
+
+**Step 3: Generate Plan Summary** — "Adds a Claude Code slash command that renames the current CMUX workspace to match the current git branch name, using git branch detection and cmux rename-workspace."
+
+**Step 4: Run Save Command**</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2961" cache_read_input_tokens="38438" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2961}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016vnzHC6nKShKf3hntUhchF">
+    <param name="command">erk exec plan-save --format json --session-id="5be8e6ed-0505-4eed-a086-c77e51bc8aa7" --bra...[truncated 103 chars]... match the current git branch name, using git branch detection and cmux rename-workspace."</param>
+    <param name="description">Save plan as draft PR on new branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2961" cache_read_input_tokens="38438" output_tokens="529" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2961, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016vnzHC6nKShKf3hntUhchF">
+{"success": true, "plan_number": 8697, "plan_url": "https://github.com/dagster-io/erk/pull/8697", "title": "[erk-plan] Plan: Create `/local:cmux-workspace-rename` command", "branch_name": "plnd/add-cmux-workspace-rename-03-03-1031", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/5be8e6ed-0505-4eed-a086-c77e51bc8aa7/plan_snapshots/000001-06fe0b89"}
+  </tool_result>
+  <assistant>**Step 5: Verify Objective Link** — Skipped (no objective linked).
+
+**Step 6: Update Objective Roadmap** — Skipped (no objective linked).
+
+Now pushing the planning session:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="706" cache_read_input_tokens="41399" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 706}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015swwP4gyB7fSD2fEmpFxcp">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="706" cache_read_input_tokens="41399" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 706, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015swwP4gyB7fSD2fEmpFxcp">
+SESSION_ID=5be8e6ed-0505-4eed-a086-c77e51bc8aa7
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/5be8e6ed-0505-4eed-a086-c77e51bc8aa7.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01QQbKKHEPXGt5aXdZEVcu7q">
+    <param name="command">erk exec push-session \
+    --session-file "/Users/schrockn/.claude/projects/-Users-schroc...[truncated 94 chars]...\
+    --stage planning \
+    --source local \
+    --plan-id 8697 \
+    2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="234" cache_read_input_tokens="42105" output_tokens="208" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 234, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QQbKKHEPXGt5aXdZEVcu7q">
+{"uploaded": true, "plan_id": 8697, "session_branch": "async-learn/8697", "session_id": "5be8e6ed-0505-4eed-a086-c77e51bc8aa7", "stage": "planning", "files": ["planning-5be8e6ed-0505-4eed-a086-c77e51bc8aa7-5be8e6ed-0505-4eed-a086-c77e51bc8aa7.xml"]}
+  </tool_result>
+  <assistant>Plan "Create `/local:cmux-workspace-rename` command" saved as draft PR #8697
+URL: https://github.com/dagster-io/erk/pull/8697
+
+**Next steps:**
+
+View PR: https://github.com/dagster-io/erk/pull/8697
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+Implement plan #8697:
+  In new wt:        `source "$(erk br co --new-slot --for-plan 8697 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --new-slot --for-plan 8697 --script)" &amp;&amp; erk implement -d`
+  In current wt:       `source "$(erk br co --for-plan 8697 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --for-plan 8697 --script)" &amp;&amp; erk implement -d`
+
+Checkout plan #8697:
+  In new wt:  `erk br co --new-slot --for-plan 8697`
+  In current wt: `erk br co --for-plan 8697`
+
+Dispatch to queue: `erk pr dispatch 8697`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="556" cache_read_input_tokens="42339" output_tokens="329" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 556, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>
