@@ -45,19 +45,3 @@ Result:
 
 ### Deleted (N files)
 ...
-
-</details>
-
-## User Experience
-...
-
-## Critical Notes
-...
-```
-
-## Verification
-
-Generate a new PR description (via `erk pr submit` or `erk pr rewrite` on a branch with changes) and confirm:
-- "Key Changes" section appears above the Files Changed toggle
-- No `## Files Changed` heading above the `<details>` element
-- Toggle still works and shows file lists correctly
