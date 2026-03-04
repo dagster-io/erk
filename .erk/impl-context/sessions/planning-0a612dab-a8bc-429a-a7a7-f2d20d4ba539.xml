@@ -1,0 +1,3567 @@
+<session>
+  <meta branch="better-labels" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:pr-preview-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-preview-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-preview-address
+
+## Description
+
+Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
+
+## Usage
+
+```bash
+/erk:pr-preview-address
+/erk:pr-preview-address --all               # Include resolved threads
+/erk:pr-preview-address --pr 6631           # Target specific PR
+/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Agent Instructions
+
+&gt; **IMPORTANT: This is a READ-ONLY preview command.**
+&gt;
+&gt; Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
+
+### Phase 1: Classify Feedback
+
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
+
+```
+/pr-feedback-classifier [--pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+```
+
+Parse the JSON response.
+
+### Phase 2: Display Results
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If `actionable_threads` is empty and `discussion_actions` is empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+**Format the results** as a human-readable summary:
+
+```
+## PR #5944: "Feature: Add new API endpoint"
+
+### Pre-Existing Items (Auto-Resolve) (N total)
+
+| # | Type | Location | Summary |
+|---|------|----------|---------|
+| 1 | review | old_module.py:30 | Bot: use LBYL pattern (pre-existing in moved code) |
+| 2 | review | old_module.py:55 | Bot: add type annotation (pre-existing in moved code) |
+
+### Actionable Items (N total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | foo.py:42 | actionable | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | actionable | Add type annotation | local |
+| 3 | discussion | - | actionable | Update documentation | cross_cutting |
+
+### Informational Items (N total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 4 | review | utils.py:10 | Bot suggestion: extract helper (optional) | local |
+
+### Execution Plan Preview
+
+**Batch 0: Pre-Existing (Auto-Resolve)** (auto-proceed, no code changes)
+- Item #1: old_module.py:30 - Bot: use LBYL pattern (pre-existing)
+- Item #2: old_module.py:55 - Bot: add type annotation (pre-existing)
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #3: foo.py:42 - Use LBYL pattern
+- Item #4: bar.py:15 - Add type annotation
+
+**Batch 2: Cross-Cutting** (user confirmation)
+- Item #5: Update documentation
+
+**Batch 3: Informational** (user decides: act or dismiss)
+- Item #6: utils.py:10 - Bot suggestion: extract helper (optional)
+
+### Statistics
+- Pre-existing items (auto-resolve): 2
+- Actionable items: 3
+- Informational items: 1
+- Informational discussion comments: 12
+- Estimated batches: 4
+- Auto-proceed batches: 2
+- User confirmation batches: 2
+```
+
+**Note:** Items in `actionable_threads` are split into three sections based on their `pre_existing` and `classification` fields: `pre_existing: true` items appear under "Pre-Existing Items (Auto-Resolve)", `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". All sections use continuous item numbering.
+
+Add footer:
+
+```
+To address these comments, run: /erk:pr-address
+```
+
+### Phase 3: Exit (NO ACTIONS)
+
+**CRITICAL**: This is a preview-only command. Do NOT:
+
+- Make any code changes
+- Resolve any threads
+- Reply to any comments
+- Create any commits
+- Push anything to remote
+- Run any CI commands
+
+Simply display the summary and exit.
+
+## Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+</user>
+  <thinking>The user invoked `/erk:pr-preview-address` which is a read-only preview command. I need to first invoke the pr-feedback-classifier skill to fetch and classify PR feedback.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="32529" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 32529}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01NM7EZYzffFZPYLUer7x4hM">
+    <param name="skill">pr-feedback-classifier</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="32529" cache_read_input_tokens="0" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 32529, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NM7EZYzffFZPYLUer7x4hM">
+Skill "pr-feedback-classifier" completed (forked execution).
+
+Result:
+Now I have all the data I need. Let me classify the feedback.
+
+**Analysis:**
+
+The PR involves adding new files (`label_ops.py`, `add_pr_labels_cmd.py`) and modifying existing files. No file renames or moves are detected in `git diff --stat -M -C` — all changes are additions and modifications. Therefore `pre_existing: false` for all bot comments.
+
+**Review threads:**
+1. `PRRT_kwDOPxC3hc5yE7Q9` — bot `github-actions` (no `[bot]` suffix, but clearly a bot): Missing `*,` keyword-only separator in `label_ops.py:26` — actionable, local fix
+2. `PRRT_kwDOPxC3hc5yE7On` — bot: Default parameter in closure `attempt()` in `label_ops.py:40` — actionable, local fix
+
+**Discussion comments:**
+- `3997563692` (schrockn): Graphite stack comment — informational
+- `3997570014` (github-actions[bot]): Dignified Code Simplifier summary — informational (summary of inline violations already tracked as review threads)
+- `3997570481` (github-actions[bot]): Test Coverage Review (passing) — informational
+- `3997572937` (github-actions[bot]): Dignified Python Review summary — informational
+- `3997578020` (github-actions[bot]): Tripwires Review (passing) — informational
+- `3997579132` (github-actions[bot]): Old Test Coverage Review (stale, superseded) — informational
+- `3997580174` (github-actions[bot]): Old test coverage inline comment — informational
+- `3997734681` (github-actions[bot]): Broken template comment `$(cat /tmp/summary_comment.md)` — informational
+- `3997906194` (schrockn): Address response about false positive LBYL — informational
+- `3997906511` (schrockn): Address response about test coverage — informational
+
+No discussion comments are actionable. Informational count: 10.
+
+Both review threads are local fixes (single-line changes at specified locations in one file).
+
+{"success": true, "pr_number": 8705, "pr_title": "Extract PR label addition to resilient CLI command", "pr_url": "https://github.com/dagster-io/erk/pull/8705", "actionable_threads": [{"thread_id": "PRRT_kwDOPxC3hc5yE7Q9", "type": "review", "path": "packages/erk-shared/src/erk_shared/gateway/github/label_ops.py", "line": 26, "is_outdated": false, "classification": "actionable", "pre_existing": false, "action_summary": "Add keyword-only separator `*,` after `github: GitHub` parameter in function with 5+ parameters", "complexity": "local", "original_comment": "**Dignified Python**: Function with 5+ parameters requires keyword-only separator - add `*,` after `github: GitHub` parameter to make remaining parameters keyword-only. See dignified-python/references/api-design.md for details."}, {"thread_id": "PRRT_kwDOPxC3hc5yE7On", "type": "review", "path": "packages/erk-shared/src/erk_shared/gateway/github/label_ops.py", "line": 40, "is_outdated": false, "classification": "actionable", "pre_existing": false, "action_summary": "Remove default parameter from closure `attempt()` — use nonlocal capture instead of `def attempt(label: str = label)`", "complexity": "local", "original_comment": "**Dignified Code Simplifier Review**: Function parameter has default value - dignified-python forbids default parameters. Instead of `def attempt(label: str = label)`, use nonlocal closure without the default: `def attempt() -&gt; None | RetryRequested:` to capture label from enclosing scope."}], "discussion_actions": [], "informational_count": 10, "batches": [{"name": "Pre-Existing (Auto-Resolve)", "complexity": "pre_existing", "auto_proceed": true, "item_indices": []}, {"name": "Local Fixes", "complexity": "local", "auto_proceed": true, "item_indices": [0, 1]}, {"name": "Single-File", "complexity": "single_file", "auto_proceed": true, "item_indices": []}, {"name": "Cross-Cutting", "complexity": "cross_cutting", "auto_proceed": false, "item_indices": []}, {"name": "Complex", "complexity": "complex", "auto_proceed": false, "item_indices": []}, {"name": "Informational", "complexity": "informational", "auto_proceed": false, "item_indices": []}], "error": null}
+  </tool_result>
+  <assistant>## PR #8705: "Extract PR label addition to resilient CLI command"
+
+### Actionable Items (2 total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | label_ops.py:26 | actionable | Add keyword-only separator `*,` after `github: GitHub` parameter | local |
+| 2 | review | label_ops.py:40 | actionable | Remove default parameter from closure `attempt()` — use nonlocal capture instead | local |
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: label_ops.py:26 - Add `*,` keyword-only separator
+- Item #2: label_ops.py:40 - Remove default parameter from `attempt()`
+
+### Statistics
+- Pre-existing items (auto-resolve): 0
+- Actionable items: 2
+- Informational items: 0
+- Informational discussion comments: 10
+- Estimated batches: 1
+- Auto-proceed batches: 1
+- User confirmation batches: 0
+
+---
+
+To address these comments, run: `/erk:pr-address`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1337" cache_read_input_tokens="32529" output_tokens="296" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1337, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>│ 2   │ review │ label_ops.py:40 │ actionable     │ Remove default parameter from closure attempt() — use nonlocal capture instead │ local      │
+
+show me what you want to do here</user>
+  <assistant>
+
+Let me read the relevant code.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="546" cache_read_input_tokens="33866" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 546}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01C9NPAxUnjTXZHgSwwX8QQB">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/gateway/github/label_ops.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="546" cache_read_input_tokens="33866" output_tokens="108" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 546, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C9NPAxUnjTXZHgSwwX8QQB">
+     1→"""Resilient label addition using the GitHub gateway with retry."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import logging
+     6→from dataclasses import dataclass
+     7→from pathlib import Path
+     8→
+     9→from erk_shared.gateway.github.abc import GitHub
+    10→from erk_shared.gateway.github.retry import RetriesExhausted, RetryRequested, with_retries
+    11→from erk_shared.gateway.github.transient_errors import is_transient_error
+    12→from erk_shared.gateway.time.abc import Time
+    13→
+    14→
+    15→@dataclass(frozen=True)
+    16→class AddLabelsResult:
+    17→    """Result from adding labels to a PR."""
+    18→
+    19→    success: bool
+    20→    pr_number: int
+    21→    added_labels: list[str]
+    22→    failed_labels: list[str]
+    23→    errors: dict[str, str]
+    24→
+    25→
+    26→def add_labels_resilient(
+    27→    github: GitHub,
+    28→    time: Time,
+    29→    repo_root: Path,
+    30→    pr_number: int,
+
+... [42 lines omitted] ...
+
+    33→    """Add labels to a PR with retry on transient errors. Never raises."""
+    36→    failed: dict[str, str] = {}
+    44→            except RuntimeError as e:
+    45→                if is_transient_error(str(e)):
+    52→                failed[label] = result.reason
+    53→                logger.warning(
+    54→                    "Failed to add label '%s' to PR #%d after retries: %s",
+    61→        except RuntimeError as e:
+    62→            failed[label] = str(e)
+    63→            logger.warning("Failed to add label '%s' to PR #%d: %s", label, pr_number, e)
+    66→        success=len(failed) == 0,
+    69→        failed_labels=list(failed.keys()),
+    70→        errors=failed,
+  </tool_result>
+  <assistant>The change on line 40 would be:
+
+**Current:**
+```python
+def attempt(label: str = label) -&gt; None | RetryRequested:
+```
+
+**Proposed:**
+```python
+def attempt() -&gt; None | RetryRequested:
+```
+
+The `label` variable is already captured from the enclosing `for` loop scope. The `label: str = label` default parameter trick is a classic Python pattern to avoid late-binding closure issues — but in this case it's unnecessary because `attempt()` is called immediately on line 50 (within the same loop iteration), so `label` will always have the correct value. The closure never escapes the loop body.
+
+Removing the default parameter aligns with the dignified-python "no default parameters" rule and the code works identically since `attempt` is never called after the loop advances.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="968" cache_read_input_tokens="34412" output_tokens="191" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 968, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user> The label: str = label default parameter trick is a classic Python pattern to avoid
+  late-binding closure issues
+
+we should expliclty allow this common pattern in dignified pythoin</user>
+  <thinking>The user wants to update the dignified-python rules to explicitly allow the `def f(x=x)` closure capture pattern as an exception to the "no default parameters" rule. Let me find where the dignified-python rules are defined.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="1582" cache_read_input_tokens="35380" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1582}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me find where the dignified-python rules are defined.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1582" cache_read_input_tokens="35380" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1582}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01SaWQ5XPk4uSzXAmPwaQung">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Find dignified-python rules</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 632 chars]...this rule appears so we can add an exception for the closure capture pattern `def f(x=x)`.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1582" cache_read_input_tokens="35380" output_tokens="368" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1582, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SaWQ5XPk4uSzXAmPwaQung">
+Perfect! This is exactly the closure capture pattern. Now I have all the information I need. Let me compile a comprehensive report.
+
+## Complete Report: "No Default Parameters" Rule Locations
+
+I've thoroughly searched the erk codebase and found every location where the "no default parameters" rule is defined, referenced, and enforced. Here's the complete picture:
+
+### 1. **Core Rule Definitions**
+
+#### Primary Skill File
+- **File**: `/Users/schrockn/.erk/repos/erk/worktrees/better-labels/.claude/skills/dignified-python/references/api-design.md`
+  - **Lines 11-42**: Core explanation titled "Default Parameter Values Are Dangerous"
+  - **Exact Wording**: "Avoid default parameter values unless absolutely necessary. They are a significant source of bugs."
+  - **Five key dangers** outlined:
+    1. Silent incorrect behavior
+    2. Hidden coupling
+    3. Audit difficulty
+    4. Refactoring hazard
+    5. Impact on call sites
+  
+  - **Lines 57-62**: Three explicit exceptions documented:
+    1. **Truly optional behavior** (95%+ of callers want the default)
+    2. **Backwards compatibility** (when adding parameters to existing API - temporary)
+    3. **Test helper functions and Fake classes** - `Functions in tests/test_utils/` and `Fake classes` (`FakeGit`, `FakeGitHub`, `FakeGraphite`, etc.) used for testing are explicitly exempt. These helpers often wrap complex constructors with sensible defaults, and having many default parameters is their intended purpose.
+
+#### Core Skill Document
+- **File**: `/Users/schrockn/.erk/repos/erk/worktrees/better-labels/.claude/skills/dignified-python/dignified-python-core.md`
+  - **Note**: Does NOT explicitly mention default parameters (this is handled in the referenced api-design.md)
+
+#### SKILL.md Router
+- **File**: `/Users/schrockn/.erk/repos/erk/worktrees/better-labels/.claude/skills/dignified-python/SKILL.md`
+
+... [99 lines omitted] ...
+
+  - **Lines 221-224**: "Pydantic `Field()` with defaults is an exception to erk's **'no default parameters' rule**. This applies only to Pydantic config/settings classes (e.g., `BaseSettings` subclasses), NOT to regular functions or dataclasses."
+    - **This documents one additional exception**: Pydantic Field() defaults in config classes
+This uses the exact pattern you want to document as an exception: `def make_task(c=collector)` where the default parameter captures the current loop variable.
+| **Exception: Pydantic** | `docs/learned/conventions.md` | Lines 221-224: Pydantic Field() exception |
+| **Exception: Test helpers** | `.claude/skills/dignified-python/references/api-design.md` | Lines 57-62: Fake classes and test utils exempt |
+The rule has three documented exceptions:
+### Key Insight for Your Closure Capture Exception
+The closure capture pattern `def f(x=x)` is **not currently documented** anywhere as an exception. The existing code at `orchestrator.py:62-63` uses it but with a comment explaining it as a closure capture, not framed as an intentional exception to the rule.
+To add your exception, you'll need to update:
+1. **Primary source**: `api-design.md` - Add closure capture as a 4th explicit exception
+2. **Possibly**: Add a comment/marker in the orchestrator.py code referencing the new exception
+  </tool_result>
+  <thinking>Good, I have a thorough understanding. The key file to update is `.claude/skills/dignified-python/references/api-design.md` where the exceptions are listed. Let me read it to see the exact current content.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="22552" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 22552}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the exact exception section in the canonical source.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="22552" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 22552}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WVTH41bYBbVeN5nJK8TKJ8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/.claude/skills/dignified-python/references/api-design.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="22552" cache_read_input_tokens="16613" output_tokens="170" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 22552, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WVTH41bYBbVeN5nJK8TKJ8">
+     1→---
+     2→description: Default parameter dangers, keyword-only arguments, ThreadPoolExecutor patterns, speculative test infrastructure.
+     3→---
+     4→
+     5→# API Design Reference
+     6→
+     7→**Read when**: Adding default parameters, functions with 5+ params, using ThreadPoolExecutor
+     8→
+     9→---
+    10→
+    11→## Default Parameter Values Are Dangerous
+    12→
+    13→&gt; **Scope:** This rule applies to **function definitions** (`def foo(bar: bool = False)`),
+    14→&gt; NOT to **function calls** where you pass an argument named `default` (e.g.,
+    15→&gt; `click.confirm(default=True)`). Passing `default=True` to a function that accepts
+    16→&gt; a `default` parameter is perfectly valid—you're not creating a default parameter value,
+    17→&gt; you're explicitly providing a value.
+    18→
+    19→**Avoid default parameter values unless absolutely necessary.** They are a significant source of bugs.
+    20→
+    21→**Why defaults are dangerous:**
+    22→
+    23→1. **Silent incorrect behavior** - Callers forget to pass a parameter and get unexpected results
+    24→2. **Hidden coupling** - The default encodes an assumption that may not hold for all callers
+    25→3. **Audit difficulty** - Hard to verify all call sites are using the right value
+    26→4. **Refactoring hazard** - Adding a new parameter with a default doesn't trigger errors at existing call sites
+    27→
+    28→```python
+    29→# DANGEROUS: Default that might be wrong for some callers
+    30→def process_file(path: Path, encoding: str = "utf-8") -&gt; str:
+
+... [200 lines omitted] ...
+
+   112→**Exceptions:**
+  </tool_result>
+  <assistant>Now let me also check the review script that enforces this.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2938" cache_read_input_tokens="39165" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2938}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01H3XAGRjjDkCtDTDBNHqkBc">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/.erk/reviews/dignified-python.md</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2938" cache_read_input_tokens="39165" output_tokens="118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2938, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H3XAGRjjDkCtDTDBNHqkBc">
+     1→---
+     2→name: Dignified Python Review
+     3→paths:
+     4→  - "**/*.py"
+     5→marker: "&lt;!-- dignified-python-review --&gt;"
+     6→model: claude-haiku-4-5
+     7→timeout_minutes: 30
+     8→allowed_tools: "Bash(gh:*),Bash(erk exec:*),Read(*)"
+     9→enabled: true
+    10→---
+    11→
+    12→## Step 1: Load the Dignified Python Standards
+    13→
+    14→Read these skill files from the repository:
+    15→
+    16→1. .claude/skills/dignified-python/SKILL.md (routing and version detection)
+    17→2. .claude/skills/dignified-python/dignified-python-core.md (LBYL, exceptions, paths, imports, DI, performance)
+    18→3. .claude/skills/dignified-python/cli-patterns.md (Click best practices)
+    19→4. .claude/skills/dignified-python/subprocess.md (subprocess handling)
+    20→
+    21→## Step 2: Identify Changed Lines
+    22→
+    23→For each Python file, determine which lines were actually modified (not just context):
+    24→
+    25→- Lines starting with `+` in the diff are additions/modifications
+    26→- Lines starting with ` ` (space) are unchanged context
+    27→
+    28→For the `__all__` / re-export rule specifically:
+    29→
+    30→- If `__all__` appears on a `+` line → Flag as violation (actively being modified)
+
+... [30 lines omitted] ...
+
+    40→- Exception handling (no silent swallowing, log at boundaries)
+  </tool_result>
+  <assistant>I have everything I need. This is a straightforward addition of an exception to the "no default parameters" rule. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1129" cache_read_input_tokens="42103" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1129}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01PUgKujpDaMBUxmYqehMsPo">
+    <param name="file_path">/Users/schrockn/.claude/plans/buzzing-bouncing-metcalfe.md</param>
+    <param name="content"># Plan: Add closure capture exception to "no default parameters" rule
+
+## Context
+
+PR revi...[truncated 1164 chars]... `def.*=.*:` patterns in loops to confirm existing usage matches the documented exception
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1129" cache_read_input_tokens="42103" output_tokens="487" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1129, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PUgKujpDaMBUxmYqehMsPo">
+File created successfully at: /Users/schrockn/.claude/plans/buzzing-bouncing-metcalfe.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_019MXPqL7jrxdBx9mkh8oMLn">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run grep to verify patterns'}]</param>
+    <param name="plan"># Plan: Add closure capture exception to "no default parameters" rule
+
+## Context
+
+PR revi...[truncated 1164 chars]... `def.*=.*:` patterns in loops to confirm existing usage matches the documented exception
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="528" cache_read_input_tokens="43232" output_tokens="76" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 528, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019MXPqL7jrxdBx9mkh8oMLn">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/buzzing-bouncing-metcalfe.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Add closure capture exception to "no default parameters" rule
+Current context: (wt:better-labels) (br:better-labels) (pr:#8705)\n\nWhat would you like to do with this plan?"
+  header: "br:better-la"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR on new branch" - Create a new branch, save plan as draft PR, and stop. Does NOT proceed to implementation.
+  2. "Just implement on the current branch without creating a PR." - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create a plan PR on new branch':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Just implement on the current branch without creating a PR.':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 0a612dab-a8bc-429a-a7a7-f2d20d4ba539 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/buzzing-bouncing-metcalfe.md
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Add closure capture exception to "no default parameters" rule
+
+## Context
+
+PR review bots flagged `def attempt(label: str = label)` as a default parameter violation. This is actually the standard Python closure capture pattern used in loops to avoid late-binding issues. The dignified-python rule should explicitly allow this pattern.
+
+The pattern already exists in the codebase (e.g., `orchestrator.py:62` uses `def make_task(c=collector)`).
+
+## Changes
+
+### 1. Add exception to `api-design.md`
+
+**File**: `.claude/skills/dignified-python/references/api-design.md`
+
+Add a 4th exception to the "Acceptable uses of defaults" list (after line 61):
+
+```
+4. **Loop closure capture** - Using `def f(x=x)` to capture the current value of a loop variable is the standard Python idiom for avoiding late-binding closure bugs. This is not a "default" in the API design sense—it's a scoping mechanism.
+```
+
+### 2. Revert the `label_ops.py` change from PR feedback
+
+**File**: `packages/erk-shared/src/erk_shared/gateway/github/label_ops.py`
+
+Keep the existing `def attempt(label: str = label)` pattern as-is. Resolve the review thread explaining this is now an accepted exception.
+
+## Verification
+
+- Read the updated `api-design.md` to confirm the exception is clear
+- Grep for `def.*=.*:` patterns in loops to confirm existing usage matches the documented exception
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="742" cache_read_input_tokens="43760" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 742}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01VkpeNSM43EtM9r9HpWhaGt">
+    <param name="questions">[{'question': 'What would you like to do with this plan?', 'header': 'br:better-la', 'opti...[truncated 340 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="742" cache_read_input_tokens="43760" output_tokens="561" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 742, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VkpeNSM43EtM9r9HpWhaGt">
+User has answered your questions: "What would you like to do with this plan?"="Create a plan PR on new branch". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01RvH3nmUiBJKtShGkdPKvdF">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="954" cache_read_input_tokens="44502" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 954, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RvH3nmUiBJKtShGkdPKvdF">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="0a612dab-a8bc-429a-a7a7-f2d20d4ba539" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "0a612dab-a8bc-429a-a7a7-f2d20d4ba539" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true** (new-wt recommended → "In new wt" listed first):
+
+```
+OR exit Claude Code first, then run one of:
+
+Implement plan #&lt;plan_number&gt;:
+  In new wt:        source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+  In current wt:       source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+
+Checkout plan #&lt;plan_number&gt;:
+  In new wt:  erk br co --new-slot --for-plan &lt;plan_number&gt;
+  In current wt: erk br co --for-plan &lt;plan_number&gt;
+
+Dispatch to queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false** (same slot recommended → "Here" listed first):
+
+```
+OR exit Claude Code first, then run one of:
+
+Implement plan #&lt;plan_number&gt;:
+  In current wt:       source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+
+Checkout plan #&lt;plan_number&gt;:
+  In current wt: erk br co --for-plan &lt;plan_number&gt;
+  In new wt:  erk br co --new-slot --for-plan &lt;plan_number&gt;
+
+Dispatch to queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout plan #&lt;plan_number&gt;:  erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to queue:             erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "0a612dab-a8bc-429a-a7a7-f2d20d4ba539" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "0a612dab-a8bc-429a-a7a7-f2d20d4ba539" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "0a612dab-a8bc-429a-a7a7-f2d20d4ba539" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>Let me execute the plan-save workflow. First, I need to read the plan file to get the title.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2867" cache_read_input_tokens="45456" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2867}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me save the plan to GitHub.
+
+The plan title is "Add closure capture exception to 'no default parameters' rule".
+
+**Branch slug:** `closure-capture-exception`
+
+**Summary:** Adds loop closure capture (def f(x=x)) as an explicit exception to the dignified-python "no default parameters" rule. This common Python idiom for avoiding late-binding bugs in loops is already used in the codebase but wasn't documented as acceptable.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2867" cache_read_input_tokens="45456" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2867}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GxjzLM2fwhygvQQjsFCAGu">
+    <param name="command">erk exec plan-save --format json --session-id="0a612dab-a8bc-429a-a7a7-f2d20d4ba539" --bra...[truncated 189 chars]...nding bugs in loops is already used in the codebase but was not documented as acceptable."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2867" cache_read_input_tokens="45456" output_tokens="342" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2867, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GxjzLM2fwhygvQQjsFCAGu">
+{"success": true, "plan_number": 8719, "plan_url": "https://github.com/dagster-io/erk/pull/8719", "title": "[erk-plan] Plan: Add closure capture exception to \"no default parameters\" rule", "branch_name": "plnd/closure-capture-exception-03-04-0818", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/better-labels/.erk/scratch/sessions/0a612dab-a8bc-429a-a7a7-f2d20d4ba539/plan_snapshots/000001-4a6291e6"}
+  </tool_result>
+  <assistant>Now let me push the planning session and capture session info.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="533" cache_read_input_tokens="48323" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 533}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XAsqDoVMNWbxorHaETuW1e">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="533" cache_read_input_tokens="48323" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 533, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XAsqDoVMNWbxorHaETuW1e">
+SESSION_ID=0a612dab-a8bc-429a-a7a7-f2d20d4ba539
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-better-labels/0a612dab-a8bc-429a-a7a7-f2d20d4ba539.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01JFbqF64LJuJFfoemEsUhtb">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn--er...[truncated 88 chars]...429a-a7a7-f2d20d4ba539" --stage planning --source local --plan-id 8719 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="436" cache_read_input_tokens="48856" output_tokens="216" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 436, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JFbqF64LJuJFfoemEsUhtb">
+{"uploaded": true, "plan_id": 8719, "session_branch": "async-learn/8719", "session_id": "0a612dab-a8bc-429a-a7a7-f2d20d4ba539", "stage": "planning", "files": ["planning-0a612dab-a8bc-429a-a7a7-f2d20d4ba539-0a612dab-a8bc-429a-a7a7-f2d20d4ba539.xml"]}
+  </tool_result>
+  <assistant>Plan "Add closure capture exception to 'no default parameters' rule" saved as draft PR #8719
+URL: https://github.com/dagster-io/erk/pull/8719
+
+**Next steps:**
+
+View PR: https://github.com/dagster-io/erk/pull/8719
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+Implement plan #8719:
+  In current wt:       `source "$(erk br co --for-plan 8719 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --for-plan 8719 --script)" &amp;&amp; erk implement -d`
+  In new wt:        `source "$(erk br co --new-slot --for-plan 8719 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --new-slot --for-plan 8719 --script)" &amp;&amp; erk implement -d`
+
+Checkout plan #8719:
+  In current wt: `erk br co --for-plan 8719`
+  In new wt:  `erk br co --new-slot --for-plan 8719`
+
+Dispatch to queue: `erk pr dispatch 8719`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="356" cache_read_input_tokens="49292" output_tokens="329" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 356, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-preview-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-preview-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-preview-address
+
+## Description
+
+Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
+
+## Usage
+
+```bash
+/erk:pr-preview-address
+/erk:pr-preview-address --all               # Include resolved threads
+/erk:pr-preview-address --pr 6631           # Target specific PR
+/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Agent Instructions
+
+&gt; **IMPORTANT: This is a READ-ONLY preview command.**
+&gt;
+&gt; Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
+
+### Phase 1: Classify Feedback
+
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
+
+```
+/pr-feedback-classifier [--pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+```
+
+Parse the JSON response.
+
+### Phase 2: Display Results
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If `actionable_threads` is empty and `discussion_actions` is empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+**Format the results** as a human-readable summary:
+
+```
+## PR #5944: "Feature: Add new API endpoint"
+
+### Pre-Existing Items (Auto-Resolve) (N total)
+
+| # | Type | Location | Summary |
+|---|------|----------|---------|
+| 1 | review | old_module.py:30 | Bot: use LBYL pattern (pre-existing in moved code) |
+| 2 | review | old_module.py:55 | Bot: add type annotation (pre-existing in moved code) |
+
+### Actionable Items (N total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | foo.py:42 | actionable | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | actionable | Add type annotation | local |
+| 3 | discussion | - | actionable | Update documentation | cross_cutting |
+
+### Informational Items (N total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 4 | review | utils.py:10 | Bot suggestion: extract helper (optional) | local |
+
+### Execution Plan Preview
+
+**Batch 0: Pre-Existing (Auto-Resolve)** (auto-proceed, no code changes)
+- Item #1: old_module.py:30 - Bot: use LBYL pattern (pre-existing)
+- Item #2: old_module.py:55 - Bot: add type annotation (pre-existing)
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #3: foo.py:42 - Use LBYL pattern
+- Item #4: bar.py:15 - Add type annotation
+
+**Batch 2: Cross-Cutting** (user confirmation)
+- Item #5: Update documentation
+
+**Batch 3: Informational** (user decides: act or dismiss)
+- Item #6: utils.py:10 - Bot suggestion: extract helper (optional)
+
+### Statistics
+- Pre-existing items (auto-resolve): 2
+- Actionable items: 3
+- Informational items: 1
+- Informational discussion comments: 12
+- Estimated batches: 4
+- Auto-proceed batches: 2
+- User confirmation batches: 2
+```
+
+**Note:** Items in `actionable_threads` are split into three sections based on their `pre_existing` and `classification` fields: `pre_existing: true` items appear under "Pre-Existing Items (Auto-Resolve)", `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". All sections use continuous item numbering.
+
+Add footer:
+
+```
+To address these comments, run: /erk:pr-address
+```
+
+### Phase 3: Exit (NO ACTIONS)
+
+**CRITICAL**: This is a preview-only command. Do NOT:
+
+- Make any code changes
+- Resolve any threads
+- Reply to any comments
+- Create any commits
+- Push anything to remote
+- Run any CI commands
+
+Simply display the summary and exit.
+
+## Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+</user>
+  <tool_use name="Skill" id="toolu_014GW7UfuvPaGkb22SxXxjqZ">
+    <param name="skill">pr-feedback-classifier</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="32075" cache_read_input_tokens="19284" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 32075, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014GW7UfuvPaGkb22SxXxjqZ">
+Skill "pr-feedback-classifier" completed (forked execution).
+
+Result:
+Now I have all the data needed to classify the feedback. No file renames, copies, or splits are detected — these are all new files or modifications to existing files. No restructuring occurred.
+
+**Classification:**
+
+**Review threads:**
+
+1. `PRRT_kwDOPxC3hc5yE7Q9` — `label_ops.py:26` — Bot (`github-actions`) flagging missing `*,` keyword-only separator for 5+ parameter function. This is a new file added by this PR (not restructured/moved code), so `pre_existing: false`. Actionable, local fix.
+
+2. `PRRT_kwDOPxC3hc5yE7On` — `label_ops.py:40` — Bot (`github-actions`) flagging default parameter in closure `def attempt(label: str = label)`. Same new file, not restructured. Actionable, local fix.
+
+**Discussion comments:**
+
+- `3997563692` (schrockn) — Graphite stack comment. Purely informational.
+- `3997570014` (github-actions[bot]) — Dignified Code Simplifier Review summary. Informational (already captured in inline review threads).
+- `3997570481` (github-actions[bot]) — Test Coverage Review (passing, 0 violations). Informational.
+- `3997572937` (github-actions[bot]) — Dignified Python Review summary. Informational (captured in inline thread).
+- `3997578020` (github-actions[bot]) — Tripwires Review (passing). Informational.
+- `3997579132` (github-actions[bot]) — Old test coverage review (outdated, superseded). Informational.
+- `3997580174` (github-actions[bot]) — Old test coverage inline comment (superseded). Informational.
+- `3997734681` (github-actions[bot]) — Malformed/broken comment `$(cat /tmp/summary_comment.md)`. Informational.
+- `3997906194` (schrockn) — User response explaining false positive was resolved. Informational.
+- `3997906511` (schrockn) — User response explaining tests were added. Informational.
+
+No discussion comments require action. All 10 are informational.
+
+Both review threads are actionable, from a bot, on a new file (not restructured/moved code) → `pre_existing: false`. Both are local fixes (single-line changes in `label_ops.py`).
+
+
+... [75 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <assistant>## PR #8705: "Extract PR label addition to resilient CLI command"
+
+### Actionable Items (2 total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | label_ops.py:26 | actionable | Add `*,` keyword-only separator after `github: GitHub` parameter | local |
+| 2 | review | label_ops.py:40 | actionable | Remove default parameter from closure `attempt()` — use nonlocal capture instead | local |
+
+### Execution Plan Preview
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #1: label_ops.py:26 - Add `*,` keyword-only separator
+- Item #2: label_ops.py:40 - Remove default parameter from `attempt()`
+
+### Statistics
+- Pre-existing items (auto-resolve): 0
+- Actionable items: 2
+- Informational items: 0
+- Informational discussion comments: 10
+- Estimated batches: 1
+- Auto-proceed batches: 1
+- User confirmation batches: 0
+
+---
+
+**Note:** Item #2 is the closure capture pattern we just saved a plan to explicitly allow. Once that plan lands, this review comment becomes a false positive.
+
+To address these comments, run: `/erk:pr-address`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3238" cache_read_input_tokens="49648" output_tokens="331" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3238, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>reso;ve │ 2   │ review │ label_ops.py:40 │ actionable     │ Remove default parameter from closure attempt() — use nonlocal capture instead │ local      │ and note we allow it and are changing coding standards
+
+fix 1</user>
+  <tool_use name="Read" id="toolu_014dWrHfeGaYWosyyzS1Jp7J">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/gateway/github/label_ops.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="36811" cache_read_input_tokens="16542" output_tokens="100" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 36811, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014dWrHfeGaYWosyyzS1Jp7J">
+     1→"""Resilient label addition using the GitHub gateway with retry."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import logging
+     6→from dataclasses import dataclass
+     7→from pathlib import Path
+     8→
+     9→from erk_shared.gateway.github.abc import GitHub
+    10→from erk_shared.gateway.github.retry import RetriesExhausted, RetryRequested, with_retries
+    11→from erk_shared.gateway.github.transient_errors import is_transient_error
+    12→from erk_shared.gateway.time.abc import Time
+    13→
+    14→
+    15→@dataclass(frozen=True)
+    16→class AddLabelsResult:
+    17→    """Result from adding labels to a PR."""
+    18→
+    19→    success: bool
+    20→    pr_number: int
+    21→    added_labels: list[str]
+    22→    failed_labels: list[str]
+    23→    errors: dict[str, str]
+    24→
+    25→
+    26→def add_labels_resilient(
+    27→    github: GitHub,
+    28→    time: Time,
+    29→    repo_root: Path,
+    30→    pr_number: int,
+
+... [42 lines omitted] ...
+
+    33→    """Add labels to a PR with retry on transient errors. Never raises."""
+    36→    failed: dict[str, str] = {}
+    44→            except RuntimeError as e:
+    45→                if is_transient_error(str(e)):
+    52→                failed[label] = result.reason
+    53→                logger.warning(
+    54→                    "Failed to add label '%s' to PR #%d after retries: %s",
+    61→        except RuntimeError as e:
+    62→            failed[label] = str(e)
+    63→            logger.warning("Failed to add label '%s' to PR #%d: %s", label, pr_number, e)
+    66→        success=len(failed) == 0,
+    69→        failed_labels=list(failed.keys()),
+    70→        errors=failed,
+  </tool_result>
+  <assistant>First, fix item #1 (add `*,` keyword-only separator):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="959" cache_read_input_tokens="53353" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 959}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MPDm2BWMfo8VECksb6cnpJ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/gateway/github/label_ops.py</param>
+    <param name="old_string">def add_labels_resilient(
+    github: GitHub,
+    time: Time,
+    repo_root: Path,
+    pr_number: int,
+    labels: tuple[str, ...],
+) -&gt; AddLabelsResult:</param>
+    <param name="new_string">def add_labels_resilient(
+    github: GitHub,
+    *,
+    time: Time,
+    repo_root: Path,
+    pr_number: int,
+    labels: tuple[str, ...],
+) -&gt; AddLabelsResult:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="959" cache_read_input_tokens="53353" output_tokens="264" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 959, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MPDm2BWMfo8VECksb6cnpJ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/gateway/github/label_ops.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me find and fix all call sites.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="54312" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 348}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01XgFc9gQMzm1Soz44KgTC9V">
+    <param name="pattern">add_labels_resilient</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="54312" output_tokens="91" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 348, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XgFc9gQMzm1Soz44KgTC9V">
+Found 6 files
+packages/erk-shared/src/erk_shared/gateway/github/label_ops.py
+src/erk/cli/commands/exec/scripts/add_pr_labels_cmd.py
+src/erk/cli/commands/pr/submit_pipeline.py
+src/erk/cli/commands/one_shot_dispatch.py
+src/erk/cli/commands/pr/rewrite_cmd.py
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01M1URV6KQqeX35C8XBnewWA">
+    <param name="pattern">add_labels_resilient\(</param>
+    <param name="output_mode">content</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="231" cache_read_input_tokens="54660" output_tokens="96" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 231, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M1URV6KQqeX35C8XBnewWA">
+/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/one_shot_dispatch.py-326-        ctx.github.update_pr_body(repo.root, pr_number, pr_body_initial + footer)
+/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/one_shot_dispatch.py-327-        # Add plan labels
+src/erk/cli/commands/one_shot_dispatch.py:328:        add_labels_resilient(ctx.github, ctx.time, repo.root, pr_number, ("erk-pr", "erk-plan"))
+/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/one_shot_dispatch.py-329-
+src/erk/cli/commands/one_shot_dispatch.py-330-        # Key: set plan_number = pr_number so downstream code
+--
+/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/pr/rewrite_cmd.py-193-    is_learn_origin = is_learn_plan(impl_dir) if impl_dir is not None else False
+src/erk/cli/commands/pr/rewrite_cmd.py-194-    if is_learn_origin:
+src/erk/cli/commands/pr/rewrite_cmd.py:195:        add_labels_resilient(
+/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/pr/rewrite_cmd.py-196-            ctx.github, ctx.time, discovery.repo_root, pr_number, (ERK_SKIP_LEARN_LABEL,)
+/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/pr/rewrite_cmd.py-197-        )
+--
+/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/pr/submit_pipeline.py-775-    # Add learn skip label if applicable
+src/erk/cli/commands/pr/submit_pipeline.py-776-    if is_learn_origin:
+src/erk/cli/commands/pr/submit_pipeline.py:777:        add_labels_resilient(
+/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/pr/submit_pipeline.py-778-            ctx.github, ctx.time, state.repo_root, state.pr_number, (ERK_SKIP_LEARN_LABEL,)
+/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/pr/submit_pipeline.py-779-        )
+--
+/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/exec/scripts/add_pr_labels_cmd.py-65-        ctx.exit(1)
+/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/exec/scripts/add_pr_labels_cmd.py-66-
+src/erk/cli/commands/exec/scripts/add_pr_labels_cmd.py:67:    result = add_labels_resilient(github, time, repo_root, pr_number, labels_list)
+/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/exec/scripts/add_pr_labels_cmd.py-68-
+/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/exec/scripts/add_pr_labels_cmd.py-69-    click.echo(json.dumps(asdict(result)))
+--
+/Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-370-        # Add labels with retry on transient errors
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-371-        if labels:
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:372:            label_result = add_labels_resilient(
+/Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-373-                self._github, self._time, repo_root, pr_number, labels
+/Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py-374-            )
+--
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>5 call sites to update. All pass positional args after `github` — need to add keyword names.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1717" cache_read_input_tokens="54891" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1717}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NBV5Fg8VabVB3RZHzkXwZk">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="old_string">add_labels_resilient(ctx.github, ctx.time, repo.root, pr_number, ("erk-pr", "erk-plan"))</param>
+    <param name="new_string">add_labels_resilient(ctx.github, time=ctx.time, repo_root=repo.root, pr_number=pr_number, labels=("erk-pr", "erk-plan"))</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1717" cache_read_input_tokens="54891" output_tokens="234" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1717, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NBV5Fg8VabVB3RZHzkXwZk">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YQVm1tnYSZVMHMLH2AiPV1">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="offset">326</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="299" cache_read_input_tokens="56608" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 299}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YQVm1tnYSZVMHMLH2AiPV1">
+   326→        ctx.github.update_pr_body(repo.root, pr_number, pr_body_initial + footer)
+   327→        # Add plan labels
+   328→        add_labels_resilient(ctx.github, ctx.time, repo.root, pr_number, ("erk-pr", "erk-plan"))
+   329→
+   330→        # Key: set plan_number = pr_number so downstream code
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Q7RSFjLGL3ajbwgBiEtA9V">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/pr/rewrite_cmd.py</param>
+    <param name="offset">193</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="299" cache_read_input_tokens="56608" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 299}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q7RSFjLGL3ajbwgBiEtA9V">
+   193→    is_learn_origin = is_learn_plan(impl_dir) if impl_dir is not None else False
+   194→    if is_learn_origin:
+   195→        add_labels_resilient(
+   196→            ctx.github, ctx.time, discovery.repo_root, pr_number, (ERK_SKIP_LEARN_LABEL,)
+   197→        )
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FghrcEr8cQnxt4EZ9rXGau">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">775</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="299" cache_read_input_tokens="56608" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 299}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FghrcEr8cQnxt4EZ9rXGau">
+   775→    # Add learn skip label if applicable
+   776→    if is_learn_origin:
+   777→        add_labels_resilient(
+   778→            ctx.github, ctx.time, state.repo_root, state.pr_number, (ERK_SKIP_LEARN_LABEL,)
+   779→        )
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NrVnV9HwNTXWfQ6ff6gXmA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/exec/scripts/add_pr_labels_cmd.py</param>
+    <param name="offset">65</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="299" cache_read_input_tokens="56608" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 299}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NrVnV9HwNTXWfQ6ff6gXmA">
+    65→        ctx.exit(1)
+    66→
+    67→    result = add_labels_resilient(github, time, repo_root, pr_number, labels_list)
+    68→
+    69→    click.echo(json.dumps(asdict(result)))
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SkKRWZ7xyzsXS6MYtxN5HC">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="offset">370</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="299" cache_read_input_tokens="56608" output_tokens="576" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 299, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SkKRWZ7xyzsXS6MYtxN5HC">
+   370→        # Add labels with retry on transient errors
+   371→        if labels:
+   372→            label_result = add_labels_resilient(
+   373→                self._github, self._time, repo_root, pr_number, labels
+   374→            )
+  </tool_result>
+  <assistant>Now update all 5 call sites:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1891" cache_read_input_tokens="56907" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1891}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KT5YigVCbiLySQwiYJHj9x">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="old_string">add_labels_resilient(ctx.github, ctx.time, repo.root, pr_number, ("erk-pr", "erk-plan"))</param>
+    <param name="new_string">add_labels_resilient(ctx.github, time=ctx.time, repo_root=repo.root, pr_number=pr_number, labels=("erk-pr", "erk-plan"))</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1891" cache_read_input_tokens="56907" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1891}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KT5YigVCbiLySQwiYJHj9x">
+The file /Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/one_shot_dispatch.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Tg2i4vLbdDJvngVuJ7rBNg">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/pr/rewrite_cmd.py</param>
+    <param name="old_string">        add_labels_resilient(
+            ctx.github, ctx.time, discovery.repo_root, pr_number, (ERK_SKIP_LEARN_LABEL,)
+        )</param>
+    <param name="new_string">        add_labels_resilient(
+            ctx.github, time=ctx.time, repo_root=discovery.repo_root, pr_number=pr_number, labels=(ERK_SKIP_LEARN_LABEL,)
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1891" cache_read_input_tokens="56907" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1891}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Tg2i4vLbdDJvngVuJ7rBNg">
+The file /Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/pr/rewrite_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PB7yBJyiQXwUgJzzWEAxQH">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">        add_labels_resilient(
+            ctx.github, ctx.time, state.repo_root, state.pr_number, (ERK_SKIP_LEARN_LABEL,)
+        )</param>
+    <param name="new_string">        add_labels_resilient(
+            ctx.github, time=ctx.time, repo_root=state.repo_root, pr_number=state.pr_number, labels=(ERK_SKIP_LEARN_LABEL,)
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1891" cache_read_input_tokens="56907" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1891}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PB7yBJyiQXwUgJzzWEAxQH">
+The file /Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016t8YH4B4t1KpieeVRSG9We">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/exec/scripts/add_pr_labels_cmd.py</param>
+    <param name="old_string">    result = add_labels_resilient(github, time, repo_root, pr_number, labels_list)</param>
+    <param name="new_string">    result = add_labels_resilient(github, time=time, repo_root=repo_root, pr_number=pr_number, labels=labels_list)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1891" cache_read_input_tokens="56907" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1891}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016t8YH4B4t1KpieeVRSG9We">
+The file /Users/schrockn/.erk/repos/erk/worktrees/better-labels/src/erk/cli/commands/exec/scripts/add_pr_labels_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017mde9SGrZtVEM5sfXKTtRy">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py</param>
+    <param name="old_string">            label_result = add_labels_resilient(
+                self._github, self._time, repo_root, pr_number, labels
+            )</param>
+    <param name="new_string">            label_result = add_labels_resilient(
+                self._github, time=self._time, repo_root=repo_root, pr_number=pr_number, labels=labels
+            )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1891" cache_read_input_tokens="56907" output_tokens="1026" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1891, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017mde9SGrZtVEM5sfXKTtRy">
+The file /Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/plan_store/planned_pr.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also check for test call sites.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1604" cache_read_input_tokens="58798" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1604}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VKmAyeGmhS7DJaoGq2iiB6">
+    <param name="pattern">add_labels_resilient\(</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/tests</param>
+    <param name="output_mode">content</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1604" cache_read_input_tokens="58798" output_tokens="148" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1604, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VKmAyeGmhS7DJaoGq2iiB6">
+No matches found
+  </tool_result>
+  <assistant>Now resolve item #2 — the closure capture thread. I need to reply explaining we're allowing this pattern.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="60402" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 163}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0198BT7uuf46o8BC3TqSF6gK">
+    <param name="command">gh api repos/dagster-io/erk/pulls/8705/comments --jq '.[] | select(.path == "packages/erk-shared/src/erk_shared/gateway/github/label_ops.py" and .line == 40) | .id'</param>
+    <param name="description">Find the review comment ID for label_ops.py:40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="60402" output_tokens="168" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 163, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0198BT7uuf46o8BC3TqSF6gK">
+2884176076
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011EQnVaLNqYGkfr2Te4Zuqw">
+    <param name="command">gh api repos/dagster-io/erk/pulls/comments/2884176076/replies -f body="This is the standar...[truncated 64 chars]...ops. We're updating dignified-python to explicitly allow this (see #8719). Keeping as-is."</param>
+    <param name="description">Reply to review comment explaining closure capture is allowed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="184" cache_read_input_tokens="60565" output_tokens="153" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 184, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011EQnVaLNqYGkfr2Te4Zuqw">
+Exit code 1
+{
+  "message": "Not Found",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "404"
+}gh: Not Found (HTTP 404)
+
+{
+  "message": "Not Found",
+  "documentation_url": "https://docs.github.com/rest",
+  "status": "404"
+}gh: Not Found (HTTP 404)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01RdJpf44ShqCuKcS4iteGT2">
+    <param name="command">gh api graphql -f query='query { repository(owner: "dagster-io", name: "erk") { pullReques...[truncated 215 chars]...ared/src/erk_shared/gateway/github/label_ops.py" and .comments.nodes[0].line == 40) | .id'</param>
+    <param name="description">Get GraphQL thread ID for label_ops.py:40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="272" cache_read_input_tokens="60749" output_tokens="224" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 272, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RdJpf44ShqCuKcS4iteGT2">
+PRRT_kwDOPxC3hc5yE7On
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Nn6heUyQNbvydfHUxCRt2c">
+    <param name="command">gh api graphql -f query='mutation { addPullRequestReviewComment(input: {pullRequestReviewT...[truncated 140 chars]...ified-python to explicitly allow this (see #8719). Keeping as-is."}) { comment { id } } }'</param>
+    <param name="description">Reply to review thread</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="61021" output_tokens="179" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 254, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Nn6heUyQNbvydfHUxCRt2c">
+Exit code 1
+{"errors":[{"path":["mutation","addPullRequestReviewComment","input","pullRequestReviewThreadId"],"extensions":{"code":"argumentNotAccepted","name":"AddPullRequestReviewCommentInput","typeName":"InputObject","argumentName":"pullRequestReviewThreadId"},"locations":[{"line":1,"column":48}],"message":"InputObject 'AddPullRequestReviewCommentInput' doesn't accept argument 'pullRequestReviewThreadId'"}]}gh: InputObject 'AddPullRequestReviewCommentInput' doesn't accept argument 'pullRequestReviewThreadId'
+
+{"errors":[{"path":["mutation","addPullRequestReviewComment","input","pullRequestReviewThreadId"],"extensions":{"code":"argumentNotAccepted","name":"AddPullRequestReviewCommentInput","typeName":"InputObject","argumentName":"pullRequestReviewThreadId"},"locations":[{"line":1,"column":48}],"message":"InputObject 'AddPullRequestReviewCommentInput' doesn't accept argument 'pullRequestReviewThreadId'"}]}gh: InputObject 'AddPullRequestReviewCommentInput' doesn't accept argument 'pullRequestReviewThreadId'
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01UNEoAE5MyYcL5gi2TfMYF1">
+    <param name="pattern">reply.*thread|resolve.*thread</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/docs/learned/pr-operations</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="489" cache_read_input_tokens="61275" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 489}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UNEoAE5MyYcL5gi2TfMYF1">
+docs/learned/pr-operations/pre-existing-detection.md:40:1. Resolves all threads via `erk exec resolve-review-threads` with a standard comment: "Pre-existing issue — this code was moved/restructured, not newly introduced."
+docs/learned/pr-operations/index.md:19:- **[resolve-review-threads-format.md](resolve-review-threads-format.md)** — calling erk exec resolve-review-threads, automating PR review thread resolution, getting 'Item at index 0 is not an object' errors
+docs/learned/pr-operations/resolve-review-threads-format.md:4:  - "calling erk exec resolve-review-threads"
+docs/learned/pr-operations/resolve-review-threads-format.md:8:  - action: "passing a flat list of thread IDs to resolve-review-threads"
+docs/learned/pr-operations/resolve-review-threads-format.md:14:The `erk exec resolve-review-threads` script expects a specific JSON input format via stdin. Using the wrong format produces an unhelpful "Item at index 0 is not an object" error.
+docs/learned/pr-operations/resolve-review-threads-format.md:18:&lt;!-- Source: src/erk/cli/commands/exec/scripts/resolve_review_threads.py, ThreadResolutionItem --&gt;
+docs/learned/pr-operations/resolve-review-threads-format.md:44:Run `erk exec resolve-review-threads -h` to see the expected format and usage.
+docs/learned/pr-operations/resolve-review-threads-format.md:48:&lt;!-- Source: src/erk/cli/commands/exec/scripts/resolve_review_threads.py --&gt;
+docs/learned/pr-operations/resolve-review-threads-format.md:50:`src/erk/cli/commands/exec/scripts/resolve_review_threads.py` — `ThreadResolutionItem` TypedDict at lines 43-47.
+docs/learned/pr-operations/tripwires.md:29:**passing a flat list of thread IDs to resolve-review-threads** → Read [Resolve Review Threads JSON Format](resolve-review-threads-format.md) first. The input must be a list of objects with thread*id and comment fields, not a flat list of strings. Wrong: ["PRRT*..."] → 'Item at index 0 is not an object'. Correct: [{"thread_id": "PRRT_...", "comment": "..."}]
+docs/learned/pr-operations/feedback-classification.md:21:| **Actionable**    | Comments requesting specific code changes          | Modify code, then resolve thread                      |
+docs/learned/pr-operations/feedback-classification.md:28:1. **Fetch comments**: Get all unresolved review threads from the PR
+docs/learned/pr-operations/feedback-classification.md:35:- **Actionable**: Make code changes, then resolve the thread
+docs/learned/pr-operations/feedback-classification.md:36:- **Informational/Praise**: Reply acknowledging the comment, resolve the thread
+docs/learned/pr-operations/feedback-classification.md:46:4. Phase 4 resolves threads
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ta4vfXS3S9SKfdoQshPobQ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/docs/learned/pr-operations/resolve-review-threads-format.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="897" cache_read_input_tokens="61764" output_tokens="93" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 897, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ta4vfXS3S9SKfdoQshPobQ">
+     1→---
+     2→title: Resolve Review Threads JSON Format
+     3→read_when:
+     4→  - "calling erk exec resolve-review-threads"
+     5→  - "automating PR review thread resolution"
+     6→  - "getting 'Item at index 0 is not an object' errors"
+     7→tripwires:
+     8→  - action: "passing a flat list of thread IDs to resolve-review-threads"
+     9→    warning: 'The input must be a list of objects with thread_id and comment fields, not a flat list of strings. Wrong: ["PRRT_..."] → ''Item at index 0 is not an object''. Correct: [{"thread_id": "PRRT_...", "comment": "..."}]'
+    10→---
+    11→
+    12→# Resolve Review Threads JSON Format
+    13→
+    14→The `erk exec resolve-review-threads` script expects a specific JSON input format via stdin. Using the wrong format produces an unhelpful "Item at index 0 is not an object" error.
+    15→
+    16→## Correct Format
+    17→
+    18→&lt;!-- Source: src/erk/cli/commands/exec/scripts/resolve_review_threads.py, ThreadResolutionItem --&gt;
+    19→
+    20→Input is a JSON array of objects matching the `ThreadResolutionItem` TypedDict:
+    21→
+    22→```json
+    23→[
+    24→  { "thread_id": "PRRT_abc123", "comment": "Fixed in latest commit" },
+    25→  { "thread_id": "PRRT_def456", "comment": null }
+    26→]
+    27→```
+    28→
+    29→| Field       | Type          | Description                               |
+    30→| ----------- | ------------- | ----------------------------------------- |
+
+... [21 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EB9QJKSztzrgHo244DS8N9">
+    <param name="command">echo '[{"thread_id": "PRRT_kwDOPxC3hc5yE7On", "comment": "This is the standard Python clos...[truncated 90 chars]...tly allow this (see #8719). Keeping as-is."}]' | erk exec resolve-review-threads --pr 8705</param>
+    <param name="description">Resolve the closure capture review thread with explanation</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="831" cache_read_input_tokens="62661" output_tokens="172" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 831, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EB9QJKSztzrgHo244DS8N9">
+Exit code 2
+Usage: erk exec resolve-review-threads [OPTIONS]
+Try 'erk exec resolve-review-threads -h' for help.
+
+Error: No such option: --pr Did you mean --help?
+
+Usage: erk exec resolve-review-threads [OPTIONS]
+Try 'erk exec resolve-review-threads -h' for help.
+
+Error: No such option: --pr Did you mean --help?
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01HvRk3GPQprRymkqYaecccM">
+    <param name="command">erk exec resolve-review-threads -h</param>
+    <param name="description">Check resolve-review-threads usage</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="400" cache_read_input_tokens="63492" output_tokens="84" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 400, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HvRk3GPQprRymkqYaecccM">
+Usage: erk exec resolve-review-threads [OPTIONS]
+
+  Resolve multiple PR review threads from JSON stdin.
+
+  Reads a JSON array from stdin where each item has: - thread_id (required):
+  GraphQL node ID of the thread - comment (optional): Comment to add before
+  resolving
+
+  Processes each thread sequentially and outputs batch results. Top-level
+  success is true only if ALL threads resolved successfully.
+
+Options:
+  -h, --help  Show this message and exit.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01HC2xR8jYcoD13GeTXEavQc">
+    <param name="command">echo '[{"thread_id": "PRRT_kwDOPxC3hc5yE7On", "comment": "This is the standard Python clos...[truncated 80 chars]...to explicitly allow this (see #8719). Keeping as-is."}]' | erk exec resolve-review-threads</param>
+    <param name="description">Resolve the closure capture review thread</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="208" cache_read_input_tokens="63892" output_tokens="165" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 208, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HC2xR8jYcoD13GeTXEavQc">
+{
+  "success": true,
+  "results": [
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5yE7On",
+      "comment_added": true
+    }
+  ]
+}
+  </tool_result>
+  <assistant>Done. Here's what I did:
+
+1. **Fixed item #1**: Added `*,` keyword-only separator to `add_labels_resilient()` and updated all 5 call sites with keyword arguments
+2. **Resolved item #2**: Replied on the closure capture thread explaining it's an intentional pattern, referenced plan #8719 for the coding standards update, and resolved the thread</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="242" cache_read_input_tokens="64100" output_tokens="91" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 242, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:quick-submit&lt;/command-message&gt;
+&lt;command-name&gt;/local:quick-submit&lt;/command-name&gt;
+&lt;command-args&gt;and resolve threads&lt;/command-args&gt;</user>
+  <user># Quick Submit
+
+Quickly commit all changes with a generic "update" message and submit to Graphite.
+
+## Usage
+
+```bash
+/quick-submit
+```
+
+## What This Command Does
+
+1. Stages all uncommitted changes
+2. Creates a commit with a generic "update" message (if there are changes)
+3. Submits the branch via Graphite (or git push if Graphite is not configured)
+4. Returns the PR URL on success
+
+This is a shortcut for rapid iteration when you don't need a detailed commit message.
+
+## Implementation Steps
+
+### Step 1: Stage and Commit Changes
+
+Run the following command from the repository root:
+
+```bash
+erk exec quick-submit
+```
+
+This command will:
+
+- Stage all changes in the working directory
+- Commit them with the message "update" if there are staged changes
+- Return a JSON response with the result
+
+### Step 2: Parse the Response
+
+The command outputs JSON with the following structure:
+
+```json
+{
+  "success": true,
+  "committed": true,
+  "message": "Changes submitted successfully",
+  "pr_url": "https://github.com/owner/repo/pull/123"
+}
+```
+
+Or on error:
+
+```json
+{
+  "success": false,
+  "error_type": "stage-failed|commit-failed|submit-failed",
+  "message": "Error description"
+}
+```
+
+**Decision logic:**
+
+- If `success` is `true`: Report the success message and PR URL to the user
+- If `success` is `false`: Display the error message and ask the user to fix the issue
+
+### Step 3: Report Results
+
+Display the result based on the response:
+
+**On success:**
+
+```
+Changes submitted successfully
+View PR: {pr_url}
+```
+
+**On failure:**
+
+```
+Error: {error_message}
+```
+
+If the error is `stage-failed` or `commit-failed`, suggest the user check their git state.
+If the error is `submit-failed`, suggest the user try `/erk:git-pr-push` as an alternative.
+
+## Error Handling
+
+- **No changes**: The command will still submit if there are already committed changes on the branch. No error is raised if there are no staged changes.
+- **Graphite not initialized**: Falls back to git push if the repository is not Graphite-managed.
+- **Submit fails**: Display the error and suggest `/erk:git-pr-push` as an alternative.
+
+## Notes
+
+- This is a shortcut for rapid iteration
+- Uses generic "update" commit message
+- For detailed commit messages, use `/erk:pr-submit` instead
+- For git-only workflows (no Graphite), use `/erk:git-pr-push`
+
+
+ARGUMENTS: and resolve threads</user>
+  <tool_use name="Bash" id="toolu_01SnWXmz5vsBHK3nRDfnhehd">
+    <param name="command">erk exec quick-submit</param>
+    <param name="description">Stage, commit, and submit via Graphite</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="926" cache_read_input_tokens="64342" output_tokens="127" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 926, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SnWXmz5vsBHK3nRDfnhehd">
+  Staging all changes...
+  Checking for staged changes...
+  Committing changes...
+  Submitting to Graphite...
+  Getting PR URL...
+{
+  "success": true,
+  "staged_changes": true,
+  "committed": true,
+  "message": "Changes submitted successfully",
+  "pr_url": "https://github.com/dagster-io/erk/pull/8705"
+}
+  </tool_result>
+  <assistant>Now resolve the keyword-only separator thread (item #1) since it's been fixed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="65268" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 216}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01U1n8YpSrqq7tk5qTwc4jys">
+    <param name="command">echo '[{"thread_id": "PRRT_kwDOPxC3hc5yE7Q9", "comment": "Fixed — added `*,` keyword-only separator and updated all 5 call sites."}]' | erk exec resolve-review-threads</param>
+    <param name="description">Resolve the keyword-only separator thread</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="65268" output_tokens="159" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 216, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01U1n8YpSrqq7tk5qTwc4jys">
+{
+  "success": true,
+  "results": [
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5yE7Q9",
+      "comment_added": true
+    }
+  ]
+}
+  </tool_result>
+  <assistant>Changes submitted successfully. View PR: https://github.com/dagster-io/erk/pull/8705
+
+Both review threads resolved:
+- **Item #1** (keyword-only separator): Fixed and resolved
+- **Item #2** (closure capture): Resolved with explanation referencing #8719</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="237" cache_read_input_tokens="65484" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 237, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>/local:statusline-refresh</user>
+  <user>&lt;local-command-stdout&gt;
+🔄 Status line refreshed
+&lt;/local-command-stdout&gt;</user>
+  <user>&lt;command-message&gt;erk:pr-preview-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-preview-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-preview-address
+
+## Description
+
+Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
+
+## Usage
+
+```bash
+/erk:pr-preview-address
+/erk:pr-preview-address --all               # Include resolved threads
+/erk:pr-preview-address --pr 6631           # Target specific PR
+/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Agent Instructions
+
+&gt; **IMPORTANT: This is a READ-ONLY preview command.**
+&gt;
+&gt; Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
+
+### Phase 1: Classify Feedback
+
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
+
+```
+/pr-feedback-classifier [--pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+```
+
+Parse the JSON response.
+
+### Phase 2: Display Results
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If `actionable_threads` is empty and `discussion_actions` is empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+**Format the results** as a human-readable summary:
+
+```
+## PR #5944: "Feature: Add new API endpoint"
+
+### Pre-Existing Items (Auto-Resolve) (N total)
+
+| # | Type | Location | Summary |
+|---|------|----------|---------|
+| 1 | review | old_module.py:30 | Bot: use LBYL pattern (pre-existing in moved code) |
+| 2 | review | old_module.py:55 | Bot: add type annotation (pre-existing in moved code) |
+
+### Actionable Items (N total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | foo.py:42 | actionable | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | actionable | Add type annotation | local |
+| 3 | discussion | - | actionable | Update documentation | cross_cutting |
+
+### Informational Items (N total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 4 | review | utils.py:10 | Bot suggestion: extract helper (optional) | local |
+
+### Execution Plan Preview
+
+**Batch 0: Pre-Existing (Auto-Resolve)** (auto-proceed, no code changes)
+- Item #1: old_module.py:30 - Bot: use LBYL pattern (pre-existing)
+- Item #2: old_module.py:55 - Bot: add type annotation (pre-existing)
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #3: foo.py:42 - Use LBYL pattern
+- Item #4: bar.py:15 - Add type annotation
+
+**Batch 2: Cross-Cutting** (user confirmation)
+- Item #5: Update documentation
+
+**Batch 3: Informational** (user decides: act or dismiss)
+- Item #6: utils.py:10 - Bot suggestion: extract helper (optional)
+
+### Statistics
+- Pre-existing items (auto-resolve): 2
+- Actionable items: 3
+- Informational items: 1
+- Informational discussion comments: 12
+- Estimated batches: 4
+- Auto-proceed batches: 2
+- User confirmation batches: 2
+```
+
+**Note:** Items in `actionable_threads` are split into three sections based on their `pre_existing` and `classification` fields: `pre_existing: true` items appear under "Pre-Existing Items (Auto-Resolve)", `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". All sections use continuous item numbering.
+
+Add footer:
+
+```
+To address these comments, run: /erk:pr-address
+```
+
+### Phase 3: Exit (NO ACTIONS)
+
+**CRITICAL**: This is a preview-only command. Do NOT:
+
+- Make any code changes
+- Resolve any threads
+- Reply to any comments
+- Create any commits
+- Push anything to remote
+- Run any CI commands
+
+Simply display the summary and exit.
+
+## Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+</user>
+  <tool_use name="Skill" id="toolu_01Gc8tKE5wpZjX6a2qmReYaE">
+    <param name="skill">pr-feedback-classifier</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="47980" cache_read_input_tokens="19284" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 47980, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Gc8tKE5wpZjX6a2qmReYaE">
+Skill "pr-feedback-classifier" completed (forked execution).
+
+Result:
+Now I have all the data I need. Let me classify the feedback.
+
+**Analysis:**
+
+**git diff --stat**: No file renames, copies, or moves detected. All files are new additions or modifications. No restructuring occurred — only new files and modifications. Therefore `pre_existing` will be `false` for all threads.
+
+**Review threads:**
+- `PRRT_kwDOPxC3hc5yG7Rv`: Bot (`github-actions`) comment on `label_ops.py` line 1, requesting test coverage. This is an `actionable` bot comment requesting tests. No restructuring in the PR means `pre_existing: false`. Complexity: `local` (single file, specific location).
+
+**Discussion comments analysis:**
+- `3997563692` (schrockn): Graphite stack management comment — informational
+- `3997570014` (github-actions[bot]): Dignified Code Simplifier review — all passing, informational
+- `3997570481` (github-actions[bot]): Test Coverage Review showing 1 violation for `label_ops.py` — this is a bot status update (the inline thread already captures the actionable item). Informational.
+- `3997572937` (github-actions[bot]): Dignified Python Review — 0 violations, informational
+- `3997578020` (github-actions[bot]): Tripwires Review — 0 violations, informational
+- `3997579132` (github-actions[bot]): Earlier test coverage review bot comment — informational (superseded)
+- `3997580174` (github-actions[bot]): Test coverage bot comment — informational (captured by inline thread)
+- `3997734681` (github-actions[bot]): Garbled `$(cat /tmp/summary_comment.md)` — informational/noise
+- `3997906194` (schrockn): Response to a false positive — acknowledgment, informational
+- `3997906511` (schrockn): Response explaining action taken on test coverage — acknowledgment, informational
+
+No discussion comments are actionable. All are informational status updates, bot reviews, and acknowledgments.
+
+```json
+{
+  "success": true,
+  "pr_number": 8705,
+
+... [70 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <assistant>## PR #8705: "Extract PR label addition to resilient CLI command"
+
+### Actionable Items (1 total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | label_ops.py:1 | actionable | Add Layer 4 unit tests for `label_ops.py` (`add_labels_resilient` with retry handling) | single_file |
+
+### Execution Plan Preview
+
+**Batch 1: Single-File** (auto-proceed)
+- Item #1: label_ops.py:1 - Add unit tests for `add_labels_resilient`
+
+### Statistics
+- Pre-existing items (auto-resolve): 0
+- Actionable items: 1
+- Informational items: 0
+- Informational discussion comments: 10
+- Estimated batches: 1
+- Auto-proceed batches: 1
+- User confirmation batches: 0
+
+---
+
+To address these comments, run: `/erk:pr-address`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1467" cache_read_input_tokens="67264" output_tokens="250" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1467, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-address
+
+## Description
+
+Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+
+## Usage
+
+```bash
+/erk:pr-address
+/erk:pr-address --all               # Include resolved threads (for reference)
+/erk:pr-address --pr 6631           # Target specific PR
+/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Prerequisite
+
+**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+
+## Agent Instructions
+
+&gt; **Plan mode**: If plan mode is active, exit it first (press `Escape`). This command manages its own execution flow and needs to make edits directly.
+
+&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+&gt;
+&gt; See `pr-operations` skill for the complete command reference. Never use raw `gh api` calls for thread operations.
+
+### Phase 0: Mode Detection
+
+Determine the execution mode before any work begins:
+
+1. **Check for `erk-plan-review` label**:
+
+   ```bash
+   gh pr view --json labels -q '.labels[].name' | grep -q '^erk-plan-review$'
+   ```
+
+   If found → **Plan Review Mode** (existing behavior, see Plan Review Mode section in pr-address-workflows docs)
+
+2. **Check if `.erk/impl-context/plan.md` is git-tracked**:
+
+   ```bash
+   git ls-files --error-unmatch .erk/impl-context/plan.md &gt;/dev/null 2&gt;&amp;1
+   ```
+
+   If found → **Plan File Mode** (see below — skip Phases 1-6 entirely)
+
+3. **Neither** → **Code Review Mode** (continue to Phase 1)
+
+---
+
+### Plan File Mode
+
+&gt; **CRITICAL**: In Plan File Mode, you are editing a _document_ — the plan. When a reviewer says "make the language about X more emphatic" or "add a step for Y", you modify the plan _text_. You do NOT make changes to any files described in the plan.
+
+This mode activates when `.erk/impl-context/plan.md` is git-tracked (plan-only PRs). It is a **complete alternative flow** — Phases 1-6 are skipped entirely.
+
+#### PF-1: Classify Feedback
+
+Use the same Task-based classifier as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Handle errors and empty comments the same way as Phase 1.
+
+#### PF-2: Display Plan
+
+Show the batched execution plan from the classifier output, same format as Phase 2.
+
+#### PF-3: Execute by Batch
+
+For each batch, follow the same structure as Phase 3 with these constraints:
+
+- **ONLY edit `.erk/impl-context/plan.md`** (and `ref.json` if feedback targets it)
+- **Interpret all feedback as "modify the plan text"** — NEVER execute changes the plan describes
+- If a reviewer says "add a step to do X", add text to the plan describing step X. Do NOT actually do X.
+- Use `git add -f .erk/impl-context/plan.md` for commits (directory is gitignored)
+
+Commit messages follow the same batch format:
+
+```bash
+git add -f .erk/impl-context/plan.md
+git commit -m "Address plan review comments (batch N/M)
+
+- &lt;summary of comment 1&gt;
+- &lt;summary of comment 2&gt;"
+```
+
+#### PF-4: Resolve Threads
+
+Same as Phase 4 — resolve all threads via `erk exec resolve-review-threads`.
+
+#### PF-5: Push
+
+Push directly — plan PRs don't use graphite submit:
+
+```bash
+git push
+```
+
+#### PF-6: Done
+
+Skip `update-pr-description` and `upload-impl-session` — plan PRs have their own formatting and lifecycle.
+
+Report the final summary in the same format as Phase 4's final summary, then stop.
+
+---
+
+### Phase 1: Classify Feedback
+
+Use the Task tool (NOT a `/pr-feedback-classifier` skill invocation) to run the classifier. The skill's `context: fork` metadata does not create true subagent isolation in `--print` mode, so we must use an explicit Task tool call to guarantee the classifier runs in a separate agent context:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Classify PR feedback",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+Parse the JSON response. The skill returns:
+
+- `success`: Whether the operation succeeded
+- `pr_number`, `pr_title`, `pr_url`: PR metadata
+- `actionable_threads`: Array with `thread_id`, `path`, `line`, `classification`, `action_summary`, `complexity`
+  - `classification`: `"actionable"` (code changes needed) or `"informational"` (user decides to act or dismiss)
+- `discussion_actions`: Array with `comment_id`, `action_summary`, `complexity`
+- `batches`: Execution order with `item_indices` referencing the arrays above
+  - Includes an **Informational** batch (last) for `classification: "informational"` threads
+- `error`: Error message if `success` is false
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If both `actionable_threads` and `discussion_actions` are empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+### Phase 2: Display Batched Plan
+
+Show the user the batched execution plan from the classifier output:
+
+```
+## Execution Plan
+
+### Batch 1: Local Fixes (3 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | foo.py:42 | Use LBYL pattern |
+| 2 | bar.py:15 | Add type annotation |
+| 3 | baz.py:99 | Fix typo |
+
+### Batch 2: Single-File Changes (1 comment)
+| # | Location | Summary |
+|---|----------|---------|
+| 4 | impl.py (multiple) | Rename `old_name` to `new_name` throughout |
+
+### Batch 3: Cross-Cutting Changes (2 comments)
+| # | Location | Summary |
+|---|----------|---------|
+| 5 | Multiple files | Update all callers of deprecated function |
+| 6 | docs/ | Update documentation per reviewer request |
+
+### Batch 4: Complex Changes (2 comments -&gt; 1 unified change)
+| # | Location | Summary |
+|---|----------|---------|
+| 7 | impl.py:50 | Fold validate into prepare with union types |
+| 8 | cmd.py:100 | (related to #7 - same refactor) |
+```
+
+**User confirmation flow:**
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval before executing
+
+### Phase 3: Execute by Batch
+
+For each batch, execute this workflow using the thread IDs from the classifier JSON:
+
+#### Pre-Existing Batch (Special Handling)
+
+If the batch has `complexity: "pre_existing"`, handle it differently — no code changes, no CI, no commit:
+
+1. Resolve all threads in the batch via `erk exec resolve-review-threads` with a standard comment:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Pre-existing issue — this code was moved/restructured, not newly introduced."}, ...]' | erk exec resolve-review-threads
+```
+
+2. Report progress:
+
+```
+## Batch 0: Pre-Existing (Auto-Resolve)
+
+Auto-resolved N pre-existing threads (bot comments on moved/restructured code).
+No code changes needed.
+```
+
+3. Continue to the next batch. Skip Steps 1-5 below for this batch.
+
+#### Step 1: Address All Comments in the Batch
+
+For each comment in the batch:
+
+**For Informational Review Threads** (`classification: "informational"`):
+
+Present the user with a choice using AskUserQuestion:
+
+- **Act**: Make the suggested change, then resolve the thread
+- **Dismiss**: Resolve the thread without code changes (reply with a brief message like "Acknowledged, not acting on this suggestion")
+
+If the user chooses **Act**, proceed as a normal review thread (read file, make fix, track change). If the user chooses **Dismiss**, skip to Step 4 to resolve the thread with a dismissal reply.
+
+**For Actionable Review Threads** (`classification: "actionable"`):
+
+1. Read the file to understand context:
+   - If `line` is specified: Read around that line number
+   - If `line` is null (outdated thread): Read the entire file or search for relevant code mentioned in the comment
+2. Make the fix following the reviewer's feedback
+3. Track the change for the batch commit message
+
+**For Discussion Comments:**
+
+1. Determine if action is needed:
+   - If it's a request (e.g., "Please update docs"), take the requested action
+   - If it's a question, provide an answer or make clarifying changes
+   - If it's architectural feedback/suggestion, investigate the codebase to understand implications
+   - If it's just acknowledgment/thanks, note it and move on
+2. **Investigate the codebase** when the comment requires understanding existing code:
+   - Search for relevant patterns, existing implementations, or related code
+   - Note any interesting findings that inform your decision
+   - Record these findings - they become permanent documentation in the reply
+3. Take action if needed
+
+**Handling False Positives from Automated Reviewers:**
+
+Automated review bots (like `dignified-python-review`, linters, or security scanners) can flag false positives. Before making code changes:
+
+1. **Read the flagged code carefully** - understand what the bot is complaining about
+2. **Verify if it's a false positive** by checking:
+   - Is the pattern the bot wants already implemented nearby? (e.g., LBYL check already exists on a preceding line)
+   - Is the bot misunderstanding the code structure?
+   - Is the bot applying a rule that doesn't fit this specific context?
+3. **If it's a false positive**, do NOT make unnecessary code changes. Instead:
+   - Reply to the comment explaining why it's a false positive
+   - Reference specific line numbers where the correct pattern already exists
+   - Resolve the thread
+
+**For Outdated Review Threads** (`is_outdated: true`):
+
+Outdated threads have `line: null` because the code has changed since the comment was made.
+
+1. **Read the file** at the path (ignore line number - search for relevant code)
+2. **Check if the issue is already fixed** in the current code
+3. **Take action:**
+   - If already fixed -&gt; Proceed directly to Step 4 to resolve the thread
+   - If not fixed -&gt; Apply the fix, then proceed to Step 4
+
+**IMPORTANT**: Outdated threads MUST still be resolved via `erk exec resolve-review-thread`.
+Do not skip resolution just because no code change was needed.
+
+#### Step 2: Run CI Checks
+
+After making all changes in the batch:
+
+```bash
+# Run relevant CI checks for changed files
+# (This may vary by project - use project's test commands)
+```
+
+If CI fails, fix the issues before proceeding.
+
+#### Step 3: Commit the Batch
+
+Create a single commit for all changes in the batch:
+
+```bash
+git add &lt;changed files&gt;
+git commit -m "Address PR review comments (batch N/M)
+
+- &lt;summary of comment 1&gt;
+- &lt;summary of comment 2&gt;
+..."
+```
+
+**Note:** If any changed files are in `.erk/impl-context/` (plan-only PRs), use `git add -f` instead — the directory is gitignored.
+
+#### Step 4: Resolve All Threads in the Batch (MANDATORY)
+
+**This step is NOT optional.** Every thread must be resolved using the thread IDs from the classifier JSON.
+
+After committing, resolve review threads and mark discussion comments.
+
+**For Review Threads** - use the batch command `erk exec resolve-review-threads` to resolve all review threads in a single call. Pipe a JSON array via stdin:
+
+```bash
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed in commit abc1234"}, {"thread_id": "PRRT_def", "comment": "Applied suggestion"}]' | erk exec resolve-review-threads
+```
+
+Each item has `thread_id` (required) and `comment` (optional). Build the JSON array from the batch's thread IDs and resolution messages, then pipe it in one call.
+
+**For Discussion Comments** - use `erk exec reply-to-discussion-comment` with the `comment_id` from the JSON, with a substantive reply that quotes the original comment and explains what action was taken.
+
+#### Step 5: Report Progress
+
+After completing the batch, report:
+
+```
+## Batch N Complete
+
+Addressed:
+- foo.py:42 - Used LBYL pattern
+- bar.py:15 - Added type annotation
+
+Committed: abc1234 "Address PR review comments (batch 1/3)"
+
+Resolved threads: 2
+Remaining batches: 2
+```
+
+Then proceed to the next batch.
+
+### Phase 4: Final Verification
+
+After all batches complete, re-invoke the classifier to verify all threads are resolved. Use Task tool (NOT skill invocation) for the same `--print` mode isolation reason as Phase 1:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  model: "haiku",
+  description: "Verify PR feedback resolved",
+  prompt: "Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+           Arguments: [pass through --pr &lt;number&gt; if originally specified]
+           Return the complete JSON output as your final message."
+)
+```
+
+If `actionable_threads` or `discussion_actions` are non-empty, warn about remaining unresolved items. Both `actionable` and `informational` classified threads should be resolved (either by code changes or by dismissal).
+
+#### Report Final Summary
+
+```
+## All PR Comments Addressed
+
+Total comments: 8
+Pre-existing (auto-resolved): 3
+Actionable (code changes): 5
+Batches: 4
+Commits: 3
+
+All review threads resolved.
+All discussion comments marked with reaction.
+
+Next steps:
+1. Push changes:
+   - **Graphite repos**: `gt submit` (or `gt ss`)
+   - **Plain git repos**: `git push`
+   - If push is rejected (non-fast-forward): Run `/erk:reconcile-with-remote` to resolve. Do NOT use `git pull --rebase`.
+2. Wait for CI to pass
+3. Request re-review if needed
+```
+
+#### Handle Any Skipped Comments
+
+If the user explicitly skipped any comments during the process, list them:
+
+```
+## Skipped Comments (user choice)
+- #5: src/legacy.py:100 - "Refactor this module" (user deferred)
+```
+
+### Phase 5: Update PR Title and Body
+
+After all review comments have been addressed, update the PR to reflect the full scope of changes.
+
+Run:
+
+```bash
+erk exec update-pr-description --session-id "0a612dab-a8bc-429a-a7a7-f2d20d4ba539"
+```
+
+This generates an AI-powered title and body from the full PR diff, preserving existing header and footer metadata.
+
+### Phase 6: Upload Address Session
+
+After addressing review comments, upload the session for cross-machine learning.
+Resolve the plan_id from the current branch, then push the session:
+
+```bash
+erk exec upload-impl-session --session-id "0a612dab-a8bc-429a-a7a7-f2d20d4ba539" 2&gt;/dev/null || true
+```
+
+This is non-critical — if it fails (no plan tracking, no session found), addressing was still successful.
+
+### Common Mistakes
+
+See `pr-operations` skill for the complete table of common mistakes and correct approaches.
+
+### Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+
+**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+</user>
+  <thinking>Let me follow the pr-address workflow. First, I need to load the pr-operations skill, then check mode detection, then classify feedback.
+
+Let me start with mode detection and classification.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="4584" cache_read_input_tokens="68731" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4584}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me load the pr-operations skill and start the workflow.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="4584" cache_read_input_tokens="68731" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4584}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_012s1mvydmzLkPMXUywti42Q">
+    <param name="skill">pr-operations</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="4584" cache_read_input_tokens="68731" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4584}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012s1mvydmzLkPMXUywti42Q">
+Launching skill: pr-operations
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/better-labels/.claude/skills/pr-operations
+
+# PR Operations Skill
+
+## Core Rule
+
+&gt; **CRITICAL: Use ONLY `erk exec` Commands for PR Thread Operations**
+&gt;
+&gt; - ❌ DO NOT use raw `gh api` calls for thread operations
+&gt; - ❌ DO NOT use `gh pr` commands directly for thread resolution
+&gt; - ✅ ONLY use `erk exec` commands listed below
+&gt;
+&gt; The `erk exec` commands handle thread resolution correctly. Raw API calls only reply without resolving.
+
+## Quick Reference
+
+| Command                       | Purpose                           | Key Point                          |
+| ----------------------------- | --------------------------------- | ---------------------------------- |
+| `get-pr-review-comments`      | Fetch unresolved review threads   | Returns threads with line info     |
+| `get-pr-discussion-comments`  | Fetch PR discussion comments      | Returns top-level comments         |
+| `resolve-review-thread`       | Reply AND resolve a single thread | Does both in one operation         |
+| `resolve-review-threads`      | Batch resolve multiple threads    | JSON stdin, one call for N threads |
+| `reply-to-discussion-comment` | Reply to discussion comment       | For non-code feedback              |
+| `post-pr-inline-comment`      | Post new inline comment           | Creates new review thread          |
+
+## When to Use Each Command
+
+### Fetching Comments
+
+```bash
+# Get all unresolved review threads (code comments)
+erk exec get-pr-review-comments
+
+# Get all discussion comments (top-level PR comments)
+erk exec get-pr-discussion-comments
+
+# Include resolved threads (for reference)
+erk exec get-pr-review-comments --all
+```
+
+### Resolving Review Threads
+
+```bash
+# Resolve a single thread
+erk exec resolve-review-thread --thread-id "PRRT_abc123" --comment "Fixed in commit abc1234"
+
+# Batch resolve multiple threads (preferred for pr-address batches)
+echo '[{"thread_id": "PRRT_abc", "comment": "Fixed"}, {"thread_id": "PRRT_def", "comment": "Applied"}]' | erk exec resolve-review-threads
+```
+
+### Replying to Discussion Comments
+
+```bash
+# For PR discussion comments (not code review threads)
+erk exec reply-to-discussion-comment --comment-id 12345 --reply "**Action taken:** Updated the docs as requested."
+```
+
+## Common Mistakes
+
+| Mistake                                        | Why It's Wrong                | Correct Approach                      |
+| ---------------------------------------------- | ----------------------------- | ------------------------------------- |
+| Using `gh api repos/.../comments/{id}/replies` | Only replies, doesn't resolve | Use `erk exec resolve-review-thread`  |
+| Using `gh pr comment`                          | Doesn't resolve threads       | Use `erk exec resolve-review-thread`  |
+| Skipping resolution for outdated threads       | Threads stay open in PR       | Always resolve, even if already fixed |
+| Generic replies like "Noted"                   | Not useful for PR history     | Include investigation findings        |
+
+## Replying vs Resolving
+
+&gt; **IMPORTANT: Replying ≠ Resolving**
+&gt;
+&gt; - **Replying** (via raw `gh api .../replies`): Adds a comment but thread stays OPEN
+&gt; - **Resolving** (via `erk exec resolve-review-thread`): Adds a comment AND marks thread as RESOLVED
+&gt;
+&gt; Always use `erk exec resolve-review-thread` (single) or `erk exec resolve-review-threads` (batch) - they do both in one operation.
+
+## Comment Classification Model
+
+When analyzing PR feedback, classify comments by complexity and group into batches.
+
+### Complexity Categories
+
+- **Local fix**: Single comment → single location change (e.g., "Fix typo", "Add type annotation")
+- **Multi-location**: Single comment → changes in multiple spots in one file
+- **Cross-cutting**: Single comment → changes across multiple files
+- **Related**: Multiple comments that inform a single unified change
+
+### Batch Ordering
+
+Process batches from simplest to most complex:
+
+| Batch | Complexity                 | Description                         | Example                                                   |
+| ----- | -------------------------- | ----------------------------------- | --------------------------------------------------------- |
+| 1     | Local fixes                | One file, one location per comment  | "Use LBYL pattern at line 42"                             |
+| 2     | Single-file multi-location | One file, multiple locations        | "Rename this variable everywhere in this file"            |
+| 3     | Cross-cutting              | Multiple files affected             | "Update all callers of this function"                     |
+| 4     | Complex/Related            | Multiple comments inform one change | "Fold validate into prepare" + "Use union types for this" |
+
+**Note**: Discussion comments requiring doc updates go in Batch 3 (cross-cutting).
+
+### Batch Confirmation Flow
+
+- **Batch 1-2 (simple)**: Auto-proceed without confirmation
+- **Batch 3-4 (complex)**: Show plan and wait for user approval
+
+## Inline Comment Deduplication
+
+When posting inline review comments, always deduplicate to prevent re-posting existing comments:
+
+1. **Build dedup key**: `(file_path, line_number, body_prefix)` where prefix is first 80 characters of comment body
+2. **Check proximity**: Match within 2-line tolerance (line 42 matches existing comments at lines 40–44)
+3. **Skip duplicates**: If a matching key exists, do not post the comment
+
+This prevents the same feedback from appearing multiple times across review iterations. See [Inline Comment Deduplication](../../docs/learned/review/inline-comment-deduplication.md) for full algorithm details.
+
+## Detailed Documentation
+
+For complete command documentation including JSON output formats, options, and examples:
+
+@references/commands.md
+</user>
+  <tool_use name="Bash" id="toolu_01ESim12NBwePaGpoY1yY8Ex">
+    <param name="command">gh pr view --json labels -q '.labels[].name' | grep -q '^erk-plan-review$' &amp;&amp; echo "PLAN_REVIEW" || echo "NOT_PLAN_REVIEW"</param>
+    <param name="description">Check for plan-review label</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="4584" cache_read_input_tokens="68731" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4584}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ESim12NBwePaGpoY1yY8Ex">
+NOT_PLAN_REVIEW
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014cgLwoUw8NmzNEdGDdoqD4">
+    <param name="command">git ls-files --error-unmatch .erk/impl-context/plan.md &gt;/dev/null 2&gt;&amp;1 &amp;&amp; echo "PLAN_FILE" || echo "NOT_PLAN_FILE"</param>
+    <param name="description">Check for tracked plan file</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="4584" cache_read_input_tokens="68731" output_tokens="331" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4584, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014cgLwoUw8NmzNEdGDdoqD4">
+NOT_PLAN_FILE
+  </tool_result>
+  <assistant>
+
+Code Review Mode. Let me classify the feedback.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1969" cache_read_input_tokens="73315" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1969}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01PB9tWjJ463HGjS5atRGzYh">
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="description">Classify PR feedback</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Arguments: (no special arguments)
+Return the complete JSON output as your final message.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1969" cache_read_input_tokens="73315" output_tokens="163" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1969, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PB9tWjJ463HGjS5atRGzYh">
+Now I have the information needed. Let me classify the PR feedback based on the Comment Classification Model. I'll analyze the review threads and discussion comments systematically.
+
+From the `erk exec get-pr-feedback` output, I can see:
+
+**Review Threads (2):**
+1. `PRRT_kwDOPxC3hc5yG7Rv` - Line 1 of `label_ops.py` - github-actions bot: "Test Coverage: New source file without corresponding tests. This module contains business logic..."
+2. `PRRT_kwDOPxC3hc5yG9I_` - Line 1 of `label_ops.py` - github-actions bot: "Test Coverage: New business logic module requires dedicated Layer 4 unit tests..."
+
+**Discussion Comments (7):**
+1. Graphite stack comment (informational - stack management)
+2. Dignified Code Simplifier Review (informational - approval with details)
+3. Test Coverage Review (informational - status report)
+4. Dignified Python Review (informational - approval with details)
+5. Tripwires Review (informational - approval with details)
+6. Earlier Test Coverage Review (informational - status report)
+7. Summary comment placeholder
+8. User response addressing test coverage issue (informational - user action)
+9. User response addressing dignified python issue (informational - user action)
+
+**Key Analysis:**
+
+The two review threads are both from `github-actions[bot]` about test coverage for a new module (`label_ops.py`). However, looking at the discussion comments, the user (schrockn) has already addressed these issues with the comment at `3997906511` which says "Added Layer 4 unit tests in `tests/unit/cli/commands/exec/scripts/test_add_pr_labels_cmd.py`..." This indicates the issues have been resolved.
+
+However, since these are unresolved review threads (they appear in `review_threads`, not resolved), I need to classify them as **actionable** (bot comments requesting action). But the user has already added the tests as evidenced by the discussion comment.
+
+**Pre-existing Detection:** 
+- Both are bot comments
+- Authors are `github-actions`
+- No file restructuring detected in the branch (diff shows changes across multiple files but no renames/splits)
+- These are not pre-existing issues - they are new issues in the new code
+
+... [82 lines omitted] ...
+
+      "action_summary": "Add dedicated Layer 4 unit tests for label_ops with retry and error handling coverage",
+      "original_comment": "Test Coverage: New business logic module requires dedicated Layer 4 unit tests. Current coverage via CLI integration tests is incomplete—missing tests for transient errors, permanent errors, partial success, and error aggregation. Create `tests/unit/gateway/github/test_label_ops.py` with full coverage."
+  "error": null
+  </tool_result>
+  <assistant>## Execution Plan
+
+### Batch 1: Single-File (2 comments — both test coverage for label_ops.py)
+
+| # | Location | Summary |
+|---|----------|---------|
+| 1 | label_ops.py:1 | Add unit tests for new source file with business logic |
+| 2 | label_ops.py:1 | Add dedicated Layer 4 unit tests with retry/error coverage |
+
+Auto-proceeding (single-file batch). Both comments request the same thing — unit tests for `label_ops.py`. Let me read the module and the fake-driven-testing skill to write proper tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1581" cache_read_input_tokens="75284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1581}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01M26PfD3PNGUSnUebHGP8iN">
+    <param name="skill">fake-driven-testing</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1581" cache_read_input_tokens="75284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1581}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M26PfD3PNGUSnUebHGP8iN">
+Launching skill: fake-driven-testing
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/better-labels/.claude/skills/fake-driven-testing
+
+# Fake-Driven Testing Architecture for Python
+
+**Use this skill when**: Writing tests, fixing bugs, adding features, or modifying gateway layers in Python projects.
+
+**Prerequisites**: For Python code standards, load the `dignified-python-313` skill first. This skill focuses on testing architecture, not Python syntax.
+
+## Overview
+
+This skill provides a **defense-in-depth testing strategy** with five layers for Python applications:
+
+```
+┌─────────────────────────────────────────┐
+│  Layer 5: Business Logic Integration Tests (5%)  │  ← Smoke tests over real system
+├─────────────────────────────────────────┤
+│  Layer 4: Business Logic Tests (70%)   │  ← Tests over fakes (MOST TESTS)
+├─────────────────────────────────────────┤
+│  Layer 3: Pure Unit Tests (10%)        │  ← Zero dependencies, isolated testing
+├─────────────────────────────────────────┤
+│  Layer 2: Integration Sanity Tests (10%)│  ← Fast validation with mocking
+├─────────────────────────────────────────┤
+│  Layer 1: Fake Infrastructure Tests (5%)│  ← Verify test doubles work
+└─────────────────────────────────────────┘
+```
+
+**Philosophy**: Test business logic extensively over fast in-memory fakes. Use real implementations sparingly for integration validation.
+
+**Terminology note**: The "gateway layer" (also called adapters/providers) refers to thin wrappers around heavyweight external APIs (databases, filesystems, HTTP APIs, message queues, etc.). The pattern matters more than the name.
+
+## Quick Decision: What Should I Read?
+
+**Adding a feature or fixing a bug?**
+→ Read `quick-reference.md` first, then `workflows.md#adding-a-new-feature`
+
+**Need to understand where to put a test?**
+→ Read `testing-strategy.md`
+
+**Working with Python-specific patterns?**
+→ Read `python-specific.md`
+
+**Adding/changing a gateway interface?**
+→ Read `gateway-architecture.md`, then `workflows.md#adding-a-gateway-method`
+
+**Creating a backend (higher-level abstraction over gateways)?**
+→ Read `gateway-architecture.md#gateways-vs-backends` - backends compose gateways and do NOT have fakes
+
+**Need to implement a specific pattern (CliRunner, builders, etc.)?**
+→ Read `patterns.md`
+
+**Not sure if I'm doing it right?**
+→ Read `anti-patterns.md`
+
+**Just need a quick lookup?**
+→ Read `quick-reference.md`
+
+## When to Read Each Reference Document
+
+### 📖 `gateway-architecture.md`
+
+**Read when**:
+
+- Adding or changing gateway/ABC interfaces
+- Understanding the ABC/Real/Fake/DryRun pattern
+- Need examples of gateway implementations
+- Want to understand what gateways are (and why they're thin)
+- **Creating a backend** (higher-level abstraction that composes gateways)
+
+**Contents**:
+
+- What are gateway classes? (naming: gateways/adapters/providers)
+- The four implementations (ABC, Real, Fake, DryRun)
+- Code examples for each
+- When to add/change gateway methods
+- Design principles (keep gateways thin)
+- Common gateway types (Database, API, FileSystem, MessageQueue)
+- **Gateways vs Backends** - critical distinction for DI boundaries
+
+### 📖 `testing-strategy.md`
+
+**Read when**:
+
+- Deciding where to put a test
+- Understanding the five testing layers
+- Need test distribution guidance (5/70/10/10/5 rule)
+- Want to know which layer tests what
+
+**Contents**:
+
+- Layer 1: Unit tests of fakes (verify test infrastructure)
+- Layer 2: Integration sanity tests with mocking (quick validation)
+- Layer 3: Pure unit tests (zero dependencies, isolated testing)
+- Layer 4: Business logic over fakes (majority of tests)
+- Layer 5: Business logic integration tests (smoke tests over real systems)
+- Decision tree: where should my test go?
+- Test distribution examples
+
+### 📖 `python-specific.md`
+
+**Read when**:
+
+- Working with pytest fixtures
+- Need Python mocking patterns
+- Testing Flask/FastAPI/Django applications
+- Understanding Python testing tools
+- Need Python-specific commands
+
+**Contents**:
+
+- pytest fixtures and parametrization
+- Mocking with unittest.mock and pytest-mock
+- Testing web frameworks (Flask, FastAPI, Django)
+- Python testing commands
+- Type hints in tests
+- Python packaging for test utilities
+
+### 📖 `workflows.md`
+
+**Read when**:
+
+- Adding a new feature (step-by-step)
+- Fixing a bug (step-by-step)
+- Adding a gateway method (complete checklist)
+- Changing an interface (what to update)
+- Managing dry-run features
+
+**Contents**:
+
+- Adding a new feature (TDD workflow)
+- Fixing a bug (reproduce → fix → regression test)
+- Adding a gateway method (8-step checklist with examples)
+- Changing an interface (update all layers)
+- Managing dry-run features (wrapping pattern)
+- Testing with builder patterns
+
+### 📖 `patterns.md`
+
+**Read when**:
+
+- Implementing constructor injection for fakes
+- Adding mutation tracking to fakes
+- Using CliRunner for CLI tests
+- Building complex test scenarios with builders
+- Testing dry-run behavior
+- Need code examples of specific patterns
+
+**Contents**:
+
+- Constructor injection (how and why)
+- Mutation tracking properties (read-only access)
+- Using CliRunner (not subprocess)
+- Builder patterns for complex scenarios
+- Simulated environment pattern
+- Error injection pattern
+- Dry-run testing pattern
+
+### 📖 `anti-patterns.md`
+
+**Read when**:
+
+- Unsure if your approach is correct
+- Want to avoid common mistakes
+- Reviewing code for bad patterns
+- Debugging why tests are slow/brittle
+
+**Contents**:
+
+- ❌ Testing speculative features
+- ❌ Hardcoded paths in tests (catastrophic)
+- ❌ Not updating all layers
+- ❌ Using subprocess in unit tests
+- ❌ Complex logic in gateway classes
+- ❌ Fakes with I/O operations
+- ❌ Testing implementation details
+- ❌ Incomplete test coverage for gateways
+
+### 📖 `quick-reference.md`
+
+**Read when**:
+
+- Quick lookup for file locations
+- Finding example tests to reference
+- Looking up common fixtures
+- Need command reference
+- Want test distribution guidelines
+
+**Contents**:
+
+- Decision tree (where to add test)
+- File location map (source + tests)
+- Common fixtures (tmp_path, CliRunner, etc.)
+- Common test patterns (code snippets)
+- Example tests to reference
+- Useful commands (pytest, ty, etc.)
+- Quick checklist for adding gateway methods
+
+## Quick Navigation by Task
+
+### I'm adding a new feature
+
+1. **Quick start**: `quick-reference.md` → Decision tree
+2. **Step-by-step**: `workflows.md#adding-a-new-feature`
+3. **Patterns**: `patterns.md` (CliRunner, builders)
+4. **Avoid**: `anti-patterns.md` (speculative tests, hardcoded paths)
+
+### I'm fixing a bug
+
+1. **Step-by-step**: `workflows.md#fixing-a-bug`
+2. **Patterns**: `patterns.md#constructor-injection-for-fakes`
+3. **Examples**: `quick-reference.md#example-tests-to-reference`
+
+### I'm adding/changing a gateway method
+
+1. **Understanding**: `gateway-architecture.md`
+2. **Step-by-step**: `workflows.md#adding-a-gateway-method`
+3. **Checklist**: `quick-reference.md#quick-checklist-adding-a-new-gateway-method`
+4. **Avoid**: `anti-patterns.md#not-updating-all-layers`
+
+### I don't know where my test should go
+
+1. **Decision tree**: `quick-reference.md#decision-tree`
+2. **Detailed guide**: `testing-strategy.md`
+3. **Examples**: `quick-reference.md#example-tests-to-reference`
+
+### I need to implement a pattern
+
+1. **All patterns**: `patterns.md`
+2. **Examples**: `quick-reference.md#common-test-patterns`
+
+### I think I'm doing something wrong
+
+1. **Anti-patterns**: `anti-patterns.md`
+2. **Correct approach**: `workflows.md`
+
+## Visual Layer Guide
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 5: Business Logic Integration Tests (5%)               │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Real database, filesystem, APIs, actual subprocess        │ │
+│ │ Purpose: Smoke tests, catch integration issues           │ │
+│ │ When: Sparingly, for critical workflows                  │ │
+│ │ Speed: Seconds per test                                   │ │
+│ │ Location: tests/e2e/ or tests/integration/               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 4: Business Logic Tests (70%) ← MOST TESTS HERE       │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ FakeDatabase, FakeApiClient, FakeFileSystem              │ │
+│ │ Purpose: Test features and business logic extensively    │ │
+│ │ When: For EVERY feature and bug fix                      │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/, tests/services/, tests/commands/  │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 3: Pure Unit Tests (10%)                               │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Zero dependencies, no fakes, no mocks                    │ │
+│ │ Purpose: Test isolated utilities and helpers             │ │
+│ │ When: For pure functions, data structures, parsers       │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/                                     │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 2: Integration Sanity Tests (10%)                      │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ RealDatabase with mocked connections                     │ │
+│ │ Purpose: Quick validation, catch syntax errors           │ │
+│ │ When: When adding/changing real implementation           │ │
+│ │ Speed: Fast (mocked)                                      │ │
+│ │ Location: tests/integration/test_real_*.py               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Layer 1: Fake Infrastructure Tests (5%)                      │
+│ ┌──────────────────────────────────────────────────────────┐ │
+│ │ Test FakeDatabase itself                                 │ │
+│ │ Purpose: Verify test infrastructure is reliable          │ │
+│ │ When: When adding/changing fake implementation           │ │
+│ │ Speed: Milliseconds per test                              │ │
+│ │ Location: tests/unit/fakes/test_fake_*.py               │ │
+│ └──────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+```
+
+## Key Principles
+
+1. **Thin gateway layer**: Wrap external state, push complexity to business logic
+2. **Fast tests over fakes**: 70% of tests should use in-memory fakes
+3. **Defense in depth**: Fakes → sanity tests → pure unit → business logic → integration
+4. **Test what you're building**: No speculative tests, only active work
+5. **Update all layers**: When changing interfaces, update ABC/real/fake/dry-run
+6. **Gateways vs Backends**: Gateways have fakes; backends compose gateways and do NOT have fakes
+
+## Layer Selection Guide
+
+**Distinguishing Layer 3 (Pure Unit) from Layer 4 (Business Logic):**
+
+- **Layer 3 (Pure Unit Tests)**: ZERO dependencies - no fakes, no mocks, no external state
+  - Testing string utilities: `sanitize_branch_name("feat/FOO")` → `"feat-foo"`
+  - Testing parsers: `parse_git_status("## main")` → `{"branch": "main"}`
+  - Testing data structures: `LinkedList.append()` without any external dependencies
+
+- **Layer 4 (Business Logic Tests)**: Uses fakes for external dependencies
+  - Testing commands: `create_worktree(fake_git, name="feature")`
+  - Testing workflows: `submit_pr(fake_gh, fake_git, ...)`
+  - Testing business logic that coordinates multiple integrations
+
+**If your test imports a Fake\*, it belongs in Layer 4, not Layer 3.**
+
+## Default Testing Strategy
+
+**When in doubt**:
+
+- Write test over fakes (Layer 4) for business logic
+- Write pure unit test (Layer 3) for utilities/helpers with no dependencies
+- Use `pytest` with fixtures
+- Use `tmp_path` fixture (not hardcoded paths)
+- Follow examples in `quick-reference.md`
+
+## Summary
+
+**For quick tasks**: Start with `quick-reference.md`
+
+**For understanding**: Start with `testing-strategy.md` or `gateway-architecture.md`
+
+**For step-by-step guidance**: Use `workflows.md`
+
+**For implementation details**: Use `patterns.md`
+
+**For validation**: Check `anti-patterns.md`
+
+**For Python specifics**: Check `python-specific.md`
+</user>
+  <tool_use name="Read" id="toolu_01Fcsu94UNNq6AszoAtb5JEc">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/gateway/github/label_ops.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1581" cache_read_input_tokens="75284" output_tokens="284" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1581, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Fcsu94UNNq6AszoAtb5JEc">
+     1→"""Resilient label addition using the GitHub gateway with retry."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import logging
+     6→from dataclasses import dataclass
+     7→from pathlib import Path
+     8→
+     9→from erk_shared.gateway.github.abc import GitHub
+    10→from erk_shared.gateway.github.retry import RetriesExhausted, RetryRequested, with_retries
+    11→from erk_shared.gateway.github.transient_errors import is_transient_error
+    12→from erk_shared.gateway.time.abc import Time
+    13→
+    14→
+    15→@dataclass(frozen=True)
+    16→class AddLabelsResult:
+    17→    """Result from adding labels to a PR."""
+    18→
+    19→    success: bool
+    20→    pr_number: int
+    21→    added_labels: list[str]
+    22→    failed_labels: list[str]
+    23→    errors: dict[str, str]
+    24→
+    25→
+    26→def add_labels_resilient(
+    27→    github: GitHub,
+    28→    *,
+    29→    time: Time,
+    30→    repo_root: Path,
+
+... [43 lines omitted] ...
+
+    34→    """Add labels to a PR with retry on transient errors. Never raises."""
+    37→    failed: dict[str, str] = {}
+    45→            except RuntimeError as e:
+    46→                if is_transient_error(str(e)):
+    53→                failed[label] = result.reason
+    54→                logger.warning(
+    55→                    "Failed to add label '%s' to PR #%d after retries: %s",
+    62→        except RuntimeError as e:
+    63→            failed[label] = str(e)
+    64→            logger.warning("Failed to add label '%s' to PR #%d: %s", label, pr_number, e)
+    67→        success=len(failed) == 0,
+    70→        failed_labels=list(failed.keys()),
+    71→        errors=failed,
+  </tool_result>
+  <assistant>
+
+Now let me find existing test patterns and the FakeGitHub to write proper Layer 4 tests.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="4870" cache_read_input_tokens="76865" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4870}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_013aGdnMr4RMxvqoAzp4CvNj">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Find test patterns for label_ops</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 745 chars]... thorough - I need the FakeGitHub's add_label_to_pr signature and how it simulates errors.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="4870" cache_read_input_tokens="76865" output_tokens="404" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4870, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013aGdnMr4RMxvqoAzp4CvNj">
+Perfect! Now I have all the information needed. Let me create a comprehensive summary document.
+
+## Summary: Layer 4 Unit Test Components for `label_ops.py`
+
+### 1. FakeGitHub Class
+**Location:** `/Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/gateway/github/fake.py`
+
+**Key Method - `add_label_to_pr`** (lines 833-847):
+```python
+def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -&gt; None:
+    """Record label addition in mutation tracking list and update internal state."""
+    self._added_labels.append((pr_number, label))
+    if pr_number not in self._pr_labels:
+        self._pr_labels[pr_number] = set()
+    self._pr_labels[pr_number].add(label)
+
+    # Keep PRDetails labels in sync
+    if pr_number in self._pr_details:
+        old = self._pr_details[pr_number]
+        if label not in old.labels:
+            updated = dataclasses.replace(old, labels=old.labels + (label,))
+            self._pr_details[pr_number] = updated
+            if old.head_ref_name in self._prs_by_branch:
+                self._prs_by_branch[old.head_ref_name] = updated
+```
+
+**Signature:** `add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -&gt; None`
+- Takes `repo_root` (Path), `pr_number` (int), and `label` (str)
+- Does NOT raise exceptions - it records mutations
+- Tracks calls via `_added_labels` property (list of tuples)
+
+... [206 lines omitted] ...
+
+**Error Injection Pattern:**
+FakeGitHub currently has NO error injection for `add_label_to_pr`. Similar patterns exist for:
+- `pr_diff_error` parameter (line 72)
+- `workflow_runs_error` parameter (line 73)
+These are used like: `raise RuntimeError(self._pr_diff_error)` when conditions are met.
+- No explicit error injection parameter for `add_label_to_pr` (but could be added if needed)
+    """Returned by with_retries when all retry attempts failed."""
+- Exceptions from callback bubble up immediately (permanent failure)
+### 4. is_transient_error Function
+**Location:** `/Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/gateway/github/transient_errors.py`
+def is_transient_error(error_message: str) -&gt; bool:
+- Returns False for unknown error types (permanent failures)
+- `failed_labels: list[str]` - Failed label names
+- `errors: dict[str, str]` - Error messages by label name
+- If RuntimeError with transient error message, returns `RetryRequested`
+- Catches `RetriesExhausted` and non-transient RuntimeErrors
+   - Check `result.failed_labels` (list[str])
+   - Check `result.errors` (dict[str, str])
+3. **Error Injection Needed:**
+   - FakeGitHub currently lacks error injection for `add_label_to_pr`
+   - You'll need to add a parameter like `add_label_to_pr_error` or create a custom callback
+   - Success with retry: Transient error then success
+   - Exhausted retries: Max attempts reached, label failed
+   - Non-transient error: Permanent failure, no retries
+  </tool_result>
+  <thinking>I need to write Layer 4 tests for `label_ops.py`. The key challenge is that FakeGitHub doesn't have error injection for `add_label_to_pr`. I need to either:
+1. Add error injection to FakeGitHub
+2. Create a test-specific subclass
+
+Given the existing patterns (like `pr_diff_error`), adding an error injection parameter would be most consistent. But the exploration found no existing parameter. Let me check the FakeGitHub class more carefully and the existing test for the CLI command.
+
+Actually, let me look at how tests handle this. The test for `add_pr_labels_cmd` seems to test success cases only. 
+
+For error scenarios, I'll need to add error injection to FakeGitHub to stay consistent with the existing patterns, though I should verify whether extending the fake or creating a minimal test double would be more appropriate given the gateway architecture. I'm settling on adding a `label_errors` parameter to FakeGitHub that maps label names to error messages—when `add_label_to_pr` gets called with a matching label, it raises RuntimeError. This fits the existing pattern and keeps the test infrastructure clean within this PR. Let me check the FakeGitHub constructor to see how other error parameters are structured.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3220" cache_read_input_tokens="81735" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3220}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I need to add error injection to FakeGitHub for `add_label_to_pr`. Let me read the relevant parts.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3220" cache_read_input_tokens="81735" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3220}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Y2fa5eDNU2bhZnHAe7Q7Ek">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="offset">44</param>
+    <param name="limit">45</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3220" cache_read_input_tokens="81735" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3220}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y2fa5eDNU2bhZnHAe7Q7Ek">
+    44→    def __init__(
+    45→        self,
+    46→        *,
+    47→        repo_info: RepoInfo | None = None,
+    48→        prs: dict[str, PullRequestInfo] | None = None,
+    49→        pr_bases: dict[int, str] | None = None,
+    50→        pr_details: dict[int, PRDetails] | None = None,
+    51→        prs_by_branch: dict[str, PRDetails] | None = None,
+    52→        workflow_runs: list[WorkflowRun] | None = None,
+    53→        workflow_runs_by_node_id: dict[str, WorkflowRun] | None = None,
+    54→        run_logs: dict[str, str] | None = None,
+    55→        pr_plan_linkages: dict[int, list[PullRequestInfo]] | None = None,
+    56→        polled_run_id: str | None = None,
+    57→        authenticated: bool = True,
+    58→        auth_username: str | None = "test-user",
+    59→        auth_hostname: str | None = "github.com",
+    60→        issues_gateway: GitHubIssues | None = None,
+    61→        issues_data: list[IssueInfo] | None = None,
+    62→        pr_titles: dict[int, str] | None = None,
+    63→        pr_bodies_by_number: dict[int, str] | None = None,
+    64→        pr_diffs: dict[int, str] | None = None,
+    65→        pr_changed_files: dict[int, list[str]] | None = None,
+    66→        merge_should_succeed: bool = True,
+    67→        pr_update_should_succeed: bool = True,
+    68→        pr_review_threads: dict[int, list[PRReviewThread]] | None = None,
+    69→        pr_check_runs: dict[int, list[PRCheckRun]] | None = None,
+    70→        review_threads_rate_limited: bool = False,
+    71→        resolve_thread_failures: set[str] | None = None,
+    72→        pr_diff_error: str | None = None,
+    73→        workflow_runs_error: str | None = None,
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_012SW3zUt9iUvYiWyAFqVPqk">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="offset">825</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3220" cache_read_input_tokens="81735" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3220}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012SW3zUt9iUvYiWyAFqVPqk">
+   825→
+   826→    def get_pr_changed_files(self, repo_root: Path, pr_number: int) -&gt; list[str]:
+   827→        """Get list of files changed in a PR from pre-configured data.
+   828→
+   829→        Returns pre-configured file list or empty list if not configured.
+   830→        """
+   831→        return self._pr_changed_files.get(pr_number, [])
+   832→
+   833→    def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -&gt; None:
+   834→        """Record label addition in mutation tracking list and update internal state."""
+   835→        self._added_labels.append((pr_number, label))
+   836→        if pr_number not in self._pr_labels:
+   837→            self._pr_labels[pr_number] = set()
+   838→        self._pr_labels[pr_number].add(label)
+   839→
+   840→        # Keep PRDetails labels in sync
+   841→        if pr_number in self._pr_details:
+   842→            old = self._pr_details[pr_number]
+   843→            if label not in old.labels:
+   844→                updated = dataclasses.replace(old, labels=old.labels + (label,))
+   845→                self._pr_details[pr_number] = updated
+   846→                if old.head_ref_name in self._prs_by_branch:
+   847→                    self._prs_by_branch[old.head_ref_name] = updated
+   848→
+   849→    def has_pr_label(self, repo_root: Path, pr_number: int, label: str) -&gt; bool:
+   850→        """Check if a PR has a specific label from configured state."""
+   851→        if pr_number not in self._pr_labels:
+   852→            return False
+   853→        return label in self._pr_labels[pr_number]
+   854→
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>I need to add error injection to `add_label_to_pr`. Let me also check the existing test file for patterns.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2628" cache_read_input_tokens="84955" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2628}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QMEfadMtNNpceNnYButAmr">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/tests/unit/cli/commands/exec/scripts/test_add_pr_labels_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2628" cache_read_input_tokens="84955" output_tokens="127" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2628, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QMEfadMtNNpceNnYButAmr">
+     1→"""Unit tests for add-pr-labels exec command."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.add_pr_labels_cmd import add_pr_labels
+     9→from erk_shared.context.context import ErkContext
+    10→from erk_shared.gateway.github.fake import FakeGitHub
+    11→from erk_shared.gateway.github.types import PRDetails
+    12→
+    13→
+    14→def _make_pr_details(*, number: int = 42) -&gt; PRDetails:
+    15→    """Create a minimal PRDetails for testing."""
+    16→    return PRDetails(
+    17→        number=number,
+    18→        url=f"https://github.com/test/repo/pull/{number}",
+    19→        title="Test PR",
+    20→        body="body",
+    21→        state="OPEN",
+    22→        is_draft=False,
+    23→        base_ref_name="main",
+    24→        head_ref_name="feature",
+    25→        is_cross_repository=False,
+    26→        mergeable="MERGEABLE",
+    27→        merge_state_status="CLEAN",
+    28→        owner="test",
+    29→        repo="repo",
+    30→        labels=(),
+
+... [58 lines omitted] ...
+
+    48→    assert result.exit_code == 0, f"Failed: {result.output}"
+    52→    assert output["failed_labels"] == []
+    69→    assert "not found" in output["error"]
+  </tool_result>
+  <assistant>Now I need to add error injection to FakeGitHub and write the tests. Let me first add the `add_label_error` parameter to FakeGitHub.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5441" cache_read_input_tokens="87583" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5441}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CLkyGJQRTEuhwAa4T3uC3Z">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="offset">80</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5441" cache_read_input_tokens="87583" output_tokens="170" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5441, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CLkyGJQRTEuhwAa4T3uC3Z">
+    80→    ) -&gt; None:
+    81→        """Create FakeGitHub with pre-configured state.
+    82→
+    83→        Args:
+    84→            repo_info: Repository owner/name info (defaults to test-owner/test-repo)
+    85→            prs: Mapping of branch name -&gt; PullRequestInfo
+    86→            pr_bases: Mapping of pr_number -&gt; base_branch
+    87→            pr_details: Mapping of pr_number -&gt; PRDetails for get_pr() and get_pr_for_branch()
+    88→            prs_by_branch: Mapping of branch name -&gt; PRDetails (simpler than prs + pr_details)
+    89→            workflow_runs: List of WorkflowRun objects to return from list_workflow_runs
+    90→            workflow_runs_by_node_id: Mapping of GraphQL node_id -&gt; WorkflowRun for
+    91→                                     get_workflow_runs_by_node_ids()
+    92→            run_logs: Mapping of run_id -&gt; log string
+    93→            pr_plan_linkages: Mapping of plan_number -&gt; list[PullRequestInfo]
+    94→            polled_run_id: Run ID to return from poll_for_workflow_run (None for timeout)
+    95→            authenticated: Whether gh CLI is authenticated (default True for test convenience)
+    96→            auth_username: Username returned by check_auth_status() (default "test-user")
+    97→            auth_hostname: Hostname returned by check_auth_status() (default "github.com")
+    98→            issues_gateway: Optional GitHubIssues implementation. If None, creates
+    99→                           FakeGitHubIssues with default empty state.
+   100→            issues_data: List of IssueInfo objects for get_issues_with_pr_linkages()
+   101→            pr_titles: Mapping of pr_number -&gt; title for explicit title storage
+   102→            pr_bodies_by_number: Mapping of pr_number -&gt; body for explicit body storage
+   103→            pr_diffs: Mapping of pr_number -&gt; diff content
+   104→            pr_changed_files: Mapping of pr_number -&gt; list of changed file paths
+   105→            merge_should_succeed: Whether merge_pr() should succeed (default True)
+   106→            pr_update_should_succeed: Whether PR updates should succeed (default True)
+   107→            pr_review_threads: Mapping of pr_number -&gt; list[PRReviewThread]
+   108→            review_threads_rate_limited: Whether get_pr_review_threads() should raise
+   109→                RuntimeError simulating GraphQL rate limit
+
+... [50 lines omitted] ...
+
+   110→            resolve_thread_failures: Set of thread IDs that should fail when resolved
+   111→            pr_diff_error: If set, get_pr_diff() raises RuntimeError with this message.
+   112→                Use to simulate HTTP 406 "diff too large" errors.
+   113→            workflow_runs_error: If set, get_workflow_runs_by_node_ids() raises
+   114→                RuntimeError with this message. Use to simulate API failures.
+   118→                False or raise to simulate failure.
+   154→        self._resolve_thread_failures = resolve_thread_failures or set()
+   155→        self._pr_diff_error = pr_diff_error
+   156→        self._workflow_runs_error = workflow_runs_error
+  </tool_result>
+  <tool_use name="Read" id="toolu_01L879EgUDwY7rcir1EYUk5q">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="offset">159</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1782" cache_read_input_tokens="93024" output_tokens="131" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1782, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01L879EgUDwY7rcir1EYUk5q">
+   159→        self._downloaded_artifacts: list[tuple[str, str, Path]] = []
+   160→        self._next_pr_number = 999
+   161→        self._updated_pr_bases: list[tuple[int, str]] = []
+   162→        self._updated_pr_bodies: list[tuple[int, str]] = []
+   163→        self._updated_pr_titles: list[tuple[int, str]] = []
+   164→        self._merged_prs: list[int] = []
+   165→        self._closed_prs: list[int] = []
+   166→        self._marked_pr_ready: list[int] = []
+   167→        self._triggered_workflows: list[tuple[str, dict[str, str], str | None]] = []
+   168→        self._poll_attempts: list[tuple[str, str, int, int]] = []
+   169→        self._check_auth_status_calls: list[None] = []
+   170→        self._created_prs: list[tuple[str, str, str, str | None, bool]] = []
+   171→        self._pr_labels: dict[int, set[str]] = {}
+   172→        self._added_labels: list[tuple[int, str]] = []
+   173→        self._pr_review_threads = pr_review_threads or {}
+   174→        self._pr_check_runs: dict[int, list[PRCheckRun]] = pr_check_runs or {}
+   175→        self._resolved_thread_ids: set[str] = set()
+   176→        self._thread_replies: list[tuple[str, str]] = []
+   177→        self._pr_review_comments: list[tuple[int, str, str, str, int]] = []
+   178→        self._pr_comments: list[tuple[int, str]] = []
+   179→        self._pr_comment_updates: list[tuple[int, str]] = []
+   180→        self._next_comment_id = 1000000
+   181→        self._deleted_remote_branches: list[str] = []
+   182→        # Ordered log of all mutation operations for testing operation ordering
+   183→        self._operation_log: list[tuple[Any, ...]] = []
+   184→        # (repo, sha, state, context, description)
+   185→        self._created_commit_statuses: list[tuple[str, str, str, str, str]] = []
+   186→        self._plan_pr_details = plan_pr_details or ([], {}, 0)
+   187→        self._ci_summary_logs = ci_summary_logs or {}
+   188→
+  </tool_result>
+  <assistant>Now I'll add the `add_label_errors` parameter and update `add_label_to_pr`. Then write the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="788" cache_read_input_tokens="94806" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 788}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JYKF7zMgibwDReyKNP8ghs">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="old_string">        ci_summary_logs: dict[str, str] | None = None,
+        time: Time | None = None,</param>
+    <param name="new_string">        ci_summary_logs: dict[str, str] | None = None,
+        time: Time | None = None,
+        add_label_errors: dict[str, str] | None = None,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="788" cache_read_input_tokens="94806" output_tokens="238" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 788, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JYKF7zMgibwDReyKNP8ghs">
+The file /Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/gateway/github/fake.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the storage of the parameter in __init__:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="320" cache_read_input_tokens="95594" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 320}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01XxhUQ8pJj9cxwpyfbMXZy4">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="old_string">        self._ci_summary_logs = ci_summary_logs or {}</param>
+    <param name="new_string">        self._ci_summary_logs = ci_summary_logs or {}
+        self._add_label_errors = add_label_errors or {}</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="320" cache_read_input_tokens="95594" output_tokens="214" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 320, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XxhUQ8pJj9cxwpyfbMXZy4">
+The file /Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/gateway/github/fake.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `add_label_to_pr` to check for errors:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="277" cache_read_input_tokens="95914" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 277}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SefkiXJDZ432VA7AjiGgm8">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="old_string">    def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -&gt; None:
+      ...[truncated 26 chars]...g list and update internal state."""
+        self._added_labels.append((pr_number, label))</param>
+    <param name="new_string">    def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -&gt; None:
+      ...[truncated 132 chars]...Error(self._add_label_errors[label])
+        self._added_labels.append((pr_number, label))</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="277" cache_read_input_tokens="95914" output_tokens="322" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 277, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SefkiXJDZ432VA7AjiGgm8">
+The file /Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/gateway/github/fake.py has been updated successfully.
+  </tool_result>
+  <assistant>Now check the test directory structure and write the test file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="496" cache_read_input_tokens="96191" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 496}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011qUpfg3Rom5AAuiZiY3jHf">
+    <param name="command">ls /Users/schrockn/.erk/repos/erk/worktrees/better-labels/tests/unit/gateways/github/</param>
+    <param name="description">List existing gateway test files</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="496" cache_read_input_tokens="96191" output_tokens="120" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 496, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011qUpfg3Rom5AAuiZiY3jHf">
+__init__.py
+__pycache__
+metadata_blocks
+test_emoji.py
+test_parse_check_runs.py
+test_real.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_011inHo2wjSC6Z4kJjC5WD4E">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/packages/erk-shared/src/erk_shared/gateway/github/retry.py</param>
+    <param name="offset">47</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="168" cache_read_input_tokens="96687" output_tokens="131" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 168, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011inHo2wjSC6Z4kJjC5WD4E">
+    47→def with_retries(
+    48→    time: Time,
+    49→    operation_name: str,
+    50→    fn: Callable[[], T | RetryRequested],
+    51→    retry_delays: list[float] | None = None,
+    52→) -&gt; T | RetriesExhausted:
+    53→    """Execute function with configurable retry logic.
+    54→
+    55→    Supports both transient error retry (quick exponential backoff) and
+    56→    eventual consistency polling (longer constant intervals).
+    57→
+    58→    The callback controls retry behavior by returning RetryRequested sentinel.
+    59→    Any exception from callback bubbles up immediately (permanent failure).
+    60→
+    61→    Args:
+    62→        time: Time abstraction for sleep operations
+    63→        operation_name: Description for logging
+    64→        fn: Function to execute with retries. Should return RetryRequested to retry,
+    65→           or return success value. Exceptions indicate permanent failure.
+    66→        retry_delays: Custom delays. Defaults to [0.5, 1.0] for transient errors.
+    67→                     Use [2.0] * 15 for polling (30s total).
+    68→
+    69→    Returns:
+    70→        Success value from callback, or RetriesExhausted if all attempts failed
+    71→
+    72→    Examples:
+    73→        # Transient error retry (callback catches and converts to RetryRequested):
+    74→        def fetch_with_retry():
+    75→            try:
+    76→                return self._api.get_comment_by_id(id)
+  </tool_result>
+  <assistant>Now I'll write the test file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="546" cache_read_input_tokens="96855" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 546}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_011mhMwvpUe37KtviGPnYBZd">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/better-labels/tests/unit/gateways/github/test_label_ops.py</param>
+    <param name="content">"""Layer 4 unit tests for add_labels_resilient."""
+
+from __future__ import annotations
+
+fr...[truncated 3951 chars]...ad-label"]
+    assert fake_github.added_labels == [(42, "good-label"), (42, "also-good")]
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="546" cache_read_input_tokens="96855" output_tokens="1429" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 546, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011mhMwvpUe37KtviGPnYBZd">
+File created successfully at: /Users/schrockn/.erk/repos/erk/worktrees/better-labels/tests/unit/gateways/github/test_label_ops.py
+  </tool_result>
+  <assistant>Now let me run the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1487" cache_read_input_tokens="97401" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1487}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01FmZphYwa6wm6JXKAgpsiaL">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run label_ops tests</param>
+    <param name="prompt">Run pytest on the new test file and report results:
+uv run pytest tests/unit/gateways/github/test_label_ops.py -v</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1487" cache_read_input_tokens="97401" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1487, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FmZphYwa6wm6JXKAgpsiaL">
+pytest passed: All 5 tests in test_label_ops.py passed in 0.03s
+
+The test file contains 5 passing tests covering the label operations gateway functionality. Tests include:
+- `test_create_label`
+- `test_update_label`
+- `test_delete_label`
+- `test_get_label`
+- `test_list_labels`
+agentId: afe6191baf34a1014 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13617
+tool_uses: 1
+duration_ms: 3241&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 5 tests pass. Now let me commit and resolve the threads.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="292" cache_read_input_tokens="98888" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 292}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Rgp2RsKBCewk2mm1ixRkB8">
+    <param name="command">git add packages/erk-shared/src/erk_shared/gateway/github/fake.py tests/unit/gateways/gith...[truncated 213 chars]...GitHub for error injection
+
+Co-Authored-By: Claude Opus 4.6 &lt;noreply@anthropic.com&gt;
+EOF
+)"</param>
+    <param name="description">Commit test additions</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="292" cache_read_input_tokens="98888" output_tokens="254" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 292, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Rgp2RsKBCewk2mm1ixRkB8">
+[better-labels 3a1206e36] Address PR review comments (batch 1/1)
+ 2 files changed, 131 insertions(+)
+ create mode 100644 tests/unit/gateways/github/test_label_ops.py
+  </tool_result>
+  <assistant>Now resolve both review threads:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="303" cache_read_input_tokens="99180" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 303}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01YcA1v8JtoxEp6WyZ2ZfbQf">
+    <param name="command">echo '[{"thread_id": "PRRT_kwDOPxC3hc5yG7Rv", "comment": "Added Layer 4 unit tests in test...[truncated 317 chars]... errors, and partial success with error aggregation."}]' | erk exec resolve-review-threads</param>
+    <param name="description">Resolve both test coverage review threads</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="303" cache_read_input_tokens="99180" output_tokens="244" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 303, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YcA1v8JtoxEp6WyZ2ZfbQf">
+{
+  "success": true,
+  "results": [
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5yG7Rv",
+      "comment_added": true
+    },
+    {
+      "success": true,
+      "thread_id": "PRRT_kwDOPxC3hc5yG9I_",
+      "comment_added": true
+    }
+  ]
+}
+  </tool_result>
+  <assistant>Now verify all threads are resolved.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="482" cache_read_input_tokens="99483" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 482}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01WAEFVDnveQxX9omv9pVzYD">
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="description">Verify PR feedback resolved</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Arguments: (no special arguments)
+Return the complete JSON output as your final message.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="482" cache_read_input_tokens="99483" output_tokens="160" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 482, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WAEFVDnveQxX9omv9pVzYD">
+Good! I can see the diff shows file additions. Now I have the PR feedback data. Let me analyze it according to the skill instructions:
+
+Based on the skill instructions and the fetched data, I'll now classify the PR feedback:
+
+**Analysis:**
+
+1. **PR Information:** PR #8705, "Extract PR label addition to resilient CLI command"
+2. **Review Threads:** No review threads (empty array)
+3. **Discussion Comments:** 8 comments total
+   - Graphite stack comment (informational - CI status)
+   - Dignified Code Simplifier Review (bot) - informational CI status
+   - Test Coverage Review (bot) - appears to be informational mixed with suggestion
+   - Dignified Python Review (bot) - informational
+   - Tripwires Review (bot) - informational
+   - Test Coverage Review (bot, earlier) - informational CI status  
+   - Test Coverage summary comment (bot) - informational
+   - Summary comment with template (bot) - informational
+   - User response addressing false positive (informational - resolution)
+   - User response to coverage comment (informational - resolution)
+
+4. **File Restructuring:** From diff output, 2 files changed (1 modified, 1 added). No renames or moves detected - just additions.
+
+5. **Classification:**
+   - All discussion comments are either CI status updates (Graphite stack), bot review summaries (dignified-code-simplifier, test-coverage, dignified-python, tripwires), or user responses addressing previous issues
+   - All are informational in nature (no code changes requested in these comments)
+   - No active unresolved threads requiring action
+
+```json
+{
+  "success": true,
+
+... [51 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <assistant>All threads resolved. Now let me push, update PR description, and upload session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="978" cache_read_input_tokens="99965" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 978}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UzT5VW8zVRgGNh2Sg5YXf4">
+    <param name="command">erk exec update-pr-description --session-id "0a612dab-a8bc-429a-a7a7-f2d20d4ba539"</param>
+    <param name="description">Update PR title and body</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="978" cache_read_input_tokens="99965" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 978}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PZfYQgj41dVpWPp3nUmcDr">
+    <param name="command">erk exec upload-impl-session --session-id "0a612dab-a8bc-429a-a7a7-f2d20d4ba539" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for learning</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="978" cache_read_input_tokens="99965" output_tokens="268" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 978, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UzT5VW8zVRgGNh2Sg5YXf4">
+
+  </tool_result>
+  <tool_result tool="toolu_01PZfYQgj41dVpWPp3nUmcDr">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>## All PR Comments Addressed
+
+Total comments: 2
+Actionable (code changes): 2
+Batches: 1
+Commits: 1
+
+All review threads resolved.
+
+Next steps:
+1. Push changes:
+   - **Graphite repos**: `gt submit` (or `gt ss`)
+   - **Plain git repos**: `git push`
+   - If push is rejected (non-fast-forward): Run `/erk:reconcile-with-remote` to resolve. Do NOT use `git pull --rebase`.
+2. Wait for CI to pass
+3. Request re-review if needed</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="81207" cache_read_input_tokens="20101" output_tokens="141" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 81207, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;local:quick-submit&lt;/command-message&gt;
+&lt;command-name&gt;/local:quick-submit&lt;/command-name&gt;</user>
+  <user># Quick Submit
+
+Quickly commit all changes with a generic "update" message and submit to Graphite.
+
+## Usage
+
+```bash
+/quick-submit
+```
+
+## What This Command Does
+
+1. Stages all uncommitted changes
+2. Creates a commit with a generic "update" message (if there are changes)
+3. Submits the branch via Graphite (or git push if Graphite is not configured)
+4. Returns the PR URL on success
+
+This is a shortcut for rapid iteration when you don't need a detailed commit message.
+
+## Implementation Steps
+
+### Step 1: Stage and Commit Changes
+
+Run the following command from the repository root:
+
+```bash
+erk exec quick-submit
+```
+
+This command will:
+
+- Stage all changes in the working directory
+- Commit them with the message "update" if there are staged changes
+- Return a JSON response with the result
+
+### Step 2: Parse the Response
+
+The command outputs JSON with the following structure:
+
+```json
+{
+  "success": true,
+  "committed": true,
+  "message": "Changes submitted successfully",
+  "pr_url": "https://github.com/owner/repo/pull/123"
+}
+```
+
+Or on error:
+
+```json
+{
+  "success": false,
+  "error_type": "stage-failed|commit-failed|submit-failed",
+  "message": "Error description"
+}
+```
+
+**Decision logic:**
+
+- If `success` is `true`: Report the success message and PR URL to the user
+- If `success` is `false`: Display the error message and ask the user to fix the issue
+
+### Step 3: Report Results
+
+Display the result based on the response:
+
+**On success:**
+
+```
+Changes submitted successfully
+View PR: {pr_url}
+```
+
+**On failure:**
+
+```
+Error: {error_message}
+```
+
+If the error is `stage-failed` or `commit-failed`, suggest the user check their git state.
+If the error is `submit-failed`, suggest the user try `/erk:git-pr-push` as an alternative.
+
+## Error Handling
+
+- **No changes**: The command will still submit if there are already committed changes on the branch. No error is raised if there are no staged changes.
+- **Graphite not initialized**: Falls back to git push if the repository is not Graphite-managed.
+- **Submit fails**: Display the error and suggest `/erk:git-pr-push` as an alternative.
+
+## Notes
+
+- This is a shortcut for rapid iteration
+- Uses generic "update" commit message
+- For detailed commit messages, use `/erk:pr-submit` instead
+- For git-only workflows (no Graphite), use `/erk:git-pr-push`
+</user>
+  <tool_use name="Bash" id="toolu_01QSsFWYyup5GU7jVsjARvzt">
+    <param name="command">erk exec quick-submit</param>
+    <param name="description">Stage, commit, and submit via Graphite</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="82163" cache_read_input_tokens="20016" output_tokens="102" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 82163, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QSsFWYyup5GU7jVsjARvzt">
+  Staging all changes...
+  Checking for staged changes...
+  Submitting to Graphite...
+  Getting PR URL...
+{
+  "success": true,
+  "staged_changes": false,
+  "committed": false,
+  "message": "No new changes, submitted existing commits",
+  "pr_url": "https://github.com/dagster-io/erk/pull/8705"
+}
+  </tool_result>
+  <assistant>Changes submitted successfully
+View PR: https://github.com/dagster-io/erk/pull/8705</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="102179" output_tokens="28" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 212, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+</session>
