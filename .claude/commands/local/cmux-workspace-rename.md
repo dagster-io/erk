@@ -1,6 +1,5 @@
 ---
 description: Rename current CMUX workspace to the current git branch name
-allowed-tools: Bash
 ---
 
 Run the following two commands sequentially:
