@@ -43,11 +43,19 @@ def test_all_labels_added_successfully() -> None:
     fake_time = FakeTime()
 
     result = add_labels_resilient(
-        fake_github, time=fake_time, repo_root=REPO_ROOT, pr_number=42, labels=("bug", "erk-plan"),
+        fake_github,
+        time=fake_time,
+        repo_root=REPO_ROOT,
+        pr_number=42,
+        labels=("bug", "erk-plan"),
     )
 
     assert result == AddLabelsResult(
-        success=True, pr_number=42, added_labels=["bug", "erk-plan"], failed_labels=[], errors={},
+        success=True,
+        pr_number=42,
+        added_labels=["bug", "erk-plan"],
+        failed_labels=[],
+        errors={},
     )
     assert fake_github.added_labels == [(42, "bug"), (42, "erk-plan")]
 
@@ -58,7 +66,11 @@ def test_empty_labels_returns_success() -> None:
     fake_time = FakeTime()
 
     result = add_labels_resilient(
-        fake_github, time=fake_time, repo_root=REPO_ROOT, pr_number=42, labels=(),
+        fake_github,
+        time=fake_time,
+        repo_root=REPO_ROOT,
+        pr_number=42,
+        labels=(),
     )
 
     assert result.success is True
@@ -75,7 +87,11 @@ def test_transient_error_retries_then_exhausted() -> None:
     fake_time = FakeTime()
 
     result = add_labels_resilient(
-        fake_github, time=fake_time, repo_root=REPO_ROOT, pr_number=42, labels=("flaky",),
+        fake_github,
+        time=fake_time,
+        repo_root=REPO_ROOT,
+        pr_number=42,
+        labels=("flaky",),
     )
 
     assert result.success is False
@@ -95,7 +111,11 @@ def test_permanent_error_no_retry() -> None:
     fake_time = FakeTime()
 
     result = add_labels_resilient(
-        fake_github, time=fake_time, repo_root=REPO_ROOT, pr_number=42, labels=("bad",),
+        fake_github,
+        time=fake_time,
+        repo_root=REPO_ROOT,
+        pr_number=42,
+        labels=("bad",),
     )
 
     assert result.success is False
