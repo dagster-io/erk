@@ -202,7 +202,7 @@ Property names should match user-facing output labels. When the CLI displays a l
 
 <!-- Source: packages/erk-shared/src/erk_shared/output/next_steps.py, PlanNextSteps -->
 
-See `PlanNextSteps` in `packages/erk-shared/src/erk_shared/output/next_steps.py` — property names like `checkout`, `implement_new_br` match their output labels "Checkout plan:", "Implement plan:".
+See `PlanNextSteps` in `packages/erk-shared/src/erk_shared/output/next_steps.py` — property names like `checkout`, `implement_current_wt` match their output labels "Checkout plan:", "Implement plan:".
 
 ## String Method Preferences
 

@@ -987,8 +987,8 @@ class TestBuildStep2Message:
         message = build_step2_message(plan_number=42, url="")
         assert "Plan #42 saved" in message
 
-    def test_contains_implement_new_br_command(self) -> None:
-        """Step 2 shows implement-in-new-branch command."""
+    def test_contains_implement_current_wt_command(self) -> None:
+        """Step 2 shows implement-in-current-worktree command."""
         message = build_step2_message(plan_number=42, url="")
         assert "erk br co --for-plan 42 --script" in message
         assert "erk implement" in message
