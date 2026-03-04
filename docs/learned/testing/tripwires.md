@@ -82,9 +82,6 @@ Rules triggered by matching actions in code.
 
 **importing time or calling datetime.now() directly** → Read [Time Injection Testing Patterns](time-injection-patterns.md) first. Never import time directly or call datetime.now(). Use ctx.time.now() and ctx.time.sleep() for testability. Read this doc.
 
-**mock chat.postMessage response missing ts field** → Read [Bolt Async Dispatch Testing Pattern](bolt-async-dispatch-testing.md) first. Always include ts in response - extract_slack_message_ts depends on it.
-
-
 **modifying business logic in src/ without adding a test** → Read [Erk Test Reference](testing.md) first. Bug fixes require regression tests (fails before, passes after). Features require behavior tests.
 
 **monkeypatching erk.tui.app.subprocess.Popen** → Read [TUI Subprocess Testing Patterns](tui-subprocess-testing.md) first. Monkeypatch subprocess.Popen at module level (subprocess.Popen), not erk.tui.app.subprocess.Popen. The import uses 'import subprocess' not 'from subprocess import Popen'.
