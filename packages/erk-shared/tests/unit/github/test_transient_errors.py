@@ -47,6 +47,12 @@ def test_connection_timed_out_detected() -> None:
     assert is_transient_error(error) is True
 
 
+def test_unexpected_end_of_json_input_detected() -> None:
+    """Test that unexpected end of JSON input is detected as transient."""
+    error = "unexpected end of JSON input"
+    assert is_transient_error(error) is True
+
+
 def test_case_insensitive() -> None:
     """Test that detection is case-insensitive."""
     error = "DIAL TCP 140.82.116.5:443: I/O TIMEOUT"
