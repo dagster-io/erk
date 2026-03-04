@@ -269,7 +269,6 @@ def _save_as_planned_pr(
             abs_path.write_text(content, encoding="utf-8")
         git.commit.stage_files(repo_root, list(files.keys()), force=True)
 
-
     git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
 
     # Build metadata — base_ref_name sets the PR base ref
