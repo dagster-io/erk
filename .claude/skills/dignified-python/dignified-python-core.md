@@ -79,7 +79,9 @@ Exceptions are ONLY acceptable at:
 
 **Default: Let exceptions bubble up**
 
-For detailed exception handling patterns including B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+
+For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
 
 ### Assert for Type Narrowing
 
@@ -505,7 +507,7 @@ Benefits:
 
 For detailed guidance on specialized topics:
 
-- **Exception chaining (B904)**: `references/exception-handling.md`
+- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
 - **ABC vs Protocol**: `references/interfaces.md`
 - **typing.cast() assertions**: `references/typing-advanced.md`
 - **Import-time side effects, @cache**: `references/module-design.md`
