@@ -157,10 +157,7 @@ Branch slugs for one-shot branches are generated using `ctx.llm_caller.call()` w
 ### Generation Flow
 
 1. `BranchSlugGenerator.generate()` calls `ctx.llm_caller.call()` with `BRANCH_SLUG_SYSTEM_PROMPT`
-2. Response passes through `_postprocess_slug()` at `src/erk/core/branch_slug_generator.py:98-131`:
-   - Strips whitespace, quotes, backticks
-   - Runs through `sanitize_worktree_name()` for character validation
-   - Validates 2+ hyphenated words and max 30 characters
+2. The raw response is postprocessed: whitespace, quotes, and backticks are stripped, then the slug passes through `sanitize_worktree_name()` for character validation, and is verified to contain 2+ hyphenated words within the 30-character limit
 3. Returns `BranchSlugResult` with the validated slug
 
 ### Fallback Behavior

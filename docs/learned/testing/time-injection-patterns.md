@@ -20,7 +20,7 @@ Erk uses a time gateway abstraction to make time-dependent code testable. All ti
 
 <!-- Source: packages/erk-shared/src/erk_shared/gateway/time/abc.py -->
 
-The `TimeGateway` ABC at `packages/erk-shared/src/erk_shared/gateway/time/abc.py` defines three abstract methods:
+The `Time` ABC at `packages/erk-shared/src/erk_shared/gateway/time/abc.py` defines three abstract methods:
 
 | Method        | Signature                  | Purpose                                       |
 | ------------- | -------------------------- | --------------------------------------------- |
@@ -40,17 +40,9 @@ The `TimeGateway` ABC at `packages/erk-shared/src/erk_shared/gateway/time/abc.py
 
 ### Usage in Tests
 
-`context_for_test()` creates an `ErkContext` with `FakeTime()` by default. Tests that need a specific time can pass a custom `FakeTime`:
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/time/fake.py, FakeTime -->
 
-```python
-from erk_shared.gateway.time.fake import FakeTime
-
-fake_time = FakeTime(current_time=datetime(2026, 3, 1, 12, 0, 0))
-ctx = context_for_test(time=fake_time)
-
-# Code under test uses ctx.time.now()
-assert ctx.time.now() == datetime(2026, 3, 1, 12, 0, 0)
-```
+`context_for_test()` creates an `ErkContext` with `FakeTime()` by default. Tests that need a specific time can pass a custom `FakeTime` with a `current_time` parameter. See `FakeTime` in `packages/erk-shared/src/erk_shared/gateway/time/fake.py` for the constructor interface.
 
 ## Production Integration
 

@@ -116,23 +116,17 @@ Capability classes should call tracking functions during `install()` and `uninst
 
 Required capabilities don't need tracking—they're always installed and always checked.
 
-**Registry functions:** `list_required_capabilities()` returns capabilities where `required=True`. `list_optional_capabilities()` (at `src/erk/core/capabilities/registry.py:85-94`) returns capabilities where `required=False`, sorted alphabetically by name.
+**Registry functions:** `list_required_capabilities()` returns capabilities where `required=True`. `list_optional_capabilities()` returns capabilities where `required=False`, sorted alphabetically by name. See `list_optional_capabilities()` in `src/erk/core/capabilities/registry.py`.
 
 ### Required Bundled Skills
 
-<!-- Source: src/erk/capabilities/skills/bundled.py:17-25 -->
+<!-- Source: src/erk/capabilities/skills/bundled.py, _REQUIRED_BUNDLED_SKILLS -->
 
-Five bundled skills are marked as required via the `_REQUIRED_BUNDLED_SKILLS` frozenset in `src/erk/capabilities/skills/bundled.py`:
+Required bundled skills are defined in the `_REQUIRED_BUNDLED_SKILLS` frozenset in `src/erk/capabilities/skills/bundled.py`. See that frozenset for the current list of required skill names.
 
-| Skill                    | Purpose                                |
-| ------------------------ | -------------------------------------- |
-| `erk-diff-analysis`      | Code diff analysis for commit messages |
-| `erk-exec`               | Erk exec subcommand reference          |
-| `objective`              | Objective tracking and management      |
-| `pr-operations`          | Pull request operations                |
-| `pr-feedback-classifier` | PR feedback classification             |
+<!-- Source: src/erk/capabilities/skills/bundled.py, is_required_bundled_skill -->
 
-The `is_required_bundled_skill(name)` helper at `src/erk/capabilities/skills/bundled.py:47-49` checks membership. Required skills are excluded from user-facing lists like `erk init capability list` since they are always installed.
+The `is_required_bundled_skill()` helper in `src/erk/capabilities/skills/bundled.py` checks membership. Required skills are excluded from user-facing lists like `erk init capability list` since they are always installed.
 
 ## CLI Commands
 

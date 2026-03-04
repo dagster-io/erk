@@ -159,11 +159,9 @@ While `PromptExecutor` runs full reasoning through the Claude CLI (and must be h
 
 ### LlmCaller ABC
 
-`LlmCaller` at `packages/erk-shared/src/erk_shared/core/llm_caller.py` defines a single abstract method:
+<!-- Source: packages/erk-shared/src/erk_shared/core/llm_caller.py, LlmCaller.call -->
 
-```python
-def call(self, prompt: str, *, system_prompt: str) -> LlmResponse | NoApiKey | LlmCallFailed
-```
+`LlmCaller` at `packages/erk-shared/src/erk_shared/core/llm_caller.py` defines a single abstract method `call()`. See `LlmCaller.call()` in `packages/erk-shared/src/erk_shared/core/llm_caller.py` for the full signature.
 
 Returns a discriminated union of three frozen dataclasses:
 

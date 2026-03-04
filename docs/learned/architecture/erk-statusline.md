@@ -114,25 +114,13 @@ Add unit tests for both fetch and display functions in `tests/test_statusline.py
 
 ## Check Run Deduplication
 
-<!-- Source: packages/erk-statusline/src/erk_statusline/statusline.py:565-574 -->
+<!-- Source: packages/erk-statusline/src/erk_statusline/statusline.py, _fetch_check_runs -->
 
 GitHub's check runs API returns duplicate entries for the same check name when workflows are rerun or superseded by newer runs. Without deduplication, the statusline would show inflated check counts.
 
-`_fetch_check_runs()` deduplicates by name using a set + first-occurrence pattern:
+`_fetch_check_runs()` in `packages/erk-statusline/src/erk_statusline/statusline.py` deduplicates by name using a set + first-occurrence pattern. The API returns results in reverse chronological order (newest first), so the first occurrence of each check name is the most recent run. This means the dedup naturally keeps the latest result for each check.
 
-```python
-seen_names: set[str] = set()
-deduplicated: list[dict[str, str]] = []
-for ctx in check_contexts:
-    name = ctx.get("name", "")
-    if name not in seen_names:
-        seen_names.add(name)
-        deduplicated.append(ctx)
-```
-
-The API returns results in reverse chronological order (newest first), so the first occurrence of each check name is the most recent run. This means the dedup naturally keeps the latest result for each check.
-
-**Test coverage:** 3 test cases in `TestFetchCheckRunsDeduplication` at `packages/erk-statusline/tests/test_statusline.py:1076-1135` verify: keeping the most recent run per name, handling mixed unique/duplicate names, and passing through all-unique names unchanged.
+**Test coverage:** See `TestFetchCheckRunsDeduplication` in `packages/erk-statusline/tests/test_statusline.py` for verification of: keeping the most recent run per name, handling mixed unique/duplicate names, and passing through all-unique names unchanged.
 
 ## Logging
 
