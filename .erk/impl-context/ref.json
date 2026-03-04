@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Generalize dangerous flag config to cover all implicitly dangerous commands"
+}
