@@ -1,0 +1,1212 @@
+<session>
+  <meta branch="plnd/add-print-dgibson-03-04-0841" />
+  <meta model="claude-opus-4-6" />
+  <user>Last login: Wed Mar  4 08:19:32 on ttys031
+direnv: loading ~/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531/.envrc
+direnv: loading ~/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531
+-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531/.venv (3.13.1)
+-&gt; Loading .env
+Activated: /Users/schrockn/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531
+direnv: export +REPO_ROOT +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT +WORKTREE_NAME +WORKTREE_PATH ~PATH
+➜  restructure-exit-plan-menu-03-03-0531 git:(plnd/restructure-exit-plan-menu-03-03-0531) gt restack --downstack
+plnd/restructure-exit-plan-menu-03-03-0531 does not need to be restacked on master.
+➜  restructure-exit-plan-menu-03-03-0531 git:(plnd/restructure-exit-plan-menu-03-03-0531) claude
+
+ ▐▛███▜▌   Claude Code v2.1.68
+▝▜█████▛▘  Opus 4.6 · Claude Max
+  ▘▘ ▝▝    ~/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531
+
+❯ add print statemnet saying "for dgibson" to the first python file you find
+
+∴ Thinking…
+
+  The user wants me to add a print statement saying "for dgibson" to the first Python file I find. But I'm in plan mode - I can only read files and write to the plan
+  file. Let me find a Python file first, then write a plan for this trivial change.
+
+  Actually, this is extremely trivial - a single line addition. But plan mode rules say I must not make edits except to the plan file. Let me just find a Python file and
+   write a quick plan.
+
+⏺ Search(pattern: "**/*.py", path: "~/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531")
+  ⎿  Found 100 files (ctrl+o to expand)
+
+⏺ Those are all .venv files. Let me find project source files instead.
+
+⏺ Search(pattern: "src/**/*.py", path: "~/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531")
+  ⎿  Found 100 files (ctrl+o to expand)
+
+∴ Thinking…
+
+  The first project Python file is src/erk/agent_docs/__init__.py. Let me read it and write a quick plan.
+
+⏺ The first project Python file is src/erk/agent_docs/__init__.py. Let me read it and write the plan.
+
+⏺ Read(src/erk/agent_docs/__init__.py)
+  ⎿  Read 6 lines
+
+⏺ Updated plan
+  ⎿  Wrote 13 lines to /Users/schrockn/.claude/plans/drifting-questing-boot.md
+       1 # Plan: Add print statement to first Python file
+       2
+       3 ## Context
+       4 User requested adding a `print("for dgibson")` statement to the first Python file found in the project.
+       5
+       6 ## Changes
+       7
+       8 **File:** `src/erk/agent_docs/__init__.py`
+       9
+      10 Add `print("for dgibson")` after the module docstring (after line 5).
+      11
+      12 ## Verification
+      13 - Visually confirm the print statement is present in the file
+
+⏺ Here's the plan:
+
+  ---
+  Plan: Add print statement to first Python file
+
+  Context
+
+  User requested adding a print("for dgibson") statement to the first Python file found in the project.
+
+  Changes
+
+  File: src/erk/agent_docs/__init__.py
+
+  Add print("for dgibson") after the module docstring (after line 5).
+
+  Verification
+
+  - Visually confirm the print statement is present in the file
+
+  ---
+
+⏺ User answered Claude's questions:
+  ⎿  · 📋 Plan: Add print statement to first Python file
+     Current context: (wt:restructure-exit-plan-menu-03-03-0531) (br:plnd/restructure-exit-plan-menu-03-03-0531) (pr:#8659)
+
+     What would you like to do with this plan? → Create new branch and planned PR
+
+⏺ Skill(/erk:plan-save)
+  ⎿  Successfully loaded skill
+
+⏺ Step 1: Parse Arguments — no flags passed, so all flags are empty.
+
+  Step 2: Generate Branch Slug — Plan title is "Add print statement to first Python file". Slug: add-print-dgibson
+
+  Step 3: Generate Plan Summary — "Adds a print statement saying 'for dgibson' to the first Python source file in the project (src/erk/agent_docs/init.py)."
+
+  Step 4: Run Save Command
+
+⏺ Bash(erk exec plan-save --format json --session-id="f3e5c725-68d3-4bf0-a6ae-528faeeb6e7f" --branch-slug="add-print-dgibson" --summary="Adds a print statement saying
+      for dgibson to the first Python source file in the project (src/erk/agent_docs/__init__.py).")
+  ⎿  {
+       "success": true,
+       "plan_number": 8720,
+       "plan_url": "https://github.com/dagster-io/erk/pull/8720",
+       "title": "[erk-plan] Plan: Add print statement to first Python file",
+       "branch_name": "plnd/add-print-dgibson-03-04-0841",
+       "plan_backend": "planned_pr",
+       "objective_issue": null,
+       "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531/.erk/scratch/sessions/f3e5c725-68d3-4bf0-a6ae-528faeeb6e7
+     f/plan_snapshots/000001-14871dbf"
+     }
+  ⎿  (timeout 30s)
+
+⏺ No objective link — skipping Steps 5 and 6.
+
+  Push planning session:
+
+⏺ Bash(erk exec upload-impl-session --session-id "f3e5c725-68d3-4bf0-a6ae-528faeeb6e7f" 2&gt;/dev/null || true)
+  ⎿  {
+       "uploaded": false,
+       "reason": "no_impl_folder"
+     }
+
+⏺ Plan "Add print statement to first Python file" saved as draft PR #8720
+  URL: https://github.com/dagster-io/erk/pull/8720
+
+⏺ Plan saved! Here are your next steps:
+
+  Implement plan #8720:
+  In current wt:    source "$(erk br co --for-plan 8720 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8720 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8720 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8720 --script)" &amp;&amp; erk implement -d
+
+  Checkout plan #8720:
+  In current wt:  erk br co --for-plan 8720
+  In new wt:      erk br co --new-slot --for-plan 8720
+
+  Dispatch plan #8720:
+  CLI command:    erk pr dispatch 8720
+  Slash command:  /erk:pr-dispatch 8720
+
+✻ Brewed for 1m 6s
+
+❯ /exit
+  ⎿  Goodbye!
+
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ➜  (git:erk) (wt:restructure-exit-plan-menu-03-03-0531) (br:plnd/restructure-exit-plan-menu-03-03-0531) | (gh:#8659 st:👀 chks:[✅:…                           49204 t…
+                                                                                                                                    current:  · latest:  Checking for up…
+  ⏸ plan mode on (shift+tab to cycle) · PR #8659
+
+Resume this session with:
+claude --resume f3e5c725-68d3-4bf0-a6ae-528faeeb6e7f
+➜  restructure-exit-plan-menu-03-03-0531 git:(plnd/restructure-exit-plan-menu-03-03-0531) source "$(erk br co --for-plan 8720 --script)" &amp;&amp; erk implement
+Checking out plan branch: plnd/add-print-dgibson-03-04-0841
+Rebasing onto base branch...
+Error: Failed to track branch 'plnd/add-print-dgibson-03-04-0841' with Graphite
+Command: gt track plnd/add-print-dgibson-03-04-0841 --parent plnd/restructure-exit-plan-menu-03-03-0531 --no-interactive
+Exit code: 1
+stderr: tip: Are you sure that plnd/restructure-exit-plan-menu-03-03-0531 is the right parent for plnd/add-print-dgibson-03-04-0841?  If so, you can fix its history with git rebase plnd/restructure-exit-plan-menu-03-03-0531 plnd/add-print-dgibson-03-04-0841 and then try again.
+Feeling like an expert? Disable tips in `gt config`
+
+WARNING: The following branch has diverged from Graphite's tracking:
+WARNING: ▸ plnd/add-print-dgibson-03-04-0841
+WARNING: This can happen when a Git command run outside of Graphite changes the commit history of a branch.
+WARNING: You can use gt track &lt;branch&gt; to remediate a diverged branch.
+WARNING: To silence reminders about a diverged branch, untrack it with gt untrack &lt;branch&gt;.
+ERROR: plnd/restructure-exit-plan-menu-03-03-0531 is not in the history of plnd/add-print-dgibson-03-04-0841.
+➜  restructure-exit-plan-menu-03-03-0531 git:(plnd/add-print-dgibson-03-04-0841)
+
+what happened. debug root cause</user>
+  <thinking>The user wants me to debug why `erk implement` failed when trying to check out and set up plan #8720. The error is about Graphite tracking failing because the parent branch isn't in the history of the plan branch.
+
+Let me trace through what happened:
+
+1. The plan was saved from branch `plnd/restructure-exit-plan-menu-03-03-0531`
+2. `erk br co --for-plan 8720` checked out `plnd/add-print-dgibson-03-04-0841`
+3. `gt track` failed because `plnd/restructure-exit-plan-menu-03-03-0531` is not in the history of `plnd/add-print-dgibson-03-04-0841`
+
+
+4. Now I need to figure out what base branch was used when `plnd/add-print-dgibson-03-04-0841` was created during the plan-save operation, since that's likely where the mismatch is coming from.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="15160" cache_read_input_tokens="19284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15160}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me investigate the branch history and the plan-save code to understand the root cause.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15160" cache_read_input_tokens="19284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15160}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FDn1s12epTsEX8k6iVuTui">
+    <param name="command">git log --oneline -5 plnd/add-print-dgibson-03-04-0841</param>
+    <param name="description">Check commit history of the plan branch</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15160" cache_read_input_tokens="19284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15160}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FDn1s12epTsEX8k6iVuTui">
+03759b5dc Add plan: Plan: Add print statement to first Python file
+50aae8e3d Fix test assertion to match renamed "Dispatch plan" header
+469b9d3c4 Address PR review: remove duplicative property table, fix section name
+aeb56c438 Make pr-address command plan-mode aware
+dce794fa4 Remove .erk/impl-context/ before implementation
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WLvCyQYvACM6KrBcaqLuLq">
+    <param name="command">git log --oneline -5 plnd/restructure-exit-plan-menu-03-03-0531</param>
+    <param name="description">Check commit history of the parent branch</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15160" cache_read_input_tokens="19284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15160}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WLvCyQYvACM6KrBcaqLuLq">
+60eade0a6 Fix test assertion to match renamed "Dispatch plan" header
+090cdfe31 Address PR review: remove duplicative property table, fix section name
+cf1473944 Remove .erk/impl-context/ before implementation
+1e62df5fa Add plan: Plan: Make pr-address plan-mode aware
+85af84fc2 Auto-fix formatting (docs-sync + ruff + Prettier)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01QYuA72HsesoucStNshcy1B">
+    <param name="command">git merge-base plnd/add-print-dgibson-03-04-0841 plnd/restructure-exit-plan-menu-03-03-0531</param>
+    <param name="description">Find merge base between the two branches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15160" cache_read_input_tokens="19284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15160}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QYuA72HsesoucStNshcy1B">
+69cad1081714840ef84128fbbf4853fb6089114f
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Vsgxhu3c1yDwN54jVdzd3k">
+    <param name="command">git log --oneline -3 master</param>
+    <param name="description">Check master tip</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15160" cache_read_input_tokens="19284" output_tokens="795" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15160, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Vsgxhu3c1yDwN54jVdzd3k">
+c0d5ac2ae Make pr-address command plan-mode aware (#8714)
+e69b3657f Fix: `erk br co --for-plan` allocates slot instead of staying in current worktree (#8713)
+69cad1081 Add "unexpected end of JSON input" as transient error (#8703)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Bh7t1NLBRsVLKudbmsAmQf">
+    <param name="command">git log --oneline 69cad108..plnd/add-print-dgibson-03-04-0841 | head -5</param>
+    <param name="description">Commits on plan branch since merge base</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1123" cache_read_input_tokens="34444" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1123}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Bh7t1NLBRsVLKudbmsAmQf">
+03759b5dc Add plan: Plan: Add print statement to first Python file
+50aae8e3d Fix test assertion to match renamed "Dispatch plan" header
+469b9d3c4 Address PR review: remove duplicative property table, fix section name
+aeb56c438 Make pr-address command plan-mode aware
+dce794fa4 Remove .erk/impl-context/ before implementation
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014hK7SgA3qqE9KigFiySea8">
+    <param name="command">git log --oneline 69cad108..plnd/restructure-exit-plan-menu-03-03-0531 | head -5</param>
+    <param name="description">Commits on parent branch since merge base</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1123" cache_read_input_tokens="34444" output_tokens="200" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1123, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014hK7SgA3qqE9KigFiySea8">
+60eade0a6 Fix test assertion to match renamed "Dispatch plan" header
+090cdfe31 Address PR review: remove duplicative property table, fix section name
+cf1473944 Remove .erk/impl-context/ before implementation
+1e62df5fa Add plan: Plan: Make pr-address plan-mode aware
+85af84fc2 Auto-fix formatting (docs-sync + ruff + Prettier)
+  </tool_result>
+  <thinking>Now I see the issue. The two branches have diverged - they share a common ancestor at `69cad108` (master) but they have different commits on top.
+
+The plan branch `plnd/add-print-dgibson-03-04-0841` has commits:
+- `03759b5dc` Add plan: Plan: Add print statement to first Python file
+- `50aae8e3d` Fix test assertion...
+- `469b9d3c4` Address PR review...
+- `aeb56c438` Make pr-address command plan-mode aware
+- `dce794fa4` Remove .erk/impl-context/ before implementation
+
+
+The parent branch `plnd/restructure-exit-plan-menu-03-03-0531` has a different set of commits with similar themes but distinct SHAs, since the plan branch was created from the worktree's HEAD when the plan was saved, which had branched off master at a different point.
+
+Looking at the commit messages more carefully, the plan branch has "Fix test assertion..." with SHA `50aae8e3d` while the parent has the same message with SHA `60eade0a6` — these are different commits entirely, suggesting the plan branch was created from master with cherry-picked or rebased commits from the restructure branch, resulting in different SHAs. The real question is what `erk exec plan-save` actually does when creating the branch from the current worktree's HEAD. So `gt track` is failing because it needs the parent branch to be an ancestor in the commit history, but since these commits have different SHAs, the parent branch isn't actually in the history of the child. I should look at how `plan-save` creates branches to understand why it's duplicating commits instead of branching from the existing one.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="450" cache_read_input_tokens="35567" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 450}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I see the problem. Let me look at how plan-save creates the branch.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="450" cache_read_input_tokens="35567" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 450}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018CeNcV7vncu7nCD6BPa5b6">
+    <param name="pattern">branch.*slug|create.*branch|git.*branch</param>
+    <param name="path">src/erk</param>
+    <param name="glob">*plan_save*</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="450" cache_read_input_tokens="35567" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 450}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018CeNcV7vncu7nCD6BPa5b6">
+Found 1 file
+src/erk/cli/commands/exec/scripts/plan_save.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01TTQGp6stPwAF9RtvzaUj1Y">
+    <param name="pattern">plan.save|plan_save</param>
+    <param name="path">src/erk</param>
+    <param name="glob">*.py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="450" cache_read_input_tokens="35567" output_tokens="1068" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 450, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TTQGp6stPwAF9RtvzaUj1Y">
+Found 10 files
+src/erk/cli/commands/branch/checkout_cmd.py
+src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py
+src/erk/cli/commands/exec/group.py
+src/erk/cli/commands/exec/scripts/plan_save.py
+src/erk/cli/commands/exec/scripts/preprocess_session.py
+src/erk/cli/commands/exec/scripts/marker.py
+src/erk/cli/commands/exec/scripts/create_pr_from_session.py
+src/erk/cli/commands/branch/create_cmd.py
+src/erk/artifacts/sync.py
+src/erk/artifacts/artifact_health.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QN26fSYWQvZbRKNdyz7GtG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1532" cache_read_input_tokens="36017" output_tokens="109" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1532, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QN26fSYWQvZbRKNdyz7GtG">
+     1→"""Plan save: creates a draft PR with the plan content.
+     2→
+     3→Usage:
+     4→    erk exec plan-save [OPTIONS]
+     5→
+     6→Options:
+     7→    --format json|display: Output format (default: json)
+     8→    --plan-file PATH: Use specific plan file (highest priority)
+     9→    --session-id ID: Session ID for scoped plan lookup
+    10→    --plan-type standard|learn: Plan type (default: standard)
+    11→    --learned-from-issue INT: Parent plan (for learn plans)
+    12→    --created-from-workflow-run-url URL: Workflow run URL
+    13→
+    14→Objective linking: use --objective to pass directly, or rely on
+    15→automatic linking via the objective-context session marker
+    16→(created by /erk:objective-plan). The --objective flag takes
+    17→precedence over the session marker.
+    18→
+    19→Exit Codes:
+    20→    0: Success
+    21→    1: Error
+    22→    2: Validation failed
+    23→"""
+    24→
+    25→import json
+    26→from pathlib import Path
+    27→
+    28→import click
+    29→
+    30→from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
+
+... [546 lines omitted] ...
+
+   162→            click.echo(f"Error: {title_validation.message}", err=True)
+   168→                        "error": f"Plan title validation failed: {title_validation.reason}",
+   169→                        "error_type": "validation_failed",
+   183→            click.echo("Error: --current-branch requires a checked-out branch.", err=True)
+   190→                "Error: --branch-slug is required. "
+   222→            click.echo(f"Error: {create_result.message}", err=True)
+   311→        raise RuntimeError(msg)
+   439→            click.echo("Error: No plan found in ~/.claude/plans/", err=True)
+   441→            click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
+   445→    valid, error, details = _validate_plan_content(plan)
+   448→            click.echo(f"Error: Plan validation failed: {error}", err=True)
+   454→                        "error": f"Plan validation failed: {error}",
+   455→                        "error_type": "validation_failed",
+  </tool_result>
+  <thinking>Now I see the root cause. Look at lines 204-220 of `plan_save.py`:
+
+```python
+# Determine base branch: use current branch if on a feature branch, otherwise trunk
+current_branch = git.branch.get_current_branch(repo_root)
+
+if (
+    current_branch is not None
+    and current_branch != trunk
+    and not current_branch.startswith("learn/")
+    and git.branch.branch_exists_on_remote(repo_root, "origin", current_branch)
+):
+    # Stack plan branch on current feature branch for natural Graphite stacking
+    base_branch = current_branch
+    create_result = branch_manager.create_branch(repo_root, branch_name, current_branch)
+else:
+    # On trunk or detached HEAD: create from origin/trunk
+    base_branch = trunk
+    git.remote.fetch_branch(repo_root, "origin", trunk)
+    create_result = branch_manager.create_branch(repo_root, branch_name, f"origin/{trunk}")
+```
+
+So the plan-save creates the branch from `current_branch` (which was `plnd/restructure-exit-plan-menu-03-03-0531`), but that branch doesn't actually exist locally—it's only a remote branch that was never checked out. Oh, I see the issue now. When the plan branch is created, it points to the same commit as the parent branch. Then files are committed directly to the plan branch using git plumbing without checking it out, which creates a new commit on top. At that point, the parent branch's tip should be an ancestor of the plan branch, so `gt track` should work fine.
+
+But if the parent branch got rebased or amended after the plan branch was created, then the original commit that the plan branch descended from is no longer the tip of the parent branch. That would explain why `gt track` can't find the parent in the plan branch's history — the parent has moved forward, breaking the ancestry chain.
+
+Let me check the actual commit SHAs to see if that's what happened here. I see the issue now—the parent branch was rebased after the plan branch was created from it, which changed all the commit SHAs. That's why the commits have the same messages but different hashes: the plan branch split off before the rebase happened, so it's now based on outdated commits that no longer exist in the parent's history. the parent branch. The plan branch is still pointing to the old commit SHAs. Let me verify whether that original parent commit still exists in the repository.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="8511" cache_read_input_tokens="37549" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8511}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I see the issue. Let me verify my hypothesis about the parent branch being rebased after the plan branch was created.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8511" cache_read_input_tokens="37549" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8511}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012wpXctD561aKzrazN2mfrM">
+    <param name="command">git log --oneline plnd/add-print-dgibson-03-04-0841 | head -6</param>
+    <param name="description">Full plan branch history</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8511" cache_read_input_tokens="37549" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8511}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012wpXctD561aKzrazN2mfrM">
+03759b5dc Add plan: Plan: Add print statement to first Python file
+50aae8e3d Fix test assertion to match renamed "Dispatch plan" header
+469b9d3c4 Address PR review: remove duplicative property table, fix section name
+aeb56c438 Make pr-address command plan-mode aware
+dce794fa4 Remove .erk/impl-context/ before implementation
+b7ffade02 Add plan: Plan: Make pr-address plan-mode aware
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016ceEXCWnJKWEwXy1378JVQ">
+    <param name="command">git log --oneline plnd/restructure-exit-plan-menu-03-03-0531 | head -6</param>
+    <param name="description">Full parent branch history</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8511" cache_read_input_tokens="37549" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8511}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016ceEXCWnJKWEwXy1378JVQ">
+60eade0a6 Fix test assertion to match renamed "Dispatch plan" header
+090cdfe31 Address PR review: remove duplicative property table, fix section name
+cf1473944 Remove .erk/impl-context/ before implementation
+1e62df5fa Add plan: Plan: Make pr-address plan-mode aware
+85af84fc2 Auto-fix formatting (docs-sync + ruff + Prettier)
+66a83975c update
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DtuZkA2D85bbWQ9wF23wyT">
+    <param name="command"># Check: is the plan branch's parent commit (50aae8e3d) still an ancestor of the parent branch?
+git branch --contains 50aae8e3d 2&gt;/dev/null | head -5</param>
+    <param name="description">Check which branches contain the plan branch's base commit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8511" cache_read_input_tokens="37549" output_tokens="1682" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8511, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DtuZkA2D85bbWQ9wF23wyT">
+* plnd/add-print-dgibson-03-04-0841
+  </tool_result>
+  <assistant>That confirms it. Here's the root cause:
+
+**The parent branch (`plnd/restructure-exit-plan-menu-03-03-0531`) was rebased after the plan branch was created from it, causing commit SHA divergence.**
+
+The timeline:
+
+1. **Plan-save ran** while on `plnd/restructure-exit-plan-menu-03-03-0531`. It created `plnd/add-print-dgibson-03-04-0841` from the parent's HEAD at that time (commit `50aae8e3d` "Fix test assertion...").
+
+2. **The parent branch was subsequently rebased** (likely via `gt submit` which squashes/rebases). The same logical commits now have different SHAs:
+   - Plan branch has: `50aae8e3d` → `469b9d3c4` → `aeb56c438` → `dce794fa4` → `b7ffade02`
+   - Parent branch has: `60eade0a6` → `090cdfe31` → `cf1473944` → `1e62df5fa` → `85af84fc2`
+
+3. **`erk br co --for-plan` tried `gt track`** with parent `plnd/restructure-exit-plan-menu-03-03-0531`, but since the parent's current commits (`60eade0a6` etc.) are NOT in the plan branch's history (it has the old pre-rebase SHAs `50aae8e3d` etc.), Graphite correctly reports the parent "is not in the history of" the plan branch.
+
+**In short**: `plan-save` snapshots the parent branch's commits at creation time. When the parent is later rebased (new SHAs), the plan branch becomes orphaned from the parent's new history, and `gt track` fails.
+
+This is a known hazard of stacking plan branches on feature branches that get squash-rebased by Graphite.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2080" cache_read_input_tokens="46060" output_tokens="460" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2080, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>we need to track the branch right when it is created i think</user>
+  <thinking>The user wants to fix the root cause by tracking the branch with Graphite right when it's created in plan-save, before any subsequent rebase of the parent can cause divergence.
+
+Let me look at what `branch_manager.create_branch` does and where we'd add the `gt track` call.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="626" cache_read_input_tokens="48140" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 626}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the branch manager to understand how branches are created and where tracking fits in.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="626" cache_read_input_tokens="48140" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 626}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01KDo9zW3hZpjhYXFwmZh35w">
+    <param name="description">Explore branch manager and gt tracking</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 656 chars]...ation in plan-save so the branch is tracked before any parent rebase can cause divergence.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="626" cache_read_input_tokens="48140" output_tokens="415" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 626, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KDo9zW3hZpjhYXFwmZh35w">
+Perfect! Now I have all the necessary information. Let me provide you with a comprehensive analysis:
+
+---
+
+## Analysis: Branch Creation and Graphite Tracking in plan-save
+
+### Summary
+
+I've thoroughly explored the codebase and found the complete picture of how branches are created and tracked. Here are my findings:
+
+---
+
+### 1. What `branch_manager.create_branch` Does
+
+**Location:** `/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py` (lines 69-106)
+
+**For Graphite Mode (GraphiteBranchManager):**
+1. Creates a branch via `git.branch.create_branch()` 
+2. Normalizes the parent branch name (strips `origin/` prefix for Graphite compatibility)
+3. If the base was a remote ref (`origin/something`), ensures the local parent branch matches the remote via `_ensure_local_matches_remote()`
+4. **Auto-fixes diverged parents** before tracking: if the parent is diverged from Graphite's tracking, calls `retrack_branch()` first
+5. **Calls `track_branch()` on the parent** to register it with Graphite
+6. **Does NOT checkout the new branch** — returns to the original branch after Graphite tracking
+
+**Key insight from documentation:** The restore-after-create behavior is intentional because `gt track` requires the branch to be checked out. GraphiteBranchManager temporarily switches to satisfy this constraint, then restores the original branch.
+
+**For Git Mode (GitBranchManager):**
+- Just uses plain `git branch` to create the branch
+
+---
+
+... [175 lines omitted] ...
+  </tool_result>
+  <thinking>So the tracking already happens inside `create_branch()`. The issue is different from what I initially thought. Let me re-analyze:
+
+1. `plan-save` runs on branch `plnd/restructure-exit-plan-menu-03-03-0531`
+2. `branch_manager.create_branch(repo_root, branch_name, current_branch)` creates the plan branch and tracks it with Graphite
+3. `git.commit.commit_files_to_branch(...)` commits the plan to the branch
+4. `git.remote.push_to_remote(...)` pushes to origin
+
+But then later, the PARENT branch gets rebased (e.g., via `gt submit` which squashes). 
+
+The parent's commit SHAs change, which means the plan branch's history no longer contains the parent's current tip. When `erk br co --for-plan` tries to check out the plan branch later, it calls `_rebase_and_track_for_plan()` which attempts `gt track` again, but the parent isn't in the history anymore. So the tracking was fine at creation time—the problem is that it became stale when the parent was rebased afterward.
+
+Looking at the `_rebase_and_track_for_plan` function, it rebases onto the parent before tracking. If `plan-save` also pushed the branch to origin, then when checkout tries to rebase, there's a divergence. The actual error the user hit is in `erk br co --for-plan` when it tries to track after checkout, and the parent branch it's trying to track against no longer exists in the history. The user's fix is to ensure tracking information gets persisted so that when the parent is rebased later, Graphite can properly update the plan branch—but I'm realizing that `gt track` stores metadata locally in `.git/`, not remotely, so the tracking relationship might be lost across worktrees or after rebasing. Let me trace through the actual `GraphiteBranchManager.create_branch()` flow to understand what's really happening.
+
+Looking at the creation process: the branch gets created, the parent name is normalized, any divergence is auto-fixed, and then the new branch is tracked with Graphite before returning to the original branch. So the tracking does happen at creation time, and the branch gets pushed to origin during plan-save. But when the parent is later rebased by `gt submit`, the plan branch's tracking information becomes stale—especially if we're in a different worktree context or if the tracking metadata wasn't persisted across that operation.
+
+The error actually occurs after `erk br co --for-plan` checks out the plan branch, which suggests the tracking from creation time might not be valid anymore. I think the real issue is that Graphite stores tracking per-worktree in `.git/`, so when the parent gets rebased, the tracking becomes invalid because the parent's commits have changed. Let me look at what `_rebase_and_track_for_plan()` does in checkout_cmd.py to understand the full flow.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2882" cache_read_input_tokens="48766" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2882}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the checkout command to understand the tracking flow during `erk br co --for-plan`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2882" cache_read_input_tokens="48766" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2882}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015oaWb48XttCDsZmtX9cLiF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">340</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2882" cache_read_input_tokens="48766" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2882}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015oaWb48XttCDsZmtX9cLiF">
+   340→
+   341→    user_output(f"Created .erk/impl-context/ folder from plan #{setup.plan_number}")
+   342→
+   343→
+   344→def _rebase_and_track_for_plan(
+   345→    ctx: ErkContext,
+   346→    *,
+   347→    repo_root: Path,
+   348→    worktree_path: Path,
+   349→    branch: str,
+   350→    parent_branch: str,
+   351→    trunk: str,
+   352→) -&gt; None:
+   353→    """Rebase onto parent branch (if stacked) and track with Graphite.
+   354→
+   355→    For stacked plans where parent_branch != trunk, the parent may have advanced
+   356→    since the plan was saved. Rebasing ensures git history includes the parent's
+   357→    tip, which gt track requires for proper stacking.
+   358→
+   359→    Mirrors the pattern from pr/checkout_cmd.py for stacked PRs.
+   360→
+   361→    Args:
+   362→        ctx: Erk context
+   363→        repo_root: Repository root path
+   364→        worktree_path: Path to the worktree (used as cwd for rebase)
+   365→        branch: The plan branch name
+   366→        parent_branch: The parent branch to rebase onto and track with
+   367→        trunk: The trunk branch name
+   368→    """
+   369→    # For stacked plans (parent is not trunk), rebase onto parent first
+
+... [30 lines omitted] ...
+
+   386→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MU98QKmp54BVNiE1CG3QbT">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531/packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py</param>
+    <param name="offset">60</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2882" cache_read_input_tokens="48766" output_tokens="1602" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2882, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MU98QKmp54BVNiE1CG3QbT">
+    60→        if isinstance(pr_details, PRNotFound):
+    61→            return None
+    62→        return PrInfo(
+    63→            number=pr_details.number,
+    64→            state=pr_details.state,
+    65→            is_draft=pr_details.is_draft,
+    66→            from_fallback=True,  # Mark as fallback
+    67→        )
+    68→
+    69→    def create_branch(
+    70→        self, repo_root: Path, branch_name: str, base_branch: str
+    71→    ) -&gt; BranchCreated | BranchAlreadyExists:
+    72→        """Create a new branch using Graphite.
+    73→
+    74→        Creates the branch via git and registers it with Graphite for stack tracking.
+    75→        Does NOT checkout the branch - leaves the current branch unchanged.
+    76→
+    77→        Args:
+    78→            repo_root: Repository root directory
+    79→            branch_name: Name of the new branch
+    80→            base_branch: Name of the parent branch (can be local or remote ref like origin/main)
+    81→
+    82→        Returns:
+    83→            BranchCreated on success, BranchAlreadyExists if branch already exists.
+    84→        """
+    85→        result = self.git.branch.create_branch(repo_root, branch_name, base_branch, force=False)
+    86→        if isinstance(result, BranchAlreadyExists):
+    87→            return result
+    88→
+    89→        # Track it with Graphite - use local branch name for parent
+
+... [30 lines omitted] ...
+  </tool_result>
+  <thinking>Now I understand the full picture. Let me trace through what happened:
+
+1. `plan-save` ran on `plnd/restructure-exit-plan-menu-03-03-0531` worktree
+2. `GraphiteBranchManager.create_branch()` created `plnd/add-print-dgibson-03-04-0841` from `current_branch` (the restructure branch)
+3. This included `gt track` at line 104, registering the plan branch with parent = restructure branch
+4. `commit_files_to_branch` added the plan commit
+
+
+5. The plan branch got pushed to remote, then the restructure branch was rebased with new commit SHAs
+
+When `erk br co --for-plan 8720` runs later, it checks out the plan branch and tries to rebase it onto the parent, but `gt track` fails because the parent branch's commits have changed and the tracking relationship is now stale.
+
+The checkout command rebases first, then tracks again—but if the rebase succeeded, the parent should be in history. The error suggests the tracking is failing because the parent's current commits don't match what the plan branch expects. Looking at the error more carefully, the rebase completed but then the tracking command failed because it's trying to set a parent that isn't actually in the plan branch's history. The issue is that when the parent branch gets rebased and force-pushed with new commits, the plan branch still has references to the old commits from before the rebase, so Graphite can't establish the parent-child relationship it's expecting. The error message suggests either the rebase failed and was rolled back, or the local parent branch in the worktree is at a different commit than what the plan branch was rebased onto. Since the user ran `gt restack --downstack` first, the local parent branch might be out of sync with origin, causing the tracking check to fail even though the rebase succeeded. The commit SHAs are completely different between the plan branch and parent branch despite having similar messages, which tells me the parent was rebased or squashed before the session even started. Let me trace through what actually happened to the restructure branch during that time. I'm trying to trace how the branch history diverged. The `commit_files_to_branch` method might be creating commits with different SHAs by reconstructing the tree rather than building on the branch's current tip. But looking at the logic more carefully, it should create the branch pointing to the same commit as the parent, then add one new commit on top—so the histories should align. Let me check if `gt submit` was somehow triggered during the session or if a hook ran it automatically. I'm noticing the commit SHAs don't match—the plan branch starts with `50aae8e3d` while the parent is at `60eade0a6`. Either the parent branch moved after the plan was created, or the plan was created from a different reference than I expected. Let me trace through what `plan-save` actually passed to `create_branch` when it ran.
+
+The issue might be that `get_current_branch` is returning the branch name correctly, but in a git worktree setup, that branch could be pointing to different commits depending on which worktree context we're in. Since all branches are shared refs across worktrees, the branch name alone doesn't guarantee we're creating from the right commit—I need to check what commit `current_branch` actually resolved to at the time of creation.
+
+Looking at the `gt restack --downstack` command, it seems like it didn't actually change anything based on the output saying the branch doesn't need restacking. But the commit SHAs did shift from `50aae8e3d` to `60eade0a6`, which suggests something did happen. Let me step back and check if the `erk exec plan-save` command is doing something unexpected with the working directory or repo context.
+
+Actually, I think the real issue is that the plan branch contains a commit (`b7ffade02 Add plan: Plan: Make pr-address plan-mode aware`) that doesn't exist on the parent branch, which means the base for the new branch creation might be wrong. Branch references are shared across worktrees, so that's not the issue. Let me trace through what `create_branch` actually does—it calls the git function to create a branch pointing to wherever the base branch currently points. Looking at the plan-save logic, it gets the current branch and uses that as the base if it's not the trunk and exists on the remote, which means the plan branch should have been created from wherever the restructure branch was pointing at that moment.
+
+But wait—if `branch_exists_on_remote` returned false (maybe the restructure branch hadn't been pushed yet?), it would fall back to creating from `origin/master` instead. That could explain the discrepancy, except the plan branch clearly contains commits like "Fix test assertion to match renamed 'Dispatch plan' header" that are definitely from the restructure branch, so something else is going on here.
+
+Looking at the actual commits on the plan branch, they have the same messages as restructure branch commits but different SHAs—which means the plan branch was created from an earlier version of restructure before it got rebased. So the question is when that rebase happened relative to the `gt restack --downstack` command the user ran.
+
+Between the plan-save process and the failed branch checkout command, there was no explicit rebase, but I'm wondering if something in plan-save itself could have triggered one. I'm looking at the branch creation logic to see if it automatically retracks the parent branch when it detects divergence from Graphite's tracking.
+
+Even if retracking happens, that's just re-registering the parent with `gt track` and shouldn't change any commit SHAs. I'm probably overthinking this. Let me look more carefully at what actually happened in the user's terminal output to see if there's a clue about when the plan branch got rebased.
+
+Looking at the error messages, the plan branch itself has diverged from Graphite's tracking—Graphite thinks it should be at a different commit than where it actually is. This suggests the branch was tracked initially, then something caused it to move to a different commit without Graphite knowing about it.
+
+The sequence makes sense now: when the branch was created, it got tracked with Graphite at that position. Then a new commit was added to the branch through git operations, but Graphite wasn't notified of this change, so it sees the branch as diverged. When the rebase and track operation runs, it fails because the branch is both diverged and the parent has been rebased.
+
+But I'm still puzzled by why the base commits have different SHAs between the plan branch and parent branch. Let me look more carefully at the git log output to understand what's actually happening. I'm looking at the git history and noticing a discrepancy—the plan branch has commits that the parent branch doesn't have, but `gt restack` said it didn't need restacking, which suggests the parent was already up to date. This makes me think the parent might have been rebased after the plan branch was created, changing the commit SHAs while keeping the same logical history. I'm going in circles trying to figure out what's modifying the parent branch. The user's transcript shows `plan-save` and `upload-impl-session` running, neither of which should touch the parent, and `commit_files_to_branch` only creates a single new commit on top of the existing tip anyway. The user already identified and accepted the root cause—the parent getting rebased after the plan was created—so I should focus on their proposed fix instead of continuing to chase this.
+
+Looking back at their suggestion to track the branch right when it's created, I notice tracking already happens at creation time in the code. But maybe what they really mean is that we need to track it *and* ensure Graphite knows about the stacking relationship so that when the parent is later rebased via `gt submit`, the plan branch can automatically restack. The issue might be that tracking alone isn't sufficient—after `commit_files_to_branch` adds a new commit, the branch becomes diverged from Graphite's tracking, and when the parent rebases, `gt restack` would need to handle that properly.
+
+The real problem seems to be that the plan-save code uses raw `git.remote.push_to_remote()` instead of `gt submit`, which means Graphite only knows about the branch from the initial track at creation time. Once a new commit is added, Graphite loses track of the branch's state and can't properly restack it when the parent changes.
+
+The fix is to call `retrack_branch` after committing to the plan branch, so Graphite's tracking stays in sync with the actual branch tip. Though I'm realizing the user might be suggesting we just need to ensure tracking happens at the right moment during creation itself.
+
+Actually, I think I see the real issue now—when `commit_files_to_branch` creates a new commit, the branch moves forward but Graphite's local tracking doesn't update. Then when the parent branch gets rebased or modified later, Graphite tries to restack the plan branch from an outdated position, causing the sync problem. The checkout code does rebase before tracking, so if that succeeds, tracking should work. Looking back at plan-save, I see that tracking already happens inside `create_branch()`, but after `commit_files_to_branch()` moves the branch forward, I need to retrack it to update Graphite's understanding of the new position. Let me write out the plan for this fix.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3601" cache_read_input_tokens="51648" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3601}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good insight. Let me trace this more precisely. The tracking IS happening at creation time inside `GraphiteBranchManager.create_branch()` (line 104), but then `commit_files_to_branch()` adds a new commit via git plumbing, advancing the branch past what Graphite tracked. Let me verify this is the issue.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3601" cache_read_input_tokens="51648" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3601}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01SVpyTkAFi2rQ7ECzeVhm3J">
+    <param name="pattern">commit_files_to_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531/packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3601" cache_read_input_tokens="51648" output_tokens="6771" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3601, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SVpyTkAFi2rQ7ECzeVhm3J">
+Found 5 files
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/printing.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01AuhrvdghFJEw1uC8aJxZFU">
+    <param name="pattern">def commit_files_to_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="45479" cache_read_input_tokens="16613" output_tokens="176" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 45479, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AuhrvdghFJEw1uC8aJxZFU">
+71:    def commit_files_to_branch(
+72-        self,
+73-        cwd: Path,
+74-        *,
+75-        branch: str,
+76-        files: dict[str, str],
+77-        message: str,
+78-    ) -&gt; None:
+79-        """Create a commit on a branch using git plumbing (no checkout)."""
+80-        # Get parent commit SHA
+81-        parent_sha = run_subprocess_with_context(
+82-            cmd=["git", "rev-parse", branch],
+83-            operation_context=f"resolve branch {branch}",
+84-            cwd=cwd,
+85-        ).stdout.strip()
+86-
+87-        # Create temporary index file to avoid touching the real index
+88-        tmp_fd, tmp_index = tempfile.mkstemp(suffix=".idx", prefix="erk-plan-")
+89-        os.close(tmp_fd)
+90-        try:
+91-            env = os.environ.copy()
+92-            env["GIT_INDEX_FILE"] = tmp_index
+93-
+94-            # Read parent tree into temp index
+95-            run_subprocess_with_context(
+96-                cmd=["git", "read-tree", parent_sha],
+97-                operation_context="read parent tree into temp index",
+98-                cwd=cwd,
+99-                env=env,
+100-            )
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>OK so `commit_files_to_branch` creates a new commit on the branch using git plumbing (no checkout). This advances the branch ref past what Graphite tracked.
+
+Here's the complete causal chain:
+
+1. `create_branch()` → creates branch at parent's tip + `gt track` (Graphite records position A)
+2. `commit_files_to_branch()` → adds plan commit via plumbing (branch now at position B, Graphite still thinks A)
+3. `push_to_remote()` → pushes position B to origin
+4. Branch is now **diverged from Graphite's tracking**
+5. Later, parent gets rebased (new SHAs) 
+6. `erk br co --for-plan` tries to rebase + track → fails because parent isn't in history AND branch is diverged
+
+The fix: after `commit_files_to_branch`, call `branch_manager.retrack_branch()` to update Graphite's tracking to position B. This way Graphite knows the real state, and if the parent is later restacked, `gt restack` can handle it.
+
+Let me check if `retrack_branch` exists on the branch manager.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="536" cache_read_input_tokens="62092" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 536}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RGF1EbZ71J4wmy1KtsDKtT">
+    <param name="pattern">def retrack_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531/packages/erk-shared/src/erk_shared/gateway/branch_manager</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="536" cache_read_input_tokens="62092" output_tokens="426" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 536, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RGF1EbZ71J4wmy1KtsDKtT">
+packages/erk-shared/src/erk_shared/gateway/branch_manager/abc.py:139:    def retrack_branch(self, repo_root: Path, branch_name: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py:229:    def retrack_branch(self, repo_root: Path, branch_name: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/branch_manager/fake.py:160:    def retrack_branch(self, repo_root: Path, branch_name: str) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/branch_manager/git.py:135:    def retrack_branch(self, repo_root: Path, branch_name: str) -&gt; None:
+  </tool_result>
+  <assistant>`retrack_branch` exists on the ABC and all implementations. Now let me check what the existing test patterns look like for plan-save.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1837" cache_read_input_tokens="62628" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1837}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Xb8X52Pz3spUdtizoPpwac">
+    <param name="pattern">tests/**/test_plan_save*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1837" cache_read_input_tokens="62628" output_tokens="92" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1837, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xb8X52Pz3spUdtizoPpwac">
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531/tests/unit/cli/commands/exec/scripts/test_plan_save.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01XkxGGEbayqt7gLLdMSLXwe">
+    <param name="pattern">retrack|commit_files_to_branch|stacked|feature.branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531/tests/unit/cli/commands/exec/scripts/test_plan_save.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="161" cache_read_input_tokens="64465" output_tokens="179" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 161, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XkxGGEbayqt7gLLdMSLXwe">
+230-) -&gt; None:
+231-    """plan-save uses git plumbing to commit without checking out the plan branch."""
+232-    fake_git = FakeGit(
+233:        current_branches={tmp_path: "feature-branch"},
+234:        remote_branches={tmp_path: ["origin/feature-branch"]},
+235-    )
+236-    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+237-    runner = CliRunner()
+--
+322-    assert tracked_call[2] == "master"  # parent_branch (trunk used as base)
+323-
+324-
+325:def test_planned_pr_branch_stacked_on_current_feature_branch(
+326-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+327-) -&gt; None:
+328:    """Plan branch is stacked on current feature branch, not trunk."""
+329:    # Current branch is a feature branch, NOT trunk — and pushed to remote
+330-    fake_git = FakeGit(
+331-        current_branches={tmp_path: "feature/my-work"},
+332-        trunk_branches={tmp_path: "master"},
+--
+347-
+348-    assert result.exit_code == 0, f"Failed: {result.output}"
+349-
+350:    # Graphite parent should be the current feature branch, NOT trunk
+351-    assert len(fake_graphite.track_branch_calls) == 1
+352-    tracked_call = fake_graphite.track_branch_calls[0]
+353:    assert tracked_call[2] == "feature/my-work"  # parent_branch is current feature branch
+354-
+355:    # Trunk should NOT be fetched (branch is based off local feature branch)
+
+... [82 lines omitted] ...
+
+381-    assert result.exit_code == 0, f"Failed: {result.output}"
+409-    assert result.exit_code == 0, f"Failed: {result.output}"
+716-    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <thinking>Now I have enough context to write the plan. The fix is straightforward: after `commit_files_to_branch()` in `_save_as_planned_pr()`, add a `branch_manager.retrack_branch()` call to update Graphite's tracking to include the new plan commit. This should only happen when not using `--current-branch` (since the current-branch path doesn't create a new branch).
+
+Let me write the plan.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1939" cache_read_input_tokens="64626" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1939}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have full context. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1939" cache_read_input_tokens="64626" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1939}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01WMTZdBb6k2AFno3unNuTfh">
+    <param name="file_path">/Users/schrockn/.claude/plans/greedy-booping-teapot.md</param>
+    <param name="content"># Plan: Retrack plan branch after plumbing commit in plan-save
+
+## Context
+
+When `plan-sav...[truncated 2013 chars]... branches
+- Add negative test asserting retrack is NOT called for `--current-branch` mode
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1939" cache_read_input_tokens="64626" output_tokens="839" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1939, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WMTZdBb6k2AFno3unNuTfh">
+File created successfully at: /Users/schrockn/.claude/plans/greedy-booping-teapot.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01QQs1oPMKc1qNoXqs6ADo4A">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests'}]</param>
+    <param name="plan"># Plan: Retrack plan branch after plumbing commit in plan-save
+
+## Context
+
+When `plan-sav...[truncated 2013 chars]... branches
+- Add negative test asserting retrack is NOT called for `--current-branch` mode
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1087" cache_read_input_tokens="66565" output_tokens="73" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1087, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QQs1oPMKc1qNoXqs6ADo4A">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/greedy-booping-teapot.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Retrack plan branch after plumbing commit in plan-save
+Current context: (wt:restructure-exit-plan-menu-03-03-0531) (br:plnd/add-print-dgibson-03-04-0841) (pr:#8720)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/add-"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 1f3952cc-756a-4552-bea2-4608643664ab \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/greedy-booping-teapot.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+## Plan: Retrack plan branch after plumbing commit in plan-save
+
+### Context
+
+When `plan-save` creates a stacked plan branch (parent is a feature branch, not trunk), the following happens:
+
+1. `branch_manager.create_branch()` creates the branch AND calls `gt track` (Graphite records branch position A)
+2. `git.commit.commit_files_to_branch()` adds the plan commit via git plumbing (branch moves to position B)
+3. `git.remote.push_to_remote()` pushes position B to origin
+
+After step 2, the branch is **diverged from Graphite's tracking** because Graphite still thinks it's at position A. If the parent branch is later rebased (e.g., via `gt submit`), the plan branch becomes unreachable from the parent's new history, and `erk br co --for-plan` fails when trying to `gt track`.
+
+**Fix**: After `commit_files_to_branch()`, call `branch_manager.retrack_branch()` to update Graphite's tracking to include the plan commit.
+
+### Changes
+
+**File:** `src/erk/cli/commands/exec/scripts/plan_save.py`
+
+In `_save_as_planned_pr()`, after `git.commit.commit_files_to_branch()` (line ~255) and before `push_to_remote`, add:
+
+```python
+# Update Graphite tracking after plumbing commit advanced the branch
+if not current_branch_flag:
+    branch_manager.retrack_branch(repo_root, branch_name)
+```
+
+**File:** `tests/unit/cli/commands/exec/scripts/test_plan_save.py`
+
+Add test asserting `retrack_branch` is called for stacked plan branches, and NOT called for `--current-branch` mode.
+
+### Verification
+
+- Run existing plan-save tests to confirm no regressions
+- New tests for retrack behavior
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="720" cache_read_input_tokens="67652" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 720}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_0157erTR1e8m7EUXrPKwF9HQ">
+    <param name="questions">[{'question': '📋 Plan: Retrack plan branch after plumbing commit in plan-save\nCurrent con...[truncated 463 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="720" cache_read_input_tokens="67652" output_tokens="725" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 720, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0157erTR1e8m7EUXrPKwF9HQ">
+User has answered your questions: "📋 Plan: Retrack plan branch after plumbing commit in plan-save
+Current context: (wt:restructure-exit-plan-menu-03-03-0531) (br:plnd/add-print-dgibson-03-04-0841) (pr:#8720)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01JH66CpoJxYwaLbbsK8pr2X">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13952" cache_read_input_tokens="55249" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13952, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JH66CpoJxYwaLbbsK8pr2X">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="1f3952cc-756a-4552-bea2-4608643664ab" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="1f3952cc-756a-4552-bea2-4608643664ab" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "1f3952cc-756a-4552-bea2-4608643664ab" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "1f3952cc-756a-4552-bea2-4608643664ab" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "1f3952cc-756a-4552-bea2-4608643664ab" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "1f3952cc-756a-4552-bea2-4608643664ab" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Step 1: No flags passed — `PLAN_TYPE_FLAG`, `OBJECTIVE_FLAG`, and `CURRENT_BRANCH_FLAG` are all empty.
+
+Step 2: Plan title is "Retrack plan branch after plumbing commit in plan-save". Slug: `retrack-after-plumbing-commit`
+
+Step 3: Summary: "After plan-save creates a stacked branch and commits via git plumbing, Graphite tracking is stale because it recorded the pre-commit position. This adds a retrack call after commit_files_to_branch to keep Graphite in sync, preventing gt track failures when the parent branch is later rebased."
+
+Step 4: Running save command.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2265" cache_read_input_tokens="69201" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2265}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DXSZzu1FpBRFztxvMK9ybw">
+    <param name="command">erk exec plan-save --format json --session-id="1f3952cc-756a-4552-bea2-4608643664ab" --bra...[truncated 235 chars]...p Graphite in sync, preventing gt track failures when the parent branch is later rebased."</param>
+    <param name="description">Save plan as draft PR</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2265" cache_read_input_tokens="69201" output_tokens="375" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2265, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DXSZzu1FpBRFztxvMK9ybw">
+{"success": true, "plan_number": 8721, "plan_url": "https://github.com/dagster-io/erk/pull/8721", "title": "[erk-plan] Plan: Retrack plan branch after plumbing commit in plan-save", "branch_name": "plnd/retrack-after-plumbing-com-03-04-0851", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531/.erk/scratch/sessions/1f3952cc-756a-4552-bea2-4608643664ab/plan_snapshots/000001-cfd49a2a"}
+  </tool_result>
+  <assistant>No objective link — skipping Steps 5 and 6.
+
+Push planning session:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="684" cache_read_input_tokens="71466" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 684}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017aKGCTnp8qESMDiiE7Fhaf">
+    <param name="command">erk exec upload-impl-session --session-id "1f3952cc-756a-4552-bea2-4608643664ab" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="684" cache_read_input_tokens="71466" output_tokens="133" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 684, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017aKGCTnp8qESMDiiE7Fhaf">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan "Retrack plan branch after plumbing commit in plan-save" saved as draft PR #8721
+URL: https://github.com/dagster-io/erk/pull/8721</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="160" cache_read_input_tokens="72150" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 160}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01NKWHtSwcAX3ca63tQEeGnE">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run tests'}]</param>
+    <param name="plan"># Plan: Retrack plan branch after plumbing commit in plan-save
+
+## Context
+
+When `plan-sav...[truncated 2013 chars]... branches
+- Add negative test asserting retrack is NOT called for `--current-branch` mode
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="160" cache_read_input_tokens="72150" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 160, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NKWHtSwcAX3ca63tQEeGnE">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8721 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8721:
+  In current wt:    source "$(erk br co --for-plan 8721 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8721 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8721 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8721 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8721:
+  In current wt:  erk br co --for-plan 8721
+  In new wt:      erk br co --new-slot --for-plan 8721
+
+Dispatch plan #8721:
+  CLI command:    erk pr dispatch 8721
+  Slash command:  /erk:pr-dispatch 8721
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan saved! Here are your next steps:
+
+Implement plan #8721:
+  In current wt:    source "$(erk br co --for-plan 8721 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8721 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8721 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8721 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8721:
+  In current wt:  erk br co --for-plan 8721
+  In new wt:      erk br co --new-slot --for-plan 8721
+
+Dispatch plan #8721:
+  CLI command:    erk pr dispatch 8721
+  Slash command:  /erk:pr-dispatch 8721</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="613" cache_read_input_tokens="72310" output_tokens="240" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 613, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>
