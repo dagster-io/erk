@@ -21,7 +21,7 @@ explain their effect.
 
 Marker Files:
     exit-plan-mode-hook.implement-now.marker
-        Created by: Agent (when user chooses "Implement without saving" or Step 2 implement)
+        Created by: Agent (when user chooses "Implement without saving")
         Effect: Next ExitPlanMode call is ALLOWED (exit plan mode, proceed to implementation)
         Lifecycle: Deleted after being read by next hook invocation
 
@@ -41,7 +41,7 @@ State Transitions:
     1. No marker files + plan exists → BLOCK with Step 1 prompt (save/implement/edit)
     2. implement-now marker exists → ALLOW (delete marker)
     3. incremental-plan marker exists → ALLOW (delete marker, skip save prompt)
-    4. plan-saved marker exists → BLOCK with Step 2 prompt (delete marker)
+    4. plan-saved marker exists → BLOCK with Step 2 plain-text next-steps (delete marker)
 """
 
 import os
@@ -59,7 +59,7 @@ from erk_shared.gateway.branch_manager.abc import BranchManager
 from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
 from erk_shared.gateway.git.abc import Git
 from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
-from erk_shared.output.next_steps import PlanNextSteps
+from erk_shared.output.next_steps import format_plan_next_steps_plain
 from erk_shared.scratch.plan_snapshots import snapshot_plan_for_session
 from erk_shared.scratch.scratch import get_scratch_dir
 from erk_shared.scratch.session_markers import (
@@ -258,51 +258,31 @@ def extract_plan_title(plan_file_path: Path | None) -> str | None:
 
 def build_step2_message(
     *,
-    session_id: str,
     plan_number: int,
+    url: str,
 ) -> str:
     """Build the Step 2 blocking message after plan is saved.
 
     Pure function - string building only. Testable without mocking.
 
-    Presents three options after either save path:
-      1. Checkout planned branch and implement
-      2. Checkout planned branch in a new worktree and implement
-      3. Done
+    Displays plain-text next-steps commands the user can copy-paste
+    into their shell. No interactive menu — just informational output.
 
     Args:
-        session_id: Claude session ID for marker creation commands.
         plan_number: The plan PR number that was just saved.
+        url: The URL of the saved plan PR.
     """
-    s = PlanNextSteps(plan_number=plan_number, url="")
+    next_steps = format_plan_next_steps_plain(plan_number, url=url)
 
     lines = [
-        f"Plan #{plan_number} saved.",
+        f"Plan #{plan_number} saved successfully.",
         "",
-        "Use AskUserQuestion to ask the user:",
-        f'  question: "Plan #{plan_number} saved. What next?"',
-        '  header: "Plan Saved"',
+        "Display the following next-steps commands to the user as plain text",
+        "(do NOT use AskUserQuestion — just display the text):",
         "",
-        "IMPORTANT: Present options in this exact order:",
-        '  1. "Checkout planned branch and implement" - Check out the plan branch and implement.',
-        '  2. "Checkout planned branch in a new worktree and implement"'
-        " - Open a new worktree for implementation.",
-        '  3. "Done" - End the session without implementing.',
+        next_steps,
         "",
-        "If user chooses 'Checkout planned branch and implement':",
-        "  1. Create implement-now marker:",
-        f"     erk exec marker create --session-id {session_id} \\",
-        "       exit-plan-mode-hook.implement-now",
-        "  2. Call ExitPlanMode",
-        f"  3. After exiting plan mode, run: /erk:plan-implement {plan_number}",
-        "",
-        "If user chooses 'Checkout planned branch in a new worktree and implement':",
-        "  Run this command in your shell (outside Claude) to set up a new worktree:",
-        f"    {s.implement_new_wt}",
-        "  Session complete. Do NOT call ExitPlanMode again.",
-        "",
-        "If user chooses 'Done':",
-        "  Session complete. Do NOT call ExitPlanMode again.",
+        "Session complete. Do NOT call ExitPlanMode again.",
     ]
     return "\n".join(lines)
 
@@ -530,8 +510,8 @@ def determine_exit_action(hook_input: HookInput) -> HookOutput:
         plan_num = hook_input.plan_saved_plan_number
         if plan_num is not None:
             saved_msg = build_step2_message(
-                session_id=hook_input.session_id,
                 plan_number=plan_num,
+                url="",
             )
         else:
             # Fallback for markers without a plan number (migration safety)
