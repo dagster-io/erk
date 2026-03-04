@@ -244,7 +244,6 @@ def test_land_with_up_does_not_call_git_pull() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
-            local_branches={env.cwd: ["main", "feature-1", "feature-2"]},
         )
 
         # feature-1 is parent of feature-2 (feature-1 has one child)
