@@ -23,7 +23,7 @@ Fetches unresolved PR review comments AND PR discussion comments from the curren
 
 ## Agent Instructions
 
-> **Plan mode**: If plan mode is active, exit it first (press `Escape`). This command manages its own execution flow and needs to make edits directly.
+> **Plan mode**: If plan mode is active, run Phases 0-2 (mode detection, classify feedback, display batched plan) as normal — these are read-only. Then write the execution plan to the plan file and call ExitPlanMode. Do NOT execute Phases 3-6 (edits, commits, resolution) until plan mode is exited and the user approves. In Plan File Mode, the same applies: run PF-1 and PF-2, then write the plan and call ExitPlanMode before executing PF-3 through PF-6.
 
 > **Prerequisite**: Load `pr-operations` skill first for command reference.
 
