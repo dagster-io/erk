@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: StatusBar MarkupError crash on subprocess error messages"
+}
