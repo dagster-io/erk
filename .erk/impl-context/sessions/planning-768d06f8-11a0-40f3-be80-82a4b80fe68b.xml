@@ -1,0 +1,610 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-sonnet-4-6" />
+  <user>
+
+good feedback. plan to fix</user>
+  <thinking>The user wants me to plan a fix for a UI issue in what appears to be a PR description or commit message view. The feedback says:
+1. "Key changes" should come before "Files changed"
+2. "Files changed" should probably just be the toggle list without the header
+
+Let me explore the codebase to find where PR descriptions are rendered or generated.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="12235" cache_read_input_tokens="19205" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12235}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01P7mRNVk5Uv9dMnAjNpYM2g">
+    <param name="description">Explore PR body generation code</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic. Read relevant ...[truncated 612 chars]... Changes", "Files Changed", "key_changes", "files_changed", "pr body", "pull_request body"</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="12235" cache_read_input_tokens="19205" output_tokens="378" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12235, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01P7mRNVk5Uv9dMnAjNpYM2g">
+Perfect! Now I have a comprehensive understanding. Let me create a summary document with all the findings:
+
+## Summary of PR Body Generation in Erk
+
+I've successfully located where PR body/description content is generated and formatted in the erk codebase. Here are the key findings:
+
+### 1. **PR Body Structure and Assembly**
+
+**Main File:** `/Users/schrockn/code/erk/src/erk/cli/commands/pr/shared.py`
+
+**Key Function:** `assemble_pr_body()` (lines 259-306)
+- Consolidates PR body construction
+- Combines AI-generated body, optional plan details section, and footer
+- Uses separate handling for issue-based plans vs. planned PR (draft) plans
+
+### 2. **The "Key Changes" and "Files Changed" Sections - WHERE THEY'RE DEFINED**
+
+**Source:** `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md`
+
+This is the **system prompt** that instructs Claude how to format PR bodies. The format includes:
+
+```markdown
+## Files Changed
+&lt;details&gt;
+&lt;summary&gt;Files Changed&lt;/summary&gt;
+### Added (N files)
+### Modified (N files)
+### Deleted (N files)
+&lt;/details&gt;
+
+
+... [93 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a clear picture. The issue is in the commit message prompt template at `packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md`. The current order is:
+1. Files Changed (with both a header AND a toggle)
+2. Key Changes
+
+The fix should:
+1. Move "Key Changes" before "Files Changed"
+2. Remove the "## Files Changed" header, keeping only the toggle/details element
+
+Let me read the actual prompt file to understand the exact format.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="14149" cache_read_input_tokens="19203" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14149}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01X4wpyEusaZKTbgNxW8kxFR">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14149" cache_read_input_tokens="19203" output_tokens="224" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 14149, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X4wpyEusaZKTbgNxW8kxFR">
+     1→You are a commit message generator. Analyze the provided git diff and return ONLY a commit message.
+     2→
+     3→## Analysis Principles
+     4→
+     5→Analyze the diff following these principles:
+     6→
+     7→- **Be concise and strategic** - focus on significant changes
+     8→- **Use component-level descriptions** - reference modules/components, not individual functions
+     9→- **Highlight breaking changes prominently**
+    10→- **Note test coverage patterns**
+    11→- **Use relative paths from repository root**
+    12→
+    13→## Level of Detail
+    14→
+    15→- Focus on architectural and component-level impact
+    16→- Keep "Key Changes" to 3-5 major items
+    17→- Group related changes together
+    18→- Skip minor refactoring, formatting, or trivial updates
+    19→
+    20→## Output Format
+    21→
+    22→```
+    23→[Clear one-line PR title describing the change]
+    24→
+    25→[2-3 sentence summary explaining what changed and why. State what the branch does (feature/fix/refactor) and highlight key changes briefly.]
+    26→
+    27→## Files Changed
+    28→
+    29→&lt;details&gt;
+    30→&lt;summary&gt;Files Changed&lt;/summary&gt;
+
+... [54 lines omitted] ...
+
+    69→[Only if there are breaking changes, security concerns, or important warnings - 1-2 bullets max]
+  </tool_result>
+  <assistant>Now I have everything I need. The fix is straightforward: in `commit_message_prompt.md`, move "Key Changes" before "Files Changed", and remove the `## Files Changed` header (keeping only the `&lt;details&gt;` toggle).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1128" cache_read_input_tokens="33352" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1128}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_016jmbxiFawrBtwHWRX5t2Xi">
+    <param name="file_path">/Users/schrockn/.claude/plans/kind-hugging-teapot.md</param>
+    <param name="content"># Fix PR body section order and "Files Changed" header
+
+## Context
+
+PR review feedback: "K...[truncated 1306 chars]...heading above the `&lt;details&gt;` element
+- Toggle still works and shows file lists correctly
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1128" cache_read_input_tokens="33352" output_tokens="560" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1128, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016jmbxiFawrBtwHWRX5t2Xi">
+File created successfully at: /Users/schrockn/.claude/plans/kind-hugging-teapot.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_019Pb8JtvrCnYsoC6eu4KM4X">
+    <param name="plan"># Fix PR body section order and "Files Changed" header
+
+## Context
+
+PR review feedback: "K...[truncated 1306 chars]...heading above the `&lt;details&gt;` element
+- Toggle still works and shows file lists correctly
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="599" cache_read_input_tokens="34480" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 599, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019Pb8JtvrCnYsoC6eu4KM4X">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/kind-hugging-teapot.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix PR body section order and "Files Changed" header
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 768d06f8-11a0-40f3-be80-82a4b80fe68b \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>## Fix PR body section order and "Files Changed" header
+
+**File:** `packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md`
+
+Two changes to the Output Format block:
+1. Move `## Key Changes` **before** the Files Changed block
+2. Remove the `## Files Changed` heading — keep only the `&lt;details&gt;` toggle
+
+**Result order:** Summary → Key Changes → `&lt;details&gt;` toggle → User Experience → Critical Notes</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="777" cache_read_input_tokens="35079" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 777}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_019p84HbVTCRZboZa9zRLnXP">
+    <param name="questions">[{'question': '📋 Fix PR body section order and "Files Changed" header\nCurrent context: (w...[truncated 380 chars]...t the Plan', 'description': 'Open plan in editor to review or modify before deciding.'}]}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="777" cache_read_input_tokens="35079" output_tokens="322" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 777, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019p84HbVTCRZboZa9zRLnXP">
+User has answered your questions: "📋 Fix PR body section order and "Files Changed" header
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01SdSGrfCByEJtJ2ZccLk36o">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2959" cache_read_input_tokens="35856" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2959, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SdSGrfCByEJtJ2ZccLk36o">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="768d06f8-11a0-40f3-be80-82a4b80fe68b" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="768d06f8-11a0-40f3-be80-82a4b80fe68b" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "768d06f8-11a0-40f3-be80-82a4b80fe68b" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "768d06f8-11a0-40f3-be80-82a4b80fe68b" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "768d06f8-11a0-40f3-be80-82a4b80fe68b" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "768d06f8-11a0-40f3-be80-82a4b80fe68b" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>The skill has been loaded. I need to follow the plan-save workflow:
+
+1. Parse arguments - no special flags
+2. Generate branch slug from plan title: "Fix PR body section order and 'Files Changed' header" → "fix-pr-body-section-order" or "fix-pr-body-key-changes"
+3. Generate plan summary
+4. Run save command
+5. Display results
+
+Branch slug: "fix-pr-body-section-order" (but that's too long, let me use "fix-pr-body-order")
+Actually: "fix-key-changes-order" - captures the essence
+
+Plan summary: "Move 'Key Changes' before 'Files Changed' in the PR body prompt template, and remove the redundant ## Files Changed heading so only the collapsible toggle remains."</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2289" cache_read_input_tokens="38815" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2289}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FEgfJkg1MrLdaLK4QPGr4K">
+    <param name="command">erk exec plan-save --format json --session-id="768d06f8-11a0-40f3-be80-82a4b80fe68b" --bra...[truncated 150 chars]...ding so only the collapsible toggle remains. One-line change to commit_message_prompt.md."</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2289" cache_read_input_tokens="38815" output_tokens="354" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2289, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FEgfJkg1MrLdaLK4QPGr4K">
+{"success": true, "plan_number": 8745, "plan_url": "https://github.com/dagster-io/erk/pull/8745", "title": "[erk-plan] Fix PR body section order and \"Files Changed\" header", "branch_name": "plnd/fix-key-changes-order-03-04-1509", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/768d06f8-11a0-40f3-be80-82a4b80fe68b/plan_snapshots/000001-5032d0f9"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014he8w6bevfbSv4ciPAJu1n">
+    <param name="command">erk exec capture-session-info --session-id "768d06f8-11a0-40f3-be80-82a4b80fe68b" 2&gt;/dev/null | head -5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="531" cache_read_input_tokens="41104" output_tokens="100" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 531, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014he8w6bevfbSv4ciPAJu1n">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01V4JdzgUAkk7JhUvGEiVW97">
+    <param name="command">erk exec push-session --session-id "768d06f8-11a0-40f3-be80-82a4b80fe68b" --stage planning --source local --plan-id 8745 2&gt;/dev/null || true</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="318" cache_read_input_tokens="41635" output_tokens="109" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 318, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V4JdzgUAkk7JhUvGEiVW97">
+
+  </tool_result>
+  <assistant>Plan saved as draft PR #8745.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="135" cache_read_input_tokens="41953" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 135}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01PEj2J7uFjVQ1maNdd853Bk">
+    <param name="plan"># Fix PR body section order and "Files Changed" header
+
+## Context
+
+PR review feedback: "K...[truncated 1306 chars]...heading above the `&lt;details&gt;` element
+- Toggle still works and shows file lists correctly
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="135" cache_read_input_tokens="41953" output_tokens="48" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 135, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PEj2J7uFjVQ1maNdd853Bk">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8745 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8745:
+  In current wt:    source "$(erk br co --for-plan 8745 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8745 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8745 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8745 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8745:
+  In current wt:  erk br co --for-plan 8745
+  In new wt:      erk br co --new-slot --for-plan 8745
+
+Dispatch plan #8745:
+  CLI command:    erk pr dispatch 8745
+  Slash command:  /erk:pr-dispatch 8745
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan "[erk-plan] Fix PR body section order and 'Files Changed' header" saved as draft PR #8745.
+
+Implement plan #8745:
+  In current wt:    source "$(erk br co --for-plan 8745 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8745 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8745 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8745 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8745:
+  In current wt:  erk br co --for-plan 8745
+  In new wt:      erk br co --new-slot --for-plan 8745
+
+Dispatch plan #8745:
+  CLI command:    erk pr dispatch 8745
+  Slash command:  /erk:pr-dispatch 8745</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="433" cache_read_input_tokens="42088" output_tokens="259" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 433, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "768d06f8-11a0-40f3-be80-82a4b80fe68b" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <thinking>The user wants to dispatch plan #8745 for remote implementation.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="827" cache_read_input_tokens="42521" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 827}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01V9ebYegTwGGDv4bHdAP42U">
+    <param name="command">erk pr dispatch 8745</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="827" cache_read_input_tokens="42521" output_tokens="87" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 827, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V9ebYegTwGGDv4bHdAP42U">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8745...
+
+✓ All 1 plan(s) validated
+
+  #8745: [erk-plan] Fix PR body section order and "Files Changed" header
+
+Dispatching PR #8745...
+
+Fetching plan content...
+Syncing branch: plnd/fix-key-changes-order-03-04-1509
+Committing plan to branch...
+✓ Branch pushed to remote
+
+Dispatching workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow dispatched.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+Dispatched plans:
+
+... [4 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Bih7XgRS9fTLCSUYL38afS">
+    <param name="command">erk exec marker delete --session-id "768d06f8-11a0-40f3-be80-82a4b80fe68b" plan-saved-issue</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="523" cache_read_input_tokens="43348" output_tokens="92" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 523, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Bih7XgRS9fTLCSUYL38afS">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Dispatched plan #8745 for remote implementation.
+
+- **Plan:** https://github.com/dagster-io/erk/pull/8745
+- **Workflow:** https://github.com/dagster-io/erk/actions/runs/22693880728</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="123" cache_read_input_tokens="43871" output_tokens="66" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 123, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
