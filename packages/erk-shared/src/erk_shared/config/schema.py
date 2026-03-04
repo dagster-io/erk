@@ -95,11 +95,13 @@ class GlobalConfigSchema(BaseModel):
         description="Enable GitHub issues integration for planning",
         json_schema_extra={"level": ConfigLevel.OVERRIDABLE, "cli_key": "github_planning"},
     )
-    rebase_require_dangerous_flag: bool = Field(
-        description="Require --dangerous flag for rebase",
+    require_dangerous_flag_for_implicitly_dangerous_operations: bool = Field(
+        description=(
+            "Require --dangerous flag for commands that invoke Claude with skip-permissions"
+        ),
         json_schema_extra={
             "level": ConfigLevel.OVERRIDABLE,
-            "cli_key": "rebase_require_dangerous_flag",
+            "cli_key": "require_dangerous_flag_for_implicitly_dangerous_operations",
         },
     )
     show_hidden_commands: bool = Field(

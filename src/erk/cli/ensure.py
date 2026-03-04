@@ -119,6 +119,32 @@ class Ensure:
         return value
 
     @staticmethod
+    def dangerous_flag(ctx: ErkContext, *, dangerous: bool) -> None:
+        """Ensure --dangerous flag is provided unless config disables the requirement.
+
+        Centralizes the check for commands that invoke Claude with
+        --dangerously-skip-permissions (rebase, reconcile-with-remote, address).
+
+        Args:
+            ctx: Application context with global config
+            dangerous: Whether the --dangerous flag was provided
+
+        Raises:
+            click.UsageError: If flag is required but not provided
+        """
+        if dangerous:
+            return
+        require_flag = (
+            ctx.global_config is None
+            or ctx.global_config.require_dangerous_flag_for_implicitly_dangerous_operations
+        )
+        if require_flag:
+            config_key = "require_dangerous_flag_for_implicitly_dangerous_operations"
+            raise click.UsageError(
+                f"Missing option '--dangerous'.\nTo disable: erk config set {config_key} false"
+            )
+
+    @staticmethod
     def path_exists(
         ctx: ErkContext,
         path: Path,

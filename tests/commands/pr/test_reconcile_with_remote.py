@@ -72,7 +72,7 @@ def test_pr_reconcile_with_remote_requires_dangerous_flag() -> None:
         assert result.exit_code != 0
         assert "Missing option '--dangerous'" in result.output
         # Verify error message includes config hint
-        assert "rebase_require_dangerous_flag false" in result.output
+        assert "require_dangerous_flag_for_implicitly_dangerous_operations false" in result.output
 
 
 def test_pr_reconcile_with_remote_skip_dangerous_with_config() -> None:
@@ -95,10 +95,10 @@ def test_pr_reconcile_with_remote_skip_dangerous_with_config() -> None:
 
         executor = FakePromptExecutor(available=True)
 
-        # Create GlobalConfig with rebase_require_dangerous_flag=False
+        # Create GlobalConfig with require_dangerous_flag_for_implicitly_dangerous_operations=False
         global_config = GlobalConfig.test(
             env.erk_root,
-            rebase_require_dangerous_flag=False,  # Disable --dangerous requirement
+            require_dangerous_flag_for_implicitly_dangerous_operations=False,
         )
 
         ctx = build_workspace_test_context(

@@ -233,7 +233,7 @@ class GlobalConfig:
     use_graphite: bool
     shell_setup_complete: bool
     github_planning: bool
-    rebase_require_dangerous_flag: bool = True
+    require_dangerous_flag_for_implicitly_dangerous_operations: bool = True
     show_hidden_commands: bool = False
     prompt_learn_on_land: bool = True
     shell_integration: bool = False
@@ -247,7 +247,7 @@ class GlobalConfig:
         use_graphite: bool = True,
         shell_setup_complete: bool = True,
         github_planning: bool = True,
-        rebase_require_dangerous_flag: bool = True,
+        require_dangerous_flag_for_implicitly_dangerous_operations: bool = True,
         show_hidden_commands: bool = False,
         prompt_learn_on_land: bool = True,
         shell_integration: bool = False,
@@ -260,7 +260,7 @@ class GlobalConfig:
             use_graphite=use_graphite,
             shell_setup_complete=shell_setup_complete,
             github_planning=github_planning,
-            rebase_require_dangerous_flag=rebase_require_dangerous_flag,
+            require_dangerous_flag_for_implicitly_dangerous_operations=require_dangerous_flag_for_implicitly_dangerous_operations,
             show_hidden_commands=show_hidden_commands,
             prompt_learn_on_land=prompt_learn_on_land,
             shell_integration=shell_integration,

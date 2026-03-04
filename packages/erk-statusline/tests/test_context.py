@@ -30,7 +30,7 @@ class TestResolveGraphite:
             use_graphite=False,
             shell_setup_complete=True,
             github_planning=True,
-            rebase_require_dangerous_flag=True,
+            require_dangerous_flag_for_implicitly_dangerous_operations=True,
             show_hidden_commands=False,
         )
         installation = FakeErkInstallation(config=config)
@@ -47,7 +47,7 @@ class TestResolveGraphite:
             use_graphite=True,
             shell_setup_complete=True,
             github_planning=True,
-            rebase_require_dangerous_flag=True,
+            require_dangerous_flag_for_implicitly_dangerous_operations=True,
             show_hidden_commands=False,
         )
         installation = FakeErkInstallation(config=config)
@@ -64,7 +64,7 @@ class TestResolveGraphite:
             use_graphite=True,
             shell_setup_complete=True,
             github_planning=True,
-            rebase_require_dangerous_flag=True,
+            require_dangerous_flag_for_implicitly_dangerous_operations=True,
             show_hidden_commands=False,
         )
         installation = FakeErkInstallation(config=config)

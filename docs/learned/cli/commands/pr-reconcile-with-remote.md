@@ -45,7 +45,7 @@ This happens when:
 To disable the `--dangerous` flag requirement:
 
 ```bash
-erk config set rebase_require_dangerous_flag false
+erk config set require_dangerous_flag_for_implicitly_dangerous_operations false
 ```
 
 This is useful for workflows where you've accepted the risk of Claude executing commands.
