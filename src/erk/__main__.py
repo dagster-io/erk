@@ -3,4 +3,5 @@
 from erk import main
 
 if __name__ == "__main__":
+    print("for dgibson after plubming")
     main()
