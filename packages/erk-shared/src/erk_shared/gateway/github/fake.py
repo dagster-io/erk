@@ -77,6 +77,7 @@ class FakeGitHub(GitHub):
         ) = None,
         ci_summary_logs: dict[str, str] | None = None,
         time: Time | None = None,
+        add_label_errors: dict[str, str] | None = None,
     ) -> None:
         """Create FakeGitHub with pre-configured state.
 
@@ -185,6 +186,7 @@ class FakeGitHub(GitHub):
         self._created_commit_statuses: list[tuple[str, str, str, str, str]] = []
         self._plan_pr_details = plan_pr_details or ([], {}, 0)
         self._ci_summary_logs = ci_summary_logs or {}
+        self._add_label_errors = add_label_errors or {}
 
     @property
     def issues(self) -> GitHubIssues:
@@ -832,6 +834,8 @@ class FakeGitHub(GitHub):
 
     def add_label_to_pr(self, repo_root: Path, pr_number: int, label: str) -> None:
         """Record label addition in mutation tracking list and update internal state."""
+        if label in self._add_label_errors:
+            raise RuntimeError(self._add_label_errors[label])
         self._added_labels.append((pr_number, label))
         if pr_number not in self._pr_labels:
             self._pr_labels[pr_number] = set()
