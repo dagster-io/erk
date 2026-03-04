@@ -160,7 +160,7 @@ except (OSError, tomllib.TOMLDecodeError) as e:
 
 ### Race Condition Exception: TOCTOU Hazards
 
-File system operations are the canonical case where try-except legitimately wraps the check-and-act pair, because the state can change between check and action:
+**TOCTOU** (Time Of Check, Time Of Use) is a race condition where the state changes between when you check a condition and when you act on it. File system operations are the canonical case where try-except legitimately wraps the check-and-act pair, because the state can change between check and action:
 
 ```python
 # ACCEPTABLE: TOCTOU — file may disappear between stat() and unlink()
