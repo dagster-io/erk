@@ -20,6 +20,7 @@ Quick reference for all `erk exec` subcommands.
 | --------------------------------- | --------------------------------------------------------------------------- |
 | `add-plan-label`                  | Add a label to a plan via the appropriate backend.                          |
 | `add-plan-labels`                 | Batch add labels to multiple plans from JSON stdin.                         |
+| `add-pr-labels`                   | Add labels to a PR with automatic retry on transient failures.              |
 | `add-remote-execution-note`       | Add remote execution tracking note to PR body.                              |
 | `capture-session-info`            | Capture Claude Code session info for CI workflows.                          |
 | `ci-fetch-summaries`              | Fetch CI failure summaries for a PR.                                        |
@@ -134,6 +135,24 @@ Add a label to a plan via the appropriate backend.
 Batch add labels to multiple plans from JSON stdin.
 
 **Usage:** `erk exec add-plan-labels`
+
+### add-pr-labels
+
+Add labels to a PR with automatic retry on transient failures.
+
+**Usage:** `erk exec add-pr-labels` <pr_number>
+
+**Arguments:**
+
+| Name        | Required | Description |
+| ----------- | -------- | ----------- |
+| `PR_NUMBER` | Yes      | -           |
+
+**Options:**
+
+| Flag       | Type | Required | Default        | Description                     |
+| ---------- | ---- | -------- | -------------- | ------------------------------- |
+| `--labels` | TEXT | Yes      | Sentinel.UNSET | Labels to add (can be repeated) |
 
 ### add-remote-execution-note
 
