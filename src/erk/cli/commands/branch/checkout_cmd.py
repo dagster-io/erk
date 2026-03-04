@@ -378,6 +378,14 @@ def _rebase_and_track_for_plan(
             ctx.branch_manager.create_tracking_branch(
                 repo_root, parent_branch, f"origin/{parent_branch}"
             )
+        else:
+            # Parent exists locally but may be stale after squash/rebase.
+            # Update to match origin so gt track sees consistent history.
+            ctx.git.remote.fetch_branch(repo_root, "origin", parent_branch)
+            remote_sha = ctx.git.branch.get_branch_head(repo_root, f"origin/{parent_branch}")
+            local_sha = ctx.git.branch.get_branch_head(repo_root, parent_branch)
+            if remote_sha is not None and remote_sha != local_sha:
+                ctx.git.branch.update_local_ref(repo_root, parent_branch, remote_sha)
 
         user_output("Rebasing onto base branch...")
         rebase_result = ctx.git.rebase.rebase_onto(worktree_path, f"origin/{parent_branch}")
