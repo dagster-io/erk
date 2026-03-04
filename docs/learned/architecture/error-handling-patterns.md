@@ -8,6 +8,9 @@ tripwires:
   - action: "swallowing errors silently in a deterministic code path"
     warning: "Never suppress errors deterministically. Use best-effort (catch + log warning) only for truly optional operations. Use error-first (check + fail with remediation) for required operations."
     score: 5
+  - action: "writing a try-except block that wraps multiple independent operations"
+    warning: "Minimal exception scope: each try block should wrap only the single operation that can raise the caught exception. Split into separate try-except blocks with early returns. Broader scope is only acceptable when statements form an atomic unit (same message and recovery regardless of which line raises). See dignified-python references/exception-handling.md."
+    score: 4
 ---
 
 # Error Handling Patterns

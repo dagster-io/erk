@@ -4,7 +4,7 @@ description: Detailed exception handling patterns including B904 chaining, third
 
 # Exception Handling Reference
 
-**Read when**: Writing try/except blocks, wrapping third-party APIs, seeing `from e` or `from None`
+**Read when**: Writing try/except blocks, scoping try-except blocks, wrapping third-party APIs, seeing `from e` or `from None`
 
 ---
 
@@ -91,6 +91,97 @@ try:
 except yaml.YAMLError as e:
     raise ValueError(f"Failed to parse config file {config_file}: {e}") from e
 ```
+
+---
+
+## Minimal Exception Scope
+
+**When exceptions are the correct tool, scope the try block to the single operation that raises.**
+
+The LBYL philosophy extends into exception handling itself: minimize the region of code governed by implicit control flow. A try-except block should be a surgical instrument targeting one operation, not a safety net draped over a paragraph of logic.
+
+### The Problem with Broad Try Blocks
+
+```python
+# WRONG: Broad scope — RuntimeError catch covers subprocess AND json AND update
+try:
+    result = run_subprocess(cmd)
+    output = json.loads(result.stdout)
+    if output.get("success"):
+        update_metadata(output)
+except RuntimeError as e:
+    logger.warning(f"Failed: {e}")
+```
+
+This is problematic even when exceptions are justified:
+
+1. **Imprecise attribution** — the handler cannot distinguish which operation raised `RuntimeError`
+2. **Accidental catch** — if `update_metadata` later starts raising `RuntimeError`, this handler silently swallows it
+3. **Coupled recovery** — different operations may need different error messages or recovery strategies
+
+### The Pattern: One Operation Per Try Block
+
+Scope each try-except to the single operation that can raise. Use early returns to keep subsequent code flat:
+
+```python
+# CORRECT: Each try wraps exactly one operation
+try:
+    result = run_subprocess(cmd)
+except RuntimeError as e:
+    logger.warning(f"Subprocess failed: {e}")
+    return
+
+try:
+    output = json.loads(result.stdout)
+except json.JSONDecodeError:
+    logger.warning(f"Bad JSON: {result.stdout}")
+    return
+
+if output.get("success"):
+    update_metadata(output)
+```
+
+Each handler knows exactly what failed. New code between the blocks cannot be accidentally caught. Different operations get different exception types, different messages, and different recovery logic.
+
+### When Broader Scope Is Acceptable
+
+A try block MAY contain multiple statements when they form an **atomic unit** — a failure in any part means the same thing and requires the same recovery:
+
+```python
+# ACCEPTABLE: Atomic unit — both lines are "reading the config file"
+try:
+    raw = config_path.read_text(encoding="utf-8")
+    config = tomllib.loads(raw)
+except (OSError, tomllib.TOMLDecodeError) as e:
+    raise UserFacingCliError(f"Failed to read config: {e}") from e
+```
+
+**The test**: if the handler's message and recovery action would be identical regardless of which line raised, the scope is appropriate. If you would write a different message or take a different action, split the blocks.
+
+### Race Condition Exception: TOCTOU Hazards
+
+**TOCTOU** (Time Of Check, Time Of Use) is a race condition where the state changes between when you check a condition and when you act on it. File system operations are the canonical case where try-except legitimately wraps the check-and-act pair, because the state can change between check and action:
+
+```python
+# ACCEPTABLE: TOCTOU — file may disappear between stat() and unlink()
+try:
+    if script_file.stat().st_mtime < cutoff:
+        script_file.unlink()
+except (FileNotFoundError, PermissionError):
+    continue
+```
+
+This is not a violation of minimal scope — the two lines are logically atomic because splitting them would introduce the exact race condition the try-except is guarding against.
+
+### Relationship to LBYL
+
+This standard is subordinate to LBYL. The decision tree:
+
+1. **Can you check the condition before acting?** → Use LBYL, no try-except at all
+2. **Do callers branch on the error type?** → Use discriminated unions (see `discriminated-union-error-handling.md`)
+3. **Must you use try-except?** → Scope it to the single operation that raises
+
+Minimal exception scope is how you stay true to the LBYL philosophy even when exceptions are unavoidable: you minimize the region of code governed by implicit control flow.
 
 ---
 
