@@ -11,7 +11,7 @@ def _parse_int_env(name: str, default: int) -> int:
     return int(value)
 
 
-def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the Erk MCP server.")
     parser.add_argument("--host", default=os.getenv("ERK_MCP_HOST", "0.0.0.0"))
     parser.add_argument("--port", type=int, default=_parse_int_env("ERK_MCP_PORT", 9000))
@@ -24,7 +24,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 
 def main() -> None:
-    args = _parse_args()
+    args = _parse_args(None)
     mcp = create_mcp()
     if args.transport == "stdio":
         mcp.run()
