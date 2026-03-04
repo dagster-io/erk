@@ -27,6 +27,10 @@ class PlanNextSteps:
         return f"erk br co --new-slot --for-plan {self.plan_number}"
 
     @property
+    def dispatch_slash_command(self) -> str:
+        return f"/erk:pr-dispatch {self.plan_number}"
+
+    @property
     def implement_current_wt(self) -> str:
         return f'source "$(erk br co --for-plan {self.plan_number} --script)" && erk implement'
 
@@ -67,7 +71,9 @@ Checkout plan #{plan_number}:
   In current wt:  {s.checkout}
   In new wt:      {s.checkout_new_slot}
 
-Dispatch to queue: {s.dispatch}"""
+Dispatch plan #{plan_number}:
+  CLI command:    {s.dispatch}
+  Slash command:  {s.dispatch_slash_command}"""
 
 
 def format_next_steps_markdown(plan_number: int, *, url: str) -> str:
