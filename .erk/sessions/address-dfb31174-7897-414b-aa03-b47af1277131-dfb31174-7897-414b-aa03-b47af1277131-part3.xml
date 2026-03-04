@@ -1,0 +1,268 @@
+<session>
+  <meta source="agent-a3c3221" />
+  <meta branch="plnd/consolidate-learn-docs-03-03-0431" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Arguments: --pr 8642
+Return the complete JSON output as your final message.</user>
+  <assistant>I'll load the skill and execute it with the specified arguments.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="20101" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20101, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QuWofLiyiDmWa42nDt4ffn">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/pr-feedback-classifier/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20101" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20101, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QuWofLiyiDmWa42nDt4ffn">
+     1→---
+     2→name: pr-feedback-classifier
+     3→description: &gt;
+     4→  Fetches and classifies PR review feedback with context isolation.
+     5→  Returns structured JSON with thread IDs for deterministic resolution.
+     6→  Use when analyzing PR comments before addressing them.
+     7→argument-hint: "[--pr &lt;number&gt;] [--include-resolved]"
+     8→context: fork
+     9→agent: general-purpose
+    10→model: sonnet
+    11→---
+    12→
+    13→# PR Feedback Classifier
+    14→
+    15→Fetch and classify all PR review feedback for the current branch's PR.
+    16→
+    17→## Arguments
+    18→
+    19→- `--pr &lt;number&gt;`: Target a specific PR by number (default: current branch's PR)
+    20→- `--include-resolved`: Include resolved threads (for reference)
+    21→
+    22→Check `$ARGUMENTS` for flags.
+    23→
+    24→## Critical Constraints
+    25→
+    26→**DO NOT write Python scripts or any code files.** Classify the data using direct AI reasoning only. Writing code to process JSON is unnecessary and pollutes the filesystem.
+    27→
+    28→## Steps
+    29→
+    30→1. **Fetch PR info and all comments in a single call:**
+
+... [194 lines omitted] ...
+
+   130→      "action_summary": "Bot suggestion: add unit tests for error handling paths",
+   132→      "original_comment": "Consider adding unit tests for the error handling paths in this endpoint"
+   170→  "error": null
+   184→## Error Case
+   198→  "error": "No PR found for branch feature-xyz"
+   216→  "error": null
+  </tool_result>
+  <assistant>Now I'll fetch the PR feedback for PR 8642 using the command specified in the skill:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="2950" cache_read_input_tokens="20101" cache_creation="{'ephemeral_5m_input_tokens': 2950, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CupKBbNbNfrXxsi67u344g">
+    <param name="command">erk exec get-pr-feedback --pr 8642</param>
+    <param name="description">Fetch PR feedback and comments for PR 8642</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="2950" cache_read_input_tokens="20101" cache_creation="{'ephemeral_5m_input_tokens': 2950, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CupKBbNbNfrXxsi67u344g">
+{
+  "success": true,
+  "pr_number": 8642,
+  "pr_url": "https://github.com/dagster-io/erk/pull/8642",
+  "pr_title": "Consolidate documentation from 12 erk-learn plans",
+  "review_threads": [
+    {
+      "id": "PRRT_kwDOPxC3hc5x8Ou2",
+      "path": "docs/learned/architecture/capability-system.md",
+      "line": 119,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Drift risk \u2014 line-range reference in prose.\n\nSource: `src/erk/core/capabilities/registry.py:85-94`\n\nThe inline annotation `(at src/erk/core/capabilities/registry.py:85-94)` uses a line-range reference for a named Python function. Per `docs/learned/documentation/source-pointers.md`: prefer name-based identifiers over line numbers \u2014 names survive refactoring, line numbers go stale silently.\n\nSuggested fix: Replace the parenthetical with a prose source pointer:\n```\n&lt;!-- Source: src/erk/core/capabilities/registry.py, list_optional_capabilities --&gt;\nSee `list_optional_capabilities()` in `src/erk/core/capabilities/registry.py`.\n```\nOr simply remove the line-range annotation \u2014 the function name alone is sufficient.",
+          "created_at": "2026-03-04T00:28:51Z"
+        }
+      ]
+    },
+    {
+      "id": "PRRT_kwDOPxC3hc5x8O1P",
+      "path": "docs/learned/architecture/capability-system.md",
+      "line": 125,
+      "is_outdated": false,
+      "comments": [
+        {
+          "author": "github-actions",
+          "body": "**Audit PR Docs**: Drift risk \u2014 enumerable catalog table will go stale.\n\nSource: `src/erk/capabilities/skills/bundled.py:17-25`\n\nThe table listing the 5 required bundled skills is an enumerable catalog. Per `docs/learned/.claude/skills/learned-docs/learned-docs-core.md` (What Doesn't Belong): \"Enumerable catalogs (error types, status values, config options) \u2014 encode as Literal types, Enums, or typed constants in source code... reference with source pointers, not tables.\" The `_REQUIRED_BUNDLED_SKILLS` frozenset at lines 17-25 is exactly this pattern.\n\nAs skills are added or removed from `_REQUIRED_BUNDLED_SKILLS`, this table will go stale silently.\n\nSuggested fix: Replace the table with a source pointer:\n```\n&lt;!-- Source: src/erk/capabilities/skills/bundled.py, _REQUIRED_BUNDLED_SKILLS --&gt;\nSee `_REQUIRED_BUNDLED_SKILLS` in `src/erk/capabilities/skills/bundled.py` for the current list. Required skills are excluded from user-facing lists like `erk init capability list` since they are always installed.\n```",
+          "created_at": "2026-03-04T00:29:04Z"
+        }
+
+... [95 lines omitted] ...
+
+      "body": "Plan Queued for Implementation\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:submission-queued --&gt;\n&lt;details&gt;\n&lt;summary&gt;submission-queued&lt;/summary&gt;\n\n```yaml\n\nstatus: queued\nqueued_at: '2026-03-03T04:33:23.762461+00:00'\nsubmitted_by: schrockn\nplan_number: 8642\nvalidation_results:\n  pr_is_open: true\n  has_erk_plan_label: true\nexpected_workflow: plan-implement\ntrigger_mechanism: label-based-webhook\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:submission-queued --&gt;\n\n---\n\nPlan submitted by **schrockn** at 2026-03-03T04:33:23.762461+00:00.\n\nThe `plan-implement` workflow has been dispatched via direct dispatch.\n\n**Workflow run:** https://github.com/dagster-io/erk/actions/runs/22608424731",
+      "body": "\u2699\ufe0f GitHub Action Started\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!-- erk:metadata-block:workflow-started --&gt;\n&lt;details&gt;\n&lt;summary&gt;workflow-started&lt;/summary&gt;\n\n```yaml\n\nstatus: started\nstarted_at: '2026-03-03T04:34:05Z'\nworkflow_run_id: '22608424731'\nworkflow_run_url: https://github.com/dagster-io/erk/actions/runs/22608424731\nplan_number: 8642\nbranch_name: plnd/consolidate-learn-docs-03-03-0431\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:workflow-started --&gt;\n\n---\n\nSetup completed successfully.\n\n**Branch:** `plnd/consolidate-learn-docs-03-03-0431`\n**PR:** [#8642](https://github.com/dagster-io/erk/pull/8642)\n**Status:** Ready for implementation\n\n[View workflow run](https://github.com/dagster-io/erk/actions/runs/22608424731)",
+  </tool_result>
+  <assistant>Now I'll fetch the file-level restructuring context to inform pre-existing detection:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="4770" cache_read_input_tokens="23051" cache_creation="{'ephemeral_5m_input_tokens': 4770, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013LLML7ZHpKDVyQPK8HRmhs">
+    <param name="command">git diff --stat -M -C main...HEAD 2&gt;/dev/null || git diff --stat -M -C origin/master...HEAD 2&gt;/dev/null || echo "Could not determine diff"</param>
+    <param name="description">Fetch file restructuring context for pre-existing detection</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="4770" cache_read_input_tokens="23051" cache_creation="{'ephemeral_5m_input_tokens': 4770, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013LLML7ZHpKDVyQPK8HRmhs">
+ docs/learned/architecture/capability-system.md     | 20 ++++-
+ docs/learned/architecture/erk-statusline.md        | 22 ++++++
+ docs/learned/architecture/inference-hoisting.md    | 38 ++++++++++
+ docs/learned/cli/command-organization.md           | 16 ++++
+ docs/learned/cli/implement-command.md              | 64 ++++++++++++++++
+ docs/learned/cli/index.md                          |  1 +
+ docs/learned/cli/tripwires.md                      |  2 +
+ docs/learned/configuration/schema-driven-config.md |  6 ++
+ docs/learned/erk/dispatch-ref-config.md            | 41 +++++++---
+ docs/learned/erk/index.md                          |  2 +-
+ docs/learned/erk/tripwires.md                      |  2 +
+ docs/learned/integrations/bundled-artifacts.md     | 10 +--
+ .../integrations/codex/codex-skills-system.md      |  2 +-
+ docs/learned/integrations/tripwires.md             |  2 +-
+ docs/learned/planning/one-shot-workflow.md         | 24 ++++++
+ docs/learned/testing/index.md                      |  1 +
+ docs/learned/testing/time-injection-patterns.md    | 88 ++++++++++++++++++++++
+ docs/learned/testing/tripwires.md                  |  4 +
+ docs/learned/tripwires-index.md                    |  6 +-
+ 19 files changed, 329 insertions(+), 22 deletions(-)
+  </tool_result>
+  <assistant>Now I'll classify the feedback using the Comment Classification Model. Let me analyze each thread:
+
+Based on the skill instructions and the fetched data, here's my classification:
+
+```json
+{
+  "success": true,
+  "pr_number": 8642,
+  "pr_title": "Consolidate documentation from 12 erk-learn plans",
+  "pr_url": "https://github.com/dagster-io/erk/pull/8642",
+  "actionable_threads": [
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5x8Ou2",
+      "type": "review",
+      "path": "docs/learned/architecture/capability-system.md",
+      "line": 119,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Replace line-range reference with name-based source pointer; prefer function names over line numbers",
+      "complexity": "local",
+      "original_comment": "**Audit PR Docs**: Drift risk — line-range reference in prose.\n\nSource: `src/erk/core/capabilities/registry.py:85-94`\n\nThe inline annotation `(at src/erk/core/capabilities/registry.py:85-94)` uses a line-range reference for a named Python function."
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5x8O1P",
+      "type": "review",
+      "path": "docs/learned/architecture/capability-system.md",
+      "line": 125,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Replace enumerable catalog table with source pointer to _REQUIRED_BUNDLED_SKILLS frozenset",
+      "complexity": "local",
+      "original_comment": "**Audit PR Docs**: Drift risk — enumerable catalog table will go stale.\n\nSource: `src/erk/capabilities/skills/bundled.py:17-25`\n\nThe table listing the 5 required bundled skills is an enumerable catalog."
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5xtguI",
+      "type": "review",
+      "path": "docs/learned/architecture/erk-statusline.md",
+      "line": 123,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Remove verbatim source code copy; replace with source pointer format from source-pointers.md",
+      "complexity": "local",
+      "original_comment": "**Audit PR Docs**: Verbatim source code copy detected.\n\nSource: `packages/erk-statusline/src/erk_statusline/statusline.py:565-574`\n\nThis code block copies ~10 lines from the source file and will go stale if the source changes."
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5xtgyb",
+      "type": "review",
+      "path": "docs/learned/architecture/inference-hoisting.md",
+      "line": 164,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Replace verbatim LlmCaller.call() method signature with source pointer format",
+      "complexity": "local",
+      "original_comment": "**Audit PR Docs**: Verbatim source code copy detected.\n\nSource: `packages/erk-shared/src/erk_shared/core/llm_caller.py:36`\n\nThis code block reproduces the `LlmCaller.call()` abstract method signature verbatim from the source file."
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5x8O6s",
+      "type": "review",
+      "path": "docs/learned/planning/one-shot-workflow.md",
+      "line": 160,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Remove private method name _postprocess_slug() and line-range reference; describe behavior conceptually",
+      "complexity": "local",
+      "original_comment": "**Audit PR Docs**: Drift risk — private method name in prose.\n\nSource: `src/erk/core/branch_slug_generator.py`\n\nThe prose names `_postprocess_slug()` — a private `_underscore` method."
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5xtg12",
+      "type": "review",
+      "path": "docs/learned/testing/time-injection-patterns.md",
+      "line": 23,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Correct inaccurate class name: replace 'TimeGateway' with 'Time'",
+      "complexity": "local",
+      "original_comment": "**Audit PR Docs**: Inaccurate claim detected.\n\nClaim: \"The `TimeGateway` ABC at `packages/erk-shared/src/erk_shared/gateway/time/abc.py`\"\nReality: The class is named `Time` (not `TimeGateway`)."
+    },
+    {
+      "thread_id": "PRRT_kwDOPxC3hc5xtg5u",
+      "type": "review",
+      "path": "docs/learned/testing/time-injection-patterns.md",
+      "line": 45,
+      "is_outdated": false,
+      "classification": "actionable",
+      "pre_existing": false,
+      "action_summary": "Replace verbatim FakeTime usage code block with source pointer format",
+      "complexity": "local",
+      "original_comment": "**Audit PR Docs**: Verbatim source code copy detected.\n\nSource: `packages/erk-shared/src/erk_shared/gateway/time/fake.py`\n\nThis code block shows erk internal usage patterns (importing from `erk_shared.gateway.time.fake`, calling `FakeTime()`)"
+    }
+  ],
+  "discussion_actions": [],
+  "informational_count": 4,
+  "batches": [
+    {
+      "name": "Pre-Existing (Auto-Resolve)",
+      "complexity": "pre_existing",
+      "auto_proceed": true,
+      "item_indices": []
+    },
+    {
+      "name": "Local Fixes",
+      "complexity": "local",
+      "auto_proceed": true,
+      "item_indices": [0, 1, 2, 3, 4, 5, 6]
+    },
+    {
+      "name": "Single-File",
+      "complexity": "single_file",
+      "auto_proceed": true,
+      "item_indices": []
+    },
+    {
+      "name": "Cross-Cutting",
+      "complexity": "cross_cutting",
+      "auto_proceed": false,
+      "item_indices": []
+    },
+    {
+      "name": "Complex",
+      "complexity": "complex",
+      "auto_proceed": false,
+      "item_indices": []
+    },
+    {
+      "name": "Informational",
+      "complexity": "informational",
+      "auto_proceed": false,
+      "item_indices": []
+    }
+  ],
+  "error": null
+}
+```</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="587" cache_read_input_tokens="27821" cache_creation="{'ephemeral_5m_input_tokens': 587, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
