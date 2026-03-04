@@ -32,6 +32,7 @@ def test_land_with_up_navigates_to_child_branch() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             repository_roots={env.cwd: env.cwd},
             file_statuses={env.cwd: ([], [], [])},
+            local_branches={env.cwd: ["main", "feature-1", "feature-2"]},
         )
 
         # feature-1 is parent of feature-2 (feature-1 has one child)
@@ -298,6 +299,96 @@ def test_land_with_up_multiple_children_fails_before_merge() -> None:
         assert len(github_ops.merged_prs) == 0
 
 
+def test_land_with_up_child_branch_deleted_fails_before_merge() -> None:
+    """Test --up fails BEFORE merge when child branch no longer exists locally."""
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main", ["feature-1"], repo_dir=repo_dir),
+            current_branches={env.cwd: "feature-1"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            repository_roots={env.cwd: env.cwd},
+            file_statuses={env.cwd: ([], [], [])},
+            # feature-2 is NOT in local branches (deleted)
+            local_branches={env.cwd: ["main", "feature-1"]},
+        )
+
+        # Graphite still reports feature-2 as a child of feature-1
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
+                ),
+                "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
+            }
+        )
+
+        github_ops = FakeGitHub(
+            prs={
+                "feature-1": PullRequestInfo(
+                    number=123,
+                    state="OPEN",
+                    url="https://github.com/owner/repo/pull/123",
+                    is_draft=False,
+                    title="Feature 1",
+                    checks_passing=None,
+                    owner="owner",
+                    repo="repo",
+                    has_conflicts=None,
+                ),
+            },
+            pr_details={
+                123: PRDetails(
+                    number=123,
+                    url="https://github.com/owner/repo/pull/123",
+                    title="Feature 1",
+                    body="PR body",
+                    state="OPEN",
+                    is_draft=False,
+                    base_ref_name="main",
+                    head_ref_name="feature-1",
+                    is_cross_repository=False,
+                    mergeable="MERGEABLE",
+                    merge_state_status="CLEAN",
+                    owner="owner",
+                    repo="repo",
+                )
+            },
+            merge_should_succeed=True,
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops, graphite=graphite_ops, github=github_ops, repo=repo, use_graphite=True
+        )
+
+        result = runner.invoke(
+            cli, ["land", "--script", "--up", "--force"], obj=test_ctx, catch_exceptions=False
+        )
+
+        # Should fail with exit code 1
+        assert result.exit_code == 1
+
+        # Should show error about deleted child branch
+        assert "no longer exists locally" in result.output
+        assert "feature-2" in result.output
+        assert "Use 'erk land' without --up" in result.output
+
+        # CRITICAL: PR should NOT have been merged (fail-fast)
+        assert len(github_ops.merged_prs) == 0
+
+
 def test_land_with_up_uses_main_repo_root_after_worktree_deletion() -> None:
     """Test --up uses main_repo_root (not deleted worktree path) for navigation.
 
@@ -326,6 +417,7 @@ def test_land_with_up_uses_main_repo_root_after_worktree_deletion() -> None:
             # how git --show-toplevel returns the worktree path when inside a worktree.
             repository_roots={feature_1_path: feature_1_path, env.cwd: env.cwd},
             file_statuses={feature_1_path: ([], [], [])},
+            local_branches={feature_1_path: ["main", "feature-1", "feature-2"]},
         )
 
         graphite_ops = FakeGraphite(
