@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Fix: Update stale local parent branch before `gt track` in plan checkout"
-}
