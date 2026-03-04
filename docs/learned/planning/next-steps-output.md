@@ -44,10 +44,10 @@ See [Shell Activation Pattern](../cli/shell-activation-pattern.md) for the full 
 
 ## Slash Command Constants
 
-Two slash command constants are defined for use in Claude Code context:
+Two module-level slash command constants are defined but not directly used in any formatter. The plain-text formatter uses the `dispatch_slash_command` property on `PlanNextSteps` instead:
 
-- `DISPATCH_SLASH_COMMAND = "/erk:pr-dispatch"` — used in the plain-text formatters for the "In Claude Code:" section
-- `CHECKOUT_SLASH_COMMAND = "/erk:prepare"` — defined but not currently used in any formatter
+- `DISPATCH_SLASH_COMMAND = "/erk:pr-dispatch"` — not used in any formatter (the instance property `dispatch_slash_command` is used instead)
+- `CHECKOUT_SLASH_COMMAND = "/erk:prepare"` — not used in any formatter
 
 ## Related Topics
 
