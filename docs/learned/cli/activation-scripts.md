@@ -84,8 +84,10 @@ This is used for **stack-in-place** operations: when the user checks out a plan 
 
 **Call sites:**
 
-- Stack-in-place checkout paths (lines 667, 701): `force_script_activation=True`
-- Normal checkout paths (lines 763, 807): `force_script_activation=False`
+See `_branch_checkout_impl()` in `src/erk/cli/commands/branch/checkout_cmd.py` for call sites to `_perform_checkout()`:
+
+- Stack-in-place checkout paths: `force_script_activation=True`
+- Normal checkout paths: `force_script_activation=False`
 
 ## VIRTUAL_ENV Idempotency Guard
 
