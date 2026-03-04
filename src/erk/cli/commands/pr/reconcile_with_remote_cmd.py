@@ -7,6 +7,7 @@ Claude slash command.
 
 import click
 
+from erk.cli.ensure import Ensure
 from erk.cli.output import stream_reconcile_with_remote
 from erk.core.context import ErkContext
 
@@ -35,16 +36,9 @@ def pr_reconcile_with_remote(ctx: ErkContext, *, dangerous: bool) -> None:
     To disable the --dangerous flag requirement:
 
     \b
-      erk config set rebase_require_dangerous_flag false
+      erk config set require_dangerous_flag_for_implicitly_dangerous_operations false
     """
-    # Runtime validation: require --dangerous unless config disables requirement
-    if not dangerous:
-        require_flag = ctx.global_config is None or ctx.global_config.rebase_require_dangerous_flag
-        if require_flag:
-            raise click.UsageError(
-                "Missing option '--dangerous'.\n"
-                "To disable: erk config set rebase_require_dangerous_flag false"
-            )
+    Ensure.dangerous_flag(ctx, dangerous=dangerous)
 
     cwd = ctx.cwd
 

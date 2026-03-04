@@ -34,10 +34,13 @@ def address(ctx: ErkContext, *, dangerous: bool) -> None:
     \b
       # Address comments locally with Claude
       erk pr address --dangerous
+
+    To disable the --dangerous flag requirement:
+
+    \b
+      erk config set require_dangerous_flag_for_implicitly_dangerous_operations false
     """
-    # Runtime validation: require --dangerous
-    if not dangerous:
-        raise click.UsageError("Missing option '--dangerous'.")
+    Ensure.dangerous_flag(ctx, dangerous=dangerous)
 
     cwd = ctx.cwd
 

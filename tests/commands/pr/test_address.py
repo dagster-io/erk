@@ -3,6 +3,7 @@
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
+from erk_shared.context.types import GlobalConfig
 from erk_shared.gateway.git.fake import FakeGit
 from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
@@ -57,6 +58,42 @@ def test_pr_address_requires_dangerous_flag() -> None:
 
         assert result.exit_code != 0
         assert "Missing option '--dangerous'" in result.output
+        # Verify error message includes config hint
+        assert "require_dangerous_flag_for_implicitly_dangerous_operations false" in result.output
+
+
+def test_pr_address_skip_dangerous_with_config() -> None:
+    """Test that --dangerous flag is not required when config disables requirement."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        executor = FakePromptExecutor(available=True)
+
+        global_config = GlobalConfig.test(
+            env.erk_root,
+            require_dangerous_flag_for_implicitly_dangerous_operations=False,
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            prompt_executor=executor,
+            global_config=global_config,
+        )
+
+        # Invoke WITHOUT --dangerous flag
+        result = runner.invoke(pr_group, ["address"], obj=ctx)
+
+        # Should succeed without --dangerous when config disables requirement
+        assert result.exit_code == 0
+        assert "PR comments addressed!" in result.output
 
 
 def test_pr_address_claude_not_available() -> None:
