@@ -1,0 +1,991 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>can we generalize rebase_require_dangerous_flag to a config key that handles *all* cases where we have these required flags so that the user knows what they are edoing. then in error text tell the user about the config flag</user>
+  <thinking>The user wants to generalize the `rebase_require_dangerous_flag` config key into a broader config mechanism that handles all commands requiring `--dangerous` flags, and improve error messages to tell users about the config flag. Let me explore the codebase to understand the current implementation.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="12217" cache_read_input_tokens="19284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12217}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the current implementation of the dangerous flag pattern and config system.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="12217" cache_read_input_tokens="19284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12217}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01XXFfFKLE9UvXSpTXhUa3CR">
+    <param name="description">Explore dangerous flag pattern</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 611 chars]...- I need to see every command that has a --dangerous flag and how the config key gates it.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="12217" cache_read_input_tokens="19284" output_tokens="382" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12217, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XXFfFKLE9UvXSpTXhUa3CR">
+Perfect! I now have a comprehensive understanding of the `--dangerous` flag pattern in erk. Let me provide a thorough summary.
+
+## Comprehensive Summary: The `--dangerous` Flag Pattern in Erk
+
+### 1. Configuration Definition
+
+**Location:** `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/config/schema.py` (lines 98-104)
+
+The config key is defined in `GlobalConfigSchema`:
+```python
+rebase_require_dangerous_flag: bool = Field(
+    description="Require --dangerous flag for rebase",
+    json_schema_extra={
+        "level": ConfigLevel.OVERRIDABLE,
+        "cli_key": "rebase_require_dangerous_flag",
+    },
+)
+```
+
+**Key attributes:**
+- **Level:** `OVERRIDABLE` - can be set at global, repo, or local level
+- **CLI key:** `rebase_require_dangerous_flag`
+- **Default:** `True` (flag is required by default)
+- **Type:** Boolean
+
+### 2. Config Runtime Type
+
+**Location:** `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/context/types.py` (lines 225-241)
+
+The `GlobalConfig` dataclass stores this configuration:
+
+... [179 lines omitted] ...
+
+          raise click.UsageError(
+      raise click.UsageError("Missing option '--dangerous'.")
+    raise click.UsageError(...)
+  </tool_result>
+  <thinking>Now I have a clear picture. Let me read the key files to understand the exact implementation details before planning.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3061" cache_read_input_tokens="31501" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3061}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the key files directly to see the exact code.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3061" cache_read_input_tokens="31501" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3061}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TdRLpLHgYfUUu9tckLoYTb">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/config/schema.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3061" cache_read_input_tokens="31501" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3061}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TdRLpLHgYfUUu9tckLoYTb">
+     1→"""Pydantic schemas for erk configuration.
+     2→
+     3→These schemas serve as the single source of truth for:
+     4→- Configuration field names and CLI keys
+     5→- Field descriptions (for `erk config keys`)
+     6→- Configuration levels (global-only vs overridable vs repo-only)
+     7→- Display formatting
+     8→"""
+     9→
+    10→from __future__ import annotations
+    11→
+    12→from collections.abc import Iterator
+    13→from enum import StrEnum
+    14→
+    15→from pydantic import BaseModel, Field
+    16→
+    17→
+    18→class ConfigLevel(StrEnum):
+    19→    """Defines where a configuration key can be set.
+    20→
+    21→    GLOBAL_ONLY: Can only be set in ~/.erk/config.toml
+    22→    OVERRIDABLE: Can be set at global, repo (.erk/config.toml), or local level
+    23→    REPO_ONLY: Can only be set in repository config (not global)
+    24→    """
+    25→
+    26→    GLOBAL_ONLY = "global_only"
+    27→    OVERRIDABLE = "overridable"
+    28→    REPO_ONLY = "repo_only"
+    29→
+    30→
+
+... [299 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RcMHFza8TYL9gBZDhimSiR">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/context/types.py</param>
+    <param name="offset">220</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3061" cache_read_input_tokens="31501" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3061}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RcMHFza8TYL9gBZDhimSiR">
+   220→            ),
+   221→        )
+   222→
+   223→
+   224→@dataclass(frozen=True)
+   225→class GlobalConfig:
+   226→    """Immutable global configuration data.
+   227→
+   228→    Loaded once at CLI entry point and stored in ErkContext.
+   229→    All fields are read-only after construction.
+   230→    """
+   231→
+   232→    erk_root: Path
+   233→    use_graphite: bool
+   234→    shell_setup_complete: bool
+   235→    github_planning: bool
+   236→    rebase_require_dangerous_flag: bool = True
+   237→    show_hidden_commands: bool = False
+   238→    prompt_learn_on_land: bool = True
+   239→    shell_integration: bool = False
+   240→    cmux_integration: bool = False
+   241→    interactive_agent: InteractiveAgentConfig = InteractiveAgentConfig.default()
+   242→
+   243→    @staticmethod
+   244→    def test(
+   245→        erk_root: Path,
+   246→        *,
+   247→        use_graphite: bool = True,
+   248→        shell_setup_complete: bool = True,
+   249→        github_planning: bool = True,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NmUtA4mMopmKTRNrLjppSt">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/address_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3061" cache_read_input_tokens="31501" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3061}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NmUtA4mMopmKTRNrLjppSt">
+     1→"""Address PR review comments with AI-powered resolution.
+     2→
+     3→This command addresses PR review comments locally using Claude CLI.
+     4→For remote resolution via GitHub Actions, use `erk launch pr-address`.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→from erk.cli.ensure import Ensure
+    10→from erk.cli.output import stream_command_with_feedback
+    11→from erk.core.context import ErkContext
+    12→
+    13→
+    14→@click.command("address")
+    15→@click.option(
+    16→    "-d",
+    17→    "--dangerous",
+    18→    is_flag=True,
+    19→    help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
+    20→)
+    21→@click.pass_obj
+    22→def address(ctx: ErkContext, *, dangerous: bool) -&gt; None:
+    23→    """Address PR review comments with AI-powered resolution.
+    24→
+    25→    Addresses PR review comments on the current branch using Claude.
+    26→
+    27→    For remote resolution via GitHub Actions workflow, use:
+    28→
+    29→    \b
+    30→      erk launch pr-address --pr &lt;number&gt;
+
+... [37 lines omitted] ...
+
+    40→        raise click.UsageError("Missing option '--dangerous'.")
+    64→        raise click.ClickException(result.error_message or "PR comment addressing failed")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01H8MP7aQtd8NcDcaBTGXKNs">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/rebase_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3061" cache_read_input_tokens="31501" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3061}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01H8MP7aQtd8NcDcaBTGXKNs">
+     1→"""Rebase PR onto base branch with AI-powered conflict resolution.
+     2→
+     3→This command rebases the current branch locally using Claude CLI.
+     4→For remote rebase via GitHub Actions, use `erk launch pr-rebase`.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→from erk.cli.ensure import Ensure
+    10→from erk.cli.output import stream_rebase
+    11→from erk.core.context import ErkContext
+    12→
+    13→
+    14→@click.command("rebase")
+    15→@click.option(
+    16→    "-d",
+    17→    "--dangerous",
+    18→    is_flag=True,
+    19→    help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
+    20→)
+    21→@click.pass_obj
+    22→def rebase(ctx: ErkContext, *, dangerous: bool) -&gt; None:
+    23→    """Rebase PR onto base branch with AI-powered conflict resolution.
+    24→
+    25→    Rebases the current branch and resolves any merge conflicts using Claude.
+    26→    Does not require or interact with Graphite stacks.
+    27→
+    28→    Also works when a rebase is already in progress with unresolved conflicts.
+    29→    If you started a rebase manually and hit conflicts you can't resolve, run
+    30→    this command to have Claude pick up where you left off.
+
+... [58 lines omitted] ...
+
+    57→            raise click.UsageError(
+    83→        raise click.ClickException("Semantic conflict requires interactive resolution")
+    85→        raise click.ClickException(result.error_message or "Rebase failed")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01C7XgqBmdru9EK2wxsUVoSt">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/reconcile_with_remote_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3061" cache_read_input_tokens="31501" output_tokens="434" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3061, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C7XgqBmdru9EK2wxsUVoSt">
+     1→"""Reconcile branch with remote.
+     2→
+     3→Uses Claude to reconcile a diverged local branch with its remote tracking branch,
+     4→handling rebase and conflicts as needed. Invokes the /erk:reconcile-with-remote
+     5→Claude slash command.
+     6→"""
+     7→
+     8→import click
+     9→
+    10→from erk.cli.output import stream_reconcile_with_remote
+    11→from erk.core.context import ErkContext
+    12→
+    13→
+    14→@click.command("reconcile-with-remote")
+    15→@click.option(
+    16→    "-d",
+    17→    "--dangerous",
+    18→    is_flag=True,
+    19→    help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
+    20→)
+    21→@click.pass_obj
+    22→def pr_reconcile_with_remote(ctx: ErkContext, *, dangerous: bool) -&gt; None:
+    23→    """Reconcile branch with remote and resolve divergence.
+    24→
+    25→    When gt submit fails with "Branch has been updated remotely", this command
+    26→    fetches remote changes, analyzes divergence, rebases if needed, and resolves
+    27→    any conflicts using Claude.
+    28→
+    29→    Examples:
+    30→
+
+... [68 lines omitted] ...
+
+    44→            raise click.UsageError(
+    54→        raise click.ClickException("Not on a branch (detached HEAD)")
+    58→        raise click.ClickException(f"No remote tracking branch: origin/{current_branch}")
+    82→        raise click.ClickException(
+    93→        raise click.ClickException("Semantic decision requires interactive resolution")
+    95→        raise click.ClickException(result.error_message or "Reconcile with remote failed")
+  </tool_result>
+  <assistant>Now let me check the config loading and test files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8270" cache_read_input_tokens="34562" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8270}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Gh91Lz2d42YW269DnHjkQj">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py</param>
+    <param name="offset">70</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8270" cache_read_input_tokens="34562" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8270}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Gh91Lz2d42YW269DnHjkQj">
+    70→            allow_dangerous=bool(ia_data.get("allow_dangerous", False)),
+    71→        )
+    72→
+    73→        return GlobalConfig(
+    74→            erk_root=Path(root).expanduser().resolve(),
+    75→            use_graphite=bool(data.get("use_graphite", False)),
+    76→            shell_setup_complete=bool(data.get("shell_setup_complete", False)),
+    77→            github_planning=bool(data.get("github_planning", True)),
+    78→            rebase_require_dangerous_flag=bool(data.get("rebase_require_dangerous_flag", True)),
+    79→            show_hidden_commands=bool(data.get("show_hidden_commands", False)),
+    80→            prompt_learn_on_land=bool(data.get("prompt_learn_on_land", True)),
+    81→            shell_integration=bool(data.get("shell_integration", False)),
+    82→            cmux_integration=bool(data.get("cmux_integration", False)),
+    83→            interactive_agent=interactive_agent,
+    84→        )
+    85→
+    86→    def save_config(self, config: GlobalConfig) -&gt; None:
+    87→        """Save global config to ~/.erk/config.toml.
+    88→
+    89→        Args:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GsXfExVqKpMcFF1b6jfvq1">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/context/types.py</param>
+    <param name="offset">243</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8270" cache_read_input_tokens="34562" output_tokens="236" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8270, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GsXfExVqKpMcFF1b6jfvq1">
+   243→    @staticmethod
+   244→    def test(
+   245→        erk_root: Path,
+   246→        *,
+   247→        use_graphite: bool = True,
+   248→        shell_setup_complete: bool = True,
+   249→        github_planning: bool = True,
+   250→        rebase_require_dangerous_flag: bool = True,
+   251→        show_hidden_commands: bool = False,
+   252→        prompt_learn_on_land: bool = True,
+   253→        shell_integration: bool = False,
+   254→        cmux_integration: bool = False,
+   255→        interactive_agent: InteractiveAgentConfig | None = None,
+   256→    ) -&gt; GlobalConfig:
+   257→        """Create a GlobalConfig with sensible test defaults."""
+   258→        return GlobalConfig(
+   259→            erk_root=erk_root,
+   260→            use_graphite=use_graphite,
+   261→            shell_setup_complete=shell_setup_complete,
+   262→            github_planning=github_planning,
+   263→            rebase_require_dangerous_flag=rebase_require_dangerous_flag,
+   264→            show_hidden_commands=show_hidden_commands,
+   265→            prompt_learn_on_land=prompt_learn_on_land,
+   266→            shell_integration=shell_integration,
+   267→            cmux_integration=cmux_integration,
+   268→            interactive_agent=(
+   269→                interactive_agent
+   270→                if interactive_agent is not None
+   271→                else InteractiveAgentConfig.default()
+   272→            ),
+  </tool_result>
+  <assistant>Now I have a clear picture. Let me design the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1141" cache_read_input_tokens="42832" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1141}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01GNtUVpGuZnEN6Reyd3rqxz">
+    <param name="description">Design dangerous flag generalization</param>
+    <param name="subagent_type">Plan</param>
+    <param name="prompt">Design a plan to generalize `rebase_require_dangerous_flag` into a single config key that ...[truncated 2133 chars]...ing the check pattern
+
+Please design the implementation with specific file changes needed.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1141" cache_read_input_tokens="42832" output_tokens="753" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1141, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GNtUVpGuZnEN6Reyd3rqxz">
+Good. I have all the information needed. Here is the implementation plan.
+
+---
+
+## Implementation Plan: Generalize `rebase_require_dangerous_flag` to `require_dangerous_flag`
+
+### Summary
+
+Rename the config key from `rebase_require_dangerous_flag` to `require_dangerous_flag` and extract a shared helper function so all three `--dangerous`-requiring commands use the same check with consistent error messaging. Since erk is unreleased private software, no backwards compatibility shim is needed.
+
+### Step 1: Rename config field in schema
+
+**File:** `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/config/schema.py`
+
+Change lines 98-104:
+```python
+# Before
+rebase_require_dangerous_flag: bool = Field(
+    description="Require --dangerous flag for rebase",
+    json_schema_extra={
+        "level": ConfigLevel.OVERRIDABLE,
+        "cli_key": "rebase_require_dangerous_flag",
+    },
+)
+
+# After
+require_dangerous_flag: bool = Field(
+    description="Require --dangerous flag for commands that invoke Claude with skip-permissions",
+    json_schema_extra={
+        "level": ConfigLevel.OVERRIDABLE,
+
+... [147 lines omitted] ...
+
+        click.UsageError: If --dangerous is required but not provided
+        raise click.UsageError(
+This uses `click.UsageError` (not `UserFacingCliError`) to match the existing behavior in the commands, since Click handles `UsageError` with a "Usage:" prefix and exit code 2 rather than a generic error.
+- The method uses `click.UsageError` rather than `UserFacingCliError` because the existing commands use `UsageError` for this check, and `UsageError` gives Click's standard "Usage:" formatting with exit code 2 (which is semantically correct -- the user didn't provide a required option).
+  </tool_result>
+  <assistant>
+
+Let me verify the Ensure class and test files before writing the final plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3432" cache_read_input_tokens="43973" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3432}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01MLPaP4HgnEXSaWM4VKg1R2">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/ensure.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3432" cache_read_input_tokens="43973" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3432}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MLPaP4HgnEXSaWM4VKg1R2">
+     1→"""CLI error handling utilities with styled output.
+     2→
+     3→This module provides the Ensure class for asserting invariants in CLI commands
+     4→with consistent, user-friendly error messages. All errors use red "Error:" prefix
+     5→for visual consistency.
+     6→
+     7→Domain-Specific Methods:
+     8→- Git state validations (branch checks, worktree existence, clean state)
+     9→- Configuration validations (required fields, format checks)
+    10→- Argument validations (count, type, range)
+    11→- File/path validations (readable, writable, not hidden)
+    12→- String/collection validations (non-empty, non-null)
+    13→- External tool validations (gh CLI installed)
+    14→"""
+    15→
+    16→from __future__ import annotations
+    17→
+    18→import shutil
+    19→from pathlib import Path
+    20→from typing import TYPE_CHECKING, Any, TypeVar
+    21→
+    22→import click
+    23→
+    24→from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledError
+    25→from erk_shared.output.output import user_output
+    26→
+    27→if TYPE_CHECKING:
+    28→    from erk.core.context import ErkContext
+    29→
+    30→T = TypeVar("T")
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01K2eTjju9yt35GVzRT4z4ww">
+    <param name="pattern">rebase_require_dangerous_flag</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3432" cache_read_input_tokens="43973" output_tokens="189" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3432, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01K2eTjju9yt35GVzRT4z4ww">
+src/erk/cli/commands/pr/reconcile_with_remote_cmd.py:38:      erk config set rebase_require_dangerous_flag false
+src/erk/cli/commands/pr/reconcile_with_remote_cmd.py:42:        require_flag = ctx.global_config is None or ctx.global_config.rebase_require_dangerous_flag
+src/erk/cli/commands/pr/reconcile_with_remote_cmd.py:46:                "To disable: erk config set rebase_require_dangerous_flag false"
+src/erk/cli/commands/pr/rebase_cmd.py:51:      erk config set rebase_require_dangerous_flag false
+src/erk/cli/commands/pr/rebase_cmd.py:55:        require_flag = ctx.global_config is None or ctx.global_config.rebase_require_dangerous_flag
+src/erk/cli/commands/pr/rebase_cmd.py:59:                "To disable: erk config set rebase_require_dangerous_flag false"
+tests/commands/pr/test_rebase.py:62:        assert "rebase_require_dangerous_flag false" in result.output
+tests/commands/pr/test_rebase.py:79:        # Create GlobalConfig with rebase_require_dangerous_flag=False
+tests/commands/pr/test_rebase.py:82:            rebase_require_dangerous_flag=False,  # Disable --dangerous requirement
+tests/commands/pr/test_reconcile_with_remote.py:75:        assert "rebase_require_dangerous_flag false" in result.output
+tests/commands/pr/test_reconcile_with_remote.py:98:        # Create GlobalConfig with rebase_require_dangerous_flag=False
+tests/commands/pr/test_reconcile_with_remote.py:101:            rebase_require_dangerous_flag=False,  # Disable --dangerous requirement
+packages/erk-shared/src/erk_shared/config/schema.py:98:    rebase_require_dangerous_flag: bool = Field(
+packages/erk-shared/src/erk_shared/config/schema.py:102:            "cli_key": "rebase_require_dangerous_flag",
+packages/erk-shared/src/erk_shared/context/types.py:236:    rebase_require_dangerous_flag: bool = True
+packages/erk-shared/src/erk_shared/context/types.py:250:        rebase_require_dangerous_flag: bool = True,
+packages/erk-shared/src/erk_shared/context/types.py:263:            rebase_require_dangerous_flag=rebase_require_dangerous_flag,
+packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py:78:            rebase_require_dangerous_flag=bool(data.get("rebase_require_dangerous_flag", True)),
+packages/erk-shared/src/erk_shared/gateway/erk_installation/real.py:138:        doc["rebase_require_dangerous_flag"] = config.rebase_require_dangerous_flag
+packages/erk-shared/tests/unit/config/test_schema.py:29:            "rebase_require_dangerous_flag",
+packages/erk-shared/tests/unit/config/test_schema.py:124:            "rebase_require_dangerous_flag",
+packages/erk-statusline/tests/test_context.py:33:            rebase_require_dangerous_flag=True,
+packages/erk-statusline/tests/test_context.py:50:            rebase_require_dangerous_flag=True,
+packages/erk-statusline/tests/test_context.py:67:            rebase_require_dangerous_flag=True,
+docs/learned/cli/commands/pr-reconcile-with-remote.md:48:erk config set rebase_require_dangerous_flag false
+  </tool_result>
+  <assistant>Now let me check the address test file to understand what exists.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1553" cache_read_input_tokens="47405" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1553}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0193YHH6XTu71KG2BMRbzh7B">
+    <param name="file_path">/Users/schrockn/code/erk/tests/commands/pr/test_address.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1553" cache_read_input_tokens="47405" output_tokens="90" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1553, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0193YHH6XTu71KG2BMRbzh7B">
+     1→"""Tests for erk pr address command (local variant)."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.commands.pr import pr_group
+     6→from erk_shared.gateway.git.fake import FakeGit
+     7→from tests.fakes.prompt_executor import FakePromptExecutor
+     8→from tests.test_utils.context_builders import build_workspace_test_context
+     9→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    10→
+    11→
+    12→def test_pr_address_success() -&gt; None:
+    13→    """Test successful local address when Claude is available."""
+    14→    runner = CliRunner()
+    15→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    16→        git = FakeGit(
+    17→            git_common_dirs={env.cwd: env.git_dir},
+    18→            local_branches={env.cwd: ["main", "feature-branch"]},
+    19→            default_branches={env.cwd: "main"},
+    20→            trunk_branches={env.cwd: "main"},
+    21→            current_branches={env.cwd: "feature-branch"},
+    22→        )
+    23→
+    24→        executor = FakePromptExecutor(available=True)
+    25→
+    26→        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+    27→
+    28→        result = runner.invoke(pr_group, ["address", "--dangerous"], obj=ctx)
+    29→
+    30→        assert result.exit_code == 0
+
+... [82 lines omitted] ...
+
+    63→    """Test error when Claude is not installed."""
+    88→def test_pr_address_fails_on_command_error() -&gt; None:
+   110→        # Error message from FakePromptExecutor
+   111→        assert "failed" in result.output.lower()
+  </tool_result>
+  <assistant>Good, I have everything I need. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6613" cache_read_input_tokens="48958" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6613}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01ByPBVMVDjdAPaerRSfwxxo">
+    <param name="file_path">/Users/schrockn/.claude/plans/typed-greeting-sphinx.md</param>
+    <param name="content"># Generalize `rebase_require_dangerous_flag` to `require_dangerous_flag`
+
+## Context
+
+The ...[truncated 3180 chars]...ests/test_context.py` — all pass
+3. Run `uv run ruff check` and `uv run ty check` — clean
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6613" cache_read_input_tokens="48958" output_tokens="1142" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6613, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ByPBVMVDjdAPaerRSfwxxo">
+File created successfully at: /Users/schrockn/.claude/plans/typed-greeting-sphinx.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01Cs2HH4ZjPaQtq8sERqGhi7">
+    <param name="plan"># Generalize `rebase_require_dangerous_flag` to `require_dangerous_flag`
+
+## Context
+
+The ...[truncated 3180 chars]...ests/test_context.py` — all pass
+3. Run `uv run ruff check` and `uv run ty check` — clean
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1178" cache_read_input_tokens="55571" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1178, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Cs2HH4ZjPaQtq8sERqGhi7">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/typed-greeting-sphinx.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Generalize `rebase_require_dangerous_flag` to `require_dangerous_flag`
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id a5f54e5b-7956-4ea0-a50d-d46cdd415356 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+## Generalize `rebase_require_dangerous_flag` to `require_dangerous_flag`
+
+**Context:** The `--dangerous` flag is required on commands that invoke Claude with `--dangerously-skip-permissions`. Currently, only `rebase` and `reconcile-with-remote` check a config key to let users opt out. `pr address` has a hardcoded requirement with no config check and no hint about how to disable it (the bug in the screenshot).
+
+**Changes:**
+1. **Rename config** `rebase_require_dangerous_flag` → `require_dangerous_flag` in schema, dataclass, and load/save
+2. **Add `Ensure.dangerous_flag()` helper** — centralizes the check with consistent error message including config hint
+3. **Update all 3 commands** (`rebase`, `reconcile-with-remote`, `address`) to use the shared helper
+4. **Update tests** — rename kwargs, assert config hint in address tests, add config-override test for address
+5. **Update docs** — one doc reference to the old key name</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="791" cache_read_input_tokens="56749" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 791}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01Fz2uUgYh5zPbsezMxasRWb">
+    <param name="questions">[{'question': '📋 Generalize `rebase_require_dangerous_flag` to `require_dangerous_flag`\nC...[truncated 398 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="791" cache_read_input_tokens="56749" output_tokens="476" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 791, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Fz2uUgYh5zPbsezMxasRWb">
+User has answered your questions: "📋 Generalize `rebase_require_dangerous_flag` to `require_dangerous_flag`
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="require_dangerous_flag_for_implicitly_dangerous_operations" user notes: require_dangerous_flag_for_implicitly_dangerous_operations. You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>The user wants the config key to be named `require_dangerous_flag_for_implicitly_dangerous_operations`. That's quite long but it's their preference. Let me update the plan and ask which option they want (save as PR vs implement).
+
+Wait, re-reading - they chose "Other" and typed `require_dangerous_flag_for_implicitly_dangerous_operations`. This seems like they want to rename the config key to that. But they didn't answer the save/implement question. Let me ask about the workflow choice again, after acknowledging the naming preference.
+
+Actually, looking more carefully, they provided the name as their answer to the question. I think they want the config key to be named `require_dangerous_flag_for_implicitly_dangerous_operations` and I should update the plan accordingly, then re-ask what to do with it.
+
+
+I'll update the plan with their chosen config key name and ask them to clarify whether they want me to save this as a PR or implement it directly.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="57540" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 686}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I'll use `require_dangerous_flag_for_implicitly_dangerous_operations` as the config key name. Let me update the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="57540" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 686}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016sQ7VpMVhNpe8xD1X81dwr">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/typed-greeting-sphinx.md</param>
+    <param name="old_string"># Generalize `rebase_require_dangerous_flag` to `require_dangerous_flag`
+
+## Context
+
+The ...[truncated 3179 chars]...tests/test_context.py` — all pass
+3. Run `uv run ruff check` and `uv run ty check` — clean</param>
+    <param name="new_string"># Generalize `rebase_require_dangerous_flag` to `require_dangerous_flag_for_implicitly_dan...[truncated 3419 chars]...tests/test_context.py` — all pass
+3. Run `uv run ruff check` and `uv run ty check` — clean</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="57540" output_tokens="2549" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 686, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016sQ7VpMVhNpe8xD1X81dwr">
+The file /Users/schrockn/.claude/plans/typed-greeting-sphinx.md has been updated successfully.
+  </tool_result>
+  <assistant>Now, back to the workflow question:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2602" cache_read_input_tokens="58226" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2602}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_015GWjHA8eQQcpbinLF5tEVb">
+    <param name="questions">[{'question': 'Updated the config key to `require_dangerous_flag_for_implicitly_dangerous_...[truncated 371 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2602" cache_read_input_tokens="58226" output_tokens="205" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2602, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015GWjHA8eQQcpbinLF5tEVb">
+User has answered your questions: "Updated the config key to `require_dangerous_flag_for_implicitly_dangerous_operations`. What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01KfLPdfCoBU8rsCKUsXwQho">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="60828" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 274, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KfLPdfCoBU8rsCKUsXwQho">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="a5f54e5b-7956-4ea0-a50d-d46cdd415356" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="a5f54e5b-7956-4ea0-a50d-d46cdd415356" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "a5f54e5b-7956-4ea0-a50d-d46cdd415356" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "a5f54e5b-7956-4ea0-a50d-d46cdd415356" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "a5f54e5b-7956-4ea0-a50d-d46cdd415356" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "a5f54e5b-7956-4ea0-a50d-d46cdd415356" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me save the plan as a draft PR.
+
+**Branch slug:** `generalize-dangerous-flag-config`
+
+**Plan summary:** Renames rebase_require_dangerous_flag to require_dangerous_flag_for_implicitly_dangerous_operations and extracts a shared Ensure.dangerous_flag() helper so all three commands (rebase, reconcile-with-remote, address) use the same config-gated check with consistent error messaging telling users how to disable the requirement.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="3485" cache_read_input_tokens="61102" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3485}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015o5dWNMRJfPbVrSqaNHQYN">
+    <param name="command">erk exec plan-save --format json --session-id="a5f54e5b-7956-4ea0-a50d-d46cdd415356" --bra...[truncated 271 chars]...gated check with consistent error messaging telling users how to disable the requirement."</param>
+    <param name="description">Save plan as draft PR via erk</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3485" cache_read_input_tokens="61102" output_tokens="334" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3485, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015o5dWNMRJfPbVrSqaNHQYN">
+Exit code 2
+{"success": false, "error": "Plan title validation failed: Too long (106 characters, maximum 100)", "error_type": "validation_failed", "agent_guidance": "Invalid plan title: Too long (106 characters, maximum 100)\n  Actual value: 'Generalize `rebase_require_dangerous_flag` to `require_dangerous_flag_for_implicitly_dangerous_operations`'\n  Rules:\n    - 5-100 characters\n    - Must contain at least one alphabetic character\n    - Must retain meaningful content after sanitization\n      (emojis, special characters, and accents are stripped)\n  Valid examples: Add User Authentication, Refactor Gateway Layer\n  Invalid examples: \ud83d\ude80\ud83c\udf89, 123, #!@, Plan"}
+
+{"success": false, "error": "Plan title validation failed: Too long (106 characters, maximum 100)", "error_type": "validation_failed", "agent_guidance": "Invalid plan title: Too long (106 characters, maximum 100)\n  Actual value: 'Generalize `rebase_require_dangerous_flag` to `require_dangerous_flag_for_implicitly_dangerous_operations`'\n  Rules:\n    - 5-100 characters\n    - Must contain at least one alphabetic character\n    - Must retain meaningful content after sanitization\n      (emojis, special characters, and accents are stripped)\n  Valid examples: Add User Authentication, Refactor Gateway Layer\n  Invalid examples: \ud83d\ude80\ud83c\udf89, 123, #!@, Plan"}
+  </tool_result>
+  <assistant>Title is too long. Let me shorten it in the plan file and retry.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="750" cache_read_input_tokens="64587" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 750}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01UrUdcMD7gst23E8TiCqxre">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/typed-greeting-sphinx.md</param>
+    <param name="old_string"># Generalize `rebase_require_dangerous_flag` to `require_dangerous_flag_for_implicitly_dangerous_operations`</param>
+    <param name="new_string"># Generalize dangerous flag config to cover all implicitly dangerous commands</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="750" cache_read_input_tokens="64587" output_tokens="170" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 750, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UrUdcMD7gst23E8TiCqxre">
+The file /Users/schrockn/.claude/plans/typed-greeting-sphinx.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EMMGKg2VC4KKuhzcWrorn1">
+    <param name="command">erk exec plan-save --format json --session-id="a5f54e5b-7956-4ea0-a50d-d46cdd415356" --bra...[truncated 271 chars]...gated check with consistent error messaging telling users how to disable the requirement."</param>
+    <param name="description">Save plan as draft PR via erk</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="337" cache_read_input_tokens="65337" output_tokens="226" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 337, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EMMGKg2VC4KKuhzcWrorn1">
+Command running in background with ID: bte78k47h. Output is being written to: /private/tmp/claude-501/-Users-schrockn-code-erk/tasks/bte78k47h.output
+  </tool_result>
+  <tool_use name="TaskOutput" id="toolu_01PR5xX7ozbt5uvY89fTqWTS">
+    <param name="task_id">bte78k47h</param>
+    <param name="block">True</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="383" cache_read_input_tokens="65674" output_tokens="94" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 383, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PR5xX7ozbt5uvY89fTqWTS">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;bte78k47h&lt;/task_id&gt;
+
+&lt;task_type&gt;local_bash&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;exit_code&gt;0&lt;/exit_code&gt;
+
+&lt;output&gt;
+{"success": true, "plan_number": 8747, "plan_url": "https://github.com/dagster-io/erk/pull/8747", "title": "[erk-plan] Generalize dangerous flag config to cover all implicitly dangerous commands", "branch_name": "plnd/generalize-dangerous-flag-03-04-1511", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/a5f54e5b-7956-4ea0-a50d-d46cdd415356/plan_snapshots/000001-be0fb166"}
+&lt;/output&gt;
+  </tool_result>
+  <assistant>Plan saved successfully. Now let me push the planning session and then exit plan mode.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="543" cache_read_input_tokens="66057" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 543}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GGRfXYJwyQjgwbapA9VQpo">
+    <param name="command">erk exec upload-impl-session --session-id "a5f54e5b-7956-4ea0-a50d-d46cdd415356" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="543" cache_read_input_tokens="66057" output_tokens="158" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 543, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GGRfXYJwyQjgwbapA9VQpo">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan **"Generalize dangerous flag config to cover all implicitly dangerous commands"** saved as draft PR #8747.
+URL: https://github.com/dagster-io/erk/pull/8747</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="185" cache_read_input_tokens="66600" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 185}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_015y7EAtBKVEWoiuEXUGyuky">
+    <param name="plan"># Generalize dangerous flag config to cover all implicitly dangerous commands
+
+## Context
+...[truncated 3389 chars]...ests/test_context.py` — all pass
+3. Run `uv run ruff check` and `uv run ty check` — clean
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="185" cache_read_input_tokens="66600" output_tokens="86" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 185, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015y7EAtBKVEWoiuEXUGyuky">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8747 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8747:
+  In current wt:    source "$(erk br co --for-plan 8747 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8747 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8747 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8747 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8747:
+  In current wt:  erk br co --for-plan 8747
+  In new wt:      erk br co --new-slot --for-plan 8747
+
+Dispatch plan #8747:
+  CLI command:    erk pr dispatch 8747
+  Slash command:  /erk:pr-dispatch 8747
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <system subtype="" duration_ms="" />
+  <assistant>Plan #8747 saved successfully.
+
+**Implement plan #8747:**
+```
+In current wt:    source "$(erk br co --for-plan 8747 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --for-plan 8747 --script)" &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 8747 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 8747 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout plan #8747:**
+```
+In current wt:  erk br co --for-plan 8747
+In new wt:      erk br co --new-slot --for-plan 8747
+```
+
+**Dispatch plan #8747:**
+```
+CLI command:    erk pr dispatch 8747
+Slash command:  /erk:pr-dispatch 8747
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="49519" cache_read_input_tokens="16613" output_tokens="248" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 49519, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>
