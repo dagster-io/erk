@@ -1,0 +1,1376 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>-&gt; Loading .env
+Activated: /Users/schrockn/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531
+direnv: export +REPO_ROOT +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT +WORKTREE_NAME +WORKTREE_PATH ~PATH
+Activated: /Users/schrockn/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531
+📋 Planning to perform the following operations:
+  1. 🔓 Unassign slot: erk-slot-03 (keep worktree for reuse)
+  2. 🌳 Delete branch: plnd/add-print-statement-03-04-1414
+✓ Unassigned slot erk-slot-03
+✅ Deleted branch: plnd/add-print-statement-03-04-1414
+➜  restructure-exit-plan-menu-03-03-0531 git:(plnd/restructure-exit-plan-menu-03-03-0531) gt pr
+https://app.graphite.dev/github/pr/dagster-io/erk/8659
+➜  restructure-exit-plan-menu-03-03-0531 git:(plnd/restructure-exit-plan-menu-03-03-0531) erk land -u
+After landing, delete branch 'plnd/restructure-exit-plan-menu-03-03-0531' and remove worktree 'restructure-exit-plan-menu-03-03-0531'? [Y/n]:
+
+To land the PR:
+  source /Users/schrockn/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531/.erk/bin/land.sh 8659 plnd/restructure-exit-plan-menu-03-03-0531 --up  (copied to clipboard)
+➜  restructure-exit-plan-menu-03-03-0531 git:(plnd/restructure-exit-plan-menu-03-03-0531) source /Users/schrockn/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531/.erk/bin/land.sh 8659 plnd/restructure-exit-plan-menu-03-03-0531 --up
+  Getting current branch...
+  Getting parent branch...
+  Validating parent is trunk branch...
+  Checking PR status...
+  Validating PR base branch...
+  Getting child branches...
+  Updating upstack PR base branches...
+  Updating Graphite tracking for child branches...
+  Getting PR metadata...
+  Merging PR #8659...
+  PR #8659 merged successfully
+  Deleting remote branch 'plnd/restructure-exit-plan-menu-03-03-0531'...
+✓ Merged PR #8659 [plnd/restructure-exit-plan-menu-03-03-0531]
+  📋 Discovered 2 session(s): 1 planning, 1 impl
+       📝  planning:  90bdd8f7...  13 turns · 71 min  (1,471 KB → 147 KB)
+       🔧  impl:      907c059a...  5 turns · 22 min  (1,326 KB → 116 KB)
+✓ Created learn plan #8737 for plan #8659
+  https://github.com/dagster-io/erk/pull/8737
+  📦 4 file(s) committed (263 KB):
+     .erk/impl-context/plan.md  (195 B)
+     .erk/impl-context/ref.json  (60 B)
+     .erk/impl-context/sessions/impl-907c059a-9ac7-486e-8b43-54b9b3af0668.xml  (116 KB)
+     .erk/impl-context/sessions/planning-90bdd8f7-3b2a-441a-8b66-57c0e7dc2078.xml  (147 KB)
+✓ Deleted branch and removed worktree 'restructure-exit-plan-menu-03-03-0531'
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531/.erk/bin/land.sh:cd:16: no such file or directory: /Users/schrockn/.erk/repos/erk/worktrees/plnd/add-dgibson-print-03-04-1405
+➜  restructure-exit-plan-menu-03-03-0531
+
+what happened here</user>
+  <thinking>The user is asking about what happened in their terminal session. Let me analyze the output.
+
+The key sequence:
+
+1. They landed PR #8659 successfully - it merged, deleted the remote branch, removed the worktree
+2. A learn plan was created (#8737)
+3. The branch and worktree `restructure-exit-plan-menu-03-03-0531` were deleted
+
+Then at the end there's an error:
+```
+/Users/schrockn/.erk/repos/erk/worktrees/plnd/restructure-exit-plan-menu-03-03-0531/.erk/bin/land.sh:cd:16: no such file or directory: /Users/schrockn/.erk/repos/erk/worktrees/plnd/add-dgibson-print-03-04-1405
+
+
+```
+
+The land script tried to navigate to a fallback worktree after deleting the current one, but that directory was already removed earlier in the session. The shell is now stuck in a deleted directory, which is why the prompt still shows the old worktree path even though it no longer exists.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="13505" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13505}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>The PR landed successfully - everything worked fine until the very last step. Here's what happened:
+
+1. PR #8659 merged, remote branch deleted, worktree removed - all good
+2. Learn plan #8737 was created with session data - all good
+3. The `land.sh` script tried to `cd` to `/Users/schrockn/.erk/repos/erk/worktrees/plnd/add-dgibson-print-03-04-1405` after cleanup, but that branch was already deleted earlier in your session (you deleted it at the top with `erk` slot cleanup)
+
+So the script's post-landing `cd` target no longer exists. Your shell is now sitting in a deleted directory (the old worktree). You should `cd` to the root repo or another valid worktree to get back to a working state:
+
+```
+cd /Users/schrockn/code/erk
+```
+
+The error is cosmetic - the PR landed and cleanup completed successfully.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="13505" cache_read_input_tokens="16613" output_tokens="577" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13505, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>can we detect this error earlier</user>
+  <assistant>
+
+Let me understand the issue first - the `land.sh` script tries to `cd` somewhere after landing, and that target directory was already deleted.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="11568" cache_read_input_tokens="19286" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11568}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01YUV8bwAqKSF5RXRzpV9fqv">
+    <param name="description">Find land.sh script</param>
+    <param name="prompt">Find the land.sh script template or generator in the erk codebase. Look for files that gen...[truncated 160 chars]...d for existing documentation on this topic. Read relevant docs before exploring raw files.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11568" cache_read_input_tokens="19286" output_tokens="207" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11568, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YUV8bwAqKSF5RXRzpV9fqv">
+Excellent! Now I have a complete picture. Let me create a summary report with all the findings.
+
+## Summary
+
+I found the land.sh script template/generator in the erk codebase. Here are the key findings:
+
+### **Primary Locations**
+
+1. **Permanent land.sh wrapper** (stored in worktree):
+   - **File**: `/Users/schrockn/code/erk/src/erk/cli/activation.py`, lines 388-424
+   - **Function**: `render_land_script()` and `ensure_land_script()`
+   - **Purpose**: Creates a persistent script at `.erk/bin/land.sh` that wraps the `erk land --script` command
+
+2. **Deferred execution script generator** (temporary, with cd logic):
+   - **File**: `/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py`, lines 1330-1392
+   - **Function**: `_build_land_deferred_script()`
+   - **Purpose**: Generates the temporary execution script that contains the `cd` logic at the end
+
+3. **Script writing infrastructure**:
+   - **File**: `/Users/schrockn/code/erk/src/erk/core/script_writer.py`
+   - **Class**: `RealScriptWriter`
+   - **Methods**: `write_activation_script()` and `write_worktree_script()`
+
+### **The cd Logic at the End**
+
+The `cd` command at the end of land.sh comes from `_build_land_deferred_script()` in `/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py`:
+
+```python
+def _build_land_deferred_script(
+    pr_number: int | None,
+
+... [56 lines omitted] ...
+
+PR_NUMBER="${{1:?Error: PR number required}}"
+BRANCH="${{2:?Error: Branch name required}}"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MEPYQsZdiZftDj5jAzwzDG">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">1330</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="32247" cache_read_input_tokens="0" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 32247, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MEPYQsZdiZftDj5jAzwzDG">
+  1330→    - --no-cleanup: user declined cleanup during validation
+  1331→
+  1332→    **Objective update (separate command, fail-open):**
+  1333→    When objective_number is set, a second command line is emitted after
+  1334→    the land-execute command: ``erk exec objective-update-after-land``.
+  1335→    This runs without ``|| return 1`` because landing already succeeded.
+  1336→
+  1337→    **Passed via "$@" (user-controllable flags):**
+  1338→    - --up: navigate upstack (resolved at execution time)
+  1339→    - --no-pull: skip pull after landing
+  1340→    - --no-delete: preserve branch/slot
+  1341→    - -f: passed for documentation (execute mode is already non-interactive)
+  1342→
+  1343→    Args:
+  1344→        pr_number: PR number to merge (not used directly, passed as arg)
+  1345→        branch: Branch name being landed (not used directly, passed as arg)
+  1346→        worktree_path: Path to worktree being cleaned up (if any)
+  1347→        is_current_branch: Whether landing from the branch's own worktree
+  1348→        objective_number: Linked objective issue number (if any)
+  1349→        use_graphite: Whether to use Graphite for merge
+  1350→        target_path: Where to cd after land completes
+  1351→
+  1352→    Returns:
+  1353→        Shell script content as string
+  1354→    """
+  1355→    # Silence unused parameter warnings - these are still needed for the function
+  1356→    # signature to document what values the script will receive at runtime
+  1357→    _ = pr_number, branch
+  1358→
+  1359→    # Build erk exec land-execute command using shell variables for pr/branch
+
+... [55 lines omitted] ...
+
+  1386→PR_NUMBER="${{1:?Error: PR number required}}"
+  1387→BRANCH="${{2:?Error: Branch name required}}"
+  </tool_result>
+  <assistant>Now let me find where `target_path` is computed during validation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1400" cache_read_input_tokens="32247" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1400}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01MVNA6mqXNzgZrgqFFDiNeS">
+    <param name="pattern">target_path</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1400" cache_read_input_tokens="32247" output_tokens="150" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1400, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MVNA6mqXNzgZrgqFFDiNeS">
+1029:        target_path = ctx.git.worktree.find_worktree_for_branch(
+1032:        if target_path is None:
+1035:                target_path = repo.worktrees_dir / target.target_child_branch
+1037:                target_path = main_repo_root
+1040:        target_path = main_repo_root
+1048:        user_output(f"Would navigate to {target_path}")
+1065:        target_path=target_path,
+1218:        target_path = ctx.git.worktree.find_worktree_for_branch(main_repo_root, target_child_branch)
+1219:        if target_path is None:
+1221:            target_path, _ = ensure_worktree_for_branch(
+1234:            target_path=target_path,
+1305:    target_path: Path,
+1350:        target_path: Where to cd after land completes
+1382:    target_path_str = str(target_path)
+1391:cd {target_path_str}
+  </tool_result>
+  <tool_use name="Read" id="toolu_014VGsUyCRXZgRgX9k4aqkqY">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">1020</param>
+    <param name="limit">55</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="424" cache_read_input_tokens="33647" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 424, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014VGsUyCRXZgRgX9k4aqkqY">
+  1020→    # Step 2: Look up slot assignment (needed for dry-run output)
+  1021→    state = load_pool_state(repo.pool_json_path)
+  1022→    slot_assignment: SlotAssignment | None = None
+  1023→    if state is not None:
+  1024→        slot_assignment = find_branch_assignment(state, branch)
+  1025→
+  1026→    # Step 4: Determine target path for navigation after landing
+  1027→    if target.target_child_branch is not None:
+  1028→        # --up mode: navigate to child branch worktree
+  1029→        target_path = ctx.git.worktree.find_worktree_for_branch(
+  1030→            main_repo_root, target.target_child_branch
+  1031→        )
+  1032→        if target_path is None:
+  1033→            # Will auto-create worktree in execute phase
+  1034→            if repo.worktrees_dir:
+  1035→                target_path = repo.worktrees_dir / target.target_child_branch
+  1036→            else:
+  1037→                target_path = main_repo_root
+  1038→    else:
+  1039→        # Navigate to trunk/root
+  1040→        target_path = main_repo_root
+  1041→
+  1042→    # Step 5: Handle dry-run mode
+  1043→    if ctx.dry_run:
+  1044→        user_output(f"Would merge PR #{pr_number} for branch '{branch}'")
+  1045→        if slot_assignment is not None:
+  1046→            user_output(f"Would unassign slot '{slot_assignment.slot_name}'")
+  1047→        user_output(f"Would delete branch '{branch}'")
+  1048→        user_output(f"Would navigate to {target_path}")
+  1049→        user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
+
+... [30 lines omitted] ...
+  </tool_result>
+  <assistant>Now I see the issue clearly. Let me check what happens in the `--up` case at execution time.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1117" cache_read_input_tokens="34071" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1117}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WsXCn9hDFjmE748xgKoj3Z">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">1200</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1117" cache_read_input_tokens="34071" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1117}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WsXCn9hDFjmE748xgKoj3Z">
+  1200→
+  1201→    Args:
+  1202→        ctx: ErkContext
+  1203→        repo: Repository context
+  1204→        script: Whether to output activation script
+  1205→        pull_flag: Whether to include git pull in activation
+  1206→        target_child_branch: If set, navigate to this child branch (--up mode)
+  1207→        skip_activation_output: If True, skip activation message (used in execute mode
+  1208→            where the script's cd command handles navigation)
+  1209→    """
+  1210→    # Create post-deletion repo context with root pointing to main_repo_root
+  1211→    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+  1212→    post_deletion_repo = replace(repo, root=main_repo_root)
+  1213→
+  1214→    if target_child_branch is not None:
+  1215→        # Skip activation output in execute mode (script's cd command handles navigation)
+  1216→        if skip_activation_output:
+  1217→            raise SystemExit(0)
+  1218→        target_path = ctx.git.worktree.find_worktree_for_branch(main_repo_root, target_child_branch)
+  1219→        if target_path is None:
+  1220→            # Auto-create worktree for child
+  1221→            target_path, _ = ensure_worktree_for_branch(
+  1222→                ctx, post_deletion_repo, target_child_branch
+  1223→            )
+  1224→        # Suggest running gt restack --downstack to update child branch's PR base
+  1225→        # Use --downstack to only restack the current branch, avoiding errors if
+  1226→        # upstack branches are checked out in other worktrees
+  1227→        user_output(
+  1228→            click.style("💡", fg="cyan")
+  1229→            + f" Run 'gt restack --downstack' in {target_child_branch} to update PR base"
+
+... [25 lines omitted] ...
+  </tool_result>
+  <assistant>Now I understand the full picture. Here's the problem and fix:
+
+**The bug**: In the `--up` case (lines 1027-1037), if the child branch worktree doesn't exist yet, the validation phase *guesses* the future path (`repo.worktrees_dir / target.target_child_branch`) and bakes it into the script. But by the time the script runs, if that worktree was deleted (as in your case — `add-dgibson-print-03-04-1405` was cleaned up before landing), the `cd` at line 1391 fails.
+
+The non-`--up` case (line 1040) goes to `main_repo_root` which is always safe.
+
+**But your case was different** — you used `--up` and the child branch worktree had already been deleted. The `cd` target was baked in during validation but was stale by execution time.
+
+The fix: validate the `cd` target exists at the *start* of the generated script, before doing anything destructive.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1007" cache_read_input_tokens="35188" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1007}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="EnterPlanMode" id="toolu_01Qem1c1eDYGumaLnPKydZ4d">
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1007" cache_read_input_tokens="35188" output_tokens="278" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1007, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Qem1c1eDYGumaLnPKydZ4d">
+Entered plan mode. You should now focus on exploring the codebase and designing an implementation approach.
+
+In plan mode, you should:
+1. Thoroughly explore the codebase to understand existing patterns
+2. Identify similar features and architectural approaches
+3. Consider multiple approaches and their trade-offs
+4. Use AskUserQuestion if you need to clarify the approach
+5. Design a concrete implementation strategy
+6. When ready, use ExitPlanMode to present your plan for approval
+
+Remember: DO NOT write or edit any files yet. This is a read-only exploration and planning phase.
+  </tool_result>
+  <thinking>Let me explore the land_cmd.py more thoroughly to understand the full picture before planning the fix.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="21303" cache_read_input_tokens="16534" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21303}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TjE2kQWC4nzupexhMbGs9L">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">1380</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21303" cache_read_input_tokens="16534" output_tokens="150" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 21303, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TjE2kQWC4nzupexhMbGs9L">
+  1380→
+  1381→    erk_cmd = " ".join(cmd_parts)
+  1382→    target_path_str = str(target_path)
+  1383→
+  1384→    return f"""# erk land deferred execution
+  1385→# Usage: source land.sh &lt;pr_number&gt; &lt;branch&gt; [flags...]
+  1386→PR_NUMBER="${{1:?Error: PR number required}}"
+  1387→BRANCH="${{2:?Error: Branch name required}}"
+  1388→shift 2
+  1389→
+  1390→{erk_cmd} || return 1
+  1391→cd {target_path_str}
+  1392→"""
+  1393→
+  1394→
+  1395→def _execute_land(
+  1396→    ctx: ErkContext,
+  1397→    *,
+  1398→    pr_number: int | None,
+  1399→    branch: str | None,
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01JRS6fEDzafNMQgd4Gqa7E1">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">1290</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="480" cache_read_input_tokens="37837" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 480, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JRS6fEDzafNMQgd4Gqa7E1">
+  1290→        )
+  1291→        # activate_root_repo raises SystemExit(0)
+  1292→
+  1293→
+  1294→def render_land_execution_script(
+  1295→    *,
+  1296→    pr_number: int,
+  1297→    branch: str,
+  1298→    worktree_path: Path | None,
+  1299→    is_current_branch: bool,
+  1300→    objective_number: int | None,
+  1301→    plan_number: int | None,
+  1302→    use_graphite: bool,
+  1303→    skip_learn: bool,
+  1304→    cleanup_confirmed: bool,
+  1305→    target_path: Path,
+  1306→) -&gt; str:
+  1307→    """Generate shell script that executes land and navigates.
+  1308→
+  1309→    This script is generated after validation passes. When sourced, it:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <thinking>Now I have a clear understanding. Let me think about the fix options:
+
+1. **In the generated script**: Add a check at the end like `[ -d {target_path_str} ] &amp;&amp; cd {target_path_str} || cd {fallback_path}` 
+2. **In the generated script**: Add a check before running the destructive operation (at the start of the script) - but the target path may not exist until after land-execute runs (it may be created during execution in `--up` mode)
+3. **In the validation phase**: Check if the target_path exists and if not, warn the user earlier
+
+Wait, the issue is more nuanced. 
+
+In the `--up` case, if the child branch's worktree exists, the target path is set to that location (though it might get deleted during cleanup), but if the worktree doesn't exist, the code either guesses the future path or falls back to the main repo root. In the user's situation, their branch worktree was already deleted before running `erk land`, so the lookup returned nothing and the system guessed the path based on the worktrees directory structure.
+
+The problem is that during execution with `skip_activation_output=True`, the code returns early without actually creating the worktree that was baked into the script, so the `cd` command points to a path that never gets created.
+
+I need to decide between fixing the root cause by ensuring the worktree gets created in execute mode, or making the generated script more defensive with a fallback path—or doing both. Option B is simpler and safer as a quick fix, but Option A addresses why the worktree isn't being created in the first place.
+
+Looking at the code flow, the non-execute path explicitly creates the worktree if it doesn't exist, but the execute mode skips that entire block and just exits early. So the real issue is that execute mode assumes the worktree already exists when it might not.
+
+The cleanest solution is to ensure the worktree gets created before we exit in execute mode, rather than relying on the script to handle a missing directory. of immediately returning, still try to ensure the worktree exists first. The cleanest approach is to add an existence check for the target path in the generated script with a fallback to the main repo root if it's missing, or alternatively ensure the child branch worktree gets created before exiting in execute mode rather than letting the shell script handle a potentially non-existent path.
+
+Looking at the actual code structure, the target path determination happens after the early exit check, so it never gets a chance to run. I need to trace through the control flow more carefully to see where the worktree creation should actually happen. The real issue is that the target branch was already deleted before the user ran the command, so there's nothing to create a worktree for. The fix should validate at landing time whether the `--up` target branch still exists, and if not, either fall back to the main repo root or warn the user that the target no longer exists.
+
+Now I need to trace through how `target.target_child_branch` gets determined to see if we can add that existence check during validation.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="444" cache_read_input_tokens="38317" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 444}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VvfbnH3EZwEDfWAgjX5CyP">
+    <param name="pattern">target_child_branch</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="444" cache_read_input_tokens="38317" output_tokens="2102" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 444, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VvfbnH3EZwEDfWAgjX5CyP">
+77:    target_child_branch: str | None  # Only set for --up mode
+97:    target_child_branch: str | None
+312:            target_child_branch=cleanup.target_child_branch,
+473:            target_child_branch=cleanup.target_child_branch,
+699:    target_child_branch: str | None = None
+721:        target_child_branch = children[0]
+751:        target_child_branch=target_child_branch,
+808:        target_child_branch=None,  # No --up for specific PR
+854:        target_child_branch=None,  # No --up for branch landing
+912:        target_child_branch=None,
+1027:    if target.target_child_branch is not None:
+1030:            main_repo_root, target.target_child_branch
+1035:                target_path = repo.worktrees_dir / target.target_child_branch
+1081:    if target.target_child_branch is not None:
+1115:    target_child_branch: str | None,
+1133:        target_child_branch: Target child branch for --up navigation (None for trunk)
+1151:        target_child_branch=target_child_branch,
+1196:    target_child_branch: str | None,
+1206:        target_child_branch: If set, navigate to this child branch (--up mode)
+1214:    if target_child_branch is not None:
+1218:        target_path = ctx.git.worktree.find_worktree_for_branch(main_repo_root, target_child_branch)
+1222:                ctx, post_deletion_repo, target_child_branch
+1229:            + f" Run 'gt restack --downstack' in {target_child_branch} to update PR base"
+1402:    target_child_branch: str | None,
+1427:        target_child_branch: Target child branch for --up navigation
+1453:        target_child_branch=target_child_branch,
+1607:        target_child_branch=result.target_child_branch,
+  </tool_result>
+  <thinking>Now let me look at where `target_child_branch` is set (lines ~699-721) to understand where branch existence could be validated.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="25645" cache_read_input_tokens="19205" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25645}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NCyUF6e4e5kjm7JgKtCuef">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">690</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="25645" cache_read_input_tokens="19205" output_tokens="159" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 25645, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NCyUF6e4e5kjm7JgKtCuef">
+   690→        ctx.git.branch.get_current_branch(ctx.cwd), "Not currently on a branch (detached HEAD)"
+   691→    )
+   692→
+   693→    current_worktree_path = Ensure.not_none(
+   694→        ctx.git.worktree.find_worktree_for_branch(repo.root, current_branch),
+   695→        f"Cannot find worktree for current branch '{current_branch}'.",
+   696→    )
+   697→
+   698→    # Validate --up preconditions BEFORE any mutations (fail-fast)
+   699→    target_child_branch: str | None = None
+   700→    if up_flag:
+   701→        # --up requires Graphite for child branch tracking
+   702→        Ensure.invariant(
+   703→            ctx.branch_manager.is_graphite_managed(),
+   704→            "--up flag requires Graphite for child branch tracking.\n\n"
+   705→            + "To enable Graphite: erk config set use_graphite true\n\n"
+   706→            + "Without --up, erk land will navigate to trunk after landing.",
+   707→        )
+   708→
+   709→        children = Ensure.truthy(
+   710→            ctx.branch_manager.get_child_branches(repo.root, current_branch),
+   711→            f"Cannot use --up: branch '{current_branch}' has no children.\n"
+   712→            "Use 'erk land' without --up to return to trunk.",
+   713→        )
+   714→        children_list = ", ".join(f"'{c}'" for c in children)
+   715→        Ensure.invariant(
+   716→            len(children) == 1,
+   717→            f"Cannot use --up: branch '{current_branch}' has multiple children: "
+   718→            f"{children_list}.\n"
+   719→            "Use 'erk land' without --up, then 'erk co &lt;branch&gt;' to choose.",
+
+... [45 lines omitted] ...
+
+   728→        validation_error = validate_parent_is_trunk(
+   734→            validation_error is None,
+   735→            validation_error.message if validation_error else "",
+  </tool_result>
+  <thinking>Now I understand the full picture. The `target_child_branch` is set from Graphite's tracked children. The child branch `add-dgibson-print-03-04-1405` existed in Graphite's tracked stack (it was a child) even though the worktree had been deleted.
+
+The issue: `get_child_branches` returns branch names tracked by Graphite, but the actual branch may have been deleted locally. So at validation time we could check if the child branch still actually exists locally.
+
+Now let me understand what the user wants: "detect this error earlier." The error is at the end — `cd` fails because the target directory doesn't exist. The user wants to detect this during validation (when `erk land` is run) rather than after the script executes.
+
+
+I'm considering two approaches: either validate that the child branch still exists when we set it during validation, and either error out with a clear message or fall back to trunk navigation, or make the generated script itself more resilient by checking if the target directory exists before trying to change into it, with a fallback to the main repo root.
+
+The user's question about detecting this error earlier points toward the first approach—I should check if the child branch exists as a local branch around line 698 where we validate the `--up` preconditions, so we catch the problem before generating a script that will fail. Now I need to find what methods are available to check whether a branch exists.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1278" cache_read_input_tokens="44850" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1278}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have the full picture. Let me check what branch existence methods are available.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1278" cache_read_input_tokens="44850" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1278}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01UXxq3d6mbYrwAEsUsDtLNK">
+    <param name="pattern">branch_exists|local_branch|get_local_branches|list_branches</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1278" cache_read_input_tokens="44850" output_tokens="681" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1278, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UXxq3d6mbYrwAEsUsDtLNK">
+src/erk/cli/commands/wt/create_cmd.py:132:    local_branches = ctx.git.branch.list_local_branches(repo.root)
+src/erk/cli/commands/wt/create_cmd.py:134:    if branch not in local_branches:
+src/erk/cli/commands/wt/create_cmd.py:141:            remote_ref in remote_branches or branch in local_branches,
+src/erk/cli/commands/wt/create_from_cmd.py:50:    local_branches = ctx.git.branch.list_local_branches(repo.root)
+src/erk/cli/commands/wt/create_from_cmd.py:51:    if branch not in local_branches:
+src/erk/cli/ensure.py:199:    def git_branch_exists(ctx: ErkContext, repo_root: Path, branch: str) -&gt; None:
+src/erk/cli/ensure.py:211:            &gt;&gt;&gt; Ensure.git_branch_exists(ctx, repo.root, "feature-branch")
+src/erk/cli/ensure.py:213:        local_branches = ctx.git.branch.list_local_branches(repo_root)
+src/erk/cli/ensure.py:214:        if branch not in local_branches:
+src/erk/cli/ensure.py:534:        local_branches = ctx.git.branch.list_local_branches(repo_root)
+src/erk/cli/ensure.py:535:        if branch not in local_branches:
+src/erk/cli/commands/implement_shared.py:550:    local_branches = ctx.git.branch.list_local_branches(repo_root)
+src/erk/cli/commands/implement_shared.py:551:    branch_already_exists = setup.branch_name in local_branches
+src/erk/cli/commands/land_cmd.py:321:    local_branches = cleanup.ctx.git.branch.list_local_branches(cleanup.main_repo_root)
+src/erk/cli/commands/land_cmd.py:322:    if cleanup.branch in local_branches:
+src/erk/cli/commands/branch/checkout_cmd.py:374:        local_branches = ctx.git.branch.list_local_branches(repo_root)
+src/erk/cli/commands/branch/checkout_cmd.py:375:        if parent_branch not in local_branches:
+src/erk/cli/commands/branch/checkout_cmd.py:530:        local_branches = ctx.git.branch.list_local_branches(repo.root)
+src/erk/cli/commands/branch/checkout_cmd.py:531:        branch_exists_locally = branch in local_branches
+src/erk/cli/commands/branch/checkout_cmd.py:534:        if branch_exists_locally:
+src/erk/cli/commands/branch/checkout_cmd.py:588:                    local_branches = ctx.git.branch.list_local_branches(repo.root)
+src/erk/cli/commands/branch/checkout_cmd.py:589:                    if branch not in local_branches:
+src/erk/cli/commands/branch/delete_cmd.py:95:    local_branches = ctx.git.branch.list_local_branches(repo_root)
+src/erk/cli/commands/branch/delete_cmd.py:97:        branch in local_branches,
+src/erk/cli/commands/completions.py:120:        local_branches = erk_ctx.git.branch.list_local_branches(repo.root)
+src/erk/cli/commands/completions.py:121:        branch_names.update(local_branches)
+src/erk/cli/commands/branch/create_cmd.py:164:    local_branches = ctx.git.branch.list_local_branches(repo.root)
+src/erk/cli/commands/branch/create_cmd.py:165:    branch_exists_locally = branch_name in local_branches
+src/erk/cli/commands/branch/create_cmd.py:169:        if branch_exists_locally:
+src/erk/cli/commands/branch/create_cmd.py:181:        if branch_exists_locally:
+
+... [24 lines omitted] ...
+  </tool_result>
+  <thinking>Good. `Ensure.git_branch_exists(ctx, repo_root, branch)` at `src/erk/cli/ensure.py:199` is already available. Also `ctx.git.branch.list_local_branches(repo_root)` is the standard pattern.
+
+Now I understand the complete picture:
+
+1. **Where the bug is**: In `_resolve_land_target_current_branch()` (around line 698-721), `target_child_branch = children[0]` is set from Graphite's tracked child branches. But Graphite tracks branches independently of whether they exist locally. The branch may have been deleted.
+
+
+2. **What to fix**: Right after line 721, I need to verify the child branch still exists locally using `ctx.git.branch.list_local_branches()`, and if it doesn't, throw an error with a clear message before the `use_graphite` validation.
+3. **Also fix the generated script**: The `cd` at the end needs error handling.
+
+I'm considering whether to add a fallback to `main_repo_root` if the target doesn't exist, but the user's main concern is catching this error earlier during validation. Let me check the exact signature of `Ensure.git_branch_exists` to see what's available.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2811" cache_read_input_tokens="46128" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2811}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WkTPZX5kz7ybgdRBHpwxB4">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/ensure.py</param>
+    <param name="offset">199</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2811" cache_read_input_tokens="46128" output_tokens="483" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2811, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WkTPZX5kz7ybgdRBHpwxB4">
+   199→    def git_branch_exists(ctx: ErkContext, repo_root: Path, branch: str) -&gt; None:
+   200→        """Ensure git branch exists, otherwise output styled error and exit.
+   201→
+   202→        Args:
+   203→            ctx: Application context with git integration
+   204→            repo_root: Repository root path
+   205→            branch: Branch name to check
+   206→
+   207→        Raises:
+   208→            UserFacingCliError: If branch does not exist
+   209→
+   210→        Example:
+   211→            &gt;&gt;&gt; Ensure.git_branch_exists(ctx, repo.root, "feature-branch")
+   212→        """
+   213→        local_branches = ctx.git.branch.list_local_branches(repo_root)
+   214→        if branch not in local_branches:
+   215→            raise UserFacingCliError(
+   216→                f"Branch '{branch}' does not exist - Create it first or check the name"
+   217→            )
+   218→
+   219→    @staticmethod
+   220→    def in_git_worktree(ctx: ErkContext, current_path: Path | None) -&gt; None:
+   221→        """Ensure currently in a git worktree, otherwise output styled error and exit.
+   222→
+   223→        Args:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <thinking>Now I have everything I need. The `Ensure.git_branch_exists` method has a generic error message ("Branch '...' does not exist - Create it first or check the name") which doesn't quite fit the `--up` context. We'd want a more contextual message. So better to use `list_local_branches` directly with a custom `Ensure.invariant` call.
+
+Let me also look at what `main_repo_root` is available in `_resolve_land_target_current_branch` at line 698+ — it's set at line 739. So I need to use `repo.root` or `main_repo_root`. Let me check...
+
+
+Actually, `main_repo_root` is set later at line 739, so for the branch check at line 698, I'd need to use `repo.root` instead. The `RepoContext` parameter gives me access to `repo.main_repo_root` which is the actual root worktree path where branches are managed.
+
+The fix is to compute the effective root early by checking if `repo.main_repo_root` exists, then use that to fetch the local branches and verify the target child branch exists before proceeding.
+
+For the script generation, I'm making the `cd` command more resilient by checking if the directory exists first, with a fallback that either silently succeeds or logs a warning depending on the approach.
+
+The main fix the user wants is earlier validation though, so that's the priority—the script resilience is just defense in depth. Now I need to think about how to test this, particularly whether there are existing test patterns for the land command's validation logic that I should follow.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="898" cache_read_input_tokens="48939" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 898}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01ESy9xGx97krf1uQhzT1VoA">
+    <param name="pattern">up_flag|target_child_branch|--up</param>
+    <param name="path">/Users/schrockn/code/erk/tests</param>
+    <param name="type">py</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="898" cache_read_input_tokens="48939" output_tokens="978" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 898, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ESy9xGx97krf1uQhzT1VoA">
+Found 23 files
+tests/unit/cli/test_activation.py
+tests/unit/cli/commands/land/test_land_learn.py
+tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py
+tests/unit/cli/commands/land/test_render_land_script.py
+tests/unit/cli/commands/land/pipeline/test_validate_pr.py
+tests/unit/cli/commands/land/pipeline/test_resolve_target.py
+tests/unit/cli/commands/land/pipeline/test_run_execution_pipeline.py
+tests/unit/cli/commands/land/pipeline/test_run_validation_pipeline.py
+tests/unit/cli/commands/land/pipeline/test_resolve_plan_id.py
+tests/unit/cli/commands/land/pipeline/test_merge_pr.py
+tests/unit/cli/commands/land/test_cleanup_and_navigate.py
+tests/commands/setup/init/test_project_setup.py
+tests/commands/land/test_confirmation.py
+tests/commands/land/test_core.py
+tests/commands/land/test_git_pull.py
+tests/unit/cli/commands/land/test_no_delete_flag.py
+tests/unit/cli/commands/land/test_dry_run.py
+tests/commands/workspace/test_consolidate.py
+tests/unit/cli/commands/land/test_validate_pr_for_landing.py
+tests/unit/cli/commands/land/test_resolvers.py
+tests/commands/land/test_up_flag.py
+tests/commands/workspace/test_split.py
+tests/unit/cli/commands/exec/scripts/test_land_execute.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01F5VHcNshiLj2ra1Nswdiyv">
+    <param name="file_path">/Users/schrockn/code/erk/tests/commands/land/test_up_flag.py</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1386" cache_read_input_tokens="49837" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1386, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01F5VHcNshiLj2ra1Nswdiyv">
+     1→"""Tests for erk land command --up flag behavior.
+     2→
+     3→The --up flag navigates to the child branch after landing.
+     4→"""
+     5→
+     6→from pathlib import Path
+     7→
+     8→from click.testing import CliRunner
+     9→
+    10→from erk.cli.cli import cli
+    11→from erk.core.repo_discovery import RepoContext
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.github.fake import FakeGitHub
+    14→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    15→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    16→from erk_shared.gateway.graphite.fake import FakeGraphite
+    17→from erk_shared.gateway.graphite.types import BranchMetadata
+    18→from tests.test_utils.env_helpers import erk_inmem_env
+    19→
+    20→
+    21→def test_land_with_up_navigates_to_child_branch() -&gt; None:
+    22→    """Test --up generates script that navigates to child branch after landing."""
+    23→    runner = CliRunner()
+    24→    with erk_inmem_env(runner) as env:
+    25→        repo_dir = env.setup_repo_structure()
+    26→        feature_2_path = repo_dir / "worktrees" / "feature-2"
+    27→
+    28→        git_ops = FakeGit(
+    29→            worktrees=env.build_worktrees("main", ["feature-1", "feature-2"], repo_dir=repo_dir),
+    30→            current_branches={env.cwd: "feature-1"},
+
+... [55 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have enough context to write the plan. The fix is clear:
+
+1. **Primary fix**: In `_resolve_land_target_current_branch()` at `land_cmd.py:721`, after setting `target_child_branch = children[0]`, add a check that the child branch still exists locally. Use `ctx.git.branch.list_local_branches()` with a custom `Ensure.invariant` call.
+
+2. **Secondary fix (defense in depth)**: In `_build_land_deferred_script()`, make the `cd` at line 1391 resilient with a fallback.
+
+3. 
+
+Now I need to add a test case to `tests/commands/land/test_up_flag.py` that reproduces the scenario where a child branch exists in Graphite's metadata but has been deleted locally. I should look at how the existing test suite handles FakeGit to understand the pattern for simulating missing branches.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="6157" cache_read_input_tokens="51223" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6157}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01St4X6Mx14isGpi4hJjUrGE">
+    <param name="file_path">/Users/schrockn/code/erk/tests/commands/land/test_up_flag.py</param>
+    <param name="offset">80</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6157" cache_read_input_tokens="51223" output_tokens="333" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6157, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01St4X6Mx14isGpi4hJjUrGE">
+    80→            merge_should_succeed=True,
+    81→        )
+    82→
+    83→        issues_ops = FakeGitHubIssues(username="testuser")
+    84→
+    85→        repo = RepoContext(
+    86→            root=env.cwd,
+    87→            repo_name=env.cwd.name,
+    88→            repo_dir=repo_dir,
+    89→            worktrees_dir=repo_dir / "worktrees",
+    90→            pool_json_path=repo_dir / "pool.json",
+    91→        )
+    92→
+    93→        test_ctx = env.build_context(
+    94→            git=git_ops,
+    95→            graphite=graphite_ops,
+    96→            github=github_ops,
+    97→            repo=repo,
+    98→            use_graphite=True,
+    99→            issues=issues_ops,
+   100→        )
+   101→
+   102→        result = runner.invoke(
+   103→            cli, ["land", "--script", "--up", "--force"], obj=test_ctx, catch_exceptions=False
+   104→        )
+   105→
+   106→        assert result.exit_code == 0
+   107→
+   108→        # Verify PR was NOT merged yet (deferred to script execution)
+   109→        assert 123 not in github_ops.merged_prs
+
+... [55 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a complete understanding. Let me look at how `FakeGit` handles `list_local_branches` to understand what parameter to pass for missing branches.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1600" cache_read_input_tokens="57380" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1600}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have enough to write the plan. Let me check how `build_worktrees` works to understand what branches it creates in FakeGit.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1600" cache_read_input_tokens="57380" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1600}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013xNks7ne9UsyWvYo4GX4Cq">
+    <param name="pattern">def build_worktrees|list_local_branches</param>
+    <param name="path">/Users/schrockn/code/erk/tests</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="head_limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1600" cache_read_input_tokens="57380" output_tokens="251" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1600, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013xNks7ne9UsyWvYo4GX4Cq">
+tests/test_utils/env_helpers.py:190:    def build_worktrees(
+tests/test_utils/env_helpers.py:772:    def build_worktrees(
+tests/integration/test_real_git_branch_ops.py:25:    branches = git.branch.list_local_branches(repo)
+tests/integration/test_real_git_branch_ops.py:53:    branches = git.branch.list_local_branches(repo)
+tests/integration/test_real_git_branch_ops.py:85:    branches = git.branch.list_local_branches(repo)
+tests/integration/test_real_git_branch_ops.py:107:    branches = git.branch.list_local_branches(repo)
+tests/integration/test_real_git_branch_ops.py:177:    branches = git.branch.list_local_branches(local_repo)
+
+[Showing results with pagination = limit: 15, offset: 0]
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01UVed8wVhhTNRaEEWefURvD">
+    <param name="pattern">list_local_branches</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk_shared/gateway/git/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="40369" cache_read_input_tokens="19284" output_tokens="154" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 40369, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UVed8wVhhTNRaEEWefURvD">
+&lt;tool_use_error&gt;Path does not exist: /Users/schrockn/code/erk/src/erk_shared/gateway/git/fake.py. Note: your current working directory is /Users/schrockn/code/erk.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Vd18BMyMVuGBiUsTLcc9tK">
+    <param name="pattern">def list_local_branches</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="59653" output_tokens="139" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 238, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Vd18BMyMVuGBiUsTLcc9tK">
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py:67:    def list_local_branches(self, repo_root: Path) -&gt; list[str]:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py:105:    def list_local_branches(self, repo_root: Path) -&gt; list[str]:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py:131:    def list_local_branches(self, repo_root: Path) -&gt; list[str]:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py:296:    def list_local_branches(self, repo_root: Path) -&gt; list[str]:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py:73:    def list_local_branches(self, repo_root: Path) -&gt; list[str]:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01AYjA3ZdCkii2UQ7wLxQmxF">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+    <param name="offset">290</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="59891" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 402, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AYjA3ZdCkii2UQ7wLxQmxF">
+   290→    # ============================================================================
+   291→
+   292→    def get_current_branch(self, cwd: Path) -&gt; str | None:
+   293→        """Get the currently checked-out branch."""
+   294→        return self._current_branches.get(cwd)
+   295→
+   296→    def list_local_branches(self, repo_root: Path) -&gt; list[str]:
+   297→        """List all local branch names in the repository."""
+   298→        return self._local_branches.get(repo_root, [])
+   299→
+   300→    def list_remote_branches(self, repo_root: Path) -&gt; list[str]:
+   301→        """List all remote branch names in the repository."""
+   302→        return self._remote_branches.get(repo_root, [])
+   303→
+   304→    def get_branch_head(self, repo_root: Path, branch: str) -&gt; str | None:
+   305→        """Get the commit SHA at the head of a branch."""
+   306→        return self._branch_heads.get(branch)
+   307→
+   308→    def get_all_branch_heads(self, repo_root: Path) -&gt; dict[str, str]:
+   309→        """Get commit SHAs for all local branches."""
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01834grL8VoPRbnGE3k3xKj5">
+    <param name="pattern">local_branches</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="446" cache_read_input_tokens="60293" output_tokens="164" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 446, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01834grL8VoPRbnGE3k3xKj5">
+37:        local_branches: dict[Path, list[str]] | None = None,
+58:            local_branches: Mapping of repo_root -&gt; list of local branch names
+76:        self._local_branches = local_branches if local_branches is not None else {}
+193:        if repo_root not in self._local_branches:
+194:            self._local_branches[repo_root] = []
+195:        if branch not in self._local_branches[repo_root]:
+196:            self._local_branches[repo_root].append(branch)
+296:    def list_local_branches(self, repo_root: Path) -&gt; list[str]:
+298:        return self._local_branches.get(repo_root, [])
+322:        branches = self._local_branches.get(repo_root, [])
+
+[Showing results with pagination = limit: 10, offset: 0]
+  </tool_result>
+  <assistant>Good. Now I have everything I need. Let me also check the `find_worktree_for_branch` logic in FakeGit to understand how worktrees are set up.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="387" cache_read_input_tokens="60739" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 387}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01ELaQCTmbPii89uAZuqqtA8">
+    <param name="pattern">def find_worktree_for_branch</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="387" cache_read_input_tokens="60739" output_tokens="192" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 387, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ELaQCTmbPii89uAZuqqtA8">
+packages/erk-shared/src/erk_shared/gateway/git/abc.py:79:def find_worktree_for_branch(worktrees: list[WorktreeInfo], branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/printing.py:33:    def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py:79:    def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py:149:    def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py:150:    def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py:38:    def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+  </tool_result>
+  <assistant>Now I have all the context. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="647" cache_read_input_tokens="61126" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 647}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_016ywE9AA43WPJrx4PpDXSjS">
+    <param name="file_path">/Users/schrockn/.claude/plans/mutable-mixing-goose.md</param>
+    <param name="content"># Detect missing child branch early in `erk land --up`
+
+## Context
+
+When running `erk land...[truncated 1604 chars]... still pass (they include child branch in worktrees which implies local branch existence)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="647" cache_read_input_tokens="61126" output_tokens="606" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 647, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016ywE9AA43WPJrx4PpDXSjS">
+File created successfully at: /Users/schrockn/.claude/plans/mutable-mixing-goose.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01EaWf21KiGaEjthSLy3Xdeo">
+    <param name="plan"># Detect missing child branch early in `erk land --up`
+
+## Context
+
+When running `erk land...[truncated 1604 chars]... still pass (they include child branch in worktrees which implies local branch existence)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="754" cache_read_input_tokens="61773" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 754, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EaWf21KiGaEjthSLy3Xdeo">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/mutable-mixing-goose.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Detect missing child branch early in `erk land --up`
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 0d00502b-47eb-48bd-af54-8a3ce9f22349 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_014wjHj9JPfDkir1npX4FFRg">
+    <param name="file_path">/Users/schrockn/.claude/plans/mutable-mixing-goose.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="680" cache_read_input_tokens="62527" output_tokens="73" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 680, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014wjHj9JPfDkir1npX4FFRg">
+     1→# Detect missing child branch early in `erk land --up`
+     2→
+     3→## Context
+     4→
+     5→When running `erk land --up`, the validation phase determines a `target_child_branch` from Graphite's tracked metadata and bakes a `cd &lt;path&gt;` into the generated shell script. If the child branch was deleted before the script runs, the `cd` fails with a confusing error after the PR has already merged — too late to do anything about it.
+     6→
+     7→The user hit this: child branch `add-dgibson-print-03-04-1405` was deleted via slot cleanup, then `erk land -u` ran successfully but the final `cd` failed.
+     8→
+     9→## Change
+    10→
+    11→Add a local branch existence check during validation, right after resolving `target_child_branch` from Graphite metadata.
+    12→
+    13→### File: `src/erk/cli/commands/land_cmd.py`
+    14→
+    15→**In `_resolve_land_target_current_branch()`, after line 721** (`target_child_branch = children[0]`):
+    16→
+    17→Add check that the child branch exists as a local git branch:
+    18→
+    19→```python
+    20→local_branches = ctx.git.branch.list_local_branches(repo.root)
+    21→Ensure.invariant(
+    22→    target_child_branch in local_branches,
+    23→    f"Cannot use --up: child branch '{target_child_branch}' no longer exists locally.\n"
+    24→    "It may have been deleted. Use 'erk land' without --up to return to trunk.",
+    25→)
+    26→```
+    27→
+    28→This fails fast with a clear message before any mutations happen.
+    29→
+    30→### File: `tests/commands/land/test_up_flag.py`
+
+... [10 lines omitted] ...
+
+    34→Set up FakeGraphite with a child branch in metadata, but configure FakeGit with `local_branches` that excludes the child. Assert exit code != 0 and error message contains "no longer exists locally".
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_0156N41c5Xt5koELgTqS68Za">
+    <param name="questions">[{'question': '📋 Detect missing child branch early in `erk land --up`\nCurrent context: (w...[truncated 380 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="723" cache_read_input_tokens="63207" output_tokens="217" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 723, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0156N41c5Xt5koELgTqS68Za">
+User has answered your questions: "📋 Detect missing child branch early in `erk land --up`
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_017ePUgt76ZK7tCsWLbcuHch">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="45283" cache_read_input_tokens="19205" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 45283, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017ePUgt76ZK7tCsWLbcuHch">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="0d00502b-47eb-48bd-af54-8a3ce9f22349" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="0d00502b-47eb-48bd-af54-8a3ce9f22349" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "0d00502b-47eb-48bd-af54-8a3ce9f22349" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "0d00502b-47eb-48bd-af54-8a3ce9f22349" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "0d00502b-47eb-48bd-af54-8a3ce9f22349" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "0d00502b-47eb-48bd-af54-8a3ce9f22349" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>The user wants to save the plan. Let me follow the erk:plan-save skill instructions.
+
+Step 1: Parse Arguments - no special flags
+
+Step 2: Generate Branch Slug
+Plan title: "Detect missing child branch early in `erk land --up`"
+Branch slug: "detect-deleted-child-branch" or "fix-up-branch-detection" or "detect-up-missing-branch"
+Let me go with: "detect-deleted-child-branch"
+
+Step 3: Generate Plan Summary
+"When using `erk land --up`, the validation phase resolves a child branch from Graphite metadata and bakes a cd path into the generated shell script. 
+
+If that child branch was deleted locally before landing, the cd fails after the PR has already merged. This plan adds an early validation check to fail fast with a clear error message before any mutations occur."
+
+Step 4: Run Save Command</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2277" cache_read_input_tokens="64488" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2277}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MJ1AxsJ5BAFZ93TCMaUGjE">
+    <param name="command">PLAN_SUMMARY="When using erk land --up, the validation phase resolves a child branch from ...[truncated 355 chars]...ce9f22349" \
+  --branch-slug="detect-deleted-child-branch" \
+  --summary="${PLAN_SUMMARY}"</param>
+    <param name="description">Save plan as draft PR</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2277" cache_read_input_tokens="64488" output_tokens="439" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2277, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MJ1AxsJ5BAFZ93TCMaUGjE">
+{"success": true, "plan_number": 8738, "plan_url": "https://github.com/dagster-io/erk/pull/8738", "title": "[erk-plan] Detect missing child branch early in `erk land --up`", "branch_name": "plnd/detect-deleted-child-branc-03-04-1427", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/0d00502b-47eb-48bd-af54-8a3ce9f22349/plan_snapshots/000001-81358e8c"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01A7AxFfpLdgEBnZFvRTYbyF">
+    <param name="command">erk exec capture-session-info --session-id "0d00502b-47eb-48bd-af54-8a3ce9f22349" 2&gt;/dev/null | head -5</param>
+    <param name="description">Get session file path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="618" cache_read_input_tokens="66765" output_tokens="118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 618, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A7AxFfpLdgEBnZFvRTYbyF">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019vzBnYnHQXsLwGJVQWC5Kv">
+    <param name="command">erk exec upload-impl-session --session-id "0d00502b-47eb-48bd-af54-8a3ce9f22349" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="144" cache_read_input_tokens="67383" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 144, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019vzBnYnHQXsLwGJVQWC5Kv">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan saved as draft PR #8738: https://github.com/dagster-io/erk/pull/8738</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="142" cache_read_input_tokens="67527" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 142}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_013NSk6FWRjt6nKb5imdrYL4">
+    <param name="plan"># Detect missing child branch early in `erk land --up`
+
+## Context
+
+When running `erk land...[truncated 1604 chars]... still pass (they include child branch in worktrees which implies local branch existence)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="142" cache_read_input_tokens="67527" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 142}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013NSk6FWRjt6nKb5imdrYL4">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8738 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8738:
+  In current wt:    source "$(erk br co --for-plan 8738 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8738 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8738 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8738 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8738:
+  In current wt:  erk br co --for-plan 8738
+  In new wt:      erk br co --new-slot --for-plan 8738
+
+Dispatch plan #8738:
+  CLI command:    erk pr dispatch 8738
+  Slash command:  /erk:pr-dispatch 8738
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan #8738 saved. Here are the next steps:
+
+```
+Implement plan #8738:
+  In current wt:    source "$(erk br co --for-plan 8738 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8738 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8738 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8738 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8738:
+  In current wt:  erk br co --for-plan 8738
+  In new wt:      erk br co --new-slot --for-plan 8738
+
+Dispatch plan #8738:
+  CLI command:    erk pr dispatch 8738
+  Slash command:  /erk:pr-dispatch 8738
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1648" cache_read_input_tokens="67669" output_tokens="248" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1648, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "0d00502b-47eb-48bd-af54-8a3ce9f22349" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <thinking>The most recent plan in this conversation is #8738. Let me dispatch it.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="53705" cache_read_input_tokens="16534" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 53705}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016gkKSjWXnKpdY5k3RGYcob">
+    <param name="command">erk pr dispatch 8738</param>
+    <param name="description">Dispatch plan #8738 for remote implementation</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="53705" cache_read_input_tokens="16534" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 53705, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016gkKSjWXnKpdY5k3RGYcob">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8738...
+
+✓ All 1 plan(s) validated
+
+  #8738: [erk-plan] Detect missing child branch early in `erk land --up`
+
+Dispatching PR #8738...
+
+Fetching plan content...
+Syncing branch: plnd/detect-deleted-child-branc-03-04-1427
+Committing plan to branch...
+✓ Branch pushed to remote
+
+Dispatching workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow dispatched.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+Dispatched plans:
+
+... [4 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Jya36ydP9NtXqB7u6Y77GT">
+    <param name="command">erk exec marker delete --session-id "0d00502b-47eb-48bd-af54-8a3ce9f22349" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="462" cache_read_input_tokens="70239" output_tokens="111" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 462, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Jya36ydP9NtXqB7u6Y77GT">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Dispatched. Workflow running at:
+https://github.com/dagster-io/erk/actions/runs/22692432221</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="142" cache_read_input_tokens="70701" output_tokens="35" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 142, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
