@@ -1,0 +1,24 @@
+<session>
+  <meta source="agent-a0c8a15" />
+  <meta branch="plnd/consolidate-15-learn-docs-03-04-1418" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Run `prettier --write docs/learned/erk/worktree-branch-mismatch.md docs/learned/integrations/cmux-integration.md docs/learned/planning/planned-pr-lifecycle.md` and report results. Do NOT fix any errors - just report them.</user>
+  <assistant>I'll run the prettier command to check and format those documentation files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5859" cache_read_input_tokens="6456" cache_creation="{'ephemeral_5m_input_tokens': 5859, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KmbSHhgQE7PZLcjTQH23DJ">
+    <param name="command">prettier --write docs/learned/erk/worktree-branch-mismatch.md docs/learned/integrations/cmux-integration.md docs/learned/planning/planned-pr-lifecycle.md</param>
+    <param name="description">Format markdown files with prettier</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5859" cache_read_input_tokens="6456" cache_creation="{'ephemeral_5m_input_tokens': 5859, 'ephemeral_1h_input_tokens': 0}" output_tokens="148" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KmbSHhgQE7PZLcjTQH23DJ">
+docs/learned/erk/worktree-branch-mismatch.md 63ms
+docs/learned/integrations/cmux-integration.md 14ms
+docs/learned/planning/planned-pr-lifecycle.md 49ms
+  </tool_result>
+  <assistant>prettier passed: All 3 files formatted successfully
+
+- `/home/runner/work/erk/erk/docs/learned/erk/worktree-branch-mismatch.md` (63ms)
+- `/home/runner/work/erk/erk/docs/learned/integrations/cmux-integration.md` (14ms)
+- `/home/runner/work/erk/erk/docs/learned/planning/planned-pr-lifecycle.md` (49ms)</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="198" cache_read_input_tokens="12315" cache_creation="{'ephemeral_5m_input_tokens': 198, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
