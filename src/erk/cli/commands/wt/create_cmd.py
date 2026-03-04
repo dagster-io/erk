@@ -999,6 +999,7 @@ def create_wt(
                 force=False,
                 config=activation_config_activate_only(),
                 copy=True,
+                same_worktree=False,
             )
     else:
         user_output(f"Created worktree at {wt_path} checked out at branch '{branch}'")
@@ -1009,6 +1010,7 @@ def create_wt(
                 force=False,
                 config=activation_config_activate_only(),
                 copy=True,
+                same_worktree=False,
             )
 
 

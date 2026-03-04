@@ -240,6 +240,7 @@ def _checkout_pr(
                 force=False,
                 config=activation_config_activate_only(),
                 copy=True,
+                same_worktree=False,
             )
         return
 
@@ -331,6 +332,7 @@ def _checkout_pr(
             force=False,
             config=activation_config_activate_only(),
             copy=True,
+            same_worktree=False,
         )
 
 

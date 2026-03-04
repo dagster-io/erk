@@ -99,35 +99,35 @@ def test_activation_config_for_implement_codespace_named() -> None:
 def test_build_activation_command_activate_only() -> None:
     """build_activation_command with activate_only config returns just source command."""
     config = activation_config_activate_only()
-    result = build_activation_command(config, Path("/path/to/script.sh"))
+    result = build_activation_command(config, Path("/path/to/script.sh"), same_worktree=False)
     assert result == "source /path/to/script.sh"
 
 
 def test_build_activation_command_implement() -> None:
     """build_activation_command with implement config includes erk implement."""
     config = activation_config_for_implement(dangerous=False, docker=False, codespace=None)
-    result = build_activation_command(config, Path("/path/to/script.sh"))
+    result = build_activation_command(config, Path("/path/to/script.sh"), same_worktree=False)
     assert result == "source /path/to/script.sh && erk implement"
 
 
 def test_build_activation_command_implement_dangerous() -> None:
     """build_activation_command with dangerous flag includes --dangerous."""
     config = activation_config_for_implement(dangerous=True, docker=False, codespace=None)
-    result = build_activation_command(config, Path("/path/to/script.sh"))
+    result = build_activation_command(config, Path("/path/to/script.sh"), same_worktree=False)
     assert result == "source /path/to/script.sh && erk implement --dangerous"
 
 
 def test_build_activation_command_implement_docker() -> None:
     """build_activation_command with docker flag includes --docker."""
     config = activation_config_for_implement(dangerous=False, docker=True, codespace=None)
-    result = build_activation_command(config, Path("/path/to/script.sh"))
+    result = build_activation_command(config, Path("/path/to/script.sh"), same_worktree=False)
     assert result == "source /path/to/script.sh && erk implement --docker"
 
 
 def test_build_activation_command_implement_docker_dangerous() -> None:
     """build_activation_command with both flags includes both in correct order."""
     config = activation_config_for_implement(dangerous=True, docker=True, codespace=None)
-    result = build_activation_command(config, Path("/path/to/script.sh"))
+    result = build_activation_command(config, Path("/path/to/script.sh"), same_worktree=False)
     # docker comes before dangerous due to append order
     assert result == "source /path/to/script.sh && erk implement --docker --dangerous"
 
@@ -135,21 +135,21 @@ def test_build_activation_command_implement_docker_dangerous() -> None:
 def test_build_activation_command_implement_codespace_default() -> None:
     """build_activation_command with codespace='' includes --codespace flag."""
     config = activation_config_for_implement(dangerous=False, docker=False, codespace="")
-    result = build_activation_command(config, Path("/path/to/script.sh"))
+    result = build_activation_command(config, Path("/path/to/script.sh"), same_worktree=False)
     assert result == "source /path/to/script.sh && erk implement --codespace"
 
 
 def test_build_activation_command_implement_codespace_named() -> None:
     """build_activation_command with named codespace includes --codespace name."""
     config = activation_config_for_implement(dangerous=False, docker=False, codespace="mybox")
-    result = build_activation_command(config, Path("/path/to/script.sh"))
+    result = build_activation_command(config, Path("/path/to/script.sh"), same_worktree=False)
     assert result == "source /path/to/script.sh && erk implement --codespace mybox"
 
 
 def test_build_activation_command_implement_codespace_dangerous() -> None:
     """build_activation_command with codespace and dangerous flags includes both."""
     config = activation_config_for_implement(dangerous=True, docker=False, codespace="mybox")
-    result = build_activation_command(config, Path("/path/to/script.sh"))
+    result = build_activation_command(config, Path("/path/to/script.sh"), same_worktree=False)
     # codespace comes before dangerous due to append order
     assert result == "source /path/to/script.sh && erk implement --codespace mybox --dangerous"
 
@@ -636,6 +636,7 @@ def test_print_activation_instructions_with_source_branch_and_force(
         force=True,
         config=activation_config_activate_only(),
         copy=True,
+        same_worktree=False,
     )
 
     captured = capsys.readouterr()
@@ -661,6 +662,7 @@ def test_print_activation_instructions_with_source_branch_no_force(
         force=False,
         config=activation_config_activate_only(),
         copy=False,
+        same_worktree=False,
     )
 
     captured = capsys.readouterr()
@@ -686,6 +688,7 @@ def test_print_activation_instructions_without_source_branch(
         force=False,
         config=activation_config_activate_only(),
         copy=False,
+        same_worktree=False,
     )
 
     captured = capsys.readouterr()
@@ -711,6 +714,7 @@ def test_print_activation_instructions_emits_osc52_clipboard_sequence(
         force=False,
         config=activation_config_activate_only(),
         copy=True,
+        same_worktree=False,
     )
 
     captured = capsys.readouterr()
@@ -743,6 +747,7 @@ def test_print_activation_instructions_shows_clipboard_hint(
         force=False,
         config=activation_config_activate_only(),
         copy=True,
+        same_worktree=False,
     )
 
     captured = capsys.readouterr()
@@ -764,6 +769,7 @@ def test_print_activation_instructions_implement_config_shows_implement_command(
         force=False,
         config=activation_config_for_implement(dangerous=False, docker=False, codespace=None),
         copy=True,
+        same_worktree=False,
     )
 
     captured = capsys.readouterr()
@@ -788,6 +794,7 @@ def test_print_activation_instructions_implement_dangerous_config_shows_dangerou
         force=False,
         config=activation_config_for_implement(dangerous=True, docker=False, codespace=None),
         copy=True,
+        same_worktree=False,
     )
 
     captured = capsys.readouterr()
@@ -810,6 +817,7 @@ def test_print_activation_instructions_implement_dangerous_copies_dangerous_comm
         force=False,
         config=activation_config_for_implement(dangerous=True, docker=False, codespace=None),
         copy=True,
+        same_worktree=False,
     )
 
     captured = capsys.readouterr()
@@ -837,6 +845,7 @@ def test_print_activation_instructions_implement_config_copies_implement_command
         force=False,
         config=activation_config_for_implement(dangerous=False, docker=False, codespace=None),
         copy=True,
+        same_worktree=False,
     )
 
     captured = capsys.readouterr()
@@ -864,6 +873,7 @@ def test_print_activation_instructions_copy_false_no_osc52(
         force=False,
         config=activation_config_activate_only(),
         copy=False,
+        same_worktree=False,
     )
 
     captured = capsys.readouterr()
@@ -890,6 +900,7 @@ def test_print_activation_instructions_copy_true_emits_osc52(
         force=False,
         config=activation_config_activate_only(),
         copy=True,
+        same_worktree=False,
     )
 
     captured = capsys.readouterr()
@@ -913,6 +924,7 @@ def test_print_activation_instructions_docker_config_shows_docker_flag(
         force=False,
         config=activation_config_for_implement(dangerous=False, docker=True, codespace=None),
         copy=True,
+        same_worktree=False,
     )
 
     captured = capsys.readouterr()
@@ -935,6 +947,7 @@ def test_print_activation_instructions_docker_dangerous_config_shows_both_flags(
         force=False,
         config=activation_config_for_implement(dangerous=True, docker=True, codespace=None),
         copy=True,
+        same_worktree=False,
     )
 
     captured = capsys.readouterr()
@@ -958,6 +971,7 @@ def test_print_activation_instructions_codespace_config_shows_codespace_flag(
         force=False,
         config=activation_config_for_implement(dangerous=False, docker=False, codespace=""),
         copy=True,
+        same_worktree=False,
     )
 
     captured = capsys.readouterr()
@@ -980,11 +994,107 @@ def test_print_activation_instructions_codespace_named_shows_name(
         force=False,
         config=activation_config_for_implement(dangerous=False, docker=False, codespace="mybox"),
         copy=True,
+        same_worktree=False,
     )
 
     captured = capsys.readouterr()
     assert "To activate and start implementation (codespace isolation):" in captured.err
     assert f"source {script_path} && erk implement --codespace mybox" in captured.err
+
+
+# same_worktree tests
+
+
+def test_build_activation_command_same_worktree_activate_only_returns_empty() -> None:
+    """build_activation_command with same_worktree=True and activate-only returns empty string."""
+    config = activation_config_activate_only()
+    result = build_activation_command(config, Path("/path/to/script.sh"), same_worktree=True)
+    assert result == ""
+
+
+def test_build_activation_command_same_worktree_implement_skips_source() -> None:
+    """build_activation_command with same_worktree=True and implement skips source prefix."""
+    config = activation_config_for_implement(dangerous=False, docker=False, codespace=None)
+    result = build_activation_command(config, Path("/path/to/script.sh"), same_worktree=True)
+    assert result == "erk implement"
+    assert "source" not in result
+
+
+def test_build_activation_command_same_worktree_implement_with_flags() -> None:
+    """build_activation_command with same_worktree=True and implement flags keeps flags."""
+    config = activation_config_for_implement(dangerous=True, docker=True, codespace=None)
+    result = build_activation_command(config, Path("/path/to/script.sh"), same_worktree=True)
+    assert result == "erk implement --docker --dangerous"
+    assert "source" not in result
+
+
+def test_print_activation_instructions_same_worktree_activate_only_suppressed(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_activation_instructions with same_worktree=True and activate-only prints nothing."""
+    script_path = tmp_path / ".erk" / "bin" / "activate.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_activation_instructions(
+        script_path,
+        source_branch=None,
+        force=False,
+        config=activation_config_activate_only(),
+        copy=True,
+        same_worktree=True,
+    )
+
+    captured = capsys.readouterr()
+    assert captured.err == ""
+
+
+def test_print_activation_instructions_same_worktree_delete_branch_no_source_prefix(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_activation_instructions with same_worktree=True and branch deletion omits source."""
+    script_path = tmp_path / ".erk" / "bin" / "activate.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_activation_instructions(
+        script_path,
+        source_branch="feature-branch",
+        force=True,
+        config=activation_config_activate_only(),
+        copy=False,
+        same_worktree=True,
+    )
+
+    captured = capsys.readouterr()
+    assert "erk br delete feature-branch -f" in captured.err
+    assert "source" not in captured.err
+    assert "To delete branch feature-branch:" in captured.err
+
+
+def test_print_activation_instructions_same_worktree_implement_no_source_prefix(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """print_activation_instructions with same_worktree=True and implement omits source prefix."""
+    script_path = tmp_path / ".erk" / "bin" / "activate.sh"
+    script_path.parent.mkdir(parents=True)
+    script_path.touch()
+
+    print_activation_instructions(
+        script_path,
+        source_branch=None,
+        force=False,
+        config=activation_config_for_implement(dangerous=False, docker=False, codespace=None),
+        copy=False,
+        same_worktree=True,
+    )
+
+    captured = capsys.readouterr()
+    assert "erk implement" in captured.err
+    assert "source" not in captured.err
 
 
 # land.sh script tests

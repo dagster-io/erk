@@ -54,22 +54,33 @@ def activation_config_for_implement(
     return ActivationConfig(implement=True, dangerous=dangerous, docker=docker, codespace=codespace)
 
 
-def build_activation_command(config: ActivationConfig, script_path: Path) -> str:
+def build_activation_command(
+    config: ActivationConfig, script_path: Path, *, same_worktree: bool
+) -> str:
     """Build the activation command string from config.
 
     Args:
         config: The activation configuration specifying which flags to include.
         script_path: Path to the activation script.
+        same_worktree: If True, the user is already in the target worktree.
+            Skips the ``source activate.sh`` prefix since the environment is
+            already active.
 
     Returns:
-        The shell command string to display/copy.
+        The shell command string to display/copy. Empty string when
+        same_worktree is True and no implement command is needed.
     """
     source_cmd = f"source {script_path}"
 
     if not config.implement:
+        if same_worktree:
+            return ""
         return source_cmd
 
-    parts = [source_cmd, "&&", "erk", "implement"]
+    if same_worktree:
+        parts = ["erk", "implement"]
+    else:
+        parts = [source_cmd, "&&", "erk", "implement"]
     if config.docker:
         parts.append("--docker")
     if config.codespace is not None:
@@ -316,12 +327,18 @@ def print_activation_instructions(
     force: bool,
     config: ActivationConfig,
     copy: bool,
+    same_worktree: bool,
 ) -> None:
     """Print activation script instructions.
 
     Displays instructions for activating the worktree environment. Used after
     worktree creation or navigation to guide users through the opt-in shell
     integration workflow.
+
+    When same_worktree is True, the user is already in the target worktree
+    with their venv activated. The ``source activate.sh`` prefix is omitted
+    since it would be noise. If there is nothing else to show (no branch
+    deletion, no implement command), the entire instruction block is suppressed.
 
     When copy=True, the primary activation command is auto-copied to the
     clipboard via OSC 52 (supported by iTerm2, Kitty, Alacritty, WezTerm,
@@ -336,16 +353,27 @@ def print_activation_instructions(
             Uses composable flags (implement, dangerous, docker) instead of
             the old combinatorial ActivationMode literal.
         copy: If True, copy the primary command to clipboard via OSC 52 and show hint.
+        same_worktree: If True, the user is already in the target worktree.
+            Skips the ``source activate.sh`` prefix and suppresses the entire
+            block when there is nothing actionable to show.
     """
     source_cmd = f"source {script_path}"
 
     # If deleting current branch, make the delete command the primary command
     if source_branch is not None and force:
-        primary_cmd = f"{source_cmd} && erk br delete {source_branch} -f"
-        instruction = f"To activate and delete branch {source_branch}:"
+        if same_worktree:
+            primary_cmd = f"erk br delete {source_branch} -f"
+            instruction = f"To delete branch {source_branch}:"
+        else:
+            primary_cmd = f"{source_cmd} && erk br delete {source_branch} -f"
+            instruction = f"To activate and delete branch {source_branch}:"
     else:
-        primary_cmd = build_activation_command(config, script_path)
+        primary_cmd = build_activation_command(config, script_path, same_worktree=same_worktree)
         instruction = _get_activation_instruction(config)
+
+    # When same_worktree produces an empty command, suppress the entire block
+    if not primary_cmd:
+        return
 
     user_output(f"\n{instruction}")
     if copy:

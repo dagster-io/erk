@@ -355,6 +355,7 @@ def activate_target(
     Ensure.path_exists(ctx, target_path, f"Target not found: {target_path}")
 
     target_name = target_path.name
+    same_worktree = target_path.resolve() == ctx.cwd.resolve()
 
     # Compute relative path to preserve user's position within worktree
     relative_path: Path | None = None
@@ -402,6 +403,7 @@ def activate_target(
             force=force,
             config=activation_config_activate_only(),
             copy=True,
+            same_worktree=same_worktree,
         )
     raise SystemExit(0)
 
@@ -885,6 +887,8 @@ def _activate_with_deferred_deletion(
     """
     Ensure.path_exists(ctx, target_path, f"Target not found: {target_path}")
 
+    same_worktree = target_path.resolve() == ctx.cwd.resolve()
+
     # Determine messaging
     if is_root:
         final_message = 'echo "Went to root repo: $(pwd)"'
@@ -920,6 +924,7 @@ def _activate_with_deferred_deletion(
             force=force,
             config=activation_config_activate_only(),
             copy=True,
+            same_worktree=same_worktree,
         )
 
     # Deletion is deferred to script sourcing - no immediate cleanup
