@@ -781,8 +781,6 @@ def test_current_branch_sets_base_to_trunk(tmp_path: Path, monkeypatch: pytest.M
     assert fake_github.created_prs[0][3] == "master"
 
 
-
-
 def test_current_branch_does_not_retrack(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """--current-branch skips retrack_branch since no new branch was created."""
     fake_git = FakeGit(current_branches={tmp_path: "my-feature-branch"})
