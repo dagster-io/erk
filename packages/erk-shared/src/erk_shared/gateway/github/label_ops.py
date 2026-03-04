@@ -11,6 +11,8 @@ from erk_shared.gateway.github.retry import RetriesExhausted, RetryRequested, wi
 from erk_shared.gateway.github.transient_errors import is_transient_error
 from erk_shared.gateway.time.abc import Time
 
+_logger = logging.getLogger(__name__)
+
 
 @dataclass(frozen=True)
 class AddLabelsResult:
@@ -32,7 +34,7 @@ def add_labels_resilient(
     labels: tuple[str, ...],
 ) -> AddLabelsResult:
     """Add labels to a PR with retry on transient errors. Never raises."""
-    logger = logging.getLogger(__name__)
+
     added: list[str] = []
     failed: dict[str, str] = {}
 
@@ -51,7 +53,7 @@ def add_labels_resilient(
             result = with_retries(time, f"add label '{label}' to PR #{pr_number}", attempt)
             if isinstance(result, RetriesExhausted):
                 failed[label] = result.reason
-                logger.warning(
+                _logger.warning(
                     "Failed to add label '%s' to PR #%d after retries: %s",
                     label,
                     pr_number,
@@ -61,7 +63,7 @@ def add_labels_resilient(
                 added.append(label)
         except RuntimeError as e:
             failed[label] = str(e)
-            logger.warning("Failed to add label '%s' to PR #%d: %s", label, pr_number, e)
+            _logger.warning("Failed to add label '%s' to PR #%d: %s", label, pr_number, e)
 
     return AddLabelsResult(
         success=len(failed) == 0,
