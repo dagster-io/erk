@@ -1,0 +1,2184 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>Last login: Tue Mar  3 02:33:44 on ttys002
+direnv: loading ~/code/erk/.envrc
+direnv: loading ~/code/erk/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/code/erk
+-&gt; Activating venv: /Users/schrockn/code/erk/.venv (3.13.1)
+Activated: /Users/schrockn/code/erk
+direnv: export +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT ~PATH
+➜  erk git:(master) erk codespace connect
+Connecting to codespace 'erk-codespace'...
+remote: Enumerating objects: 21, done.
+remote: Counting objects: 100% (19/19), done.
+remote: Compressing objects: 100% (8/8), done.
+remote: Total 21 (delta 10), reused 18 (delta 10), pack-reused 2 (from 1)
+Unpacking objects: 100% (21/21), 4.63 KiB | 948.00 KiB/s, done.
+From https://github.com/dagster-io/erk
+ + e73f7fa3a...452730000 plnd/fix-dispatch-auto-detect-03-02-1014 -&gt; origin/plnd/fix-dispatch-auto-detect-03-02-1014  (forced update)
+ * [new branch]          plnd/fix-down-root-worktree-03-03-0247   -&gt; origin/plnd/fix-down-root-worktree-03-03-0247
+Already up to date.
+Resolved 104 packages in 2ms
+Audited 83 packages in 1ms
+
+ ▐▛███▜▌   Claude Code v2.1.63
+▝▜█████▛▘  Sonnet 4.6 · Claude API
+  ▘▘ ▝▝    /workspaces/erk
+
+❯ ⏺ Bash(erk exec upload-impl-session --session-id "a5b57b09-05e3-4d16-b1ec-de1e02b1302a" 2&gt;/dev/null || true)
+    ⎿  {
+         "uploaded": false,
+         "reason": "no_impl_folder"
+       }
+
+  ⏺ Plan saved successfully.
+
+    ---
+    Plan "Fix erk down -f -d from root worktree with non-trunk branch" saved as draft PR #8651
+
+    URL: https://github.com/dagster-io/erk/pull/8651
+
+    Next steps:
+
+    View PR: https://github.com/dagster-io/erk/pull/8651
+
+    In Claude Code:
+      Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+    OR exit Claude Code first, then run one of:
+
+      Same slot (recommended — you're in a slot):
+        Local: erk br co --for-plan 8651
+        Implement: source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement --dangerous
+
+      New slot:
+        Local: erk br co --new-slot --for-plan 8651
+        Implement: source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement --dangerous
+
+      Dispatch to Queue: erk pr dispatch 8651
+
+  ✻ Churned for 9m 51s
+
+  ❯ /exit
+    ⎿  Catch you later!
+
+  "Local" is an unclear label for this copy. do you have alternative suggestions?
+
+● Let me find the source that generates this output.
+
+● Searched for 2 patterns, read 1 file (ctrl+o to expand)
+
+● Good context. The Local label means "just checkout the branch (for manual implementation)" as opposed to Implement which auto-runs the implementation. Some alternatives:
+
+  - Checkout — most literal, describes the action precisely
+  - Switch — verb-first, matches the git mental model
+  - Branch — short, but ambiguous
+  - Prep — implies "prepare the branch without implementing"
+  - Manual — implies you'll implement yourself after
+
+  Notably, line 218 in the same file already uses Checkout in the "Next steps block" template. So the slot options block is inconsistent with the next steps block.
+
+  My suggestion: Checkout — it's already used elsewhere in the file, it's specific, and it pairs clearly with Implement as a contrast.
+
+❯ Checkout Branch, Checkout Worktree, Implement in Branch, Implement in Worktree maybe the most clear?
+
+● The idea is good — making labels self-describing without needing to read the section header. But "Branch" as the same-slot label might be slightly confusing since both cases
+  involve branches. You're always checking out a branch; the difference is where.
+
+  Alternatives that encode the same idea:
+
+  Same slot:
+    Checkout Here:          erk br co --for-plan 8651
+    Implement Here:         source "..." &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Checkout New Worktree:  erk br co --new-slot --for-plan 8651
+    Implement New Worktree: source "..." &amp;&amp; erk implement --dangerous
+
+  Or shorter:
+
+  Same slot:
+    Checkout (here):        ...
+    Implement (here):       ...
+
+  New slot:
+    Checkout (new wt):      ...
+    Implement (new wt):     ...
+
+  My honest take: since the section headers ("Same slot" / "New slot") already carry the context, the labels just need to distinguish the action. Checkout / Implement is
+  sufficient, clean, and already consistent with the next-steps block in the file. The longer labels add value only if someone reads commands in isolation without the headers —
+  which seems unlikely in a formatted terminal block.
+
+❯ maybe drop same slot new slot then. what would that look like
+
+● Flat list, self-describing labels:
+
+  OR exit Claude Code first, then run one of:
+
+    Checkout branch:          erk br co --for-plan 8651
+    Checkout new worktree:    erk br co --new-slot --for-plan 8651
+    Implement in branch:      source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement --dangerous
+    Implement in worktree:    source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement --dangerous
+
+    Dispatch to Queue: erk pr dispatch 8651
+
+  One thing lost: the "recommended" hint. Could bring it back inline:
+
+    Checkout branch (recommended):  erk br co --for-plan 8651
+
+  Or drop the recommendation entirely — the ordering already implies it, and it changes based on context (trunk vs slot) which adds complexity to maintain.
+
+❯     Checkout branch:          erk br co --for-plan 8651
+      Checkout new worktree:    erk br co --new-slot --for-plan 8651
+      Implement in branch:      source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement --dangerous
+      Implement in worktree:    source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement --dangerous
+
+  have implemetn options without --dangerous
+
+  then impelment dangerously with -d flag
+
+● Checkout branch:              erk br co --for-plan 8651
+    Checkout new worktree:        erk br co --new-slot --for-plan 8651
+    Implement in branch:          source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement
+    Implement in worktree:        source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement
+    Implement in branch -d:       source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement -d
+    Implement in worktree -d:     source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement -d
+
+    Dispatch to Queue: erk pr dispatch 8651
+
+  Six options is getting long. Worth considering whether the non-dangerous implement variants are commonly used enough to keep, or if most people just want -d. What's the typical
+   flow?
+
+❯ checkout plan br:
+  checkout plan wt
+
+  impl in br
+  impl
+
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ Checkout plan pr:
+    Here:
+    In new wt:
+  Implement plan pr:
+    Here:
+      (dangerously):
+    In new wt:
+      (dangerously):
+
+  How about this
+
+
+● That hierarchy is clean. Rendered out:
+
+  Checkout plan #8651:
+    Here:       erk br co --for-plan 8651
+    In new wt:  erk br co --new-slot --for-plan 8651
+
+  Implement plan #8651:
+    Here:             source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement
+      (dangerously):  source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement -d
+    In new wt:        source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement
+      (dangerously):  source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement -d
+
+  Dispatch to queue: erk pr dispatch 8651
+
+  The (dangerously): sub-label is a little awkward though — it's a modifier on the parent but structured as a sibling. Could simplify to just -d: since the flag name is
+  self-documenting:
+
+  Implement plan #8651:
+    Here:       source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement
+    Here -d:    source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement -d
+    In new wt:  source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement
+    In new wt -d: source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement -d
+
+  Which nesting style feels right to you?
+
+❯ i want to keep (dangerously)
+
+● Got it. So the final shape:
+
+  Checkout plan #8651:
+    Here:       erk br co --for-plan 8651
+    In new wt:  erk br co --new-slot --for-plan 8651
+
+  Implement plan #8651:
+    Here:             source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement
+      (dangerously):  source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement -d
+    In new wt:        source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement
+      (dangerously):  source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement -d
+
+  Dispatch to queue: erk pr dispatch 8651
+
+  Want me to update the plan-save command with this structure?
+
+❯ but checkout after implement
+
+● Implement plan #8651:
+    Here:             source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement
+      (dangerously):  source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement -d
+    In new wt:        source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement
+      (dangerously):  source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement -d
+
+  Checkout plan #8651:
+    Here:       erk br co --for-plan 8651
+    In new wt:  erk br co --new-slot --for-plan 8651
+
+  Dispatch to queue: erk pr dispatch 8651
+
+  Want me to update the plan-save command now?
+
+❯ make a plan to
+
+● User answered Claude's questions:
+  ⎿  · It looks like your message got cut off — make a plan to do what? → Update plan-save command output format
+
+● Explore(Explore plan-save command structure)
+  ⎿  Done (15 tool uses · 41.8k tokens · 36s)
+  (ctrl+o to expand)
+
+● Read 2 files (ctrl+o to expand)
+
+● Now I have enough context. Let me write the plan.
+
+● Updated plan
+  ⎿  /plan to preview
+
+● Update plan-save output: hierarchical Implement/Checkout format
+
+  File: .claude/commands/erk/plan-save.md
+
+  Changes: Replace the "Same slot" / "New slot" section headers and "Local:" / "Implement:" labels with a hierarchical format grouped by action. Both trunk and non-trunk cases
+  get the same structure, with ordering (Here vs In new wt) controlled by trunk detection.
+
+  New shape:
+  OR exit Claude Code first, then run one of:
+
+  Implement plan #8651:
+    Here:             source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement
+      (dangerously):  source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement -d
+    In new wt:        source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement
+      (dangerously):  source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement -d
+
+  Checkout plan #8651:
+    Here:       erk br co --for-plan 8651
+    In new wt:  erk br co --new-slot --for-plan 8651
+
+  Dispatch to queue: erk pr dispatch 8651
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+ ☐ br:master
+
+📋 Update plan-save output: hierarchical Implement/Checkout format
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?
+
+❯ 1. Create a plan PR on new branch
+     Create a new branch, save plan as draft PR, and stop. Does NOT proceed to implementation.
+  2. Create a plan PR on the current branch
+     Save plan as a PR on the current branch and stop. Does NOT proceed to implementation.
+  3. Just implement on the current branch without creating a PR.
+     Implement directly on the current branch without saving a plan PR.
+  4. View/Edit the Plan
+     Open plan in editor to review or modify before deciding.
+  5. Type something.
+──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  6. Chat about this
+  7. Skip interview and plan immediately
+
+Enter to select · ↑/↓ to navigate · Esc to cancel
+
+continue</user>
+  <thinking>The user wants me to continue with the plan. Let me first read the plan file and the relevant source file to understand what needs to be changed.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="33758" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 33758}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the codebase to understand the current plan-save command structure.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="33758" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 33758}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_017njL3rTPDnoZVpNcp87MVf">
+    <param name="description">Explore plan-save command</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 654 chars]...rdering of same-slot vs new-slot options
+
+Report all relevant file paths and line numbers.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="33758" cache_read_input_tokens="0" output_tokens="358" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 33758, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017njL3rTPDnoZVpNcp87MVf">
+Perfect! Now I have the full picture. Let me compile a comprehensive summary of what I found:
+
+## Summary
+
+Based on my exploration of the codebase, here's where the plan-save command's "Next steps" output block is generated and controlled:
+
+### Key Files
+
+1. **Command Documentation**: `/Users/schrockn/code/erk/.claude/commands/erk/plan-save.md` (lines 173-220)
+   - Contains the formal specification of what the "Next steps" output should be
+   - Describes trunk detection logic (lines 173-205)
+   - Shows how the output format changes based on `is_trunk` detection
+
+2. **Output Formatting Code**: `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/output/next_steps.py`
+   - `PlannedPRNextSteps` class (lines 44-84): Contains command properties for planned PR operations
+     - `checkout_new_slot_and_implement` (lines 37-41): Command for new slot implementation
+     - `checkout` (lines 65-66): Command for checkout
+     - `dispatch` (lines 57-58): Command for dispatch
+   - `format_planned_pr_next_steps_plain()` function (lines 108-121): Generates the plain text output for planned PR next steps
+     - This is the single implementation used for output formatting
+     - Does NOT currently implement trunk detection variations
+
+3. **Plan Save Script**: `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py`
+   - Line 176: Detects trunk branch: `trunk = git.branch.detect_trunk_branch(repo_root)`
+   - Lines 204-220: Determines base branch based on current branch (feature branch vs trunk)
+   - Lines 319-328: Calls `format_planned_pr_next_steps_plain()` to display the next steps block
+   - Does not pass trunk detection info to the formatting function
+
+4. **Supporting PR Creation**: `/Users/schrockn/code/erk/src/erk/cli/commands/pr/create_cmd.py`
+   - Lines 137-141: Also calls `format_planned_pr_next_steps_plain()` for output
+
+... [47 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the key files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1497" cache_read_input_tokens="33758" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1497}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0129zPyxMuGzisWAUdT5N1qU">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/output/next_steps.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1497" cache_read_input_tokens="33758" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1497}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0129zPyxMuGzisWAUdT5N1qU">
+     1→"""Issue and planned PR next steps formatting - single source of truth."""
+     2→
+     3→from dataclasses import dataclass
+     4→
+     5→
+     6→@dataclass(frozen=True)
+     7→class IssueNextSteps:
+     8→    """Canonical commands for issue operations."""
+     9→
+    10→    plan_number: int
+    11→    url: str
+    12→
+    13→    @property
+    14→    def view(self) -&gt; str:
+    15→        return self.url
+    16→
+    17→    @property
+    18→    def checkout(self) -&gt; str:
+    19→        return f"erk br co --for-plan {self.plan_number}"
+    20→
+    21→    @property
+    22→    def dispatch(self) -&gt; str:
+    23→        return f"erk pr dispatch {self.plan_number}"
+    24→
+    25→    @property
+    26→    def checkout_and_implement(self) -&gt; str:
+    27→        return (
+    28→            f'source "$(erk br co --for-plan {self.plan_number} --script)"'
+    29→            " &amp;&amp; erk implement --dangerous"
+    30→        )
+
+... [112 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01A2AZsJRjhDkvppMJY6Sndk">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/plan-save.md</param>
+    <param name="offset">160</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1497" cache_read_input_tokens="33758" output_tokens="189" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1497, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A2AZsJRjhDkvppMJY6Sndk">
+   160→If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+   161→
+   162→Return immediately (skip Steps 5, 6 above if not already executed).
+   163→
+   164→**Otherwise, on success**, display:
+   165→
+   166→```
+   167→Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+   168→URL: &lt;issue_url&gt;
+   169→```
+   170→
+   171→**Slot options block:**
+   172→
+   173→The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+   174→
+   175→If **on trunk = true**:
+   176→
+   177→```
+   178→OR exit Claude Code first, then run one of:
+   179→
+   180→  New slot (recommended — you're on trunk):
+   181→    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+   182→    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+   183→
+   184→  Same slot:
+   185→    Local: erk br co --for-plan &lt;plan_number&gt;
+   186→    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+   187→
+   188→  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+   189→```
+
+... [40 lines omitted] ...
+
+   228→On failure, display the error message and suggest:
+  </tool_result>
+  <thinking>Now let me also check how `format_planned_pr_next_steps_plain` is called, and look at the callers to understand what parameters are available (especially trunk detection).</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2831" cache_read_input_tokens="35255" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2831}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the callers and also look at `format_next_steps_plain` (for issues) since it needs the same update.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2831" cache_read_input_tokens="35255" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2831}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012MpnDmWLRpTXoZCviNBC6S">
+    <param name="pattern">format_planned_pr_next_steps_plain|format_next_steps_plain</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2831" cache_read_input_tokens="35255" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2831}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012MpnDmWLRpTXoZCviNBC6S">
+Found 6 files
+src/erk/cli/commands/exec/scripts/plan_save.py
+src/erk/cli/commands/pr/create_cmd.py
+tests/unit/shared/test_next_steps.py
+packages/erk-shared/tests/unit/output/test_next_steps.py
+packages/erk-shared/src/erk_shared/output/next_steps.py
+docs/learned/planning/next-steps-output.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NvvA5HdFdN2tXbQxWd2kht">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/plan-save.md</param>
+    <param name="offset">1</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2831" cache_read_input_tokens="35255" output_tokens="272" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2831, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NvvA5HdFdN2tXbQxWd2kht">
+     1→---
+     2→description: Save the current session's plan to GitHub
+     3→argument-hint: "[--plan-type=learn]"
+     4→---
+     5→
+     6→# /erk:plan-save
+     7→
+     8→Save the current session's plan to GitHub with session context.
+     9→
+    10→## Usage
+    11→
+    12→```bash
+    13→/erk:plan-save                           # Standalone plan
+    14→/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+    15→/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+    16→/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+    17→```
+    18→
+    19→Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+    20→
+    21→## Plan Storage
+    22→
+    23→The plan is saved using the configured backend:
+    24→
+    25→- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+    26→  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+    27→
+    28→## Agent Instructions
+    29→
+    30→### Step 1: Parse Arguments
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FXf1bQ9MfiEBD6D5iPT6PQ">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="offset">310</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="857" cache_read_input_tokens="38086" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 857}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FXf1bQ9MfiEBD6D5iPT6PQ">
+   310→        snapshot_result = _get_snapshot_result(
+   311→            session_id=session_id,
+   312→            plan_file=plan_file,
+   313→            cwd=cwd,
+   314→            claude_installation=claude_installation,
+   315→            repo_root=repo_root,
+   316→        )
+   317→
+   318→    # Output
+   319→    if output_format == "display":
+   320→        click.echo(f"Plan saved as planned PR #{plan_number}")
+   321→        click.echo(f"Title: {prefixed_title}")
+   322→        click.echo(f"URL: {result.url}")
+   323→        click.echo(f"Branch: {branch_name}")
+   324→        if snapshot_result is not None:
+   325→            click.echo(f"Archived: {snapshot_result.snapshot_dir}")
+   326→        click.echo()
+   327→        click.echo(
+   328→            format_planned_pr_next_steps_plain(plan_number, branch_name=branch_name, url=result.url)
+   329→        )
+   330→    else:
+   331→        output_data: dict[str, str | int | bool | None] = {
+   332→            "success": True,
+   333→            "plan_number": plan_number,
+   334→            "plan_url": result.url,
+   335→            "title": prefixed_title,
+   336→            "branch_name": branch_name,
+   337→            "plan_backend": "planned_pr",
+   338→            "objective_issue": objective_issue,
+   339→        }
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MSH8dQ8GaYtYSZwjvgm9vV">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/create_cmd.py</param>
+    <param name="offset">125</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="857" cache_read_input_tokens="38086" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 857}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MSH8dQ8GaYtYSZwjvgm9vV">
+   125→
+   126→    # Display success message with next steps
+   127→    user_output(f"Created plan #{result.plan_number}")
+   128→    user_output("")
+   129→    user_output(f"Plan: {result.plan_url}")
+   130→    user_output(f"Branch: {result.branch_name}")
+   131→    user_output("")
+   132→    if (
+   133→        result.plan_number is not None
+   134→        and result.branch_name is not None
+   135→        and result.plan_url is not None
+   136→    ):
+   137→        user_output(
+   138→            format_planned_pr_next_steps_plain(
+   139→                result.plan_number, branch_name=result.branch_name, url=result.plan_url
+   140→            )
+   141→        )
+   142→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TUYCpXouqsr9sPGGiXZQkX">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/tests/unit/output/test_next_steps.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="857" cache_read_input_tokens="38086" output_tokens="283" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 857, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TUYCpXouqsr9sPGGiXZQkX">
+     1→"""Tests for next_steps formatting."""
+     2→
+     3→from erk_shared.output.next_steps import (
+     4→    IssueNextSteps,
+     5→    PlannedPRNextSteps,
+     6→    format_next_steps_plain,
+     7→    format_planned_pr_next_steps_plain,
+     8→)
+     9→
+    10→
+    11→def test_planned_pr_next_steps_constructs_with_all_params() -&gt; None:
+    12→    """PlannedPRNextSteps constructs correctly with pr_number, branch_name, and url."""
+    13→    s = PlannedPRNextSteps(
+    14→        pr_number=42, branch_name="plan-feature-foo", url="https://github.com/org/repo/pull/42"
+    15→    )
+    16→    assert s.pr_number == 42
+    17→    assert s.branch_name == "plan-feature-foo"
+    18→    assert s.url == "https://github.com/org/repo/pull/42"
+    19→
+    20→
+    21→def test_planned_pr_next_steps_view_returns_url() -&gt; None:
+    22→    """view returns the URL directly."""
+    23→    s = PlannedPRNextSteps(
+    24→        pr_number=42, branch_name="plan-feature-foo", url="https://github.com/org/repo/pull/42"
+    25→    )
+    26→    assert s.view == "https://github.com/org/repo/pull/42"
+    27→
+    28→
+    29→def test_planned_pr_next_steps_checkout_branch_and_implement_uses_branch_name() -&gt; None:
+    30→    """checkout_branch_and_implement uses branch_name, not pr_number."""
+
+... [69 lines omitted] ...
+  </tool_result>
+  <thinking>Now I have a full picture. Let me also check the plan-save.md command for how it handles the output and what the plan-save script's Claude agent is supposed to do (the "Next steps block" section).
+
+Let me also check if there's a `format_next_steps_plain` for issues that needs updating too.
+
+Now let me also look at the plan-save.md more carefully around the "Next steps block" section and the "Slot options block" to understand the full spec that needs to change.
+
+I also need to check if `IssueNextSteps` (used by `format_next_steps_plain`) needs the same treatment.
+
+
+So I'm looking at two formatting functions: `format_planned_pr_next_steps_plain` used by plan_save.py and create_cmd.py for planned PRs, and `format_next_steps_plain` for issues. The user wants both to switch to a hierarchical format with indented command options, showing different ways to execute the plan depending on context.
+
+I need to update the `PlannedPRNextSteps` dataclass to include non-dangerous implement variants, then refactor both formatting functions to output this nested structure with "Here" and "In new wt" sections for each action, plus add the dispatch command at the end. Looking at the new design more carefully, the user wants a consistent format regardless of trunk detection — just "Here" and "In new wt" options that are self-describing. The `--dangerous` flag shouldn't appear in the default implement command, only as a parenthetical note showing the `-d` variant. For the dataclass, I need to add an `implement_here` property that chains the checkout script with the implement command.
+
+Now I'm realizing the current implementation has these combined checkout-and-implement methods that all use `--dangerous`, but the new approach should separate them into distinct implement variants for each checkout context — one for the current slot, one for the new slot, and dangerous versions of each.
+
+Looking at the broader picture, I should apply the same treatment to `PlannedPRNextSteps` and its formatting function since that's what was discussed, though I'm noting that `IssueNextSteps` has a similar structure and might benefit from consistency later. The key question is whether I need to update just the Python code or also the plan-save.md spec that drives the agent behavior. are two separate execution paths: the Python CLI uses `format_planned_pr_next_steps_plain()` for the display format, while the Claude agent follows the markdown spec and constructs its own output. Looking at the code flow, the agent actually calls `erk exec plan-save --format json` and then applies the spec formatting itself, so I need to update both the Python function and the markdown specification. I'm identifying the three places where the output format needs to be updated: the plan-save.md spec file that defines what the Claude agent outputs, the Python function that formats planned PR next steps for CLI display, and the create command module that also uses that same formatting function. I should focus on these three locations for consistency, though I'll note that the issue format function might need similar updates as a follow-up.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="3607" cache_read_input_tokens="38943" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3607}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a complete picture. Let me also quickly check how the plan-save.md command spec drives agent output vs the Python formatting.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3607" cache_read_input_tokens="38943" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3607}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KwP5i2cjygz76WMNi9xxsW">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/plan-save.md</param>
+    <param name="offset">100</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3607" cache_read_input_tokens="38943" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3607}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KwP5i2cjygz76WMNi9xxsW">
+   100→
+   101→- If `success: true` and `value` matches the expected objective number: verification passed
+   102→- If `success: false` or value doesn't match: verification failed
+   103→
+   104→**On verification success:**
+   105→
+   106→Display: `Verified objective link: #&lt;objective-number&gt;`
+   107→
+   108→**On verification failure:**
+   109→
+   110→Display error and remediation steps:
+   111→
+   112→```
+   113→ERROR: Objective link verification failed
+   114→Expected objective: #&lt;expected&gt;
+   115→Actual: &lt;actual-or-null&gt;
+   116→
+   117→The plan was saved but without the correct objective link.
+   118→Fix: Close draft PR #&lt;plan_number&gt;,
+   119→ensure the objective-context marker exists, and re-run /erk:plan-save.
+   120→```
+   121→
+   122→Exit without creating the plan-saved marker. The session continues so the user can retry.
+   123→
+   124→### Step 6: Update Objective Roadmap (if objective linked)
+   125→
+   126→**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+   127→
+   128→Update the objective's roadmap table to show that a plan has been created for this node:
+   129→
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_011jvF4V6jwmmj9Fj9BwzYMc">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/plan-save.md</param>
+    <param name="offset">138</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2500" cache_read_input_tokens="42550" output_tokens="111" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2500, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011jvF4V6jwmmj9Fj9BwzYMc">
+   138→2. **Update the roadmap table** using the dedicated command:
+   139→
+   140→```bash
+   141→erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+   142→```
+   143→
+   144→This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+   145→
+   146→3. **Report the update:**
+   147→
+   148→Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+   149→
+   150→**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+   151→
+   152→### Step 7: Display Results
+   153→
+   154→**If JSON contains `skipped_duplicate: true`:**
+   155→
+   156→Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+   157→
+   158→If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+   159→
+   160→If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+   161→
+   162→Return immediately (skip Steps 5, 6 above if not already executed).
+   163→
+   164→**Otherwise, on success**, display:
+   165→
+   166→```
+   167→Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+  </tool_result>
+  <assistant>Good. Now I have full context. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="520" cache_read_input_tokens="45050" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 520}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01KfJKVYhQwNEpGXFaa9jWb8">
+    <param name="file_path">/Users/schrockn/.claude/plans/drifting-wiggling-kahn.md</param>
+    <param name="content"># Update plan-save output: hierarchical Implement/Checkout format
+
+## Context
+
+The plan-sa...[truncated 3051 chars]...sually by running a plan-save in display mode or inspecting the formatted string in tests
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="520" cache_read_input_tokens="45050" output_tokens="1094" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 520, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KfJKVYhQwNEpGXFaa9jWb8">
+File created successfully at: /Users/schrockn/.claude/plans/drifting-wiggling-kahn.md
+  </tool_result>
+  <assistant>Let me verify there are no other callers of the properties I'd be removing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1232" cache_read_input_tokens="45570" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1232}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01JShi3JuSqRbTupSL3ogYHA">
+    <param name="pattern">checkout_and_implement|checkout_new_slot_and_implement|checkout_branch_and_implement</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1232" cache_read_input_tokens="45570" output_tokens="111" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1232, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JShi3JuSqRbTupSL3ogYHA">
+tests/unit/shared/test_next_steps.py:20:    def test_checkout_and_implement_uses_co(self) -&gt; None:
+tests/unit/shared/test_next_steps.py:22:        assert steps.checkout_and_implement == (
+tests/unit/shared/test_next_steps.py:30:    def test_checkout_new_slot_and_implement(self) -&gt; None:
+tests/unit/shared/test_next_steps.py:32:        assert steps.checkout_new_slot_and_implement == (
+tests/unit/shared/test_next_steps.py:63:    def test_checkout_branch_and_implement_uses_branch_name(self) -&gt; None:
+tests/unit/shared/test_next_steps.py:69:        assert steps.checkout_branch_and_implement == (
+tests/unit/shared/test_next_steps.py:81:    def test_checkout_and_implement_uses_pr_number(self) -&gt; None:
+tests/unit/shared/test_next_steps.py:87:        assert steps.checkout_and_implement == (
+tests/unit/shared/test_next_steps.py:99:    def test_checkout_new_slot_and_implement(self) -&gt; None:
+tests/unit/shared/test_next_steps.py:105:        assert steps.checkout_new_slot_and_implement == (
+docs/learned/conventions.md:203:- Properties were renamed from `prepare` to `checkout`, `checkout_and_implement`, `checkout_new_slot`, `checkout_new_slot_and_implement`
+packages/erk-shared/src/erk_shared/output/next_steps.py:26:    def checkout_and_implement(self) -&gt; str:
+packages/erk-shared/src/erk_shared/output/next_steps.py:37:    def checkout_new_slot_and_implement(self) -&gt; str:
+packages/erk-shared/src/erk_shared/output/next_steps.py:61:    def checkout_branch_and_implement(self) -&gt; str:
+packages/erk-shared/src/erk_shared/output/next_steps.py:69:    def checkout_and_implement(self) -&gt; str:
+packages/erk-shared/src/erk_shared/output/next_steps.py:80:    def checkout_new_slot_and_implement(self) -&gt; str:
+packages/erk-shared/src/erk_shared/output/next_steps.py:104:  Implement: {s.checkout_and_implement}
+packages/erk-shared/src/erk_shared/output/next_steps.py:120:  Implement: {s.checkout_new_slot_and_implement}
+docs/learned/planning/next-steps-output.md:31:| `checkout_and_implement`          | `source "$(erk br co --for-plan {N} --script)" &amp;&amp; erk implement --dangerous`            |
+docs/learned/planning/next-steps-output.md:33:| `checkout_new_slot_and_implement` | `source "$(erk br co --new-slot --for-plan {N} --script)" &amp;&amp; erk implement --dangerous` |
+docs/learned/planning/next-steps-output.md:44:| `checkout_branch_and_implement`   | `source "$(erk br co {branch_name} --script)" &amp;&amp; erk implement --dangerous`             |
+docs/learned/planning/next-steps-output.md:45:| `checkout_and_implement`          | `source "$(erk br co --for-plan {N} --script)" &amp;&amp; erk implement --dangerous`            |
+docs/learned/planning/next-steps-output.md:47:| `checkout_new_slot_and_implement` | `source "$(erk br co --new-slot --for-plan {N} --script)" &amp;&amp; erk implement --dangerous` |
+docs/learned/planning/next-steps-output.md:49:**Note:** `PlannedPRNextSteps` has `checkout_branch_and_implement` (using direct branch name) which `IssueNextSteps` does not.
+packages/erk-shared/tests/unit/output/test_next_steps.py:29:def test_planned_pr_next_steps_checkout_branch_and_implement_uses_branch_name() -&gt; None:
+packages/erk-shared/tests/unit/output/test_next_steps.py:30:    """checkout_branch_and_implement uses branch_name, not pr_number."""
+packages/erk-shared/tests/unit/output/test_next_steps.py:34:    assert "plan-feature-foo" in s.checkout_branch_and_implement
+packages/erk-shared/tests/unit/output/test_next_steps.py:35:    assert "42" not in s.checkout_branch_and_implement
+  </tool_result>
+  <assistant>Good — the old properties are only used within next_steps.py itself, tests, and docs. No external callers. Let me finalize the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1303" cache_read_input_tokens="46802" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1303}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RKTEijh2qz1dPUtLrLqoP9">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/drifting-wiggling-kahn.md</param>
+    <param name="old_string">Existing properties (`checkout_and_implement`, `checkout_new_slot_and_implement`, `checkout_branch_and_implement`) can be removed if no other callers use them — verify first.</param>
+    <param name="new_string">Existing properties (`checkout_and_implement`, `checkout_new_slot_and_implement`, `checkout_branch_and_implement`) are only used within next_steps.py, tests, and docs — safe to replace.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1303" cache_read_input_tokens="46802" output_tokens="236" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1303, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RKTEijh2qz1dPUtLrLqoP9">
+The file /Users/schrockn/.claude/plans/drifting-wiggling-kahn.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014nGCwyQTeEpkUuauY9eiFs">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.claude/plans/drifting-wiggling-kahn.md</param>
+    <param name="old_string">## Verification
+
+1. Run tests: `pytest packages/erk-shared/tests/unit/output/test_next_ste...[truncated 69 chars]...isually by running a plan-save in display mode or inspecting the formatted string in tests</param>
+    <param name="new_string">### 6. Update docs/learned references
+**Files:**
+- `docs/learned/planning/next-steps-outpu...[truncated 331 chars]..._steps.py`
+3. Check formatting visually by inspecting the formatted string output in tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="296" cache_read_input_tokens="48105" output_tokens="339" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 296, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014nGCwyQTeEpkUuauY9eiFs">
+The file /Users/schrockn/.claude/plans/drifting-wiggling-kahn.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01SAyU73AtiLMnH1rG1r2D4L">
+    <param name="plan"># Update plan-save output: hierarchical Implement/Checkout format
+
+## Context
+
+The plan-sa...[truncated 3324 chars]...steps.py`
+3. Check formatting visually by inspecting the formatted string output in tests
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="609" cache_read_input_tokens="48401" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 609, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SAyU73AtiLMnH1rG1r2D4L">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/drifting-wiggling-kahn.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Update plan-save output: hierarchical Implement/Checkout format
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR on new branch" - Create a new branch, save plan as draft PR, and stop. Does NOT proceed to implementation.
+  2. "Create a plan PR on the current branch" - Save plan as a PR on the current branch and stop. Does NOT proceed to implementation.
+  3. "Just implement on the current branch without creating a PR." - Implement directly on the current branch without saving a plan PR.
+  4. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR on new branch':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Create a plan PR on the current branch':
+  1. Run /erk:plan-save --current-branch
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     This converts the current branch into the plan PR branch
+     instead of creating a new branch.
+
+... [16 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DD8nVBfgM7uhhGfArPeNLR">
+    <param name="file_path">/Users/schrockn/.claude/plans/drifting-wiggling-kahn.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="841" cache_read_input_tokens="49010" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 841, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DD8nVBfgM7uhhGfArPeNLR">
+     1→# Update plan-save output: hierarchical Implement/Checkout format
+     2→
+     3→## Context
+     4→
+     5→The plan-save command's "next steps" output currently uses flat labels ("Checkout:", "Implement:") under "Same slot" / "New slot" section headers. The user wants a hierarchical format grouped by action (Implement first, then Checkout), with "Here" vs "In new wt" as sub-labels, and non-dangerous implement as the default with `(dangerously)` as a nested sub-option.
+     6→
+     7→## Target format
+     8→
+     9→```
+    10→Implement plan #8651:
+    11→  Here:             source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement
+    12→    (dangerously):  source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement -d
+    13→  In new wt:        source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement
+    14→    (dangerously):  source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement -d
+    15→
+    16→Checkout plan #8651:
+    17→  Here:       erk br co --for-plan 8651
+    18→  In new wt:  erk br co --new-slot --for-plan 8651
+    19→
+    20→Dispatch to queue: erk pr dispatch 8651
+    21→```
+    22→
+    23→This replaces the old "Same slot" / "New slot" section headers and "Local:" / "Implement:" labels. Trunk detection for ordering is removed — the format is the same regardless of branch context.
+    24→
+    25→## Changes
+    26→
+    27→### 1. Update `PlannedPRNextSteps` dataclass
+    28→**File:** `packages/erk-shared/src/erk_shared/output/next_steps.py` (lines 44-84)
+    29→
+    30→Add non-dangerous implement properties:
+
+... [41 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+## Update plan-save output: hierarchical Implement/Checkout format
+
+**Context:** The plan-save command's "next steps" output currently uses flat labels ("Checkout:", "Implement:") under "Same slot" / "New slot" section headers. The new format groups by action (Implement first, then Checkout), with "Here" vs "In new wt" sub-labels, and non-dangerous implement as default with `(dangerously)` as a nested sub-option.
+
+**Target format:**
+```
+Implement plan #8651:
+  Here:             source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8651:
+  Here:       erk br co --for-plan 8651
+  In new wt:  erk br co --new-slot --for-plan 8651
+
+Dispatch to queue: erk pr dispatch 8651
+```
+
+**Changes:** 6 steps across `next_steps.py` (dataclass + formatters), `plan-save.md` (agent spec), tests (both test files), and docs/learned references.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1393" cache_read_input_tokens="49851" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1393}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01QMJcebrVhkyhGcX7hR1KKM">
+    <param name="questions">[{'question': '📋 Update plan-save output: hierarchical Implement/Checkout format\nCurrent ...[truncated 602 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1393" cache_read_input_tokens="49851" output_tokens="632" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1393, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QMJcebrVhkyhGcX7hR1KKM">
+User has answered your questions: "📋 Update plan-save output: hierarchical Implement/Checkout format
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR on new branch". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01DdX7kv2453dipoAzzcKdLA">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="715" cache_read_input_tokens="51244" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 715, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DdX7kv2453dipoAzzcKdLA">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="90bdd8f7-3b2a-441a-8b66-57c0e7dc2078" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "90bdd8f7-3b2a-441a-8b66-57c0e7dc2078" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  New slot (recommended — you're on trunk):
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Same slot:
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false**:
+
+```
+OR exit Claude Code first, then run one of:
+
+  Same slot (recommended — you're in a slot):
+    Local: erk br co --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  New slot:
+    Local: erk br co --new-slot --for-plan &lt;plan_number&gt;
+    Implement: source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement --dangerous
+
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout: erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to Queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "90bdd8f7-3b2a-441a-8b66-57c0e7dc2078" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "90bdd8f7-3b2a-441a-8b66-57c0e7dc2078" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "90bdd8f7-3b2a-441a-8b66-57c0e7dc2078" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+I'll execute the plan-save command now. Let me work through the steps.
+
+**Step 1: Parse Arguments** — No `--plan-type`, no `--objective`, no `--current-branch`. All flags empty.
+
+**Step 2: Generate Branch Slug** — The plan title is "Update plan-save output: hierarchical Implement/Checkout format". Branch slug: `update-next-steps-format`
+
+**Step 3: Generate Plan Summary** — Replaces the flat "Same slot" / "New slot" section headers with a hierarchical format grouped by action: Implement (with non-dangerous default and dangerously sub-option), Checkout, and Dispatch. Applies to both PlannedPRNextSteps and IssueNextSteps formatters, the plan-save.md agent spec, and related tests/docs.
+
+**Step 4: Run Save Command**</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="3873" cache_read_input_tokens="51959" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3873}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DMUYTKYeVbz18LkWUEQJrF">
+    <param name="command">erk exec plan-save --format json --session-id="90bdd8f7-3b2a-441a-8b66-57c0e7dc2078" --bra...[truncated 249 chars]...teps and IssueNextSteps formatters, the plan-save agent spec, and related tests and docs."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3873" cache_read_input_tokens="51959" output_tokens="450" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3873, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DMUYTKYeVbz18LkWUEQJrF">
+{"success": true, "plan_number": 8654, "plan_url": "https://github.com/dagster-io/erk/pull/8654", "title": "[erk-plan] Update plan-save output: hierarchical Implement/Checkout format", "branch_name": "plnd/update-next-steps-format-03-03-0438", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/90bdd8f7-3b2a-441a-8b66-57c0e7dc2078/plan_snapshots/000001-7d9e189c"}
+  </tool_result>
+  <assistant>**Step 5: Verify Objective** — `objective_issue` is null, skipping.
+
+**Step 6: Update Roadmap** — No objective linked, skipping.
+
+**Step 7: Display Results**
+
+---
+
+Plan "[erk-plan] Update plan-save output: hierarchical Implement/Checkout format" saved as draft PR #8654
+
+URL: https://github.com/dagster-io/erk/pull/8654
+
+Next steps:
+
+View PR: https://github.com/dagster-io/erk/pull/8654
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+Implement plan #8654:
+  Here:             `source "$(erk br co --for-plan 8654 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --for-plan 8654 --script)" &amp;&amp; erk implement -d`
+  In new wt:        `source "$(erk br co --new-slot --for-plan 8654 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --new-slot --for-plan 8654 --script)" &amp;&amp; erk implement -d`
+
+Checkout plan #8654:
+  Here:       `erk br co --for-plan 8654`
+  In new wt:  `erk br co --new-slot --for-plan 8654`
+
+Dispatch to queue: `erk pr dispatch 8654`
+
+---
+
+**Step 5 (Push Session):**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="622" cache_read_input_tokens="55832" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 622}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_017vpy47PyjNeHeXzqRBtZo5">
+    <param name="command">erk exec upload-impl-session --session-id "90bdd8f7-3b2a-441a-8b66-57c0e7dc2078" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="622" cache_read_input_tokens="55832" output_tokens="517" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 622, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017vpy47PyjNeHeXzqRBtZo5">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan saved successfully as **PR #8654**.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="544" cache_read_input_tokens="56454" output_tokens="13" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 544, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user> Implement plan #8654:
+    Here:             source "$(erk br co --for-plan 8654 --script)" &amp;&amp; erk implement
+      (dangerously):  source "$(erk br co --for-plan 8654 --script)" &amp;&amp; erk implement -d
+    In new wt:        source "$(erk br co --new-slot --for-plan 8654 --script)" &amp;&amp; erk implement
+      (dangerously):  source "$(erk br co --new-slot --for-plan 8654 --script)" &amp;&amp; erk implement -d
+
+Here:
+
+In new br:
+
+In new wt</user>
+  <assistant>
+
+Good point — there's a third option beyond "Here" and "In new wt": checking out a new branch (without a full worktree). Let me think about what that maps to.
+
+Currently the commands are:
+- **Here**: `erk br co --for-plan N` (reuses current slot/branch context)
+- **In new wt**: `erk br co --new-slot --for-plan N` (creates a new worktree)
+
+What would "In new br" mean? Let me check what branch checkout options exist.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="57524" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 57524}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Bf7N5ReD5Lb7k4KdGmWjdm">
+    <param name="command">erk br co --help 2&gt;&amp;1 | head -30</param>
+    <param name="description">Check erk br co help for branch options</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="57524" cache_read_input_tokens="0" output_tokens="215" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 57524, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Bf7N5ReD5Lb7k4KdGmWjdm">
+Usage: erk br co [OPTIONS] BRANCH
+
+  Checkout BRANCH by finding and switching to its worktree.
+
+  Prints the activation path for the target worktree. Enable shell integration
+  for automatic navigation: erk config set shell_integration true
+
+  This command finds which worktree has the specified branch checked out and
+  switches to it. If the branch exists but isn't checked out anywhere, a
+  worktree is automatically created. If the branch exists on origin but not
+  locally, a tracking branch and worktree are created automatically.
+
+  Use --for-plan to resolve a plan and set up .erk/impl-context/ after
+  checkout.
+
+  Examples:
+
+      erk br co feature/user-auth      # Checkout existing worktree
+
+      erk br co unchecked-branch       # Auto-create worktree
+
+      erk br co --for-plan 123         # Checkout plan branch with .erk/impl-
+      context/ setup
+
+  If multiple worktrees contain the branch, all options are shown.
+
+Options:
+  --for-plan TEXT  Plan number or PR with erk-plan label
+  --no-slot        Create worktree without slot assignment
+  --new-slot       Force allocation of a new slot instead of stacking in place
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01NisX4uFoxKqRmfsmtKMHSG">
+    <param name="questions">[{'question': "I see three options now: Here, In new br, In new wt. Can you clarify what '...[truncated 561 chars]...isting options to 'In new br' and 'In new wt' (dropping 'Here')"}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="523" cache_read_input_tokens="57524" output_tokens="287" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 523, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NisX4uFoxKqRmfsmtKMHSG">
+User has answered your questions: "I see three options now: Here, In new br, In new wt. Can you clarify what 'In new br' means? Currently `erk br co --for-plan` checks out the plan branch in the current worktree (Here), and `--new-slot` creates a new worktree. What's the third variant — a new local branch without a new worktree? Or is this a relabeling where 'In new br' replaces 'Here' and 'In new wt' stays?"="Three distinct options". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01DrzjBzn3cunyn67xCCXPVR">
+    <param name="questions">[{'question': "Got it — three distinct options. What's the concrete command for 'In new br...[truncated 635 chars]...'description': 'Raw git branch creation, no erk slot management'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="442" cache_read_input_tokens="58047" output_tokens="313" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 442, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DrzjBzn3cunyn67xCCXPVR">
+User has answered your questions: "Got it — three distinct options. What's the concrete command for 'In new br'? My understanding:
+
+- **Here**: `erk br co --for-plan N` — checks out the plan branch in the current worktree (stack-in-place)
+- **In new br**: creates a new branch in the current worktree but... what flag/command does this use?
+- **In new wt**: `erk br co --new-slot --for-plan N` — creates a new worktree
+
+What does 'In new br' do differently from 'Here'? Both check out a branch in the current worktree. Is there a `--no-slot` or other flag involved?"="In new br is the current "Here". "Here" means on the current branch (user has already named)" user notes: In new br is the current "Here". "Here" means on the current branch (user has already named). You can now continue with the user's answers in mind.
+  </tool_result>
+  <assistant>Got it, so the three options are:
+
+- **Here** = stay on the current branch (already named by the user, no checkout needed)
+- **In new br** = `erk br co --for-plan N` (checks out the plan branch in the current worktree)
+- **In new wt** = `erk br co --new-slot --for-plan N` (creates a new worktree)
+
+So the full format becomes:
+
+```
+Implement plan #8654:
+  Here:             erk implement
+    (dangerously):  erk implement -d
+  In new br:        source "$(erk br co --for-plan 8654 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8654 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8654 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8654 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8654:
+  Here:       (already on this branch)
+  In new br:  erk br co --for-plan 8654
+  In new wt:  erk br co --new-slot --for-plan 8654
+
+Dispatch to queue: erk pr dispatch 8654
+```
+
+Wait — "Here" for checkout doesn't make sense if you're already on the branch. And "Here" for implement just runs `erk implement` directly. Should we skip the "Here" row for Checkout entirely?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="551" cache_read_input_tokens="58489" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 551}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01FdvA4PdCA5Ceijz1LRTxyt">
+    <param name="questions">[{'question': "For the 'Here' option (current branch): should we show it in the Checkout s...[truncated 533 chars]...ckout shows the same erk br co command (idempotent re-checkout)'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="551" cache_read_input_tokens="58489" output_tokens="643" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 551, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FdvA4PdCA5Ceijz1LRTxyt">
+User has answered your questions: "For the 'Here' option (current branch): should we show it in the Checkout section? It would just say '(already on this branch)' since there's nothing to checkout. Or should we omit 'Here' from Checkout entirely and only show it under Implement?"="  Implement plan #8654:
+    Here:             erk implement
+      (dangerously):  erk implement -d
+
+i don't think this will work because we need to create the plan file in the current branch" user notes: Implement plan #8654:
+    Here:             erk implement
+      (dangerously):  erk implement -d
+
+i don't think this will work because we need to create the plan file in the current branch. You can now continue with the user's answers in mind.
+  </tool_result>
+  <assistant>Right — `erk implement` requires `.erk/impl-context/plan.md` which is set up by `erk br co --for-plan`. Even "Here" needs the checkout step to pull down the plan. So "Here" doesn't really apply — if you're already on the branch, you still need to run `erk br co --for-plan` to set up impl-context.
+
+That means the three-tier model collapses back to two: **In new br** (current worktree) and **In new wt** (new worktree). The "Here" case only makes sense if the plan is already set up locally, which it won't be right after plan-save.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="936" cache_read_input_tokens="59040" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 936}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_012ocq9ftbEXokbLsD8xxZPM">
+    <param name="questions">[{'question': 'So \'Here\' doesn\'t work standalone because impl-context needs setup. That...[truncated 836 chars]...scription': "I have a different idea for how 'Here' should work"}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="936" cache_read_input_tokens="59040" output_tokens="559" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 936, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012ocq9ftbEXokbLsD8xxZPM">
+User has answered your questions: "So 'Here' doesn't work standalone because impl-context needs setup. That leaves two options:
+
+```
+Implement plan #8654:
+  In new br:        source "$(erk br co --for-plan 8654 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8654 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8654 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8654 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8654:
+  In new br:  erk br co --for-plan 8654
+  In new wt:  erk br co --new-slot --for-plan 8654
+
+Dispatch to queue: erk pr dispatch 8654
+```
+
+Does this look right, or did you have something else in mind for the three options?"="keep three options. this new option means NO new branch should end up existing. we might need to change plan-save. OR we might need to copy the plan. or we switch to the new branch and then delete the odl branch. this option should only be presented if we are on an empty branch" user notes: keep three options. this new option means NO new branch should end up existing. we might need to change plan-save. OR we might need to copy the plan. or we switch to the new branch and then delete the odl branch. this option should only be presented if we are on an empty branch. You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>So the user wants a "Here" option that means: implement the plan on the current branch without creating any new branch. This would only be shown when the current branch is empty (no commits ahead of trunk).
+
+The idea is:
+- **Here**: Implement on the current branch (no new branch created). Only shown if the branch is empty.
+- **In new br**: `erk br co --for-plan N` — checks out the plan branch in the current worktree
+- **In new wt**: `erk br co --new-slot --for-plan N` — creates a new worktree
+
+For "Here", the challenge is that `plan-save` creates a new `plnd/` branch for the plan PR. 
+
+The tricky part is that if someone's on an empty feature branch and wants to implement the plan right there, I'd need to either add a `--here` flag that sets up the impl-context on the current branch without switching, or have them copy the plan file locally and run `erk implement` directly. The core issue is that the plan gets saved to a separate `plnd/` branch, so implementing "here" requires some way to pull that context into the current branch.
+
+This feels like it's expanding beyond just reformatting output — it's asking for new functionality around how branch switching and implementation context work. I should probably clarify whether this belongs in the current plan or if it needs to be a separate feature request.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="964" cache_read_input_tokens="59976" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 964}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>That's a meaningful new feature — "implement here on the current empty branch without creating a new one." This goes beyond reformatting the output; it requires new behavior in either `erk br co --for-plan` or a new setup command.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="964" cache_read_input_tokens="59976" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 964}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01GSoj4hgGhnrEHPyLGnK5dB">
+    <param name="questions">[{'question': "The 'Here' option (implement on current empty branch, no new branch created...[truncated 558 chars]...ption': "Include the 'Here' feature in this plan (larger scope)"}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="964" cache_read_input_tokens="59976" output_tokens="759" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 964, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GSoj4hgGhnrEHPyLGnK5dB">
+User has answered your questions: "The 'Here' option (implement on current empty branch, no new branch created) requires new functionality beyond output formatting. Should we:
+
+1. Split into two plans: this plan handles the output format refactor (with just 'In new br' / 'In new wt'), and a follow-up plan adds the 'Here' option with the necessary plumbing
+2. Expand this plan to include the 'Here' feature (impl-context setup on current branch, conditional display only when branch is empty)"="Expand this plan". You can now continue with the user's answers in mind.
+  </tool_result>
+  <assistant>Let me explore the impl-context setup and branch checkout flow to understand what "Here" would require.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1013" cache_read_input_tokens="60940" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1013}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01P594iUoLxcSe2SiBgzmrfN">
+    <param name="description">Explore impl-context setup flow</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 680 chars]..."empty" (no commits ahead of trunk)?
+
+Report file paths and line numbers for all key code.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1013" cache_read_input_tokens="60940" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1013}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_012cAoiNnUnKwKFT6gwCzWRA">
+    <param name="description">Explore plan-save branch creation</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 620 chars]...eating or switching to a new branch.
+
+Report file paths and line numbers for all key code.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1013" cache_read_input_tokens="60940" output_tokens="637" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1013, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012cAoiNnUnKwKFT6gwCzWRA">
+Perfect! Now I have all the information I need. Let me compile a comprehensive report for the user.
+
+## Summary: `erk exec plan-save` Branch Creation and `--current-branch` Flag
+
+Based on my analysis of the codebase, here's how `erk exec plan-save` works:
+
+### 1. **How the `plnd/` branch is created**
+
+**File:** `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py`
+
+The branch creation is **conditional** (lines 179-223):
+
+- **`--current-branch` flag is passed**: Uses the current branch directly without creating a new one
+  ```python
+  current_branch = git.branch.get_current_branch(repo_root)
+  branch_name = current_branch
+  base_branch = trunk
+  ```
+
+- **`--current-branch` is NOT passed** (default): Creates a NEW `plnd/` branch:
+  ```python
+  branch_name = generate_planned_pr_branch_name(
+      slug,
+      now,
+      objective_id=objective_issue,
+  )
+  # Creates from origin/trunk OR stacks on current feature branch
+  create_result = branch_manager.create_branch(repo_root, branch_name, base_or_current)
+  ```
+
+
+... [149 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01P594iUoLxcSe2SiBgzmrfN">
+Excellent! Now I have a comprehensive understanding. Let me compile my findings into a clear, structured report:
+
+## Summary: How `erk br co --for-plan` Sets Up impl-context
+
+Based on my exploration of the codebase, here's a detailed breakdown of how `erk br co --for-plan N` works and how you can design a "Here" variant:
+
+---
+
+### 1. **How `erk br co --for-plan` Works**
+
+#### Location: `/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py`
+
+**Main Flow (lines 454-782):**
+
+1. **Plan Fetching** (lines 492-508):
+   - Parses the plan number from `--for-plan N`
+   - Calls `ctx.plan_store.get_plan(repo.root, str(plan_number))`
+   - Gets a `Plan` object with metadata and content
+
+2. **Plan Validation** (lines 499-508):
+   - Calls `prepare_plan_for_worktree(plan, ctx.time.now(), warn_non_open=True)`
+   - This returns `IssueBranchSetup` which contains:
+     - `branch_name`: Git branch name (set by plan during save)
+     - `plan_content`: The full plan.md content
+     - `plan_number`: Issue number
+     - `objective_issue`: Optional linked objective ID
+     - Other metadata
+
+3. **Branch Management** (lines 514-539):
+   - Detects trunk branch
+
+... [209 lines omitted] ...
+  </tool_result>
+  <thinking>Let me synthesize what I've learned. The user wants a "Here" option that means: implement the plan on the current branch without creating a new branch. This should only be shown when the current branch is empty (no commits ahead of trunk).
+
+The key insight is:
+1. Plan-save creates a `plnd/` branch with the plan as a draft PR
+2. "In new br" = `erk br co --for-plan N` - checks out the plan's `plnd/` branch in current worktree, sets up impl-context
+3. "In new wt" = `erk br co --new-slot --for-plan N` - creates a new worktree with the plan's branch
+
+
+4. "Here" = set up impl-context on the current branch referencing the plan PR, without switching branches
+
+To make "Here" work, I need to fetch the plan content from the PR, create the `.erk/impl-context/` directory on the current branch, and save a plan-ref pointing to the plan PR. Since `erk br co --for-plan N` already handles all this but switches branches, I could add a `--here` flag as a variant that keeps me on the current branch.
+
+But thinking through the user's constraints more carefully: they want no new branch created, and this option should only appear when on an empty branch. So the real flow is—if I'm on an empty branch like `feature/foo` and save a plan, instead of creating `plnd/...`, I should set up the impl-context right here and keep working on `feature/foo`.
+
+The `--here` flag on `erk br co --for-plan` makes sense: it fetches the plan and sets up impl-context without switching branches, leaving the plan PR on its original branch while implementation happens locally on the current branch. The tricky part is that `--script` mode needs to work differently with `--here`—it shouldn't output a directory change since we're staying put. So the output format would show the "Here" option alongside the other branching strategies, each with their own dangerous variant, letting users pick whether they want to implement on the current branch, create a new branch, or spin up a new worktree. I'm realizing the "Here" option needs to be conditional—it should only show up when we're on an empty branch. To make that work, the formatting function needs to know whether the branch is empty, so I'll need to pass that as a parameter alongside the existing PR number, branch name, and URL. This way the display logic can decide whether to include the "Here" variant of the commands. I need to detect two things: whether the user is on trunk, and whether their current branch is empty with zero commits ahead. If they're on trunk, I shouldn't show the "Here" option, but if they're on a non-trunk empty branch, I should show it so they can implement directly there instead of on the `plnd/` branch.
+
+The cleanest approach is adding a `--here` flag to `erk br co --for-plan` that fetches the plan but sets up the implementation context using the current branch name instead of switching branches, then outputs the worktree path when using `--script` mode. I'm working through the command syntax for the different checkout options. The `--here` flag keeps us in the current directory without switching, so `erk br co --for-plan 8654 --here &amp;&amp; erk implement` would be the simplest approach. I should also add conditional logic to only show this option when we're on an empty branch, which means the format function needs to accept parameters for that check.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="51209" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 51209}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I have a clear picture now. Let me update the plan to include the expanded scope.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="51209" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 51209}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013SbnDUuKnrWKqUYbhLDQJU">
+    <param name="file_path">/Users/schrockn/.claude/plans/drifting-wiggling-kahn.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="51209" cache_read_input_tokens="16613" output_tokens="2702" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 51209, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013SbnDUuKnrWKqUYbhLDQJU">
+     1→# Update plan-save output: hierarchical Implement/Checkout format
+     2→
+     3→## Context
+     4→
+     5→The plan-save command's "next steps" output currently uses flat labels ("Checkout:", "Implement:") under "Same slot" / "New slot" section headers. The user wants a hierarchical format grouped by action (Implement first, then Checkout), with "Here" vs "In new wt" as sub-labels, and non-dangerous implement as the default with `(dangerously)` as a nested sub-option.
+     6→
+     7→## Target format
+     8→
+     9→```
+    10→Implement plan #8651:
+    11→  Here:             source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement
+    12→    (dangerously):  source "$(erk br co --for-plan 8651 --script)" &amp;&amp; erk implement -d
+    13→  In new wt:        source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement
+    14→    (dangerously):  source "$(erk br co --new-slot --for-plan 8651 --script)" &amp;&amp; erk implement -d
+    15→
+    16→Checkout plan #8651:
+    17→  Here:       erk br co --for-plan 8651
+    18→  In new wt:  erk br co --new-slot --for-plan 8651
+    19→
+    20→Dispatch to queue: erk pr dispatch 8651
+    21→```
+    22→
+    23→This replaces the old "Same slot" / "New slot" section headers and "Local:" / "Implement:" labels. Trunk detection for ordering is removed — the format is the same regardless of branch context.
+    24→
+    25→## Changes
+    26→
+    27→### 1. Update `PlannedPRNextSteps` dataclass
+    28→**File:** `packages/erk-shared/src/erk_shared/output/next_steps.py` (lines 44-84)
+    29→
+    30→Add non-dangerous implement properties:
+
+... [41 lines omitted] ...
+  </tool_result>
+  <tool_use name="Write" id="toolu_011dPh1vD7RG7mPJpkFRLxr1">
+    <param name="file_path">/Users/schrockn/.claude/plans/drifting-wiggling-kahn.md</param>
+    <param name="content"># Update plan-save output: hierarchical Implement/Checkout format
+
+## Context
+
+The plan-sa...[truncated 6151 chars]...ere` flag
+4. Check formatting visually by inspecting the formatted string output in tests
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3973" cache_read_input_tokens="67822" output_tokens="2135" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3973, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011dPh1vD7RG7mPJpkFRLxr1">
+The file /Users/schrockn/.claude/plans/drifting-wiggling-kahn.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01LGr7HGpDCDu6fk3GGvuWuy">
+    <param name="plan"># Update plan-save output: hierarchical Implement/Checkout format
+
+## Context
+
+The plan-sa...[truncated 6151 chars]...ere` flag
+4. Check formatting visually by inspecting the formatted string output in tests
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2176" cache_read_input_tokens="71795" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2176, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LGr7HGpDCDu6fk3GGvuWuy">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: ✅ Plan PR already created. Session complete - no further action needed.
+
+  </tool_result>
+  <assistant>Plan saved as **PR #8654** and finalized. The plan covers:
+
+1. **New `--here` flag** on `erk br co --for-plan` — sets up impl-context on the current branch without switching (only valid on empty non-trunk branches)
+2. **Hierarchical output format** — Implement (with `(dangerously)` sub-option) → Checkout → Dispatch, with three location labels: Here / In new br / In new wt
+3. **Conditional "Here" display** — only shown when on an empty non-trunk branch
+4. **Updates** to both dataclasses, format functions, plan-save.md spec, callers, tests, and docs</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="136" cache_read_input_tokens="73971" output_tokens="163" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 136, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>1. New --here flag on erk br co --for-plan — sets up impl-context on the current branch without switching (only valid on empty non-trunk branches)
+
+--here flag doesn't make too much sense to me. can you step back and think and present a few alteratives</user>
+  <assistant>
+
+Let me think about what "Here" actually means and what alternatives make sense.
+
+The core need: after saving a plan to a `plnd/` branch, set up impl-context on the **current** branch so you can implement without creating any new branch.
+
+Current `erk br co --for-plan N` does two things:
+1. **Checkout** the plan's branch (switching to it)
+2. **Set up impl-context** (fetching plan content, creating `.erk/impl-context/`)
+
+`--here` tried to mean "do step 2 but skip step 1" — but bolting that onto a checkout command is semantically odd since you're explicitly *not* checking out anything.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="74502" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 74502}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_018bHuG8wRMx4Hj2zaXV1qBW">
+    <param name="questions">[{'question': "What's the right command shape for 'set up impl-context for a plan on the c...[truncated 838 chars]...the plan available locally; --here means on the current branch."}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="74502" cache_read_input_tokens="0" output_tokens="473" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 74502, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018bHuG8wRMx4Hj2zaXV1qBW">
+User has answered your questions: "What's the right command shape for 'set up impl-context for a plan on the current branch without switching'?"="erk pr setup maybe? it does create a plan pr" user notes: erk pr setup maybe? it does create a plan pr. You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>The user is suggesting `erk pr setup` — but they said "it does create a plan pr" which I'm not sure about. Let me think about this.
+
+Wait, re-reading: "erk pr setup maybe? it does create a plan pr" — I think they're saying the plan-save command does create a plan PR, so maybe the setup command should be `erk pr setup N` where N is the plan PR number.
+
+But wait, there's a conceptual issue. The "Here" option means:
+1. A plan PR already exists (from plan-save)
+2. You want to set up impl-context for that plan on your current branch
+
+
+3. Then run `erk implement`
+
+So `erk pr setup N` would fetch plan #N from GitHub and create `.erk/impl-context/` on the current branch with the plan content, without switching branches. But I'm still unclear whether the user meant `erk pr setup` should also create the plan PR itself, or if they're just saying plan-save does that and this is a separate command to set it up locally.
+
+Looking at the existing CLI structure with `erk pr create`, `erk pr list`, `erk pr dispatch`, and `erk pr submit`, I think `erk pr setup N` makes sense as "set up the local workspace for plan PR #N". Though I'm wondering if the naming is clear enough — maybe something like `erk pr prepare N` would be better.
+
+Actually, the user's suggestion feels right. `erk pr setup N` is clean and means "set up everything needed to implement plan PR #N on the current branch". Let me refine that and see if they're happy with it.
+
+So the next-steps output would show the "Here" option with the setup command followed by implement, and then the alternative for creating a new branch.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="13292" cache_read_input_tokens="61953" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13292}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>`erk pr setup` makes sense — it's in the `pr` namespace since it operates on a plan PR, and "setup" clearly means "prepare this PR for local implementation."
+
+The next-steps output would then be:
+
+```
+Implement plan #8654:
+  Here:             erk pr setup 8654 &amp;&amp; erk implement
+    (dangerously):  erk pr setup 8654 &amp;&amp; erk implement -d
+  In new br:        source "$(erk br co --for-plan 8654 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8654 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8654 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8654 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8654:
+  Here:       erk pr setup 8654
+  In new br:  erk br co --for-plan 8654
+  In new wt:  erk br co --new-slot --for-plan 8654
+
+Dispatch to queue: erk pr dispatch 8654
+```
+
+`erk pr setup N` would:
+1. Fetch plan #N from GitHub
+2. Create `.erk/impl-context/` on the current branch with the plan content + ref.json
+3. Stay on the current branch — no branch creation, no checkout
+4. Error if on trunk</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="13292" cache_read_input_tokens="61953" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13292}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01BEh2A1Tph8omwLrKrBbtHv">
+    <param name="questions">[{'question': "Does `erk pr setup N` with this behavior look right? Anything you'd change ...[truncated 196 chars]... 'description': "I want a different command name (I'll type it)"}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13292" cache_read_input_tokens="61953" output_tokens="1420" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13292, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BEh2A1Tph8omwLrKrBbtHv">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). To tell you how to proceed, the user said:
+The user wants to clarify these questions.
+    This means they may have additional information, context or questions for you.
+    Take their response into account and then reformulate the questions if appropriate.
+    Start by asking them what they would like to clarify.
+
+    Questions asked:
+- "Does `erk pr setup N` with this behavior look right? Anything you'd change about the command name or what it does?"
+  (No answer provided)
+  </tool_result>
+  <assistant>What would you like to clarify about the approach?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1569" cache_read_input_tokens="75245" output_tokens="14" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1569, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>So in this structure the plan PR has already been created. This is interesting. When is plan save called relative to this menu? Is this after plan save?</user>
+  <assistant>
+
+Yes, exactly. This output is shown **after** plan-save has already run. The flow is:
+
+1. User creates a plan in plan mode
+2. User chooses "Create a plan PR on new branch"
+3. `/erk:plan-save` runs → creates the `plnd/` branch, pushes it, opens draft PR #8654
+4. Plan-save outputs the "Next steps" block ← **this is where the menu appears**
+
+So by the time the user sees "Implement plan #8654: Here / In new br / In new wt", the plan PR already exists on a `plnd/` branch. The question is just: where do you want to implement it?
+
+That's why `erk pr setup N` works — the PR is already created, and you're just setting up impl-context locally to implement it on the current branch.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1404" cache_read_input_tokens="76814" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1404}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01Gwk3XRw2ZDwUmJ6JV4jues">
+    <param name="questions">[{'question': "With this context clear (plan PR already exists when the menu shows), does ...[truncated 308 chars]...e timing clarification changes things — I have a different idea'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1404" cache_read_input_tokens="76814" output_tokens="380" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1404, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Gwk3XRw2ZDwUmJ6JV4jues">
+User has answered your questions: "With this context clear (plan PR already exists when the menu shows), does `erk pr setup N` as the 'Here' command look right? Or did the timing clarification change your thinking?"="Maybe we should rethink this workflow and instead move the plan save after this workflow. This would actually make the process in-between plan creation and this menu more lightweight, which I think is actually good so let's consider that " user notes: Maybe we should rethink this workflow and instead move the plan save after this workflow. This would actually make the process in-between plan creation and this menu more lightweight, which I think is actually good so let's consider that. You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>Interesting. The user wants to flip the order:
+
+Current flow:
+1. Create plan in plan mode
+2. Save plan as PR (plan-save) → creates plnd/ branch + draft PR
+3. Show "Next steps" menu with implement/checkout options
+
+Proposed flow:
+1. Create plan in plan mode
+2. Show menu: what do you want to do?
+   - "Here" → implement on current branch (no PR created yet, or defer PR creation)
+   - "In new br" → create branch, save plan as PR, implement
+   - "In new wt" → create worktree, save plan as PR, implement
+   - "Dispatch" → save plan as PR, dispatch remotely
+3. Plan save happens as part of the chosen option, not before
+
+So the key difference is that the plan save is now deferred until after the user picks their action. For "Here", they might skip the PR entirely and just implement directly on their current branch. For the other options, the plan gets saved as part of that workflow. This means I need to rethink when and how the plan PR gets created — it's no longer automatic upfront. save plan as PR, dispatch to remote agent.
+
+The key insight: plan-save is heavyweight (creates branch, pushes, opens PR). If the user just wants to implement "here," they don't need a PR at all — they just implement directly. Moving plan-save after the menu means:
+- Lighter flow between plan creation and action
+- "Here" can skip plan-save entirely
+- Other options bundle plan-save into their flow
+
+But this is a significant architectural change to the exit-plan-mode hook and the plan-save workflow. The current hook flow is:
+1. ExitPlanMode triggers the hook
+2. Hook presents the menu: "Create PR on new branch" / "Create PR on current branch" / "Just implement" / "View/Edit"
+3. Based on choice, either runs plan-save or implements directly
+
+Actually, the menu already supports this — option 3 lets users implement directly without a PR. The real question is whether to restructure the flow so plan-save only runs when explicitly chosen, bundling it with the implementation action rather than running it upfront. This would mean the menu becomes: implement here, save-and-implement on new branch, save-and-implement on current worktree, or save-and-dispatch to remote. So the new flow would let you decide what to do first, then only run plan-save if that option actually needs it—which is cleaner than forcing a save upfront. But this is a pretty significant restructuring of the exit-plan-mode hook and how plan-save fits into the workflow, not just an output format change. I need to figure out if this should expand the current plan or become its own separate one. stage flow where the user picks an action first, then the system saves if needed and executes. This is a pretty significant shift from the current two-step approach, so I should check with them whether this is actually what they're looking for and if they want to refine it further or start fresh.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="557" cache_read_input_tokens="78218" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 557}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>That's an interesting rethink. So instead of:
+
+**Current flow:**
+1. Plan mode exits → hook menu asks "save PR?" 
+2. Plan-save runs → creates PR
+3. "Next steps" output shows implement/checkout options
+
+**Proposed flow:**
+1. Plan mode exits → menu shows all options directly:
+   - **Here**: implement on current branch (no PR created)
+   - **In new br**: save PR + checkout + implement
+   - **In new wt**: save PR + new worktree + implement
+   - **Save only**: save PR, stop
+   - **Dispatch**: save PR, dispatch remotely
+
+Plan-save becomes embedded in the options that need it, rather than being a prerequisite step.
+
+This is a significantly larger scope than the output format change. It reshapes the exit-plan-mode hook itself.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="557" cache_read_input_tokens="78218" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 557}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01KSWysjdwe8vL5nEwGSYfJt">
+    <param name="questions">[{'question': 'This is a big workflow redesign beyond the output format change. How do you...[truncated 395 chars]...format plan, create a new plan focused on the workflow redesign'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="557" cache_read_input_tokens="78218" output_tokens="1780" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 557, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KSWysjdwe8vL5nEwGSYfJt">
+User has answered your questions: "This is a big workflow redesign beyond the output format change. How do you want to handle scope?"="Replace the plan entirely". You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>OK, the user wants to replace the plan entirely. Let me think about what the new plan should look like.
+
+The core idea: restructure the exit-plan-mode hook so that plan-save is deferred until after the user chooses what to do, and the menu itself becomes the unified interface for all post-planning actions.
+
+Let me think about what the new menu looks like. Currently the exit-plan-mode hook presents:
+1. "Create a plan PR on new branch"
+2. "Create a plan PR on the current branch"
+3. "Just implement on the current branch without creating a PR."
+4. "View/Edit the Plan"
+
+
+Now I'm sketching out a reorganized menu structure that groups related actions together. The idea is to have sections for implementing the plan directly, checking it out to a different location, or just saving it without implementation. Each option would specify what happens behind the scenes—whether we're saving a PR, switching branches or worktrees, and whether we're proceeding with implementation or stopping there. The challenge is fitting all these variations into the AskUserQuestion format, which has constraints on how many options we can present.
+
+Looking at the actual user workflows, I'm realizing we should probably collapse this into a simpler top-level menu that covers the most common cases: implementing right away, saving as a draft PR for later, saving and implementing in a new branch or worktree, and dispatching remotely. But the tool's limitations mean we might need to use a cascading menu approach where selecting "Save as PR" opens up additional sub-options rather than trying to show everything at once. So the hook output tells Claude which options to present via AskUserQuestion, and we can restructure those options to create a simpler flow. The user wants to move the plan-save step later and streamline the process between plan creation and the menu, so they don't have to wait for plan-save before seeing options.
+
+The real insight is that options should come first, and plan-save happens as part of executing whichever option the user picks. I'm thinking through how to map this to 4 action-oriented menu choices: implement directly on the current branch, implement in a new branch with a saved PR, implement in a new worktree with a saved PR, or just save as a draft PR without implementing yet. Each option bundles the plan-save step if needed.
+
+But I'm realizing I need to figure out where dispatch and checkout-without-implement fit into this structure, and whether the current "Implement here" option (which already works) should stay as-is or get reorganized.
+
+Looking at the existing flow, options 1 and 2 both save a PR first and then show next-steps for implementing or checking out. The user wants to skip that intermediate save step and go straight to the action. Though "Save as draft PR" should still exist as a standalone option for when someone wants to save and come back later.
+
+So I'm drafting a cleaner menu structure: implement here without a PR, save and implement with a follow-up question about branch or worktree, save as a draft PR for later, or view and edit the plan. If they pick save-and-implement, I'd ask whether they want a new branch or worktree and whether to use the dangerous flag. If they pick save-as-draft, the output shows the PR details and next-steps for when they're ready.
+
+The core insight is that only the exit-plan-mode hook menu is changing—everything else about plan creation, the save command, branch checkout, and implement stays the same.
+
+For the "implement here" path, Claude exits plan mode, reads the plan file, and implements directly without saving or creating a PR. For the "save and implement elsewhere" path, Claude first runs plan-save to create the PR, then checks out a new branch or workspace and runs implement there—though I'm realizing there's a question about whether this flow works when Claude is in the conversation versus running from the terminal.
+
+Looking at the hook output more carefully, the save options are actually save-and-stop (the user exits Claude and runs terminal commands afterward), while the implement option is implement-without-saving on the current branch. There's no built-in save-and-implement combo in the hook itself. So the menu should appear first, then based on the choice, either trigger plan-save or proceed directly to implementation.
+
+The user's suggesting we rethink this entirely—moving the plan save to happen after the workflow completes rather than as an interruption point. That would streamline the process between plan creation and implementation, but I'm realizing the current flow with different option labels might actually accomplish the same thing. Let me look at what the user actually said about this. So the real insight is that by moving "implement here" into the menu itself as a first-class option, we avoid needing a separate command like `erk pr setup`. The menu becomes the decision point—user picks their path, and only the relevant operations run afterward. "Here" is just the direct implementation path, no PR machinery needed. Now I'm seeing the full structure—the menu options map cleanly to the current ones, just reorganized with the new "Save and dispatch" option added. The key insight is that the next-steps block after saving as a draft PR should use a hierarchical format showing implementation and checkout commands without the "Here" variant since that's already handled by the top-level "Implement here" option. I'm realizing the distinction here—the original "Here" option saved the plan as a PR and implemented on the current branch, but what the user is actually asking for is simpler: move the plan-save step after the menu so "Here" just means implementing directly without creating a PR, which is already the "Just implement" flow. No new command needed, just a restructuring of when the save happens. So the flow would be: plan mode exits, then a menu appears with options to implement here, implement on a new branch, implement on a new worktree, or save/dispatch. If they pick "implement here," it's the lightest path—just implement without creating a PR or branch. Plan-save only triggers for the other options that need a PR. The user seems to want the simple case to be frictionless: you're on a branch with a plan, you just implement it, done. For users who want to implement here and still have a PR, they could save first and come back, or we could add a sub-option.
+
+I'm realizing the next-steps output that shows after plan-save still needs updating, even if someone runs the command directly outside the hook. So there are really two parts to this: restructure the exit menu and update the next-steps format. Let me draft the full plan and present it to the user.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="6485" cache_read_input_tokens="74107" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6485}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me understand the current hook structure before designing the replacement.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6485" cache_read_input_tokens="74107" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6485}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_013SEBiVUkkq4zNSWvd6dpc7">
+    <param name="description">Explore exit-plan-mode hook</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 626 chars]...uration in settings.json or .claude/settings.json
+
+Report all file paths and line numbers.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6485" cache_read_input_tokens="74107" output_tokens="4288" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6485, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013SEBiVUkkq4zNSWvd6dpc7">
+Excellent! Now I have all the information I need. Let me compile a comprehensive report.
+
+## Exit-Plan-Mode Hook - Complete Report
+
+I've located and analyzed the exit-plan-mode hook that manages the plan save/implement workflow. Here's a comprehensive breakdown:
+
+### 1. Hook Configuration
+
+**Location**: `/Users/schrockn/code/erk/.claude/settings.json` (lines 29-36)
+
+The hook is registered in the `PreToolUse` lifecycle event:
+
+```json
+{
+  "matcher": "ExitPlanMode",
+  "hooks": [
+    {
+      "type": "command",
+      "command": "command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook"
+    }
+  ]
+}
+```
+
+The hook fires whenever Claude Code's `ExitPlanMode` tool is called.
+
+---
+
+### 2. Hook Implementation Script
+
+
+... [222 lines omitted] ...
+
+#### Warning:
+- If current branch is `master` or `main`: Shows warning (lines 359-367)
+  </tool_result>
+  <assistant>
+
+Now I have a clear picture of the hook. Let me read the key function that builds the menu to see exactly what changes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7245" cache_read_input_tokens="80592" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7245}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018C4fHMx7wM6ctCQ1mXFtLY">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/exit_plan_mode_hook.py</param>
+    <param name="offset">250</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7245" cache_read_input_tokens="80592" output_tokens="150" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7245, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018C4fHMx7wM6ctCQ1mXFtLY">
+   250→def build_blocking_message(
+   251→    *,
+   252→    session_id: str,
+   253→    current_branch: str | None,
+   254→    branch_has_commits: bool,
+   255→    plan_file_path: Path | None,
+   256→    plan_title: str | None,
+   257→    worktree_name: str | None,
+   258→    pr_number: int | None,
+   259→    plan_number: int | None,
+   260→    editor: str | None,
+   261→) -&gt; str:
+   262→    """Build the blocking message with AskUserQuestion instructions.
+   263→
+   264→    Pure function - string building only. Testable without mocking.
+   265→
+   266→    Args:
+   267→        session_id: Claude session ID for marker creation commands.
+   268→        current_branch: Current git branch name.
+   269→        branch_has_commits: Whether branch has commits ahead of trunk.
+   270→        plan_file_path: Path to the plan file, if it exists.
+   271→        plan_title: Title extracted from plan file, if available.
+   272→        worktree_name: Directory name of current worktree.
+   273→        pr_number: PR number if exists for current branch.
+   274→        plan_number: Plan number from .erk/impl-context/plan-ref.json.
+   275→        editor: Value of EDITOR env var for TUI detection.
+   276→    """
+   277→    # Build context lines for the question
+   278→    context_lines: list[str] = []
+   279→
+
+... [170 lines omitted] ...
+
+   363→                f"⚠️  WARNING: Currently on '{current_branch}'. "
+  </tool_result>
+  <assistant>Now I have the full picture. Let me design the new menu and update the plan.
+
+The key insight: the new flow makes plan-save happen **as part of** the chosen action, not before it. The menu becomes:
+
+1. **Implement here** — no PR, just implement on current branch (existing behavior)
+2. **Save as draft PR** — runs plan-save, shows hierarchical next-steps output, stops
+3. **Save and dispatch** — runs plan-save + dispatch to remote agent
+4. **View/Edit the Plan** — same as today
+
+And the next-steps output after "Save as draft PR" uses the new hierarchical format with just "In new br" and "In new wt" (no "Here" — that's the top-level "Implement here" option).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2930" cache_read_input_tokens="87837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2930}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01LKaSGbY3GH62iay799xzES">
+    <param name="questions">[{'question': "Does this menu structure match what you have in mind?\n\n1. **Implement her...[truncated 505 chars]...ucture', 'description': 'I have a different menu layout in mind'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2930" cache_read_input_tokens="87837" output_tokens="446" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2930, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LKaSGbY3GH62iay799xzES">
+User has answered your questions: "Does this menu structure match what you have in mind?
+
+1. **Implement here** — implement directly, no PR (current 'Just implement' behavior)
+2. **Save as draft PR** — plan-save, show next-steps with In new br / In new wt / Dispatch
+3. **Save and dispatch** — plan-save + dispatch to remote agent
+4. **View/Edit the Plan**
+
+'Here' is handled at the menu level. The next-steps output after save only shows 'In new br' and 'In new wt'."="flatten to one menu" user notes: flatten to one menu. You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>The user wants to flatten everything to a single menu instead of having a two-stage flow (menu → next-steps output). So instead of "Save as draft PR" showing a sub-menu of next-steps, all options should be in the first menu.
+
+So the single menu would be something like:
+
+1. Implement here (no PR)
+2. Save + implement in new br
+3. Save + implement in new wt
+4. Save + dispatch
+5. Just save (for later)
+6. View/Edit
+
+But AskUserQuestion only supports 2-4 options. So we can't fit all of these.
+
+
+Maybe the "menu" isn't an AskUserQuestion at all—it could just be a text output block showing commands, similar to how the current next-steps output works. That would let me display all the options without being constrained by the tool's limits.
+
+But there's a problem: the "Here" option can't show a runnable command since it needs to be handled within Claude, and the branch/worktree commands require the plan PR to exist first, which means plan-save has to run before those options become available.
+
+I could bake plan-save into the commands themselves, but that adds too much new CLI surface. Or I could present this as a simpler set of options in the AskUserQuestion: implement here, save and implement in a new branch, save and implement in a new worktree, or just save and dispatch. That's four clear actions, each bundling plan-save when needed. But then I'm losing the "just save" and "view/edit" options that are also useful. Let me think through what the actual user needs are here.
+
+The user wants to flatten this to one menu—no two-stage flow where you pick "save" first and then see sub-options. All the final actions should be in one place. Given the constraint of 2-4 options on AskUserQuestion, I could offer the four most common leaf actions and let the automatic "Other" option handle less frequent ones like just-save or view/edit.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="12593" cache_read_input_tokens="78775" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12593}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>So all leaf actions in one menu, no sub-menus or follow-up next-steps output. With AskUserQuestion's 2-4 option limit:
+
+1. **Implement here** — no PR, implement directly
+2. **Save + implement in new branch** — plan-save → checkout → implement
+3. **Save + implement in new worktree** — plan-save → new wt → implement  
+4. **Save + dispatch** — plan-save → dispatch to remote
+
+"Just save" and "View/Edit" available via the auto "Other" text input.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12593" cache_read_input_tokens="78775" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12593}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01VD6i1dWwcCMFAV2ZLivTjh">
+    <param name="questions">[{'question': "These 4 as the AskUserQuestion options, with 'just save' and 'view/edit' ac...[truncated 153 chars]...set of 4', 'description': 'I want different options in the menu'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12593" cache_read_input_tokens="78775" output_tokens="1266" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12593, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VD6i1dWwcCMFAV2ZLivTjh">
+User has answered your questions: "These 4 as the AskUserQuestion options, with 'just save' and 'view/edit' accessible via 'Other'?"="go back to previous" user notes: go back to previous. You can now continue with the user's answers in mind.
+  </tool_result>
+  <thinking>The user said "go back to previous" — they want to go back to the previous menu structure. Let me think about what the "previous" was.
+
+Before the "flatten to one menu" comment, I had proposed:
+
+1. **Implement here** — implement directly, no PR
+2. **Save as draft PR** — plan-save, show next-steps with In new br / In new wt / Dispatch
+3. **Save and dispatch** — plan-save + dispatch to remote agent
+4. **View/Edit the Plan**
+
+But the user rejected that and said "flatten to one menu."
+
+Before that, the next-steps output block was:
+
+
+I'm looking at the command options for implementing plan #8654 — showing different ways to execute it directly in the current environment, in a new branch, in a new worktree, or with dangerous flags enabled.
+
+Now I'm reconsidering what the user meant by "go back to previous" — they might be referring to the earlier four-option menu structure I proposed (Implement here, Save as draft PR, Save and dispatch, View/Edit) rather than the flattened version, since they asked me to flatten it and then said to go back. and they're rejecting the AskUserQuestion approach entirely. They want to go back to that previous format—just a simple output block with the three implementation options and their commands, no interactive menu at all.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1420" cache_read_input_tokens="91368" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1420}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'm not sure which "previous" you mean — can you clarify? We've been through several iterations:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1420" cache_read_input_tokens="91368" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1420}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01XmxZadF679LSetgcQQokmU">
+    <param name="questions">[{'question': 'Which version do you want to go back to?', 'header': 'Which one', 'options'...[truncated 462 chars]... under Implement and Checkout headers (before 'Here' was added)"}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1420" cache_read_input_tokens="91368" output_tokens="1338" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1420, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XmxZadF679LSetgcQQokmU">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>I want to do this one:
+
+  The key insight: the new flow makes plan-save happen as part of the chosen action, not before it. The menu becomes:
+
+  1. Implement here — no PR, just implement on current branch (existing behavior)
+  2. Save as draft PR — runs plan-save, shows hierarchical next-steps output, stops
+  3. Save and dispatch — runs plan-save + dispatch to remote agent
+  4. View/Edit the Plan — same as today
+
+  And the next-steps output after "Save as draft PR" uses the new hierarchical format with just "In new br" and "In new wt" (no "Here" — that's the top-level "Implement here"
+  option).</user>
+  <assistant>
+
+Got it. Clear and simple. Let me update the plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1731" cache_read_input_tokens="92788" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1731}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_012PGZCnodytduRgfqHTfyMC">
+    <param name="file_path">/Users/schrockn/.claude/plans/drifting-wiggling-kahn.md</param>
+    <param name="content"># Restructure exit-plan-mode menu and next-steps output
+
+## Context
+
+The current exit-plan...[truncated 4499 chars]...hook tests
+4. Manually verify: enter plan mode, write a plan, exit → see new menu options
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1731" cache_read_input_tokens="92788" output_tokens="1582" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1731, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012PGZCnodytduRgfqHTfyMC">
+The file /Users/schrockn/.claude/plans/drifting-wiggling-kahn.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01TCSfFVh1hXMj92oR9wf5Y3">
+    <param name="plan"># Restructure exit-plan-mode menu and next-steps output
+
+## Context
+
+The current exit-plan...[truncated 4499 chars]...hook tests
+4. Manually verify: enter plan mode, write a plan, exit → see new menu options
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1625" cache_read_input_tokens="94519" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1625, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TCSfFVh1hXMj92oR9wf5Y3">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: ✅ Plan PR already created. Session complete - no further action needed.
+
+  </tool_result>
+  <assistant>The hook is blocking because plan PR #8654 was already saved in this session. The plan file has been updated with the new design. To proceed, you can either:
+
+1. **Update PR #8654** with the new plan content — I can push the updated plan to the existing PR
+2. **Start a new session** to get a fresh hook state and save as a new PR
+
+What would you prefer?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="233" cache_read_input_tokens="96144" output_tokens="92" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 233, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>2</user>
+  <assistant>
+
+Understood — updating PR #8654 with the revised plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="361" cache_read_input_tokens="96377" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 361}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NH6DaTvrATiUBdzFdFrek9">
+    <param name="file_path">/Users/schrockn/.claude/plans/drifting-wiggling-kahn.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="361" cache_read_input_tokens="96377" output_tokens="91" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 361, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NH6DaTvrATiUBdzFdFrek9">
+     1→# Restructure exit-plan-mode menu and next-steps output
+     2→
+     3→## Context
+     4→
+     5→The current exit-plan-mode flow has a two-stage UX: first the user picks "Create a plan PR on new branch" (which runs plan-save), then plan-save outputs a "next steps" block with implement/checkout commands. The new design makes plan-save happen as part of the chosen action (not before it), and replaces the flat "Same slot" / "New slot" labels with a hierarchical format.
+     6→
+     7→## New menu (AskUserQuestion options)
+     8→
+     9→1. **Implement here** — implement directly on current branch, no PR (existing "Just implement" behavior)
+    10→2. **Save as draft PR** — runs plan-save, shows hierarchical next-steps output, stops
+    11→3. **Save and dispatch** — runs plan-save + dispatch to remote agent
+    12→4. **View/Edit the Plan** — same as today
+    13→
+    14→This replaces the current options:
+    15→- ~~"Create a plan PR on new branch"~~ → merged into "Save as draft PR"
+    16→- ~~"Create a plan PR on the current branch"~~ → dropped (was conditional, rarely used)
+    17→- ~~"Just implement on the current branch without creating a PR"~~ → "Implement here"
+    18→
+    19→## New next-steps output (after "Save as draft PR")
+    20→
+    21→```
+    22→Implement plan #8654:
+    23→  In new br:        source "$(erk br co --for-plan 8654 --script)" &amp;&amp; erk implement
+    24→    (dangerously):  source "$(erk br co --for-plan 8654 --script)" &amp;&amp; erk implement -d
+    25→  In new wt:        source "$(erk br co --new-slot --for-plan 8654 --script)" &amp;&amp; erk implement
+    26→    (dangerously):  source "$(erk br co --new-slot --for-plan 8654 --script)" &amp;&amp; erk implement -d
+    27→
+    28→Checkout plan #8654:
+    29→  In new br:  erk br co --for-plan 8654
+    30→  In new wt:  erk br co --new-slot --for-plan 8654
+
+... [77 lines omitted] ...
+
+    62→- The trunk warning (still relevant but can be simplified — warn on "Implement here" when on trunk)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0138reCanDqBg5Xpue6xKZmX">
+    <param name="command">erk exec update-plan-body 8654 /Users/schrockn/.claude/plans/drifting-wiggling-kahn.md --s...[truncated 166 chars]...cal Implement / Checkout / Dispatch format using In new br and In new wt sub-labels." 2&gt;&amp;1</param>
+    <param name="description">Update PR #8654 body with revised plan</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1933" cache_read_input_tokens="96738" output_tokens="202" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1933, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0138reCanDqBg5Xpue6xKZmX">
+Exit code 2
+Usage: erk exec [OPTIONS] COMMAND [ARGS]...
+Try 'erk exec -h' for help.
+
+Error: No such command 'update-plan-body'.
+
+Usage: erk exec [OPTIONS] COMMAND [ARGS]...
+Try 'erk exec -h' for help.
+
+Error: No such command 'update-plan-body'.
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01GQQpi67qTUjZ7WUeTDLe28">
+    <param name="command">erk exec -h 2&gt;&amp;1 | grep -i "plan\|update\|body\|pr"</param>
+    <param name="description">Find the right command for updating plan PR body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="312" cache_read_input_tokens="98671" output_tokens="102" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 312, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GQQpi67qTUjZ7WUeTDLe28">
+  add-plan-label                  Add a label to a plan via the...
+  add-plan-labels                 Batch add labels to multiple plans...
+  ci-fetch-summaries              Fetch CI failure summaries for a PR.
+  ci-update-pr-body               Update PR body with AI-generated...
+  close-pr                        Close a plan with a comment.
+  close-prs                       Batch close multiple plan PRs with...
+  cmux-sync-workspace             Create a cmux workspace with PR...
+  create-impl-context-from-plan   Create .erk/impl-context/ folder from...
+  create-pr-from-session          Extract plan from Claude session and...
+  dash-data                       Serialize plan dashboard data to JSON.
+  detect-plan-from-branch         Detect plan number from the current...
+  discover-reviews                Discover code reviews matching PR...
+  exit-plan-mode-hook             Prompt user about plan saving when...
+  extract-latest-plan             Extract the latest plan from Claude...
+  fetch-sessions                  Fetch preprocessed sessions from an...
+  generate-pr-address-summary     Generate enhanced PR comment for...
+  get-embedded-prompt             Get embedded prompt content from...
+  get-issue-body                  Fetch an issue's body using REST API...
+  get-issue-timeline-prs          Fetch PRs referencing an issue via...
+  get-learn-sessions              Get session information for a plan.
+  get-plan-info                   Retrieve plan info from the...
+  get-plan-metadata               Extract a metadata field from a plan's...
+  get-plans-for-objective         Fetch erk-plans linked to an objective.
+  get-pr-body-footer              Generate PR body footer with checkout...
+  get-pr-commits                  Fetch PR commits using REST API...
+  get-pr-context                  Output JSON with branch, PR, diff,...
+  get-pr-discussion-comments      Fetch PR discussion comments for agent...
+  get-pr-feedback                 Fetch all PR feedback in a single...
+  get-pr-for-plan                 Get PR details for a plan.
+  get-pr-review-comments          Fetch PR review comments for agent...
+
+... [31 lines omitted] ...
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>close the existing PR. start wiht a fresh one</user>
+  <tool_use name="Bash" id="toolu_01TLxcw8yd7SSr96aDv6Vgds">
+    <param name="command">erk exec close-pr 8654 --comment "Replaced by updated plan with restructured exit-plan-mode menu" 2&gt;&amp;1</param>
+    <param name="description">Close PR #8654</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1437" cache_read_input_tokens="98983" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1437, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TLxcw8yd7SSr96aDv6Vgds">
+{"success": true, "plan_number": 8654, "comment_id": "3991109669"}
+  </tool_result>
+  <assistant>PR #8654 closed. Now let me save the updated plan as a new PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="100420" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 162}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CwM3BZoAMHTQ2cDMH4GEdo">
+    <param name="command">erk exec plan-save --format json --session-id="90bdd8f7-3b2a-441a-8b66-57c0e7dc2078" --bra...[truncated 207 chars]...cal Implement / Checkout / Dispatch format using In new br and In new wt sub-labels." 2&gt;&amp;1</param>
+    <param name="description">Save updated plan as new draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="100420" output_tokens="240" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 162, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CwM3BZoAMHTQ2cDMH4GEdo">
+{"success": true, "plan_number": 8654, "skipped_duplicate": true, "message": "Session already saved plan #8654", "plan_backend": "planned_pr", "branch_name": "plnd/update-next-steps-format-03-03-0438"}
+  </tool_result>
+  <assistant>The session marker still points to the old PR. Let me clear it and retry.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="320" cache_read_input_tokens="100582" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 320}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018jFkMXv9PufGEWBPbyiSP5">
+    <param name="command">erk exec marker delete --session-id "90bdd8f7-3b2a-441a-8b66-57c0e7dc2078" plan-saved-issu...[truncated 111 chars]...c marker delete --session-id "90bdd8f7-3b2a-441a-8b66-57c0e7dc2078" plan-saved-branch 2&gt;&amp;1</param>
+    <param name="description">Delete old plan-saved markers</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="320" cache_read_input_tokens="100582" output_tokens="242" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 320, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018jFkMXv9PufGEWBPbyiSP5">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+{"success": true, "message": "Deleted marker: exit-plan-mode-hook.plan-saved"}
+{"success": true, "message": "Deleted marker: plan-saved-branch"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016Br5b3opKSbkBtGCapnDxB">
+    <param name="command">erk exec plan-save --format json --session-id="90bdd8f7-3b2a-441a-8b66-57c0e7dc2078" --bra...[truncated 207 chars]...cal Implement / Checkout / Dispatch format using In new br and In new wt sub-labels." 2&gt;&amp;1</param>
+    <param name="description">Save updated plan as new draft PR</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1519" cache_read_input_tokens="100902" output_tokens="220" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1519, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016Br5b3opKSbkBtGCapnDxB">
+{"success": true, "plan_number": 8659, "plan_url": "https://github.com/dagster-io/erk/pull/8659", "title": "[erk-plan] Restructure exit-plan-mode menu and next-steps output", "branch_name": "plnd/restructure-exit-plan-menu-03-03-0531", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/90bdd8f7-3b2a-441a-8b66-57c0e7dc2078/plan_snapshots/000002-1b35c745"}
+  </tool_result>
+  <assistant>Done. PR #8654 closed, new plan saved as **PR #8659**.
+
+Plan "[erk-plan] Restructure exit-plan-mode menu and next-steps output" saved as draft PR #8659
+
+URL: https://github.com/dagster-io/erk/pull/8659
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch
+
+Implement plan #8659:
+  In new br:        `source "$(erk br co --for-plan 8659 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --for-plan 8659 --script)" &amp;&amp; erk implement -d`
+  In new wt:        `source "$(erk br co --new-slot --for-plan 8659 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --new-slot --for-plan 8659 --script)" &amp;&amp; erk implement -d`
+
+Checkout plan #8659:
+  In new br:  `erk br co --for-plan 8659`
+  In new wt:  `erk br co --new-slot --for-plan 8659`
+
+Dispatch to queue: `erk pr dispatch 8659`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="514" cache_read_input_tokens="102421" output_tokens="307" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 514, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
