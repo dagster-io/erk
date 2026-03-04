@@ -1,0 +1,619 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>create new plan from /Users/schrockn/.claude/plans/breezy-humming-locket.md</user>
+  <assistant>
+
+Let me read the referenced plan file first.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="30591" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 30591, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Read" id="toolu_01WV9JcqgJuoZffs8JbsWxS1">
+    <param name="file_path">/Users/schrockn/.claude/plans/breezy-humming-locket.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="30591" cache_read_input_tokens="0" output_tokens="86" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 30591}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01WV9JcqgJuoZffs8JbsWxS1">
+     1→# Fix pr-submit step labels for resubmission
+     2→
+     3→## Context
+     4→
+     5→When `/erk:pr-submit` is used to update an existing PR (resubmission), the output shows misleading step labels like "Push and Create PR" and "Link PR to Objective" — implying a fresh creation. The `push-and-create-pr` exec script already returns `was_created: true/false` in its JSON output, but the slash command doesn't use it.
+     6→
+     7→## Change
+     8→
+     9→**File:** `.claude/commands/erk/pr-submit.md`
+    10→
+    11→Update the command to:
+    12→
+    13→1. **Reorder Steps 1 and 2** — Run `get-pr-context` first (to detect if PR exists), then push. Actually, we can't do this because the PR might not exist yet before pushing. Instead, keep `push-and-create-pr` first but **use the `was_created` field from its JSON output** to branch behavior.
+    14→
+    15→2. **Add conditional step labels after Step 1** — After parsing the Step 1 JSON, instruct Claude:
+    16→   - If `was_created` is `true`: use "Create" language for subsequent steps
+    17→   - If `was_created` is `false`: use "Update" language and skip the objective-link step
+    18→
+    19→3. **Specific label changes for resubmit path:**
+    20→   - Step 1: "Push and Create PR" → report as "Pushed changes (PR #N already exists)"
+    21→   - Step 3: "Generate Title and Body" → "Update Title and Body"
+    22→   - Step 4: "Apply Description" → "Update Description"
+    23→   - Step 5: "Link PR to Objective" → skip entirely (already linked on first submit)
+    24→   - Step 6: report "PR updated successfully" instead of generic success
+    25→
+    26→4. **Add a branching instruction** right after Step 1 that says:
+    27→   &gt; Check the `was_created` field in the JSON output. If `false`, this is a resubmission — use "Update" language in step headers and skip Step 5 (objective linking).
+    28→
+    29→## Verification
+    30→
+
+... [4 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FzZEN39Jtkno7EmUFBsfsS">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/pr-submit.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="765" cache_read_input_tokens="30591" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 765}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01FzZEN39Jtkno7EmUFBsfsS">
+     1→---
+     2→description:
+     3→  Create git commit and submit current branch with Graphite (squashes commits
+     4→  and rebases stack)
+     5→argument-hint: &lt;description&gt;
+     6→---
+     7→
+     8→# Submit PR
+     9→
+    10→Automatically create a git commit with a helpful summary message and submit the current branch as a pull request.
+    11→
+    12→**Note:** This command squashes commits and rebases the stack. If you prefer a simpler workflow that preserves your commit history, use `/erk:git-pr-push` instead.
+    13→
+    14→## Usage
+    15→
+    16→```bash
+    17→# Invoke the command (description argument is optional but recommended)
+    18→/erk:pr-submit "Add user authentication feature"
+    19→
+    20→# Without argument (will analyze changes automatically)
+    21→/erk:pr-submit
+    22→```
+    23→
+    24→## Implementation
+    25→
+    26→This command uses a three-step flow to avoid nested Claude subprocess calls:
+    27→
+    28→1. **Push + create PR** (no AI) via `erk exec push-and-create-pr`
+    29→2. **Gather context** via `erk exec get-pr-context` (returns JSON)
+    30→3. **Generate title + body** natively (you are the agent — no subprocess)
+
+... [82 lines omitted] ...
+
+    41→If this fails (exit code 1), display the error from the JSON output and stop.
+    57→Parse the JSON output. If this fails, display the error and stop.
+    75→If this fails, display the error and stop.
+   102→## Error Handling
+   104→If any step fails, display the error and stop. Do NOT attempt to auto-resolve errors. Let the user fix issues and re-run.
+   106→Common errors:
+  </tool_result>
+  <thinking>Now let me check the push-and-create-pr exec script to understand the `was_created` field.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="1332" cache_read_input_tokens="31356" cache_creation="{'ephemeral_5m_input_tokens': 1332, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <assistant>Let me check the exec script to confirm the `was_created` field exists.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1332" cache_read_input_tokens="31356" cache_creation="{'ephemeral_5m_input_tokens': 1332, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Agent" id="toolu_01Q7QEKFJb1Bgep54EaKm9Tq">
+    <param name="description">Find push-and-create-pr script</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 222 chars]...ng for a `was_created` field
+3. Any related test files
+
+Look in src/erk/ for exec scripts.</param>
+    <param name="model">haiku</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1332" cache_read_input_tokens="31356" output_tokens="279" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1332}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01Q7QEKFJb1Bgep54EaKm9Tq">
+Perfect! I found all the information you requested. Here's my complete report:
+
+## 1. Full Source Code
+
+The `push-and-create-pr` exec script is located at:
+**`/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/push_and_create_pr.py`**
+
+The script (116 lines):
+- Takes the `--force` flag to force push
+- Takes the `--no-graphite` flag to skip Graphite and use git + gh only
+- Takes an optional `--session-id` for tracing
+- Runs the push-and-create portion of the submit pipeline
+- Outputs structured JSON on success or error
+
+## 2. JSON Output Structure
+
+The script outputs JSON with the following structure on success (lines 85-96):
+
+```json
+{
+  "success": true,
+  "branch": "&lt;branch_name&gt;",
+  "pr": {
+    "number": &lt;int&gt;,
+    "url": "&lt;url&gt;",
+    "was_created": &lt;boolean&gt;
+  },
+  "graphite_url": "&lt;url_or_null&gt;",
+  "plan_id": "&lt;id_or_null&gt;"
+}
+
+... [34 lines omitted] ...
+
+On error, it outputs:
+  "error": {
+    "error_type": "&lt;type&gt;",
+2. **`test_error_json_output_on_no_branch`** - Tests detached HEAD error (exit code 1, `success=False`)
+5. **`test_no_commits_returns_error`** - Tests zero commits ahead error case
+  </tool_result>
+  <assistant>
+
+Good — the `was_created` field exists at `pr.was_created` in the JSON output. The plan from the source file is clear and actionable. Let me write the new plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1119" cache_read_input_tokens="32688" cache_creation="{'ephemeral_5m_input_tokens': 1119, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Write" id="toolu_01K9iG6DcZiAfTTpodvvB1Pq">
+    <param name="file_path">/Users/schrockn/.claude/plans/mighty-conjuring-noodle.md</param>
+    <param name="content"># Fix pr-submit step labels for resubmission
+
+## Context
+
+When `/erk:pr-submit` updates an...[truncated 1506 chars]...kipped
+- Run `/erk:pr-submit` on a new branch — confirm "Create" language and Step 5 runs
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1119" cache_read_input_tokens="32688" output_tokens="613" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1119}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01K9iG6DcZiAfTTpodvvB1Pq">
+File created successfully at: /Users/schrockn/.claude/plans/mighty-conjuring-noodle.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01MJhPzNq7QD1qcupTXdEy9E">
+    <param name="plan"># Fix pr-submit step labels for resubmission
+
+## Context
+
+When `/erk:pr-submit` updates an...[truncated 1506 chars]...kipped
+- Run `/erk:pr-submit` on a new branch — confirm "Create" language and Step 5 runs
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="655" cache_read_input_tokens="33807" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 655}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01MJhPzNq7QD1qcupTXdEy9E">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/mighty-conjuring-noodle.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix pr-submit step labels for resubmission
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id f04df795-c8db-4cd0-a24b-930ccf57673b \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Fix pr-submit step labels for resubmission
+
+## Context
+
+When `/erk:pr-submit` updates an existing PR (resubmission), step labels say "Push and Create PR", "Generate Title and Body", "Link PR to Objective" — implying fresh creation. The `push-and-create-pr` exec script already returns `pr.was_created` (boolean) in its JSON output, but the slash command ignores it.
+
+## Change
+
+**File:** `.claude/commands/erk/pr-submit.md`
+
+### 1. Add branching instruction after Step 1
+
+After Step 1's JSON parsing, add an instruction block:
+
+&gt; Check `pr.was_created` in the JSON output. If `false`, this is a resubmission — use "Update" language in all subsequent step headers and skip Step 5 (objective linking is already done).
+
+### 2. Update step headers to be conditional
+
+- **Step 1 reporting:** After parsing JSON, report either:
+  - `was_created: true` → "Created PR #N"
+  - `was_created: false` → "Pushed changes (PR #N already exists)"
+
+- **Step 3 header:** "Generate Title and Body" → conditional:
+  - Create path: "Generate Title and Body"
+  - Update path: "Update Title and Body"
+
+- **Step 4 header:** "Apply Description" → conditional:
+  - Create path: "Apply Description"
+  - Update path: "Update Description"
+
+- **Step 5:** Add a conditional skip:
+  - Create path: run objective linking as today
+  - Update path: skip entirely (already linked on first submit)
+
+- **Step 6 reporting:** Conditional success message:
+  - Create path: "PR created successfully"
+  - Update path: "PR updated successfully"
+
+## Verification
+
+- Run `/erk:pr-submit` on a branch with an existing PR — confirm "Update" language and Step 5 skipped
+- Run `/erk:pr-submit` on a new branch — confirm "Create" language and Step 5 runs
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="678" cache_read_input_tokens="34462" cache_creation="{'ephemeral_5m_input_tokens': 678, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="AskUserQuestion" id="toolu_01JuTHGRfrWC8dnt35rjsmSo">
+    <param name="questions">[{'question': '📋 Fix pr-submit step labels for resubmission\nCurrent context: (wt:erk) (br...[truncated 370 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="678" cache_read_input_tokens="34462" output_tokens="703" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 678}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01JuTHGRfrWC8dnt35rjsmSo">
+User has answered your questions: "📋 Fix pr-submit step labels for resubmission
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_013Xz85ENzWrLAEy9iYnefuM">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="991" cache_read_input_tokens="35140" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 991}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_013Xz85ENzWrLAEy9iYnefuM">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="f04df795-c8db-4cd0-a24b-930ccf57673b" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="f04df795-c8db-4cd0-a24b-930ccf57673b" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "f04df795-c8db-4cd0-a24b-930ccf57673b" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "f04df795-c8db-4cd0-a24b-930ccf57673b" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "f04df795-c8db-4cd0-a24b-930ccf57673b" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "f04df795-c8db-4cd0-a24b-930ccf57673b" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>Let me follow the plan-save skill instructions. I need to:
+
+1. Parse arguments - no special flags
+2. Generate branch slug from plan title "Fix pr-submit step labels for resubmission"
+3. Generate plan summary
+4. Run save command
+5-7. Follow remaining steps
+
+Let me start.
+
+Branch slug from "Fix pr-submit step labels for resubmission": "fix-pr-submit-labels"
+
+Plan summary: "Updates the pr-submit slash command to detect resubmissions using the was_created field from push-and-create-pr output. When updating an existing PR, step labels use 'Update' language instead of 'Create' and objective linking is skipped."</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2277" cache_read_input_tokens="36131" cache_creation="{'ephemeral_5m_input_tokens': 2277, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <assistant>**Step 1: Parse Arguments** — No flags passed.
+
+**Step 2: Branch Slug** — `fix-pr-submit-labels`
+
+**Step 3: Plan Summary** — "Updates the pr-submit slash command to use the was_created field from push-and-create-pr JSON output to detect resubmissions. When updating an existing PR, step labels use Update language instead of Create and the objective linking step is skipped."
+
+**Step 4: Run Save Command**</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2277" cache_read_input_tokens="36131" cache_creation="{'ephemeral_5m_input_tokens': 2277, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Bash" id="toolu_01WQH6XovQrwWqzHQ5tSW7Ag">
+    <param name="command">erk exec plan-save --format json --session-id="f04df795-c8db-4cd0-a24b-930ccf57673b" --bra...[truncated 182 chars]...p labels use Update language instead of Create and the objective linking step is skipped."</param>
+    <param name="description">Save plan as draft PR via erk exec</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2277" cache_read_input_tokens="36131" output_tokens="480" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 2277}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01WQH6XovQrwWqzHQ5tSW7Ag">
+{"success": true, "plan_number": 8748, "plan_url": "https://github.com/dagster-io/erk/pull/8748", "title": "[erk-plan] Fix pr-submit step labels for resubmission", "branch_name": "plnd/fix-pr-submit-labels-03-04-1515", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/f04df795-c8db-4cd0-a24b-930ccf57673b/plan_snapshots/000001-3aabffa9"}
+  </tool_result>
+  <assistant>No objective linked — skipping Steps 5 and 6.
+
+**Step 7: Display Results**
+
+Plan "Fix pr-submit step labels for resubmission" saved as draft PR #8748
+URL: https://github.com/dagster-io/erk/pull/8748
+
+**Pushing planning session:**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="638" cache_read_input_tokens="38408" cache_creation="{'ephemeral_5m_input_tokens': 638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Bash" id="toolu_017SvZSkvQdSwT4xKAJtgEY5">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="638" cache_read_input_tokens="38408" output_tokens="161" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 638}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_017SvZSkvQdSwT4xKAJtgEY5">
+SESSION_ID=f04df795-c8db-4cd0-a24b-930ccf57673b
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/f04df795-c8db-4cd0-a24b-930ccf57673b.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Nxhm3Nh4dmr6XNKsZQABSw">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 58 chars]...4cd0-a24b-930ccf57673b" --stage planning --source local --plan-id 8748 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="351" cache_read_input_tokens="39046" output_tokens="186" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 351}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01Nxhm3Nh4dmr6XNKsZQABSw">
+{"uploaded": true, "plan_id": 8748, "session_branch": "async-learn/8748", "session_id": "f04df795-c8db-4cd0-a24b-930ccf57673b", "stage": "planning", "files": ["planning-f04df795-c8db-4cd0-a24b-930ccf57673b-f04df795-c8db-4cd0-a24b-930ccf57673b.xml"]}
+  </tool_result>
+  <assistant>Plan saved and session pushed. Now calling ExitPlanMode.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="39397" cache_creation="{'ephemeral_5m_input_tokens': 317, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="ExitPlanMode" id="toolu_01A8PyZq2i7NvKghJgC7jEZn">
+    <param name="plan"># Fix pr-submit step labels for resubmission
+
+## Context
+
+When `/erk:pr-submit` updates an...[truncated 1506 chars]...kipped
+- Run `/erk:pr-submit` on a new branch — confirm "Create" language and Step 5 runs
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="39397" output_tokens="53" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 317}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01A8PyZq2i7NvKghJgC7jEZn">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8748 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8748:
+  In current wt:    source "$(erk br co --for-plan 8748 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8748 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8748 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8748 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8748:
+  In current wt:  erk br co --for-plan 8748
+  In new wt:      erk br co --new-slot --for-plan 8748
+
+Dispatch plan #8748:
+  CLI command:    erk pr dispatch 8748
+  Slash command:  /erk:pr-dispatch 8748
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan saved as draft PR #8748: https://github.com/dagster-io/erk/pull/8748
+
+**Next steps:**
+
+Implement plan #8748:
+  In current wt:    `source "$(erk br co --for-plan 8748 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --for-plan 8748 --script)" &amp;&amp; erk implement -d`
+  In new wt:        `source "$(erk br co --new-slot --for-plan 8748 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --new-slot --for-plan 8748 --script)" &amp;&amp; erk implement -d`
+
+Checkout plan #8748:
+  In current wt:  `erk br co --for-plan 8748`
+  In new wt:      `erk br co --new-slot --for-plan 8748`
+
+Dispatch plan #8748:
+  CLI command:    `erk pr dispatch 8748`
+  Slash command:  `/erk:pr-dispatch 8748`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="438" cache_read_input_tokens="39714" output_tokens="278" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 438}" inference_geo="" iterations="[]" speed="fast" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>
