@@ -179,6 +179,13 @@ def _resolve_current_branch(
         )
         target_child_branch = children[0]
 
+        local_branches = ctx.git.branch.list_local_branches(repo_root)
+        Ensure.invariant(
+            target_child_branch in local_branches,
+            f"Cannot use --up: child branch '{target_child_branch}' no longer exists locally.\n"
+            "It may have been deleted. Use 'erk land' without --up to return to trunk.",
+        )
+
     # Validate Graphite stack
     use_graphite = ctx.branch_manager.is_graphite_managed()
     if use_graphite:
