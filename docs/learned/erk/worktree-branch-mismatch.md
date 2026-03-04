@@ -17,7 +17,9 @@ When a user manually runs `git checkout other-branch` inside a worktree slot, th
 
 ## The Solution
 
-`find_worktree_for_branch_or_path()` in `src/erk/cli/commands/navigation_helpers.py` (lines 624-662) implements a two-stage lookup:
+<!-- Source: src/erk/cli/commands/navigation_helpers.py, find_worktree_for_branch_or_path -->
+
+`find_worktree_for_branch_or_path()` in `src/erk/cli/commands/navigation_helpers.py` implements a two-stage lookup:
 
 1. **Exact branch match**: Try `find_worktree_for_branch()` first. If a worktree has the expected branch checked out, return it with `needs_checkout=False`.
 
@@ -25,12 +27,9 @@ When a user manually runs `git checkout other-branch` inside a worktree slot, th
 
 ## The WorktreeLookupResult Type
 
-```python
-@dataclass(frozen=True)
-class WorktreeLookupResult:
-    path: Path | None
-    needs_checkout: bool
-```
+<!-- Source: src/erk/cli/commands/navigation_helpers.py, WorktreeLookupResult -->
+
+`WorktreeLookupResult` in `src/erk/cli/commands/navigation_helpers.py` is a frozen dataclass with `path: Path | None` and `needs_checkout: bool` fields.
 
 | `path`   | `needs_checkout` | Meaning                                               |
 | -------- | ---------------- | ----------------------------------------------------- |
@@ -51,7 +50,7 @@ Both `resolve_up_navigation()` and `resolve_down_navigation()` (lines 501-603) c
 
 ## Implementation Reference
 
-| File                                                       | Purpose                                                         |
-| ---------------------------------------------------------- | --------------------------------------------------------------- |
-| `src/erk/cli/commands/navigation_helpers.py` lines 616-662 | `WorktreeLookupResult` and `find_worktree_for_branch_or_path()` |
-| `src/erk/cli/commands/navigation_helpers.py` lines 501-603 | `resolve_up_navigation()` and `resolve_down_navigation()`       |
+| Function / Type                          | File                                             |
+| ---------------------------------------- | ------------------------------------------------ |
+| `WorktreeLookupResult`, `find_worktree_for_branch_or_path()` | `src/erk/cli/commands/navigation_helpers.py` |
+| `resolve_up_navigation()`, `resolve_down_navigation()`        | `src/erk/cli/commands/navigation_helpers.py` |

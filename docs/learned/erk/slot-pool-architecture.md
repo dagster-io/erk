@@ -58,7 +58,9 @@ If the branch is already assigned to a slot, return that assignment immediately 
 - Are not currently assigned to any branch
 - Have no staged or modified tracked files
 
-Untracked files (e.g., `.erk/bin/`, build artifacts) do **not** block slot reuse. The function uses `git.status.get_file_status()` (`src/erk/cli/commands/slot/common.py` lines 179-181) to distinguish staged/modified from untracked — only staged or modified files prevent reuse, since git leaves untracked files untouched during branch switching.
+<!-- Source: src/erk/cli/commands/slot/common.py, find_inactive_slot -->
+
+Untracked files (e.g., `.erk/bin/`, build artifacts) do **not** block slot reuse. `find_inactive_slot()` uses `git.status.get_file_status()` to distinguish staged/modified from untracked — only staged or modified files prevent reuse, since git leaves untracked files untouched during branch switching.
 
 This is the fast path because it reuses an existing worktree directory.
 

@@ -103,7 +103,9 @@ fi
 
 ### Implementation
 
-`render_activation_script()` at `src/erk/cli/activation.py` generates the guard at line 202. Lines 196-201 run `uv sync` and `uv pip install` unconditionally (outside the guard), while lines 202-225 wrap venv activation, `.env` loading, and shell completion inside the `VIRTUAL_ENV` guard. The guard checks if `$VIRTUAL_ENV` already points to this worktree's `.venv` directory, and if so, skips activation entirely.
+<!-- Source: src/erk/cli/activation.py, render_activation_script -->
+
+`render_activation_script()` in `src/erk/cli/activation.py` generates the guard. `uv sync` and `uv pip install` run unconditionally before the guard, while venv activation, `.env` loading, and shell completion are inside the `VIRTUAL_ENV` guard. The guard checks if `$VIRTUAL_ENV` already points to this worktree's `.venv` directory, and if so, skips activation entirely.
 
 ## Related Topics
 

@@ -159,10 +159,8 @@ During PR #8679, plan-related types were consolidated to remove "issue-based" na
 
 The new `format_plan_next_steps_plain()` takes only `plan_number` and `url` parameters (no `branch_name`). Historical references to "issue-based" naming in documentation are intentional for migration context.
 
-**Current locations:**
-
-- `PlanNextSteps`: `packages/erk-shared/src/erk_shared/output/next_steps.py`
-- `PlanNumberEvent`: `packages/erk-shared/src/erk_shared/core/prompt_executor.py`
+<!-- Source: packages/erk-shared/src/erk_shared/output/next_steps.py, PlanNextSteps -->
+<!-- Source: packages/erk-shared/src/erk_shared/core/prompt_executor.py, PlanNumberEvent -->
 
 ## Related Topics
 
