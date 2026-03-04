@@ -83,7 +83,9 @@ In addition to the pre-implementation cleanup (Step 2d), the plan-implement work
 
 ## The plnd/ Skip Saga
 
-The `cleanup_impl_for_submit()` function in `src/erk/cli/commands/pr/submit_pipeline.py` (lines 194-211) runs for ALL branches including `plnd/*` — there is no special casing.
+<!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, cleanup_impl_for_submit -->
+
+The `cleanup_impl_for_submit()` function in `src/erk/cli/commands/pr/submit_pipeline.py` runs for ALL branches including `plnd/*` — there is no special casing.
 
 Historical context: A `plnd/` skip was added (PR #8650) to `cleanup_impl_for_submit()` based on the assumption that plan PRs needed their `.erk/impl-context/` preserved. This was incorrect and was removed (PR #8669) because plan-save uses `push_to_remote()` directly and never goes through the submit pipeline. The skip was never actually triggered in practice.
 

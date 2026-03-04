@@ -41,7 +41,7 @@ When `needs_checkout=True`, the activation script includes a `git checkout <expe
 
 ## Usage in Navigation
 
-Both `resolve_up_navigation()` and `resolve_down_navigation()` (lines 501-603) call `find_worktree_for_branch_or_path()` to locate worktrees for target branches. The orchestrator layer then handles the checkout if `needs_checkout=True`.
+Both `resolve_up_navigation()` and `resolve_down_navigation()` call `find_worktree_for_branch_or_path()` to locate worktrees for target branches. The orchestrator layer then handles the checkout if `needs_checkout=True`.
 
 ## Historical Context
 

@@ -165,9 +165,11 @@ parse_roadmap(body)
 2. **Block parses successfully** → normal objective with roadmap phases.
 3. **Block exists but fails to parse** → legacy/broken format. Returns `([], [legacy_format_error])`.
 
-This distinction matters for `validate_objective()` in `check_cmd.py` (lines 108-125): when no roadmap block exists, it reports "Roadmap: none (objective has no roadmap)" as a passing check and skips checks 3-7 (all roadmap-dependent). The `erk objective view` command displays "No roadmap data found" for roadmap-free objectives.
+This distinction matters for `validate_objective()` in `check_cmd.py`: when no roadmap block exists, it reports "Roadmap: none (objective has no roadmap)" as a passing check and skips checks 3-7 (all roadmap-dependent). The `erk objective view` command displays "No roadmap data found" for roadmap-free objectives.
 
-**Source:** `parse_roadmap()` in `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py` (lines 467-481)
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, parse_roadmap -->
+
+**Source:** See `parse_roadmap()` in `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`
 
 There is no table-parsing fallback. Non-v2 content returns an empty phases list with a legacy format error message directing users to recreate the objective.
 
