@@ -253,6 +253,12 @@ def _save_as_planned_pr(
         files=files,
         message=f"Add plan: {title}",
     )
+
+    # Update Graphite tracking after plumbing commit advanced the branch
+    # (create_branch tracked position A, but commit_files_to_branch moved to B)
+    if not current_branch_flag:
+        branch_manager.retrack_branch(repo_root, branch_name)
+
     git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
 
     # Build metadata — base_ref_name sets the PR base ref
