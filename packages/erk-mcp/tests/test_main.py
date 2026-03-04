@@ -22,6 +22,11 @@ class TestParseIntEnv:
             result = _parse_int_env("ERK_MCP_PORT", 9000)
         assert result == 8080
 
+    def test_raises_on_non_integer_env(self) -> None:
+        with patch.dict("os.environ", {"ERK_MCP_PORT": "notanumber"}):
+            with pytest.raises(ValueError, match="ERK_MCP_PORT"):
+                _parse_int_env("ERK_MCP_PORT", 9000)
+
 
 class TestParseArgs:
     """Tests for _parse_args argument parsing."""

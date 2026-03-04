@@ -8,6 +8,8 @@ def _parse_int_env(name: str, default: int) -> int:
     value = os.getenv(name)
     if value is None:
         return default
+    if not value.isdigit():
+        raise ValueError(f"Environment variable {name} must be a positive integer, got: {value!r}")
     return int(value)
 
 
