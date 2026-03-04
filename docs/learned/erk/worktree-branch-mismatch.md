@@ -50,7 +50,7 @@ Both `resolve_up_navigation()` and `resolve_down_navigation()` (lines 501-603) c
 
 ## Implementation Reference
 
-| Function / Type                          | File                                             |
-| ---------------------------------------- | ------------------------------------------------ |
+| Function / Type                                              | File                                         |
+| ------------------------------------------------------------ | -------------------------------------------- |
 | `WorktreeLookupResult`, `find_worktree_for_branch_or_path()` | `src/erk/cli/commands/navigation_helpers.py` |
-| `resolve_up_navigation()`, `resolve_down_navigation()`        | `src/erk/cli/commands/navigation_helpers.py` |
+| `resolve_up_navigation()`, `resolve_down_navigation()`       | `src/erk/cli/commands/navigation_helpers.py` |
