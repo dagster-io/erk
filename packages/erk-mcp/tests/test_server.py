@@ -7,7 +7,7 @@ from unittest.mock import patch
 
 import pytest
 
-from erk_mcp.server import _run_erk, one_shot, plan_list, plan_view
+from erk_mcp.server import _run_erk, create_mcp, one_shot, plan_list, plan_view
 
 
 class TestRunErk:
@@ -147,3 +147,30 @@ class TestOneShot:
 
         with pytest.raises(RuntimeError, match="timeout"):
             one_shot(prompt="Do something")
+
+
+class TestCreateMcp:
+    """Tests for create_mcp() factory function."""
+
+    def test_returns_fastmcp_instance(self) -> None:
+        from fastmcp import FastMCP
+
+        server = create_mcp()
+
+        assert isinstance(server, FastMCP)
+
+    def test_server_has_correct_name(self) -> None:
+        from erk_mcp.server import DEFAULT_MCP_NAME
+
+        server = create_mcp()
+
+        assert server.name == DEFAULT_MCP_NAME
+
+    def test_registers_expected_tools(self) -> None:
+        import asyncio
+
+        server = create_mcp()
+        tools = asyncio.run(server.list_tools())
+        tool_names = {t.name for t in tools}
+
+        assert tool_names == {"plan_list", "plan_view", "one_shot"}

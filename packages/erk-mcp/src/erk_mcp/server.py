@@ -1,10 +1,14 @@
 """FastMCP server exposing erk capabilities as MCP tools."""
 
+from __future__ import annotations
+
 import subprocess
+from typing import TYPE_CHECKING
 
-from fastmcp import FastMCP
+if TYPE_CHECKING:
+    from fastmcp import FastMCP
 
-mcp = FastMCP("erk")
+DEFAULT_MCP_NAME = "erk"
 
 
 def _run_erk(args: list[str]) -> subprocess.CompletedProcess[str]:
@@ -21,7 +25,6 @@ def _run_erk(args: list[str]) -> subprocess.CompletedProcess[str]:
     return result
 
 
-@mcp.tool()
 def plan_list(state: str | None = None) -> str:
     """List erk plans with their status, labels, and metadata.
 
@@ -35,7 +38,6 @@ def plan_list(state: str | None = None) -> str:
     return result.stdout
 
 
-@mcp.tool()
 def plan_view(plan_id: int) -> str:
     """View a specific plan's metadata and body content.
 
@@ -45,7 +47,6 @@ def plan_view(plan_id: int) -> str:
     return result.stdout
 
 
-@mcp.tool()
 def one_shot(prompt: str) -> str:
     """Submit a task for fully autonomous remote execution.
 
@@ -56,3 +57,14 @@ def one_shot(prompt: str) -> str:
     """
     result = _run_erk(["one-shot", prompt])
     return result.stdout
+
+
+def create_mcp() -> FastMCP:
+    """Create and configure the FastMCP server instance."""
+    from fastmcp import FastMCP
+
+    server = FastMCP(DEFAULT_MCP_NAME)
+    server.tool()(plan_list)
+    server.tool()(plan_view)
+    server.tool()(one_shot)
+    return server
