@@ -301,14 +301,10 @@ jobs:
             echo "run=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/setup-python@v5
+      - uses: astral-sh/setup-uv@v5
         if: steps.should-autofix.outputs.run == 'true'
         with:
           python-version: "3.12"
-
-      - name: Install uv
-        if: steps.should-autofix.outputs.run == 'true'
-        run: pip install uv
 
       # Inlined from .github/actions/setup-claude-erk to avoid CodeQL warning
       # about executing untrusted code from checkout in privileged workflow
