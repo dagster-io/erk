@@ -412,7 +412,7 @@ PR #8600 reclassified three commands based on frequency-of-use analysis:
 | `one-shot` | Hidden (`hidden=True`)  | Top-Level Commands | Primary autonomous workflow; hiding reduced discoverability        |
 | `workflow` | Top-Level Commands      | Command Groups     | Low-frequency infrastructure; `workflow smoke-test` is rarely used |
 
-The reclassification is implemented in `src/erk/cli/help_formatter.py` (lines 244-278), where `TOP_LEVEL_COMMANDS` and `COMMAND_GROUPS` lists control `erk --help` output ordering.
+The reclassification is implemented in `src/erk/cli/help_formatter.py` (lines 244-278), where `top_level_commands` and `command_groups` lists control `erk --help` output ordering.
 
 **Key change for `one-shot`:** The `hidden=True` parameter was removed from `@click.command("one-shot")` in `src/erk/cli/commands/one_shot.py`, making it visible in help output. Previously, users had to know the command existed.
 

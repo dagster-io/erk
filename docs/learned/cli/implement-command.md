@@ -33,7 +33,7 @@ If neither strategy finds a plan, the command exits with an error.
 
 <!-- Source: src/erk/cli/commands/implement.py:44-103 -->
 
-The shared `_execute()` function supports multiple execution modes:
+The shared execution function supports multiple execution modes:
 
 | Mode            | Flag               | Behavior                                          |
 | --------------- | ------------------ | ------------------------------------------------- |
