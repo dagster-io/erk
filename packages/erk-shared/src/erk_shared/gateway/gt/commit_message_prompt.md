@@ -24,7 +24,11 @@ Analyze the diff following these principles:
 
 [2-3 sentence summary explaining what changed and why. State what the branch does (feature/fix/refactor) and highlight key changes briefly.]
 
-## Files Changed
+## Key Changes
+
+- [3-5 high-level component/architectural changes]
+- Strategic change description focusing on purpose and impact
+- Focus on what capabilities changed, not implementation details
 
 <details>
 <summary>Files Changed</summary>
@@ -39,12 +43,6 @@ Analyze the diff following these principles:
 - `path/to/file.py` - Why removed (strategic reason)
 
 </details>
-
-## Key Changes
-
-- [3-5 high-level component/architectural changes]
-- Strategic change description focusing on purpose and impact
-- Focus on what capabilities changed, not implementation details
 
 ## User Experience
 [Only include this section if changes affect user-facing behavior: CLI commands, prompts, output, workflows]
