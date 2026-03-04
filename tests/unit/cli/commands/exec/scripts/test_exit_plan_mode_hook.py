@@ -137,10 +137,9 @@ class TestDetermineExitAction:
         )
         assert result.action == ExitAction.BLOCK
         assert "Plan #42 saved" in result.message
-        assert "What next?" in result.message
-        assert "Checkout planned branch and implement" in result.message
-        assert "Checkout planned branch in a new worktree and implement" in result.message
-        assert "Done" in result.message
+        assert "erk br co --for-plan 42" in result.message
+        assert "erk pr dispatch 42" in result.message
+        assert "Session complete" in result.message
         assert result.delete_plan_saved_marker is True
         assert result.delete_implement_now_marker is False
 
@@ -981,60 +980,54 @@ class TestBuildBlockingMessage:
 
 
 class TestBuildStep2Message:
-    """Tests for the pure build_step2_message() function (Step 2: What next?)."""
+    """Tests for the pure build_step2_message() function (Step 2: plain text next-steps)."""
 
     def test_contains_plan_number(self) -> None:
         """Step 2 message includes the plan number."""
-        message = build_step2_message(session_id="session-123", plan_number=42)
+        message = build_step2_message(plan_number=42, url="")
         assert "Plan #42 saved" in message
 
-    def test_contains_checkout_and_implement_option(self) -> None:
-        """Step 2 includes 'Checkout planned branch and implement' option."""
-        message = build_step2_message(session_id="session-123", plan_number=42)
-        assert "Checkout planned branch and implement" in message
+    def test_contains_implement_new_br_command(self) -> None:
+        """Step 2 shows implement-in-new-branch command."""
+        message = build_step2_message(plan_number=42, url="")
+        assert "erk br co --for-plan 42 --script" in message
+        assert "erk implement" in message
 
-    def test_contains_new_worktree_option(self) -> None:
-        """Step 2 includes 'Checkout planned branch in a new worktree and implement' option."""
-        message = build_step2_message(session_id="session-123", plan_number=42)
-        assert "Checkout planned branch in a new worktree and implement" in message
+    def test_contains_implement_new_wt_command(self) -> None:
+        """Step 2 shows implement-in-new-worktree command."""
+        message = build_step2_message(plan_number=42, url="")
+        assert "--new-slot --for-plan 42" in message
 
-    def test_contains_done_option(self) -> None:
-        """Step 2 includes 'Done' option."""
-        message = build_step2_message(session_id="session-123", plan_number=42)
-        assert '"Done"' in message
+    def test_contains_checkout_commands(self) -> None:
+        """Step 2 shows checkout commands."""
+        message = build_step2_message(plan_number=42, url="")
+        assert "erk br co --for-plan 42" in message
 
-    def test_implement_creates_marker_then_plan_implement(self) -> None:
-        """Checkout-and-implement instructions create marker then run plan-implement."""
-        message = build_step2_message(session_id="session-123", plan_number=42)
-        assert "erk exec marker create --session-id session-123" in message
-        assert "exit-plan-mode-hook.implement-now" in message
-        assert "/erk:plan-implement 42" in message
+    def test_contains_dispatch_command(self) -> None:
+        """Step 2 shows dispatch command."""
+        message = build_step2_message(plan_number=42, url="")
+        assert "erk pr dispatch 42" in message
 
-    def test_new_worktree_shows_shell_command(self) -> None:
-        """New-worktree option shows shell command with erk br co."""
-        message = build_step2_message(session_id="session-123", plan_number=42)
-        assert "erk br co" in message
-        assert "--for-plan 42" in message
-
-    def test_new_worktree_ends_session(self) -> None:
-        """New-worktree option ends the session (no more ExitPlanMode)."""
-        message = build_step2_message(session_id="session-123", plan_number=42)
+    def test_session_complete_no_exit_plan_mode(self) -> None:
+        """Step 2 tells Claude not to call ExitPlanMode again."""
+        message = build_step2_message(plan_number=42, url="")
         assert "Session complete. Do NOT call ExitPlanMode again." in message
 
-    def test_done_ends_session(self) -> None:
-        """Done option ends the session."""
-        message = build_step2_message(session_id="session-123", plan_number=42)
-        # "Done" section should also say session complete
-        lines = message.split("\n")
-        done_section_found = False
-        for i, line in enumerate(lines):
-            if "'Done'" in line:
-                done_section_found = True
-                # Check subsequent lines for session complete
-                remaining = "\n".join(lines[i:])
-                assert "Session complete" in remaining
-                break
-        assert done_section_found, "Done section not found in message"
+    def test_no_ask_user_question(self) -> None:
+        """Step 2 does NOT use AskUserQuestion."""
+        message = build_step2_message(plan_number=42, url="")
+        assert "do NOT use AskUserQuestion" in message
+
+    def test_no_implement_now_marker(self) -> None:
+        """Step 2 does NOT reference implement-now marker creation."""
+        message = build_step2_message(plan_number=42, url="")
+        assert "implement-now" not in message
+        assert "marker create" not in message
+
+    def test_no_plan_implement_slash_command(self) -> None:
+        """Step 2 does NOT reference /erk:plan-implement."""
+        message = build_step2_message(plan_number=42, url="")
+        assert "/erk:plan-implement" not in message
 
 
 # ============================================================================
@@ -1095,7 +1088,7 @@ class TestHookIntegration:
 
         assert result.exit_code == 2
         assert "Plan #42 saved" in result.output
-        assert "Checkout planned branch and implement" in result.output
+        assert "erk pr dispatch 42" in result.output
         assert not plan_saved_marker.exists()  # Marker deleted after session ends
 
     def test_incremental_plan_marker_flow(self, tmp_path: Path) -> None:
