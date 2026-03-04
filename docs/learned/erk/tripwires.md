@@ -58,4 +58,8 @@ Rules triggered by matching actions in code.
 
 **using `gh codespace create` to create a codespace** → Read [Codespace Machine Types](codespace-machine-types.md) first. The machines endpoint returns HTTP 500 for this repo. Use `POST /user/codespaces` REST API directly. See the workaround section below.
 
+**using find_worktree_for_branch() alone for stack navigation** → Read [Worktree Branch Mismatch Handling](worktree-branch-mismatch.md) first. Always use find_worktree_for_branch_or_path() for stack navigation, not find_worktree_for_branch() alone. The path-based fallback handles cases where users ran manual git checkout in a worktree.
+
+**using has_uncommitted_changes() to check slot reuse eligibility** → Read [Slot Pool Architecture](slot-pool-architecture.md) first. Untracked files are safe for branch switching — use get_file_status() and check only staged/modified files. has_uncommitted_changes() includes untracked files which would incorrectly block slot reuse.
+
 **using issue number in checkout footer instead of PR number** → Read [PR Checkout Footer Validation Pattern](pr-commands.md) first. Checkout footer requires the PR number (from gh pr create output), NOT the plan issue number from .erk/impl-context/plan-ref.json.

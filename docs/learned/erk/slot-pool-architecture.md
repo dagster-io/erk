@@ -4,6 +4,9 @@ read_when:
   - "understanding slot pool design"
   - "implementing slot-related features"
   - "debugging slot assignment issues"
+tripwires:
+  - action: "using has_uncommitted_changes() to check slot reuse eligibility"
+    warning: "Untracked files are safe for branch switching — use get_file_status() and check only staged/modified files. has_uncommitted_changes() includes untracked files which would incorrectly block slot reuse."
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 ---
@@ -53,7 +56,11 @@ If the branch is already assigned to a slot, return that assignment immediately 
 
 - Exist in git's worktree registry
 - Are not currently assigned to any branch
-- Have no uncommitted changes
+- Have no staged or modified tracked files
+
+<!-- Source: src/erk/cli/commands/slot/common.py, find_inactive_slot -->
+
+Untracked files (e.g., `.erk/bin/`, build artifacts) do **not** block slot reuse. `find_inactive_slot()` uses `git.status.get_file_status()` to distinguish staged/modified from untracked — only staged or modified files prevent reuse, since git leaves untracked files untouched during branch switching.
 
 This is the fast path because it reuses an existing worktree directory.
 

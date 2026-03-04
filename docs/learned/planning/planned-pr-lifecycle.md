@@ -147,6 +147,21 @@ Plans use `lifecycle_stage` tracking. The stage progresses through the values (`
 
 See [Lifecycle Stage Tracking](lifecycle.md#lifecycle-stage-tracking) for the complete stage definitions and write points.
 
+## Type Naming (Historical)
+
+During PR #8679, plan-related types were consolidated to remove "issue-based" naming:
+
+| Old Name                                | New Name                         |
+| --------------------------------------- | -------------------------------- |
+| `IssueNextSteps` + `PlannedPRNextSteps` | `PlanNextSteps`                  |
+| `IssueNumberEvent`                      | `PlanNumberEvent`                |
+| `format_planned_pr_next_steps_plain()`  | `format_plan_next_steps_plain()` |
+
+The new `format_plan_next_steps_plain()` takes only `plan_number` and `url` parameters (no `branch_name`). Historical references to "issue-based" naming in documentation are intentional for migration context.
+
+<!-- Source: packages/erk-shared/src/erk_shared/output/next_steps.py, PlanNextSteps -->
+<!-- Source: packages/erk-shared/src/erk_shared/core/prompt_executor.py, PlanNumberEvent -->
+
 ## Related Topics
 
 - [Planned PR Branch Sync](planned-pr-branch-sync.md) - How branches are synced with remote

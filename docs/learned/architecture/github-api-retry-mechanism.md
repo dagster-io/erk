@@ -57,6 +57,7 @@ Errors are detected as transient by checking for patterns in the error message:
 - `network is unreachable`
 - `connection reset`
 - `connection timed out`
+- `unexpected end of json input` — occurs when GitHub API returns truncated JSON responses
 
 See `erk_shared/gateway/github/transient_errors.py` for the canonical pattern list.
 

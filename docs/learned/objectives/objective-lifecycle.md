@@ -145,22 +145,31 @@ parse_roadmap(body)
   ↓
   Check for objective-roadmap metadata block
   ↓
-  ├─ Metadata block found?
+  ├─ Block found + valid YAML?
   │  ↓
   │  parse_roadmap_frontmatter()
-  │  ↓
-  │  ├─ Valid YAML?
-  │  │  ↓
-  │  │  group_nodes_by_phase()
-  │  │  ↓
-  │  │  enrich_phase_names() (from markdown headers)
-  │  │  ↓
-  │  │  Return (phases, [])
-  │  │
-  │  └─ Invalid → Return ([], [legacy_format_error])
+  │  → group_nodes_by_phase()
+  │  → enrich_phase_names()
+  │  → Return (phases, [])
   │
-  └─ No metadata block → Return ([], [legacy_format_error])
+  ├─ Block found + invalid YAML?
+  │  → Return ([], [legacy_format_error])
+  │
+  └─ No block at all?
+     → Return ([], [])  ← valid roadmap-free objective
 ```
+
+### Three-Case Distinction
+
+1. **No `objective-roadmap` block** → valid roadmap-free objective. Returns `([], [])` with no errors.
+2. **Block parses successfully** → normal objective with roadmap phases.
+3. **Block exists but fails to parse** → legacy/broken format. Returns `([], [legacy_format_error])`.
+
+This distinction matters for `validate_objective()` in `check_cmd.py`: when no roadmap block exists, it reports "Roadmap: none (objective has no roadmap)" as a passing check and skips checks 3-7 (all roadmap-dependent). The `erk objective view` command displays "No roadmap data found" for roadmap-free objectives.
+
+<!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py, parse_roadmap -->
+
+**Source:** See `parse_roadmap()` in `packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py`
 
 There is no table-parsing fallback. Non-v2 content returns an empty phases list with a legacy format error message directing users to recreate the objective.
 
