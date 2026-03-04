@@ -27,11 +27,11 @@ class PlanNextSteps:
         return f"erk br co --new-slot --for-plan {self.plan_number}"
 
     @property
-    def implement_new_br(self) -> str:
+    def implement_current_wt(self) -> str:
         return f'source "$(erk br co --for-plan {self.plan_number} --script)" && erk implement'
 
     @property
-    def implement_new_br_dangerous(self) -> str:
+    def implement_current_wt_dangerous(self) -> str:
         return f'source "$(erk br co --for-plan {self.plan_number} --script)" && erk implement -d'
 
     @property
@@ -58,14 +58,14 @@ def format_plan_next_steps_plain(plan_number: int, *, url: str) -> str:
     """Format for CLI output (plain text)."""
     s = PlanNextSteps(plan_number=plan_number, url=url)
     return f"""Implement plan #{plan_number}:
-  In new br:        {s.implement_new_br}
-    (dangerously):  {s.implement_new_br_dangerous}
+  In current wt:    {s.implement_current_wt}
+    (dangerously):  {s.implement_current_wt_dangerous}
   In new wt:        {s.implement_new_wt}
     (dangerously):  {s.implement_new_wt_dangerous}
 
 Checkout plan #{plan_number}:
-  In new br:  {s.checkout}
-  In new wt:  {s.checkout_new_slot}
+  In current wt:  {s.checkout}
+  In new wt:      {s.checkout_new_slot}
 
 Dispatch to queue: {s.dispatch}"""
 
