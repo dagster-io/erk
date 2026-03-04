@@ -657,8 +657,42 @@ def _branch_checkout_impl(
                         force_script_activation=True,
                     )
                     return
+                elif setup is not None and not new_slot:
+                    # --for-plan from a non-slot worktree: checkout in current worktree
+                    # (only --new-slot should trigger slot allocation for --for-plan)
+                    ctx.branch_manager.checkout_branch(repo.root, branch)
+                    target_wt = WorktreeInfo(path=repo.root, branch=branch)
+
+                    _rebase_and_track_for_plan(
+                        ctx,
+                        repo_root=repo.root,
+                        worktree_path=target_wt.path,
+                        branch=branch,
+                        parent_branch=parent_branch,
+                        trunk=trunk,
+                    )
+                    _setup_impl_for_plan(
+                        ctx,
+                        setup=setup,
+                        worktree_path=target_wt.path,
+                        branch_name=branch,
+                        script=script,
+                    )
+
+                    worktrees = ctx.git.worktree.list_worktrees(repo.root)
+                    _perform_checkout(
+                        ctx,
+                        repo_root=repo.root,
+                        target_worktree=target_wt,
+                        branch=branch,
+                        script=script,
+                        is_newly_created=False,
+                        worktrees=worktrees,
+                        force_script_activation=True,
+                    )
+                    return
                 else:
-                    # Allocate slot for the branch
+                    # Allocate slot for the branch (normal checkout or --new-slot)
                     slot_result = allocate_slot_for_branch(
                         ctx,
                         repo,
