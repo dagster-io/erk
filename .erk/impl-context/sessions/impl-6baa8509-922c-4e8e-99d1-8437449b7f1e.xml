@@ -1,0 +1,810 @@
+<session>
+  <meta branch="plnd/add-json-transient-error-03-03-1105" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="6baa8509-922c-4e8e-99d1-8437449b7f1e" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="6baa8509-922c-4e8e-99d1-8437449b7f1e" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="6baa8509-922c-4e8e-99d1-8437449b7f1e" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="6baa8509-922c-4e8e-99d1-8437449b7f1e" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <thinking>Let me start by running the setup command to detect the plan from the current branch.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="33193" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 33193}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation from the current branch...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="33193" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 33193}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NjzmbxQ2P3U2PSecetHPg2">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Auto-detect and set up impl context from current branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="33193" cache_read_input_tokens="0" output_tokens="177" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 33193, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NjzmbxQ2P3U2PSecetHPg2">
+Found existing impl dir for plan #8703, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.erk/impl-context/plnd--add-json-transient-error-03-03-1105", "plan_number": 8703, "plan_url": "https://github.com/dagster-io/erk/pull/8703", "branch": "plnd/add-json-transient-error-03-03-1105", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8703, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="33193" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 357}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HSEuDScMiAEqc635sVPbnW">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.erk/impl-context/plnd--add-json-transient-error-03-03-1105/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="33193" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 357, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HSEuDScMiAEqc635sVPbnW">
+     1→# Add "unexpected end of JSON input" as transient error
+     2→
+     3→## Context
+     4→
+     5→`erk down -f -d` crashed when `gh api --method PATCH repos/{owner}/{repo}/pulls/8702 -f state=closed` returned exit code 1 with stderr `unexpected end of JSON input`. This is a transient GitHub API error (truncated response), but it's not in `TRANSIENT_ERROR_PATTERNS`, so the retry logic never fires and the command fails immediately.
+     6→
+     7→The same command succeeds on retry — confirming it's transient.
+     8→
+     9→## Plan
+    10→
+    11→### 1. Add pattern to `TRANSIENT_ERROR_PATTERNS`
+    12→
+    13→**File:** `packages/erk-shared/src/erk_shared/gateway/github/transient_errors.py`
+    14→
+    15→Add `"unexpected end of json input"` to the tuple (lowercase, matching the existing convention).
+    16→
+    17→### 2. Add test
+    18→
+    19→**File:** `packages/erk-shared/tests/unit/github/test_transient_errors.py`
+    20→
+    21→Add a test following the existing pattern:
+    22→
+    23→```python
+    24→def test_unexpected_end_of_json_input_detected() -&gt; None:
+    25→    """Test that unexpected end of JSON input is detected as transient."""
+    26→    error = "unexpected end of JSON input"
+    27→    assert is_transient_error(error) is True
+    28→```
+    29→
+    30→## Verification
+
+... [4 lines omitted] ...
+
+    32→- Run `pytest packages/erk-shared/tests/unit/github/test_transient_errors.py`
+  </tool_result>
+  <assistant>Simple plan. Let me look at the files to implement.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="614" cache_read_input_tokens="33550" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 614}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Dh2SVxzxXfSVfRWkHABfF2">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/packages/erk-shared/src/erk_shared/gateway/github/transient_errors.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="614" cache_read_input_tokens="33550" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 614}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Dh2SVxzxXfSVfRWkHABfF2">
+     1→"""Detection of transient GitHub API errors that should be retried."""
+     2→
+     3→TRANSIENT_ERROR_PATTERNS = (
+     4→    "i/o timeout",
+     5→    "dial tcp",
+     6→    "connection refused",
+     7→    "could not connect",
+     8→    "network is unreachable",
+     9→    "connection reset",
+    10→    "connection timed out",
+    11→)
+    12→
+    13→
+    14→def is_transient_error(error_message: str) -&gt; bool:
+    15→    """Check if an error message indicates a transient network error.
+    16→
+    17→    These errors are typically recoverable with a retry and include:
+    18→    - Network timeouts
+    19→    - Connection failures
+    20→    - TCP errors
+    21→
+    22→    Args:
+    23→        error_message: The error message to check
+    24→
+    25→    Returns:
+    26→        True if the error appears to be transient, False otherwise
+    27→    """
+    28→    lower_message = error_message.lower()
+    29→    return any(pattern in lower_message for pattern in TRANSIENT_ERROR_PATTERNS)
+    30→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LWfhSsQvPKW7f34cL15dYZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/packages/erk-shared/tests/unit/github/test_transient_errors.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="614" cache_read_input_tokens="33550" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 614}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LWfhSsQvPKW7f34cL15dYZ">
+     1→"""Tests for transient error detection."""
+     2→
+     3→import pytest
+     4→
+     5→from erk_shared.gateway.github.transient_errors import TRANSIENT_ERROR_PATTERNS, is_transient_error
+     6→
+     7→
+     8→def test_io_timeout_detected() -&gt; None:
+     9→    """Test that i/o timeout is detected as transient."""
+    10→    error = "dial tcp 140.82.116.5:443: i/o timeout"
+    11→    assert is_transient_error(error) is True
+    12→
+    13→
+    14→def test_dial_tcp_detected() -&gt; None:
+    15→    """Test that dial tcp errors are detected as transient."""
+    16→    error = "dial tcp: lookup api.github.com: no such host"
+    17→    assert is_transient_error(error) is True
+    18→
+    19→
+    20→def test_connection_refused_detected() -&gt; None:
+    21→    """Test that connection refused is detected as transient."""
+    22→    error = "connect: connection refused"
+    23→    assert is_transient_error(error) is True
+    24→
+    25→
+    26→def test_could_not_connect_detected() -&gt; None:
+    27→    """Test that 'could not connect' is detected as transient."""
+    28→    error = "could not connect to server"
+    29→    assert is_transient_error(error) is True
+    30→
+
+... [73 lines omitted] ...
+
+    34→    error = "connect: network is unreachable"
+    35→    assert is_transient_error(error) is True
+    40→    error = "read: connection reset by peer"
+    41→    assert is_transient_error(error) is True
+    46→    error = "connect: connection timed out"
+    47→    assert is_transient_error(error) is True
+    52→    error = "DIAL TCP 140.82.116.5:443: I/O TIMEOUT"
+    53→    assert is_transient_error(error) is True
+    57→    """Test that 404 errors are not detected as transient."""
+    58→    error = "HTTP 404: Not Found"
+    59→    assert is_transient_error(error) is False
+    63→    """Test that authentication errors are not detected as transient."""
+    64→    error = "HTTP 401: Unauthorized - Bad credentials"
+    65→    assert is_transient_error(error) is False
+    69→    """Test that rate limit errors are not detected as transient."""
+    70→    error = "HTTP 403: rate limit exceeded"
+    71→    assert is_transient_error(error) is False
+    74→def test_validation_error_not_transient() -&gt; None:
+    75→    """Test that validation errors are not detected as transient."""
+    76→    error = "HTTP 422: Unprocessable Entity - Validation Failed"
+    77→    assert is_transient_error(error) is False
+    80→def test_gh_cli_error_not_transient() -&gt; None:
+    81→    """Test that gh CLI errors are not detected as transient."""
+    82→    error = "gh: could not find issue with number 12345"
+    83→    assert is_transient_error(error) is False
+    88→    assert is_transient_error("") is False
+    92→    """Test that TRANSIENT_ERROR_PATTERNS is a tuple (immutable)."""
+    93→    assert isinstance(TRANSIENT_ERROR_PATTERNS, tuple)
+    98→    TRANSIENT_ERROR_PATTERNS,
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Bq7eisLNYg3UrexXVXigdQ">
+    <param name="command">erk exec impl-signal started --session-id="6baa8509-922c-4e8e-99d1-8437449b7f1e" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="614" cache_read_input_tokens="33550" output_tokens="299" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 614, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Bq7eisLNYg3UrexXVXigdQ">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8703
+}
+  </tool_result>
+  <assistant>Implementing both changes now.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2024" cache_read_input_tokens="34164" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2024}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MXhYcGveKn7TzjRCtn7mUz">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/packages/erk-shared/src/erk_shared/gateway/github/transient_errors.py</param>
+    <param name="old_string">    "connection timed out",
+)</param>
+    <param name="new_string">    "connection timed out",
+    "unexpected end of json input",
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2024" cache_read_input_tokens="34164" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2024}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MXhYcGveKn7TzjRCtn7mUz">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/packages/erk-shared/src/erk_shared/gateway/github/transient_errors.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01U8oL69sareSDkt4xjxzqEU">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/packages/erk-shared/tests/unit/github/test_transient_errors.py</param>
+    <param name="old_string">def test_case_insensitive() -&gt; None:</param>
+    <param name="new_string">def test_unexpected_end_of_json_input_detected() -&gt; None:
+    """Test that unexpected end ...[truncated 59 chars]...input"
+    assert is_transient_error(error) is True
+
+
+def test_case_insensitive() -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2024" cache_read_input_tokens="34164" output_tokens="372" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2024, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01U8oL69sareSDkt4xjxzqEU">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/packages/erk-shared/tests/unit/github/test_transient_errors.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="691" cache_read_input_tokens="36188" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 691}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01JxFFQwgpA7KX9DfpgGSCEb">
+    <param name="description">Run transient error tests</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run these two test files and report results:
+1. pytest packages/erk-shared/tests/unit/gith...[truncated 3 chars]...s.py
+2. pytest packages/erk-shared/tests/unit/github/test_execute_gh_command_with_retry.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="691" cache_read_input_tokens="36188" output_tokens="165" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 691, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JxFFQwgpA7KX9DfpgGSCEb">
+Both test suites passed successfully:
+
+**Test 1:** `test_transient_errors.py` - 24 passed in 0.02s
+
+**Test 2:** `test_execute_gh_command_with_retry.py` - 9 passed in 0.03s
+
+**Summary:** 33 total tests passed with no failures.
+agentId: a253c184cf88bfffb (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14112
+tool_uses: 2
+duration_ms: 5490&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 33 tests pass. Now let me complete the remaining steps.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="36879" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 311}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014zPiwmdBVrbhX7mc75JBhs">
+    <param name="command">erk exec impl-signal ended --session-id="6baa8509-922c-4e8e-99d1-8437449b7f1e" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="36879" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 311}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013Me8Lhr9YFBYofeEwUUvYH">
+    <param name="command">erk exec upload-impl-session --session-id="6baa8509-922c-4e8e-99d1-8437449b7f1e" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="36879" output_tokens="236" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 311, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014zPiwmdBVrbhX7mc75JBhs">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8703
+}
+  </tool_result>
+  <tool_result tool="toolu_013Me8Lhr9YFBYofeEwUUvYH">
+{"uploaded": true, "plan_id": 8703}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01NQ8GKUtVQsWgsPEcNo9grJ">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="336" cache_read_input_tokens="37190" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 336, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NQ8GKUtVQsWgsPEcNo9grJ">
+{"cleaned": true}
+  </tool_result>
+  <assistant>Now running CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="97" cache_read_input_tokens="37526" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 97}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013xV8havoQ3SBbKKLtxjWTz">
+    <param name="command">ls /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.erk/prompt-hooks/post-plan-implement-ci.md 2&gt;/dev/null &amp;&amp; echo "EXISTS" || echo "NOT_FOUND"</param>
+    <param name="description">Check for post-implement CI hook</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="97" cache_read_input_tokens="37526" output_tokens="142" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 97, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013xV8havoQ3SBbKKLtxjWTz">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.erk/prompt-hooks/post-plan-implement-ci.md
+EXISTS
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Eg2R3ieAHmkS1B7CsGJbJZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="37623" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Eg2R3ieAHmkS1B7CsGJbJZ">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01JvNyA8qsikuWHmL7V6PKGV">
+    <param name="skill">ci-iteration</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="37821" output_tokens="54" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 163, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JvNyA8qsikuWHmL7V6PKGV">
+Launching skill: ci-iteration
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.claude/skills/ci-iteration
+
+# CI Iteration
+
+## Overview
+
+Run the specified CI target and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
+
+## Sub-Agent Policy
+
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  &lt;- MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+**FORBIDDEN**:
+
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
+- Giving sub-agents prompts like "fix issues" or "iterate until passing"
+
+**REQUIRED**:
+
+- Sub-agents run ONE command and report results
+- Parent agent decides what to fix based on reports
+
+## Core Workflow
+
+### 1. Initial Run
+
+Use the devrun agent to run the specified make target from the repository root:
+
+```
+Task tool with:
+- subagent_type: devrun
+- description: "Run [make target] from repo root"
+- prompt: "Change to repository root and execute: [make target]"
+```
+
+### 2. Parse Failures
+
+Analyze the output to identify which check(s) failed:
+
+- **Ruff lint failures**: "ruff check" errors
+- **Format failures**: "ruff format --check" or files needing reformatting
+- **Prettier failures**: Markdown files needing formatting
+- **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
+- **ty failures**: Type errors with file paths and line numbers
+- **Test failures**: pytest failures with test names and assertion errors
+
+### 3. Apply Targeted Fixes
+
+Based on failure type, apply appropriate fixes:
+
+| Failure Type | Fix Command                                 |
+| ------------ | ------------------------------------------- |
+| Ruff lint    | `make fix` via devrun                       |
+| Ruff format  | `make format` via devrun                    |
+| Prettier     | `make prettier` via devrun                  |
+| Sync-Kit     | `erk sync` directly                         |
+| MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
+| ty           | Edit files to fix type annotations          |
+| Tests        | Read and edit source/test files             |
+
+### 4. Verify and Repeat
+
+After applying fixes, run the make target again via devrun. Continue the cycle: run -&gt; identify failures -&gt; fix -&gt; verify.
+
+## Iteration Control
+
+**Safety Limits:**
+
+- **Maximum iterations**: 10 attempts
+- **Stuck detection**: If the same error appears 3 times in a row, stop
+- **Progress tracking**: Use TodoWrite to show iteration progress
+
+## Progress Reporting
+
+Use TodoWrite to track progress:
+
+```
+Iteration 1: Fixing lint errors
+Iteration 2: Fixing format errors
+Iteration 3: Fixing type errors in src/erk/cli/commands/switch.py
+Iteration 4: All checks passed
+```
+
+## When to Stop
+
+**SUCCESS**: Stop when the make target exits with code 0 (all checks passed)
+
+**STUCK**: Stop and report to user if:
+
+1. You've completed 10 iterations without success
+2. The same error persists after 3 fix attempts
+3. You encounter an error you cannot automatically fix
+
+## Reporting Formats
+
+### Success Format
+
+```markdown
+## Finalization Status: SUCCESS
+
+All CI checks passed after N iteration(s):
+
+(check) **Lint (ruff check)**: PASSED
+
+(check) **Format (ruff format --check)**: PASSED
+
+(check) **Prettier**: PASSED
+
+(check) **AGENTS.md Standard (md-check)**: PASSED
+
+(check) **ty**: PASSED
+
+(check) **Tests**: PASSED
+
+(check) **Sync-Kit (erk check)**: PASSED
+
+The code is ready for commit/PR.
+```
+
+**IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
+
+### Stuck Format
+
+```markdown
+## Finalization Status: STUCK
+
+I was unable to resolve the following issue after N attempts:
+
+**Check**: [lint/format/prettier/md-check/ty/test]
+
+**Error**:
+[Exact error message]
+
+**File**: [file path if applicable]
+
+**Attempted Fixes**:
+
+1. [What you tried first]
+2. [What you tried second]
+3. [What you tried third]
+
+**Next Steps**:
+[Suggest what needs to be done manually]
+```
+
+## Guidelines
+
+1. **Be systematic**: Fix one type of error at a time
+2. **Run full CI**: Always run the full make target, not individual checks
+3. **Use devrun agent**: Always use the Task tool with devrun agent for ALL make commands
+4. **Run from repo root**: Always ensure make commands execute from repository root
+5. **Track progress**: Use TodoWrite for every iteration
+6. **Don't guess**: Read files before making changes
+7. **Follow standards**: Adhere to AGENTS.md coding standards
+8. **Fail gracefully**: Report clearly when stuck
+9. **Be efficient**: Use targeted fixes (don't reformat everything for one lint error)
+
+## Example Flow
+
+```
+Iteration 1:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 5 lint errors, 2 files need formatting
+- Fix: Use Task tool with devrun agent to run make fix, then make format from repo root
+- Result: 3 lint errors remain
+
+Iteration 2:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 3 lint errors (imports)
+- Fix: Edit files to fix import issues
+- Result: All lint/format pass, 2 type errors
+
+Iteration 3:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 2 ty errors in switch.py:45 and switch.py:67
+- Fix: Add type annotations
+- Result: All checks pass
+
+SUCCESS
+```
+
+## Important Reminders
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <tool_use name="Agent" id="toolu_018FkXBGSQ25Leg8anbFdKQV">
+    <param name="description">Run make fast-ci</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Change to /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03 and run: make fast-ci
+
+Report all results.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1809" cache_read_input_tokens="37984" output_tokens="134" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1809, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018FkXBGSQ25Leg8anbFdKQV">
+The `make fast-ci` command completed successfully. Here's a summary of all results:
+
+**Lint &amp; Format Checks:**
+- Lint: All checks passed
+- Format Check: 1598 files already formatted
+- Prettier Check: All matched files use Prettier code style
+- Markdown Check: AGENTS.md standard passed, 0 violations across 19 CLAUDE.md files
+- Exec Reference Check: .claude/skills/erk-exec/reference.md is up to date
+
+**Type Checking:**
+- ty: All checks passed
+
+**Unit Tests:**
+- **erk**: 5548 passed in 7.58s
+- **erk-dev**: 136 passed in 2.86s
+- **erk-statusline**: 115 passed in 0.75s
+- **erk-mcp**: 10 passed (test count not shown but all passed)
+
+**Overall Status:** All CI checks passed successfully with no failures or violations.
+agentId: a4151386eb2eff7fe (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14646
+tool_uses: 1
+duration_ms: 22739&lt;/usage&gt;
+  </tool_result>
+  <assistant>All CI checks passed. Now submitting the PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="424" cache_read_input_tokens="39793" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 424}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01M1nfPuW4HZHorzu4fTeH2S">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="424" cache_read_input_tokens="39793" output_tokens="135" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 424, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M1nfPuW4HZHorzu4fTeH2S">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01RhvDd7XujWpasCZsZ7WcJb">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="23071" cache_read_input_tokens="17292" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 23071}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015iXzzbFKfanpGuZ2XwxnhD">
+    <param name="command">erk pr check --stage=impl 2&gt;&amp;1</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="23071" cache_read_input_tokens="17292" output_tokens="151" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 23071, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RhvDd7XujWpasCZsZ7WcJb">
+{
+  "success": false,
+  "event": "submitted",
+  "error_type": "no-plan-reference",
+  "message": "No plan reference found"
+}
+  </tool_result>
+  <tool_result tool="toolu_015iXzzbFKfanpGuZ2XwxnhD">
+Checking PR #8703 for branch plnd/add-json-transient-error-03-03-1105...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>Plan execution complete.
+
+**Summary:**
+- Added `"unexpected end of json input"` to `TRANSIENT_ERROR_PATTERNS` in `transient_errors.py`
+- Added `test_unexpected_end_of_json_input_detected` test in `test_transient_errors.py`
+- All 33 transient error tests pass, all CI checks green
+- PR #8703 submitted and ready for review</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="314" cache_read_input_tokens="40363" output_tokens="101" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 314, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>
