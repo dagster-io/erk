@@ -24,11 +24,7 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [config](config/tripwires.md)               | 3         | `config/` code                           |
 | [configuration](configuration/tripwires.md) | 1         | `configuration/` code                    |
 | [documentation](documentation/tripwires.md) | 30        | `documentation/` code                    |
-<<<<<<< HEAD
-| [erk](erk/tripwires.md)                     | 24        | `erk/` code                              |
-=======
-| [erk](erk/tripwires.md)                     | 25        | `erk/` code                              |
->>>>>>> c2f0e8cc8 (Consolidate documentation from 15 erk-learn plans)
+| [erk](erk/tripwires.md)                     | 26        | `erk/` code                              |
 | [gateway](gateway/tripwires.md)             | 5         | `gateway/` code                          |
 | [hooks](hooks/tripwires.md)                 | 4         | `.claude/hooks/`, hook development       |
 | [integrations](integrations/tripwires.md)   | 19        | `integrations/` code                     |
