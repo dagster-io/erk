@@ -277,7 +277,8 @@ def build_step2_message(
     lines = [
         f"Plan #{plan_number} saved successfully.",
         "",
-        "Display the following next-steps commands to the user as plain text",
+        "Display ALL of the following next-steps commands to the user as plain text.",
+        "Show every line exactly as written — do NOT summarize, truncate, or omit any lines.",
         "(do NOT use AskUserQuestion — just display the text):",
         "",
         next_steps,
