@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Detect missing child branch early in `erk land --up`"
+}
