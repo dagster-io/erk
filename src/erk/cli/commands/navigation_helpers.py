@@ -18,6 +18,7 @@ from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import worktree_path_for
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
+from erk.core.display_utils import copy_to_clipboard_osc52
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state
 from erk.core.worktree_utils import compute_relative_path_in_worktree
@@ -935,8 +936,6 @@ def _activate_with_deferred_deletion(
             user_output(f"\nTo delete branch {current_branch}:")
             clipboard_hint = click.style("(copied to clipboard)", dim=True)
             user_output(f"  {combined_cmd}  {clipboard_hint}")
-            from erk.core.display_utils import copy_to_clipboard_osc52
-
             user_output(copy_to_clipboard_osc52(combined_cmd), nl=False)
         else:
             script_path = ensure_worktree_activate_script(
