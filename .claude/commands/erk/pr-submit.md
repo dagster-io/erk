@@ -36,9 +36,14 @@ This command uses a three-step flow to avoid nested Claude subprocess calls:
 erk exec push-and-create-pr
 ```
 
-This pushes the branch, creates/finds the PR via Graphite, but skips AI description generation. The PR is created with a placeholder title. Outputs JSON with `pr.number` and `pr.url`.
+This pushes the branch, creates/finds the PR via Graphite, but skips AI description generation. The PR is created with a placeholder title. Outputs JSON with `pr.number`, `pr.url`, and `pr.was_created`.
 
 If this fails (exit code 1), display the error from the JSON output and stop.
+
+Check `pr.was_created` in the JSON output:
+
+- `was_created: true` → Report "Created PR #N". This is a **new submission** — use "Create" language in subsequent steps.
+- `was_created: false` → Report "Pushed changes (PR #N already exists)". This is a **resubmission** — use "Update" language in subsequent steps and skip Step 5.
 
 ### Step 2: Get PR Context
 
@@ -56,7 +61,9 @@ This outputs JSON to stdout with:
 
 Parse the JSON output. If this fails, display the error and stop.
 
-### Step 3: Generate Title and Body
+### Step 3: Generate Title and Body / Update Title and Body
+
+Report step as "Generate Title and Body" for new submissions, "Update Title and Body" for resubmissions.
 
 1. Read the diff file from the `diff_file` path in the JSON
 2. Load the `erk-diff-analysis` skill for the commit message prompt format
@@ -64,7 +71,9 @@ Parse the JSON output. If this fails, display the error and stop.
 4. If the user provided a `` argument, use it to guide the description
 5. Generate a PR title (first line) and body following the diff analysis format
 
-### Step 4: Apply Description
+### Step 4: Apply Description / Update Description
+
+Report step as "Apply Description" for new submissions, "Update Description" for resubmissions.
 
 Write the generated body to a temp file, then apply:
 
@@ -76,7 +85,9 @@ If this fails, display the error and stop.
 
 ### Step 5: Link PR to Objective (if applicable)
 
-If `ref.json` exists in `.erk/impl-context/<branch>/` and contains `objective_id`:
+**Skip this step entirely for resubmissions** (`was_created: false`) — the PR is already linked.
+
+For new submissions: if `ref.json` exists in `.erk/impl-context/<branch>/` and contains `objective_id`:
 
 ```bash
 erk exec objective-link-pr --pr-number <pr_number>
@@ -89,7 +100,8 @@ Where `<pr_number>` is the PR number from Step 1. If this fails, warn but contin
 Report:
 
 - PR URL (from step 2 JSON)
-- Success message
+- For new submissions: "PR created successfully"
+- For resubmissions: "PR updated successfully"
 
 ### Refresh Status Line
 
