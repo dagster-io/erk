@@ -14,27 +14,17 @@ Exit Codes:
 from __future__ import annotations
 
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict
 from typing import TYPE_CHECKING
 
 import click
 
-from erk_shared.context.helpers import require_github, require_repo_root
+from erk_shared.context.helpers import require_github, require_repo_root, require_time
+from erk_shared.gateway.github.label_ops import add_labels_resilient
 from erk_shared.gateway.github.types import PRNotFound
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-
-@dataclass(frozen=True)
-class AddLabelsResult:
-    """Result from adding labels to a PR."""
-
-    success: bool
-    pr_number: int
-    added_labels: list[str]
-    failed_labels: list[str]
-    errors: dict[str, str]  # Maps label name to error message
 
 
 @click.command(name="add-pr-labels")
@@ -58,6 +48,7 @@ def add_pr_labels(
     Partial success is reported: some labels may be added while others fail.
     """
     github = require_github(ctx)
+    time = require_time(ctx)
     repo_root: Path = require_repo_root(ctx)
 
     # Validate PR exists
@@ -71,31 +62,10 @@ def add_pr_labels(
                 }
             )
         )
-        raise SystemExit(1) from None
+        ctx.exit(1)
 
-    # Try to add each label individually
-    added: list[str] = []
-    failed: dict[str, str] = {}
-
-    for label in labels_list:
-        try:
-            github.add_label_to_pr(repo_root, pr_number, label)
-            added.append(label)
-        except RuntimeError as e:
-            # Capture error message but continue with other labels
-            failed[label] = str(e)
-
-    # Report result
-    result = AddLabelsResult(
-        success=len(failed) == 0,
-        pr_number=pr_number,
-        added_labels=added,
-        failed_labels=list(failed.keys()),
-        errors=failed,
-    )
+    result = add_labels_resilient(github, time, repo_root, pr_number, labels_list)
 
     click.echo(json.dumps(asdict(result)))
 
-    # Exit with success (0) if any labels were added or all were already present.
     # Caller should check 'success' field in JSON to determine if retry is needed.
-    raise SystemExit(0)
