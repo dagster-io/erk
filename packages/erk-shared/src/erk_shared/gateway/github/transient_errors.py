@@ -8,6 +8,7 @@ TRANSIENT_ERROR_PATTERNS = (
     "network is unreachable",
     "connection reset",
     "connection timed out",
+    "unexpected end of json input",
 )
 
 
