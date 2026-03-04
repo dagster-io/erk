@@ -54,7 +54,7 @@ Functions that need the current time should accept a `now: datetime` parameter i
 
 ### Example: Worktree Naming
 
-<!-- Source: packages/erk-shared/src/erk_shared/naming.py:721-762 -->
+<!-- Source: packages/erk-shared/src/erk_shared/naming.py, ensure_unique_worktree_name_with_date() -->
 
 `ensure_unique_worktree_name_with_date()` at `packages/erk-shared/src/erk_shared/naming.py` accepts `*, now: datetime` and generates a datetime suffix using `now.strftime()`. Callers pass `ctx.time.now()` for testability. The docstring states: "Callers should pass ctx.time.now() for testability."
 

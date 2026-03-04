@@ -184,7 +184,7 @@ Returns a discriminated union of three frozen dataclasses:
 
 ### Context Integration
 
-`AnthropicLlmCaller` is instantiated during context creation at `src/erk/core/context.py:644-692` and stored as `ctx.llm_caller`. The branch slug generator and other dispatch-layer callers access it through the context.
+`AnthropicLlmCaller` is instantiated during context creation in `create_context()` at `src/erk/core/context.py` and stored as `ctx.llm_caller`. The branch slug generator and other dispatch-layer callers access it through the context.
 
 ## Related Documentation
 

@@ -15,7 +15,7 @@ The `erk implement` command sets up an implementation environment and executes a
 
 ## Auto-Detection Strategies
 
-<!-- Source: src/erk/cli/commands/implement.py:400-423 -->
+<!-- Source: src/erk/cli/commands/implement.py, implement() command -->
 
 When `TARGET` is omitted, `erk implement` tries two strategies in order:
 
@@ -31,7 +31,7 @@ If neither strategy finds a plan, the command exits with an error.
 
 ## Execution Modes
 
-<!-- Source: src/erk/cli/commands/implement.py:44-103 -->
+<!-- Source: src/erk/cli/commands/implement.py, _execute() -->
 
 The shared execution function supports multiple execution modes:
 
