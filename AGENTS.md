@@ -29,6 +29,10 @@
 
 **CRITICAL: When creating a plan for an objective, ALWAYS use `/erk:objective-plan` to ensure proper metadata linking.** Do not manually reference objectives in plan text without using the structured workflow. The objective-context marker created by this command is required for the plan-save pipeline to link the plan to its parent objective.
 
+**CRITICAL: When mutating GitHub issues or comments via `gh api`, NEVER use `-f body=@file`.** The `@` prefix does not read file contents with `-f` — it writes the literal string. Use `--input <json-file>` with a JSON payload instead. Before mutating any GitHub comment, save the original body to a local backup file — GitHub does not expose comment edit history.
+
+**CRITICAL: When creating an objective issue, ALWAYS use `/erk:objective-create`.** Never hand-craft the issue body — the roadmap schema (v4, nodes, slugs, `<details>` wrapper) is complex enough that hand-crafting will produce invalid metadata.
+
 ### Universal Tripwires
 
 These critical rules apply across all code areas.

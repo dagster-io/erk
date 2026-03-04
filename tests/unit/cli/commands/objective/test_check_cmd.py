@@ -15,7 +15,7 @@ from erk.cli.commands.objective.check_cmd import (
 from erk_shared.context.context import ErkContext
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
-from erk_shared.gateway.github.issues.types import IssueInfo
+from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
 
 
 def _make_issue(
@@ -809,3 +809,97 @@ def test_fan_out_fan_in_json_output() -> None:
     # next_node should be one of the fan-out branches (2.1 by position order)
     assert output["next_node"]["id"] == "2.1"
     assert output["all_complete"] is False
+
+
+# --- Comment staleness detection tests ---
+
+
+STALE_COMMENT_BODY = """\
+<!-- erk:metadata-block:objective-body -->
+<details open>
+<summary><strong>Objective</strong></summary>
+
+# Objective: V2 Valid
+
+<!-- erk:roadmap-table -->
+### Phase 1: Foundation (0 PR)
+| Node | Description | Status | Plan | PR |
+|------|-------------|--------|------|----|
+| 1.1 | Set up project structure | pending | - | - |
+| 1.2 | Add core types | pending | - | - |
+<!-- /erk:roadmap-table -->
+
+</details>
+<!-- /erk:metadata-block:objective-body -->
+"""
+
+
+def test_stale_comment_produces_warning() -> None:
+    """Stale comment tables produce a [WARN] without affecting pass/fail."""
+    issue = _make_issue(1400, "Objective: V2 Stale", V2_BODY_VALID)
+    fake_gh = FakeGitHubIssues(
+        issues={1400: issue},
+        comments_with_urls={
+            1400: [
+                IssueComment(
+                    body=STALE_COMMENT_BODY,
+                    url="https://example.com/c/42",
+                    id=42,
+                    author="testuser",
+                )
+            ],
+        },
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["1400"],
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+    )
+
+    # Staleness is a warning, not a failure — passes should still hold
+    assert "[WARN]" in result.output
+    assert "stale" in result.output.lower()
+    assert "rerender" in result.output.lower()
+
+
+def test_stale_comment_json_includes_warnings() -> None:
+    """JSON output includes warnings list for stale comments."""
+    issue = _make_issue(1500, "Objective: V2 Stale JSON", V2_BODY_VALID)
+    fake_gh = FakeGitHubIssues(
+        issues={1500: issue},
+        comments_with_urls={
+            1500: [
+                IssueComment(
+                    body=STALE_COMMENT_BODY,
+                    url="https://example.com/c/42",
+                    id=42,
+                    author="testuser",
+                )
+            ],
+        },
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        check_objective,
+        ["1500", "--json-output"],
+        obj=ErkContext.for_test(github=FakeGitHub(issues_gateway=fake_gh)),
+    )
+
+    assert result.exit_code == 0
+    output = json.loads(result.output)
+    assert output["success"] is True
+    assert len(output["warnings"]) > 0
+    assert "stale" in output["warnings"][0].lower()
+
+
+def test_no_comment_id_produces_no_warning() -> None:
+    """Objectives without comment_id (v1) produce no staleness warning."""
+    issue = _make_issue(1600, "Objective: No Comment", VALID_OBJECTIVE_BODY)
+    fake_gh = FakeGitHubIssues(issues={1600: issue})
+
+    result = validate_objective(fake_gh, Path("/fake/repo"), 1600)
+    assert isinstance(result, ObjectiveValidationSuccess)
+    assert len(result.warnings) == 0

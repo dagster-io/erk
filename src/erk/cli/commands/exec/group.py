@@ -129,6 +129,9 @@ from erk.cli.commands.exec.scripts.register_one_shot_plan import (
 from erk.cli.commands.exec.scripts.reply_to_discussion_comment import (
     reply_to_discussion_comment,
 )
+from erk.cli.commands.exec.scripts.rerender_objective_comment import (
+    rerender_objective_comment,
+)
 from erk.cli.commands.exec.scripts.resolve_review_thread import (
     resolve_review_thread,
 )
@@ -240,6 +243,7 @@ exec_group.add_command(push_session, name="push-session")
 exec_group.add_command(quick_submit, name="quick-submit")
 exec_group.add_command(rebase_with_conflict_resolution, name="rebase-with-conflict-resolution")
 exec_group.add_command(register_one_shot_plan, name="register-one-shot-plan")
+exec_group.add_command(rerender_objective_comment, name="rerender-objective-comment")
 exec_group.add_command(resolve_review_thread, name="resolve-review-thread")
 exec_group.add_command(resolve_review_threads, name="resolve-review-threads")
 exec_group.add_command(run_review, name="run-review")

@@ -16,6 +16,9 @@ tripwires:
   - action: "using gh codespace start"
     warning: "gh codespace start does not exist. Use REST API POST /user/codespaces/{name}/start via gh api instead."
     pattern: "gh\\s+codespace\\s+start"
+  - action: "using -f body=@file with gh api"
+    warning: "-f body=@file sends the literal string '@file', not file contents. Use --input with a JSON payload instead."
+    pattern: "-f\\s+body=@"
 ---
 
 # GitHub CLI Limits
@@ -141,6 +144,53 @@ The `/repos/{owner}/{repo}/codespaces/machines` endpoint returns HTTP 500 for ce
 GitHub's `willCloseTarget` behavior is evaluated at PR creation time. Adding a `Closes #N` reference via a post-creation body update does **not** enable auto-close. The closing reference must be present in the initial `create_pr()` call body.
 
 This affects one-shot dispatch and any workflow that creates a PR then later wants to link it to a plan issue. The registration step must ensure the closing reference is in the initial body, not appended afterward.
+
+## `-f` vs `--input` for Request Body Data
+
+The `gh api` command has two mechanisms for sending data, with a critical distinction:
+
+### `-f key=value` — Literal String Fields
+
+`-f body=hello` sends `{"body": "hello"}`. The value is **always a literal string**.
+
+**Common misconception**: `-f body=@file.txt` does **NOT** read file contents. It sends the literal string `@file.txt` as the body value. This has caused data loss in production — an objective comment was corrupted when `-f body=@backup.md` wrote the literal path instead of file contents.
+
+```bash
+# WRONG: Sends literal string "@body.md" as the body
+gh api repos/owner/repo/issues/comments/123 -X PATCH -f body=@body.md
+
+# The -F flag (uppercase) DOES read files, but only for form-encoded fields:
+# -F body=@file reads file contents for multipart form data
+```
+
+### `--input <file>` — Full JSON Request Body
+
+`--input payload.json` reads the file and sends its entire contents as the request body.
+
+```bash
+# CORRECT: Read file contents as full JSON body
+echo '{"body": "new comment text"}' > /tmp/payload.json
+gh api repos/owner/repo/issues/comments/123 -X PATCH --input /tmp/payload.json
+```
+
+### Decision: When to Use Each
+
+| Use Case                   | Method              | Why                                           |
+| -------------------------- | ------------------- | --------------------------------------------- |
+| Set a simple string field  | `-f key=value`      | Convenient for inline values                  |
+| Send file contents as body | `--input file.json` | Only reliable way to send file data           |
+| Update issue/comment body  | `--input` with JSON | Body text can be large, contain special chars |
+| Set multiple simple fields | Multiple `-f` flags | Each is a literal key-value pair              |
+
+### Safety Rule: Backup Before Mutating Comments
+
+GitHub does not expose comment edit history. Before updating any comment body:
+
+1. Fetch current body: `gh api repos/{owner}/{repo}/issues/comments/{id} --jq .body > backup.md`
+2. Construct JSON payload with new body
+3. Update via `--input`
+
+This backup-before-mutate pattern prevents irrecoverable data loss.
 
 ## Hardcoded --repo Flag Returns Empty Output
 
