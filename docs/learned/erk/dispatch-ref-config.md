@@ -94,6 +94,36 @@ This is a shorthand for `--ref $(git branch --show-current)`. It reads the curre
 
 In `_dispatch_workflow_impl()`, if `ref` is provided it's used directly, bypassing the REST API call. When `None`, the gateway calls `_get_default_branch()` to fetch and cache the default branch.
 
+## Two-Stage Plan Auto-Detection
+
+When `erk pr dispatch` is called without explicit plan numbers, it detects the plan via two-stage fallback:
+
+<!-- Source: src/erk/cli/commands/pr/dispatch_cmd.py, _detect_plan_number_from_context -->
+
+```python
+def _detect_plan_number_from_context(...) -> int | None:
+    # Stage 1: Local .erk/impl-context/ (fast, no network)
+    impl_dir = resolve_impl_dir(repo.root, branch_name=branch_name)
+    if impl_dir is not None:
+        plan_ref = read_plan_ref(impl_dir)
+        if plan_ref is not None and plan_ref.plan_id.isdigit():
+            return int(plan_ref.plan_id)
+
+    # Stage 2: GitHub API lookup (network call)
+    if branch_name is not None:
+        plan_id = ctx.plan_backend.resolve_plan_id_for_branch(repo.root, branch_name)
+        if plan_id is not None and plan_id.isdigit():
+            return int(plan_id)
+
+    return None
+```
+
+**Stage 1**: Check local `.erk/impl-context/<branch>/ref.json` (no network). Fast path — works when a plan has been set up locally.
+
+**Stage 2**: Call `resolve_plan_id_for_branch()` on the plan backend (GitHub API). Matches the branch name against open plan PRs. Used when no local impl-context exists (e.g., dispatching from a raw branch).
+
+This two-stage pattern matches the `implement` and `land` commands for consistency.
+
 ## Related Documentation
 
 - [Remote Workflow Template](remote-workflow-template.md) - How dispatched workflows execute

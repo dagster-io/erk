@@ -58,56 +58,66 @@ Create a plan using Claude's ExitPlanMode tool. This stores the plan in session 
 
 ### 2. Choose Your Workflow
 
-When exiting plan mode, you have four options:
+When exiting plan mode, the hook presents options based on your current branch context.
 
-#### Option A: Save for Later ("Save the plan")
+#### Option 1: "Create new branch and planned PR" (always available)
 
-Save the plan to GitHub without implementing:
-
-```bash
-/erk:plan-save
-```
-
-This command saves the plan from the current session as a GitHub issue with the `erk-plan` label. The issue becomes the source of truth. Use this when you want to:
-
-- Defer implementation to a remote worker
-- Review the plan before committing to implementation
-- Hand off to someone else
-
-#### Option B: Save and Implement ("Implement")
-
-Save to GitHub AND immediately implement in the current worktree:
+Creates a new branch, saves the plan to GitHub as a draft PR, then exits plan mode:
 
 ```bash
-/erk:plan-implement
+/erk:plan-save          # run by agent after user chooses this option
 ```
 
-This command:
+The plan PR branch is stacked on the current branch if on a feature branch, otherwise created from trunk. After exit, the agent implements on the new branch. Use when you want a tracked plan PR with full lifecycle management.
 
-1. Saves the plan to GitHub as an issue
-2. Creates a feature branch (stacked if on feature branch, otherwise from trunk)
-3. Sets up the impl directory under `.erk/impl-context/<branch>/` with plan content
-4. Executes the implementation phases
-5. Runs CI and creates a PR
+#### Option 2: "Implement without saving" (always available, NEW)
 
-Use this for the typical flow where you plan and implement in one session.
+Implements directly on the current branch **without** creating a plan PR or saving to GitHub:
 
-#### Option C: Incremental Changes ("Incremental implementation")
+- Creates the `exit-plan-mode-hook.implement-now.marker` marker file
+- Calls ExitPlanMode
+- Implements changes directly on the current branch
+- Optionally runs `erk pr submit` when done
 
-For small PR iterations that don't need issue tracking:
+Use for small changes or experiments where GitHub tracking overhead isn't worth it.
 
-- Skip saving to GitHub
-- Implement changes directly in the current worktree
-- Best for minor fixes or follow-up changes to existing PRs
+#### Option 3: "Make current empty branch a planned PR" (conditional — hidden on trunk)
 
-#### Option D: View/Edit ("View or edit the plan")
+Only shown when **both** conditions are met:
+
+- Current branch has **no commits** ahead of trunk
+- Current branch is **not** `master` or `main`
+
+Saves the plan to GitHub using the current branch as the plan PR branch (instead of creating a new one):
+
+```bash
+/erk:plan-save --current-branch    # run by agent after user chooses this option
+```
+
+This converts the current branch into the plan PR branch directly.
+
+> **⚠️ WARNING:** If you are on `master` or `main`, option 3 is hidden and the hook displays a warning: "We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead."
+
+#### Option 4: "View/Edit the Plan"
 
 For reviewing or refining the plan:
 
-- Review the plan content in the session
-- Make adjustments to the plan if needed
+- Opens plan in editor (non-terminal editors) or displays plan in session
 - Loop back to choose another option
 - Best when you need to refine before committing to save or implement
+
+#### Statusline Context Display
+
+The hook displays current context before presenting options:
+
+```
+(wt:erk-slot-01) (br:feature-x) (pr:#123) (plan:#456)
+```
+
+- `wt:` — current worktree name
+- `br:` — current branch name
+- `pr:` — PR number if current branch has an associated PR
+- `plan:` — plan number if an impl-context plan is active
 
 ### 3. Implement from Existing Issue (Alternative)
 
@@ -141,26 +151,30 @@ When a user saves their plan to GitHub (via `/erk:plan-save`), the workflow shou
 │ like to do?"        │
 └─────────┬───────────┘
           │
-    ┌─────┼─────┬─────────────┐
-    │     │     │             │
-    ▼     ▼     ▼             ▼
-┌───────┐ ┌─────────┐ ┌──────────────┐ ┌──────────┐
-│ Save  │ │Implement│ │ Incremental  │ │View/Edit │
-│ (A)   │ │ (B)     │ │ (C)          │ │ (D)      │
-└───┬───┘ └────┬────┘ └──────┬───────┘ └────┬─────┘
-    │          │             │              │
-    ▼          ▼             ▼              │
-┌───────┐ ┌─────────────┐ ┌──────────────┐  │
-│GitHub │ │Save + Setup │ │Create marker │  │
-│issue  │ │+ Implement  │ │Exit plan mode│  │
-│created│ │+ CI + PR    │ │Impl directly │  │
-└───┬───┘ └─────────────┘ └──────────────┘  │
-    │                                       │
-    ▼                                       │
-┌───────┐                          ┌────────┘
-│ STOP  │  ← Do NOT call           │ (loop back)
-│(plan  │    ExitPlanMode          │
-│mode)  │                          ▼
+    ┌─────┼──────────────┬─────────────┐
+    │     │              │             │
+    ▼     ▼              ▼             ▼
+┌────────────────┐ ┌──────────────┐ ┌──────────┐
+│ Create new     │ │Implement     │ │View/Edit │
+│ branch + PR    │ │without saving│ │ (4)      │
+│ (1)            │ │ (2)          │ │          │
+└───┬────────────┘ └──────┬───────┘ └────┬─────┘
+    │    [3: Make current  │              │
+    │     empty branch PR] │              │
+    │    (hidden on trunk) │              │
+    │                      │              │
+    ▼                      ▼              │
+┌───────────────┐  ┌──────────────┐      │
+│plan-save      │  │Create marker │      │
+│creates plan PR│  │ExitPlanMode  │      │
+│exits plan mode│  │Impl directly │      │
+└───────┬───────┘  └──────────────┘      │
+        │                                │
+        ▼                                │
+┌───────┐                       ┌────────┘
+│ STOP  │  ← Do NOT call        │ (loop back)
+│(plan  │    ExitPlanMode        │
+│mode)  │    again               ▼
 └───────┘
 ```
 

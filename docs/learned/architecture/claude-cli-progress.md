@@ -182,6 +182,12 @@ for event in executor.execute_command_streaming(...):
 
 **See also**: [Glossary - ExecutorEvent](../glossary.md#executorevent) for complete event type reference.
 
+## Background Threads with Progress Ticks
+
+When the blocking operation runs in a background thread (e.g., a subprocess call), use the **daemon thread + holder list** pattern to yield progress events while waiting:
+
+See [Threading Patterns](threading-patterns.md) for the full pattern, including result_holder/error_holder design, daemon thread rationale, polling with join(timeout=...), and testability via Time abstraction.
+
 ## Related Files
 
 - `packages/erk-shared/src/erk_shared/gateway/gt/events.py` - ProgressEvent/CompletionEvent definitions

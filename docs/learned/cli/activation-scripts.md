@@ -8,7 +8,9 @@ read_when:
   - "configuring post-create commands"
 tripwires:
   - action: "removing the VIRTUAL_ENV guard from activation scripts"
-    warning: "Guard prevents double activation when direnv and temp script both source activation. Removing it causes duplicate package installs."
+    warning: "Guard prevents double activation when direnv and temp script both source activation. Removing it causes duplicate venv activation and .env loading. Moving uv sync OUTSIDE the guard is correct — guard only protects venv activation, .env loading, and shell completion."
+  - action: "moving uv sync or uv pip install inside the VIRTUAL_ENV guard"
+    warning: "uv sync and uv pip install run OUTSIDE the guard (always execute, even on re-entry). This ensures deps stay current after branch switches in reused slots. Only venv activation, .env loading, and shell completion go inside the guard."
 ---
 
 # Activation Scripts
@@ -72,17 +74,40 @@ Activation scripts support dynamic post-CD commands via the `post_cd_commands` p
 
 **Implementation:** `src/erk/cli/commands/pr/checkout_cmd.py` uses the `post_cd_commands` parameter when `should_track_with_graphite and sync` evaluates to True.
 
+## `force_script_activation` Parameter
+
+<!-- Source: src/erk/cli/commands/branch/checkout_cmd.py:164 -->
+
+`checkout_to_worktree()` in `src/erk/cli/commands/branch/checkout_cmd.py` accepts a `force_script_activation: bool` parameter. When `True`, the function emits the activation script even if the user didn't pass `--script` on the command line.
+
+This is used for **stack-in-place** operations: when the user checks out a plan branch within the current slot (rather than switching worktrees), the activation script is automatically emitted so shell integration can source it. The effective flag is computed as `effective_script = script or force_script_activation`.
+
+**Call sites:**
+
+- Stack-in-place checkout paths (lines 667, 701): `force_script_activation=True`
+- Normal checkout paths (lines 763, 807): `force_script_activation=False`
+
 ## VIRTUAL_ENV Idempotency Guard
 
 When `erk pr checkout --script` generates an activation script and direnv is active, the script can be sourced twice: once by direnv (which triggers on the `cd` inside the script) and once by the temp script execution itself. This causes duplicate `uv sync`, `uv pip install`, `.env` loading, and shell completion setup.
 
 ### Solution
 
-The activation script wraps all expensive operations in a `VIRTUAL_ENV` guard:
+Dependency sync always runs unconditionally (outside the guard). The `VIRTUAL_ENV` guard only protects idempotent side effects:
 
 ```bash
+# Always sync deps (outside guard — handles branch switches in reused slots)
+uv sync --quiet
+uv pip install --no-deps --quiet -e . -e packages/erk-shared -e packages/erk-statusline
+
+# Guard only protects venv activation, .env loading, shell completion
 if [ "$VIRTUAL_ENV" != "{worktree_path}/.venv" ]; then
-  # venv creation, uv sync, uv pip install, .env loading, shell completion
+  unset VIRTUAL_ENV
+  . {worktree_path}/.venv/bin/activate
+  # Load .env into the environment
+  set -a; . ./.env; set +a
+  # Shell completion
+  eval "$(erk completion bash)"  # or zsh
 fi
 ```
 

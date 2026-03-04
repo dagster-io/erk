@@ -13,4 +13,5 @@
 - **[issue-pr-closing-integration.md](issue-pr-closing-integration.md)** — linking PRs to issues for auto-close, debugging why issues didn't close when PR merged, working on issue number discovery in the submit pipeline, understanding cross-repo plan issue references
 - **[linear-erk-mapping.md](linear-erk-mapping.md)** — Evaluating Linear as issue tracker for erk, Building Linear gateway, Understanding trade-offs between GitHub Issues and Linear
 - **[linear-primitives.md](linear-primitives.md)** — Considering Linear as an alternative to GitHub Issues, Building a Linear gateway for erk, Understanding how other tools (Cursor, Devin) integrate with Linear
+- **[mcp-integration.md](mcp-integration.md)** — adding new MCP tools to erk, configuring erk as an MCP server for Claude, understanding the erk-mcp package structure, debugging MCP tool calls from external clients
 - **[multi-agent-portability.md](multi-agent-portability.md)** — adding Codex support to erk, understanding differences between Claude Code and Codex CLI, designing multi-backend agent support, mapping erk concepts to Codex equivalents
