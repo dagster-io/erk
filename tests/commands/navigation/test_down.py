@@ -1482,3 +1482,154 @@ def test_down_worktree_branch_mismatch() -> None:
         assert str(feature_1_path) in script_content
         # Should include git checkout to switch to the correct branch
         assert "git checkout feature-1" in script_content
+
+
+def test_down_delete_current_same_worktree_script() -> None:
+    """Test --delete-current -f when parent shares the same worktree (script mode).
+
+    When a plan branch is checked out into an existing worktree (not a new one),
+    both branches share the same physical directory. The worktree directory is
+    named after feature-1 but has feature-2 checked out.  The deferred deletion
+    script should NOT include 'git worktree remove' (the worktree belongs to the
+    parent branch).
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # The worktree at feature-1's path has feature-2 checked out (same-worktree).
+        # find_worktree_for_branch("feature-2") returns this path (exact match).
+        # find_worktree_for_branch_or_path("feature-1") falls back to path-based
+        # lookup: expected path matches, needs_checkout=True.
+        feature_1_wt = repo_dir / "worktrees" / "feature-1"
+        git_ops = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=feature_1_wt, branch="feature-2", is_root=False),
+                ]
+            },
+            current_branches={feature_1_wt: "feature-2"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir, feature_1_wt: env.git_dir},
+            file_statuses={feature_1_wt: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
+                ),
+                "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
+            }
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            graphite=graphite_ops,
+            repo=repo,
+            use_graphite=True,
+            cwd=feature_1_wt,
+        )
+
+        result = runner.invoke(
+            cli,
+            ["down", "--delete-current", "-f", "--script"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+
+        script_path = Path(result.stdout.strip().split("\n")[-1])
+        script_content = env.script_writer.get_script_content(script_path)
+        assert script_content is not None
+
+        # Worktree removal must NOT be in the script — the worktree belongs to the parent
+        assert "git worktree remove" not in script_content
+        assert "erk slot unassign" not in script_content
+
+        # Branch deletion should still be present
+        assert "gt delete -f --no-interactive feature-2" in script_content
+
+        # Checkout command should be present to switch to feature-1
+        assert "git checkout" in script_content
+        assert "feature-1" in script_content
+
+
+def test_down_delete_current_same_worktree_no_script() -> None:
+    """Test --delete-current -f when parent shares the same worktree (no script mode).
+
+    In non-script mode, the output should show the actual deletion commands
+    (e.g. gt delete) instead of 'erk br delete' which would crash.
+    """
+    runner = CliRunner()
+    with erk_inmem_env(runner) as env:
+        repo_dir = env.setup_repo_structure()
+
+        feature_1_wt = repo_dir / "worktrees" / "feature-1"
+        git_ops = FakeGit(
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=feature_1_wt, branch="feature-2", is_root=False),
+                ]
+            },
+            current_branches={feature_1_wt: "feature-2"},
+            default_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir, feature_1_wt: env.git_dir},
+            file_statuses={feature_1_wt: ([], [], [])},
+        )
+
+        graphite_ops = FakeGraphite(
+            branches={
+                "main": BranchMetadata.trunk("main", children=["feature-1"], commit_sha="abc123"),
+                "feature-1": BranchMetadata.branch(
+                    "feature-1", "main", children=["feature-2"], commit_sha="def456"
+                ),
+                "feature-2": BranchMetadata.branch("feature-2", "feature-1", commit_sha="ghi789"),
+            }
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(
+            git=git_ops,
+            graphite=graphite_ops,
+            repo=repo,
+            use_graphite=True,
+            cwd=feature_1_wt,
+        )
+
+        result = runner.invoke(
+            cli,
+            ["down", "--delete-current", "-f"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+
+        # Should NOT suggest `erk br delete` — that would delete the shared worktree
+        assert "erk br delete" not in result.output
+
+        # Should show the direct branch deletion command
+        assert "gt delete" in result.output
+
+        # Should NOT include worktree removal
+        assert "git worktree remove" not in result.output
