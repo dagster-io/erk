@@ -72,7 +72,7 @@ The MCP server is configured in `.mcp.json` at the repository root:
 }
 ```
 
-This uses `uv run` to execute the `erk-mcp` entry point, which calls `create_mcp().run()` (stdio transport).
+This uses `uv run` to execute the `erk-mcp` entry point via stdio IPC (the `"type": "stdio"` in `.mcp.json` describes the Claude-to-server protocol). Internally, `__main__.py` defaults to `streamable-http` transport when no `--transport` arg is given.
 
 ## Makefile Targets
 

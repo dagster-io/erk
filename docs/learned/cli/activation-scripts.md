@@ -76,9 +76,9 @@ Activation scripts support dynamic post-CD commands via the `post_cd_commands` p
 
 ## `force_script_activation` Parameter
 
-<!-- Source: src/erk/cli/commands/branch/checkout_cmd.py:164 -->
+<!-- Source: src/erk/cli/commands/branch/checkout_cmd.py, _perform_checkout -->
 
-`checkout_to_worktree()` in `src/erk/cli/commands/branch/checkout_cmd.py` accepts a `force_script_activation: bool` parameter. When `True`, the function emits the activation script even if the user didn't pass `--script` on the command line.
+`_perform_checkout()` in `src/erk/cli/commands/branch/checkout_cmd.py` accepts a `force_script_activation: bool` parameter. When `True`, the function emits the activation script even if the user didn't pass `--script` on the command line.
 
 This is used for **stack-in-place** operations: when the user checks out a plan branch within the current slot (rather than switching worktrees), the activation script is automatically emitted so shell integration can source it. The effective flag is computed as `effective_script = script or force_script_activation`.
 
