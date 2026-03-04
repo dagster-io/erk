@@ -10,12 +10,9 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/setup-python@v5
+    - uses: astral-sh/setup-uv@v5
       with:
         python-version: ${{ inputs.python-version }}
-    - name: Install uv
-      shell: bash
-      run: pip install uv
     - name: Install dependencies
       shell: bash
       run: uv sync --python ${{ inputs.python-version }}
