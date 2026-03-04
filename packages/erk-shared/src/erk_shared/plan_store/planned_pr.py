@@ -101,26 +101,22 @@ def _add_pr_labels_with_cli(repo_root: Path, pr_number: int, labels: tuple[str, 
             operation_context=f"add labels to PR #{pr_number}",
             cwd=repo_root,
         )
-
-        # Parse JSON output
-        try:
-            output = json.loads(result.stdout)
-            if isinstance(output, dict) and output.get("success"):
-                logger.debug(f"Successfully added labels to PR #{pr_number}")
-            else:
-                # Partial or complete failure
-                failed_labels = output.get("failed_labels", [])
-                errors = output.get("errors", {})
-                logger.warning(
-                    f"Failed to add some labels to PR #{pr_number}: "
-                    f"{failed_labels} - {errors}"
-                )
-        except json.JSONDecodeError:
-            logger.warning(f"Could not parse add-pr-labels output: {result.stdout}")
     except RuntimeError as e:
-        # If the command itself fails, log a warning but continue
-        # The PR exists on GitHub even if labeling fails
         logger.warning(f"Error adding labels to PR #{pr_number}: {e}")
+        return
+
+    try:
+        output = json.loads(result.stdout)
+    except json.JSONDecodeError:
+        logger.warning(f"Could not parse add-pr-labels output: {result.stdout}")
+        return
+
+    if isinstance(output, dict) and output.get("success"):
+        logger.debug(f"Successfully added labels to PR #{pr_number}")
+    else:
+        failed_labels = output.get("failed_labels", [])
+        errors = output.get("errors", {})
+        logger.warning(f"Failed to add some labels to PR #{pr_number}: {failed_labels} - {errors}")
 
 
 class PlannedPRBackend(PlanBackend):
