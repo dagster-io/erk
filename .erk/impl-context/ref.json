@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: `erk br co --for-plan` allocates a new slot instead of staying in current worktree"
+}
