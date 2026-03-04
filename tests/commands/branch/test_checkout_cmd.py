@@ -1484,3 +1484,63 @@ def test_checkout_for_plan_skips_rebase_for_trunk_parent() -> None:
         _repo_root, tracked_branch, parent = graphite.track_branch_calls[0]
         assert tracked_branch == "plan-603"
         assert parent == "main"
+
+
+def test_checkout_for_plan_updates_stale_local_parent() -> None:
+    """--for-plan syncs stale local parent branch with origin before gt track.
+
+    When the parent branch exists locally but has diverged from origin
+    (e.g., after squash/rebase via gt submit), the local ref should be
+    updated to match origin so gt track sees consistent history.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+
+        plan = Plan(
+            plan_identifier="604",
+            title="Stale parent sync",
+            body="# Plan\nStale parent test",
+            state=PlanState.OPEN,
+            url="https://github.com/owner/repo/issues/604",
+            labels=["erk-pr", "erk-plan"],
+            assignees=[],
+            created_at=TEST_PLAN_TIMESTAMP,
+            updated_at=TEST_PLAN_TIMESTAMP,
+            metadata={"base_ref_name": "feature-parent"},
+            objective_id=None,
+        )
+        plan_store, _ = create_plan_store_with_plans({"604": plan})
+
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-parent", "plan-604"]},
+            current_branches={env.cwd: "main"},
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+            branch_heads={
+                "feature-parent": "stale_local_sha",
+                "origin/feature-parent": "fresh_remote_sha",
+            },
+        )
+
+        graphite = FakeGraphite()
+        ctx = build_workspace_test_context(
+            env, git=git, plan_store=plan_store, graphite=graphite, use_graphite=True
+        )
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(
+                branch_group, ["checkout", "--for-plan", "604", "--script"], obj=ctx
+            )
+
+        assert result.exit_code == 0, f"Failed: {result.output}"
+
+        # Verify fetch was called for the parent branch
+        assert ("origin", "feature-parent") in git.fetched_branches
+
+        # Verify local ref was updated to match remote
+        assert len(git.updated_refs) == 1
+        _repo_root, branch, target_sha = git.updated_refs[0]
+        assert branch == "feature-parent"
+        assert target_sha == "fresh_remote_sha"
