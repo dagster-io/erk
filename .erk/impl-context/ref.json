@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Fix `erk down -d` for same-worktree downstack navigation"
-}
