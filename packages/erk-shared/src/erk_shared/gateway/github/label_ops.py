@@ -25,6 +25,7 @@ class AddLabelsResult:
 
 def add_labels_resilient(
     github: GitHub,
+    *,
     time: Time,
     repo_root: Path,
     pr_number: int,
