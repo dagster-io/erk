@@ -15,6 +15,7 @@ Add `--no-restack` flag to all `gt repo sync` commands in audit-branches.md.
 ### File: `.claude/commands/local/audit-branches.md`
 
 **Change 1: Line 334 (Phase 6.0.3)**
+
 ```bash
 # Before:
 gt repo sync --no-interactive --force
@@ -24,6 +25,7 @@ gt repo sync --no-interactive --force --no-restack
 ```
 
 **Change 2: Line 356 (Phase 6.3)**
+
 ```bash
 # Before:
 gt repo sync --no-interactive --force
@@ -35,6 +37,7 @@ gt repo sync --no-interactive --force --no-restack
 **Change 3: Update Phase 6.3 description (lines 359-363)**
 
 Update the "This automatically:" section to remove the restacking bullet since we're disabling it:
+
 - Remove: "Restacks remaining branches on master"
 
 ## Verification
