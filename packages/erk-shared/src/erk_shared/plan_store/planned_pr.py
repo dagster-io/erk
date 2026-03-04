@@ -5,6 +5,8 @@ PR body contains the plan-header metadata block followed by plan content.
 The "erk-plan" label identifies plan PRs vs regular draft PRs.
 """
 
+import json
+import logging
 from collections.abc import Mapping
 from datetime import UTC
 from pathlib import Path
@@ -47,6 +49,7 @@ from erk_shared.plan_store.types import (
     PlanQuery,
     PlanState,
 )
+from erk_shared.subprocess_utils import run_subprocess_with_context
 
 _PLAN_LABEL = "erk-plan"
 
@@ -70,6 +73,54 @@ def _parse_objective_id(value: object) -> int | None:
     if isinstance(value, str):
         return int(value)
     raise ValueError(f"objective_issue must be str or int, got {type(value).__name__}")
+
+
+def _add_pr_labels_with_cli(repo_root: Path, pr_number: int, labels: tuple[str, ...]) -> None:
+    """Add labels to a PR using the 'erk exec add-pr-labels' command.
+
+    This CLI command provides built-in retry logic for transient GitHub API errors.
+    If label addition fails, the error is logged but does not prevent plan creation,
+    allowing the plan to be marked as saved (via markers) even if labeling failed.
+
+    Args:
+        repo_root: Repository root directory
+        pr_number: PR number to add labels to
+        labels: Tuple of label names
+
+    Logs:
+        WARNING: If label addition fails (but does not raise)
+    """
+    logger = logging.getLogger(__name__)
+
+    label_args = [f"--labels={label}" for label in labels]
+    cmd = ["erk", "exec", "add-pr-labels", str(pr_number)] + label_args
+
+    try:
+        result = run_subprocess_with_context(
+            cmd=cmd,
+            operation_context=f"add labels to PR #{pr_number}",
+            cwd=repo_root,
+        )
+
+        # Parse JSON output
+        try:
+            output = json.loads(result.stdout)
+            if isinstance(output, dict) and output.get("success"):
+                logger.debug(f"Successfully added labels to PR #{pr_number}")
+            else:
+                # Partial or complete failure
+                failed_labels = output.get("failed_labels", [])
+                errors = output.get("errors", {})
+                logger.warning(
+                    f"Failed to add some labels to PR #{pr_number}: "
+                    f"{failed_labels} - {errors}"
+                )
+        except json.JSONDecodeError:
+            logger.warning(f"Could not parse add-pr-labels output: {result.stdout}")
+    except RuntimeError as e:
+        # If the command itself fails, log a warning but continue
+        # The PR exists on GitHub even if labeling fails
+        logger.warning(f"Error adding labels to PR #{pr_number}: {e}")
 
 
 class PlannedPRBackend(PlanBackend):
@@ -363,9 +414,10 @@ class PlannedPRBackend(PlanBackend):
         footer = build_pr_body_footer(pr_number)
         self._github.update_pr_body(repo_root, pr_number, pr_body + footer)
 
-        # Add all labels provided by caller
-        for label in labels:
-            self._github.add_label_to_pr(repo_root, pr_number, label)
+        # Add all labels provided by caller using the add-pr-labels CLI command
+        # This command has built-in retry logic and returns structured JSON output
+        if labels:
+            _add_pr_labels_with_cli(repo_root, pr_number, labels)
 
         # Get the PR URL from the created PR
         pr_result = self._github.get_pr(repo_root, pr_number)
