@@ -1,0 +1,706 @@
+<session>
+  <meta branch="plnd/pr-address-plan-mode-03-04-0653" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="926d0c08-5015-48de-bc7a-2ea9e39f0c06" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="926d0c08-5015-48de-bc7a-2ea9e39f0c06" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="926d0c08-5015-48de-bc7a-2ea9e39f0c06" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="926d0c08-5015-48de-bc7a-2ea9e39f0c06" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <thinking>Let me start by running the setup command to detect the plan from the current branch.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="13230" cache_read_input_tokens="19284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13230}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation from the current branch.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="13230" cache_read_input_tokens="19284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13230}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AvpXFREnLrk2P2ubPMBsaR">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Auto-detect and set up impl context from current branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="13230" cache_read_input_tokens="19284" output_tokens="177" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13230, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AvpXFREnLrk2P2ubPMBsaR">
+Found existing impl dir for plan #8714, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.erk/impl-context/plnd--pr-address-plan-mode-03-04-0653", "plan_number": 8714, "plan_url": "https://github.com/dagster-io/erk/pull/8714", "branch": "plnd/pr-address-plan-mode-03-04-0653", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8714, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YR3L9LehjkSXyTH9aMRthq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.erk/impl-context/plnd--pr-address-plan-mode-03-04-0653/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="355" cache_read_input_tokens="32514" output_tokens="107" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 355, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YR3L9LehjkSXyTH9aMRthq">
+     1→# Plan: Make pr-address plan-mode aware
+     2→
+     3→## Context
+     4→
+     5→When `/erk:pr-address` is invoked in plan mode, it currently tells the user to exit plan mode first. Instead, it should work *within* plan mode — classifying feedback, planning the changes, and presenting that plan for approval before any edits are made.
+     6→
+     7→## Change
+     8→
+     9→**File**: `.claude/commands/erk/pr-address.md` (line 26)
+    10→
+    11→Replace the current plan mode instruction:
+    12→
+    13→```markdown
+    14→&gt; **Plan mode**: If plan mode is active, exit it first (press `Escape`). This command manages its own execution flow and needs to make edits directly.
+    15→```
+    16→
+    17→With a plan-mode-aware instruction:
+    18→
+    19→```markdown
+    20→&gt; **Plan mode**: If plan mode is active, run Phases 0-2 (mode detection, classify feedback, display batched plan) as normal — these are read-only. Then write the execution plan to the plan file and call ExitPlanMode. Do NOT execute Phases 3-6 (edits, commits, resolution) until plan mode is exited and the user approves. In Plan File Mode, the same applies: run PF-1 and PF-2, then write the plan and call ExitPlanMode before executing PF-3 through PF-6.
+    21→```
+    22→
+    23→This is a single-line edit in one file. No other files need changes.
+    24→
+    25→**Note**: The replacement text explicitly covers both Code Review Mode (Phases 3-6) and Plan File Mode (PF-3 through PF-6), since Phase 0 can route to either flow.
+    26→
+    27→## Verification
+    28→
+    29→1. Invoke `/erk:pr-address` while in plan mode on a branch with PR comments
+    30→2. Confirm it classifies feedback and writes a plan instead of refusing to run
+
+... [3 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_013bTgfx9xoguSLqSpnPzZgd">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.claude/commands/erk/pr-address.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="670" cache_read_input_tokens="32869" output_tokens="91" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 670, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013bTgfx9xoguSLqSpnPzZgd">
+     1→---
+     2→description: Address PR review comments on current branch
+     3→---
+     4→
+     5→# /erk:pr-address
+     6→
+     7→## Description
+     8→
+     9→Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+    10→
+    11→## Usage
+    12→
+    13→```bash
+    14→/erk:pr-address
+    15→/erk:pr-address --all               # Include resolved threads (for reference)
+    16→/erk:pr-address --pr 6631           # Target specific PR
+    17→/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+    18→```
+    19→
+    20→## Prerequisite
+    21→
+    22→**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+    23→
+    24→## Agent Instructions
+    25→
+    26→&gt; **Plan mode**: If plan mode is active, exit it first (press `Escape`). This command manages its own execution flow and needs to make edits directly.
+    27→
+    28→&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+    29→
+    30→&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+
+... [391 lines omitted] ...
+
+    49→   git ls-files --error-unmatch .erk/impl-context/plan.md &gt;/dev/null 2&gt;&amp;1
+    79→Handle errors and empty comments the same way as Phase 1.
+   148→- `error`: Error message if `success` is false
+   150→**Handle errors**: If `success` is false, display the error and exit.
+   414→### Error Handling
+   416→**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+   418→**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+   420→**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+  </tool_result>
+  <thinking>The plan is simple: replace a single line in `.claude/commands/erk/pr-address.md` at line 26.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5623" cache_read_input_tokens="33539" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5623}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Plan is straightforward — single edit to `.claude/commands/erk/pr-address.md` line 26. Let me implement it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5623" cache_read_input_tokens="33539" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5623}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_013pDEWWurn5bmLoZA1dPdy2">
+    <param name="subject">Replace plan mode instruction in pr-address.md</param>
+    <param name="description">Replace the plan mode escape instruction with a plan-mode-aware instruction that allows Phases 0-2 to run in plan mode, then exits plan mode before executing Phases 3-6.</param>
+    <param name="activeForm">Replacing plan mode instruction</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5623" cache_read_input_tokens="33539" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5623}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013pDEWWurn5bmLoZA1dPdy2">
+Task #1 created successfully: Replace plan mode instruction in pr-address.md
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01L8zza7fcYGuk69b5Lzj7Nm">
+    <param name="command">erk exec impl-signal started --session-id="926d0c08-5015-48de-bc7a-2ea9e39f0c06" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5623" cache_read_input_tokens="33539" output_tokens="315" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5623, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01L8zza7fcYGuk69b5Lzj7Nm">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8714
+}
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01EyYmnAPvQzUukvcL8dmekg">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="419" cache_read_input_tokens="39162" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 419}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EyYmnAPvQzUukvcL8dmekg">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01DhPLyjeyzH9KYg4zJepk3k">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.claude/commands/erk/pr-address.md</param>
+    <param name="old_string">&gt; **Plan mode**: If plan mode is active, exit it first (press `Escape`). This command manages its own execution flow and needs to make edits directly.</param>
+    <param name="new_string">&gt; **Plan mode**: If plan mode is active, run Phases 0-2 (mode detection, classify feedback...[truncated 254 chars]...-1 and PF-2, then write the plan and call ExitPlanMode before executing PF-3 through PF-6.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="419" cache_read_input_tokens="39162" output_tokens="348" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 419, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DhPLyjeyzH9KYg4zJepk3k">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.claude/commands/erk/pr-address.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01RowiWeQnRcvaLHYRrJtYiV">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="478" cache_read_input_tokens="39581" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 478, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RowiWeQnRcvaLHYRrJtYiV">
+Updated task #1 status
+  </tool_result>
+  <assistant>Edit complete. Now let me signal completion, clean up, and run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3774" cache_read_input_tokens="40059" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3774}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019VmfNmbHxQxxNMDQ5mnvjK">
+    <param name="command">erk exec impl-signal ended --session-id="926d0c08-5015-48de-bc7a-2ea9e39f0c06" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3774" cache_read_input_tokens="40059" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3774}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PuqLcbqMcfw23DqfMD8mh9">
+    <param name="command">erk exec upload-impl-session --session-id="926d0c08-5015-48de-bc7a-2ea9e39f0c06" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3774" cache_read_input_tokens="40059" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3774}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BA72gbyFkaXzVp6S384VwL">
+    <param name="command">erk exec cleanup-impl-context 2&gt;&amp;1</param>
+    <param name="description">Clean up impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3774" cache_read_input_tokens="40059" output_tokens="303" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3774, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019VmfNmbHxQxxNMDQ5mnvjK">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8714
+}
+  </tool_result>
+  <tool_result tool="toolu_01PuqLcbqMcfw23DqfMD8mh9">
+{"uploaded": true, "plan_id": 8714}
+  </tool_result>
+  <tool_result tool="toolu_01BA72gbyFkaXzVp6S384VwL">
+{"cleaned": true}
+  </tool_result>
+  <assistant>Now running CI checks.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="431" cache_read_input_tokens="43833" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 431}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012VYJkcVq3XEpEGXmRSmJeH">
+    <param name="command">ls /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.erk/prompt-hooks/post-plan-implement-ci.md 2&gt;/dev/null &amp;&amp; echo "EXISTS" || echo "NOT_FOUND"</param>
+    <param name="description">Check for post-implement CI hook</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="431" cache_read_input_tokens="43833" output_tokens="143" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 431, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012VYJkcVq3XEpEGXmRSmJeH">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.erk/prompt-hooks/post-plan-implement-ci.md
+EXISTS
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KvcGpsQGgG3XSMQqHtySVJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="199" cache_read_input_tokens="44264" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 199, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KvcGpsQGgG3XSMQqHtySVJ">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+  </tool_result>
+  <assistant>This is a markdown-only change so `make fast-ci` would just validate formatting. Let me run it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="44463" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 163}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01UYiynXSFjtiP23RfvntCeM">
+    <param name="subagent_type">devrun</param>
+    <param name="description">Run fast-ci checks</param>
+    <param name="prompt">Run `make fast-ci` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03 and report results. Do not fix anything.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="44463" output_tokens="161" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 163, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UYiynXSFjtiP23RfvntCeM">
+**make fast-ci passed**: All CI checks completed successfully.
+
+Summary:
+- **Lint**: All checks passed
+- **Format Check**: 1598 files already formatted
+- **Prettier Check**: All files use correct code style
+- **Markdown Check**: CLAUDE.md/AGENTS.md pairing valid (0 violations across 19 files)
+- **Exec Reference Check**: reference.md is up to date
+- **Type Checking (ty)**: All checks passed
+- **Unit Tests (erk)**: 5548 passed in 12.24s
+- **Tests (erk-dev)**: 136 passed in 2.66s
+- **Tests (erk-statusline)**: 115 passed in 0.75s
+- **Tests (erk-mcp)**: 10 passed
+
+Exit code: 0 (success)
+agentId: abc17733f5a8dd430 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14716
+tool_uses: 2
+duration_ms: 31300&lt;/usage&gt;
+  </tool_result>
+  <assistant>All CI checks pass. Now submitting the PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="426" cache_read_input_tokens="44626" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 426}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0138tZPyM3VpFQJvNMkujBCH">
+    <param name="command">erk pr submit 2&gt;&amp;1</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="426" cache_read_input_tokens="44626" output_tokens="139" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 426, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0138tZPyM3VpFQJvNMkujBCH">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01MfQUxTpnUQos1pYvmffdZu">
+    <param name="command">erk pr submit 2&gt;&amp;1</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="28684" cache_read_input_tokens="16613" output_tokens="127" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 28684, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MfQUxTpnUQos1pYvmffdZu">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Hbpx3MtPVoREQ8UfhvmrAP">
+    <param name="command">gh pr view --json url -q .url 2&gt;&amp;1</param>
+    <param name="description">Get PR URL</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="124" cache_read_input_tokens="45297" output_tokens="84" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 124, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Hbpx3MtPVoREQ8UfhvmrAP">
+https://github.com/dagster-io/erk/pull/8714
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Spr9BqDthJSjscgrwFS6uj">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="114" cache_read_input_tokens="45421" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 114}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0126ooxskLQCFJzenAeSKH4J">
+    <param name="command">erk pr check --stage=impl 2&gt;&amp;1</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="114" cache_read_input_tokens="45421" output_tokens="153" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 114, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Spr9BqDthJSjscgrwFS6uj">
+{
+  "success": false,
+  "event": "submitted",
+  "error_type": "no-plan-reference",
+  "message": "No plan reference found"
+}
+  </tool_result>
+  <tool_result tool="toolu_0126ooxskLQCFJzenAeSKH4J">
+Checking PR #8714 for branch plnd/pr-address-plan-mode-03-04-0653...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>Plan execution complete.
+
+**Summary**: Replaced the plan mode instruction in `.claude/commands/erk/pr-address.md` (line 26) so that `/erk:pr-address` now works within plan mode — running read-only phases (0-2) normally, writing the execution plan, and calling ExitPlanMode before proceeding with edits.
+
+**PR**: https://github.com/dagster-io/erk/pull/8714</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="45535" output_tokens="106" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 315, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>Unknown skill: prrbiq</user>
+  <user>&lt;command-message&gt;erk:pr-preview-address&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-preview-address&lt;/command-name&gt;</user>
+  <user># /erk:pr-preview-address
+
+## Description
+
+Fetches unresolved PR review comments and discussion comments, displays a summary of what `/erk:pr-address` would do. This is a read-only preview command that makes no changes.
+
+## Usage
+
+```bash
+/erk:pr-preview-address
+/erk:pr-preview-address --all               # Include resolved threads
+/erk:pr-preview-address --pr 6631           # Target specific PR
+/erk:pr-preview-address --pr 6631 --all     # Target specific PR with resolved threads
+```
+
+## Agent Instructions
+
+&gt; **IMPORTANT: This is a READ-ONLY preview command.**
+&gt;
+&gt; Do NOT make any code changes, resolve any threads, reply to any comments, or create any commits.
+
+### Phase 1: Classify Feedback
+
+Invoke the pr-feedback-classifier skill to fetch and classify all PR feedback:
+
+```
+/pr-feedback-classifier [--pr &lt;number&gt; if specified] [--include-resolved if --all was specified]
+```
+
+Parse the JSON response.
+
+### Phase 2: Display Results
+
+**Handle errors**: If `success` is false, display the error and exit.
+
+**Handle no comments**: If `actionable_threads` is empty and `discussion_actions` is empty, display: "No unresolved review comments or discussion comments on PR #NNN." and exit.
+
+**Format the results** as a human-readable summary:
+
+```
+## PR #5944: "Feature: Add new API endpoint"
+
+### Pre-Existing Items (Auto-Resolve) (N total)
+
+| # | Type | Location | Summary |
+|---|------|----------|---------|
+| 1 | review | old_module.py:30 | Bot: use LBYL pattern (pre-existing in moved code) |
+| 2 | review | old_module.py:55 | Bot: add type annotation (pre-existing in moved code) |
+
+### Actionable Items (N total)
+
+| # | Type | Location | Classification | Summary | Complexity |
+|---|------|----------|----------------|---------|------------|
+| 1 | review | foo.py:42 | actionable | Use LBYL pattern | local |
+| 2 | review | bar.py:15 | actionable | Add type annotation | local |
+| 3 | discussion | - | actionable | Update documentation | cross_cutting |
+
+### Informational Items (N total)
+
+| # | Type | Location | Summary | Complexity |
+|---|------|----------|---------|------------|
+| 4 | review | utils.py:10 | Bot suggestion: extract helper (optional) | local |
+
+### Execution Plan Preview
+
+**Batch 0: Pre-Existing (Auto-Resolve)** (auto-proceed, no code changes)
+- Item #1: old_module.py:30 - Bot: use LBYL pattern (pre-existing)
+- Item #2: old_module.py:55 - Bot: add type annotation (pre-existing)
+
+**Batch 1: Local Fixes** (auto-proceed)
+- Item #3: foo.py:42 - Use LBYL pattern
+- Item #4: bar.py:15 - Add type annotation
+
+**Batch 2: Cross-Cutting** (user confirmation)
+- Item #5: Update documentation
+
+**Batch 3: Informational** (user decides: act or dismiss)
+- Item #6: utils.py:10 - Bot suggestion: extract helper (optional)
+
+### Statistics
+- Pre-existing items (auto-resolve): 2
+- Actionable items: 3
+- Informational items: 1
+- Informational discussion comments: 12
+- Estimated batches: 4
+- Auto-proceed batches: 2
+- User confirmation batches: 2
+```
+
+**Note:** Items in `actionable_threads` are split into three sections based on their `pre_existing` and `classification` fields: `pre_existing: true` items appear under "Pre-Existing Items (Auto-Resolve)", `"actionable"` items appear under "Actionable Items", `"informational"` items appear under "Informational Items". All sections use continuous item numbering.
+
+Add footer:
+
+```
+To address these comments, run: /erk:pr-address
+```
+
+### Phase 3: Exit (NO ACTIONS)
+
+**CRITICAL**: This is a preview-only command. Do NOT:
+
+- Make any code changes
+- Resolve any threads
+- Reply to any comments
+- Create any commits
+- Push anything to remote
+- Run any CI commands
+
+Simply display the summary and exit.
+
+## Error Handling
+
+**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+
+**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+</user>
+  <tool_use name="Agent" id="toolu_01KJLwHRw9CoHzgEsY7ptcYe">
+    <param name="subagent_type">general-purpose</param>
+    <param name="model">haiku</param>
+    <param name="description">Classify PR feedback</param>
+    <param name="prompt">Load and follow the skill instructions in .claude/skills/pr-feedback-classifier/SKILL.md
+Arguments: (no extra arguments - use current branch PR)
+Return the complete JSON output as your final message.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="30708" cache_read_input_tokens="16542" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 30708}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KJLwHRw9CoHzgEsY7ptcYe">
+Perfect. Now I'll classify the PR feedback according to the skill instructions.
+
+## Analysis
+
+Based on the PR feedback data:
+
+**PR Details:**
+- PR #8714: "Make pr-address command plan-mode aware"
+- URL: https://github.com/dagster-io/erk/pull/8714
+
+**File-level Context:**
+- Single file change: `.claude/commands/erk/pr-address.md` (1 insertion, 1 deletion)
+- No restructuring, renames, or splits
+
+**Comments Classification:**
+1. **schrockn** (implementation start marker) - Informational (operational status update)
+2. **Graphite stack comment** - Informational (stack management, PR reference)
+3. **github-actions[bot] tripwires-review** - Informational (CI status: passed, 0 violations)
+
+**Result:**
+- **0 review threads** (no actionable code review feedback)
+- **3 discussion comments**, all informational (operational/CI status)
+- No actionable feedback to address
+
+Here is the complete JSON output:
+
+```json
+{
+  "success": true,
+  "pr_number": 8714,
+
+... [50 lines omitted] ...
+
+  "error": null
+  </tool_result>
+  <assistant>## PR #8714: "Make pr-address command plan-mode aware"
+
+No unresolved review comments or discussion comments on PR #8714.
+
+(3 informational discussion comments exist — operational/CI status updates, no action needed.)
+
+To address comments if they appear later, run: `/erk:pr-address`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="855" cache_read_input_tokens="47250" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 855, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+</session>

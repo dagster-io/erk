@@ -1,0 +1,598 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>⏺ Updated plan
+  ⎿  Added 29 lines, removed 2 lines
+       1 -# Plan: Address PR Review Comments on better-labels branch
+       1 +# Plan: Make pr-address plan-mode aware
+       2
+       3 -(Plan mode used temporarily — exiting to execute /erk:pr-address)
+       3 +## Context
+       4 +
+       5 +When `/erk:pr-address` is invoked in plan mode, it currently tells the user to exit plan mode first. Instead, it should work *within* plan mode — classi
+         +fying feedback, planning the changes, and presenting that plan for approval before any edits are made.
+       6 +
+       7 +## Change
+       8 +
+       9 +**File**: `.claude/commands/erk/pr-address.md` (line 26)
+      10 +
+      11 +Replace the current plan mode instruction:
+      12 +
+      13 +```markdown
+      14 +&gt; **Plan mode**: If plan mode is active, exit it first (press `Escape`). This command manages its own execution flow and needs to make edits directly.
+      15 +```
+      16 +
+      17 +With a plan-mode-aware instruction:
+      18 +
+      19 +```markdown
+      20 +&gt; **Plan mode**: If plan mode is active, run Phases 0-2 (mode detection, classify feedback, display batched plan) as normal — these are read-only. Then
+         +write the execution plan to the plan file and call ExitPlanMode. Do NOT execute Phases 3-6 (edits, commits, resolution) until plan mode is exited and th
+         +e user approves.
+      21 +```
+      22 +
+      23 +This is a single-line edit in one file. No other files need changes.
+      24 +
+      25 +## Verification
+      26 +
+      27 +1. Invoke `/erk:pr-address` while in plan mode
+      28 +2. Confirm it classifies feedback and writes a plan instead of refusing to run
+      29 +3. Confirm it calls ExitPlanMode after presenting the plan
+      30 +4. After approval, confirm it proceeds with Phases 3-6 normally</user>
+  <assistant>
+
+Looking at this plan, I need to understand the current state of the pr-address command to make sure the proposed edit is correct.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="11489" cache_read_input_tokens="19284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11489}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Jk158Dmtf69Wy58rgq5ezk">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/pr-address.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11489" cache_read_input_tokens="19284" output_tokens="106" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11489, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Jk158Dmtf69Wy58rgq5ezk">
+     1→---
+     2→description: Address PR review comments on current branch
+     3→---
+     4→
+     5→# /erk:pr-address
+     6→
+     7→## Description
+     8→
+     9→Fetches unresolved PR review comments AND PR discussion comments from the current branch's PR and addresses them using holistic analysis with smart batching. Comments are grouped by complexity and relationship, then processed batch-by-batch with incremental commits and resolution.
+    10→
+    11→## Usage
+    12→
+    13→```bash
+    14→/erk:pr-address
+    15→/erk:pr-address --all               # Include resolved threads (for reference)
+    16→/erk:pr-address --pr 6631           # Target specific PR
+    17→/erk:pr-address --pr 6631 --all     # Target specific PR with resolved threads
+    18→```
+    19→
+    20→## Prerequisite
+    21→
+    22→**Load the `pr-operations` skill first** for complete command reference and common mistake patterns.
+    23→
+    24→## Agent Instructions
+    25→
+    26→&gt; **Plan mode**: If plan mode is active, exit it first (press `Escape`). This command manages its own execution flow and needs to make edits directly.
+    27→
+    28→&gt; **Prerequisite**: Load `pr-operations` skill first for command reference.
+    29→
+    30→&gt; **CRITICAL: Use ONLY `erk exec` Commands**
+
+... [391 lines omitted] ...
+
+    49→   git ls-files --error-unmatch .erk/impl-context/plan.md &gt;/dev/null 2&gt;&amp;1
+    79→Handle errors and empty comments the same way as Phase 1.
+   148→- `error`: Error message if `success` is false
+   150→**Handle errors**: If `success` is false, display the error and exit.
+   414→### Error Handling
+   416→**No PR for branch:** Display error and suggest creating a PR with `gt create` or `gh pr create`
+   418→**GitHub API error:** Display error and suggest checking `gh auth status` and repository access
+   420→**CI failure during batch:** Stop, display the failure, and let the user decide whether to fix and continue or abort
+  </tool_result>
+  <thinking>Now I understand the current file. The plan proposes replacing line 26's plan mode instruction. Let me read the plan file to understand what's been written so far.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5641" cache_read_input_tokens="30773" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5641}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the current plan file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5641" cache_read_input_tokens="30773" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5641}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PxWjKjdn9NVyzCjmM6kF43">
+    <param name="file_path">/Users/schrockn/.claude/plans/delegated-juggling-crown.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5641" cache_read_input_tokens="30773" output_tokens="133" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5641, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PxWjKjdn9NVyzCjmM6kF43">
+File does not exist. Note: your current working directory is /Users/schrockn/code/erk.
+  </tool_result>
+  <thinking>The plan file doesn't exist yet but the user's message shows it was "Updated plan" with content. Let me re-read - actually the user's message shows the plan content that was supposedly written. Let me look more carefully at the proposed change.
+
+The current line 26 says:
+```
+&gt; **Plan mode**: If plan mode is active, exit it first (press `Escape`). This command manages its own execution flow and needs to make edits directly.
+```
+
+The proposed replacement is:
+```
+&gt; **Plan mode**: If plan mode is active, run Phases 0-2 (mode detection, classify feedback, display batched plan) as normal — these are read-only. Then write the execution plan to the plan file and call ExitPlanMode. Do NOT execute Phases 3-6 (edits, commits, resolution) until plan mode is exited and the user approves.
+
+
+```
+
+I'm realizing the proposed change makes sense for normal mode since Phases 0-2 are read-only operations, but I need to account for Plan File Mode where phases 1-6 get replaced entirely with PF-1 through PF-6, and those PF phases involve edits to the plan file itself.
+
+```
+for Plan File Mode, only PF-1 and PF-2 are read-only.
+
+Let me think about whether this is something I should flag. The proposed change says "Phases 0-2" which applies to Code Review Mode. For Plan File Mode, the equivalent read-only phases would be PF-1 and PF-2. PF-3 involves edits.
+
+Actually, let me re-think. The instruction says "run Phases 0-2 as normal — these are read-only. Then write the execution plan to the plan file and call ExitPlanMode." This implicitly handles Plan File Mode too because Phase 0 determines the mode, and then Phase 1/2 (or PF-1/PF-2) classify and display. The instruction then says to write the plan and call ExitPlanMode.
+
+But wait - in Plan File Mode, the phases are named PF-1 through PF-6, not Phase 1-6. So "Phases 0-2" doesn't directly reference the Plan File Mode phases. However, the instruction says "Do NOT execute Phases 3-6" which wouldn't apply in Plan File Mode (which uses PF-3 through PF-6).
+
+This is a potential gap. Let me write the plan and flag this.
+
+Actually, let me think more carefully. The proposed instruction is:
+"run Phases 0-2 (mode detection, classify feedback, display batched plan) as normal"
+
+Phase 0 = Mode Detection (applies to all modes)
+Phase 1 = Classify Feedback (Code Review Mode) / PF-1 = Classify Feedback (Plan File Mode)  
+Phase 2 = Display Batched Plan (Code Review Mode) / PF-2 = Display
+
+So the instruction actually maps correctly across both modes — Phase 0 is universal, and Phases 1-2 correspond to PF-1 and PF-2. The naming difference doesn't create a gap because the instruction's intent is clear: run the read-only phases, then exit. I don't think I need to flag this.
+```</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="177" cache_read_input_tokens="36414" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 177}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have full context. The proposed plan is a simple single-line edit, but I want to verify it handles all three modes from Phase 0 (Plan Review Mode, Plan File Mode, Code Review Mode). Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="177" cache_read_input_tokens="36414" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 177}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01BfqPoSLEd2gs47HR8m72qD">
+    <param name="file_path">/Users/schrockn/.claude/plans/delegated-juggling-crown.md</param>
+    <param name="content"># Plan: Make pr-address plan-mode aware
+
+## Context
+
+When `/erk:pr-address` is invoked in ...[truncated 1439 chars]...enting the plan
+4. After approval, confirm it proceeds with the execution phases normally
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="177" cache_read_input_tokens="36414" output_tokens="1491" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 177, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BfqPoSLEd2gs47HR8m72qD">
+File created successfully at: /Users/schrockn/.claude/plans/delegated-juggling-crown.md
+  </tool_result>
+  <assistant>One thing I refined from the original: the replacement text now explicitly mentions Plan File Mode (PF-3 through PF-6) in addition to Code Review Mode (Phases 3-6), since Phase 0 can route to either flow and both have write phases that should be deferred.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1614" cache_read_input_tokens="36591" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1614}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01Pp5rzD9h9KpUDpXgoTJMsn">
+    <param name="plan"># Plan: Make pr-address plan-mode aware
+
+## Context
+
+When `/erk:pr-address` is invoked in ...[truncated 1439 chars]...enting the plan
+4. After approval, confirm it proceeds with the execution phases normally
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1614" cache_read_input_tokens="36591" output_tokens="103" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1614, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Pp5rzD9h9KpUDpXgoTJMsn">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/delegated-juggling-crown.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Make pr-address plan-mode aware
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR on new branch" - Create a new branch, save plan as draft PR, and stop. Does NOT proceed to implementation.
+  2. "Just implement on the current branch without creating a PR." - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR on new branch':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Just implement on the current branch without creating a PR.':
+  1. Create implement-now marker:
+     erk exec marker create --session-id cd4a21fa-b3b3-47bb-9d6b-cbc5ad90ab33 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+
+... [9 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Make pr-address plan-mode aware
+
+## Context
+
+When `/erk:pr-address` is invoked in plan mode, it currently tells the user to exit plan mode first. Instead, it should work *within* plan mode — classifying feedback, planning the changes, and presenting that plan for approval before any edits are made.
+
+## Change
+
+**File**: `.claude/commands/erk/pr-address.md` (line 26)
+
+Replace the current plan mode instruction:
+
+```markdown
+&gt; **Plan mode**: If plan mode is active, exit it first (press `Escape`). This command manages its own execution flow and needs to make edits directly.
+```
+
+With a plan-mode-aware instruction:
+
+```markdown
+&gt; **Plan mode**: If plan mode is active, run Phases 0-2 (mode detection, classify feedback, display batched plan) as normal — these are read-only. Then write the execution plan to the plan file and call ExitPlanMode. Do NOT execute Phases 3-6 (edits, commits, resolution) until plan mode is exited and the user approves. In Plan File Mode, the same applies: run PF-1 and PF-2, then write the plan and call ExitPlanMode before executing PF-3 through PF-6.
+```
+
+This is a single-line edit in one file. No other files need changes.
+
+**Note**: The replacement text explicitly covers both Code Review Mode (Phases 3-6) and Plan File Mode (PF-3 through PF-6), since Phase 0 can route to either flow.
+
+## Verification
+
+1. Invoke `/erk:pr-address` while in plan mode on a branch with PR comments
+2. Confirm it classifies feedback and writes a plan instead of refusing to run
+3. Confirm it calls ExitPlanMode after presenting the plan
+4. After approval, confirm it proceeds with the execution phases normally
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="784" cache_read_input_tokens="38205" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 784}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_014TB5DVNnbrmqjJwXp2do7M">
+    <param name="questions">[{'question': '📋 Plan: Make pr-address plan-mode aware\nCurrent context: (wt:erk) (br:mast...[truncated 419 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="784" cache_read_input_tokens="38205" output_tokens="673" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 784, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014TB5DVNnbrmqjJwXp2do7M">
+User has answered your questions: "📋 Plan: Make pr-address plan-mode aware
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR on new branch". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01C2FkEvkCHHBUZ7BgiuBLtz">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="863" cache_read_input_tokens="38989" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 863, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C2FkEvkCHHBUZ7BgiuBLtz">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="cd4a21fa-b3b3-47bb-9d6b-cbc5ad90ab33" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "cd4a21fa-b3b3-47bb-9d6b-cbc5ad90ab33" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true** (new-wt recommended → "In new wt" listed first):
+
+```
+OR exit Claude Code first, then run one of:
+
+Implement plan #&lt;plan_number&gt;:
+  In new wt:        source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+  In current wt:       source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+
+Checkout plan #&lt;plan_number&gt;:
+  In new wt:  erk br co --new-slot --for-plan &lt;plan_number&gt;
+  In current wt: erk br co --for-plan &lt;plan_number&gt;
+
+Dispatch to queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false** (same slot recommended → "Here" listed first):
+
+```
+OR exit Claude Code first, then run one of:
+
+Implement plan #&lt;plan_number&gt;:
+  In current wt:       source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+
+Checkout plan #&lt;plan_number&gt;:
+  In current wt: erk br co --for-plan &lt;plan_number&gt;
+  In new wt:  erk br co --new-slot --for-plan &lt;plan_number&gt;
+
+Dispatch to queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout plan #&lt;plan_number&gt;:  erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to queue:             erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "cd4a21fa-b3b3-47bb-9d6b-cbc5ad90ab33" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "cd4a21fa-b3b3-47bb-9d6b-cbc5ad90ab33" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "cd4a21fa-b3b3-47bb-9d6b-cbc5ad90ab33" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <thinking>Let me follow the plan-save instructions. I need to:
+
+1. Parse arguments - no flags passed
+2. Generate branch slug from plan title
+3. Generate plan summary
+4. Run the save command
+
+The plan title is "Make pr-address plan-mode aware". Let me generate a slug.
+
+Branch slug: "pr-address-plan-mode"
+
+Plan summary: "Replaces the plan-mode instruction in pr-address.md so the command works within plan mode instead of requiring the user to exit first. Read-only phases (classification and display) run normally, then the execution plan is written to the plan file for approval before any edits begin."
+
+
+Now I'm executing the save command with these parameters.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="2963" cache_read_input_tokens="39852" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2963}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015MWtT3Vh5Xkra1kY7oMZkM">
+    <param name="command">erk exec plan-save --format json --session-id="cd4a21fa-b3b3-47bb-9d6b-cbc5ad90ab33" --bra...[truncated 218 chars]...then the execution plan is written to the plan file for approval before any edits begin." </param>
+    <param name="description">Save plan as draft PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2963" cache_read_input_tokens="39852" output_tokens="376" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2963, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015MWtT3Vh5Xkra1kY7oMZkM">
+{"success": true, "plan_number": 8714, "plan_url": "https://github.com/dagster-io/erk/pull/8714", "title": "[erk-plan] Plan: Make pr-address plan-mode aware", "branch_name": "plnd/pr-address-plan-mode-03-04-0653", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/cd4a21fa-b3b3-47bb-9d6b-cbc5ad90ab33/plan_snapshots/000001-34de327e"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Hkx7B7mwEAJ2aPAn6iScsq">
+    <param name="command">erk exec upload-impl-session --session-id "cd4a21fa-b3b3-47bb-9d6b-cbc5ad90ab33" 2&gt;/dev/null || true</param>
+    <param name="description">Upload planning session</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="548" cache_read_input_tokens="42815" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 548, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Hkx7B7mwEAJ2aPAn6iScsq">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan "Make pr-address plan-mode aware" saved as draft PR #8714
+URL: https://github.com/dagster-io/erk/pull/8714
+
+Next steps:
+
+View PR: https://github.com/dagster-io/erk/pull/8714
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+Implement plan #8714:
+  In new wt:        `source "$(erk br co --new-slot --for-plan 8714 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --new-slot --for-plan 8714 --script)" &amp;&amp; erk implement -d`
+  In current wt:       `source "$(erk br co --for-plan 8714 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --for-plan 8714 --script)" &amp;&amp; erk implement -d`
+
+Checkout plan #8714:
+  In new wt:  `erk br co --new-slot --for-plan 8714`
+  In current wt: `erk br co --for-plan 8714`
+
+Dispatch to queue: `erk pr dispatch 8714`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="43363" output_tokens="324" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 163, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
