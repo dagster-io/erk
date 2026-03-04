@@ -1,0 +1,1581 @@
+<session>
+  <meta branch="plnd/fix-br-co-slot-allocation-03-04-0651" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="974b73ba-e37f-476a-b409-3763868926b6" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="974b73ba-e37f-476a-b409-3763868926b6" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="974b73ba-e37f-476a-b409-3763868926b6" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="974b73ba-e37f-476a-b409-3763868926b6" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <thinking>Let me start by running the setup command to detect the plan from the current branch.</thinking>
+  <usage input_tokens="2" cache_creation_input_tokens="13227" cache_read_input_tokens="19284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13227}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation from the current branch...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="13227" cache_read_input_tokens="19284" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13227}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HtYVPYFXhzWXWJLdfmywiF">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Auto-detect and set up impl context from current branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="13227" cache_read_input_tokens="19284" output_tokens="177" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13227, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HtYVPYFXhzWXWJLdfmywiF">
+Found existing impl dir for plan #8713, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/.erk/impl-context/plnd--fix-br-co-slot-allocation-03-04-0651", "plan_number": 8713, "plan_url": "https://github.com/dagster-io/erk/pull/8713", "branch": "plnd/fix-br-co-slot-allocation-03-04-0651", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8713, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VnTSRSsr7jJLHYH8NmK8hR">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/.erk/impl-context/plnd--fix-br-co-slot-allocation-03-04-0651/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="359" cache_read_input_tokens="32511" output_tokens="109" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 359, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VnTSRSsr7jJLHYH8NmK8hR">
+     1→# Fix: `erk br co --for-plan` allocates a new slot instead of staying in current worktree
+     2→
+     3→## Context
+     4→
+     5→When running `erk br co --for-plan 8712` from a named worktree (e.g., `restructure-exit-plan-menu-03-03-0531`), the command allocates a new pool slot (`erk-slot-01`) instead of checking out the branch in the current worktree. Only `--new-slot` should trigger slot allocation.
+     6→
+     7→The bug is in `src/erk/cli/commands/branch/checkout_cmd.py` lines 660-673. When `current_assignment is None` (user is not in a slot worktree) and the branch doesn't exist anywhere yet, the `else` branch at line 660 unconditionally calls `allocate_slot_for_branch`. It should only do this when `new_slot` is True.
+     8→
+     9→## Changes
+    10→
+    11→**File**: `src/erk/cli/commands/branch/checkout_cmd.py`
+    12→
+    13→Replace the `else` block at line 660 with a two-way branch:
+    14→
+    15→```python
+    16→elif new_slot:
+    17→    # Allocate slot for the branch (only when --new-slot explicitly requested)
+    18→    slot_result = allocate_slot_for_branch(...)
+    19→    ...
+    20→else:
+    21→    # No slot assignment, not --new-slot: checkout in current worktree
+    22→    ctx.branch_manager.checkout_branch(repo.root, branch)
+    23→    target_wt = WorktreeInfo(path=repo.root, branch=branch)
+    24→
+    25→    if setup is not None:
+    26→        _rebase_and_track_for_plan(
+    27→            ctx, repo_root=repo.root, worktree_path=target_wt.path,
+    28→            branch=branch, parent_branch=parent_branch, trunk=trunk,
+    29→        )
+    30→        _setup_impl_for_plan(
+
+... [24 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LUpRnSGL3kBoEFD2G6jBbv">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">640</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1054" cache_read_input_tokens="32870" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1054, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LUpRnSGL3kBoEFD2G6jBbv">
+   640→                        _setup_impl_for_plan(
+   641→                            ctx,
+   642→                            setup=setup,
+   643→                            worktree_path=target_wt.path,
+   644→                            branch_name=branch,
+   645→                            script=script,
+   646→                        )
+   647→
+   648→                    worktrees = ctx.git.worktree.list_worktrees(repo.root)
+   649→                    _perform_checkout(
+   650→                        ctx,
+   651→                        repo_root=repo.root,
+   652→                        target_worktree=target_wt,
+   653→                        branch=branch,
+   654→                        script=script,
+   655→                        is_newly_created=False,
+   656→                        worktrees=worktrees,
+   657→                        force_script_activation=True,
+   658→                    )
+   659→                    return
+   660→                else:
+   661→                    # Allocate slot for the branch
+   662→                    slot_result = allocate_slot_for_branch(
+   663→                        ctx,
+   664→                        repo,
+   665→                        branch,
+   666→                        force=force,
+   667→                        reuse_inactive_slots=True,
+   668→                        cleanup_artifacts=True,
+   669→                    )
+
+... [30 lines omitted] ...
+
+   685→            raise click.ClickException(
+  </tool_result>
+  <assistant>Now let me see the broader context around line 600 to understand the full branching structure.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="955" cache_read_input_tokens="33924" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 955}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017mGdntQeRMKMJvf5CNxrJ7">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">590</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="955" cache_read_input_tokens="33924" output_tokens="150" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 955, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017mGdntQeRMKMJvf5CNxrJ7">
+   590→                            user_output(
+   591→                                f"Error: Branch '{branch}' does not exist.\n"
+   592→                                f"To create a new branch and worktree, run:\n"
+   593→                                f"  erk wt create --branch {branch}"
+   594→                            )
+   595→                            raise SystemExit(1) from None
+   596→
+   597→                # Detect if running in an assigned slot (for stack-in-place)
+   598→                # Unless --new-slot forces a new allocation
+   599→                state = load_pool_state(repo.pool_json_path)
+   600→                current_assignment = None
+   601→                if state is not None and not new_slot:
+   602→                    current_assignment = _find_current_slot_assignment(state, repo.root)
+   603→
+   604→                if current_assignment is not None:
+   605→                    # Stack in place — update assignment to new tip, no new slot
+   606→                    assert state is not None
+   607→                    slot_result = update_slot_assignment_tip(
+   608→                        repo.pool_json_path,
+   609→                        state,
+   610→                        current_assignment,
+   611→                        branch_name=branch,
+   612→                        now=ctx.time.now().isoformat(),
+   613→                    )
+   614→                    user_output(
+   615→                        click.style(
+   616→                            f"✓ Stacked {branch} in {slot_result.slot_name} (in place)", fg="green"
+   617→                        )
+   618→                    )
+   619→
+  </tool_result>
+  <assistant>Now I have the full picture. Let me create tasks and implement.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="576" cache_read_input_tokens="34879" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 576}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01MjeQQk6wsbi55Mm2K5WGZt">
+    <param name="subject">Fix the else branch to only allocate slot when --new-slot is set</param>
+    <param name="description">Replace the unconditional `else` at line 660 with `elif new_slot` + `else` for checkout-in-current-worktree</param>
+    <param name="activeForm">Fixing slot allocation logic</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="576" cache_read_input_tokens="34879" output_tokens="154" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 576, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MjeQQk6wsbi55Mm2K5WGZt">
+Task #1 created successfully: Fix the else branch to only allocate slot when --new-slot is set
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01XjAifkK2Kk23PvEdYJeiP7">
+    <param name="subject">Add test for --for-plan from non-slot worktree</param>
+    <param name="description">Add a test confirming `erk br co --for-plan` from a non-slot worktree checks out in the current worktree without allocating a slot</param>
+    <param name="activeForm">Adding test for non-slot worktree checkout</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="189" cache_read_input_tokens="35455" output_tokens="144" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 189, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XjAifkK2Kk23PvEdYJeiP7">
+Task #2 created successfully: Add test for --for-plan from non-slot worktree
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_013WX4rm2EZ1detYMdwYgz1E">
+    <param name="subject">Run CI checks</param>
+    <param name="description">Run fast-ci to confirm all tests pass</param>
+    <param name="activeForm">Running CI checks</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="177" cache_read_input_tokens="35644" output_tokens="99" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 177, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013WX4rm2EZ1detYMdwYgz1E">
+Task #3 created successfully: Run CI checks
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01Rf4efYFPQRHC41Nj2nzNZX">
+    <param name="subject">Submit PR</param>
+    <param name="description">Submit the PR via erk pr submit</param>
+    <param name="activeForm">Submitting PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="121" cache_read_input_tokens="35821" output_tokens="98" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 121, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Rf4efYFPQRHC41Nj2nzNZX">
+Task #4 created successfully: Submit PR
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013Tin8K3D1hVmzK7E9fK7dn">
+    <param name="command">erk exec impl-signal started --session-id="974b73ba-e37f-476a-b409-3763868926b6" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="119" cache_read_input_tokens="35942" output_tokens="112" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 119, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013Tin8K3D1hVmzK7E9fK7dn">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8713
+}
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01U94QPe4jhuetAJyAeU7zXt">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="150" cache_read_input_tokens="36061" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 150, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01U94QPe4jhuetAJyAeU7zXt">
+Updated task #1 status
+  </tool_result>
+  <assistant>Now let me read more context to understand what functions are used in the stack-in-place path that I need to replicate in the new else branch.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="36211" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018YgYGc3GPGECw3D3fM9bom">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">619</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="36211" output_tokens="162" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 90, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018YgYGc3GPGECw3D3fM9bom">
+   619→
+   620→                    # Checkout the branch before _setup_impl_for_plan, which may
+   621→                    # sys.exit(0) in script mode and skip _perform_checkout.
+   622→                    ctx.branch_manager.checkout_branch(slot_result.worktree_path, branch)
+   623→
+   624→                    # Build a synthetic WorktreeInfo for the existing worktree.
+   625→                    # Branch is already checked out above.
+   626→                    target_wt = WorktreeInfo(
+   627→                        path=slot_result.worktree_path,
+   628→                        branch=branch,
+   629→                    )
+   630→
+   631→                    if setup is not None:
+   632→                        _rebase_and_track_for_plan(
+   633→                            ctx,
+   634→                            repo_root=repo.root,
+   635→                            worktree_path=target_wt.path,
+   636→                            branch=branch,
+   637→                            parent_branch=parent_branch,
+   638→                            trunk=trunk,
+   639→                        )
+   640→                        _setup_impl_for_plan(
+   641→                            ctx,
+   642→                            setup=setup,
+   643→                            worktree_path=target_wt.path,
+  </tool_result>
+  <assistant>Good, I can see the stack-in-place pattern. Now let me implement the fix. The change is at line 660: replace `else:` with `elif new_slot:` and add a new `else:` block for checkout-in-current-worktree.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="509" cache_read_input_tokens="36301" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 509}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01N9cSSV42QRKY438N9mmrhk">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">                else:
+                    # Allocate slot for the branch
+                 ...[truncated 440 chars]...{slot_result.slot_name}"
+                        user_output(click.style(msg, fg="green"))</param>
+    <param name="new_string">                elif new_slot:
+                    # Allocate slot for the branch (only wh...[truncated 1963 chars]...            force_script_activation=True,
+                    )
+                    return</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="509" cache_read_input_tokens="36301" output_tokens="827" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 509, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N9cSSV42QRKY438N9mmrhk">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_017Ei4PL3z5b7a6a2jYJUErd">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="907" cache_read_input_tokens="36810" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 907, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017Ei4PL3z5b7a6a2jYJUErd">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01UomJAt7ikQ9sm8s3Wn2fJt">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="37717" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 88, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UomJAt7ikQ9sm8s3Wn2fJt">
+Updated task #2 status
+  </tool_result>
+  <assistant>Now let me find the existing tests for checkout to understand the test patterns.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="37805" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_0195vkDjf5qgNHjizwbx53Nj">
+    <param name="description">Find checkout test files</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 401 chars].... Be thorough - check for test_checkout, test_branch, test_co patterns. Quick exploration.</param>
+    <param name="model">haiku</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="37805" output_tokens="273" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 90, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0195vkDjf5qgNHjizwbx53Nj">
+Perfect! Now I have a comprehensive understanding. Let me create a final summary document:
+
+## Summary: Checkout Test Files and Patterns
+
+Based on my thorough exploration, here's what I found about the `erk br co` / `--for-plan` test structure:
+
+### Main Test Files
+
+**1. `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/tests/commands/branch/test_checkout_cmd.py`**
+- **Primary location** for all `erk br co` branch checkout tests
+- 1400+ lines covering comprehensive scenarios
+- Contains both basic checkout and advanced `--for-plan` tests
+
+**2. `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/tests/commands/navigation/test_checkout.py`**
+- Tests for `erk wt co` (worktree navigation, not branch checkout)
+- 292 lines of tests for worktree switching
+
+**3. `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/tests/commands/test_wt_checkout.py`**
+- Additional worktree checkout tests (CliRunner-based)
+
+### Key `--for-plan` Tests (in test_checkout_cmd.py)
+
+These are the core tests for the slot allocation behavior you're interested in:
+
+**Line 685-740: `test_checkout_for_plan_creates_impl_folder()`**
+- Tests basic `--for-plan` resolving a plan and creating `.impl/` folder
+- Uses `erk_isolated_fs_env` (filesystem-based)
+- Creates a Plan object and plan store with `create_plan_store_with_plans()`
+- Verifies implementation folder structure created
+
+
+... [121 lines omitted] ...
+
+- Tests error resilience
+**Line 958-991: `test_checkout_new_slot_errors_when_branch_exists_in_worktree()`**
+  </tool_result>
+  <thinking>Now I have a great understanding of the test patterns. Let me read one of the existing stack-in-place tests closely to model my new test after it.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2272" cache_read_input_tokens="37895" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2272}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the stack-in-place test to model my new test after it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2272" cache_read_input_tokens="37895" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2272}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HRRch58hrY4tZeDoMD5f1g">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="offset">791</param>
+    <param name="limit">65</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2272" cache_read_input_tokens="37895" output_tokens="193" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2272, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HRRch58hrY4tZeDoMD5f1g">
+   791→def test_checkout_stacks_in_place_for_plan_outputs_activation_script() -&gt; None:
+   792→    """Test that --for-plan in stack-in-place path outputs activation script for shell integration.
+   793→
+   794→    When --for-plan is used and the current worktree is a pool slot (stack-in-place
+   795→    path), the activation script path is emitted to stdout so that shell integration
+   796→    can automatically execute it — no manual copy-paste step required.
+   797→    """
+   798→    runner = CliRunner()
+   799→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+   800→        env.setup_repo_structure()
+   801→
+   802→        plan = Plan(
+   803→            plan_identifier="700",
+   804→            title="Stack in place activation",
+   805→            body="# Plan\nStack-in-place plan",
+   806→            state=PlanState.OPEN,
+   807→            url="https://github.com/owner/repo/issues/700",
+   808→            labels=["erk-pr", "erk-plan"],
+   809→            assignees=[],
+   810→            created_at=TEST_PLAN_TIMESTAMP,
+   811→            updated_at=TEST_PLAN_TIMESTAMP,
+   812→            metadata={},
+   813→            objective_id=None,
+   814→        )
+   815→        plan_store, _ = create_plan_store_with_plans({"700": plan})
+   816→
+   817→        git = FakeGit(
+   818→            git_common_dirs={env.cwd: env.git_dir},
+   819→            default_branches={env.cwd: "main"},
+   820→            local_branches={env.cwd: ["main", "plan-700"]},
+
+... [35 lines omitted] ...
+
+   843→        assert result.exit_code == 0, f"Failed: {result.output}"
+   852→def test_checkout_for_plan_error_both_branch_and_for_plan() -&gt; None:
+  </tool_result>
+  <assistant>Now let me look at how to write a test for the new "no slot assignment, no --new-slot" path. I need to verify that from a non-slot worktree, `--for-plan` checks out in the current worktree without allocating a slot.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6123" cache_read_input_tokens="40167" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6123}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QUm81eSxFyz3916ScaKiSL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="offset">685</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6123" cache_read_input_tokens="40167" output_tokens="187" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6123, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QUm81eSxFyz3916ScaKiSL">
+   685→def test_checkout_for_plan_creates_impl_folder() -&gt; None:
+   686→    """Test that --for-plan resolves plan, creates branch, and sets up .impl/."""
+   687→    runner = CliRunner()
+   688→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+   689→        env.setup_repo_structure()
+   690→
+   691→        git = FakeGit(
+   692→            git_common_dirs={env.cwd: env.git_dir},
+   693→            default_branches={env.cwd: "main"},
+   694→            local_branches={env.cwd: ["main"]},
+   695→            existing_paths={env.cwd, env.repo.worktrees_dir},
+   696→        )
+   697→
+   698→        plan = Plan(
+   699→            plan_identifier="500",
+   700→            title="Add feature",
+   701→            body="# Plan\nImplementation details",
+   702→            state=PlanState.OPEN,
+   703→            url="https://github.com/owner/repo/issues/500",
+   704→            labels=["erk-pr", "erk-plan"],
+   705→            assignees=[],
+   706→            created_at=TEST_PLAN_TIMESTAMP,
+   707→            updated_at=TEST_PLAN_TIMESTAMP,
+   708→            metadata={},
+   709→            objective_id=None,
+   710→        )
+   711→        plan_store, _ = create_plan_store_with_plans({"500": plan})
+   712→
+   713→        # Draft-PR backend needs the branch to exist already
+   714→        git = FakeGit(
+
+... [30 lines omitted] ...
+
+   726→        assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <assistant>I see — the basic `test_checkout_for_plan_creates_impl_folder` test does NOT pre-create pool state, so it follows the path I'm fixing. But it still goes through `allocate_slot_for_branch` because the old code had an unconditional `else`. Let me check if that test allocates a slot.
+
+Looking at line 735, it checks `env.repo.worktrees_dir / "erk-slot-01"` — confirming the old behavior allocated a slot. My fix changes this: without pool state and without `--new-slot`, it should checkout in the current worktree instead.
+
+Wait — I need to think carefully here. The existing `test_checkout_for_plan_creates_impl_folder` test will break with my change because it no longer allocates a slot. Let me re-read the original code flow more carefully.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1132" cache_read_input_tokens="46290" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1132}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013xc2ECSkiXMv8jtY2dSzWS">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">555</param>
+    <param name="limit">45</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1132" cache_read_input_tokens="46290" output_tokens="326" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1132, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013xc2ECSkiXMv8jtY2dSzWS">
+   555→        else:
+   556→            # Root not available or not trunk - auto-create worktree
+   557→            if no_slot:
+   558→                # Legacy behavior: branch-name-based paths
+   559→                _worktree_path, is_newly_created = ensure_worktree_for_branch(
+   560→                    ctx, repo, branch, is_plan_derived=False
+   561→                )
+   562→            else:
+   563→                # New behavior: slot allocation
+   564→                # First check if this is the trunk branch - trunk cannot have a slot
+   565→                trunk_branch = ctx.git.branch.detect_trunk_branch(repo.root)
+   566→                if branch == trunk_branch:
+   567→                    user_output(
+   568→                        f'Error: Cannot create worktree for trunk branch "{trunk_branch}".\n'
+   569→                        f"The trunk branch should be checked out in the root worktree.\n"
+   570→                        f"To switch to {trunk_branch}, use:\n"
+   571→                        f"  erk br co root"
+   572→                    )
+   573→                    raise SystemExit(1) from None
+   574→
+   575→                # Ensure branch exists (may need to create tracking branch)
+   576→                # Skip if --for-plan already handled branch creation
+   577→                if setup is None:
+   578→                    local_branches = ctx.git.branch.list_local_branches(repo.root)
+   579→                    if branch not in local_branches:
+   580→                        remote_branches = ctx.git.branch.list_remote_branches(repo.root)
+   581→                        remote_ref = f"origin/{branch}"
+   582→                        if remote_ref in remote_branches:
+   583→                            user_output(
+   584→                                f"Branch '{branch}' exists on origin,"
+
+... [15 lines omitted] ...
+
+   591→                                f"Error: Branch '{branch}' does not exist.\n"
+  </tool_result>
+  <tool_use name="Read" id="toolu_0129P2RockCFTLgwiztjryiQ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">530</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1040" cache_read_input_tokens="47422" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1040, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0129P2RockCFTLgwiztjryiQ">
+   530→        # Use base_ref_name from plan metadata (set by plan-save via the draft PR)
+   531→        # to determine the correct Graphite parent, instead of guessing from current branch
+   532→        base_ref = plan.metadata.get("base_ref_name") if plan is not None else None
+   533→        parent_branch = base_ref if isinstance(base_ref, str) else trunk
+   534→        # Defer track_branch until after worktree is created — for stacked plans
+   535→        # (parent != trunk), we need to rebase first so gt track succeeds
+   536→
+   537→    # Get all worktrees
+   538→    worktrees = ctx.git.worktree.list_worktrees(repo.root)
+   539→
+   540→    # Find worktrees containing the target branch
+   541→    matching_worktrees = find_worktrees_containing_branch(ctx, repo.root, worktrees, branch)
+   542→
+   543→    # Track whether we're creating a new worktree
+   544→    is_newly_created = False
+   545→
+   546→    # Handle three cases: no match, one match, multiple matches
+   547→    if len(matching_worktrees) == 0:
+   548→        # No worktrees have this branch checked out
+   549→        # First, try switching clean root worktree if checking out trunk
+   550→        root_path = try_switch_root_worktree(ctx, repo, branch)
+   551→        if root_path is not None:
+   552→            # Successfully switched root to trunk - refresh and jump to it
+   553→            worktrees = ctx.git.worktree.list_worktrees(repo.root)
+   554→            matching_worktrees = find_worktrees_containing_branch(ctx, repo.root, worktrees, branch)
+   555→        else:
+   556→            # Root not available or not trunk - auto-create worktree
+   557→            if no_slot:
+   558→                # Legacy behavior: branch-name-based paths
+   559→                _worktree_path, is_newly_created = ensure_worktree_for_branch(
+  </tool_result>
+  <thinking>Now I see the flow. When `matching_worktrees == 0` and it's not a `no_slot` case, it enters the slot allocation logic. The three-way branch is:
+
+1. `current_assignment is not None` → stack in place
+2. `else` (was unconditional, now should be `elif new_slot`) → allocate slot
+3. New `else` → checkout in current worktree
+
+The existing test `test_checkout_for_plan_creates_impl_folder` doesn't set up pool state, so `current_assignment` is None, and it falls through to the `else` which allocates a slot. 
+
+With my fix, it'll fall through to the new `else` instead, which checks out in the current worktree. So the test will break and I need to update it. Looking back at the plan, the intent is clear: when running `erk br co --for-plan` from a named worktree, it should check out in that worktree unless `--new-slot` is explicitly passed. Slot allocation should only happen with that flag.
+
+But I'm realizing this change affects more than just `--for-plan` — it changes behavior for any checkout when there's no current assignment and `--new-slot` isn't set. The plan actually seems to want this broader behavior change, where slot allocation only triggers with `--new-slot`, not just for the `--for-plan` case. Let me verify what the existing test expects. The test `test_checkout_for_plan_creates_impl_folder` doesn't set up pool state, so with my fix it'll now checkout in the current worktree instead of allocating a slot, which will break it. I need to update that test, but I'm also wondering if there's a deeper issue here — if we're not allocating a slot, the user just stays in their current worktree, which might not be the intended behavior for the general case.
+
+Looking back at the plan, the intent is clear: only `--new-slot` should trigger slot allocation. So the fix is right, but it means any existing tests that rely on auto-slot-allocation without passing `--new-slot` will need updating. Let me identify which tests are affected.
+
+I'm checking the tests that don't set up pool state and don't pass `--new-slot` — `test_checkout_for_plan_creates_impl_folder` is definitely one, and I need to verify if `test_checkout_for_plan_prints_activation_when_sync_status_fails` is another.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="677" cache_read_input_tokens="48462" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 677}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016guqACjL4i8eSRDannbM8a">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="offset">742</param>
+    <param name="limit">55</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="677" cache_read_input_tokens="48462" output_tokens="1327" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 677, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016guqACjL4i8eSRDannbM8a">
+   742→def test_checkout_for_plan_prints_activation_when_sync_status_fails() -&gt; None:
+   743→    """Test that --for-plan checkout prints activation instructions even when sync status fails.
+   744→
+   745→    Verifies the fix where display_sync_status errors could prevent activation
+   746→    instructions from being printed after --for-plan checkout. This happens when
+   747→    a newly-created tracking branch doesn't have upstream refs fully set up.
+   748→    """
+   749→    runner = CliRunner()
+   750→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+   751→        env.setup_repo_structure()
+   752→
+   753→        plan = Plan(
+   754→            plan_identifier="600",
+   755→            title="Test activation output",
+   756→            body="# Plan\nTest plan content",
+   757→            state=PlanState.OPEN,
+   758→            url="https://github.com/owner/repo/issues/600",
+   759→            labels=["erk-pr", "erk-plan"],
+   760→            assignees=[],
+   761→            created_at=TEST_PLAN_TIMESTAMP,
+   762→            updated_at=TEST_PLAN_TIMESTAMP,
+   763→            metadata={},
+   764→            objective_id=None,
+   765→        )
+   766→        plan_store, _ = create_plan_store_with_plans({"600": plan})
+   767→
+   768→        git = FakeGit(
+   769→            git_common_dirs={env.cwd: env.git_dir},
+   770→            default_branches={env.cwd: "main"},
+   771→            local_branches={env.cwd: ["main", "plan-600"]},
+
+... [25 lines omitted] ...
+
+   773→            ahead_behind_raises=RuntimeError("upstream tracking ref not set"),
+   778→        # get_ahead_behind raises RuntimeError, simulating upstream tracking ref not set.
+   783→        assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <thinking>Both `test_checkout_for_plan_creates_impl_folder` and `test_checkout_for_plan_prints_activation_when_sync_status_fails` don't set up pool state and don't pass `--new-slot`, so they'll be affected by my change. They previously fell through to `allocate_slot_for_branch`, which created a new worktree in the slots directory. Now they'll fall through to the new `else` path that checks out in the current worktree.
+
+I need to:
+1. Update `test_checkout_for_plan_creates_impl_folder` — it checks for impl folder in `env.repo.worktrees_dir / "erk-slot-01"`. Now the impl folder should be in `env.cwd` (the current worktree).
+
+
+2. Update `test_checkout_for_plan_prints_activation_when_sync_status_fails` similarly.
+
+I'm deciding between two approaches: either update the existing tests to match the new behavior and add a separate test for the `--new-slot` path, or keep the existing tests on the old path by adding pool state and create a new test for the no-slot scenario. The updated tests would naturally cover the new behavior, so I think I should go with the first option and add a test specifically for `--new-slot`.
+
+Looking at the existing tests, I need to update the assertions for `test_checkout_for_plan_creates_impl_folder` — the impl folder should now be created in the current worktree's `.erk` directory rather than in a slot-specific worktree directory.
+
+The output shouldn't mention slot allocation anymore, and the activation flow changes since we're using `_perform_checkout` with `force_script_activation=True` in the current directory. Let me trace through what the new code path actually does: it checks out the branch in the current directory, builds a `WorktreeInfo` for that location, then runs the setup steps if needed before performing the checkout with activation.
+
+Now I need to update the tests to account for where the impl folder ends up — it'll be at `repo.root / ".erk" / "impl-context" / "plan-500"`, and since `repo.root` is the isolated filesystem root in the test, I should adjust my test expectations accordingly.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2392" cache_read_input_tokens="49139" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2392}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I need to update the existing tests that will break with this change. Both `test_checkout_for_plan_creates_impl_folder` and `test_checkout_for_plan_prints_activation_when_sync_status_fails` don't set up pool state, so they'll now take the new "checkout in current worktree" path instead of allocating a slot.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2392" cache_read_input_tokens="49139" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2392}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018kbUhyixVWgKTHMtfWTc1K">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="offset">1</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2392" cache_read_input_tokens="49139" output_tokens="1038" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2392, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018kbUhyixVWgKTHMtfWTc1K">
+     1→"""Tests for erk br co (branch checkout) command."""
+     2→
+     3→import os
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→from unittest.mock import patch
+     7→
+     8→from click.testing import CliRunner
+     9→
+    10→from erk.cli.cli import cli
+    11→from erk.cli.commands.branch import branch_group
+    12→from erk.cli.config import LoadedConfig
+    13→from erk.core.repo_discovery import RepoContext
+    14→from erk.core.worktree_pool import (
+    15→    PoolState,
+    16→    SlotAssignment,
+    17→    SlotInfo,
+    18→    load_pool_state,
+    19→    save_pool_state,
+    20→)
+    21→from erk_shared.gateway.git.abc import WorktreeInfo
+    22→from erk_shared.gateway.git.fake import FakeGit
+    23→from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledReason
+    24→from erk_shared.gateway.graphite.fake import FakeGraphite
+    25→from erk_shared.plan_store.types import Plan, PlanState
+    26→from tests.test_utils.context_builders import build_workspace_test_context
+    27→from tests.test_utils.env_helpers import erk_inmem_env, erk_isolated_fs_env
+    28→from tests.test_utils.plan_helpers import create_plan_store_with_plans
+    29→
+    30→# Fixed timestamp for test Plan objects
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>Now update the first test. The impl folder will now be at `env.cwd` (the current worktree) instead of in a new slot worktree.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1618" cache_read_input_tokens="51531" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1618}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0115RwnkrWP74Mc7DMwpqL1n">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">def test_checkout_for_plan_creates_impl_folder() -&gt; None:
+    """Test that --for-plan reso...[truncated 2120 chars]...sert (impl_folder / "plan.md").exists()
+        assert (impl_folder / "ref.json").exists()</param>
+    <param name="new_string">def test_checkout_for_plan_creates_impl_folder() -&gt; None:
+    """Test that --for-plan reso...[truncated 1949 chars]...sert (impl_folder / "plan.md").exists()
+        assert (impl_folder / "ref.json").exists()</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1618" cache_read_input_tokens="51531" output_tokens="1506" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1618, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0115RwnkrWP74Mc7DMwpqL1n">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/tests/commands/branch/test_checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the second test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="38134" cache_read_input_tokens="16613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 38134}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NguXyeEf36oyHvBzfP3ShY">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="old_string">def test_checkout_for_plan_prints_activation_when_sync_status_fails() -&gt; None:
+    """Test...[truncated 2018 chars]...put
+        assert "source" in result.output
+        assert "activate.sh" in result.output</param>
+    <param name="new_string">def test_checkout_for_plan_prints_activation_when_sync_status_fails() -&gt; None:
+    """Test...[truncated 2378 chars]...utput}"
+        assert "Created .erk/impl-context/ folder from plan #600" in result.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="38134" cache_read_input_tokens="16613" output_tokens="1472" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 38134, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NguXyeEf36oyHvBzfP3ShY">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/tests/commands/branch/test_checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also check if there are other tests that might be affected by this change. Let me look at the test around line 992 that tests `--new-slot` succeeds when branch not in any worktree — that one should still pass because it passes `--new-slot`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1530" cache_read_input_tokens="54747" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1530}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TDHg9wMn6tuJ78EkewHQx4">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="offset">992</param>
+    <param name="limit">75</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1530" cache_read_input_tokens="54747" output_tokens="189" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1530, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TDHg9wMn6tuJ78EkewHQx4">
+   992→        )
+   993→
+   994→        assert result.exit_code == 1
+   995→        assert "already checked out" in result.output
+   996→        assert "erk-slot-01" in result.output
+   997→        assert "Cannot create a new slot" in result.output
+   998→
+   999→
+  1000→def test_checkout_new_slot_succeeds_when_branch_not_in_any_worktree() -&gt; None:
+  1001→    """Test that --new-slot succeeds when the branch is not already in a worktree.
+  1002→
+  1003→    This verifies the normal --new-slot path still works (no regression).
+  1004→    """
+  1005→    runner = CliRunner()
+  1006→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+  1007→        env.setup_repo_structure()
+  1008→
+  1009→        git = FakeGit(
+  1010→            git_common_dirs={env.cwd: env.git_dir},
+  1011→            default_branches={env.cwd: "main"},
+  1012→            local_branches={env.cwd: ["main", "fresh-branch"]},
+  1013→            existing_paths={env.cwd, env.repo.worktrees_dir},
+  1014→        )
+  1015→        ctx = build_workspace_test_context(env, git=git)
+  1016→
+  1017→        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+  1018→            result = runner.invoke(
+  1019→                branch_group, ["checkout", "--new-slot", "fresh-branch"], obj=ctx
+  1020→            )
+  1021→
+
+... [45 lines omitted] ...
+
+  1022→        assert result.exit_code == 0, f"Failed: {result.output}"
+  1054→        assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <assistant>Good — `test_checkout_new_slot_succeeds_when_branch_not_in_any_worktree` passes `--new-slot`, so it'll hit `elif new_slot` and still work. `test_checkout_without_new_slot_still_jumps_to_existing_worktree` has the branch already in a worktree (`matching_worktrees == 1`), so it never enters the `len == 0` block.
+
+Let me also check if there are basic checkout tests that don't use `--new-slot` and don't set up pool state where the branch isn't in any worktree yet.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1437" cache_read_input_tokens="56277" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1437}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FS8vWENsot4QfMTW2eKjEd">
+    <param name="pattern">def test_checkout_</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1437" cache_read_input_tokens="56277" output_tokens="278" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1437, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FS8vWENsot4QfMTW2eKjEd">
+34:def test_checkout_succeeds_when_graphite_not_enabled() -&gt; None:
+79:def test_checkout_succeeds_when_graphite_not_installed() -&gt; None:
+685:def test_checkout_for_plan_creates_impl_folder() -&gt; None:
+738:def test_checkout_for_plan_prints_activation_when_sync_status_fails() -&gt; None:
+799:def test_checkout_stacks_in_place_for_plan_outputs_activation_script() -&gt; None:
+860:def test_checkout_for_plan_error_both_branch_and_for_plan() -&gt; None:
+881:def test_checkout_for_plan_error_neither_branch_nor_for_plan() -&gt; None:
+900:def test_checkout_new_slot_forces_new_allocation() -&gt; None:
+944:def test_checkout_new_slot_and_no_slot_fails() -&gt; None:
+966:def test_checkout_new_slot_errors_when_branch_exists_in_worktree() -&gt; None:
+1000:def test_checkout_new_slot_succeeds_when_branch_not_in_any_worktree() -&gt; None:
+1026:def test_checkout_without_new_slot_still_jumps_to_existing_worktree() -&gt; None:
+1058:def test_checkout_stacks_in_place_from_assigned_slot() -&gt; None:
+1101:def test_checkout_stacks_in_place_for_plan_with_script() -&gt; None:
+1170:def test_checkout_for_plan_planned_pr_stacks_on_base_ref() -&gt; None:
+1221:def test_checkout_script_mode_error_writes_error_script() -&gt; None:
+1278:def test_checkout_script_mode_success_unaffected() -&gt; None:
+1328:def test_checkout_for_plan_planned_pr_falls_back_to_trunk_without_base_ref() -&gt; None:
+1376:def test_checkout_for_plan_rebases_onto_stale_parent() -&gt; None:
+1434:def test_checkout_for_plan_skips_rebase_for_trunk_parent() -&gt; None:
+  </tool_result>
+  <assistant>Let me check a few more tests that might be affected — the ones that use `--for-plan` without pool state:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="999" cache_read_input_tokens="57714" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 999}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017Wpsv6FHYczfseN6nvinvk">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="offset">1170</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="999" cache_read_input_tokens="57714" output_tokens="154" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 999, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017Wpsv6FHYczfseN6nvinvk">
+  1170→def test_checkout_for_plan_planned_pr_stacks_on_base_ref() -&gt; None:
+  1171→    """--for-plan with planned_pr backend tracks with base_ref_name from plan metadata."""
+  1172→    runner = CliRunner()
+  1173→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+  1174→        env.setup_repo_structure()
+  1175→
+  1176→        plan = Plan(
+  1177→            plan_identifier="600",
+  1178→            title="Stack feature",
+  1179→            body="# Plan\nStacking test",
+  1180→            state=PlanState.OPEN,
+  1181→            url="https://github.com/owner/repo/issues/600",
+  1182→            labels=["erk-pr", "erk-plan"],
+  1183→            assignees=[],
+  1184→            created_at=TEST_PLAN_TIMESTAMP,
+  1185→            updated_at=TEST_PLAN_TIMESTAMP,
+  1186→            metadata={"base_ref_name": "feature-parent"},
+  1187→            objective_id=None,
+  1188→        )
+  1189→        plan_store, _ = create_plan_store_with_plans({"600": plan})
+  1190→
+  1191→        git = FakeGit(
+  1192→            git_common_dirs={env.cwd: env.git_dir},
+  1193→            default_branches={env.cwd: "main"},
+  1194→            local_branches={env.cwd: ["main", "feature-parent", "plan-600"]},
+  1195→            current_branches={env.cwd: "feature-parent"},
+  1196→            existing_paths={env.cwd, env.repo.worktrees_dir},
+  1197→        )
+  1198→
+  1199→        graphite = FakeGraphite()
+
+... [50 lines omitted] ...
+
+  1209→        assert result.exit_code == 0, f"Failed: {result.output}"
+  1218→# --- Script mode error resilience tests ---
+  1221→def test_checkout_script_mode_error_writes_error_script() -&gt; None:
+  1222→    """Test that --script mode outputs error script on stdout when command fails.
+  1225→    stdout must contain a path to a valid error script (not be empty).
+  1226→    This prevents ``source ""`` from producing a confusing shell error.
+  </tool_result>
+  <tool_use name="Read" id="toolu_017Gi2ZyTpjmNknmYdNSLgGk">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/tests/commands/branch/test_checkout_cmd.py</param>
+    <param name="offset">1328</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1435" cache_read_input_tokens="58713" output_tokens="127" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1435, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017Gi2ZyTpjmNknmYdNSLgGk">
+  1328→def test_checkout_for_plan_planned_pr_falls_back_to_trunk_without_base_ref() -&gt; None:
+  1329→    """When plan metadata has no base_ref_name, falls back to trunk as parent."""
+  1330→    runner = CliRunner()
+  1331→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+  1332→        env.setup_repo_structure()
+  1333→
+  1334→        plan = Plan(
+  1335→            plan_identifier="601",
+  1336→            title="Trunk feature",
+  1337→            body="# Plan\nTrunk parent test",
+  1338→            state=PlanState.OPEN,
+  1339→            url="https://github.com/owner/repo/issues/601",
+  1340→            labels=["erk-pr", "erk-plan"],
+  1341→            assignees=[],
+  1342→            created_at=TEST_PLAN_TIMESTAMP,
+  1343→            updated_at=TEST_PLAN_TIMESTAMP,
+  1344→            metadata={},
+  1345→            objective_id=None,
+  1346→        )
+  1347→        plan_store, _ = create_plan_store_with_plans({"601": plan})
+  1348→
+  1349→        git = FakeGit(
+  1350→            git_common_dirs={env.cwd: env.git_dir},
+  1351→            default_branches={env.cwd: "main"},
+  1352→            local_branches={env.cwd: ["main", "plan-601"]},
+  1353→            current_branches={env.cwd: "main"},
+  1354→            existing_paths={env.cwd, env.repo.worktrees_dir},
+  1355→        )
+  1356→
+  1357→        graphite = FakeGraphite()
+
+... [90 lines omitted] ...
+
+  1367→        assert result.exit_code == 0, f"Failed: {result.output}"
+  1420→        assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <thinking>Looking at the tests from line 1170 onwards, they all use `--for-plan` without pool state and without `--new-slot`. With my change, these tests will now take the new `else` path (checkout in current worktree) instead of allocating a slot.
+
+But wait - these tests use `--script` mode. The new `else` path calls `_perform_checkout` which should handle script mode. And the tests are checking for graphite track calls and rebase calls, which happen in `_rebase_and_track_for_plan` and `_setup_impl_for_plan`. Since the new code calls both of those functions when `setup is not None`, these should still work.
+
+
+Let me trace through the specific test case more carefully: with no matching worktree for `plan-600`, `try_switch_root_worktree` returns None, so we enter the else block and hit the slot allocation path since `no_slot` is False. The branch isn't trunk, but since `setup is not None`, we skip the branch existence check and continue with the setup logic.
+
+When loading the pool state, there's no pool.json so the state comes back as None, meaning `current_assignment` is None. Since neither the assignment condition nor the `new_slot` condition is true, we fall through to checking out in the current worktree. The branch checkout should succeed, and then because `setup is not None`, we trigger the rebase and track calls along with the setup implementation. This means the assertions on those calls should still pass.
+
+The key difference is that the worktree path is now the repo root instead of a slot worktree, but since the tests only verify branch names and parents rather than paths, they should be unaffected. When `_perform_checkout` tries to jump to the current directory in script mode, it should generate a script that activates the current location without issues. I'm concerned about the `test_checkout_for_plan_planned_pr_stacks_on_base_ref` test though, which also uses script mode.
+
+Looking at the flow, `_setup_impl_for_plan` might call `sys.exit(0)` in script mode before `_perform_checkout` runs, but the comment at line 620-621 confirms the stack-in-place path does checkout first, then setup, which is what my new path does too. Since the test expects `exit_code == 0`, an early exit should be fine. I'm tracing through the control flow to understand when `_perform_checkout` gets skipped. Looking at the stack-in-place path, it runs `_setup_impl_for_plan` before `_perform_checkout`, and my new else path has the same structure. The key insight is that when `_setup_impl_for_plan` calls `sys.exit(0)` in script mode, it bypasses `_perform_checkout` entirely—and CliRunner catches that SystemExit so the test sees the exit code properly.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2043" cache_read_input_tokens="60148" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2043}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me run the checkout tests to see which pass and which need fixing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2043" cache_read_input_tokens="60148" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2043}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_016F7PL74RHtTEzi43pHuwBR">
+    <param name="description">Run checkout command tests</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run pytest on tests/commands/branch/test_checkout_cmd.py and report results. Show any failures in detail.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2043" cache_read_input_tokens="60148" output_tokens="1516" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2043, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016F7PL74RHtTEzi43pHuwBR">
+pytest failed: 9 issues found
+
+## Summary
+
+**9 failed, 23 passed in 0.54s**
+
+## Failures
+
+1. **test_branch_checkout_creates_slot_assignment_by_default** (line 145)
+   - Expected: "Assigned feature-branch to erk-slot-01" in output
+   - Got: Shell script path instead of assignment message
+
+2. **test_branch_checkout_reuses_inactive_slot** (line 228)
+   - Expected: "Assigned reuse-slot-branch to erk-slot-01" in output
+   - Got: Shell script path instead of assignment message
+
+3. **test_branch_checkout_creates_tracking_branch_for_remote** (line 269)
+   - Expected: "Assigned remote-branch to erk-slot-01" in output
+   - Got: Shell script path instead of assignment message
+
+4. **test_branch_checkout_force_unassigns_oldest** (line 506)
+   - Expected: 1 added worktree (len == 1)
+   - Got: 0 added worktrees (len == 0)
+
+5. **test_branch_checkout_pool_full_no_force_fails** (line 549)
+   - Expected: exit_code == 1
+   - Got: exit_code == 0
+
+6. **test_branch_checkout_stale_assignment_worktree_missing** (line 572)
+   - Expected: 1 added worktree
+
+... [23 lines omitted] ...
+
+The failures fall into two categories:
+- **Worktree allocation issues**: Tests expect worktrees to be added or errors to be raised, but the command is returning success (exit_code 0) without allocating worktrees
+  </tool_result>
+  <thinking>My change was too broad. The plan says the bug is specifically about `--for-plan` from a named worktree, but the `else` branch I changed handles ALL cases where `current_assignment is None` and no slot allocated. This affects basic `erk br co some-branch` too.
+
+Looking at the failing tests, they're all basic branch checkout tests (not `--for-plan`), and they expect slot allocation to happen by default. The fix should only apply when the user is NOT in a slot worktree and the checkout is `--for-plan` without `--new-slot`.
+
+Let me re-read the plan more carefully:
+
+
+The issue is specifically about `--for-plan` from a named worktree allocating a new slot when it shouldn't — but the statement "only `--new-slot` should trigger slot allocation" can't be globally true since basic checkout tests show slots get allocated normally. So the real problem must be narrower than I initially thought.
+
+The fix should check whether `--for-plan` is being used without `--new-slot` from a non-slot worktree, and in that case checkout in the current worktree instead of allocating a slot. But I'm getting confused about the exact condition — it seems like basic checkout (no flags) also allocates slots, so the logic needs to distinguish between `--for-plan` behavior and normal checkout behavior more carefully. expects slot allocation. So this statement in the plan is wrong or overly broad.
+
+The real bug is: when `--for-plan` is used from a non-slot worktree, it should checkout in the current worktree, not allocate a slot. Normal checkout (without `--for-plan`) should still allocate slots as before.
+
+The fix needs to check if we're using `--for-plan` without `--new-slot` from a non-slot worktree—in that case, checkout locally instead of allocating a slot. Otherwise, follow the existing behavior of allocating slots for normal checkouts and `--new-slot` requests. This preserves the current behavior while fixing the specific case where `--for-plan` was incorrectly triggering slot allocation.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="2166" cache_read_input_tokens="62191" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2166}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The fix was too broad — it affected ALL checkouts, not just `--for-plan`. The fix should only apply when `--for-plan` is used from a non-slot worktree. Let me refine the logic.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2166" cache_read_input_tokens="62191" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2166}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013vBYffbJDc2ACZdnwQWjxa">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">660</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2166" cache_read_input_tokens="62191" output_tokens="931" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2166, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013vBYffbJDc2ACZdnwQWjxa">
+   660→                elif new_slot:
+   661→                    # Allocate slot for the branch (only when --new-slot explicitly requested)
+   662→                    slot_result = allocate_slot_for_branch(
+   663→                        ctx,
+   664→                        repo,
+   665→                        branch,
+   666→                        force=force,
+   667→                        reuse_inactive_slots=True,
+   668→                        cleanup_artifacts=True,
+   669→                    )
+   670→                    is_newly_created = not slot_result.already_assigned
+   671→                    if is_newly_created:
+   672→                        msg = f"✓ Assigned {branch} to {slot_result.slot_name}"
+   673→                        user_output(click.style(msg, fg="green"))
+   674→                else:
+   675→                    # No slot assignment, not --new-slot: checkout in current worktree
+   676→                    ctx.branch_manager.checkout_branch(repo.root, branch)
+   677→                    target_wt = WorktreeInfo(path=repo.root, branch=branch)
+   678→
+   679→                    if setup is not None:
+   680→                        _rebase_and_track_for_plan(
+   681→                            ctx,
+   682→                            repo_root=repo.root,
+   683→                            worktree_path=target_wt.path,
+   684→                            branch=branch,
+   685→                            parent_branch=parent_branch,
+   686→                            trunk=trunk,
+   687→                        )
+   688→                        _setup_impl_for_plan(
+   689→                            ctx,
+
+... [20 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FdZJhJww2Fx2X2MB9z24Hr">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">                elif new_slot:
+                    # Allocate slot for the branch (only wh...[truncated 1963 chars]...            force_script_activation=True,
+                    )
+                    return</param>
+    <param name="new_string">                elif setup is not None and not new_slot:
+                    # --for-plan ...[truncated 1962 chars]...{slot_result.slot_name}"
+                        user_output(click.style(msg, fg="green"))</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1596" cache_read_input_tokens="64357" output_tokens="1145" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1596, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FdZJhJww2Fx2X2MB9z24Hr">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now run the tests again:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1206" cache_read_input_tokens="65953" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1206}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Dvakjf1gyrGoGheuxKkDP8">
+    <param name="description">Run checkout command tests</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run pytest on tests/commands/branch/test_checkout_cmd.py and report results. Show any failures in detail.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1206" cache_read_input_tokens="65953" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1206, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Dvakjf1gyrGoGheuxKkDP8">
+pytest passed: All 32 tests in tests/commands/branch/test_checkout_cmd.py passed successfully in 0.42s
+agentId: a5603782f55c4145c (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13655
+tool_uses: 1
+duration_ms: 3094&lt;/usage&gt;
+  </tool_result>
+  <assistant>
+
+All 32 tests pass. Now let me verify the test I updated for `test_checkout_for_plan_creates_impl_folder` properly covers the new path (it does — it tests `--for-plan` without pool state and without `--new-slot`, which now takes the new checkout-in-current-worktree path). Let me also revert the unnecessary change to `test_checkout_for_plan_prints_activation_when_sync_status_fails` since it now passes as-is with pool state added — actually it passed, so the change is fine.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="405" cache_read_input_tokens="67159" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 405}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01Sw6VeTB9tSVDoUfcUAA83o">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="405" cache_read_input_tokens="67159" output_tokens="199" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 405, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Sw6VeTB9tSVDoUfcUAA83o">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01AJV8jVJrbUtXEbCEWR3LYE">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="220" cache_read_input_tokens="67564" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 220, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AJV8jVJrbUtXEbCEWR3LYE">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018htR8ZaywmtS5XSVwvnb6B">
+    <param name="command">test -f /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/.erk/prompt-hooks/post-plan-i...[truncated 53 chars]...1/.erk/prompt-hooks/post-plan-implement-ci.md || echo "No post-plan-implement-ci.md found"</param>
+    <param name="description">Check for CI hook instructions</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="67784" output_tokens="178" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 90, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018htR8ZaywmtS5XSVwvnb6B">
+# Post-Implementation CI
+
+Run CI validation after plan implementation using `make fast-ci`.
+
+Load the `ci-iteration` skill for the iterative fix workflow.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_014LHboBrfARigp3EjSST15V">
+    <param name="skill">ci-iteration</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="223" cache_read_input_tokens="67874" output_tokens="54" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 223, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014LHboBrfARigp3EjSST15V">
+Launching skill: ci-iteration
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/.claude/skills/ci-iteration
+
+# CI Iteration
+
+## Overview
+
+Run the specified CI target and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
+
+## Sub-Agent Policy
+
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  &lt;- MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+**FORBIDDEN**:
+
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
+- Giving sub-agents prompts like "fix issues" or "iterate until passing"
+
+**REQUIRED**:
+
+- Sub-agents run ONE command and report results
+- Parent agent decides what to fix based on reports
+
+## Core Workflow
+
+### 1. Initial Run
+
+Use the devrun agent to run the specified make target from the repository root:
+
+```
+Task tool with:
+- subagent_type: devrun
+- description: "Run [make target] from repo root"
+- prompt: "Change to repository root and execute: [make target]"
+```
+
+### 2. Parse Failures
+
+Analyze the output to identify which check(s) failed:
+
+- **Ruff lint failures**: "ruff check" errors
+- **Format failures**: "ruff format --check" or files needing reformatting
+- **Prettier failures**: Markdown files needing formatting
+- **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
+- **ty failures**: Type errors with file paths and line numbers
+- **Test failures**: pytest failures with test names and assertion errors
+
+### 3. Apply Targeted Fixes
+
+Based on failure type, apply appropriate fixes:
+
+| Failure Type | Fix Command                                 |
+| ------------ | ------------------------------------------- |
+| Ruff lint    | `make fix` via devrun                       |
+| Ruff format  | `make format` via devrun                    |
+| Prettier     | `make prettier` via devrun                  |
+| Sync-Kit     | `erk sync` directly                         |
+| MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
+| ty           | Edit files to fix type annotations          |
+| Tests        | Read and edit source/test files             |
+
+### 4. Verify and Repeat
+
+After applying fixes, run the make target again via devrun. Continue the cycle: run -&gt; identify failures -&gt; fix -&gt; verify.
+
+## Iteration Control
+
+**Safety Limits:**
+
+- **Maximum iterations**: 10 attempts
+- **Stuck detection**: If the same error appears 3 times in a row, stop
+- **Progress tracking**: Use TodoWrite to show iteration progress
+
+## Progress Reporting
+
+Use TodoWrite to track progress:
+
+```
+Iteration 1: Fixing lint errors
+Iteration 2: Fixing format errors
+Iteration 3: Fixing type errors in src/erk/cli/commands/switch.py
+Iteration 4: All checks passed
+```
+
+## When to Stop
+
+**SUCCESS**: Stop when the make target exits with code 0 (all checks passed)
+
+**STUCK**: Stop and report to user if:
+
+1. You've completed 10 iterations without success
+2. The same error persists after 3 fix attempts
+3. You encounter an error you cannot automatically fix
+
+## Reporting Formats
+
+### Success Format
+
+```markdown
+## Finalization Status: SUCCESS
+
+All CI checks passed after N iteration(s):
+
+(check) **Lint (ruff check)**: PASSED
+
+(check) **Format (ruff format --check)**: PASSED
+
+(check) **Prettier**: PASSED
+
+(check) **AGENTS.md Standard (md-check)**: PASSED
+
+(check) **ty**: PASSED
+
+(check) **Tests**: PASSED
+
+(check) **Sync-Kit (erk check)**: PASSED
+
+The code is ready for commit/PR.
+```
+
+**IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
+
+### Stuck Format
+
+```markdown
+## Finalization Status: STUCK
+
+I was unable to resolve the following issue after N attempts:
+
+**Check**: [lint/format/prettier/md-check/ty/test]
+
+**Error**:
+[Exact error message]
+
+**File**: [file path if applicable]
+
+**Attempted Fixes**:
+
+1. [What you tried first]
+2. [What you tried second]
+3. [What you tried third]
+
+**Next Steps**:
+[Suggest what needs to be done manually]
+```
+
+## Guidelines
+
+1. **Be systematic**: Fix one type of error at a time
+2. **Run full CI**: Always run the full make target, not individual checks
+3. **Use devrun agent**: Always use the Task tool with devrun agent for ALL make commands
+4. **Run from repo root**: Always ensure make commands execute from repository root
+5. **Track progress**: Use TodoWrite for every iteration
+6. **Don't guess**: Read files before making changes
+7. **Follow standards**: Adhere to AGENTS.md coding standards
+8. **Fail gracefully**: Report clearly when stuck
+9. **Be efficient**: Use targeted fixes (don't reformat everything for one lint error)
+
+## Example Flow
+
+```
+Iteration 1:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 5 lint errors, 2 files need formatting
+- Fix: Use Task tool with devrun agent to run make fix, then make format from repo root
+- Result: 3 lint errors remain
+
+Iteration 2:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 3 lint errors (imports)
+- Fix: Edit files to fix import issues
+- Result: All lint/format pass, 2 type errors
+
+Iteration 3:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 2 ty errors in switch.py:45 and switch.py:67
+- Fix: Add type annotations
+- Result: All checks pass
+
+SUCCESS
+```
+
+## Important Reminders
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <tool_use name="Agent" id="toolu_01YFFkndibqNZqZNPkNomQeD">
+    <param name="description">Run fast-ci from repo root</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Change to repository root /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01 and execute: make fast-ci</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1699" cache_read_input_tokens="68097" output_tokens="134" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1699, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YFFkndibqNZqZNPkNomQeD">
+make: passed: All checks passed across linting, formatting, and tests
+
+**Summary:**
+- Lint: All checks passed
+- Format: 1598 files already formatted
+- Prettier: All matched files use correct style
+- Markdown: AGENTS.md/CLAUDE.md files properly paired (0 violations)
+- Exec Reference: `.claude/skills/erk-exec/reference.md` is up to date
+- Type checking (ty): All checks passed
+- Unit Tests (erk): 5548 passed in 6.44s
+- Tests (erk-dev): 136 passed in 2.52s
+- Tests (erk-statusline): 115 passed in 0.68s
+- Tests (erk-mcp): 10 tests completed
+
+All CI checks are passing successfully.
+agentId: abca28afe4e1e5538 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14598
+tool_uses: 1
+duration_ms: 22113&lt;/usage&gt;
+  </tool_result>
+  <assistant>All CI checks pass.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="390" cache_read_input_tokens="69796" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 390}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01Kr8L8GPuvVkjQAHEBH73tJ">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="390" cache_read_input_tokens="69796" output_tokens="76" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 390, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Kr8L8GPuvVkjQAHEBH73tJ">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01Ht4znX7YHWQErYisdPtDZz">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="94" cache_read_input_tokens="70186" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 94, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ht4znX7YHWQErYisdPtDZz">
+Updated task #4 status
+  </tool_result>
+  <assistant>Now signal completion and clean up:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="70280" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01UdY92DrHV4Pq4ZuvfKT5Zp">
+    <param name="command">erk exec impl-signal ended --session-id="974b73ba-e37f-476a-b409-3763868926b6" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="70280" output_tokens="149" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 90, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UdY92DrHV4Pq4ZuvfKT5Zp">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8713
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01XDQsmQuXNCG8UsZXHoydMk">
+    <param name="command">erk exec upload-impl-session --session-id="974b73ba-e37f-476a-b409-3763868926b6" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="70370" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 158, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XDQsmQuXNCG8UsZXHoydMk">
+{"uploaded": true, "plan_id": 8713}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01GRRQUsT989emuYsadXTvWg">
+    <param name="command">erk exec cleanup-impl-context 2&gt;&amp;1</param>
+    <param name="description">Clean up impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="140" cache_read_input_tokens="70528" output_tokens="85" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 140, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GRRQUsT989emuYsadXTvWg">
+{"cleaned": true}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Y1J78KgWpyKuiMXkeMKtBG">
+    <param name="command">erk pr submit 2&gt;&amp;1</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="101" cache_read_input_tokens="70668" output_tokens="127" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 101, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Y1J78KgWpyKuiMXkeMKtBG">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_018JdqCWkZNsDfys8nxkYD9A">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="124" cache_read_input_tokens="70769" output_tokens="85" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 124, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018JdqCWkZNsDfys8nxkYD9A">
+{
+  "success": false,
+  "event": "submitted",
+  "error_type": "no-plan-reference",
+  "message": "No plan reference found"
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017pN3PHSueRR8AAAgSddu7Z">
+    <param name="command">erk pr check --stage=impl 2&gt;&amp;1</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="138" cache_read_input_tokens="70893" output_tokens="85" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 138, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017pN3PHSueRR8AAAgSddu7Z">
+Checking PR #8713 for branch plnd/fix-br-co-slot-allocation-03-04-0651...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01LgM8hWux4pvwVnUemTLzKz">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="159" cache_read_input_tokens="71031" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 159, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LgM8hWux4pvwVnUemTLzKz">
+Updated task #4 status
+  </tool_result>
+  <assistant>## Plan execution complete
+
+**Summary of changes:**
+
+**`src/erk/cli/commands/branch/checkout_cmd.py`** — Added a new code path in the three-way branch when `matching_worktrees == 0` and `current_assignment is None`:
+
+1. `current_assignment is not None` → stack in place (unchanged)
+2. **NEW**: `setup is not None and not new_slot` → `--for-plan` from a non-slot worktree checks out in the current worktree without allocating a slot
+3. `else` → allocate slot (existing behavior for normal checkout and `--new-slot`)
+
+**`tests/commands/branch/test_checkout_cmd.py`** — Updated two tests:
+- `test_checkout_for_plan_creates_impl_folder` — now verifies no slot allocation occurs and impl folder is created in the current worktree
+- `test_checkout_for_plan_prints_activation_when_sync_status_fails` — added pool state setup so it exercises the stack-in-place path (which is what it was originally testing)
+
+All 32 checkout tests pass, full CI green (5548+ tests).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="71190" output_tokens="275" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 88, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>/local:statusline-refresh</user>
+  <user>&lt;local-command-stdout&gt;
+I notice you've shared the `/statusline-refresh` command documentation. This command triggers an immediate status line refresh in Claude Code by generating conversation activity.
+
+However, I don't see a specific task or request you'd like me to help with. 
+
+Could you clarify what you'd like me to do? For example:
+
+- Are you asking me to trigger a status line refresh?
+- Do you need help with a specific coding task or investigation?
+- Are you looking for information about a particular part of the erk codebase?
+
+Please let me know what you'd like me to work on, and I'll be happy to help!
+&lt;/local-command-stdout&gt;</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>
