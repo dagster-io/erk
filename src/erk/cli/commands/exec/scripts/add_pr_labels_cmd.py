@@ -64,7 +64,7 @@ def add_pr_labels(
         )
         ctx.exit(1)
 
-    result = add_labels_resilient(github, time, repo_root, pr_number, labels_list)
+    result = add_labels_resilient(github, time=time, repo_root=repo_root, pr_number=pr_number, labels=labels_list)
 
     click.echo(json.dumps(asdict(result)))
 

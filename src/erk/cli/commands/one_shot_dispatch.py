@@ -325,7 +325,7 @@ def dispatch_one_shot(
         footer = build_pr_body_footer(pr_number)
         ctx.github.update_pr_body(repo.root, pr_number, pr_body_initial + footer)
         # Add plan labels
-        add_labels_resilient(ctx.github, ctx.time, repo.root, pr_number, ("erk-pr", "erk-plan"))
+        add_labels_resilient(ctx.github, time=ctx.time, repo_root=repo.root, pr_number=pr_number, labels=("erk-pr", "erk-plan"))
 
         # Key: set plan_number = pr_number so downstream code
         # (workflow inputs, metadata writing, comments) targets the PR
