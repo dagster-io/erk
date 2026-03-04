@@ -26,6 +26,7 @@ from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext
 from erk.core.plan_context_provider import PlanContextProvider
 from erk_shared.gateway.branch_manager.types import SubmitBranchError
+from erk_shared.gateway.github.label_ops import add_labels_resilient
 from erk_shared.gateway.github.types import BodyText, PRNotFound
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL, is_learn_plan
@@ -191,7 +192,13 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
     # Add learn skip label if applicable
     is_learn_origin = is_learn_plan(impl_dir) if impl_dir is not None else False
     if is_learn_origin:
-        ctx.github.add_label_to_pr(discovery.repo_root, pr_number, ERK_SKIP_LEARN_LABEL)
+        add_labels_resilient(
+            ctx.github,
+            time=ctx.time,
+            repo_root=discovery.repo_root,
+            pr_number=pr_number,
+            labels=(ERK_SKIP_LEARN_LABEL,),
+        )
 
     # Clean up scratch diff file
     cleanup_diff_file(diff_file)

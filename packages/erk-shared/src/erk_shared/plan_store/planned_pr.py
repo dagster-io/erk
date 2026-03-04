@@ -5,12 +5,14 @@ PR body contains the plan-header metadata block followed by plan content.
 The "erk-plan" label identifies plan PRs vs regular draft PRs.
 """
 
+import logging
 from collections.abc import Mapping
 from datetime import UTC
 from pathlib import Path
 
 from erk_shared.gateway.github.abc import GitHub
 from erk_shared.gateway.github.issues.abc import GitHubIssues
+from erk_shared.gateway.github.label_ops import add_labels_resilient
 from erk_shared.gateway.github.metadata.core import (
     add_metadata_block,
     find_metadata_block,
@@ -49,6 +51,8 @@ from erk_shared.plan_store.types import (
 )
 
 _PLAN_LABEL = "erk-plan"
+
+_logger = logging.getLogger(__name__)
 
 
 def _parse_objective_id(value: object) -> int | None:
@@ -363,9 +367,21 @@ class PlannedPRBackend(PlanBackend):
         footer = build_pr_body_footer(pr_number)
         self._github.update_pr_body(repo_root, pr_number, pr_body + footer)
 
-        # Add all labels provided by caller
-        for label in labels:
-            self._github.add_label_to_pr(repo_root, pr_number, label)
+        # Add labels with retry on transient errors
+        if labels:
+            label_result = add_labels_resilient(
+                self._github,
+                time=self._time,
+                repo_root=repo_root,
+                pr_number=pr_number,
+                labels=labels,
+            )
+            if not label_result.success:
+                _logger.warning(
+                    "Failed to add labels to PR #%d: %s",
+                    pr_number,
+                    label_result.failed_labels,
+                )
 
         # Get the PR URL from the created PR
         pr_result = self._github.get_pr(repo_root, pr_number)

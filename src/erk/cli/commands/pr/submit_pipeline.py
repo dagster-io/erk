@@ -30,6 +30,7 @@ from erk.core.context import ErkContext
 from erk.core.plan_context_provider import PlanContext, PlanContextProvider
 from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
 from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.label_ops import add_labels_resilient
 from erk_shared.gateway.github.metadata.core import (
     extract_metadata_value,
     extract_raw_metadata_blocks,
@@ -773,7 +774,13 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
 
     # Add learn skip label if applicable
     if is_learn_origin:
-        ctx.github.add_label_to_pr(state.repo_root, state.pr_number, ERK_SKIP_LEARN_LABEL)
+        add_labels_resilient(
+            ctx.github,
+            time=ctx.time,
+            repo_root=state.repo_root,
+            pr_number=state.pr_number,
+            labels=(ERK_SKIP_LEARN_LABEL,),
+        )
 
     # Amend local commit with title and body (without metadata footer)
     commit_message = pr_title
