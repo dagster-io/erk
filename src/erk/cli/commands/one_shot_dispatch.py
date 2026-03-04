@@ -24,6 +24,7 @@ from erk_shared.core.llm_caller import LlmCallFailed, NoApiKey
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
 from erk_shared.gateway.git.remote_ops.types import PushError
+from erk_shared.gateway.github.label_ops import add_labels_resilient
 from erk_shared.gateway.github.metadata.core import (
     create_submission_queued_block,
     render_erk_issue_event,
@@ -324,8 +325,7 @@ def dispatch_one_shot(
         footer = build_pr_body_footer(pr_number)
         ctx.github.update_pr_body(repo.root, pr_number, pr_body_initial + footer)
         # Add plan labels
-        ctx.github.add_label_to_pr(repo.root, pr_number, "erk-pr")
-        ctx.github.add_label_to_pr(repo.root, pr_number, "erk-plan")
+        add_labels_resilient(ctx.github, ctx.time, repo.root, pr_number, ("erk-pr", "erk-plan"))
 
         # Key: set plan_number = pr_number so downstream code
         # (workflow inputs, metadata writing, comments) targets the PR
