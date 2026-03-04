@@ -88,22 +88,22 @@ fi
 
 ### Guard Scope
 
+**OUTSIDE guard** (always runs):
+
+- Dependency sync (`uv sync --quiet`) — ensures deps are current after branch switches in reused slots
+- Package refresh (`uv pip install --no-deps --quiet`)
+- Post-activation commands (e.g., `gt submit --no-interactive`)
+- Final status message
+
 **INSIDE guard** (skipped on re-entry):
 
-- venv creation (`uv sync`)
-- Package refresh (`uv pip install --no-deps`)
 - venv activation (`. .venv/bin/activate`)
 - `.env` loading (`set -a`)
 - Shell completion setup (`eval "$(erk completion ...)"`)
 
-**OUTSIDE guard** (always run):
-
-- Post-activation commands (e.g., `gt submit --no-interactive`)
-- Final status message
-
 ### Implementation
 
-`render_activation_script()` at `src/erk/cli/activation.py:198` generates the guard. The guard checks if `$VIRTUAL_ENV` already points to this worktree's `.venv` directory, and if so, skips activation entirely.
+`render_activation_script()` at `src/erk/cli/activation.py` generates the guard at line 202. Lines 196-201 run `uv sync` and `uv pip install` unconditionally (outside the guard), while lines 202-225 wrap venv activation, `.env` loading, and shell completion inside the `VIRTUAL_ENV` guard. The guard checks if `$VIRTUAL_ENV` already points to this worktree's `.venv` directory, and if so, skips activation entirely.
 
 ## Related Topics
 

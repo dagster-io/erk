@@ -19,6 +19,8 @@ tripwires:
   - action: "pushing implementation commits after impl-context cleanup without git pull --rebase"
     warning: "After git rm + commit + push of .erk/impl-context/, the local branch may diverge from remote if other commits were pushed. Run git pull --rebase before pushing further implementation commits to avoid non-fast-forward push failures."
     score: 4
+  - action: "adding plnd/ special-casing to cleanup_impl_for_submit"
+    warning: "plan-save never goes through the submit pipeline — it pushes directly via push_to_remote(). No special casing for plnd/ branches is needed in cleanup_impl_for_submit()."
 ---
 
 # Impl-Context Staging Directory
@@ -74,6 +76,18 @@ See the `impl_context_exists()` / `remove_impl_context()` LBYL guard in `package
 > "Do not delete here — Step 2d in plan-implement.md handles git rm + commit + push"
 
 This deferred pattern exists because filesystem deletion (`shutil.rmtree`) only removes the local copy. The files remain in git tracking and appear in the PR diff. Only `git rm` + commit + push removes them from the branch history.
+
+## Cleanup at End of plan-implement
+
+In addition to the pre-implementation cleanup (Step 2d), the plan-implement workflow also performs end-of-implementation cleanup via **Step 11**, which calls `erk exec cleanup-impl-context`. This exec script (`src/erk/cli/commands/exec/scripts/cleanup_impl_context.py`) removes any `.erk/impl-context/` that may have been recreated during implementation. It is idempotent: if the directory doesn't exist, it reports `not_found` and exits 0.
+
+## The plnd/ Skip Saga
+
+The `cleanup_impl_for_submit()` function in `src/erk/cli/commands/pr/submit_pipeline.py` (lines 194-211) runs for ALL branches including `plnd/*` — there is no special casing.
+
+Historical context: A `plnd/` skip was added (PR #8650) to `cleanup_impl_for_submit()` based on the assumption that plan PRs needed their `.erk/impl-context/` preserved. This was incorrect and was removed (PR #8669) because plan-save uses `push_to_remote()` directly and never goes through the submit pipeline. The skip was never actually triggered in practice.
+
+**Key insight**: `plan-save` never goes through the submit pipeline — it pushes directly via `git.remote.push_to_remote()`.
 
 ## Related Documentation
 
