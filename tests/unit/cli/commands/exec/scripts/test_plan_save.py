@@ -321,6 +321,12 @@ def test_planned_pr_tracks_branch_with_graphite_on_trunk(
     assert tracked_call[1] == branch_name  # branch_name
     assert tracked_call[2] == "master"  # parent_branch (trunk used as base)
 
+    # retrack_branch must be called after plumbing commit to keep Graphite in sync
+    assert len(fake_graphite.retrack_branch_calls) == 1
+    retrack_cwd, retrack_branch = fake_graphite.retrack_branch_calls[0]
+    assert retrack_cwd == tmp_path
+    assert retrack_branch == branch_name
+
 
 def test_planned_pr_branch_stacked_on_current_feature_branch(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
@@ -354,6 +360,13 @@ def test_planned_pr_branch_stacked_on_current_feature_branch(
 
     # Trunk should NOT be fetched (branch is based off local feature branch)
     assert ("origin", "master") not in fake_git.fetched_branches
+
+    # retrack_branch must be called after plumbing commit to keep Graphite in sync
+    output = json.loads(result.output)
+    assert len(fake_graphite.retrack_branch_calls) == 1
+    retrack_cwd, retrack_branch = fake_graphite.retrack_branch_calls[0]
+    assert retrack_cwd == tmp_path
+    assert retrack_branch == output["branch_name"]
 
 
 def test_planned_pr_feature_branch_creates_correct_pr_base(
@@ -766,3 +779,28 @@ def test_current_branch_sets_base_to_trunk(tmp_path: Path, monkeypatch: pytest.M
     # PR base should be trunk
     assert len(fake_github.created_prs) == 1
     assert fake_github.created_prs[0][3] == "master"
+
+
+def test_current_branch_does_not_retrack(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """--current-branch skips retrack_branch since no new branch was created."""
+    fake_git = FakeGit(current_branches={tmp_path: "my-feature-branch"})
+    fake_graphite = FakeGraphite()
+    monkeypatch.setenv("ERK_PLAN_BACKEND", "planned_pr")
+    ctx = context_for_test(
+        git=fake_git,
+        graphite=fake_graphite,
+        claude_installation=FakeClaudeInstallation.for_test(plans={"plan": VALID_PLAN_CONTENT}),
+        cwd=tmp_path,
+        repo_root=tmp_path,
+    )
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save,
+        ["--format", "json", "--current-branch"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    # No retrack_branch should be called when using --current-branch
+    assert len(fake_graphite.retrack_branch_calls) == 0
