@@ -40,4 +40,5 @@
 - **[subprocess-testing.md](subprocess-testing.md)** — testing code that uses subprocess, creating fakes for process execution, avoiding subprocess mocks in tests
 - **[test-file-organization.md](test-file-organization.md)** — splitting a large test file into a test subdirectory, deciding whether a test file is too large, organizing tests for a complex module
 - **[testing.md](testing.md)** — writing tests for erk, using erk fakes, running erk test commands
+- **[time-injection-patterns.md](time-injection-patterns.md)** — writing time-dependent tests, using FakeTime in tests, fixing flaky timestamp tests, calling datetime.now() or time.sleep() in erk code
 - **[tui-subprocess-testing.md](tui-subprocess-testing.md)** — testing TUI features that use subprocess.Popen, writing tests for background worker methods, creating fake subprocess objects for TUI tests

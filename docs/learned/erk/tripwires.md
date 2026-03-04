@@ -38,6 +38,8 @@ Rules triggered by matching actions in code.
 
 **implementing branch deletion during automated cleanup** → Read [Branch Cleanup Guide](branch-cleanup.md) first. Use force=True (git branch -D) for post-merge cleanup. Non-force delete refuses squash-merged branches because the SHA differs.
 
+**passing both --ref and --ref-current to a dispatch command** → Read [dispatch_ref Configuration](dispatch-ref-config.md) first. --ref and --ref-current are mutually exclusive. resolve_dispatch_ref() raises UsageError if both are provided.
+
 **pushing to a branch that may have been updated remotely without checking for divergence** → Read [Graphite Divergence Detection](graphite-divergence-detection.md) first. The Graphite-first flow pre-checks for divergence before gt submit. Check with branch_exists_on_remote -> fetch_branch -> is_branch_diverged_from_remote.
 
 **removing the uv pip install --no-deps line from activation** → Read [Workspace Activation and Package Refresh](workspace-activation.md) first. This line refreshes workspace editable packages on every activation. Without it, worktrees may use stale versions of erk, erk-shared, or erk-statusline after switching branches.

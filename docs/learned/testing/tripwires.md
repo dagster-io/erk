@@ -80,6 +80,8 @@ Rules triggered by matching actions in code.
 
 **importing or monkeypatching a module with 'exec' in its path** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. `exec` is a Python keyword that blocks direct import and string-path monkeypatch. Use `importlib.import_module()` + object-form `setattr` instead.
 
+**importing time or calling datetime.now() directly** → Read [Time Injection Testing Patterns](time-injection-patterns.md) first. Never import time directly or call datetime.now(). Use ctx.time.now() and ctx.time.sleep() for testability. Read this doc.
+
 **modifying business logic in src/ without adding a test** → Read [Erk Test Reference](testing.md) first. Bug fixes require regression tests (fails before, passes after). Features require behavior tests.
 
 **monkeypatching erk.tui.app.subprocess.Popen** → Read [TUI Subprocess Testing Patterns](tui-subprocess-testing.md) first. Monkeypatch subprocess.Popen at module level (subprocess.Popen), not erk.tui.app.subprocess.Popen. The import uses 'import subprocess' not 'from subprocess import Popen'.
@@ -137,5 +139,7 @@ Rules triggered by matching actions in code.
 **using output=, should_fail=, or transient_failures= parameters in FakePromptExecutor** → Read [FakePromptExecutor API Migration - Gateway to Core](fake-api-migration-pattern.md) first. These are the deleted gateway API. Use simulated\_\* parameters (tests/fakes/) or prompt_results/streaming_events (erk_shared/core/fakes.py). See migration table.
 
 **using truthiness checks or .success on discriminated union results in tests** → Read [Gateway Fake Testing Exemplar](gateway-fake-testing-exemplar.md) first. Always use isinstance() for type narrowing. Never check bool(result) or result.success — these bypass the type system.
+
+**writing a test that depends on the current time** → Read [Time Injection Testing Patterns](time-injection-patterns.md) first. Use FakeTime from context_for_test(). The default fake time is datetime(2024, 1, 15, 14, 30, 0).
 
 **writing plan storage tests that parametrize across both backends** → Read [Plan Storage Testing](dual-backend-testing.md) first. After PR #8210, only the PlannedPRBackend exists. The GitHubPlanStore class was deleted. New plan-related tests should use PlannedPRBackend directly.

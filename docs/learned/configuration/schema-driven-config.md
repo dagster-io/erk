@@ -74,6 +74,12 @@ Steps 1-3 are always required. Steps 4-5 are only needed for sectioned or repo-l
 
 **What does NOT auto-update:** `config set` for repo-level keys (these use a `match` statement that must be extended manually), and `config list` for repo-level keys (displayed with hand-written logic).
 
+## Pydantic Version Constraint
+
+<!-- Source: pyproject.toml:27, packages/erkbot/pyproject.toml:15-16 -->
+
+Erk requires `pydantic>=2.0` (loosened from the previous `>=2.10` requirement). The erkbot package also requires `pydantic-settings>=2.0`. These relaxed constraints allow broader compatibility with other packages in the dependency tree while still requiring the Pydantic v2 API.
+
 ## Anti-Patterns
 
 **Adding a config key to config.py without a schema field** — The config commands will work initially but the key won't appear in `erk config keys`, won't be validated, and won't have a description. Always start from the schema.

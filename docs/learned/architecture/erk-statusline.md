@@ -112,6 +112,16 @@ Add the new display output into `build_gh_label()` following the existing patter
 
 Add unit tests for both fetch and display functions in `tests/test_statusline.py`.
 
+## Check Run Deduplication
+
+<!-- Source: packages/erk-statusline/src/erk_statusline/statusline.py, _fetch_check_runs -->
+
+GitHub's check runs API returns duplicate entries for the same check name when workflows are rerun or superseded by newer runs. Without deduplication, the statusline would show inflated check counts.
+
+The check run fetch function in `packages/erk-statusline/src/erk_statusline/statusline.py` deduplicates by name using a set + first-occurrence pattern. The API returns results in reverse chronological order (newest first), so the first occurrence of each check name is the most recent run. This means the dedup naturally keeps the latest result for each check.
+
+**Test coverage:** See `TestFetchCheckRunsDeduplication` in `packages/erk-statusline/tests/test_statusline.py` for verification of: keeping the most recent run per name, handling mixed unique/duplicate names, and passing through all-unique names unchanged.
+
 ## Logging
 
 Logs go to `~/.erk/logs/statusline/{session-id}.log`. They are file-based to avoid polluting stderr, which would break the status line display.

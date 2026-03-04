@@ -134,7 +134,7 @@ See `codex_portable_skills()` and `claude_only_skills()` in `src/erk/core/capabi
 
 <!-- Source: src/erk/artifacts/paths.py, get_bundled_codex_dir -->
 
-See `get_bundled_codex_dir()` in `src/erk/artifacts/paths.py` for install-mode-aware path resolution. The key insight: in editable installs, `.codex/` doesn't exist, so the resolver falls back to `.claude/`. This works because Claude's SKILL.md format is a strict subset of Codex's — any SKILL.md with `name` and `description` frontmatter is valid for both systems. The only structural difference is the target install directory (`.claude/skills/` vs `.codex/skills/`), not the file content. Wheel installs bundle Codex skills separately at `erk/data/codex/`.
+See `get_bundled_codex_dir()` in `src/erk/artifacts/paths.py` for install-mode-aware path resolution. The key insight: in editable installs, `.codex/` doesn't exist, so the resolver falls back to `.claude/`. This works because Claude's SKILL.md format is a strict subset of Codex's — any SKILL.md with `name` and `description` frontmatter is valid for both systems. The only structural difference is the target install directory (`.claude/skills/` vs `.codex/skills/`), not the file content. Wheel installs bundle skills at `erk/data/claude/` (shared path); the Codex backend falls back to this path at runtime.
 
 ## Slash Command Translation
 

@@ -31,7 +31,7 @@ See the base class for the complete interface including:
 
 The registry in `src/erk/core/capabilities/registry.py` maintains a cached tuple of all capability instances.
 
-**Key functions:** `get_capability(name)`, `list_capabilities()`, `list_required_capabilities()`, `get_managed_artifacts()`, `is_capability_managed(name, type)`
+**Key functions:** `get_capability(name)`, `list_capabilities()`, `list_required_capabilities()`, `list_optional_capabilities()`, `get_managed_artifacts()`, `is_capability_managed(name, type)`
 
 #### Registry Splice Pattern
 
@@ -115,6 +115,18 @@ Capability classes should call tracking functions during `install()` and `uninst
 | Example      | hooks                      | dignified-python, workflows |
 
 Required capabilities don't need tracking—they're always installed and always checked.
+
+**Registry functions:** `list_required_capabilities()` returns capabilities where `required=True`. `list_optional_capabilities()` returns capabilities where `required=False`, sorted alphabetically by name. See `list_optional_capabilities()` in `src/erk/core/capabilities/registry.py`.
+
+### Required Bundled Skills
+
+<!-- Source: src/erk/capabilities/skills/bundled.py, _REQUIRED_BUNDLED_SKILLS -->
+
+Required bundled skills are defined in the `_REQUIRED_BUNDLED_SKILLS` frozenset in `src/erk/capabilities/skills/bundled.py`. See that frozenset for the current list of required skill names.
+
+<!-- Source: src/erk/capabilities/skills/bundled.py, is_required_bundled_skill -->
+
+The `is_required_bundled_skill()` helper in `src/erk/capabilities/skills/bundled.py` checks membership. Required skills are excluded from user-facing lists like `erk init capability list` since they are always installed.
 
 ## CLI Commands
 

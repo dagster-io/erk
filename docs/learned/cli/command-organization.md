@@ -400,6 +400,22 @@ wt_group.add_command(create_wt)  # Grouped under wt
 | Navigation        | `src/erk/cli/commands/branch/checkout_cmd.py`, `src/erk/cli/commands/up.py`, `src/erk/cli/commands/down.py` |
 | Setup             | `src/erk/cli/commands/init/` (directory), `src/erk/cli/commands/config.py`                                  |
 
+## Case Study: Reclassifying `launch`, `one-shot`, `workflow`
+
+<!-- Source: src/erk/cli/help_formatter.py:244-278 -->
+
+PR #8600 reclassified three commands based on frequency-of-use analysis:
+
+| Command    | Previous Classification | New Classification | Rationale                                                          |
+| ---------- | ----------------------- | ------------------ | ------------------------------------------------------------------ |
+| `launch`   | Command Groups          | Top-Level Commands | High-frequency entry point for remote operations                   |
+| `one-shot` | Hidden (`hidden=True`)  | Top-Level Commands | Primary autonomous workflow; hiding reduced discoverability        |
+| `workflow` | Top-Level Commands      | Command Groups     | Low-frequency infrastructure; `workflow smoke-test` is rarely used |
+
+The reclassification is implemented in `src/erk/cli/help_formatter.py` (lines 244-278), where `top_level_commands` and `command_groups` lists control `erk --help` output ordering.
+
+**Key change for `one-shot`:** The `hidden=True` parameter was removed from `@click.command("one-shot")` in `src/erk/cli/commands/one_shot.py`, making it visible in help output. Previously, users had to know the command existed.
+
 ## Related Documentation
 
 - [CLI Output Styling](output-styling.md) - Output formatting guidelines
