@@ -29,8 +29,8 @@ Takes `plan_number: int` and `url: str`.
 | `checkout`                   | `erk br co --for-plan {plan_number}`                                           |
 | `dispatch`                   | `erk pr dispatch {plan_number}`                                                |
 | `checkout_new_slot`          | `erk br co --new-slot --for-plan {plan_number}`                                |
-| `implement_new_br`           | `source "$(erk br co --for-plan {N} --script)" && erk implement`               |
-| `implement_new_br_dangerous` | `source "$(erk br co --for-plan {N} --script)" && erk implement -d`            |
+| `implement_current_wt`           | `source "$(erk br co --for-plan {N} --script)" && erk implement`               |
+| `implement_current_wt_dangerous` | `source "$(erk br co --for-plan {N} --script)" && erk implement -d`            |
 | `implement_new_wt`           | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement`    |
 | `implement_new_wt_dangerous` | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement -d` |
 
