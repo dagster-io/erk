@@ -23,14 +23,11 @@ After saving a plan, erk displays next-steps commands to the user. The formattin
 
 Takes `plan_number: int` and `url: str`.
 
-| Property                          | Returns                                                                                 |
-| --------------------------------- | --------------------------------------------------------------------------------------- |
-| `view`                            | URL string                                                                              |
-| `checkout`                        | `erk br co --for-plan {plan_number}`                                                    |
-| `dispatch`                        | `erk pr dispatch {plan_number}`                                                         |
-| `checkout_and_implement`          | `source "$(erk br co --for-plan {N} --script)" && erk implement --dangerous`            |
-| `checkout_new_slot`               | `erk br co --new-slot --for-plan {plan_number}`                                         |
-| `checkout_new_slot_and_implement` | `source "$(erk br co --new-slot --for-plan {N} --script)" && erk implement --dangerous` |
+Properties return pre-formatted command strings. See the source file for the full list of available properties.
+
+## Hierarchical Output Format
+
+The plain-text formatter (`format_plan_next_steps_plain`) produces a hierarchical format with three sections: "Implement plan" (with branch/worktree and dangerous variants), "Checkout plan" (branch/worktree), and "Dispatch plan".
 
 ## Shell Activation Pattern
 
@@ -47,10 +44,10 @@ See [Shell Activation Pattern](../cli/shell-activation-pattern.md) for the full 
 
 ## Slash Command Constants
 
-Two slash command constants are defined for use in Claude Code context:
+Two module-level slash command constants are defined but not directly used in any formatter. The plain-text formatter uses the `dispatch_slash_command` property on `PlanNextSteps` instead:
 
-- `DISPATCH_SLASH_COMMAND = "/erk:pr-dispatch"` — used in the plain-text formatters for the "In Claude Code:" section
-- `CHECKOUT_SLASH_COMMAND = "/erk:prepare"` — defined but not currently used in any formatter
+- `DISPATCH_SLASH_COMMAND = "/erk:pr-dispatch"` — not used in any formatter (the instance property `dispatch_slash_command` is used instead)
+- `CHECKOUT_SLASH_COMMAND = "/erk:prepare"` — not used in any formatter
 
 ## Related Topics
 

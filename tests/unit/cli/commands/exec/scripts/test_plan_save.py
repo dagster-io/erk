@@ -804,3 +804,61 @@ def test_current_branch_does_not_retrack(tmp_path: Path, monkeypatch: pytest.Mon
     assert result.exit_code == 0, f"Failed: {result.output}"
     # No retrack_branch should be called when using --current-branch
     assert len(fake_graphite.retrack_branch_calls) == 0
+
+
+def test_current_branch_writes_files_to_working_tree(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """--current-branch writes impl-context files to disk and stages them."""
+    fake_git = FakeGit(current_branches={tmp_path: "my-feature-branch"})
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    runner = CliRunner()
+
+    result = runner.invoke(
+        plan_save,
+        ["--format", "json", "--current-branch"],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    # Files should exist on disk
+    plan_file = tmp_path / IMPL_CONTEXT_DIR / "plan.md"
+    ref_file = tmp_path / IMPL_CONTEXT_DIR / "ref.json"
+    assert plan_file.exists(), "plan.md should be written to working tree"
+    assert ref_file.exists(), "ref.json should be written to working tree"
+    assert "Feature Plan" in plan_file.read_text(encoding="utf-8")
+    # Files should be staged
+    assert f"{IMPL_CONTEXT_DIR}/plan.md" in fake_git.staged_files
+    assert f"{IMPL_CONTEXT_DIR}/ref.json" in fake_git.staged_files
+
+
+def test_current_branch_creates_unified_plan_saved_marker(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """--current-branch creates unified plan-saved marker (same as new-branch path)."""
+    fake_git = FakeGit(current_branches={tmp_path: "my-feature-branch"})
+    ctx = _planned_pr_context(tmp_path=tmp_path, fake_git=fake_git, monkeypatch=monkeypatch)
+    runner = CliRunner()
+    session_id = "current-branch-session"
+
+    result = runner.invoke(
+        plan_save,
+        ["--format", "json", "--current-branch", "--session-id", session_id],
+        obj=ctx,
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output)
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+    # Unified plan-saved marker should exist with plan number on first line
+    plan_saved_marker = marker_dir / "exit-plan-mode-hook.plan-saved.marker"
+    assert plan_saved_marker.exists(), "plan-saved marker should exist"
+    marker_content = plan_saved_marker.read_text(encoding="utf-8")
+    first_line = marker_content.split("\n")[0].strip()
+    assert first_line == str(output["plan_number"]), "first line should be plan number"
+    # Old current-branch marker should NOT exist
+    old_marker = marker_dir / "exit-plan-mode-hook.plan-saved-current-branch.marker"
+    assert not old_marker.exists(), "plan-saved-current-branch marker should NOT exist"
+    # Issue and branch markers should still exist
+    assert (marker_dir / "plan-saved-issue.marker").exists()
+    assert (marker_dir / "plan-saved-branch.marker").exists()

@@ -35,13 +35,22 @@ class TestPlanNextSteps:
         )
         assert steps.checkout == "erk br co --for-plan 42"
 
-    def test_checkout_and_implement_uses_plan_number(self) -> None:
+    def test_implement_current_wt(self) -> None:
         steps = PlanNextSteps(
             plan_number=42,
             url="https://github.com/org/repo/pull/42",
         )
-        assert steps.checkout_and_implement == (
-            'source "$(erk br co --for-plan 42 --script)" && erk implement --dangerous'
+        assert steps.implement_current_wt == (
+            'source "$(erk br co --for-plan 42 --script)" && erk implement'
+        )
+
+    def test_implement_current_wt_dangerous(self) -> None:
+        steps = PlanNextSteps(
+            plan_number=42,
+            url="https://github.com/org/repo/pull/42",
+        )
+        assert steps.implement_current_wt_dangerous == (
+            'source "$(erk br co --for-plan 42 --script)" && erk implement -d'
         )
 
     def test_checkout_new_slot(self) -> None:
@@ -51,14 +60,30 @@ class TestPlanNextSteps:
         )
         assert steps.checkout_new_slot == "erk br co --new-slot --for-plan 42"
 
-    def test_checkout_new_slot_and_implement(self) -> None:
+    def test_implement_new_wt(self) -> None:
         steps = PlanNextSteps(
             plan_number=42,
             url="https://github.com/org/repo/pull/42",
         )
-        assert steps.checkout_new_slot_and_implement == (
-            'source "$(erk br co --new-slot --for-plan 42 --script)" && erk implement --dangerous'
+        assert steps.implement_new_wt == (
+            'source "$(erk br co --new-slot --for-plan 42 --script)" && erk implement'
         )
+
+    def test_implement_new_wt_dangerous(self) -> None:
+        steps = PlanNextSteps(
+            plan_number=42,
+            url="https://github.com/org/repo/pull/42",
+        )
+        assert steps.implement_new_wt_dangerous == (
+            'source "$(erk br co --new-slot --for-plan 42 --script)" && erk implement -d'
+        )
+
+    def test_dispatch_slash_command(self) -> None:
+        steps = PlanNextSteps(
+            plan_number=42,
+            url="https://github.com/org/repo/pull/42",
+        )
+        assert steps.dispatch_slash_command == "/erk:pr-dispatch 42"
 
 
 class TestFormatPlanNextStepsPlain:
@@ -66,10 +91,23 @@ class TestFormatPlanNextStepsPlain:
         output = format_plan_next_steps_plain(42, url="https://github.com/org/repo/pull/42")
         assert "erk br co --for-plan 42" in output
 
-    def test_contains_url_in_view(self) -> None:
+    def test_hierarchical_format(self) -> None:
         output = format_plan_next_steps_plain(42, url="https://github.com/org/repo/pull/42")
-        assert "https://github.com/org/repo/pull/42" in output
+        assert "Implement plan #42:" in output
+        assert "In current wt:" in output
+        assert "In new wt:" in output
 
     def test_contains_implement_command(self) -> None:
         output = format_plan_next_steps_plain(42, url="https://github.com/org/repo/pull/42")
-        assert "erk implement --dangerous" in output
+        assert "erk implement" in output
+        assert "erk implement -d" in output
+
+    def test_contains_dispatch(self) -> None:
+        output = format_plan_next_steps_plain(42, url="https://github.com/org/repo/pull/42")
+        assert "erk pr dispatch 42" in output
+        assert "/erk:pr-dispatch 42" in output
+        assert "Dispatch plan #42:" in output
+
+    def test_contains_checkout_new_slot(self) -> None:
+        output = format_plan_next_steps_plain(42, url="https://github.com/org/repo/pull/42")
+        assert "erk br co --new-slot --for-plan 42" in output
