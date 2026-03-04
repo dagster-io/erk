@@ -193,7 +193,11 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
     is_learn_origin = is_learn_plan(impl_dir) if impl_dir is not None else False
     if is_learn_origin:
         add_labels_resilient(
-            ctx.github, time=ctx.time, repo_root=discovery.repo_root, pr_number=pr_number, labels=(ERK_SKIP_LEARN_LABEL,)
+            ctx.github,
+            time=ctx.time,
+            repo_root=discovery.repo_root,
+            pr_number=pr_number,
+            labels=(ERK_SKIP_LEARN_LABEL,),
         )
 
     # Clean up scratch diff file

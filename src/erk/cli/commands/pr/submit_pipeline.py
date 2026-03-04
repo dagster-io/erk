@@ -775,7 +775,11 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
     # Add learn skip label if applicable
     if is_learn_origin:
         add_labels_resilient(
-            ctx.github, time=ctx.time, repo_root=state.repo_root, pr_number=state.pr_number, labels=(ERK_SKIP_LEARN_LABEL,)
+            ctx.github,
+            time=ctx.time,
+            repo_root=state.repo_root,
+            pr_number=state.pr_number,
+            labels=(ERK_SKIP_LEARN_LABEL,),
         )
 
     # Amend local commit with title and body (without metadata footer)
