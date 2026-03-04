@@ -18,6 +18,7 @@ from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
 from erk.cli.core import worktree_path_for
 from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
+from erk.core.display_utils import copy_to_clipboard_osc52
 from erk.core.repo_discovery import RepoContext
 from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state
 from erk.core.worktree_utils import compute_relative_path_in_worktree
@@ -821,6 +822,16 @@ def execute_stack_navigation(
 
     # Handle activation
     if delete_current and current_worktree_path is not None:
+        # In same-worktree case (branch being deleted shares the target worktree),
+        # filter out worktree/slot removal — the worktree belongs to the target branch.
+        shared_worktree = current_worktree_path.resolve() == target_path.resolve()
+        if shared_worktree and deletion_commands:
+            deletion_commands = [
+                cmd
+                for cmd in deletion_commands
+                if not cmd.startswith("git worktree remove")
+                and not cmd.startswith("erk slot unassign")
+            ]
         # Prepend checkout command before deletion commands
         all_post_cd = (checkout_commands or []) + (deletion_commands or [])
         # Handle activation inline with deferred deletion
@@ -835,6 +846,7 @@ def execute_stack_navigation(
             current_branch=current_branch,
             force=force,
             is_root=is_root,
+            shared_worktree=shared_worktree,
         )
     else:
         # No cleanup needed, use standard activation
@@ -864,6 +876,7 @@ def _activate_with_deferred_deletion(
     current_branch: str,
     force: bool,
     is_root: bool,
+    shared_worktree: bool,
 ) -> NoReturn:
     """Handle activation with deferred deletion commands embedded in script.
 
@@ -881,6 +894,7 @@ def _activate_with_deferred_deletion(
         current_branch: Branch being navigated away from
         force: If True and current_branch is provided, shows delete hint
         is_root: If True, uses root repo messaging
+        shared_worktree: If True, the branch being deleted shares the target worktree
 
     Raises:
         SystemExit: Always exits with 0 on success
@@ -914,18 +928,28 @@ def _activate_with_deferred_deletion(
         )
         machine_output(str(result.path), nl=False)
     else:
-        script_path = ensure_worktree_activate_script(
-            worktree_path=target_path,
-            post_create_commands=None,
-        )
-        print_activation_instructions(
-            script_path,
-            source_branch=current_branch,
-            force=force,
-            config=activation_config_activate_only(),
-            copy=True,
-            same_worktree=same_worktree,
-        )
+        if shared_worktree and deletion_commands:
+            # Shared-worktree with deletion: show the filtered commands directly.
+            # Don't delegate to print_activation_instructions with source_branch,
+            # which would suggest `erk br delete` (wrong — it deletes the shared worktree).
+            combined_cmd = " && ".join(deletion_commands)
+            user_output(f"\nTo delete branch {current_branch}:")
+            clipboard_hint = click.style("(copied to clipboard)", dim=True)
+            user_output(f"  {combined_cmd}  {clipboard_hint}")
+            user_output(copy_to_clipboard_osc52(combined_cmd), nl=False)
+        else:
+            script_path = ensure_worktree_activate_script(
+                worktree_path=target_path,
+                post_create_commands=None,
+            )
+            print_activation_instructions(
+                script_path,
+                source_branch=current_branch,
+                force=force,
+                config=activation_config_activate_only(),
+                copy=True,
+                same_worktree=same_worktree,
+            )
 
     # Deletion is deferred to script sourcing - no immediate cleanup
     raise SystemExit(0)

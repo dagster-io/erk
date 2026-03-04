@@ -316,6 +316,10 @@ def _delete_branch(
         _handle_slot_worktree(ctx, repo, wt_info)
     elif wt_info.has_worktree:
         ctx = _handle_vanilla_worktree(ctx, repo, wt_info, dry_run)
+        if not dry_run:
+            # Re-discover repo: _handle_vanilla_worktree may have deleted the worktree
+            # and escaped cwd to main_repo_root, making repo.root stale.
+            repo = discover_repo_context(ctx, ctx.cwd)
 
     # 2. Close PR and plan (if --all)
     if close_all:
