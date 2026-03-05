@@ -84,13 +84,13 @@ def release_notes_cmd(show_all: bool, target_version: str | None) -> None:
 
     \b
       # Show current version notes
-      erk info release-notes
+      erk release-notes
 
       # Show all releases
-      erk info release-notes --all
+      erk release-notes --all
 
       # Show specific version
-      erk info release-notes --version 0.2.1
+      erk release-notes --version 0.2.1
     """
     releases = get_releases()
 
@@ -120,7 +120,7 @@ def release_notes_cmd(show_all: bool, target_version: str | None) -> None:
 
     if release is None:
         click.echo(click.style(f"No notes found for version {current}.", dim=True))
-        click.echo("Run 'erk info release-notes --all' to see all releases.")
+        click.echo("Run 'erk release-notes --all' to see all releases.")
         return
 
     click.echo(click.style(f"Release notes for erk {current}", bold=True))

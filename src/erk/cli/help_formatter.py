@@ -252,6 +252,7 @@ class ErkCommandGroup(click.Group):
             "launch",
             "list",
             "one-shot",
+            "release-notes",
             "up",
             "upgrade",
         ]
@@ -264,7 +265,6 @@ class ErkCommandGroup(click.Group):
             "config",
             "docs",
             "hook",
-            "info",
             "md",
             "objective",
             "plan",

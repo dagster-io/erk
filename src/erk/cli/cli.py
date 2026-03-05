@@ -19,7 +19,7 @@ from erk.cli.commands.doctor_workflow import workflow_group
 from erk.cli.commands.down import down_cmd
 from erk.cli.commands.exec.group import exec_group
 from erk.cli.commands.implement import implement
-from erk.cli.commands.info import info_group
+from erk.cli.commands.info.release_notes_cmd import release_notes_cmd
 from erk.cli.commands.init import init_group
 from erk.cli.commands.land_cmd import land
 from erk.cli.commands.launch_cmd import launch
@@ -198,7 +198,7 @@ if is_learned_docs_available(repo_ops=RealGitRepoOps(), cwd=Path.cwd()):
 admin_group.add_command(log_cmd)
 cli.add_command(dash)
 cli.add_command(pr_group)
-cli.add_command(info_group)
+cli.add_command(release_notes_cmd)
 cli.add_command(objective_group)
 cli.add_command(one_shot)
 cli.add_command(project_group)
