@@ -23,6 +23,7 @@ _UNBUNDLED_SKILLS: frozenset[str] = frozenset(
         "learned-docs",  # has its own capability class (LearnedDocsCapability)
         "rename-swarm",
         "session-inspector",
+        "erk-skill-onboarding",
         "skill-creator",
     }
 )

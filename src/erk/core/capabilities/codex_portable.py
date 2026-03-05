@@ -43,6 +43,7 @@ def claude_only_skills() -> frozenset[str]:
             "command-creator",
             "cli-skill-creator",
             "rename-swarm",
+            "erk-skill-onboarding",
             "skill-creator",
         }
     )
