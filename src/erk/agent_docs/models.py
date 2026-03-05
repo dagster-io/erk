@@ -10,6 +10,11 @@ from typing import Literal
 # "edited" — audit found issues and the doc was updated to fix them
 AuditResult = Literal["clean", "edited"]
 
+# "raw" — fresh from session extraction, not yet reviewed
+# "staged" — reviewed and confirmed accurate
+# "promoted" — absorbed into a skill (requires promoted_to)
+Lifecycle = Literal["raw", "staged", "promoted"]
+
 
 @dataclass(frozen=True)
 class Tripwire:
@@ -44,6 +49,8 @@ class AgentDocFrontmatter:
     tripwires: list[Tripwire]
     last_audited: str | None
     audit_result: AuditResult | None
+    lifecycle: Lifecycle | None
+    promoted_to: str | None
 
     def is_valid(self) -> bool:
         """Check if this frontmatter has all required fields."""

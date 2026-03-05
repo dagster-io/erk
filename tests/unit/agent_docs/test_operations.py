@@ -8,6 +8,7 @@ from pathlib import Path
 
 from erk.agent_docs.operations import (
     collect_tripwires,
+    collect_valid_docs,
     discover_agent_docs,
     sync_agent_docs,
     validate_agent_docs,
@@ -307,3 +308,53 @@ def test_validate_tripwires_index_missing_category() -> None:
 
     assert not result.is_valid
     assert "architecture/tripwires.md" in result.missing_from_index
+
+
+# -- promoted doc filtering --
+
+PROMOTED_DOC = """\
+---
+title: Promoted Patterns
+read_when:
+  - working on gateways
+lifecycle: promoted
+promoted_to: fake-driven-testing
+tripwires:
+  - action: creating a new gateway
+    warning: Follow the 5-place pattern.
+---
+
+# Promoted Patterns
+"""
+
+
+def test_promoted_docs_excluded_from_index() -> None:
+    """Docs with lifecycle: promoted don't appear in generated index."""
+    agent_docs = FakeAgentDocs(
+        has_docs_dir=True,
+        files={
+            "architecture/active.md": VALID_DOC,
+            "architecture/promoted.md": PROMOTED_DOC,
+        },
+    )
+    uncategorized, categories, invalid_count = collect_valid_docs(agent_docs, PROJECT_ROOT)
+
+    assert invalid_count == 0
+    # Only the active doc should appear
+    all_doc_paths = [d.rel_path for cat in categories for d in cat.docs]
+    all_doc_paths.extend(d.rel_path for d in uncategorized)
+    assert "architecture/active.md" in all_doc_paths
+    assert "architecture/promoted.md" not in all_doc_paths
+
+
+def test_promoted_docs_tripwires_still_collected() -> None:
+    """Tripwires from promoted docs are still included."""
+    agent_docs = FakeAgentDocs(
+        has_docs_dir=True,
+        files={"architecture/promoted.md": PROMOTED_DOC},
+    )
+    tripwires = collect_tripwires(agent_docs, PROJECT_ROOT)
+
+    assert len(tripwires) == 1
+    assert tripwires[0].action == "creating a new gateway"
+    assert tripwires[0].doc_path == "architecture/promoted.md"
