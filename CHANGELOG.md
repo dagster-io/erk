@@ -7,35 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-<!-- As of: 7f57dead6 -->
+## [0.9.5] - 2026-03-04 15:53 PT
 
 ### Major Changes
 
-- Support stacked branches on the same worktree: implement plans on the current branch without creating a new worktree, with restructured exit-plan-mode menu and hierarchical next-steps output. Includes fixes for stale parent branch tracking, slot reuse, and branch tracking after plan-save. (473b9a769, 9ca2e1ecf, 3a969663d, 51ed4fbcc, a8347ca3f, e69b3657f, 1872695a7)
+- Support stacked branches on the same worktree: implement plans on the current branch without creating a new worktree, with restructured exit-plan-mode menu and hierarchical next-steps output. Includes fixes for stale parent branch tracking, slot reuse, and branch tracking after plan-save.
 
 ### Added
 
-- Support creating objectives without a roadmap: `erk objective create` and `erk objective check` now work for standalone objectives not tied to any roadmap. (7577959c5)
+- Support creating objectives without a roadmap: `erk objective create` and `erk objective check` now work for standalone objectives not tied to any roadmap.
 
 ### Changed
 
-- Show progress feedback during PR description generation: `erk pr submit` and `erk pr rewrite` now display "Still waiting..." messages at 3-second intervals while Claude generates the PR description, replacing silence during long API call windows. (9006754f2)
-- Auto-activate worktree environment on stack-in-place checkout: When using `erk br co` from an assigned slot, the activation script now runs automatically instead of printing copy-paste instructions. (b9f51ab61)
-- Improve branch checkout messaging for plan flows: The message when checking out a plan branch changes from "Using existing branch" to "Checking out plan branch". (081094be4)
-- Always run `uv sync` during worktree activation regardless of VIRTUAL_ENV state (ccf0aeb21)
+- Generalize `--dangerous` flag configuration across rebase, reconcile-with-remote, and address commands: all three now share a single config key (`require_dangerous_flag_for_implicitly_dangerous_operations`) with consistent error messaging
+- Remove upstack child branch existence check in `erk land --up`: landing no longer fails when an upstack child branch has been deleted remotely
+- Show progress feedback during PR description generation: `erk pr submit` and `erk pr rewrite` now display "Still waiting..." messages at 3-second intervals while Claude generates the PR description, replacing silence during long API call windows.
+- Auto-activate worktree environment on stack-in-place checkout: When using `erk br co` from an assigned slot, the activation script now runs automatically instead of printing copy-paste instructions.
+- Improve branch checkout messaging for plan flows: The message when checking out a plan branch changes from "Using existing branch" to "Checking out plan branch".
+- Always run `uv sync` during worktree activation regardless of VIRTUAL_ENV state
 
 ### Fixed
 
-- Fix `erk down -f -d` from root worktree with non-trunk branch: Navigation to trunk from the root worktree no longer fails with "Cannot create worktree for trunk branch" when a non-trunk branch is checked out. (d7a070a62)
-- Fix `erk pr dispatch` when no impl-context reference exists: Dispatch auto-detection now falls back to resolving the plan number from the current branch via the GitHub API. (a0e1ed2ff)
-- Fix dispatch metadata write for plans missing a plan-header: A minimal plan-header is now created automatically before writing dispatch metadata, preventing a silent failure. (119dc9026)
-- Fix impl-context files leaking into implementation PRs: Removes an incorrect optimization that preserved impl-context for plan branches during submit pipeline cleanup. (ac59a65fb)
-- Fix `erk up/down` navigation when worktree has a different branch checked out (51d2e25f3)
-- Fix slot reuse incorrectly treating untracked files as dirty (7bd67b60a)
+- Fix `erk down -d` for same-worktree downstack navigation: delete-after-navigate now works correctly within the same worktree
+- Fix PR body section order: move "Key Changes" before "Files Changed" in generated PR descriptions
+- Fix `erk down -f -d` from root worktree with non-trunk branch: Navigation to trunk from the root worktree no longer fails with "Cannot create worktree for trunk branch" when a non-trunk branch is checked out.
+- Fix `erk pr dispatch` when no impl-context reference exists: Dispatch auto-detection now falls back to resolving the plan number from the current branch via the GitHub API.
+- Fix dispatch metadata write for plans missing a plan-header: A minimal plan-header is now created automatically before writing dispatch metadata, preventing a silent failure.
+- Fix impl-context files leaking into implementation PRs: Removes an incorrect optimization that preserved impl-context for plan branches during submit pipeline cleanup.
+- Fix `erk up/down` navigation when worktree has a different branch checked out
+- Fix slot reuse incorrectly treating untracked files as dirty
 
 ### Removed
 
-- Delete erkbot package (dd35477c1)
+- Delete erkbot package
 
 ## [0.9.4] - 2026-03-02 12:11 PT
 
