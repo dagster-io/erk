@@ -4,19 +4,10 @@ import os
 from erk_mcp.server import create_mcp
 
 
-def _parse_int_env(name: str, default: int) -> int:
-    value = os.getenv(name)
-    if value is None:
-        return default
-    if not value.isdigit():
-        raise ValueError(f"Environment variable {name} must be a positive integer, got: {value!r}")
-    return int(value)
-
-
 def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run the Erk MCP server.")
     parser.add_argument("--host", default=os.getenv("ERK_MCP_HOST", "0.0.0.0"))
-    parser.add_argument("--port", type=int, default=_parse_int_env("ERK_MCP_PORT", 9000))
+    parser.add_argument("--port", type=int, default=9000)
     parser.add_argument(
         "--transport",
         choices=["streamable-http", "stdio"],
