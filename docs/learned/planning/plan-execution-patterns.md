@@ -3,7 +3,7 @@ title: Plan Execution Patterns
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
 read_when:
-  - "implementing a plan from a GitHub issue"
+  - "implementing a plan from a GitHub draft PR"
   - "understanding branch naming and worktree isolation"
   - "designing PR submission workflows for plans"
 ---
@@ -26,7 +26,7 @@ Plan branches follow the pattern `plnd/<slug>-<timestamp>`:
 
 Each plan implementation runs in an isolated worktree:
 
-1. `erk br co --for-plan <issue-number>` creates a new worktree from the plan issue
+1. `erk br co --for-plan <issue-number>` creates a new worktree from the plan
 2. The worktree gets its own `.erk/impl-context/` folder with the plan content
 3. Implementation happens entirely within the worktree
 4. After PR lands, the worktree is cleaned up

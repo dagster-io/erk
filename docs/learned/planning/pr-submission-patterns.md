@@ -30,7 +30,7 @@ PR submission frequently retries due to network failures, hook loops, or agent r
 
 See `push_and_create_pr()` in `src/erk/cli/commands/pr/submit_pipeline.py` — it calls `get_pr_for_branch()` and branches on `PRNotFound` vs existing.
 
-**Session-level:** Plan-save operations use scratch-directory marker files keyed by session ID. Before creating a GitHub issue, the command checks if this session already created one. This prevents the specific failure mode where exit-plan-mode hook retries cause duplicate plan issues.
+**Session-level:** Plan-save operations use scratch-directory marker files keyed by session ID. Before creating a GitHub issue, the command checks if this session already created one. This prevents the specific failure mode where exit-plan-mode hook retries cause duplicate plans.
 
 <!-- Source: packages/erk-shared/src/erk_shared/scratch/session_markers.py, get_existing_saved_issue -->
 
@@ -75,7 +75,7 @@ The escalation to source investigation after two failures is the key discipline.
 
 ## Closing Reference Preservation on Re-Submit
 
-When re-submitting a PR that already has a closing reference but no local `.erk/impl-context/` folder (e.g., after worktree recreation), the pipeline extracts the existing reference from the PR body rather than losing it. Without this, re-submitting from a fresh worktree would silently drop the issue linkage, causing the plan issue to remain open after PR merge.
+When re-submitting a PR that already has a closing reference but no local `.erk/impl-context/` folder (e.g., after worktree recreation), the pipeline extracts the existing reference from the PR body rather than losing it. Without this, re-submitting from a fresh worktree would silently drop the issue linkage, causing the plan to remain open after PR merge.
 
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, _extract_closing_ref_from_pr -->
 

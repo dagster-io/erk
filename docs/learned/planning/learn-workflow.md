@@ -25,7 +25,7 @@ This guide explains the learn workflow in erk: how `/erk:learn` creates document
 
 The learn workflow extracts insights from implementation sessions and creates documentation plans. It's part of erk's knowledge capture system.
 
-**Key change**: Learn no longer writes documentation directly. Instead, it creates a plan issue for human review, which is then implemented through the standard `plan-implement` workflow. This gives humans control over documentation quality while maintaining the unified implementation pattern.
+**Key change**: Learn no longer writes documentation directly. Instead, it creates a plan for human review, which is then implemented through the standard `plan-implement` workflow. This gives humans control over documentation quality while maintaining the unified implementation pattern.
 
 ```
 ┌─────────────────┐     /erk:learn      ┌─────────────────┐
@@ -66,7 +66,7 @@ The original implementation plan that `/erk:learn` is invoked on. After learn co
 
 A documentation plan created by `/erk:learn`. It has the `erk-learn` label and contains:
 
-- `learned_from_issue`: Backlink to the parent plan issue number
+- `learned_from_issue`: Backlink to the parent plan number
 
 This backlink enables automatic status updates when the learn plan is landed.
 
@@ -144,10 +144,10 @@ The skill:
 
 1. Analyzes sessions associated with the parent plan
 2. Identifies documentation gaps via multi-agent analysis
-3. Creates a learn plan issue (if documentation needed)
-4. The plan issue is queued for human review before implementation
+3. Creates a learn plan (if documentation needed)
+4. The plan is queued for human review before implementation
 
-**Note**: Learn runs inline during the `plan-implement` workflow after successful implementation. It does NOT write documentation directly - it creates a plan issue for later review and implementation.
+**Note**: Learn runs inline during the `plan-implement` workflow after successful implementation. It does NOT write documentation directly - it creates a plan for later review and implementation.
 
 ### Step 2: Track Learn Result
 
@@ -157,7 +157,7 @@ After creating the learn plan, the skill calls:
 erk exec track-learn-result \
     --issue <parent-issue-number> \
     --status completed_with_plan \
-    --plan-issue <learn-plan-issue-number>
+    --learn-plan <learn-plan-number>
 ```
 
 This sets `learn_status` and `learn_plan_issue` on the parent plan.
@@ -185,9 +185,9 @@ This sets `learned_from_issue` in the learn plan's metadata, creating a bidirect
 
 ### Step 4: Human Review and Submit
 
-After the learn plan issue is created, a human reviews it and decides whether to implement:
+After the learn plan is created, a human reviews it and decides whether to implement:
 
-1. Review the plan issue - it contains draft content starters and documentation suggestions
+1. Review the plan - it contains draft content starters and documentation suggestions
 2. Optionally edit the plan to adjust priorities or content
 3. Dispatch via `erk pr dispatch` to queue for implementation
 
@@ -210,10 +210,10 @@ The TUI shows learn status in the "lrn" column:
 | Display | Meaning                     |
 | ------- | --------------------------- |
 | (empty) | Not learned yet             |
-| `#N`    | Learn created plan issue #N |
+| `#N`    | Learn created plan #N       |
 | `✓ #PR` | Learn plan landed in PR #PR |
 
-Clicking the cell opens the learn plan issue or PR.
+Clicking the cell opens the learn plan or PR.
 
 ## Related Commands
 
@@ -237,7 +237,7 @@ last_learn_session: abc123 # Session ID that ran learn
 ### On Learn Plans
 
 ```yaml
-learned_from_issue: 100 # Parent plan issue number
+learned_from_issue: 100 # Parent plan number
 ```
 
 ## Learn Plan Parent Branch Stacking
@@ -249,7 +249,7 @@ When a learn plan is submitted via `erk pr submit`, it automatically stacks on i
 The submit command calls `get_learn_plan_parent_branch()` which:
 
 1. Extracts `learned_from_issue` from the learn plan's metadata
-2. Fetches the parent plan issue
+2. Fetches the parent plan
 3. Returns the parent plan's `branch_name` from its plan-header
 
 ### How It Works
@@ -317,7 +317,7 @@ The learn workflow uses stateless agents with file-based composition. Each agent
 **Input:**
 
 - `pr_number`: Pull request number
-- `issue_number`: Plan issue number
+- `issue_number`: Plan number
 
 **Output:** Inventory markdown with:
 
@@ -330,7 +330,7 @@ The learn workflow uses stateless agents with file-based composition. Each agent
 
 **Input:**
 
-- `plan_title`: Title from plan issue
+- `plan_title`: Title from plan
 - `pr_title`: PR title (if available)
 - `search_hints`: Key terms for searching
 
@@ -347,7 +347,7 @@ The learn workflow uses stateless agents with file-based composition. Each agent
 - `session_analysis_paths`: List of session analysis file paths
 - `diff_analysis_path`: Path to diff analysis (or null)
 - `existing_docs_path`: Path to existing docs check
-- `plan_title`: Title from plan issue
+- `plan_title`: Title from plan
 
 **Output:** Enumerated table with:
 
@@ -362,7 +362,7 @@ The learn workflow uses stateless agents with file-based composition. Each agent
 - `gap_analysis_path`: Path to gap analysis
 - `session_analysis_paths`: Session analysis file paths
 - `diff_analysis_path`: Diff analysis path (or null)
-- `plan_title`: Title from plan issue
+- `plan_title`: Title from plan
 - `gist_url`: Gist URL with raw materials
 - `pr_number`: PR number (or null)
 

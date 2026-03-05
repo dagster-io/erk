@@ -15,7 +15,7 @@ audit_result: clean
 
 # Session-Based Plan Deduplication
 
-This document explains how erk prevents duplicate plan issues from being created during retry loops or hook edge cases.
+This document explains how erk prevents duplicate plans from being created during retry loops or hook edge cases.
 
 ## Problem
 

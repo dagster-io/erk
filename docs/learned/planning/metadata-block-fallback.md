@@ -5,7 +5,7 @@ audit_result: clean
 read_when:
   - "extracting plan content from GitHub issue comments"
   - "debugging 'no plan content found' errors in replan or plan-implement"
-  - "working with older erk-plan issues that lack metadata blocks"
+  - "working with older erk-plans that lack metadata blocks"
 tripwires:
   - action: "assuming plan content is in the issue body"
     warning: "Schema v2 stores plan content in the FIRST COMMENT, not the issue body. The body contains only the plan-header metadata block. See extract_plan_from_comment() for the extraction logic."
@@ -21,11 +21,11 @@ tripwires:
 
 # Plan Content Extraction Fallback
 
-Plan issues use a two-location storage design with backward-compatible fallback. Understanding why content lives where it does prevents agents from looking in the wrong place and reporting false "no content" errors.
+Plans use a two-location storage design with backward-compatible fallback. Understanding why content lives where it does prevents agents from looking in the wrong place and reporting false "no content" errors.
 
 ## Why Two Locations Exist
 
-Schema v2 plan issues split content across two GitHub API objects for a deliberate reason: **fast querying vs. full content**.
+Schema v2 plans split content across two GitHub API objects for a deliberate reason: **fast querying vs. full content**.
 
 | Location      | What it stores                                                | Why                                                                                                                        |
 | ------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
@@ -47,7 +47,7 @@ The `create_plan_draft_pr()` function in `erk_shared/plan_store/create_plan_draf
 
 The replan command (`/erk:replan`, Step 4a) adds an additional layer: if no plan content is found in the first comment at all, check the issue body directly. This handles legacy issues that predate the body/comment split entirely.
 
-## Three Eras of Plan Issues
+## Three Eras of Plans
 
 The fallback exists because the plan storage format evolved through three eras:
 
@@ -55,7 +55,7 @@ The fallback exists because the plan storage format evolved through three eras:
 | ------------------------- | ------------------- | ------------------------------------------------------------------------ | ------------------- |
 | **Pre-metadata**          | Issue body directly | None (raw markdown)                                                      | Earliest issues     |
 | **v1 metadata**           | First comment       | `<!-- erk:plan-content -->`                                              | Transitional format |
-| **v2 metadata**           | First comment       | `<!-- erk:metadata-block:plan-body -->` with `<details>`                 | Plan issues         |
+| **v2 metadata**           | First comment       | `<!-- erk:metadata-block:plan-body -->` with `<details>`                 | Plans               |
 | **v4 metadata** (current) | PR body / issues    | Self-delimiting `<!-- erk:metadata-block:{key} -->` HTML comment markers | All new plans       |
 
 v4 metadata blocks are self-delimiting via HTML comment markers. Extraction uses `find_metadata_block()` and rendering uses `render_metadata_block()` from `packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py`. The `PLAN_CONTENT_SEPARATOR` constant is retained for backward compatibility only — new code should not use it.
@@ -66,7 +66,7 @@ Each extraction layer handles one transition, and together they cover the full h
 
 **Only checking one location and failing immediately** — The most common agent mistake. An agent fetches the issue body, sees YAML metadata instead of plan content, and reports "no plan found." The plan is in the first comment, not the body.
 
-**Assuming `plan_comment_id` is always set** — Older issues may not have this field in the plan-header. When it's missing, fall back to fetching the first comment via the GitHub API (e.g., `gh issue view --comments`).
+**Assuming `plan_comment_id` is always set** — Older plans may not have this field in the plan-header. When it's missing, fall back to fetching the first comment via the GitHub API (e.g., `gh pr view --comments`).
 
 **Ignoring the `<details>` wrapper** — The plan-body block wraps content in a `<details open>` tag for GitHub rendering. Extracting the raw block body without stripping the `<details>` wrapper will include HTML tags in the plan text.
 
