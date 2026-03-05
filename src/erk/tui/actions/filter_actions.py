@@ -105,6 +105,30 @@ class FilterActionsMixin:
         if self._status_bar is not None:
             self._status_bar.set_message(None)
 
+    def action_toggle_all_users(self: ErkDashApp) -> None:
+        """Toggle between showing only my plans and all users' plans.
+
+        Since the creator filter is server-side (GitHub API), toggling
+        requires clearing the data cache and re-fetching.
+        """
+        self._show_all_users = not self._show_all_users
+        self._data_cache.clear()
+
+        if self._show_all_users:
+            label = "all"
+        else:
+            label = self._original_creator or "me"
+
+        if self._status_bar is not None:
+            self._status_bar.set_author_filter(label)
+
+        self.action_refresh()
+
+        if self._show_all_users:
+            self.notify("Showing all users", timeout=2)
+        else:
+            self.notify("Showing my plans", timeout=2)
+
     def action_toggle_sort(self: ErkDashApp) -> None:
         """Toggle between sort modes."""
         self._sort_state = self._sort_state.toggle()

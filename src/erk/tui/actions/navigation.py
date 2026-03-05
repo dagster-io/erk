@@ -32,10 +32,18 @@ class NavigationActionsMixin:
     def action_exit_app(self: ErkDashApp) -> None:
         """Quit the application or handle progressive escape from filter mode.
 
-        Progressive escape: objective -> stack -> text content -> text mode -> quit.
+        Progressive escape: all-users -> objective -> stack -> text content -> text mode -> quit.
         """
         from erk.tui.filtering.types import FilterMode
 
+        if self._show_all_users:
+            self._show_all_users = False
+            self._data_cache.clear()
+            if self._status_bar is not None:
+                self._status_bar.set_author_filter(None)
+            self.action_refresh()
+            self.notify("Showing my plans", timeout=2)
+            return
         if self._objective_filter_issue is not None:
             self._clear_objective_filter()
             return

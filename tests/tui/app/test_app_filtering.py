@@ -1,4 +1,4 @@
-"""Tests for stack and objective filter functionality."""
+"""Tests for stack, objective, and author filter functionality."""
 
 import pytest
 
@@ -374,3 +374,159 @@ class TestObjectiveFilter:
             # Text filter narrows further
             assert len(app._rows) == 1
             assert app._rows[0].plan_id == 3
+
+
+class TestAuthorFilter:
+    """Tests for 'a' author filter (toggle all users) functionality."""
+
+    @pytest.mark.asyncio
+    async def test_a_toggles_show_all_users_on(self) -> None:
+        """Pressing 'a' sets _show_all_users to True and triggers refresh."""
+        provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            assert not app._show_all_users
+            initial_fetch_count = provider.fetch_count
+
+            await pilot.press("a")
+            await pilot.pause()
+            await pilot.pause()
+
+            assert app._show_all_users
+            assert provider.fetch_count > initial_fetch_count
+
+    @pytest.mark.asyncio
+    async def test_a_toggles_show_all_users_off(self) -> None:
+        """Pressing 'a' twice returns to my-plans mode."""
+        provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("a")
+            await pilot.pause()
+            await pilot.pause()
+            assert app._show_all_users
+
+            await pilot.press("a")
+            await pilot.pause()
+            await pilot.pause()
+            assert not app._show_all_users
+
+    @pytest.mark.asyncio
+    async def test_a_clears_data_cache(self) -> None:
+        """Pressing 'a' clears the data cache to force re-fetch."""
+        provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # After initial load, cache should have data
+            assert len(app._data_cache) > 0
+
+            await pilot.press("a")
+            await pilot.pause()
+
+            # Cache was cleared (then refilled by the re-fetch)
+            # Verify it was rebuilt from the re-fetch
+            assert provider.fetch_count >= 2
+
+    @pytest.mark.asyncio
+    async def test_a_updates_status_bar_author_filter(self) -> None:
+        """Pressing 'a' updates the status bar author filter indicator."""
+        provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
+        filters = PlanFilters(
+            labels=("erk-plan",),
+            state="open",
+            run_state=None,
+            limit=None,
+            show_prs=False,
+            show_runs=False,
+            exclude_labels=(),
+            creator="testuser",
+        )
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            status_bar = app.query_one(StatusBar)
+            assert status_bar._author_filter is None
+
+            await pilot.press("a")
+            await pilot.pause()
+
+            assert status_bar._author_filter == "all"
+
+            await pilot.press("a")
+            await pilot.pause()
+            await pilot.pause()
+
+            assert status_bar._author_filter == "testuser"
+
+    @pytest.mark.asyncio
+    async def test_escape_clears_all_users_filter(self) -> None:
+        """Escape clears the all-users filter before other filters."""
+        provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("a")
+            await pilot.pause()
+            await pilot.pause()
+            assert app._show_all_users
+
+            # Escape clears all-users filter (not quit)
+            await pilot.press("escape")
+            await pilot.pause()
+            await pilot.pause()
+            assert not app._show_all_users
+
+    @pytest.mark.asyncio
+    async def test_original_creator_preserved(self) -> None:
+        """The original creator value is preserved across toggles."""
+        provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
+        filters = PlanFilters(
+            labels=("erk-plan",),
+            state="open",
+            run_state=None,
+            limit=None,
+            show_prs=False,
+            show_runs=False,
+            exclude_labels=(),
+            creator="myuser",
+        )
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            assert app._original_creator == "myuser"
+
+            # Toggle on and off
+            await pilot.press("a")
+            await pilot.pause()
+            await pilot.pause()
+            await pilot.press("a")
+            await pilot.pause()
+            await pilot.pause()
+
+            # Original creator should still be preserved
+            assert app._original_creator == "myuser"

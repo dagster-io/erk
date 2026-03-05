@@ -80,6 +80,7 @@ class ErkDashApp(
         Binding("2", "switch_view_learn", "Learn", show=False),
         Binding("3", "switch_view_objectives", "Objectives", show=False),
         Binding("t", "toggle_stack_filter", "Stack", show=False),
+        Binding("a", "toggle_all_users", "All Users", show=False),
         Binding("x", "one_shot_prompt", "One-Shot"),
         Binding("right", "next_view", "Next View", show=False, priority=True),
         Binding("left", "previous_view", "Previous View", show=False, priority=True),
@@ -140,6 +141,8 @@ class ErkDashApp(
         self._view_mode: ViewMode = ViewMode.PLANS
         self._view_bar: ViewBar | None = None
         self._data_cache: dict[tuple[str, ...], list[PlanRowData]] = {}
+        self._show_all_users = False
+        self._original_creator: str | None = filters.creator
 
     def _display_name_for_view(self, mode: ViewMode) -> str:
         """Get the display name for a view mode.
@@ -199,6 +202,7 @@ class ErkDashApp(
         # under the correct key and stale results don't overwrite the display.
         fetched_mode = self._view_mode
         view_config = get_view_config(fetched_mode)
+        active_creator = None if self._show_all_users else self._original_creator
         active_filters = PlanFilters(
             labels=view_config.labels,
             state=self._plan_filters.state,
@@ -206,7 +210,7 @@ class ErkDashApp(
             limit=self._plan_filters.limit,
             show_prs=self._plan_filters.show_prs,
             show_runs=self._plan_filters.show_runs,
-            creator=self._plan_filters.creator,
+            creator=active_creator,
             exclude_labels=view_config.exclude_labels,
         )
 
