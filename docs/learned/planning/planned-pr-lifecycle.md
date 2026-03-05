@@ -164,6 +164,6 @@ The new `format_plan_next_steps_plain()` takes only `plan_number` and `url` para
 
 ## Related Topics
 
-- [Planned PR Branch Sync](planned-pr-branch-sync.md) - How branches are synced with remote
+- [Planned PR Branch Teleport](planned-pr-branch-teleport.md) - How branches are teleported from remote
 - [PR Body Assembly](../architecture/pr-body-assembly.md) - How `assemble_pr_body()` handles both backends
 - [Plan Lifecycle](lifecycle.md) - Overall plan lifecycle

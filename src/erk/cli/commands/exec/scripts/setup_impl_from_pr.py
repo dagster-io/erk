@@ -69,12 +69,12 @@ def _checkout_plan_branch(
     current_branch: str,
     branch_name: str,
 ) -> None:
-    """Fetch, checkout, and sync a planned-PR plan branch.
+    """Fetch, checkout, and teleport a planned-PR plan branch.
 
     Handles three cases:
-    - Already on the branch: just sync
-    - Branch exists locally: checkout and sync
-    - Branch only on remote: create tracking branch (no sync needed)
+    - Already on the branch: just teleport
+    - Branch exists locally: checkout and teleport
+    - Branch only on remote: create tracking branch (no teleport needed)
 
     Args:
         git: Git gateway
@@ -86,10 +86,10 @@ def _checkout_plan_branch(
     """
     git.remote.fetch_branch(repo_root, "origin", branch_name)
     local_branches = git.branch.list_local_branches(repo_root)
-    needs_sync = True
+    needs_teleport = True
 
     if current_branch == branch_name:
-        click.echo(f"Already on plan branch '{branch_name}', syncing with remote...", err=True)
+        click.echo(f"Already on plan branch '{branch_name}', teleporting from remote...", err=True)
     elif branch_name in local_branches:
         click.echo(f"Checking out plan branch '{branch_name}'...", err=True)
         branch_manager.checkout_branch(cwd, branch_name)
@@ -97,16 +97,16 @@ def _checkout_plan_branch(
         click.echo(f"Creating local tracking branch for '{branch_name}' from remote...", err=True)
         branch_manager.create_tracking_branch(repo_root, branch_name, f"origin/{branch_name}")
         branch_manager.checkout_branch(cwd, branch_name)
-        needs_sync = False
+        needs_teleport = False
 
-    if needs_sync:
+    if needs_teleport:
         pull_result = git.remote.pull_rebase(cwd, "origin", branch_name)
         if isinstance(pull_result, PullRebaseError):
             error_output = {
                 "success": False,
                 "error": "pull_rebase_failed",
                 "message": (
-                    f"Failed to sync branch '{branch_name}' with remote: {pull_result.message}"
+                    f"Failed to teleport branch '{branch_name}' from remote: {pull_result.message}"
                 ),
             }
             click.echo(json.dumps(error_output), err=True)
@@ -178,7 +178,7 @@ def _setup_planned_pr_plan(
     pr_url = pr_result.url
     current_branch = _get_current_branch(git, cwd)
 
-    # Checkout and sync the plan branch
+    # Checkout and teleport the plan branch
     _checkout_plan_branch(
         git=git,
         branch_manager=branch_manager,

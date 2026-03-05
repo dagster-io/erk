@@ -94,7 +94,7 @@ Rules triggered by matching actions in code.
 
 **closing a plan issue without verifying all items were addressed** → Read [Complete File Inventory Protocol](complete-inventory-protocol.md) first. Compare the file inventory against the plan's items before closing. Silent omissions are the most common failure mode.
 
-**committing to planned-PR plan branches after checkout without pulling remote** → Read [Planned PR Branch Sync](planned-pr-branch-sync.md) first. Both setup_impl_from_pr.py and submit.py use the same three-step sync: fetch_branch -> checkout/create_tracking -> pull_rebase. Skipping pull_rebase causes non-fast-forward push failures.
+**committing to planned-PR plan branches after checkout without pulling remote** → Read [Planned PR Branch Teleport](planned-pr-branch-teleport.md) first. Both setup_impl_from_pr.py and submit.py use the same three-step teleport: fetch_branch -> checkout/create_tracking -> pull_rebase. Skipping pull_rebase causes non-fast-forward push failures.
 
 **consolidating issues that already have erk-consolidated label** → Read [Consolidation Labels](consolidation-labels.md) first. Filter out erk-consolidated issues before consolidation. These are outputs of previous consolidation and should not be re-consolidated.
 
@@ -104,7 +104,7 @@ Rules triggered by matching actions in code.
 
 **creating a learn plan without setting learned_from_issue** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plans MUST set learned_from_issue to their parent implementation plan's issue number. Without it, base branch auto-detection fails and the learn plan lands on trunk instead of stacking on the parent.
 
-**creating a new branch for a planned-PR plan** → Read [Planned PR Branch Sync](planned-pr-branch-sync.md) first. Planned PR plans already have a branch created during plan-save. Reuse the existing branch, don't create a new one.
+**creating a new branch for a planned-PR plan** → Read [Planned PR Branch Teleport](planned-pr-branch-teleport.md) first. Planned PR plans already have a branch created during plan-save. Reuse the existing branch, don't create a new one.
 
 **creating a new plan-generating command without a pre-plan gathering step** → Read [Context Preservation Prompting Patterns](context-preservation-prompting.md) first. Without explicit context materialization before EnterPlanMode, agents produce sparse plans. Apply the two-phase pattern from this document.
 
@@ -118,7 +118,7 @@ Rules triggered by matching actions in code.
 
 **designing output routing for a multi-agent workflow** → Read [Agent Output Routing Strategies](agent-output-routing-strategies.md) first. Choose between embedded-prompt routing (in orchestrator Task prompts) and agent-file routing (in agent definitions). See this doc for the decision framework.
 
-**detecting plan backend by checking backend type directly** → Read [Planned PR Branch Sync](planned-pr-branch-sync.md) first. Use github.get_pr() + pr_result.head_ref_name to discover the plan branch. There is only one backend (planned-PR).
+**detecting plan backend by checking backend type directly** → Read [Planned PR Branch Teleport](planned-pr-branch-teleport.md) first. Use github.get_pr() + pr_result.head_ref_name to discover the plan branch. There is only one backend (planned-PR).
 
 **editing plan body content in plan creation, replan, or one-shot dispatch** → Read [One-Shot Workflow](one-shot-workflow.md) first. One-shot metadata block preservation: the metadata block in the plan body (HTML comment with erk:metadata-block markers) must survive all edits. Never strip or overwrite HTML comment blocks that contain erk:metadata-block markers.
 
@@ -144,7 +144,7 @@ Rules triggered by matching actions in code.
 
 **implementing custom PR/plan relevance assessment logic** → Read [Plan Lifecycle](lifecycle.md) first. Reference `/local:check-relevance` verdict classification system first. Use SUPERSEDED (80%+ overlap), PARTIALLY_IMPLEMENTED (30-80% overlap), DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency.
 
-**implementing planned-PR plan without syncing with remote** → Read [Planned PR Branch Sync](planned-pr-branch-sync.md) first. Before implementing a planned-PR plan, always sync with remote: fetch_branch -> checkout/create_tracking -> pull_rebase
+**implementing planned-PR plan without teleporting from remote** → Read [Planned PR Branch Teleport](planned-pr-branch-teleport.md) first. Before implementing a planned-PR plan, always teleport from remote: fetch_branch -> checkout/create_tracking -> pull_rebase
 
 **importing functions directly from plan_header.py** → Read [Plan Header Privatization](plan-header-privatization.md) first. plan_header.py functions are being privatized. Use PlanBackend methods instead for metadata operations.
 
