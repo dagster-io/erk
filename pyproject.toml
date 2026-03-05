@@ -100,7 +100,7 @@ packages = ["src/erk"]
 target-version = "py311"
 line-length = 100
 src = ["src"]
-# exclude = [".claude/skills/"]
+exclude = [".claude/skills/"]
 
 [tool.ruff.lint]
 select = [
@@ -121,6 +121,9 @@ exclude = [".claude/skills/"]
 [tool.ty.environment]
 python-version = "3.11"
 python = ".venv"
+
+[tool.erk.reviews]
+exclude = [".claude/skills/"]
 
 [tool.pytest.ini_options]
 addopts = "-q"

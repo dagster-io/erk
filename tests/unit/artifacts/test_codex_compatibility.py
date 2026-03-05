@@ -10,6 +10,7 @@ from pathlib import Path
 import pytest
 import yaml
 
+from erk.capabilities.skills.bundled import bundled_skills, unbundled_skills
 from erk.core.capabilities.codex_portable import (
     claude_only_skills,
     codex_portable_skills,
@@ -258,3 +259,36 @@ def test_codex_portable_skills_match_force_include() -> None:
 
     if failures:
         pytest.fail("\n".join(failures))
+
+
+def test_bundled_and_unbundled_cover_all_skills() -> None:
+    """Verify bundled_skills() + unbundled_skills() covers all skills on disk.
+
+    Every skill in .claude/skills/ must be explicitly listed as either bundled
+    (synced to external projects) or unbundled (erk-repo-only).
+    """
+    all_skills = _get_all_skill_names()
+    bundled = set(bundled_skills().keys())
+    unbundled = set(unbundled_skills())
+
+    # No overlap
+    overlap = bundled & unbundled
+    if overlap:
+        pytest.fail(f"Skills in both bundled_skills() and unbundled_skills(): {sorted(overlap)}")
+
+    # No orphans
+    classified = bundled | unbundled
+    orphaned = all_skills - classified
+    if orphaned:
+        pytest.fail(
+            f"Skills not in bundled_skills() or unbundled_skills(): {sorted(orphaned)}\n"
+            f"Add to bundled_skills() in src/erk/capabilities/skills/bundled.py to bundle,\n"
+            f"or to _UNBUNDLED_SKILLS to explicitly exclude from the bundle."
+        )
+
+    # No nonexistent entries
+    nonexistent = classified - all_skills
+    if nonexistent:
+        pytest.fail(
+            f"Skills in bundled/unbundled registries not found on disk: {sorted(nonexistent)}"
+        )

@@ -34,6 +34,7 @@ from dataclasses import dataclass
 
 import click
 
+from erk.review.config import read_review_exclude_patterns
 from erk.review.models import ParsedReview
 from erk.review.parsing import discover_matching_reviews
 from erk_shared.context.helpers import require_cwd, require_github
@@ -132,10 +133,14 @@ def discover_reviews(
         click.echo(json.dumps(result.__dict__, indent=2))
         raise SystemExit(1) from None
 
+    # Read exclude patterns from pyproject.toml
+    exclude_patterns = read_review_exclude_patterns(cwd)
+
     # Discover matching reviews
     discovery = discover_matching_reviews(
         reviews_dir=reviews_path,
         changed_files=changed_files,
+        exclude_patterns=exclude_patterns,
     )
 
     # Check for validation errors

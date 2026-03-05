@@ -218,12 +218,43 @@ Found X violations across Y files.
 """
 
 
+EXCLUDE_SECTION = """\
+
+
+## File Exclusions
+
+The following file patterns are excluded from review. Do NOT analyze, flag violations,
+or post inline comments for any files matching these patterns:
+
+{patterns}
+
+Skip these files entirely when reviewing the diff.
+"""
+
+
+def _build_exclude_section(exclude_patterns: tuple[str, ...]) -> str:
+    """Build the file exclusion section for injection into prompts.
+
+    Args:
+        exclude_patterns: Gitignore-style glob patterns to exclude.
+
+    Returns:
+        Formatted exclusion section, or empty string if no patterns.
+    """
+    if not exclude_patterns:
+        return ""
+
+    pattern_list = "\n".join(f"- `{p}`" for p in exclude_patterns)
+    return EXCLUDE_SECTION.format(patterns=pattern_list)
+
+
 def assemble_review_prompt(
     *,
     review: ParsedReview,
     repository: str,
     pr_number: int | None,
     base_branch: str | None,
+    exclude_patterns: tuple[str, ...] = (),
 ) -> str:
     """Assemble a complete review prompt from a review definition.
 
@@ -249,20 +280,36 @@ def assemble_review_prompt(
     if pr_number is None and base_branch is None:
         raise ValueError("Must specify either pr_number or base_branch")
 
+    exclude_section = _build_exclude_section(exclude_patterns)
+
     if pr_number is not None:
-        return REVIEW_PROMPT_TEMPLATE.format(
+        prompt = REVIEW_PROMPT_TEMPLATE.format(
             repository=repository,
             pr_number=pr_number,
             review_name=review.frontmatter.name,
             review_body=review.body,
             marker=review.frontmatter.marker,
         )
+        if exclude_section:
+            # Inject after "Get the Diff" step
+            prompt = prompt.replace(
+                "## Step 4: Collect Violations",
+                exclude_section + "## Step 4: Collect Violations",
+            )
+        return prompt
 
     # Local mode
     assert base_branch is not None
-    return LOCAL_REVIEW_PROMPT_TEMPLATE.format(
+    prompt = LOCAL_REVIEW_PROMPT_TEMPLATE.format(
         repository=repository,
         base_branch=base_branch,
         review_name=review.frontmatter.name,
         review_body=review.body,
     )
+    if exclude_section:
+        # Inject after "Get the Diff" step
+        prompt = prompt.replace(
+            "## Step 3: Output Violations",
+            exclude_section + "## Step 3: Output Violations",
+        )
+    return prompt

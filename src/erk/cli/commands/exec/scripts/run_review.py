@@ -45,6 +45,7 @@ from dataclasses import dataclass
 
 import click
 
+from erk.review.config import read_review_exclude_patterns
 from erk.review.parsing import parse_review_file
 from erk.review.prompt_assembly import assemble_review_prompt
 from erk_shared.context.helpers import (
@@ -164,12 +165,16 @@ def run_review(
     if repository is None:
         repository = "unknown/unknown"
 
+    # Read exclude patterns from pyproject.toml
+    exclude_patterns = read_review_exclude_patterns(cwd)
+
     # Assemble the prompt
     prompt = assemble_review_prompt(
         review=review,
         repository=repository,
         pr_number=pr_number,
         base_branch=resolved_base_branch,
+        exclude_patterns=exclude_patterns,
     )
 
     if dry_run:
