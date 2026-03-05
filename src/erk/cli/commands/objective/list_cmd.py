@@ -25,13 +25,16 @@ from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import Plan
 
 
+_SLUG_MAX_LEN = 30
+
+
 def _compute_slug(plan: Plan) -> str:
     if plan.body:
         slug = extract_objective_slug(plan.body)
         if slug is not None:
-            return slug[:25]
+            return slug[:_SLUG_MAX_LEN]
     if plan.title:
-        return plan.title.removeprefix("Objective: ")[:25]
+        return plan.title.removeprefix("Objective: ")[:_SLUG_MAX_LEN]
     return "-"
 
 
@@ -77,6 +80,21 @@ def _compute_next_node_fields(
 
     deps = " ".join(dep_prs[:3]) if dep_prs else "-"
     return (next_node, deps_state, deps)
+
+
+_SPARKLINE_RICH_STYLES: dict[str, str] = {
+    "✓": "[green]✓[/green]",
+    "▶": "[yellow]▶[/yellow]",
+    "◐": "[blue]◐[/blue]",
+    "○": "[dim]○[/dim]",
+    "⊘": "[red]⊘[/red]",
+    "-": "[dim]-[/dim]",
+}
+
+
+def _rich_sparkline(sparkline: str) -> str:
+    """Wrap sparkline characters in Rich markup for colored output."""
+    return "".join(_SPARKLINE_RICH_STYLES.get(ch, ch) for ch in sparkline)
 
 
 def _compute_enriched_fields(plan: Plan) -> dict[str, str]:
@@ -143,10 +161,10 @@ def list_objectives(ctx: ErkContext) -> None:
     # Build Rich table with enriched columns matching TUI dashboard
     table = Table(show_header=True, header_style="bold", box=None)
     table.add_column("#", style="cyan", no_wrap=True)
-    table.add_column("slug", no_wrap=True)
+    table.add_column("slug", no_wrap=True, min_width=20)
     table.add_column("prog", no_wrap=True)
     table.add_column("state", no_wrap=True)
-    table.add_column("deps-state", no_wrap=True)
+    table.add_column("deps-state", no_wrap=True, min_width=10)
     table.add_column("deps", no_wrap=True)
     table.add_column("next", no_wrap=True)
     table.add_column("updated", no_wrap=True)
@@ -162,7 +180,7 @@ def list_objectives(ctx: ErkContext) -> None:
             f"[link={plan.url}]#{plan.plan_identifier}[/link]",
             escape(slug),
             fields["progress"],
-            fields["state"],
+            _rich_sparkline(fields["state"]),
             fields["deps_state"],
             fields["deps"],
             fields["next_node"],
