@@ -1,8 +1,12 @@
 """Teleport a PR's remote state to the local branch.
 
-Ensures the PR exists on GitHub, fetches the remote branch, and force-resets
-the local branch to match the remote exactly. Operates on the current worktree
-by default, with --new-slot to create a fresh worktree slot.
+Remote-first counterpart to 'checkout'. While checkout preserves local state
+(reusing existing worktrees, keeping unpushed commits), teleport force-resets
+the local branch to match the remote exactly. Use teleport when a remote agent
+has pushed commits and you want your local copy to match.
+
+Operates on the current worktree by default, with --new-slot to create a fresh
+worktree slot.
 """
 
 from pathlib import Path
@@ -26,8 +30,15 @@ from erk_shared.output.output import user_output
 def pr_teleport(ctx: ErkContext, pr_number: int, new_slot: bool, force: bool) -> None:
     """Teleport a PR's remote state to local, overwriting local branch.
 
-    Ensures the PR exists on GitHub, fetches the latest remote state, and
-    force-resets the local branch to match the remote exactly.
+    Unlike 'checkout' which preserves local state (reusing existing worktrees
+    and keeping local commits), teleport is remote-first: it force-resets the
+    local branch to match the remote exactly, discarding any local commits
+    that haven't been pushed.
+
+    \b
+    Use 'checkout' when you want to start working on a PR locally.
+    Use 'teleport' when a remote agent has pushed new commits and you
+    want your local branch to match the remote exactly.
 
     \b
     Examples:
