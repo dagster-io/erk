@@ -434,7 +434,7 @@ last_dispatched_node_id: 'WFR_draft456'
         assert "Key Changes" in plan_body
         # Footer content should NOT be present
         assert "Closes #7626" not in plan_body
-        assert "erk pr checkout" not in plan_body
+        assert "erk pr teleport" not in plan_body
 
     def test_stage1_pr_body_extracts_original_plan(self) -> None:
         """Stage 1 PR bodies with original-plan section extract plan content correctly.

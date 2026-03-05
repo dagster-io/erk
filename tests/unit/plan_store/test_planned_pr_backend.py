@@ -342,4 +342,4 @@ def test_create_plan_includes_checkout_footer() -> None:
 
     pr = fake_github.get_pr(Path("/repo"), int(result.plan_id))
     assert not isinstance(pr, PRNotFound)
-    assert "erk pr checkout" in pr.body
+    assert "erk pr teleport" in pr.body

@@ -20,16 +20,14 @@ def test_build_pr_body_footer_basic() -> None:
     result = build_pr_body_footer(pr_number=1895)
 
     assert "---" in result
-    assert 'source "$(erk pr checkout 1895 --script)"' in result
+    assert "erk pr teleport 1895" in result
 
 
 def test_build_pr_body_footer_includes_checkout_command() -> None:
     """Test that footer includes checkout command."""
     result = build_pr_body_footer(pr_number=100)
 
-    assert 'source "$(erk pr checkout 100 --script)"' in result
-    # sync is no longer needed — checkout fetches and updates local branch
-    assert "erk pr sync" not in result
+    assert "erk pr teleport 100" in result
 
 
 def test_build_pr_body_footer_different_pr_numbers() -> None:
@@ -37,8 +35,8 @@ def test_build_pr_body_footer_different_pr_numbers() -> None:
     result1 = build_pr_body_footer(pr_number=456)
     result2 = build_pr_body_footer(pr_number=789)
 
-    assert 'source "$(erk pr checkout 456 --script)"' in result1
-    assert 'source "$(erk pr checkout 789 --script)"' in result2
+    assert "erk pr teleport 456" in result1
+    assert "erk pr teleport 789" in result2
 
 
 # ============================================================================
