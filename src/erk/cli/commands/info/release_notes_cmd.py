@@ -19,16 +19,31 @@ def _format_items(items: list[tuple[str, int]]) -> None:
     for item_text, indent_level in items:
         # Base indent (4 spaces) + extra indent per nesting level (2 spaces)
         indent = "    " + ("  " * indent_level)
-        click.echo(f"{indent}- {item_text}")
+        if indent_level > 0:
+            click.echo(click.style(f"{indent}• {item_text}", dim=True))
+        else:
+            click.echo(f"{indent}• {item_text}")
+
+
+_SECTION_COLORS: dict[str, str] = {
+    "Added": "green",
+    "Changed": "yellow",
+    "Fixed": "blue",
+    "Removed": "red",
+    "Major Changes": "bright_magenta",
+}
 
 
 def _format_release(release: ReleaseEntry) -> None:
     """Format and display a single release entry."""
-    header = f"[{release.version}]"
+    version_part = click.style(f"[{release.version}]", fg="cyan", bold=True)
     if release.date:
-        header += f" - {release.date}"
+        date_part = click.style(f" - {release.date}", dim=True)
+        header = version_part + date_part
+    else:
+        header = version_part
 
-    click.echo(click.style(header, bold=True))
+    click.echo(header)
     click.echo()
 
     if not release.categories and not release.items:
@@ -45,7 +60,7 @@ def _format_release(release: ReleaseEntry) -> None:
 
     # Render Major Changes first if present (with bold header)
     if "Major Changes" in release.categories:
-        click.echo(click.style("  Major Changes", bold=True))
+        click.echo(click.style("  Major Changes", fg="bright_magenta", bold=True))
         _format_items(release.categories["Major Changes"])
         click.echo()
 
@@ -53,7 +68,8 @@ def _format_release(release: ReleaseEntry) -> None:
     standard_sections = ["Added", "Changed", "Fixed", "Removed"]
     for category in standard_sections:
         if category in release.categories:
-            click.echo(f"  {category}")
+            color = _SECTION_COLORS.get(category)
+            click.echo(click.style(f"  {category}", fg=color, bold=True))
             _format_items(release.categories[category])
             click.echo()
 
@@ -61,7 +77,7 @@ def _format_release(release: ReleaseEntry) -> None:
     rendered = {"Major Changes"} | set(standard_sections)
     for category, items in release.categories.items():
         if category not in rendered:
-            click.echo(f"  {category}")
+            click.echo(click.style(f"  {category}", bold=True))
             _format_items(items)
             click.echo()
 
@@ -109,9 +125,12 @@ def release_notes_cmd(show_all: bool, target_version: str | None) -> None:
     if show_all:
         click.echo(click.style("# erk Changelog", bold=True))
         click.echo()
-        for release in releases:
-            if release.version != "Unreleased" or release.items:
-                _format_release(release)
+        visible = [r for r in releases if r.version != "Unreleased" or r.items]
+        for i, release in enumerate(visible):
+            _format_release(release)
+            if i < len(visible) - 1:
+                click.echo(click.style("  " + "\u2500" * 50, dim=True))
+                click.echo()
         return
 
     # Default: show current version
@@ -123,6 +142,6 @@ def release_notes_cmd(show_all: bool, target_version: str | None) -> None:
         click.echo("Run 'erk release-notes --all' to see all releases.")
         return
 
-    click.echo(click.style(f"Release notes for erk {current}", bold=True))
+    click.echo(click.style(f"Release notes for erk {current}", fg="green", bold=True))
     click.echo()
     _format_release(release)
