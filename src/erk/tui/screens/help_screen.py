@@ -82,6 +82,7 @@ class HelpScreen(ModalScreen):
                 yield Label("c       View unresolved comments", classes="help-binding")
                 yield Label("h       View failing checks", classes="help-binding")
                 yield Label("l       Launch actions menu", classes="help-binding")
+                yield Label("b       View objective nodes", classes="help-binding")
                 yield Label("x       Dispatch one-shot prompt", classes="help-binding")
 
             with Vertical(classes="help-section"):
