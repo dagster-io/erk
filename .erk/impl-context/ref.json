@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Fix High-Priority Planning Docs Terminology",
+  "objective_id": 8381,
+  "node_ids": [
+    "6.1"
+  ]
+}
