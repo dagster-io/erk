@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Colorize Objective Nodes Screen"
+  "plan_id": "8784",
+  "url": "https://github.com/dagster-io/erk/pull/8784",
+  "created_at": "2026-03-05T15:25:22.228067",
+  "synced_at": "2026-03-05T15:25:22.228067",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
