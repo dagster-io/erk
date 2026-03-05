@@ -7,26 +7,22 @@ model: haiku
 
 # /erk:objective-list
 
-List all open objectives in the current repository.
+List all open objectives in the current repository with enriched dashboard columns.
 
 ## Agent Instructions
 
-### Step 1: Fetch Open Objectives
+### Step 1: Run CLI Command
 
 Run:
 
 ```bash
-gh issue list --label "erk-objective" --state open --json number,title,createdAt --limit 50
+erk objective list
 ```
 
 ### Step 2: Display Results
 
-Format output as a markdown table:
-
-| #    | Title                 | Created |
-| ---- | --------------------- | ------- |
-| #123 | Objective: Feature X  | 3d ago  |
-| #456 | Objective: Refactor Y | 1w ago  |
+Show the CLI output directly to the user. The command produces a Rich table with columns:
+`#`, `slug`, `prog`, `state`, `deps-state`, `deps`, `next`, `updated`, `created by`.
 
 If no objectives found, report: "No open objectives found."
 
