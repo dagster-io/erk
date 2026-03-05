@@ -72,6 +72,7 @@ Quick reference for all `erk exec` subcommands.
 | `objective-apply-landed-update`   | Apply mechanical updates to an objective after landing a PR.                |
 | `objective-fetch-context`         | Fetch all context for objective update in a single call.                    |
 | `objective-link-pr`               | Link PR number to objective roadmap nodes from .erk/impl-context/ metadata. |
+| `objective-plan-setup`            | Fetch, validate, and set up context for objective planning.                 |
 | `objective-post-action-comment`   | Post a formatted action comment to an objective issue.                      |
 | `objective-render-roadmap`        | Render a complete roadmap section from JSON input on stdin.                 |
 | `objective-save-to-issue`         | Save plan as objective GitHub issue.                                        |
@@ -90,6 +91,7 @@ Quick reference for all `erk exec` subcommands.
 | `rebase-with-conflict-resolution` | Rebase onto target branch and resolve conflicts with Claude.                |
 | `register-one-shot-plan`          | Register a one-shot plan with issue metadata and comment.                   |
 | `reply-to-discussion-comment`     | Reply to a PR discussion comment with quote and action summary.             |
+| `resolve-objective-ref`           | Resolve an objective reference to an objective number.                      |
 | `resolve-review-thread`           | Resolve a PR review thread.                                                 |
 | `resolve-review-threads`          | Resolve multiple PR review threads from JSON stdin.                         |
 | `run-review`                      | Run a code review using Claude.                                             |
@@ -854,6 +856,24 @@ Link PR number to objective roadmap nodes from .erk/impl-context/ metadata.
 | ------------- | ------- | -------- | -------------- | ------------------------------------ |
 | `--pr-number` | INTEGER | Yes      | Sentinel.UNSET | PR number to link to objective nodes |
 
+### objective-plan-setup
+
+Fetch, validate, and set up context for objective planning.
+
+**Usage:** `erk exec objective-plan-setup` <objective_number>
+
+**Arguments:**
+
+| Name               | Required | Description |
+| ------------------ | -------- | ----------- |
+| `OBJECTIVE_NUMBER` | Yes      | -           |
+
+**Options:**
+
+| Flag           | Type | Required | Default        | Description                          |
+| -------------- | ---- | -------- | -------------- | ------------------------------------ |
+| `--session-id` | TEXT | Yes      | Sentinel.UNSET | Claude session ID for marker storage |
+
 ### objective-post-action-comment
 
 Post a formatted action comment to an objective issue.
@@ -1102,6 +1122,18 @@ Reply to a PR discussion comment with quote and action summary.
 | `--comment-id` | INTEGER | Yes      | Sentinel.UNSET | Numeric comment ID to reply to              |
 | `--pr`         | INTEGER | No       | -              | PR number (defaults to current branch's PR) |
 | `--reply`      | TEXT    | Yes      | Sentinel.UNSET | Action summary text (what was done)         |
+
+### resolve-objective-ref
+
+Resolve an objective reference to an objective number.
+
+**Usage:** `erk exec resolve-objective-ref` [ref]
+
+**Arguments:**
+
+| Name  | Required | Description |
+| ----- | -------- | ----------- |
+| `REF` | No       | -           |
 
 ### resolve-review-thread
 
