@@ -209,9 +209,8 @@ class StatusBar(Static):
             parts.append(f"next: {self._seconds_remaining}s")
 
         # Key hints
-        key_hints = (
+        parts.append(
             "1-3:views Enter:open /:filter a:users t:stack o:obj s:sort r:refresh q:quit ?:help"
         )
-        parts.append(key_hints)
 
         self.update(" │ ".join(parts))

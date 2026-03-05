@@ -114,10 +114,7 @@ class FilterActionsMixin:
         self._show_all_users = not self._show_all_users
         self._data_cache.clear()
 
-        if self._show_all_users:
-            label = "all"
-        else:
-            label = self._original_creator or "me"
+        label = "all" if self._show_all_users else (self._original_creator or "me")
 
         if self._status_bar is not None:
             self._status_bar.set_author_filter(label)
