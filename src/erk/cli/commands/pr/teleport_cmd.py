@@ -5,6 +5,8 @@ the local branch to match the remote exactly. Operates on the current worktree
 by default, with --new-slot to create a fresh worktree slot.
 """
 
+from pathlib import Path
+
 import click
 
 from erk.cli.commands.checkout_helpers import ensure_branch_has_worktree
@@ -135,7 +137,7 @@ def _teleport_new_slot(
     )
 
 
-def _confirm_overwrite(ctx: ErkContext, *, cwd, branch_name: str) -> None:
+def _confirm_overwrite(ctx: ErkContext, *, cwd: Path, branch_name: str) -> None:
     """Show divergence info and ask for confirmation before overwriting."""
     try:
         ahead, behind = ctx.git.branch.get_ahead_behind(cwd, branch_name)
