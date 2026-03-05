@@ -29,7 +29,12 @@ from collections.abc import Callable
 
 import click
 
-from erk_shared.context.helpers import require_cwd, require_git, require_plan_backend, require_repo_root
+from erk_shared.context.helpers import (
+    require_cwd,
+    require_git,
+    require_plan_backend,
+    require_repo_root,
+)
 from erk_shared.gateway.github.parsing import parse_plan_number_from_url
 from erk_shared.naming import extract_objective_number
 from erk_shared.plan_store.types import PlanNotFound

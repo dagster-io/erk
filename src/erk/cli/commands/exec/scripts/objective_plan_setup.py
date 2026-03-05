@@ -47,7 +47,11 @@ def _fetch_and_setup(
     issue = github_issues.get_issue(repo_root, objective_number)
     if isinstance(issue, IssueNotFound):
         return (
-            {"success": False, "error": "not_found", "message": f"Issue #{objective_number} not found"},
+            {
+                "success": False,
+                "error": "not_found",
+                "message": f"Issue #{objective_number} not found",
+            },
             1,
         )
 
@@ -64,7 +68,9 @@ def _fetch_and_setup(
         )
 
     if ERK_OBJECTIVE_LABEL not in issue.labels:
-        warnings.append(f"Issue #{objective_number} does not have the '{ERK_OBJECTIVE_LABEL}' label")
+        warnings.append(
+            f"Issue #{objective_number} does not have the '{ERK_OBJECTIVE_LABEL}' label"
+        )
 
     # Create marker
     scratch_dir = get_scratch_dir(session_id, repo_root=repo_root)
@@ -104,8 +110,7 @@ def _fetch_and_setup(
         "validation": {
             "passed": validation_result.passed,
             "checks": [
-                {"passed": passed, "description": desc}
-                for passed, desc in validation_result.checks
+                {"passed": passed, "description": desc} for passed, desc in validation_result.checks
             ],
         },
         "marker_created": True,

@@ -44,6 +44,7 @@ erk exec resolve-objective-ref $ARGUMENTS
 ```
 
 **Interpret the JSON result:**
+
 - If `"resolved": true` with `"source": "branch_name"` or `"source": "plan_metadata"`: Inform user "Using objective #N from {source}. Run with explicit argument to override."
 - If `"resolved": true` with `"source": "argument"`: Use the `objective_number` directly.
 - If `"resolved": false`: Use AskUserQuestion to ask "What objective issue should I work from?"
@@ -57,6 +58,7 @@ erk exec objective-plan-setup <objective-number> --session-id "${CLAUDE_SESSION_
 ```
 
 **Interpret the JSON result:**
+
 - If `"success": false` with `"error": "not_found"`: Report error and exit.
 - If `"success": false` with `"error": "is_plan"`: Redirect to `/erk:plan-implement`.
 - If `"success": false` with `"error": "validation_error"`: Report error and exit.

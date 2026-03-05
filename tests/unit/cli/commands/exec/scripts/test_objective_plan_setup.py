@@ -185,7 +185,8 @@ def test_marker_file_created(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 0
-    marker_path = tmp_path / ".erk" / "scratch" / "sessions" / "marker-test-session" / "objective-context.marker"
+    session_dir = tmp_path / ".erk" / "scratch" / "sessions" / "marker-test-session"
+    marker_path = session_dir / "objective-context.marker"
     assert marker_path.exists()
     assert marker_path.read_text(encoding="utf-8") == "400"
 
