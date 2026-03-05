@@ -1,0 +1,1295 @@
+<session>
+  <meta branch="plnd/add-workflow-run-indicator-03-04-1907" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8757&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8757` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll implement plan #8757. Let me start by setting up the implementation environment.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28202" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28202, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01UX2msFtxWBDsSsEWkixMV5">
+    <param name="command">erk exec setup-impl --issue 8757</param>
+    <param name="description">Set up implementation for plan #8757</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28202" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28202, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UX2msFtxWBDsSsEWkixMV5">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--add-workflow-run-indicator-03-04-1907", "plan_number": 8757, "plan_url": "https://github.com/dagster-io/erk/pull/8757", "branch": "plnd/add-workflow-run-indicator-03-04-1907", "plan_title": "[erk-plan] Plan: Add Active Workflow Run Indicator to Statusline", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8757, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/add-workflow-run-indicator-03-04-1907', syncing with remote...
+  </tool_result>
+  <assistant>Setup complete. Let me read the plan and load relevant context.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="28202" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018rjfHiwXRHkQwETgSuXEET">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--add-workflow-run-indicator-03-04-1907/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="28202" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018rjfHiwXRHkQwETgSuXEET">
+     1→# Plan: Add Active Workflow Run Indicator to Statusline
+     2→
+     3→&gt; **Replans:** #8668
+     4→
+     5→## Context
+     6→
+     7→When erk dispatches a plan for remote implementation via GitHub Actions, there's no visual indication in the statusline that a workflow is actively running. This plan adds a robot emoji (🤖) indicator showing active workflow runs for the current PR, giving users real-time awareness of remote agent activity.
+     8→
+     9→## What Changed Since Original Plan
+    10→
+    11→- Plan #8668 was closed without implementation — all items remain unimplemented
+    12→- Codebase is unchanged relative to the plan's assumptions
+    13→- Line numbers verified accurate as of current master
+    14→
+    15→## Investigation Findings
+    16→
+    17→### Corrections to Original Plan
+    18→
+    19→1. **Line references slightly off**: `max_workers=3` is at line 795 (plan said 794), `_fetch_review_thread_counts` ends at line 737
+    20→2. **Missing early-return path**: The `GitHubData` constructor at lines 772-782 (no-PR case) must also include `active_run_count=0`
+    21→3. **Missing TimeoutError path**: Line 821 must set `active_run_count = 0`
+    22→
+    23→### Key Architecture Details
+    24→
+    25→- **GitHubData** is a `NamedTuple` at lines 134-145 with 9 fields. Adding `active_run_count: int = 0` as trailing default preserves all existing constructors
+    26→- **Parallel fetch** uses `ThreadPoolExecutor(max_workers=3)` at line 795 with 3 futures
+    27→- **`build_gh_label`** receives `github_data: GitHubData | None` — the new field is accessible without signature changes
+    28→- **Workflow run-name patterns** use `:#PR_NUMBER:` format (verified in plan-implement.yml, pr-address.yml, one-shot.yml, pr-rebase.yml, pr-rewrite.yml). learn.yml correctly excluded (no `:#` pattern)
+    29→
+    30→## Implementation Steps
+
+... [67 lines omitted] ...
+
+    41→- Return `int` count, default to 0 on any error/timeout
+    52→- **TimeoutError handler** (line 821): Add `active_run_count = 0`
+    73→  - Error handling returns 0
+  </tool_result>
+  <assistant>Now let me explore the relevant source files and load necessary context.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1890" cache_read_input_tokens="28554" cache_creation="{'ephemeral_5m_input_tokens': 1890, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016i1Fd7isGH4bmSuFVPGTWi">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="limit">160</param>
+    <param name="offset">130</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1890" cache_read_input_tokens="28554" cache_creation="{'ephemeral_5m_input_tokens': 1890, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018pv4oFPUBPouuEDEra8RdA">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/tests/test_statusline.py</param>
+    <param name="limit">50</param>
+    <param name="offset">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1890" cache_read_input_tokens="28554" cache_creation="{'ephemeral_5m_input_tokens': 1890, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01La5ECQoqHbfQKey2QrsV8w">
+    <param name="pattern">_fetch_review_thread_counts</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1890" cache_read_input_tokens="28554" cache_creation="{'ephemeral_5m_input_tokens': 1890, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Hq9GTdbY6r6i5Ew9ZWcPyR">
+    <param name="pattern">max_workers</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1890" cache_read_input_tokens="28554" cache_creation="{'ephemeral_5m_input_tokens': 1890, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01MfByZ4zaibLVLjieVDTb8x">
+    <param name="pattern">statusline|workflow|active.*run</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1890" cache_read_input_tokens="28554" cache_creation="{'ephemeral_5m_input_tokens': 1890, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016i1Fd7isGH4bmSuFVPGTWi">
+   130→    pr_state: str  # "published", "draft", "merged", "closed" (empty if no PR)
+   131→    has_conflicts: bool  # True if mergeable == "CONFLICTING"
+   132→
+   133→
+   134→class GitHubData(NamedTuple):
+   135→    """Complete GitHub data from GraphQL query."""
+   136→
+   137→    owner: str  # Repository owner
+   138→    repo: str  # Repository name
+   139→    pr_number: int  # PR number (0 if no PR)
+   140→    pr_state: str  # "OPEN", "MERGED", "CLOSED" (empty if no PR)
+   141→    is_draft: bool  # True if PR is draft
+   142→    mergeable: str  # "MERGEABLE", "CONFLICTING", "UNKNOWN" (empty if no PR)
+   143→    check_contexts: list[dict[str, str]]  # List of check contexts from statusCheckRollup
+   144→    review_thread_counts: tuple[int, int]  # (resolved, total) counts for PR review threads
+   145→    from_fallback: bool  # True if PR info came from GitHub API fallback, not Graphite cache
+   146→
+   147→
+   148→def get_git_root_via_gateway(ctx: StatuslineContext) -&gt; Path | None:
+   149→    """Get git repository root directory using gateway.
+   150→
+   151→    Args:
+   152→        ctx: StatuslineContext with git gateway
+   153→
+   154→    Returns:
+   155→        Path to git root, or None if not in git repo.
+   156→    """
+   157→    try:
+   158→        return ctx.git.repo.get_repository_root(ctx.cwd)
+   159→    except (ValueError, OSError):
+
+... [135 lines omitted] ...
+
+   221→        except json.JSONDecodeError:
+  </tool_result>
+  <tool_result tool="toolu_018pv4oFPUBPouuEDEra8RdA">
+     1→"""Tests for statusline.py GitHub integration."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import json
+     6→import os
+     7→import tempfile
+     8→import time
+     9→from pathlib import Path
+    10→from unittest.mock import MagicMock, patch
+    11→
+    12→from erk_shared.gateway.branch_manager.fake import FakeBranchManager
+    13→from erk_shared.gateway.branch_manager.types import PrInfo
+    14→from erk_shared.gateway.git.abc import WorktreeInfo
+    15→from erk_shared.gateway.git.fake import FakeGit
+    16→from erk_shared.gateway.github.fake import FakeGitHub
+    17→from erk_shared.gateway.graphite.fake import FakeGraphite
+    18→from erk_statusline.context import StatuslineContext
+    19→from erk_statusline.statusline import (
+    20→    CACHE_TTL_SECONDS,
+    21→    GitHubData,
+    22→    PRDetailsResult,
+    23→    RepoInfo,
+    24→    _categorize_check_buckets,
+    25→    _fetch_check_runs,
+    26→    _fetch_pr_details,
+    27→    _fetch_review_thread_counts,
+    28→    _get_cache_path,
+    29→    _get_cached_pr_info,
+    30→    _parse_github_repo_from_url,
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01MfByZ4zaibLVLjieVDTb8x">
+Found 300 files
+docs/learned/workflows/index.md
+docs/learned/workflows/one-shot-workflow.md
+docs/learned/workflows/tripwires.md
+docs/learned/tui/view-aware-commands.md
+docs/learned/uncategorized/tripwires.md
+docs/learned/workflows/commit-messages.md
+docs/learned/tui/lifecycle-display.md
+docs/learned/tui/multi-operation-tracking.md
+docs/learned/tui/one-shot-prompt-modal.md
+docs/learned/tui/plan-row-data.md
+docs/learned/tui/subprocess-feedback.md
+docs/learned/tripwires-index.md
+docs/learned/tui/action-inventory.md
+docs/learned/tui/adding-commands.md
+docs/learned/tui/architecture.md
+docs/learned/tui/async-action-refresh-pattern.md
+docs/learned/tui/command-palette.md
+docs/learned/tui/data-contract.md
+docs/learned/tui/index.md
+docs/learned/testing/tripwires.md
+docs/learned/textual/background-workers.md
+docs/learned/testing/devrun-agent.md
+docs/learned/testing/exec-script-testing.md
+docs/learned/testing/fake-github-api-reference.md
+docs/learned/testing/fake-github-mutation-tracking.md
+docs/learned/testing/frozen-dataclass-test-doubles.md
+docs/learned/sessions/discovery-fallback.md
+docs/learned/sessions/index.md
+docs/learned/sessions/lifecycle.md
+
+... [271 lines omitted] ...
+
+docs/learned/ci/ci-failure-summarization.md
+docs/learned/architecture/gateway-error-boundaries.md
+docs/learned/architecture/error-handling-patterns.md
+  </tool_result>
+  <tool_result tool="toolu_01Hq9GTdbY6r6i5Ew9ZWcPyR">
+795:        with ThreadPoolExecutor(max_workers=3) as executor:
+  </tool_result>
+  <tool_result tool="toolu_01La5ECQoqHbfQKey2QrsV8w">
+609:def _fetch_review_thread_counts(
+805:                lambda: _fetch_review_thread_counts(
+  </tool_result>
+  <assistant>Let me read the key sections of the statusline file more thoroughly.</assistant>
+  <usage input_tokens="4238" cache_creation_input_tokens="3502" cache_read_input_tokens="30444" cache_creation="{'ephemeral_5m_input_tokens': 3502, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01DmMPjUsn9rWsCMoY1MrHLA">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="limit">140</param>
+    <param name="offset">609</param>
+  </tool_use>
+  <usage input_tokens="4238" cache_creation_input_tokens="3502" cache_read_input_tokens="30444" cache_creation="{'ephemeral_5m_input_tokens': 3502, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01LTBJ5Be531zfJ6Mna5TyTm">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="limit">100</param>
+    <param name="offset">760</param>
+  </tool_use>
+  <usage input_tokens="4238" cache_creation_input_tokens="3502" cache_read_input_tokens="30444" cache_creation="{'ephemeral_5m_input_tokens': 3502, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0142ecjuMYeyc7MBgFhox9Ph">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="limit">100</param>
+    <param name="offset">1070</param>
+  </tool_use>
+  <usage input_tokens="4238" cache_creation_input_tokens="3502" cache_read_input_tokens="30444" cache_creation="{'ephemeral_5m_input_tokens': 3502, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01EAU9UAHBoKVyL3DxB8vau3">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/erk-statusline.md</param>
+  </tool_use>
+  <usage input_tokens="4238" cache_creation_input_tokens="3502" cache_read_input_tokens="30444" cache_creation="{'ephemeral_5m_input_tokens': 3502, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DmMPjUsn9rWsCMoY1MrHLA">
+   609→def _fetch_review_thread_counts(
+   610→    *,
+   611→    owner: str,
+   612→    repo: str,
+   613→    pr_number: int,
+   614→    cwd: str,
+   615→    timeout: float,
+   616→) -&gt; tuple[int, int]:
+   617→    """Fetch resolved/total review thread counts via GraphQL.
+   618→
+   619→    Args:
+   620→        owner: Repository owner
+   621→        repo: Repository name
+   622→        pr_number: Pull request number
+   623→        cwd: Working directory for subprocess
+   624→        timeout: Timeout in seconds
+   625→
+   626→    Returns:
+   627→        Tuple of (resolved_count, total_count). Returns (0, 0) on error.
+   628→    """
+   629→    _logger.debug("Fetching review threads: %s/%s #%d", owner, repo, pr_number)
+   630→    start_time = time.time()
+   631→
+   632→    query = """query($owner: String!, $repo: String!, $number: Int!) {
+   633→      repository(owner: $owner, name: $repo) {
+   634→        pullRequest(number: $number) {
+   635→          reviewThreads(first: 100) {
+   636→            nodes {
+   637→              isResolved
+   638→            }
+
+... [115 lines omitted] ...
+
+   670→                "Review threads fetch failed: %s/%s #%d returncode=%d in %.2fs",
+   727→    except (subprocess.SubprocessError, json.JSONDecodeError) as e:
+   730→            "Review threads error: %s/%s #%d in %.2fs - %s",
+  </tool_result>
+  <tool_result tool="toolu_01LTBJ5Be531zfJ6Mna5TyTm">
+   760→    repo_info = get_github_repo_via_gateway(ctx, repo_root)
+   761→    if repo_info is None:
+   762→        _logger.debug("GitHub data fetch: no repo info found")
+   763→        return None
+   764→    owner, repo = repo_info
+   765→
+   766→    # Get PR info via BranchManager (Graphite cache or GitHub API)
+   767→    pr_info = get_pr_info_via_branch_manager(ctx, repo_root, branch)
+   768→
+   769→    if pr_info is None:
+   770→        # No PR for this branch
+   771→        _logger.debug("GitHub data fetch: no PR for branch=%s", branch)
+   772→        return GitHubData(
+   773→            owner=owner,
+   774→            repo=repo,
+   775→            pr_number=0,
+   776→            pr_state="",
+   777→            is_draft=False,
+   778→            mergeable="",
+   779→            check_contexts=[],
+   780→            review_thread_counts=(0, 0),
+   781→            from_fallback=False,
+   782→        )
+   783→
+   784→    pr_number, pr_state, is_draft, from_fallback = pr_info
+   785→    _logger.debug(
+   786→        "GitHub data fetch: found PR #%d state=%s draft=%s", pr_number, pr_state, is_draft
+   787→    )
+   788→
+   789→    # Fetch PR details, check runs, and review threads in parallel
+
+... [75 lines omitted] ...
+
+   815→    except TimeoutError:
+  </tool_result>
+  <tool_result tool="toolu_0142ecjuMYeyc7MBgFhox9Ph">
+  1070→    """Build GitHub PR metadata label.
+  1071→
+  1072→    Args:
+  1073→        repo_info: Repository and PR information
+  1074→        github_data: GitHub data from GraphQL query (for checks status and comments)
+  1075→        plan_number: Optional plan number from .impl/plan-ref.json
+  1076→        objective_issue: Optional objective issue number from .impl/plan-ref.json
+  1077→
+  1078→    Returns:
+  1079→        TokenSeq for the complete GitHub label like:
+  1080→        (gh:#123 plan:#456 obj:#789 st:👀💥 chks:✅ cmts:3/5)
+  1081→    """
+  1082→    parts = [Token("(gh:")]
+  1083→
+  1084→    # Add PR number if available (no hyperlink due to Claude Code alignment bug with OSC 8)
+  1085→    if repo_info.pr_number and repo_info.pr_url:
+  1086→        parts.append(Token(f"#{repo_info.pr_number}", color=Color.BLUE))
+  1087→
+  1088→        # Add plan number if available
+  1089→        if plan_number:
+  1090→            parts.extend(
+  1091→                [
+  1092→                    Token(" plan:"),
+  1093→                    Token(f"#{plan_number}", color=Color.BLUE),
+  1094→                ]
+  1095→            )
+  1096→
+  1097→        # Add objective issue if available
+  1098→        if objective_issue:
+  1099→            parts.extend(
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01EAU9UAHBoKVyL3DxB8vau3">
+     1→---
+     2→title: erk-statusline Architecture Guide
+     3→read_when:
+     4→  - "modifying the Claude Code status line"
+     5→  - "adding new status indicators to the statusline"
+     6→  - "understanding how statusline fetches GitHub data"
+     7→  - "working with Token/TokenSeq patterns"
+     8→  - "debugging statusline performance"
+     9→last_audited: "2026-02-05 14:19 PT"
+    10→audit_result: edited
+    11→---
+    12→
+    13→# erk-statusline Architecture Guide
+    14→
+    15→The erk-statusline package provides a custom status line for Claude Code, displaying git context, PR status, and CI checks.
+    16→
+    17→## Package Structure
+    18→
+    19→The package lives at `packages/erk-statusline/`. Source modules are in `src/erk_statusline/` and tests in `tests/`. Entry point: `erk_statusline.statusline:main`.
+    20→
+    21→Key modules:
+    22→
+    23→- `statusline.py` -- Core logic: data fetching, label building, `main()`
+    24→- `colored_tokens.py` -- Token/TokenSeq pattern for colored output (see module docstring for full API)
+    25→- `context.py` -- `StatuslineContext` with gateway dependency injection
+    26→
+    27→## Token/TokenSeq Pattern
+    28→
+    29→The statusline uses an immutable token system for building colored terminal output. See the module docstring in `colored_tokens.py` for full API documentation and usage examples.
+    30→
+
+... [117 lines omitted] ...
+
+    62→- Error fallback to defaults (never crashes)
+   131→1. **Never crash:** Errors fallback to defaults, showing partial info
+  </tool_result>
+  <assistant>Now let me set up my task tracking and read more of the files I'll need.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11575" cache_read_input_tokens="33946" cache_creation="{'ephemeral_5m_input_tokens': 11575, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01PQ228HGefyKcPizrz3uG9s">
+    <param name="todos">[{'content': 'Extend GitHubData NamedTuple with active_run_count field', 'status': 'pendin...[truncated 881 chars]...I and fix any issues', 'status': 'pending', 'activeForm': 'Running CI and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11575" cache_read_input_tokens="33946" cache_creation="{'ephemeral_5m_input_tokens': 11575, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01WXmcPmbNVhH3Ldjkgz8NHC">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="limit">20</param>
+    <param name="offset">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11575" cache_read_input_tokens="33946" cache_creation="{'ephemeral_5m_input_tokens': 11575, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017NzuVgWCbDnJFZhgPsAkM3">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/README.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11575" cache_read_input_tokens="33946" cache_creation="{'ephemeral_5m_input_tokens': 11575, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PQ228HGefyKcPizrz3uG9s">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_result tool="toolu_01WXmcPmbNVhH3Ldjkgz8NHC">
+     1→#!/usr/bin/env python3
+     2→"""
+     3→Claude Code status line - robbyrussell theme style.
+     4→
+     5→Matches the robbyrussell Oh My Zsh theme format:
+     6→➜  directory (git:branch) ✗
+     7→
+     8→With added Claude-specific info on the right.
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→import hashlib
+    14→import json
+    15→import logging
+    16→import os
+    17→import subprocess
+    18→import sys
+    19→import time
+    20→from concurrent.futures import ThreadPoolExecutor
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_017NzuVgWCbDnJFZhgPsAkM3">
+     1→# erk-statusline
+     2→
+     3→Custom status line for Claude Code with robbyrussell theme style.
+     4→
+     5→![Screenshot](screenshots/statusline.png)
+     6→
+     7→## Status Line Components
+     8→
+     9→The status line displays (left to right):
+    10→
+    11→- **Git repo**: `(git:repo-name)` - Current GitHub repository name
+    12→- **Worktree**: `({wt, br}:name)` or `(wt:name)` - Git worktree info ("root" for main worktree, or worktree name for linked worktrees)
+    13→- **Branch**: `(br:branch-name)` - Current git branch (combined with worktree if names match)
+    14→- **Current directory**: `(cwd:path)` - Relative path from git root (only shown if not at root)
+    15→- **Dirty indicator**: `✗` - Shows when there are uncommitted changes
+    16→- **GitHub PR info**: `(gh:#123 plan:#456 st:XX chks:XX)`:
+    17→  - `#123` - PR number
+    18→  - `plan:#456` - Associated issue number from `.impl/issue.json`
+    19→  - `st:` - PR state emoji: `👀` published, `🚧` draft, `🎉` merged, `⛔` closed, `💥` conflicts
+    20→  - `chks:` - CI checks status: `✅` passing, `🚫` failing, `🔄` pending
+    21→- **Model**: `(S)` Sonnet, `(O)` Opus, or model initial
+    22→
+    23→## Installation
+    24→
+    25→```bash
+    26→uv tool install git+https://github.com/dagster-io/erk-statusline
+    27→```
+    28→
+    29→Or for development:
+    30→
+
+... [73 lines omitted] ...
+
+    52→The statusline writes debug logs to help diagnose issues like missing `chks:` indicator, timeouts, or API failures.
+  </tool_result>
+  <assistant>Now let me signal GitHub and start implementing. Let me also check the workflow files to understand the run-name patterns.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2264" cache_read_input_tokens="45521" cache_creation="{'ephemeral_5m_input_tokens': 2264, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0149oGvEPYe8kk7G91TZAY6g">
+    <param name="command">erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2264" cache_read_input_tokens="45521" cache_creation="{'ephemeral_5m_input_tokens': 2264, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01UcKKEtmZucZyeaGPeoh2Cc">
+    <param name="pattern">run-name:</param>
+    <param name="path">/home/runner/work/erk/erk/.github/workflows</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2264" cache_read_input_tokens="45521" cache_creation="{'ephemeral_5m_input_tokens': 2264, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0149oGvEPYe8kk7G91TZAY6g">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_result tool="toolu_01UcKKEtmZucZyeaGPeoh2Cc">
+.github/workflows/plan-implement.yml:2:run-name: "${{ inputs.plan_id }}:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+.github/workflows/one-shot.yml:2:run-name: "one-shot:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+.github/workflows/pr-address.yml:2:run-name: "pr-address:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+.github/workflows/pr-rebase.yml:2:run-name: "rebase:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+.github/workflows/learn.yml:11:run-name: "${{ inputs.plan_id }}:${{ inputs.distinct_id }}"
+.github/workflows/pr-rewrite.yml:2:run-name: "rewrite:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+  </tool_result>
+  <assistant>Good - the run-name patterns confirm the `:#PR_NUMBER:` format. The `learn.yml` workflow does NOT include `:#` so it won't match. Now let me load the dignified-python skill and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="592" cache_read_input_tokens="47785" cache_creation="{'ephemeral_5m_input_tokens': 592, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01A8irUYByNx26vD9G9fxsZK">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="592" cache_read_input_tokens="47785" cache_creation="{'ephemeral_5m_input_tokens': 592, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01A8irUYByNx26vD9G9fxsZK">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <assistant>Now let me read the core dignified-python standards and check the Python version for this package.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1189" cache_read_input_tokens="48377" cache_creation="{'ephemeral_5m_input_tokens': 1189, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01TS5ZPtG6BbzE86bD7yAzKp">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1189" cache_read_input_tokens="48377" cache_creation="{'ephemeral_5m_input_tokens': 1189, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Rt2shyRutq1ykawV5hYHeh">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/pyproject.toml</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1189" cache_read_input_tokens="48377" cache_creation="{'ephemeral_5m_input_tokens': 1189, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TS5ZPtG6BbzE86bD7yAzKp">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [491 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   103→The key distinction: if removing the assert would cause a runtime error, it's control flow (WRONG). If removing it would only lose type information, it's type narrowing (ACCEPTABLE).
+   115→- `.resolve()` raises `OSError` for non-existent paths
+   116→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   117→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   132→# WRONG: Using exceptions for path validation
+   137→except (OSError, ValueError):
+   177→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   208→**The only acceptable exception:** Resolving genuine name collisions between two different modules that export identically-named symbols.
+   217→# CORRECT (rare exception): Resolving genuine collision
+   469→    log.warning("Non-numeric plan_id")
+   483→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   510→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_01Rt2shyRutq1ykawV5hYHeh">
+     1→[project]
+     2→name = "erk-statusline"
+     3→version = "0.9.5"
+     4→description = "Custom status line for Claude Code with robbyrussell theme style"
+     5→readme = "README.md"
+     6→requires-python = "&gt;=3.11"
+     7→dependencies = [
+     8→    "erk-shared",
+     9→]
+    10→
+    11→[project.scripts]
+    12→erk-statusline = "erk_statusline.statusline:main"
+    13→
+    14→[build-system]
+    15→requires = ["hatchling"]
+    16→build-backend = "hatchling.build"
+    17→
+    18→[tool.hatch.build.targets.wheel]
+    19→packages = ["src/erk_statusline"]
+    20→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Python 3.11+. Now let me start implementing. First, extend the `GitHubData` NamedTuple.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6561" cache_read_input_tokens="49566" cache_creation="{'ephemeral_5m_input_tokens': 6561, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01KSt39Jw6jWxYYedXsDc2DF">
+    <param name="todos">[{'content': 'Extend GitHubData NamedTuple with active_run_count field', 'status': 'in_pro...[truncated 885 chars]...I and fix any issues', 'status': 'pending', 'activeForm': 'Running CI and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6561" cache_read_input_tokens="49566" cache_creation="{'ephemeral_5m_input_tokens': 6561, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KSt39Jw6jWxYYedXsDc2DF">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Step 1: Extend `GitHubData` NamedTuple</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="427" cache_read_input_tokens="56127" cache_creation="{'ephemeral_5m_input_tokens': 427, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01W3qa4s3Zp2cLV1LFAPaGmt">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="old_string">    from_fallback: bool  # True if PR info came from GitHub API fallback, not Graphite cache</param>
+    <param name="new_string">    from_fallback: bool  # True if PR info came from GitHub API fallback, not Graphite cache
+    active_run_count: int = 0  # Number of active workflow runs for this PR</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="427" cache_read_input_tokens="56127" cache_creation="{'ephemeral_5m_input_tokens': 427, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01W3qa4s3Zp2cLV1LFAPaGmt">
+The file /home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01EB9bvcseLc4Qieyw4uRMA1">
+    <param name="todos">[{'content': 'Extend GitHubData NamedTuple with active_run_count field', 'status': 'comple...[truncated 887 chars]...I and fix any issues', 'status': 'pending', 'activeForm': 'Running CI and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="263" cache_read_input_tokens="56554" cache_creation="{'ephemeral_5m_input_tokens': 263, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EB9bvcseLc4Qieyw4uRMA1">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Step 2: Add `_fetch_active_workflow_runs()` function
+
+Now add the new fetch function after `_fetch_review_thread_counts`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="56817" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MPHW6RMhE89gZxfavbVPic">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="limit">10</param>
+    <param name="offset">735</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="56817" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MPHW6RMhE89gZxfavbVPic">
+   735→            elapsed,
+   736→            e,
+   737→        )
+   738→        return (0, 0)
+   739→
+   740→
+   741→def fetch_github_data_via_gateway(
+   742→    ctx: StatuslineContext, repo_root: Path, branch: str
+   743→) -&gt; GitHubData | None:
+   744→    """Fetch GitHub data using gateways for PR info, with REST for checks/mergeable.
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JQAiZTbv9N7nsrq7gi93hs">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="old_string">        return (0, 0)
+
+
+def fetch_github_data_via_gateway(</param>
+    <param name="new_string">        return (0, 0)
+
+
+def _fetch_active_workflow_runs(
+    *,
+    owner: str,
+    repo: ...[truncated 2563 chars]...       elapsed,
+        count,
+    )
+    return count
+
+
+def fetch_github_data_via_gateway(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="361" cache_read_input_tokens="57214" cache_creation="{'ephemeral_5m_input_tokens': 361, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JQAiZTbv9N7nsrq7gi93hs">
+The file /home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01WpwBie67yHrtMnyruHDsi3">
+    <param name="todos">[{'content': 'Extend GitHubData NamedTuple with active_run_count field', 'status': 'comple...[truncated 889 chars]...I and fix any issues', 'status': 'pending', 'activeForm': 'Running CI and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="913" cache_read_input_tokens="57575" cache_creation="{'ephemeral_5m_input_tokens': 913, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WpwBie67yHrtMnyruHDsi3">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Step 3: Add parallel worker for workflow runs
+
+Now I need to update the parallel fetch section. Let me read the current state:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="58488" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015e3Q88Nhm44fkhT9ZtFzfo">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="limit">70</param>
+    <param name="offset">870</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="58488" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015e3Q88Nhm44fkhT9ZtFzfo">
+   870→            from_fallback=False,
+   871→        )
+   872→
+   873→    pr_number, pr_state, is_draft, from_fallback = pr_info
+   874→    _logger.debug(
+   875→        "GitHub data fetch: found PR #%d state=%s draft=%s", pr_number, pr_state, is_draft
+   876→    )
+   877→
+   878→    # Fetch PR details, check runs, and review threads in parallel
+   879→    # Note: check runs uses branch name (not local SHA) which resolves to GitHub's HEAD,
+   880→    # avoiding issues when local branch differs from remote (e.g., after Graphite squash)
+   881→    cwd = str(ctx.cwd)
+   882→    review_thread_counts: tuple[int, int] = (0, 0)
+   883→    try:
+   884→        with ThreadPoolExecutor(max_workers=3) as executor:
+   885→            pr_future = executor.submit(
+   886→                lambda: _fetch_pr_details(
+   887→                    owner=owner, repo=repo, pr_number=pr_number, cwd=cwd, timeout=1.5
+   888→                )
+   889→            )
+   890→            checks_future = executor.submit(
+   891→                lambda: _fetch_check_runs(owner=owner, repo=repo, ref=branch, cwd=cwd, timeout=1.5)
+   892→            )
+   893→            threads_future = executor.submit(
+   894→                lambda: _fetch_review_thread_counts(
+   895→                    owner=owner, repo=repo, pr_number=pr_number, cwd=cwd, timeout=1.5
+   896→                )
+   897→            )
+   898→
+   899→            # Wait for all three with combined timeout
+
+... [45 lines omitted] ...
+
+   904→    except TimeoutError:
+  </tool_result>
+  <assistant>Now update the parallel fetch section:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1210" cache_read_input_tokens="58885" cache_creation="{'ephemeral_5m_input_tokens': 1210, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_0148GLJ5NrmM8hmdrR1XRXQR">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="old_string">    # Fetch PR details, check runs, and review threads in parallel
+    # Note: check runs ...[truncated 2026 chars]...     review_thread_counts=review_thread_counts,
+        from_fallback=from_fallback,
+    )</param>
+    <param name="new_string">    # Fetch PR details, check runs, review threads, and workflow runs in parallel
+    # No...[truncated 2446 chars]...nts,
+        from_fallback=from_fallback,
+        active_run_count=active_run_count,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1210" cache_read_input_tokens="58885" cache_creation="{'ephemeral_5m_input_tokens': 1210, 'ephemeral_1h_input_tokens': 0}" output_tokens="1520" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0148GLJ5NrmM8hmdrR1XRXQR">
+The file /home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01MphRxVSdPCh7Mh2vYsmcZJ">
+    <param name="todos">[{'content': 'Extend GitHubData NamedTuple with active_run_count field', 'status': 'comple...[truncated 891 chars]...I and fix any issues', 'status': 'pending', 'activeForm': 'Running CI and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1571" cache_read_input_tokens="60095" cache_creation="{'ephemeral_5m_input_tokens': 1571, 'ephemeral_1h_input_tokens': 0}" output_tokens="355" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MphRxVSdPCh7Mh2vYsmcZJ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Step 4: Update GitHubData construction paths
+
+The no-PR early return already needs `active_run_count=0`. Since `active_run_count` has a default of 0 on the NamedTuple, existing positional constructions still work. But the plan explicitly calls for adding it. Let me check the no-PR path:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="61666" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016AuYdamNsTKSxWS8Y9ecb7">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="limit">20</param>
+    <param name="offset">857</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="61666" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016AuYdamNsTKSxWS8Y9ecb7">
+   857→
+   858→    if pr_info is None:
+   859→        # No PR for this branch
+   860→        _logger.debug("GitHub data fetch: no PR for branch=%s", branch)
+   861→        return GitHubData(
+   862→            owner=owner,
+   863→            repo=repo,
+   864→            pr_number=0,
+   865→            pr_state="",
+   866→            is_draft=False,
+   867→            mergeable="",
+   868→            check_contexts=[],
+   869→            review_thread_counts=(0, 0),
+   870→            from_fallback=False,
+   871→        )
+   872→
+   873→    pr_number, pr_state, is_draft, from_fallback = pr_info
+   874→    _logger.debug(
+   875→        "GitHub data fetch: found PR #%d state=%s draft=%s", pr_number, pr_state, is_draft
+   876→    )
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>The no-PR path and TimeoutError path both use keyword arguments, and `active_run_count` has a default of 0, so they'll correctly default. The normal return already has `active_run_count=active_run_count` from my earlier edit. The plan says to explicitly add it to the no-PR path for clarity, let me do that:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="532" cache_read_input_tokens="62063" cache_creation="{'ephemeral_5m_input_tokens': 532, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_017ZqYc5J9Vp2E6p1MVd2PWx">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="old_string">        return GitHubData(
+            owner=owner,
+            repo=repo,
+            pr_...[truncated 93 chars]...ts=[],
+            review_thread_counts=(0, 0),
+            from_fallback=False,
+        )</param>
+    <param name="new_string">        return GitHubData(
+            owner=owner,
+            repo=repo,
+            pr_...[truncated 125 chars]..._counts=(0, 0),
+            from_fallback=False,
+            active_run_count=0,
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="532" cache_read_input_tokens="62063" cache_creation="{'ephemeral_5m_input_tokens': 532, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017ZqYc5J9Vp2E6p1MVd2PWx">
+The file /home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01PmYuiVvNb95oHZFLy55H8t">
+    <param name="todos">[{'content': 'Extend GitHubData NamedTuple with active_run_count field', 'status': 'comple...[truncated 893 chars]...I and fix any issues', 'status': 'pending', 'activeForm': 'Running CI and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="423" cache_read_input_tokens="62595" cache_creation="{'ephemeral_5m_input_tokens': 423, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PmYuiVvNb95oHZFLy55H8t">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Step 5: Add robot emoji to `build_gh_label()`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="63018" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01GXU1a2DTwbEMxaet4x2jtx">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="limit">20</param>
+    <param name="offset">1225</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="63018" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GXU1a2DTwbEMxaet4x2jtx">
+  1225→                        Token(emoji),
+  1226→                    ]
+  1227→                )
+  1228→
+  1229→        # Get checks status
+  1230→        checks_status = get_checks_status(github_data)
+  1231→        if checks_status:
+  1232→            parts.extend(
+  1233→                [
+  1234→                    Token(" chks:"),
+  1235→                    Token(checks_status),
+  1236→                ]
+  1237→            )
+  1238→
+  1239→        # Add comment count if there are review threads
+  1240→        comment_label = build_comment_count_label(github_data)
+  1241→        if comment_label:
+  1242→            parts.extend([Token(" cmts:"), Token(comment_label)])
+  1243→    else:
+  1244→        parts.append(Token("no-pr"))
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Etxu2mZYua9PuQukVKY67R">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="old_string">        # Add comment count if there are review threads
+        comment_label = build_comm...[truncated 20 chars]...comment_label:
+            parts.extend([Token(" cmts:"), Token(comment_label)])
+    else:</param>
+    <param name="new_string">        # Add comment count if there are review threads
+        comment_label = build_comm...[truncated 220 chars]...0:
+            parts.extend([Token(" "), Token("\U0001f916", color=Color.CYAN)])
+    else:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="457" cache_read_input_tokens="63415" cache_creation="{'ephemeral_5m_input_tokens': 457, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Etxu2mZYua9PuQukVKY67R">
+The file /home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01HYMrdXWw6EGsQDpu8WBzR3">
+    <param name="todos">[{'content': 'Extend GitHubData NamedTuple with active_run_count field', 'status': 'comple...[truncated 895 chars]...I and fix any issues', 'status': 'pending', 'activeForm': 'Running CI and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="341" cache_read_input_tokens="63872" cache_creation="{'ephemeral_5m_input_tokens': 341, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HYMrdXWw6EGsQDpu8WBzR3">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Step 6: Rename `gh:` prefix to `pr:`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="64213" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018kmFGThR3pL6vesY9crQ3W">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="limit">15</param>
+    <param name="offset">1175</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="64213" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018kmFGThR3pL6vesY9crQ3W">
+  1175→        plan_number: Optional plan number from .impl/plan-ref.json
+  1176→        objective_issue: Optional objective issue number from .impl/plan-ref.json
+  1177→
+  1178→    Returns:
+  1179→        TokenSeq for the complete GitHub label like:
+  1180→        (gh:#123 plan:#456 obj:#789 st:👀💥 chks:✅ cmts:3/5)
+  1181→    """
+  1182→    parts = [Token("(gh:")]
+  1183→
+  1184→    # Add PR number if available (no hyperlink due to Claude Code alignment bug with OSC 8)
+  1185→    if repo_info.pr_number and repo_info.pr_url:
+  1186→        parts.append(Token(f"#{repo_info.pr_number}", color=Color.BLUE))
+  1187→
+  1188→        # Add plan number if available
+  1189→        if plan_number:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Jo1cTmPa1R6Z57aMssRzDi">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py</param>
+    <param name="old_string">    Returns:
+        TokenSeq for the complete GitHub label like:
+        (gh:#123 plan:#456 obj:#789 st:👀💥 chks:✅ cmts:3/5)
+    """
+    parts = [Token("(gh:")]</param>
+    <param name="new_string">    Returns:
+        TokenSeq for the complete GitHub label like:
+        (pr:#123 plan:#456 obj:#789 st:👀💥 chks:✅ cmts:3/5 🤖)
+    """
+    parts = [Token("(pr:")]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="477" cache_read_input_tokens="64610" cache_creation="{'ephemeral_5m_input_tokens': 477, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Jo1cTmPa1R6Z57aMssRzDi">
+The file /home/runner/work/erk/erk/packages/erk-statusline/src/erk_statusline/statusline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the README:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="304" cache_read_input_tokens="65087" cache_creation="{'ephemeral_5m_input_tokens': 304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01YbB9w8ZgeY6Bk2mBowyC2Q">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/README.md</param>
+    <param name="old_string">- **GitHub PR info**: `(gh:#123 plan:#456 st:XX chks:XX)`:</param>
+    <param name="new_string">- **GitHub PR info**: `(pr:#123 plan:#456 st:XX chks:XX 🤖)`:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="304" cache_read_input_tokens="65087" cache_creation="{'ephemeral_5m_input_tokens': 304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YbB9w8ZgeY6Bk2mBowyC2Q">
+The file /home/runner/work/erk/erk/packages/erk-statusline/README.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01JPSntF2Hzvc91pwWevGwiw">
+    <param name="todos">[{'content': 'Extend GitHubData NamedTuple with active_run_count field', 'status': 'comple...[truncated 897 chars]...I and fix any issues', 'status': 'pending', 'activeForm': 'Running CI and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="65391" cache_creation="{'ephemeral_5m_input_tokens': 212, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JPSntF2Hzvc91pwWevGwiw">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Step 7: Add tests
+
+Let me read the existing test file to understand the test patterns and find where to add new tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="65603" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01F1p6CawSDUdPhFGuK6EWdi">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-statusline/tests/test_statusline.py</param>
+    <param name="limit">100</param>
+    <param name="offset">350</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="65603" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_011Tq39ZFL2TNYws5J1MTb6z">
+    <param name="pattern">class Test</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-statusline/tests/test_statusline.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="65603" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+</session>
