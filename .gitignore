@@ -28,3 +28,8 @@ CLAUDE.local.md
 site/
 
 .superset/
+
+# Astro/Starlight docs-v2
+docs-v2/node_modules/
+docs-v2/dist/
+docs-v2/.astro/
