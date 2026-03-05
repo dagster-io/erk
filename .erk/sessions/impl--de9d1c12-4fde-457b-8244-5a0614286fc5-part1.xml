@@ -1,0 +1,1056 @@
+<session>
+  <meta branch="plnd/O8381-fix-planning-docs-te-03-05-1854" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8775&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8775` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8775.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11269" cache_read_input_tokens="17118" cache_creation="{'ephemeral_5m_input_tokens': 11269, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01TWxUoD3EpHkjZ7EzXmmwgc">
+    <param name="command">erk exec setup-impl --issue 8775</param>
+    <param name="description">Set up implementation for plan #8775</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11269" cache_read_input_tokens="17118" cache_creation="{'ephemeral_5m_input_tokens': 11269, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TWxUoD3EpHkjZ7EzXmmwgc">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--O8381-fix-planning-docs-te-03-05-1854", "plan_number": 8775, "plan_url": "https://github.com/dagster-io/erk/pull/8775", "branch": "plnd/O8381-fix-planning-docs-te-03-05-1854", "plan_title": "[erk-plan] Plan: Fix planning/ docs terminology (Objective #8381, Nodes 6.1 + 6.2)", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8775, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/O8381-fix-planning-docs-te-03-05-1854', syncing with remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="373" cache_read_input_tokens="28387" cache_creation="{'ephemeral_5m_input_tokens': 373, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01WVN7YBDXaKiLpryyMTGarN">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--O8381-fix-planning-docs-te-03-05-1854/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="373" cache_read_input_tokens="28387" cache_creation="{'ephemeral_5m_input_tokens': 373, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WVN7YBDXaKiLpryyMTGarN">
+     1→# Plan: Fix planning/ docs terminology (Objective #8381, Nodes 6.1 + 6.2)
+     2→
+     3→## Context
+     4→
+     5→Objective #8381 standardizes "plan-as-PR" terminology across the codebase. Phases 1-5 fixed code, CLI help, commands, and exec scripts. Phase 6 targets documentation. Nodes 6.1 and 6.2 together cover all 19 `docs/learned/planning/` files.
+     6→
+     7→The core change: replace "plan issue" with "plan" throughout, matching patterns established in prior PRs (#8382-#8580).
+     8→
+     9→## Node 6.1: High-priority planning/ docs (4 files need fixes, 3 clean)
+    10→
+    11→### 1. `docs/learned/planning/lifecycle.md` (5 instances)
+    12→
+    13→- Line 10: "plan issue" → "plan"
+    14→- Line 101: `plan-issue-number` → `plan-number`
+    15→- Line 107: "plan issue was already created" → "plan was already created"
+    16→- Line 642: "plan issue link" → "plan link"
+    17→- Line 663: "plan issue is tracked" → "plan is tracked"
+    18→- Line 1044: "One-shot plan issue created" → "One-shot plan created"
+    19→
+    20→### 2. `docs/learned/planning/session-deduplication.md` (1 instance)
+    21→
+    22→- Line 18: "duplicate plan issues" → "duplicate plans"
+    23→
+    24→### 3. `docs/learned/planning/pr-submission-patterns.md` (2 instances)
+    25→
+    26→- Line 33: "duplicate plan issues" → "duplicate plans"
+    27→- Line 78: "plan issue to remain open" → "plan to remain open"
+    28→
+    29→### 4. `docs/learned/planning/learn-workflow.md` (10 instances)
+    30→
+
+... [75 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I understand the plan. It's a terminology fix across planning docs - replacing "plan issue" with "plan" to match the "plan-as-PR" standardization. Let me set up the todo list and start working.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1852" cache_read_input_tokens="28760" cache_creation="{'ephemeral_5m_input_tokens': 1852, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01K9ybjJGtNP5Er5swpZcVzb">
+    <param name="todos">[{'content': 'Fix lifecycle.md (5 instances)', 'status': 'pending', 'activeForm': 'Fixing ...[truncated 1581 chars]...unning CI'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1852" cache_read_input_tokens="28760" cache_creation="{'ephemeral_5m_input_tokens': 1852, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01K9ybjJGtNP5Er5swpZcVzb">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01VwgNLkyiDGbfnmR1c4q9KL">
+    <param name="todos">[{'content': 'Fix lifecycle.md (5 instances)', 'status': 'pending', 'activeForm': 'Fixing ...[truncated 1585 chars]...unning CI'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="674" cache_read_input_tokens="30612" cache_creation="{'ephemeral_5m_input_tokens': 674, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VwgNLkyiDGbfnmR1c4q9KL">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01RH8k6BshstPNc12GiMr3Et">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="626" cache_read_input_tokens="31286" cache_creation="{'ephemeral_5m_input_tokens': 626, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RH8k6BshstPNc12GiMr3Et">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <assistant>Signal didn't have the session ID but that's non-critical in CI. Let me start reading all the files I need to edit and making the changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="31912" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01PEozth4BKzL83nNqG7LhHM">
+    <param name="todos">[{'content': 'Fix lifecycle.md (5 instances)', 'status': 'in_progress', 'activeForm': 'Fix...[truncated 1587 chars]...unning CI'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="31912" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PEozth4BKzL83nNqG7LhHM">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me read all 11 files that need changes in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="659" cache_read_input_tokens="32084" cache_creation="{'ephemeral_5m_input_tokens': 659, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01DAVSRZRZ3sgCbNXZS47Mt8">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="659" cache_read_input_tokens="32084" cache_creation="{'ephemeral_5m_input_tokens': 659, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015DfpZzqZH7CQtJqX3gXTFF">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/session-deduplication.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="659" cache_read_input_tokens="32084" cache_creation="{'ephemeral_5m_input_tokens': 659, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01M9CyUfCjgppMSdMnkpz5x5">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/pr-submission-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="659" cache_read_input_tokens="32084" cache_creation="{'ephemeral_5m_input_tokens': 659, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01PgeS41Gb5xzUijX5qznt8B">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-workflow.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="659" cache_read_input_tokens="32084" cache_creation="{'ephemeral_5m_input_tokens': 659, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01JNJjcudhX1PZ3pchqqm8QM">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/label-scheme.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="659" cache_read_input_tokens="32084" cache_creation="{'ephemeral_5m_input_tokens': 659, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Dnh9NfzWXvgbd94EY9WHG5">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/metadata-block-fallback.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="659" cache_read_input_tokens="32084" cache_creation="{'ephemeral_5m_input_tokens': 659, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01852FyK6seaKYAjQt9LvSVu">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/learn-vs-implementation-plans.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="659" cache_read_input_tokens="32084" cache_creation="{'ephemeral_5m_input_tokens': 659, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Ns7YxgJGzPd3Yjw38u2UEM">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="659" cache_read_input_tokens="32084" cache_creation="{'ephemeral_5m_input_tokens': 659, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0191krxk2VDChR6fuH3uDkAK">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-creation-pathways.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="659" cache_read_input_tokens="32084" cache_creation="{'ephemeral_5m_input_tokens': 659, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01PsZGPJm2LsCj5k6SAxConh">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/plan-execution-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="659" cache_read_input_tokens="32084" cache_creation="{'ephemeral_5m_input_tokens': 659, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018VyykyW3oe4dEDHWgDg6iQ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/metadata-field-workflow.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="659" cache_read_input_tokens="32084" cache_creation="{'ephemeral_5m_input_tokens': 659, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015DfpZzqZH7CQtJqX3gXTFF">
+     1→---
+     2→title: Session-Based Plan Deduplication
+     3→read_when:
+     4→  - "understanding duplicate plan prevention"
+     5→  - "working with exit-plan-mode hook"
+     6→  - "debugging duplicate issue creation"
+     7→tripwires:
+     8→  - action: "modifying marker deletion behavior in exit-plan-mode hook"
+     9→    warning: "Reusable markers (plan-saved) must persist; one-time markers (implement-now, objective-context) are consumed. Deleting reusable markers breaks state machines and enables retry loops that create duplicates."
+    10→  - action: "using session-scoped markers in exec scripts"
+    11→    warning: "Session markers enable idempotency in command retries. Always write markers AFTER successful operation completion, never before. Use triple-check guard on marker read: file exists AND content is valid AND expected type (numeric for issue numbers)."
+    12→last_audited: "2026-02-16 14:20 PT"
+    13→audit_result: clean
+    14→---
+    15→
+    16→# Session-Based Plan Deduplication
+    17→
+    18→This document explains how erk prevents duplicate plan issues from being created during retry loops or hook edge cases.
+    19→
+    20→## Problem
+    21→
+    22→When Claude retries a blocked ExitPlanMode call, the same plan could be saved multiple times, creating duplicate GitHub issues. This can happen when:
+    23→
+    24→1. Hook blocks with prompt → user chooses "save" → save succeeds → hook fires again
+    25→2. Network failures during save → retry creates second issue
+    26→3. Session interruption → user resumes → re-runs save command
+    27→
+    28→## Two-Layer Defense
+    29→
+    30→Erk uses two complementary mechanisms:
+
+... [78 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01M9CyUfCjgppMSdMnkpz5x5">
+     1→---
+     2→title: PR Submission Patterns
+     3→read_when:
+     4→  - "creating or updating PRs programmatically in erk"
+     5→  - "debugging why a duplicate PR or issue was created"
+     6→  - "fixing erk pr check validation failures"
+     7→  - "understanding the PR number vs issue number distinction"
+     8→last_audited: "2026-02-17 16:00 PT"
+     9→audit_result: clean
+    10→tripwires:
+    11→  - action: "using issue number from .erk/impl-context/plan-ref.json in a checkout footer"
+    12→    warning: "Checkout footers require the PR number, not the issue number. The issue is the plan; the PR is the implementation. See the PR Number vs Issue Number section."
+    13→  - action: "creating a PR without first checking if one already exists for the branch"
+    14→    warning: "The dispatch pipeline is idempotent — it checks for existing PRs before creating. If building PR creation outside the pipeline, replicate this check to prevent duplicates."
+    15→  - action: "constructing a PR footer manually instead of using build_pr_body_footer()"
+    16→    warning: "The footer format includes checkout commands and closing references with specific patterns. Use the builder function to ensure validation passes."
+    17→---
+    18→
+    19→# PR Submission Patterns
+    20→
+    21→Cross-cutting patterns for reliable, idempotent PR creation in erk. The dispatch pipeline touches git, GitHub API, Graphite, and the `.erk/impl-context/` metadata system — mistakes in any layer cascade into validation failures or duplicate artifacts.
+    22→
+    23→## Idempotency: Why Every PR Operation Must Be Re-Runnable
+    24→
+    25→PR submission frequently retries due to network failures, hook loops, or agent restarts. Without idempotency, each retry creates duplicate PRs or issues. Erk enforces idempotency at two levels:
+    26→
+    27→**Branch-level:** The dispatch pipeline checks GitHub for an existing PR on the current branch before creating one. If found, it updates the existing PR rather than creating a duplicate. This is the single most important idempotency guarantee — without it, every retry during the push-and-create phase would spawn a new PR.
+    28→
+    29→&lt;!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, push_and_create_pr --&gt;
+    30→
+
+... [65 lines omitted] ...
+
+    33→**Session-level:** Plan-save operations use scratch-directory marker files keyed by session ID. Before creating a GitHub issue, the command checks if this session already created one. This prevents the specific failure mode where exit-plan-mode hook retries cause duplicate plan issues.
+    65→## Iterate-Until-Valid: Fixing PR Validation Failures
+    67→When `erk pr check` reports failures, use this workflow:
+    69→1. Read the error message — it names the specific check that failed
+    74→The escalation to source investigation after two failures is the key discipline. Erk validators use literal regex matching, not semantic equivalence — "close enough" formats fail silently. For the full investigation methodology, see [Source Investigation Over Trial-and-Error](debugging-patterns.md).
+    88→- [Source Investigation Over Trial-and-Error](debugging-patterns.md) — When to stop guessing and read validator source
+  </tool_result>
+  <tool_result tool="toolu_01PgeS41Gb5xzUijX5qznt8B">
+     1→---
+     2→title: Learn Workflow
+     3→read_when:
+     4→  - "using /erk:learn skill"
+     5→  - "understanding learn status tracking"
+     6→  - "auto-updating parent plans when learn plans land"
+     7→tripwires:
+     8→  - action: "modifying learn command to add/remove/reorder agents"
+     9→    warning: "Verify tier placement before assigning model. Parallel extraction uses haiku, sequential synthesis may need opus for quality-critical output."
+    10→  - action: "adding new agents to learn workflow"
+    11→    warning: "Document input/output format and test file passing. Learn workflow uses stateless agents with file-based composition."
+    12→  - action: "running /erk:learn in CI"
+    13→    warning: "CI mode skips interactive prompts and auto-proceeds. Check CI/GITHUB_ACTIONS env vars. See CI Environment Behavior section."
+    14→  - action: "gathering sessions for preprocessing"
+    15→    warning: "Sessions &gt;100k characters MUST be preprocessed first. Use erk exec preprocess-session for ~99% token reduction."
+    16→last_audited: "2026-02-16 14:20 PT"
+    17→audit_result: clean
+    18→---
+    19→
+    20→# Learn Workflow
+    21→
+    22→This guide explains the learn workflow in erk: how `/erk:learn` creates documentation plans, tracks status on parent plans, and enables automatic updates when learn plans are landed.
+    23→
+    24→## Overview
+    25→
+    26→The learn workflow extracts insights from implementation sessions and creates documentation plans. It's part of erk's knowledge capture system.
+    27→
+    28→**Key change**: Learn no longer writes documentation directly. Instead, it creates a plan issue for human review, which is then implemented through the standard `plan-implement` workflow. This gives humans control over documentation quality while maintaining the unified implementation pattern.
+    29→
+    30→```
+
+... [385 lines omitted] ...
+
+   311→- Error resolutions
+  </tool_result>
+  <tool_result tool="toolu_01JNJjcudhX1PZ3pchqqm8QM">
+     1→---
+     2→title: Plan Label Assignment Scheme
+     3→read_when:
+     4→  - "understanding how plans and learn issues are labeled"
+     5→  - "working with erk-planned-pr, erk-plan, or erk-learn labels"
+     6→  - "debugging label filtering in TUI or CLI views"
+     7→tripwires:
+     8→  - action: "querying plans using only the erk-planned-pr base label"
+     9→    warning: "Use type-specific labels (erk-plan, erk-learn) for queries. The base label erk-planned-pr is for identification, not filtering. See github-graphql-label-semantics.md for AND-logic issues."
+    10→  - action: "backfilling labels on existing issues without considering updated_at side effects"
+    11→    warning: "GitHub label operations change the issue's updated_at timestamp. This affects sort order in list views and may confuse users."
+    12→---
+    13→
+    14→# Plan Label Assignment Scheme
+    15→
+    16→Erk uses a two-label scheme for plan issues: a **base label** for universal identification and a **type-specific label** for filtering and routing.
+    17→
+    18→## Label Taxonomy
+    19→
+    20→| Label              | Purpose                           | Applied To               |
+    21→| ------------------ | --------------------------------- | ------------------------ |
+    22→| `erk-planned-pr`   | Base label — identifies all plans | All plan/learn issues    |
+    23→| `erk-plan`         | Type label — implementation plans | Regular plan issues      |
+    24→| `erk-learn`        | Type label — documentation plans  | Learn plan issues        |
+    25→| `erk-objective`    | Separate system — objectives      | Objective issues         |
+    26→| `erk-consolidated` | Consolidation marker              | Consolidated learn plans |
+    27→
+    28→## Two-Label Assignment
+    29→
+    30→When `PlannedPRBackend.create_plan()` creates a new issue:
+
+... [46 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Dnh9NfzWXvgbd94EY9WHG5">
+     1→---
+     2→title: Plan Content Extraction Fallback
+     3→last_audited: "2026-02-17 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "extracting plan content from GitHub issue comments"
+     7→  - "debugging 'no plan content found' errors in replan or plan-implement"
+     8→  - "working with older erk-plan issues that lack metadata blocks"
+     9→tripwires:
+    10→  - action: "assuming plan content is in the issue body"
+    11→    warning: "Schema v2 stores plan content in the FIRST COMMENT, not the issue body. The body contains only the plan-header metadata block. See extract_plan_from_comment() for the extraction logic."
+    12→  - action: "checking only one location when extracting plan content"
+    13→    warning: "Always check both the first comment (plan-body metadata block) and the issue body before reporting 'no plan content found'. The replan command documents this explicitly in Step 4a."
+    14→  - action: "using extract_metadata_prefix() or extract_plan_header_block() for metadata extraction"
+    15→    warning: "These functions are deleted. Use find_metadata_block() from packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py for extraction and render_metadata_block() for rendering."
+    16→  - action: "using PLAN_CONTENT_SEPARATOR for new code"
+    17→    warning: "Metadata blocks are now self-delimiting via HTML comment markers (&lt;!-- erk:metadata-block:{key} --&gt;). PLAN_CONTENT_SEPARATOR is retained for backward compatibility only — new code must not use it."
+    18→  - action: "assuming metadata is at the top of a PR body"
+    19→    warning: "PR body metadata position changed from top to bottom. Do not assume metadata is at the start of the body."
+    20→---
+    21→
+    22→# Plan Content Extraction Fallback
+    23→
+    24→Plan issues use a two-location storage design with backward-compatible fallback. Understanding why content lives where it does prevents agents from looking in the wrong place and reporting false "no content" errors.
+    25→
+    26→## Why Two Locations Exist
+    27→
+    28→Schema v2 plan issues split content across two GitHub API objects for a deliberate reason: **fast querying vs. full content**.
+    29→
+    30→| Location      | What it stores                                                | Why                                                                                                                        |
+
+... [51 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01852FyK6seaKYAjQt9LvSVu">
+     1→---
+     2→title: Learn Plans vs. Implementation Plans
+     3→read_when:
+     4→  - "choosing between plan types"
+     5→  - "creating erk-learn plans"
+     6→  - "understanding how learn plans relate to implementation plans"
+     7→  - "debugging learn plan base branch selection"
+     8→tripwires:
+     9→  - action: "creating a learn plan without setting learned_from_issue"
+    10→    warning: "Learn plans MUST set learned_from_issue to their parent implementation plan's issue number. Without it, base branch auto-detection fails and the learn plan lands on trunk instead of stacking on the parent."
+    11→  - action: "running /erk:learn on an issue that already has the erk-learn label"
+    12→    warning: "Learn plans cannot generate additional learn plans — this creates documentation cycles. The learn command validates this upfront and rejects learn-on-learn."
+    13→  - action: "manually setting the base branch for a learn plan submission"
+    14→    warning: "Learn plan base branch is auto-detected from learned_from_issue → parent branch. Only use --base to override if the parent branch is missing from the remote."
+    15→last_audited: "2026-02-17 16:00 PT"
+    16→audit_result: clean
+    17→---
+    18→
+    19→# Learn Plans vs. Implementation Plans
+    20→
+    21→Erk has two plan types that share the same issue infrastructure (`erk-pr` base label, plan-header metadata, same lifecycle phases) but serve fundamentally different purposes. Understanding when to use each — and how they connect — prevents workflow mistakes and ensures documentation is created alongside the code it documents.
+    22→
+    23→## Decision Table
+    24→
+    25→**Ask: "Is the primary output code or documentation?"**
+    26→
+    27→| Signal                                    | Plan Type      | Label(s)               | Typical Output              |
+    28→| ----------------------------------------- | -------------- | ---------------------- | --------------------------- |
+    29→| Adding features, fixing bugs, refactoring | Implementation | `erk-pr` + `erk-plan`  | Source code, tests, config  |
+    30→| Extracting insights from completed work   | Learn          | `erk-pr` + `erk-learn` | Docs in `docs/learned/`     |
+
+... [85 lines omitted] ...
+
+    77→**Fallback behavior**: If the parent branch lookup fails (parent issue not found, no `branch_name` set, or parent branch missing from remote), learn plan submission falls back to trunk with a warning. This prevents blocking documentation work when the parent state is incomplete.
+   102→**Running `/erk:learn` on a learn plan issue**: Creates a documentation cycle. The learn command rejects this with a clear error.
+  </tool_result>
+  <tool_result tool="toolu_01Ns7YxgJGzPd3Yjw38u2UEM">
+     1→---
+     2→title: Planned PR Backend
+     3→read_when:
+     4→  - "working with plan storage or plan backends"
+     5→  - "adding plan storage behavior without checking plan backend type"
+     6→  - "understanding how plans are stored as planned pull requests"
+     7→  - "modifying plan-save or land pipeline for plan handling"
+     8→tripwires:
+     9→  - action: "validating plan_id in exec scripts without checking provider type"
+    10→    warning: "Planned PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics. Issue-based plans use issue numbers; planned-PR plans use PR numbers."
+    11→    score: 4
+    12→  - action: "using gh issue view on a plan ID without checking plan backend type"
+    13→    warning: "Planned PR plan IDs are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type."
+    14→    score: 7
+    15→  - action: "checking erk exec plan-save --format json output for empty result"
+    16→    warning: "Empty stdout does not mean failure. The duplicate-detection path writes JSON to stderr, not stdout. Always capture both streams with 2&gt;&amp;1 or check for empty stdout and retry with stderr capture."
+    17→    score: 5
+    18→  - action: "calling update_metadata() on PlannedPRBackend without verifying plan exists"
+    19→    warning: "PlannedPRBackend.update_metadata() raises PlanHeaderNotFoundError if the header block is absent. Read operations (get_plan) return None gracefully. Always check plan existence before writing metadata."
+    20→    score: 6
+    21→---
+    22→
+    23→# Planned PR Backend
+    24→
+    25→PlannedPRBackend stores plans as GitHub draft pull requests. It is the only active plan storage backend.
+    26→
+    27→## Backend Selection
+    28→
+    29→The plan backend is hardcoded to `"planned_pr"`. All plans are stored as GitHub draft pull requests via PlannedPRBackend. The former `get_plan_backend()` function and `PlanBackendType` type alias were deleted in PR #7971 (objective #7911 node 1.1).
+    30→
+
+... [116 lines omitted] ...
+
+    79→PlannedPRBackend metadata operations have asymmetric error behavior:
+    84→| `update_metadata()` | No header found      | Raises `PlanHeaderNotFoundError` |
+   119→**Rebase conflict handling:** After cleanup commits on the plan branch, a `git pull --rebase` may be needed before pushing further implementation commits. Skipping this can cause non-fast-forward push failures when the remote branch has diverged.
+   127→Empty stdout from `plan-save` does not indicate failure. Always capture both streams:
+   133→If stdout is empty, check stderr for the duplicate-detection response before assuming the command failed.
+  </tool_result>
+  <tool_result tool="toolu_0191krxk2VDChR6fuH3uDkAK">
+     1→---
+     2→title: Plan Creation Pathways
+     3→read_when:
+     4→  - "understanding how plans are created in erk"
+     5→  - "adding a new plan creation entry point"
+     6→  - "debugging which code path created a plan"
+     7→---
+     8→
+     9→# Plan Creation Pathways
+    10→
+    11→Plans can be created through multiple entry points, all routing to the planned-PR backend.
+    12→
+    13→## Entry Points
+    14→
+    15→| Entry Point                             | Backend Used                    | Creates            |
+    16→| --------------------------------------- | ------------------------------- | ------------------ |
+    17→| `/erk:plan-save`                        | Planned PR (PlannedPRBackend)   | Draft pull request |
+    18→| `erk pr create --file &lt;path&gt;`           | Planned PR (PlannedPRBackend)   | Draft pull request |
+    19→| One-shot dispatch (`one_shot_dispatch`) | Planned PR (`ctx.plan_backend`) | Draft pull request |
+    20→| `PlannedPRBackend.create_plan()`        | Planned PR                      | Draft pull request |
+    21→| `register_one_shot_plan`                | Planned PR (updates existing)   | Updates skeleton   |
+    22→
+    23→## Backend Routing
+    24→
+    25→The plan backend is hardcoded to `"planned_pr"`. All plan creation routes through PlannedPRBackend. The former dynamic backend selection via `get_plan_backend()` was removed in PR #7971 (objective #7911 node 1.1). There is no longer a `"github"` issue-based plan storage path for new plans.
+    26→
+    27→The `ERK_PLAN_BACKEND` environment variable is no longer read by application code.
+    28→
+    29→## Label Application
+    30→
+
+... [22 lines omitted] ...
+
+    40→Plans are created with `lifecycle_stage: planned` by default. The exception is one-shot plans, which start at `prompted` (set by `one_shot_dispatch`) and transition to `planning` when the agent begins.
+  </tool_result>
+  <tool_result tool="toolu_01PsZGPJm2LsCj5k6SAxConh">
+     1→---
+     2→title: Plan Execution Patterns
+     3→last_audited: "2026-02-16 14:20 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "implementing a plan from a GitHub issue"
+     7→  - "understanding branch naming and worktree isolation"
+     8→  - "designing PR submission workflows for plans"
+     9→---
+    10→
+    11→# Plan Execution Patterns
+    12→
+    13→Patterns for executing plans: from issue preparation through PR submission.
+    14→
+    15→## Branch Naming Conventions
+    16→
+    17→Plan branches follow the pattern `plnd/&lt;slug&gt;-&lt;timestamp&gt;`:
+    18→
+    19→- `plnd/consolidated-learn-docs-01-15-1430` — slugified title with timestamp
+    20→- The `plnd/` prefix identifies planned PR branches
+    21→- `plan-ref.json` is the sole source of truth for plan-to-branch mapping
+    22→
+    23→**Legacy format:** Older plans may use the `P&lt;issue-number&gt;-&lt;slug&gt;` pattern (e.g., `P6967-consolidated-learn-docs`). The `P{issue}-` prefix is considered legacy.
+    24→
+    25→## Worktree Isolation
+    26→
+    27→Each plan implementation runs in an isolated worktree:
+    28→
+    29→1. `erk br co --for-plan &lt;issue-number&gt;` creates a new worktree from the plan issue
+    30→2. The worktree gets its own `.erk/impl-context/` folder with the plan content
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_018VyykyW3oe4dEDHWgDg6iQ">
+     1→---
+     2→title: Metadata Field Addition Workflow
+     3→read_when:
+     4→  - "adding a new field to plan-header metadata"
+     5→  - "extending plan issue schema"
+     6→  - "coordinating metadata changes across files"
+     7→last_audited: "2026-02-05 20:38 PT"
+     8→audit_result: edited
+     9→---
+    10→
+    11→# Metadata Field Addition Workflow
+    12→
+    13→Adding a new field to the plan-header metadata block requires coordinated changes across multiple files. This checklist ensures nothing is missed.
+    14→
+    15→## 5-File Coordination Checklist
+    16→
+    17→### 1. schemas.py -- Define the Field
+    18→
+    19→**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`
+    20→
+    21→Three changes required in this file:
+    22→
+    23→- Add the field name as a new entry in the `PlanHeaderFieldName` Literal union type
+    24→- Add a module-level constant with a matching `Literal` type (e.g., `YOUR_NEW_FIELD: Literal["your_new_field"] = "your_new_field"`)
+    25→- Add validation logic inside `PlanHeaderSchema.validate()` -- follow the existing pattern of checking `if FIELD in data and data[FIELD] is not None:` then validating the type. Also add the constant to the `optional_fields` set in that method.
+    26→
+    27→### 2. plan_header.py -- Thread the Parameter
+    28→
+    29→**File:** `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py`
+    30→
+
+... [53 lines omitted] ...
+
+    70→1. Run `make fast-ci` to catch type errors
+  </tool_result>
+  <tool_result tool="toolu_01DAVSRZRZ3sgCbNXZS47Mt8">
+     1→---
+     2→title: Plan Lifecycle
+     3→last_audited: "2026-02-11 00:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "creating a plan"
+     7→  - "closing a plan"
+     8→  - "understanding plan states"
+     9→tripwires:
+    10→  - action: "manually creating an erk-plan issue with gh issue create"
+    11→    warning: "Use `erk exec plan-save --plan-file &lt;path&gt;` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section)."
+    12→  - action: "saving a plan linked to an objective"
+    13→    warning: "Always verify the link was saved correctly with `erk exec get-plan-metadata &lt;issue&gt; objective_issue`. Silent failures can leave plans unlinked from their objectives."
+    14→  - action: "implementing custom PR/plan relevance assessment logic"
+    15→    warning: "Reference `/local:check-relevance` verdict classification system first. Use SUPERSEDED (80%+ overlap), PARTIALLY_IMPLEMENTED (30-80% overlap), DIFFERENT_APPROACH, STILL_RELEVANT, NEEDS_REVIEW categories for consistency."
+    16→  - action: "after plan-implement execution completes"
+    17→    warning: "Always clean .erk/impl-context/ with `git rm -rf .erk/impl-context/` and commit. Transient artifacts cause CI formatter failures (Prettier)."
+    18→  - action: "implementing PR body generation with checkout footers"
+    19→    warning: "HTML `&lt;details&gt;` tags will fail `has_checkout_footer_for_pr()` validation. Use plain text backtick format: `` `gh pr checkout &lt;number&gt;` ``"
+    20→  - action: "calling commands that depend on `.erk/impl-context/plan-ref.json` metadata"
+    21→    warning: "Verify metadata file exists in worktree; if missing, operations silently return empty values. read_plan_ref() tries plan-ref.json first, falls back to legacy issue.json."
+    22→  - action: "delegating batch file renames from a plan"
+    23→    warning: "Verify each file path exists before delegating. Wrong paths cause silent coverage gaps in rename operations."
+    24→  - action: "renaming a lifecycle stage value"
+    25→    warning: "Update 3 locations: LifecycleStageValue type, valid_stages set, and color conditions in compute_lifecycle_display(). Missing any location causes silent validation failures or incorrect TUI colors."
+    26→    score: 7
+    27→---
+    28→
+    29→# Plan Lifecycle
+    30→
+
+... [1077 lines omitted] ...
+
+   222→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   537→### No-Changes Error Scenario
+   550→- Exit 1 = Error (GitHub API failure)
+   552→The workflow treats no-changes as successful completion, not an error. Users review the diagnostic PR to determine if work is already done.
+   796→status: in_progress # pending, in_progress, complete, failed
+   880→### Silent Failure Pattern
+   882→The most insidious failure is with `get-closing-text`:
+   900→  echo "ERROR: Missing plan-ref.json - issue linking will fail"
+   933→### Graceful Failure Patterns for Metadata
+   945→**Failure modes:**
+   948→2. **Metadata read failure** → Returns error with diagnostic message
+   960→if [ "$PR_NUMBER" = "error" ]; then
+   961→  echo "Failed to read plan metadata"
+  </tool_result>
+  <assistant>I've read all 11 files. Now let me make all the changes. I'll work through them systematically. Let me start with the Node 6.1 files (high-priority) and then do Node 6.2.
+
+**File 1: lifecycle.md** - The plan mentions 5 instances but let me find them precisely.</assistant>
+  <usage input_tokens="19932" cache_creation_input_tokens="15792" cache_read_input_tokens="32743" cache_creation="{'ephemeral_5m_input_tokens': 15792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01SD37hBQNbE4jtqD6cqrUVA">
+    <param name="pattern">plan.issue</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md</param>
+    <param name="-i">True</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="19932" cache_creation_input_tokens="15792" cache_read_input_tokens="32743" cache_creation="{'ephemeral_5m_input_tokens': 15792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01EEnU3YfTVqivLmYD3Bj8rV">
+    <param name="pattern">plan.issue</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/planning/session-deduplication.md</param>
+    <param name="-i">True</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="19932" cache_creation_input_tokens="15792" cache_read_input_tokens="32743" cache_creation="{'ephemeral_5m_input_tokens': 15792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01SQxCZi3W3doV9pdFdGNJhR">
+    <param name="pattern">plan.issue</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/planning/pr-submission-patterns.md</param>
+    <param name="-i">True</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="19932" cache_creation_input_tokens="15792" cache_read_input_tokens="32743" cache_creation="{'ephemeral_5m_input_tokens': 15792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01LmY6kXQUNE73qG7nEzkvj9">
+    <param name="pattern">plan.issue</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/planning/learn-workflow.md</param>
+    <param name="-i">True</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="19932" cache_creation_input_tokens="15792" cache_read_input_tokens="32743" cache_creation="{'ephemeral_5m_input_tokens': 15792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01K5RM8JJT3qZW43xxdtha1y">
+    <param name="pattern">plan.issue</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/planning/label-scheme.md</param>
+    <param name="-i">True</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="19932" cache_creation_input_tokens="15792" cache_read_input_tokens="32743" cache_creation="{'ephemeral_5m_input_tokens': 15792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01JjKDxS96R1U6aZWLpHomiv">
+    <param name="pattern">plan.issue|issue.based|older.*(issues|erk-plan issues)</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/planning/metadata-block-fallback.md</param>
+    <param name="-i">True</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="19932" cache_creation_input_tokens="15792" cache_read_input_tokens="32743" cache_creation="{'ephemeral_5m_input_tokens': 15792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01KQmpTwjQG647bpmyXDiC8V">
+    <param name="pattern">issue.infrastructure|issue.based|learned_from_issue</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/planning/learn-vs-implementation-plans.md</param>
+    <param name="-i">True</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="19932" cache_creation_input_tokens="15792" cache_read_input_tokens="32743" cache_creation="{'ephemeral_5m_input_tokens': 15792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01VRqBaq4uJDVnUCpXGjX8D1">
+    <param name="pattern">plan.issue|issue.based|plan-saved-issue</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/planning/planned-pr-backend.md</param>
+    <param name="-i">True</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="19932" cache_creation_input_tokens="15792" cache_read_input_tokens="32743" cache_creation="{'ephemeral_5m_input_tokens': 15792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01TZJVuRcxqNEJ8T1eG2S7XE">
+    <param name="pattern">issue.based</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/planning/plan-creation-pathways.md</param>
+    <param name="-i">True</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="19932" cache_creation_input_tokens="15792" cache_read_input_tokens="32743" cache_creation="{'ephemeral_5m_input_tokens': 15792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01P6pjqwBZY7YKxvq6UQeyjj">
+    <param name="pattern">plan from a GitHub issue</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/planning/plan-execution-patterns.md</param>
+    <param name="-i">True</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="19932" cache_creation_input_tokens="15792" cache_read_input_tokens="32743" cache_creation="{'ephemeral_5m_input_tokens': 15792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01F8LSqXfCgmWcRdZ9RCgQzK">
+    <param name="pattern">plan issue schema</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/planning/metadata-field-workflow.md</param>
+    <param name="-i">True</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="19932" cache_creation_input_tokens="15792" cache_read_input_tokens="32743" cache_creation="{'ephemeral_5m_input_tokens': 15792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01K5RM8JJT3qZW43xxdtha1y">
+16:Erk uses a two-label scheme for plan issues: a **base label** for universal identification and a **type-specific label** for filtering and routing.
+23:| `erk-plan`         | Type label — implementation plans | Regular plan issues      |
+24:| `erk-learn`        | Type label — documentation plans  | Learn plan issues        |
+  </tool_result>
+  <tool_result tool="toolu_01SD37hBQNbE4jtqD6cqrUVA">
+10:  - action: "manually creating an erk-plan issue with gh issue create"
+101:**Usage:** Run `/local:check-relevance &lt;plan-issue-number&gt;` to assess a plan's current relevance before deciding to implement or close it.
+107:1. Checks if a plan issue was already created for this session ID
+642:   - If present, runs `erk exec update-objective-node` to update the objective's roadmap table with the plan issue link
+663:Branches follow the pattern `plnd/{slug}-{timestamp}`. The association between branch and plan issue is tracked in `plan-ref.json`, which is the sole source of truth for plan-to-branch mapping.
+1029:| `prompted` | Plan issue created, planning not yet started | magenta     |
+1044:| `prompted` | `one_shot_dispatch`                                                                         | One-shot plan issue created                       |
+  </tool_result>
+  <tool_result tool="toolu_01P6pjqwBZY7YKxvq6UQeyjj">
+6:  - "implementing a plan from a GitHub issue"
+  </tool_result>
+  <tool_result tool="toolu_01VRqBaq4uJDVnUCpXGjX8D1">
+10:    warning: "Planned PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics. Issue-based plans use issue numbers; planned-PR plans use PR numbers."
+94:Planned PR titles (and issue-based plan titles) are prefixed with a label-based tag via `get_title_tag_from_labels()` in `packages/erk-shared/src/erk_shared/plan_utils.py:178-190`.
+125:When `erk exec plan-save --format json` detects that a plan was already saved in the current session (via the `plan-saved-issue` marker), it returns `{"skipped_duplicate": true, "plan_number": &lt;N&gt;}`. This JSON is written to **stderr**, not stdout.
+  </tool_result>
+  <tool_result tool="toolu_01JjKDxS96R1U6aZWLpHomiv">
+8:  - "working with older erk-plan issues that lack metadata blocks"
+24:Plan issues use a two-location storage design with backward-compatible fallback. Understanding why content lives where it does prevents agents from looking in the wrong place and reporting false "no content" errors.
+28:Schema v2 plan issues split content across two GitHub API objects for a deliberate reason: **fast querying vs. full content**.
+50:## Three Eras of Plan Issues
+58:| **v2 metadata**           | First comment       | `&lt;!-- erk:metadata-block:plan-body --&gt;` with `&lt;details&gt;`                 | Plan issues         |
+69:**Assuming `plan_comment_id` is always set** — Older issues may not have this field in the plan-header. When it's missing, fall back to fetching the first comment via the GitHub API (e.g., `gh issue view --comments`).
+  </tool_result>
+  <tool_result tool="toolu_01SQxCZi3W3doV9pdFdGNJhR">
+33:**Session-level:** Plan-save operations use scratch-directory marker files keyed by session ID. Before creating a GitHub issue, the command checks if this session already created one. This prevents the specific failure mode where exit-plan-mode hook retries cause duplicate plan issues.
+78:When re-submitting a PR that already has a closing reference but no local `.erk/impl-context/` folder (e.g., after worktree recreation), the pipeline extracts the existing reference from the PR body rather than losing it. Without this, re-submitting from a fresh worktree would silently drop the issue linkage, causing the plan issue to remain open after PR merge.
+  </tool_result>
+  <tool_result tool="toolu_01TZJVuRcxqNEJ8T1eG2S7XE">
+25:The plan backend is hardcoded to `"planned_pr"`. All plan creation routes through PlannedPRBackend. The former dynamic backend selection via `get_plan_backend()` was removed in PR #7971 (objective #7911 node 1.1). There is no longer a `"github"` issue-based plan storage path for new plans.
+  </tool_result>
+  <tool_result tool="toolu_01KQmpTwjQG647bpmyXDiC8V">
+9:  - action: "creating a learn plan without setting learned_from_issue"
+10:    warning: "Learn plans MUST set learned_from_issue to their parent implementation plan's issue number. Without it, base branch auto-detection fails and the learn plan lands on trunk instead of stacking on the parent."
+14:    warning: "Learn plan base branch is auto-detected from learned_from_issue → parent branch. Only use --base to override if the parent branch is missing from the remote."
+21:Erk has two plan types that share the same issue infrastructure (`erk-pr` base label, plan-header metadata, same lifecycle phases) but serve fundamentally different purposes. Understanding when to use each — and how they connect — prevents workflow mistakes and ensures documentation is created alongside the code it documents.
+43:## The `learned_from_issue` Link
+45:The key structural difference between the two plan types is a single plan-header field: `learned_from_issue`. This field exists only on learn plans and points back to the parent implementation plan's issue number.
+47:&lt;!-- Source: packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py, LEARNED_FROM_ISSUE --&gt;
+49:See the `LEARNED_FROM_ISSUE` constant and `PlanHeaderFieldName` type in `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`.
+53:1. **Base branch auto-detection** — During `erk pr dispatch`, the dispatch command reads `learned_from_issue`, fetches the parent issue, extracts its `branch_name`, and uses that as the base branch. This creates a stacked branch hierarchy: trunk → implementation branch → learn plan branch.
+55:2. **Learn status tracking** — When a learn plan's PR lands, `erk land` reads `learned_from_issue` to find the parent and updates the parent's `learn_status` to `plan_completed` with the learn plan's PR number.
+72:            └── P456-docs-for-feature (learn plan, stacked via learned_from_issue)
+100:**Creating a learn plan manually without `--learned-from-issue`**: The `learned_from_issue` field is what distinguishes a learn plan from an implementation plan in the plan-header. Without it, base branch detection defaults to trunk, status tracking breaks, and the TUI can't show the link between plans.
+  </tool_result>
+  <tool_result tool="toolu_01EEnU3YfTVqivLmYD3Bj8rV">
+18:This document explains how erk prevents duplicate plan issues from being created during retry loops or hook edge cases.
+  </tool_result>
+  <tool_result tool="toolu_01LmY6kXQUNE73qG7nEzkvj9">
+28:**Key change**: Learn no longer writes documentation directly. Instead, it creates a plan issue for human review, which is then implemented through the standard `plan-implement` workflow. This gives humans control over documentation quality while maintaining the unified implementation pattern.
+62:- `learn_plan_issue`: Issue number of the created learn plan (if any)
+69:- `learned_from_issue`: Backlink to the parent plan issue number
+147:3. Creates a learn plan issue (if documentation needed)
+148:4. The plan issue is queued for human review before implementation
+150:**Note**: Learn runs inline during the `plan-implement` workflow after successful implementation. It does NOT write documentation directly - it creates a plan issue for later review and implementation.
+160:    --plan-issue &lt;learn-plan-issue-number&gt;
+163:This sets `learn_status` and `learn_plan_issue` on the parent plan.
+188:After the learn plan issue is created, a human reviews it and decides whether to implement:
+190:1. Review the plan issue - it contains draft content starters and documentation suggestions
+213:| `#N`    | Learn created plan issue #N |
+216:Clicking the cell opens the learn plan issue or PR.
+231:learn_plan_issue: 123 # Issue number of learn plan
+240:learned_from_issue: 100 # Parent plan issue number
+252:2. Fetches the parent plan issue
+320:- `issue_number`: Plan issue number
+333:- `plan_title`: Title from plan issue
+350:- `plan_title`: Title from plan issue
+365:- `plan_title`: Title from plan issue
+  </tool_result>
+  <tool_result tool="toolu_01F8LSqXfCgmWcRdZ9RCgQzK">
+5:  - "extending plan issue schema"
+  </tool_result>
+  <assistant>Now I have a clear picture of all instances. Let me make all the edits. I'll batch the independent file edits in parallel:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="52169" cache_read_input_tokens="20217" cache_creation="{'ephemeral_5m_input_tokens': 52169, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01WkRL4iG5mQAvhd7eKyhSpY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md</param>
+    <param name="old_string">  - action: "manually creating an erk-plan issue with gh issue create"</param>
+    <param name="new_string">  - action: "manually creating an erk-plan with gh issue create"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="52169" cache_read_input_tokens="20217" cache_creation="{'ephemeral_5m_input_tokens': 52169, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WkRL4iG5mQAvhd7eKyhSpY">
+The file /home/runner/work/erk/erk/docs/learned/planning/lifecycle.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01SRRx8NcSYUFPZCUS89zRAW">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md</param>
+    <param name="old_string">**Usage:** Run `/local:check-relevance &lt;plan-issue-number&gt;` to assess a plan's current relevance before deciding to implement or close it.</param>
+    <param name="new_string">**Usage:** Run `/local:check-relevance &lt;plan-number&gt;` to assess a plan's current relevance before deciding to implement or close it.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="215" cache_read_input_tokens="72386" cache_creation="{'ephemeral_5m_input_tokens': 215, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SRRx8NcSYUFPZCUS89zRAW">
+The file /home/runner/work/erk/erk/docs/learned/planning/lifecycle.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EXDjtvgiBwyuhJX9MESGhY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md</param>
+    <param name="old_string">1. Checks if a plan issue was already created for this session ID</param>
+    <param name="new_string">1. Checks if a plan was already created for this session ID</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="582" cache_read_input_tokens="72601" cache_creation="{'ephemeral_5m_input_tokens': 582, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EXDjtvgiBwyuhJX9MESGhY">
+The file /home/runner/work/erk/erk/docs/learned/planning/lifecycle.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0177XPYfCMQn7F5SVC8ohbQi">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md</param>
+    <param name="old_string">   - If present, runs `erk exec update-objective-node` to update the objective's roadmap table with the plan issue link</param>
+    <param name="new_string">   - If present, runs `erk exec update-objective-node` to update the objective's roadmap table with the plan link</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="179" cache_read_input_tokens="73183" cache_creation="{'ephemeral_5m_input_tokens': 179, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0177XPYfCMQn7F5SVC8ohbQi">
+The file /home/runner/work/erk/erk/docs/learned/planning/lifecycle.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Bb37vet2EKfs6Tt5rzHPSW">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md</param>
+    <param name="old_string">Branches follow the pattern `plnd/{slug}-{timestamp}`. The association between branch and plan issue is tracked in `plan-ref.json`, which is the sole source of truth for plan-to-branch mapping.</param>
+    <param name="new_string">Branches follow the pattern `plnd/{slug}-{timestamp}`. The association between branch and plan is tracked in `plan-ref.json`, which is the sole source of truth for plan-to-branch mapping.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="207" cache_read_input_tokens="73362" cache_creation="{'ephemeral_5m_input_tokens': 207, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Bb37vet2EKfs6Tt5rzHPSW">
+The file /home/runner/work/erk/erk/docs/learned/planning/lifecycle.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FPtpy7REUPEceZ3uqGJXJg">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md</param>
+    <param name="old_string">| `prompted` | Plan issue created, planning not yet started | magenta     |</param>
+    <param name="new_string">| `prompted` | Plan created, planning not yet started | magenta     |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="607" cache_read_input_tokens="73569" cache_creation="{'ephemeral_5m_input_tokens': 607, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FPtpy7REUPEceZ3uqGJXJg">
+The file /home/runner/work/erk/erk/docs/learned/planning/lifecycle.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019tVJZ7NTwGpprXzqSH7YAy">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/lifecycle.md</param>
+    <param name="old_string">| `prompted` | `one_shot_dispatch`                                                                         | One-shot plan issue created                       |</param>
+    <param name="new_string">| `prompted` | `one_shot_dispatch`                                                                         | One-shot plan created                             |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="185" cache_read_input_tokens="74176" cache_creation="{'ephemeral_5m_input_tokens': 185, 'ephemeral_1h_input_tokens': 0}" output_tokens="163" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019tVJZ7NTwGpprXzqSH7YAy">
+The file /home/runner/work/erk/erk/docs/learned/planning/lifecycle.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01U2GdrHfcQmtFr2gW91kMQr">
+    <param name="todos">[{'content': 'Fix lifecycle.md (5 instances)', 'status': 'completed', 'activeForm': 'Fixin...[truncated 1589 chars]...unning CI'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="203" cache_read_input_tokens="74361" cache_creation="{'ephemeral_5m_input_tokens': 203, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01U2GdrHfcQmtFr2gW91kMQr">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me fix the remaining files. I'll do multiple edits in parallel where possible:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="626" cache_read_input_tokens="74564" cache_creation="{'ephemeral_5m_input_tokens': 626, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01FQNvQqKupEqNdDMPqZDtRV">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/session-deduplication.md</param>
+    <param name="old_string">This document explains how erk prevents duplicate plan issues from being created during retry loops or hook edge cases.</param>
+    <param name="new_string">This document explains how erk prevents duplicate plans from being created during retry loops or hook edge cases.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="626" cache_read_input_tokens="74564" cache_creation="{'ephemeral_5m_input_tokens': 626, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_011aLQzL45ww5Ujaz5cV4rMb">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/pr-submission-patterns.md</param>
+    <param name="old_string">This prevents the specific failure mode where exit-plan-mode hook retries cause duplicate plan issues.</param>
+    <param name="new_string">This prevents the specific failure mode where exit-plan-mode hook retries cause duplicate plans.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="626" cache_read_input_tokens="74564" cache_creation="{'ephemeral_5m_input_tokens': 626, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01X7u4ew4kwMWt82EDRjPiYu">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/pr-submission-patterns.md</param>
+    <param name="old_string">causing the plan issue to remain open after PR merge.</param>
+    <param name="new_string">causing the plan to remain open after PR merge.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="626" cache_read_input_tokens="74564" cache_creation="{'ephemeral_5m_input_tokens': 626, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FQNvQqKupEqNdDMPqZDtRV">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_011aLQzL45ww5Ujaz5cV4rMb">
+The file /home/runner/work/erk/erk/docs/learned/planning/pr-submission-patterns.md has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01X7u4ew4kwMWt82EDRjPiYu">
+The file /home/runner/work/erk/erk/docs/learned/planning/pr-submission-patterns.md has been updated successfully.
+  </tool_result>
+  <assistant>The session-deduplication edit failed because the read was apparently invalidated. Let me re-read it and retry:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="595" cache_read_input_tokens="75190" cache_creation="{'ephemeral_5m_input_tokens': 595, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012fRm8pPDHJ3YBcvCuipKd6">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/planning/session-deduplication.md</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="595" cache_read_input_tokens="75190" cache_creation="{'ephemeral_5m_input_tokens': 595, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
