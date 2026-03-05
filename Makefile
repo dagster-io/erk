@@ -1,4 +1,4 @@
-.PHONY: format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check mcp mcp-dev test-erk-mcp
+.PHONY: format-check lint prettier prettier-check ty upgrade-ty test py-fast-ci fast-ci all-ci md-check docs-check docs-validate docs-sync-check docs-fix clean publish fix reinstall-erk-tools docs docs-serve docs-deploy exec-reference-check mcp mcp-dev test-erk-mcp test-e2e
 
 prettier:
 	prettier --write '**/*.md' --ignore-path .gitignore
@@ -60,6 +60,10 @@ test-integration: test-integration-erk
 
 # All tests: Run both unit and integration tests (comprehensive validation)
 test-all: test-all-erk test-erk-dev
+
+# E2E tests: Run end-to-end tests requiring Claude API access (slow, costs tokens)
+test-e2e:
+	uv run pytest tests/e2e/ -v --timeout=300
 
 md-check:
 	uv run erk md check
