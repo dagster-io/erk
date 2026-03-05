@@ -1086,9 +1086,9 @@ Plans evolve through lifecycle stages within a single draft PR.
 
 **Lifecycle stages:** Plan Creation (Stage 1) → Implementation (Stage 2) → Review & Merge (Stage 3)
 
-**Branch sync:** Because the branch is created during plan-save and the user returns to their original branch, implementation must sync with remote before starting work.
+**Branch teleport:** Because the branch is created during plan-save and the user returns to their original branch, implementation must teleport from remote before starting work.
 
-See [Planned PR Lifecycle](planned-pr-lifecycle.md) for body format details and [Planned PR Branch Sync](planned-pr-branch-sync.md) for the sync mechanism.
+See [Planned PR Lifecycle](planned-pr-lifecycle.md) for body format details and [Planned PR Branch Teleport](planned-pr-branch-teleport.md) for the teleport mechanism.
 
 ---
 
@@ -1096,6 +1096,6 @@ See [Planned PR Lifecycle](planned-pr-lifecycle.md) for body format details and 
 
 - [Planning Workflow](workflow.md) - `.erk/impl-context/` folder structure and commands
 - [Planned PR Lifecycle](planned-pr-lifecycle.md) - Planned PR body format and stage transitions
-- [Planned PR Branch Sync](planned-pr-branch-sync.md) - Branch sync during planned-PR implementation
+- [Planned PR Branch Teleport](planned-pr-branch-teleport.md) - Branch teleport during planned-PR implementation
 - [Exec Command Patterns](../cli/exec-command-patterns.md) - Available `erk exec` commands
 - [Glossary](../glossary.md) - Erk terminology definitions

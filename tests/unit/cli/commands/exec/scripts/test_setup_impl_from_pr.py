@@ -101,7 +101,7 @@ class TestSetupImplFromPrNoImplFlag:
 
 
 # =============================================================================
-# Planned-PR plan branch sync tests
+# Planned-PR plan branch teleport tests
 # =============================================================================
 
 
@@ -171,7 +171,7 @@ def _make_planned_pr_context(
 
 
 def test_planned_pr_plan_uses_plan_branch_name(tmp_path: Path) -> None:
-    """Planned-PR plan with branch_name checks out the plan branch and syncs with remote."""
+    """Planned-PR plan with branch_name checks out the plan branch and teleports from remote."""
     plan_branch = "my-plan-branch-02-19"
     fake_git = FakeGit(
         current_branches={tmp_path: "master"},
