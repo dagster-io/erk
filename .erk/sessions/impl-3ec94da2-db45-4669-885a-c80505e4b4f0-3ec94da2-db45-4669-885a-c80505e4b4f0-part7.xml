@@ -1,37 +1,857 @@
 <session>
-  <meta source="agent-aba4d6c" />
+  <meta source="agent-aaf469b" />
   <meta branch="plnd/O7813-add-git-ls-remote-ch-03-05-1043" />
   <meta model="claude-haiku-4-5-20251001" />
-  <user>Run `ty check` to verify type checking passes on the codebase. Report any errors found.</user>
-  <assistant>I'll run the type checking command and report the results.</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="12305" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 12305, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Bash" id="toolu_0189mLF7hzahyNR3Uo6FmYub">
-    <param name="command">uv run ty check</param>
-    <param name="description">Run type checking on the codebase</param>
-  </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="12305" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 12305, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_0189mLF7hzahyNR3Uo6FmYub">
-All checks passed!
-   Building erk-dev @ file:///home/runner/work/erk/erk/packages/erk-dev
-Downloading libcst (2.2MiB)
-Downloading babel (9.7MiB)
-Downloading aiohttp (1.7MiB)
-Downloading ty (10.3MiB)
-Downloading ruff (10.7MiB)
-Downloading mkdocs (3.7MiB)
-Downloading mkdocs-material (8.9MiB)
- Downloaded aiohttp
-      Built erk-dev @ file:///home/runner/work/erk/erk/packages/erk-dev
- Downloaded mkdocs
- Downloaded ty
- Downloaded ruff
- Downloaded libcst
- Downloaded babel
- Downloaded mkdocs-material
-Installed 58 packages in 374ms
-  </tool_result>
-  <assistant>**ty passed:** All type checks passed successfully!
+  <user>Find the submit pipeline file and the section that does the remote divergence pre-check in the _graphite_first_flow function. I need to see:
+1. The file `src/erk/cli/commands/pr/submit_pipeline.py` around the remote divergence check (likely around lines 260-280)
+2. The imports at the top of that file
+3. Any existing submit pipeline test files
 
-The type checking completed with no errors. The build of the erk-dev package succeeded and all 58 packages were installed without issues.</assistant>
-  <usage input_tokens="6" cache_creation_input_tokens="309" cache_read_input_tokens="12305" cache_creation="{'ephemeral_5m_input_tokens': 309, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.</user>
+  <assistant>I'll help you find the submit pipeline file and the remote divergence pre-check. Let me start by checking the documentation as instructed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18769" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18769, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01N1UatHwjAAgLHBme2483d1">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18769" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18769, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_015cgBsPauwVvufwaS7jicVW">
+    <param name="pattern">**/submit_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18769" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18769, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N1UatHwjAAgLHBme2483d1">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_015cgBsPauwVvufwaS7jicVW">
+/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py
+  </tool_result>
+  <assistant>Good! I found the file. Now let me look for relevant documentation about PR operations and the submit pipeline. Let me check those categories:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1315" cache_read_input_tokens="18769" cache_creation="{'ephemeral_5m_input_tokens': 1315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01DwQjUG6sropeDUpPkvxU6z">
+    <param name="pattern">docs/learned/pr-operations/*.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1315" cache_read_input_tokens="18769" cache_creation="{'ephemeral_5m_input_tokens': 1315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_017NnDKQBs2swJfFTxk8Hxdg">
+    <param name="pattern">docs/learned/erk/*.md</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1315" cache_read_input_tokens="18769" cache_creation="{'ephemeral_5m_input_tokens': 1315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01B8hps55H3mzjovHc2dArVV">
+    <param name="pattern">**/submit_pipeline*test*.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1315" cache_read_input_tokens="18769" cache_creation="{'ephemeral_5m_input_tokens': 1315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01EDqdWoMKyzASpkyb2Ejzm8">
+    <param name="pattern">tests/**/*submit*.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1315" cache_read_input_tokens="18769" cache_creation="{'ephemeral_5m_input_tokens': 1315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017NnDKQBs2swJfFTxk8Hxdg">
+/home/runner/work/erk/erk/docs/learned/erk/branch-cleanup.md
+/home/runner/work/erk/erk/docs/learned/erk/branch-naming.md
+/home/runner/work/erk/erk/docs/learned/erk/tripwires.md
+/home/runner/work/erk/erk/docs/learned/erk/codespace-machine-types.md
+/home/runner/work/erk/erk/docs/learned/erk/index.md
+/home/runner/work/erk/erk/docs/learned/erk/issue-pr-linkage-storage.md
+/home/runner/work/erk/erk/docs/learned/erk/slot-pool-architecture.md
+/home/runner/work/erk/erk/docs/learned/erk/graphite-branch-setup.md
+/home/runner/work/erk/erk/docs/learned/erk/remote-workflow-template.md
+/home/runner/work/erk/erk/docs/learned/erk/placeholder-branches.md
+/home/runner/work/erk/erk/docs/learned/erk/stub-branch-lifecycle.md
+/home/runner/work/erk/erk/docs/learned/erk/pr-commands.md
+/home/runner/work/erk/erk/docs/learned/erk/graphite-stack-troubleshooting.md
+/home/runner/work/erk/erk/docs/learned/erk/codespace-remote-execution.md
+/home/runner/work/erk/erk/docs/learned/erk/four-path-cleanup.md
+/home/runner/work/erk/erk/docs/learned/erk/pr-address-workflows.md
+/home/runner/work/erk/erk/docs/learned/erk/graphite-divergence-detection.md
+/home/runner/work/erk/erk/docs/learned/erk/pr-feedback-classifier-schema.md
+/home/runner/work/erk/erk/docs/learned/erk/dispatch-ref-config.md
+/home/runner/work/erk/erk/docs/learned/erk/workspace-activation.md
+/home/runner/work/erk/erk/docs/learned/erk/worktree-branch-mismatch.md
+  </tool_result>
+  <tool_result tool="toolu_01B8hps55H3mzjovHc2dArVV">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01EDqdWoMKyzASpkyb2Ejzm8">
+/home/runner/work/erk/erk/tests/commands/pr/test_submit.py
+/home/runner/work/erk/erk/tests/commands/pr/test_submit_graphite_disabled.py
+/home/runner/work/erk/erk/tests/commands/pr/test_submit_pr_cache_polling.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py
+/home/runner/work/erk/erk/tests/unit/gateways/gt/test_quick_submit.py
+  </tool_result>
+  <tool_result tool="toolu_01DwQjUG6sropeDUpPkvxU6z">
+/home/runner/work/erk/erk/docs/learned/pr-operations/automated-review-handling.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/draft-pr-handling.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/checkout-footer-syntax.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/large-diff-recovery.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/index.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/feedback-classification.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/commit-message-generation.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/tripwires.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/pr-validation-rules.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/pre-existing-detection.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/template-synchronization.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/plan-implementation-auto-force.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/resolve-review-threads-format.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/plan-embedding-in-pr.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/pr-submission-workflow.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/pr-creation-patterns.md
+/home/runner/work/erk/erk/docs/learned/pr-operations/stub-pr-workflow-link.md
+  </tool_result>
+  <assistant>Great! I found relevant documentation on submit phases and validation. Let me read those docs first:</assistant>
+  <usage input_tokens="861" cache_creation_input_tokens="909" cache_read_input_tokens="20084" cache_creation="{'ephemeral_5m_input_tokens': 909, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HeKfg1piKRZpcXtaVXMsNL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md</param>
+  </tool_use>
+  <usage input_tokens="861" cache_creation_input_tokens="909" cache_read_input_tokens="20084" cache_creation="{'ephemeral_5m_input_tokens': 909, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DEiuKYSxLDNYRrzprnnZZc">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/pr-validation-rules.md</param>
+  </tool_use>
+  <usage input_tokens="861" cache_creation_input_tokens="909" cache_read_input_tokens="20084" cache_creation="{'ephemeral_5m_input_tokens': 909, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016Ex72nfBDKpHX9C3c2L1Hh">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/erk/graphite-divergence-detection.md</param>
+  </tool_use>
+  <usage input_tokens="861" cache_creation_input_tokens="909" cache_read_input_tokens="20084" cache_creation="{'ephemeral_5m_input_tokens': 909, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HeKfg1piKRZpcXtaVXMsNL">
+     1→---
+     2→title: PR Submit Workflow Phases
+     3→read_when:
+     4→  - "understanding the erk pr submit workflow"
+     5→  - "debugging PR submission issues"
+     6→  - "working with AI-generated PR descriptions"
+     7→  - "understanding plan context integration in PRs"
+     8→last_audited: "2026-02-16 14:20 PT"
+     9→audit_result: clean
+    10→---
+    11→
+    12→# PR Submit Workflow Phases
+    13→
+    14→The `erk pr submit` command uses a 6-phase workflow to submit PRs with AI-generated descriptions. This document explains each phase and the two-layer architecture.
+    15→
+    16→## Two-Layer Architecture
+    17→
+    18→The workflow has two layers:
+    19→
+    20→1. **Core layer (always runs)**: `git push` + `gh pr create` - works without Graphite
+    21→2. **Graphite layer (optional)**: `gt submit` for stack metadata - runs when Graphite is available and branch is tracked
+    22→
+    23→## Workflow Phases
+    24→
+    25→| Phase | Name                      | Description                                  |
+    26→| ----- | ------------------------- | -------------------------------------------- |
+    27→| 1     | Creating or Updating PR   | Push changes and create/find PR              |
+    28→| 2     | Getting diff              | Extract diff from GitHub API for AI analysis |
+    29→| 3     | Fetching plan context     | Get plan from linked erk-plan issue          |
+    30→| 4     | Generating PR description | AI generates title and body via Claude CLI   |
+
+... [121 lines omitted] ...
+
+   104→This phase is non-fatal - errors are warnings, not failures.
+  </tool_result>
+  <tool_result tool="toolu_01DEiuKYSxLDNYRrzprnnZZc">
+     1→---
+     2→title: PR Validation Rules
+     3→read_when:
+     4→  - "debugging 'erk pr check' failures"
+     5→  - "building or modifying PR submission pipelines"
+     6→  - "generating PR bodies with checkout footers"
+     7→tripwires:
+     8→  - action: "using issue number from .erk/impl-context/plan-ref.json in a checkout footer"
+     9→    warning: "Checkout footers require the PR number (from create_pr return value), NOT the plan issue number. See pr-validation-rules.md."
+    10→last_audited: "2026-02-26 00:00 PT"
+    11→audit_result: edited
+    12→---
+    13→
+    14→# PR Validation Rules
+    15→
+    16→`erk pr check` enforces structural invariants on every PR: a checkout footer containing the correct PR number. Understanding **why** these checks exist and **where** the data comes from prevents the most common agent mistakes.
+    17→
+    18→## The Checks
+    19→
+    20→&lt;!-- Source: src/erk/cli/commands/pr/check_cmd.py, pr_check --&gt;
+    21→
+    22→See `pr_check()` in `src/erk/cli/commands/pr/check_cmd.py` for the orchestration logic. The command runs checks in sequence:
+    23→
+    24→| Check             | What it validates                                                     | Why it exists                                         |
+    25→| ----------------- | --------------------------------------------------------------------- | ----------------------------------------------------- |
+    26→| Plan-ref presence | `.erk/impl-context/plan-ref.json` exists and contains a valid plan ID | Confirms the PR is linked to a tracked plan           |
+    27→| Checkout footer   | PR body contains `erk pr checkout &lt;pr_number&gt;` with exact number      | Lets reviewers check out the PR into a fresh worktree |
+    28→| Header position   | Plan-header metadata is at bottom, not legacy top position            | Ensures PR body follows current formatting standards  |
+    29→
+    30→## The PR Number vs Issue Number Trap
+
+... [56 lines omitted] ...
+
+    32→This is the single most common validation failure for agents, and it stems from a data source confusion:
+    49→## Debugging Validation Failures
+    57→Common failure modes:
+    70→| `.erk/impl-context/` cleanup | Directory must not exist in the repo | Transient artifacts cause CI formatter failures (Prettier) |
+  </tool_result>
+  <tool_result tool="toolu_016Ex72nfBDKpHX9C3c2L1Hh">
+     1→---
+     2→title: Graphite Divergence Detection
+     3→read_when:
+     4→  - "debugging remote divergence errors during erk pr submit"
+     5→  - "understanding the Graphite-first submit flow's pre-checks"
+     6→  - "resolving 'branch is behind remote' errors"
+     7→  - "using --force flag with erk pr submit"
+     8→tripwires:
+     9→  - action: "running gt commands without --no-interactive"
+    10→    warning: "All gt commands MUST use --no-interactive. Without it, gt may prompt for input and hang indefinitely."
+    11→  - action: "pushing to a branch that may have been updated remotely without checking for divergence"
+    12→    warning: "The Graphite-first flow pre-checks for divergence before gt submit. Check with branch_exists_on_remote -&gt; fetch_branch -&gt; is_branch_diverged_from_remote."
+    13→  - action: "running raw git commands (checkout, branch) without gt track on a Graphite-managed branch"
+    14→    warning: "Raw git commands (checkout, branch) without `gt track` cause Graphite's cache to diverge from actual branch state. Use BranchManager which handles Graphite tracking automatically, or call `gt track` after raw git operations."
+    15→    score: 7
+    16→---
+    17→
+    18→# Graphite Divergence Detection
+    19→
+    20→The Graphite-first submit flow includes proactive divergence detection before running `gt submit`. This prevents cryptic failures when the remote branch has been updated by CI, another session, or a prior submission.
+    21→
+    22→## Guard Chain
+    23→
+    24→&lt;!-- Source: src/erk/cli/commands/pr/submit_pipeline.py:200-230 --&gt;
+    25→
+    26→The `_graphite_first_flow()` function in `submit_pipeline.py` runs a four-step guard chain before `gt submit`:
+    27→
+    28→```
+    29→branch_exists_on_remote() → fetch_branch() → is_branch_diverged_from_remote() → check behind &gt; 0
+    30→```
+
+... [48 lines omitted] ...
+
+    35→4. **Check `behind &gt; 0`**: If the local branch is behind remote AND `effective_force` is `False`, return a `SubmitError` with `error_type="remote_diverged"`. Note: `effective_force = state.force or is_plan_impl`, so plan implementations (`state.issue_number is not None`) auto-force and never hit this guard — it only applies to non-plan `erk pr submit` invocations.
+    43→| On divergence    | Rebase automatically | Error with resolution steps |
+    49→When divergence is detected, the error message suggests two options:
+    66→When `state.force` is `True` (from `erk pr submit -f`), the divergence check is bypassed entirely. The guard chain still runs `fetch_branch()` but skips the error return when `behind &gt; 0`. This allows force-pushing over remote changes when the user explicitly opts in.
+    72→- [Draft PR Handling — Troubleshooting](../pr-operations/draft-pr-handling.md#troubleshooting-common-failures) - Related failure modes
+  </tool_result>
+  <assistant>Excellent! Now let me read the actual submit_pipeline.py file around the areas you mentioned:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="6248" cache_read_input_tokens="20993" cache_creation="{'ephemeral_5m_input_tokens': 6248, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01558DfQmYmbCnotZgnKC1ZP">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">1</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6248" cache_read_input_tokens="20993" cache_creation="{'ephemeral_5m_input_tokens': 6248, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017E3SRC7m3u7UnioXx2gfKV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">200</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6248" cache_read_input_tokens="20993" cache_creation="{'ephemeral_5m_input_tokens': 6248, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01558DfQmYmbCnotZgnKC1ZP">
+     1→"""Linear pipeline for PR submission.
+     2→
+     3→Replaces the dual-path branching orchestration with a sequence of plain
+     4→functions transforming a frozen SubmitState dataclass.
+     5→
+     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+     7→"""
+     8→
+     9→import dataclasses
+    10→import sys
+    11→import uuid
+    12→from collections.abc import Callable
+    13→from dataclasses import dataclass
+    14→from functools import cache
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.pr.shared import (
+    20→    assemble_pr_body,
+    21→    echo_plan_context_status,
+    22→    maybe_advance_lifecycle_to_impl,
+    23→    recover_plan_header,
+    24→    run_commit_message_generation,
+    25→)
+    26→from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
+    27→from erk.cli.ensure import UserFacingCliError
+    28→from erk.core.commit_message_generator import CommitMessageGenerator
+    29→from erk.core.context import ErkContext
+    30→from erk.core.plan_context_provider import PlanContext, PlanContextProvider
+
+... [55 lines omitted] ...
+
+    31→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+  </tool_result>
+  <tool_result tool="toolu_017E3SRC7m3u7UnioXx2gfKV">
+   200→    push happens later in push_and_create_pr.
+   201→    """
+   202→    if not impl_context_exists(state.repo_root):
+   203→        return state
+   204→
+   205→    if not ctx.git.status.has_tracked_files(state.repo_root, ".erk/impl-context"):
+   206→        return state
+   207→
+   208→    remove_impl_context(state.repo_root)
+   209→    ctx.git.commit.stage_files(state.repo_root, [".erk/impl-context/"], force=True)
+   210→    ctx.git.commit.commit(state.repo_root, "Remove .erk/impl-context/ before submission")
+   211→
+   212→    return state
+   213→
+   214→
+   215→def commit_wip(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   216→    """Check for uncommitted changes; if present, add_all + commit."""
+   217→    if ctx.git.status.has_uncommitted_changes(state.cwd):
+   218→        if not state.quiet:
+   219→            click.echo(click.style("   Committing uncommitted changes...", dim=True))
+   220→        ctx.git.commit.add_all(state.cwd)
+   221→        ctx.git.commit.commit(state.cwd, "WIP: Prepare for PR submission")
+   222→    return state
+   223→
+   224→
+   225→def capture_existing_pr_body(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   226→    """Capture full PR body before gt submit overwrites it."""
+   227→    if not state.quiet:
+   228→        click.echo(click.style("   Checking for existing PR...", dim=True))
+   229→    pr_result = ctx.github.get_pr_for_branch(state.repo_root, state.branch_name)
+
+... [75 lines omitted] ...
+
+   237→def push_and_create_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   252→def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   259→    # but the first submit attempt failed before pushing.
+   273→            return SubmitError(
+   275→                error_type="remote_diverged",
+  </tool_result>
+  <assistant>Perfect! Now let me also read the test files to give you a complete picture:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3268" cache_read_input_tokens="27241" cache_creation="{'ephemeral_5m_input_tokens': 3268, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01U1cYAT5KdXF8PRuu9G9bam">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py</param>
+    <param name="offset">1</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3268" cache_read_input_tokens="27241" cache_creation="{'ephemeral_5m_input_tokens': 3268, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018Mm7SbYmJ7nqEVaNwQeegY">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="offset">1</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3268" cache_read_input_tokens="27241" cache_creation="{'ephemeral_5m_input_tokens': 3268, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01U1cYAT5KdXF8PRuu9G9bam">
+     1→"""Unit tests for _core_submit_flow pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitError,
+     7→    SubmitState,
+     8→    _core_submit_flow,
+     9→)
+    10→from erk.core.context import context_for_test
+    11→from erk_shared.gateway.git.abc import BranchDivergence
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.git.remote_ops.types import PushError
+    14→from erk_shared.gateway.github.fake import FakeGitHub
+    15→from erk_shared.gateway.github.types import PRDetails
+    16→
+    17→
+    18→def _make_state(
+    19→    *,
+    20→    cwd: Path,
+    21→    repo_root: Path | None = None,
+    22→    branch_name: str = "feature",
+    23→    parent_branch: str = "main",
+    24→    trunk_branch: str = "main",
+    25→    use_graphite: bool = False,
+    26→    force: bool = False,
+    27→    debug: bool = False,
+    28→    session_id: str = "test-session",
+    29→    plan_id: str | None = None,
+    30→    pr_number: int | None = None,
+
+... [55 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_018Mm7SbYmJ7nqEVaNwQeegY">
+     1→"""Tests for erk pr submit command.
+     2→
+     3→These tests verify the CLI layer behavior of the submit command.
+     4→The command now uses Python orchestration (preflight -&gt; generate -&gt; finalize)
+     5→rather than delegating to a Claude slash command.
+     6→"""
+     7→
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.pr import pr_group
+    13→from erk_shared.gateway.git.abc import BranchDivergence
+    14→from erk_shared.gateway.git.fake import FakeGit
+    15→from erk_shared.gateway.github.fake import FakeGitHub
+    16→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    17→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    18→from erk_shared.gateway.graphite.fake import FakeGraphite
+    19→from erk_shared.gateway.graphite.types import BranchMetadata
+    20→from tests.fakes.prompt_executor import FakePromptExecutor
+    21→from tests.test_utils.context_builders import build_workspace_test_context
+    22→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    23→
+    24→
+    25→def test_pr_submit_fails_when_claude_not_available() -&gt; None:
+    26→    """Test that command fails when Claude CLI is not available."""
+    27→    runner = CliRunner()
+    28→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    29→        git = FakeGit(
+    30→            git_common_dirs={env.cwd: env.git_dir},
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me get a broader view of the submit_pipeline.py file to see the SubmitState and SubmitError definitions:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="8663" cache_read_input_tokens="30509" cache_creation="{'ephemeral_5m_input_tokens': 8663, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WgwP8goGqWN6XVgaT9TeLv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">80</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8663" cache_read_input_tokens="30509" cache_creation="{'ephemeral_5m_input_tokens': 8663, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JDJPCatPdB7M2jPBepfdgr">
+    <param name="command">wc -l /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="description">Check total line count of submit_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="8663" cache_read_input_tokens="30509" cache_creation="{'ephemeral_5m_input_tokens': 8663, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WgwP8goGqWN6XVgaT9TeLv">
+    80→
+    81→
+    82→# ---------------------------------------------------------------------------
+    83→# Data Types
+    84→# ---------------------------------------------------------------------------
+    85→
+    86→
+    87→@dataclass(frozen=True)
+    88→class SubmitState:
+    89→    """Immutable state threaded through the submit pipeline."""
+    90→
+    91→    cwd: Path
+    92→    repo_root: Path
+    93→    branch_name: str
+    94→    parent_branch: str
+    95→    trunk_branch: str
+    96→    use_graphite: bool
+    97→    force: bool
+    98→    debug: bool
+    99→    session_id: str
+   100→    skip_description: bool
+   101→    quiet: bool
+   102→    plan_id: str | None
+   103→    pr_number: int | None
+   104→    pr_url: str | None
+   105→    was_created: bool
+   106→    base_branch: str | None
+   107→    graphite_url: str | None
+   108→    diff_file: Path | None
+   109→    plan_context: PlanContext | None
+
+... [95 lines omitted] ...
+
+   116→class SubmitError:
+   117→    """Error result from a pipeline step."""
+   120→    error_type: str
+   129→SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
+   132→def prepare_state(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   145→        return SubmitError(
+   147→            error_type="no_branch",
+   161→        except ValueError as e:
+   162→            return SubmitError(
+   164→                error_type="issue_linkage_mismatch",
+   195→def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+  </tool_result>
+  <tool_result tool="toolu_01JDJPCatPdB7M2jPBepfdgr">
+1058 /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py
+  </tool_result>
+  <assistant>Perfect! Now let me read more of the _graphite_first_flow function to see the complete section:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2001" cache_read_input_tokens="39172" cache_creation="{'ephemeral_5m_input_tokens': 2001, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01S7zm4vTUj5rMwRNPDqSbtv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">252</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2001" cache_read_input_tokens="39172" cache_creation="{'ephemeral_5m_input_tokens': 2001, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S7zm4vTUj5rMwRNPDqSbtv">
+   252→def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   253→    """Graphite-first flow: gt submit handles push + PR creation."""
+   254→    if not state.quiet:
+   255→        click.echo(click.style("Phase 1: Graphite Submit", bold=True))
+   256→
+   257→    # Auto-force for plan implementations (branches always diverge from remote).
+   258→    # Fall back to branch prefix when cleanup already deleted .erk/impl-context/
+   259→    # but the first submit attempt failed before pushing.
+   260→    is_plan_impl = state.plan_id is not None or state.branch_name.startswith("plnd/")
+   261→    effective_force = state.force or is_plan_impl
+   262→
+   263→    # Pre-check: detect remote divergence before gt submit
+   264→    if ctx.git.branch.branch_exists_on_remote(state.repo_root, "origin", state.branch_name):
+   265→        ctx.git.remote.fetch_branch(state.repo_root, "origin", state.branch_name)
+   266→        divergence = ctx.git.branch.is_branch_diverged_from_remote(
+   267→            state.cwd, state.branch_name, "origin"
+   268→        )
+   269→        if divergence.behind &gt; 0 and not effective_force:
+   270→            ahead_msg = (
+   271→                f" and ahead by {divergence.ahead} commit(s)" if divergence.ahead &gt; 0 else ""
+   272→            )
+   273→            return SubmitError(
+   274→                phase="push_and_create_pr",
+   275→                error_type="remote_diverged",
+   276→                message=(
+   277→                    f"Branch '{state.branch_name}' is behind remote by "
+   278→                    f"{divergence.behind} commit(s){ahead_msg}.\n\n"
+   279→                    "The remote branch has been updated (e.g., by CI or another session).\n\n"
+   280→                    "To fix:\n"
+   281→                    "  erk pr reconcile-with-remote --dangerous  # Reconcile with remote\n"
+
+... [55 lines omitted] ...
+
+   305→    except RuntimeError as e:
+   306→        error_str = str(e)
+   307→        if "restack" in error_str.lower():
+   308→            return SubmitError(
+   310→                error_type="graphite_restack_required",
+   319→        return SubmitError(
+   321→            error_type="graphite_submit_failed",
+   322→            message=f"Graphite submit failed: {e}",
+  </tool_result>
+  <assistant>Excellent! Now let me check for any additional test files that specifically test the graphite_first_flow:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1481" cache_read_input_tokens="41173" cache_creation="{'ephemeral_5m_input_tokens': 1481, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JrYhXuteUo1L8CKmyaQm63">
+    <param name="command">find /home/runner/work/erk/erk/tests -name "*.py" -type f | xargs grep -l "_graphite_first_flow\|graphite.*first.*flow" 2&gt;/dev/null | head -20</param>
+    <param name="description">Search for tests of graphite_first_flow function</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1481" cache_read_input_tokens="41173" cache_creation="{'ephemeral_5m_input_tokens': 1481, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JrYhXuteUo1L8CKmyaQm63">
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py
+  </tool_result>
+  <assistant>Perfect! Let me read that test file:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="346" cache_read_input_tokens="42654" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XAfrT6nk2rjZKCLmPrjVjB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="346" cache_read_input_tokens="42654" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XAfrT6nk2rjZKCLmPrjVjB">
+     1→"""Unit tests for _graphite_first_flow pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitError,
+     7→    SubmitState,
+     8→    _graphite_first_flow,
+     9→)
+    10→from erk.core.context import context_for_test
+    11→from erk_shared.context.types import GlobalConfig
+    12→from erk_shared.gateway.git.abc import BranchDivergence
+    13→from erk_shared.gateway.git.fake import FakeGit
+    14→from erk_shared.gateway.github.fake import FakeGitHub
+    15→from erk_shared.gateway.github.types import PRDetails
+    16→from erk_shared.gateway.graphite.fake import FakeGraphite
+    17→
+    18→
+    19→def _make_state(
+    20→    *,
+    21→    cwd: Path,
+    22→    repo_root: Path | None = None,
+    23→    branch_name: str = "feature",
+    24→    parent_branch: str = "main",
+    25→    trunk_branch: str = "main",
+    26→    use_graphite: bool = True,
+    27→    force: bool = False,
+    28→    debug: bool = False,
+    29→    session_id: str = "test-session",
+    30→    plan_id: str | None = None,
+
+... [338 lines omitted] ...
+
+    89→def test_submit_failure_returns_error(tmp_path: Path) -&gt; None:
+    90→    """SubmitError(error_type='graphite_submit_failed') on RuntimeError."""
+    92→        submit_stack_raises=RuntimeError("gt submit failed"),
+   109→    assert isinstance(result, SubmitError)
+   110→    assert result.error_type == "graphite_submit_failed"
+   113→def test_restack_error_returns_actionable_message(tmp_path: Path) -&gt; None:
+   114→    """SubmitError(error_type='graphite_restack_required') when restack needed."""
+   116→        submit_stack_raises=RuntimeError(
+   117→            "gt submit failed (exit code 1): "
+   118→            "ERROR: You must restack and resolve conflicts with gt restack before submitting."
+   136→    assert isinstance(result, SubmitError)
+   137→    assert result.error_type == "graphite_restack_required"
+   142→def test_pr_not_found_after_submit_returns_error(tmp_path: Path) -&gt; None:
+   143→    """SubmitError(error_type='pr_not_found') when no PR after gt submit."""
+   162→    assert isinstance(result, SubmitError)
+   163→    assert result.error_type == "pr_not_found"
+   202→    """Plan impl branch (plan_id set) auto-forces when behind remote; no error returned."""
+   308→def test_non_plan_branch_errors_on_divergence(tmp_path: Path) -&gt; None:
+   309→    """Non-plan branch (no plan_id) still errors when behind remote."""
+   331→    assert isinstance(result, SubmitError)
+   332→    assert result.error_type == "remote_diverged"
+   335→def test_branch_behind_remote_returns_error(tmp_path: Path) -&gt; None:
+   336→    """SubmitError(error_type='remote_diverged') when branch is behind remote."""
+   360→    assert isinstance(result, SubmitError)
+   361→    assert result.error_type == "remote_diverged"
+  </tool_result>
+  <assistant>Perfect! Now let me look at one more section from the main submit_pipeline.py file to see the complete picture:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5021" cache_read_input_tokens="43000" cache_creation="{'ephemeral_5m_input_tokens': 5021, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01G2zkRgHoNWNfsv1PVEeNqm">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">1</param>
+    <param name="limit">65</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5021" cache_read_input_tokens="43000" cache_creation="{'ephemeral_5m_input_tokens': 5021, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01G2zkRgHoNWNfsv1PVEeNqm">
+     1→"""Linear pipeline for PR submission.
+     2→
+     3→Replaces the dual-path branching orchestration with a sequence of plain
+     4→functions transforming a frozen SubmitState dataclass.
+     5→
+     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+     7→"""
+     8→
+     9→import dataclasses
+    10→import sys
+    11→import uuid
+    12→from collections.abc import Callable
+    13→from dataclasses import dataclass
+    14→from functools import cache
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.pr.shared import (
+    20→    assemble_pr_body,
+    21→    echo_plan_context_status,
+    22→    maybe_advance_lifecycle_to_impl,
+    23→    recover_plan_header,
+    24→    run_commit_message_generation,
+    25→)
+    26→from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
+    27→from erk.cli.ensure import UserFacingCliError
+    28→from erk.core.commit_message_generator import CommitMessageGenerator
+    29→from erk.core.context import ErkContext
+    30→from erk.core.plan_context_provider import PlanContext, PlanContextProvider
+
+... [40 lines omitted] ...
+
+    31→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+  </tool_result>
+  <assistant>Perfect! I now have all the information you need. Let me create a comprehensive summary.
+
+## Summary
+
+I've found the submit pipeline file and documented the remote divergence pre-check section. Here's what you requested:
+
+### 1. **File Location and Remote Divergence Check**
+
+**File:** `/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py` (1058 lines total)
+
+**Remote Divergence Pre-Check Section (lines 263-289)** in `_graphite_first_flow()`:
+
+```python
+def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+    """Graphite-first flow: gt submit handles push + PR creation."""
+    if not state.quiet:
+        click.echo(click.style("Phase 1: Graphite Submit", bold=True))
+
+    # Auto-force for plan implementations (branches always diverge from remote).
+    # Fall back to branch prefix when cleanup already deleted .erk/impl-context/
+    # but the first submit attempt failed before pushing.
+    is_plan_impl = state.plan_id is not None or state.branch_name.startswith("plnd/")
+    effective_force = state.force or is_plan_impl
+
+    # Pre-check: detect remote divergence before gt submit
+    if ctx.git.branch.branch_exists_on_remote(state.repo_root, "origin", state.branch_name):
+        ctx.git.remote.fetch_branch(state.repo_root, "origin", state.branch_name)
+        divergence = ctx.git.branch.is_branch_diverged_from_remote(
+            state.cwd, state.branch_name, "origin"
+        )
+        if divergence.behind &gt; 0 and not effective_force:
+            ahead_msg = (
+                f" and ahead by {divergence.ahead} commit(s)" if divergence.ahead &gt; 0 else ""
+            )
+            return SubmitError(
+                phase="push_and_create_pr",
+                error_type="remote_diverged",
+                message=(
+                    f"Branch '{state.branch_name}' is behind remote by "
+                    f"{divergence.behind} commit(s){ahead_msg}.\n\n"
+                    "The remote branch has been updated (e.g., by CI or another session).\n\n"
+                    "To fix:\n"
+                    "  erk pr reconcile-with-remote --dangerous  # Reconcile with remote\n"
+                    "  erk pr submit -f                          # Force push"
+                ),
+                details={
+                    "branch": state.branch_name,
+                    "ahead": str(divergence.ahead),
+                    "behind": str(divergence.behind),
+                },
+            )
+```
+
+### 2. **Imports at Top of File (lines 1-61)**
+
+```python
+"""Linear pipeline for PR submission.
+
+Replaces the dual-path branching orchestration with a sequence of plain
+functions transforming a frozen SubmitState dataclass.
+
+Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+"""
+
+import dataclasses
+import sys
+import uuid
+from collections.abc import Callable
+from dataclasses import dataclass
+from functools import cache
+from pathlib import Path
+
+import click
+
+from erk.cli.commands.pr.shared import (
+    assemble_pr_body,
+    echo_plan_context_status,
+    maybe_advance_lifecycle_to_impl,
+    recover_plan_header,
+    run_commit_message_generation,
+)
+from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
+from erk.cli.ensure import UserFacingCliError
+from erk.core.commit_message_generator import CommitMessageGenerator
+from erk.core.context import ErkContext
+from erk.core.plan_context_provider import PlanContext, PlanContextProvider
+from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+from erk_shared.gateway.github.issues.types import IssueNotFound
+from erk_shared.gateway.github.label_ops import add_labels_resilient
+from erk_shared.gateway.github.metadata.core import (
+    extract_metadata_value,
+    extract_raw_metadata_blocks,
+    has_metadata_block,
+    replace_metadata_block_in_body,
+)
+from erk_shared.gateway.github.metadata.roadmap import (
+    render_objective_roadmap_block,
+    rerender_comment_roadmap,
+    update_node_in_frontmatter,
+)
+from erk_shared.gateway.github.metadata.types import BlockKeys
+from erk_shared.gateway.github.parsing import parse_git_remote_url
+from erk_shared.gateway.github.pr_footer import build_pr_body_footer
+from erk_shared.gateway.github.types import BodyText, GitHubRepoId, PRNotFound
+from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL, is_learn_plan
+from erk_shared.gateway.gt.prompts import truncate_diff
+from erk_shared.gateway.pr.diff_extraction import filter_diff_excluded_files
+from erk_shared.gateway.pr.graphite_enhance import should_enhance_with_graphite
+from erk_shared.impl_context import impl_context_exists, remove_impl_context
+from erk_shared.impl_folder import (
+    has_plan_ref,
+    read_plan_ref,
+    resolve_impl_dir,
+    save_plan_ref,
+    validate_plan_linkage,
+)
+from erk_shared.scratch.scratch import write_scratch_file
+```
+
+### 3. **Data Types (lines 87-123)**
+
+The pipeline uses two frozen dataclasses:
+
+```python
+@dataclass(frozen=True)
+class SubmitState:
+    """Immutable state threaded through the submit pipeline."""
+    cwd: Path
+    repo_root: Path
+    branch_name: str
+    parent_branch: str
+    trunk_branch: str
+    use_graphite: bool
+    force: bool
+    debug: bool
+    session_id: str
+    skip_description: bool
+    quiet: bool
+    plan_id: str | None
+    pr_number: int | None
+    pr_url: str | None
+    was_created: bool
+    base_branch: str | None
+    graphite_url: str | None
+    diff_file: Path | None
+    plan_context: PlanContext | None
+    title: str | None
+    body: str | None
+    existing_pr_body: str
+
+@dataclass(frozen=True)
+class SubmitError:
+    """Error result from a pipeline step."""
+    phase: str
+    error_type: str
+    message: str
+    details: dict[str, str]
+```
+
+### 4. **Submit Pipeline Test Files**
+
+Complete test file specifically for the graphite-first flow:
+
+- **Primary:** `/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py` (363 lines)
+  - Contains 10 unit tests covering:
+    - Success path
+    - Graphite submit failures
+    - Restack error handling
+    - PR not found after submit
+    - Plan impl auto-forcing on divergence
+    - `plnd/` branch prefix auto-forcing
+    - Branch not on remote (skip divergence check)
+    - Non-plan branch errors on divergence
+    - Branch behind remote error
+
+- **Other related test files:**
+  - `/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py`
+  - `/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py`
+  - `/home/runner/work/erk/erk/tests/commands/pr/test_submit.py`
+  - `/home/runner/work/erk/erk/tests/commands/pr/test_submit_graphite_disabled.py`
+  - `/home/runner/work/erk/erk/tests/commands/pr/test_submit_pr_cache_polling.py`
+
+### 5. **Related Documentation**
+
+I also found excellent documentation explaining the architecture:
+
+- **`docs/learned/erk/graphite-divergence-detection.md`** — Explains the guard chain and divergence detection logic with resolution steps
+- **`docs/learned/pr-operations/pr-submit-phases.md`** — Documents the 6-phase workflow and internal 10-step pipeline architecture
+- **`docs/learned/pr-operations/pr-validation-rules.md`** — Explains PR validation and the PR number vs issue number distinction
+
+All these files are in the read-only code repository.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1288" cache_read_input_tokens="48021" cache_creation="{'ephemeral_5m_input_tokens': 1288, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
 </session>
