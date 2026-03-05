@@ -1,8 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Agent-DX Framework: Output Envelope Helpers + Describe Command + First Port",
+  "plan_id": "8765",
+  "url": "https://github.com/dagster-io/erk/pull/8765",
+  "created_at": "2026-03-05T08:28:15.109877",
+  "synced_at": "2026-03-05T08:28:15.109877",
+  "labels": [],
   "objective_id": 8760,
-  "node_ids": [
-    "1.1,1.2,1.3"
-  ]
+  "node_ids": null
 }
