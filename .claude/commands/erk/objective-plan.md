@@ -43,11 +43,11 @@ Parse `$ARGUMENTS` to extract the objective reference:
 
 - If argument is a URL: extract objective number from path
 - If argument is a number: use directly
-- If no argument provided: try to get the default from current branch's plan (see below), then prompt if no default
+- If no argument provided: try to infer from current branch (see below), then prompt if no default
 
-**Getting default objective from current branch's plan:**
+**Getting default objective from current branch:**
 
-If no argument is provided, check if the current branch is associated with a plan:
+If no argument is provided, try to infer the objective from the current branch:
 
 1. Get current branch name:
 
@@ -55,11 +55,17 @@ If no argument is provided, check if the current branch is associated with a pla
    git rev-parse --abbrev-ref HEAD
    ```
 
-2. Check if `ref.json` exists in `.erk/impl-context/<branch>/` and extract the plan ID from it. If not found, check for legacy P-prefix pattern for backwards compatibility:
+2. **Extract objective from branch name directly:**
+   - Pattern: `^pl(?:an(?:ned)?|nd)/[Oo](\d+)-` (e.g., `plnd/O8762-some-slug-01-15-1430`)
+   - If matched, use the extracted number as the objective and inform the user:
+     "Using objective #<number> from branch name. Run with explicit argument to override."
+   - If matched, skip the plan metadata lookup below and proceed to Step 2.
+
+3. Check if `ref.json` exists in `.erk/impl-context/<branch>/` and extract the plan ID from it. If not found, check for legacy P-prefix pattern for backwards compatibility:
    - Legacy pattern: `^P(\d+)-` (e.g., `P5731-some-title-01-23-2354`)
    - Current format: Branch names use `plnd/` prefix; plan ID is resolved via plan-ref.json
 
-3. If plan found, get its objective:
+4. If plan found, get its objective:
 
    ```bash
    erk exec get-plan-metadata <plan-number> objective_issue
@@ -87,7 +93,7 @@ If no argument is provided, check if the current branch is associated with a pla
    }
    ```
 
-4. If `value` is not null, use it as the default and inform the user:
+5. If `value` is not null, use it as the default and inform the user:
    "Using objective #<value> from current branch's plan #<plan-number>. Run with explicit argument to override."
 
 If no default found from current branch, prompt user using AskUserQuestion with "What objective issue should I work from?"
