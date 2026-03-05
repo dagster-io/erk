@@ -22,7 +22,7 @@ Plans can be created through multiple entry points, all routing to the planned-P
 
 ## Backend Routing
 
-The plan backend is hardcoded to `"planned_pr"`. All plan creation routes through PlannedPRBackend. The former dynamic backend selection via `get_plan_backend()` was removed in PR #7971 (objective #7911 node 1.1). There is no longer a `"github"` issue-based plan storage path for new plans.
+The plan backend is hardcoded to `"planned_pr"`. All plan creation routes through PlannedPRBackend. The former dynamic backend selection via `get_plan_backend()` was removed in PR #7971 (objective #7911 node 1.1).
 
 The `ERK_PLAN_BACKEND` environment variable is no longer read by application code.
 

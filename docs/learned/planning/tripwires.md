@@ -158,7 +158,7 @@ Rules triggered by matching actions in code.
 
 **making objective-update-after-land exit non-zero** → Read [Objective Update After Land](objective-update-after-land.md) first. This script uses fail-open design. Failures must not block landing. See objective-update-after-land.md.
 
-**manually creating an erk-plan issue with gh issue create** → Read [Plan Lifecycle](lifecycle.md) first. Use `erk exec plan-save --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section).
+**manually creating an erk-plan with gh issue create** → Read [Plan Lifecycle](lifecycle.md) first. Use `erk exec plan-save --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section).
 
 **manually setting the base branch for a learn plan submission** → Read [Learn Plans vs. Implementation Plans](learn-vs-implementation-plans.md) first. Learn plan base branch is auto-detected from learned_from_issue → parent branch. Only use --base to override if the parent branch is missing from the remote.
 
@@ -254,7 +254,7 @@ Rules triggered by matching actions in code.
 
 **using session-scoped markers in exec scripts** → Read [Session-Based Plan Deduplication](session-deduplication.md) first. Session markers enable idempotency in command retries. Always write markers AFTER successful operation completion, never before. Use triple-check guard on marker read: file exists AND content is valid AND expected type (numeric for issue numbers).
 
-**validating plan_id in exec scripts without checking provider type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics. Issue-based plans use issue numbers; planned-PR plans use PR numbers.
+**validating plan_id in exec scripts without checking provider type** → Read [Planned PR Backend](planned-pr-backend.md) first. Planned PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics.
 
 **writing lifecycle_stage value other than 'impl' in a write point** → Read [Lifecycle Stage Consolidation](lifecycle-stage-consolidation.md) first. All lifecycle write points must use 'impl', never the legacy values 'implementing' or 'implemented'. Schema validation accepts legacy values for backwards compatibility only.
 

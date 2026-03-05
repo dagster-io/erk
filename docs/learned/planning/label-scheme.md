@@ -13,15 +13,15 @@ tripwires:
 
 # Plan Label Assignment Scheme
 
-Erk uses a two-label scheme for plan issues: a **base label** for universal identification and a **type-specific label** for filtering and routing.
+Erk uses a two-label scheme for plans: a **base label** for universal identification and a **type-specific label** for filtering and routing.
 
 ## Label Taxonomy
 
 | Label              | Purpose                           | Applied To               |
 | ------------------ | --------------------------------- | ------------------------ |
 | `erk-planned-pr`   | Base label — identifies all plans | All plan/learn issues    |
-| `erk-plan`         | Type label — implementation plans | Regular plan issues      |
-| `erk-learn`        | Type label — documentation plans  | Learn plan issues        |
+| `erk-plan`         | Type label — implementation plans | Regular plans            |
+| `erk-learn`        | Type label — documentation plans  | Learn plans              |
 | `erk-objective`    | Separate system — objectives      | Objective issues         |
 | `erk-consolidated` | Consolidation marker              | Consolidated learn plans |
 

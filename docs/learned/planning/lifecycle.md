@@ -7,7 +7,7 @@ read_when:
   - "closing a plan"
   - "understanding plan states"
 tripwires:
-  - action: "manually creating an erk-plan issue with gh issue create"
+  - action: "manually creating an erk-plan with gh issue create"
     warning: "Use `erk exec plan-save --plan-file <path>` instead. Manual creation requires complex metadata block format (see Metadata Block Reference section)."
   - action: "saving a plan linked to an objective"
     warning: "Always verify the link was saved correctly with `erk exec get-plan-metadata <issue> objective_issue`. Silent failures can leave plans unlinked from their objectives."
@@ -98,13 +98,13 @@ When evaluating whether a plan should be implemented or closed, use the verdict 
 | STILL_RELEVANT        | <30%    | Work is not yet implemented, plan remains valid    |
 | NEEDS_REVIEW          | Unclear | Manual review required, evidence inconclusive      |
 
-**Usage:** Run `/local:check-relevance <plan-issue-number>` to assess a plan's current relevance before deciding to implement or close it.
+**Usage:** Run `/local:check-relevance <plan-number>` to assess a plan's current relevance before deciding to implement or close it.
 
 ### Session Idempotency
 
 Plan save operations are idempotent within a session. The `plan-save` command:
 
-1. Checks if a plan issue was already created for this session ID
+1. Checks if a plan was already created for this session ID
 2. If found, returns the existing issue instead of creating a duplicate
 3. Uses `_get_existing_saved_issue()` helper to query GitHub
 
@@ -639,7 +639,7 @@ When implementing a plan that corresponds to an objective roadmap step, the work
 
 2. **Automatic roadmap update on plan save:**
    - `/erk:plan-save` checks for `roadmap-step` marker
-   - If present, runs `erk exec update-objective-node` to update the objective's roadmap table with the plan issue link
+   - If present, runs `erk exec update-objective-node` to update the objective's roadmap table with the plan link
    - Marker is cleared after successful submission
 
 ### Lifecycle
@@ -660,7 +660,7 @@ Entities are connected through GitHub's native linking and deterministic metadat
 
 ### Branch → Issue
 
-Branches follow the pattern `plnd/{slug}-{timestamp}`. The association between branch and plan issue is tracked in `plan-ref.json`, which is the sole source of truth for plan-to-branch mapping.
+Branches follow the pattern `plnd/{slug}-{timestamp}`. The association between branch and plan is tracked in `plan-ref.json`, which is the sole source of truth for plan-to-branch mapping.
 
 **Legacy format:** Older branches may use the `P{issue}-{slug}-{timestamp}` pattern (e.g., `P123-feature-name-01-15-1430`), where the issue number is encoded in the branch name. This format is considered legacy.
 
@@ -1024,12 +1024,12 @@ The `lifecycle_stage` field in the plan-header metadata block provides machine-r
 
 ### Stage Values
 
-| Stage      | Meaning                                      | Color (TUI) |
-| ---------- | -------------------------------------------- | ----------- |
-| `prompted` | Plan issue created, planning not yet started | magenta     |
-| `planning` | Plan is being written by an agent            | magenta     |
-| `planned`  | Plan written, ready for implementation       | dim         |
-| `impl`     | Implementation in progress or complete       | yellow      |
+| Stage      | Meaning                                | Color (TUI) |
+| ---------- | -------------------------------------- | ----------- |
+| `prompted` | Plan created, planning not yet started | magenta     |
+| `planning` | Plan is being written by an agent      | magenta     |
+| `planned`  | Plan written, ready for implementation | dim         |
+| `impl`     | Implementation in progress or complete | yellow      |
 
 Legacy values `implementing` and `implemented` are accepted by schema validation for backwards compatibility but are never written. The display layer renders all three as `[yellow]impl[/yellow]`. See [Lifecycle Stage Consolidation](lifecycle-stage-consolidation.md) for details.
 
@@ -1041,7 +1041,7 @@ Each stage is set by specific commands at well-defined moments:
 
 | Stage      | Set By                                                                                      | When                                              |
 | ---------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| `prompted` | `one_shot_dispatch`                                                                         | One-shot plan issue created                       |
+| `prompted` | `one_shot_dispatch`                                                                         | One-shot plan created                             |
 | `planning` | `one-shot.yml` workflow                                                                     | Agent begins writing plan                         |
 | `planned`  | `plan_save`, `plan create`, `register_one_shot_plan`, `PlannedPRBackend.create_plan`        | Plan saved to GitHub                              |
 | `impl`     | `mark-impl-started`, `impl-signal` (started/submitted), `handle-no-changes`, `pr/shared.py` | Implementation begins, completes, or PR submitted |

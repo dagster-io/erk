@@ -7,7 +7,7 @@ read_when:
   - "modifying plan-save or land pipeline for plan handling"
 tripwires:
   - action: "validating plan_id in exec scripts without checking provider type"
-    warning: "Planned PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics. Issue-based plans use issue numbers; planned-PR plans use PR numbers."
+    warning: "Planned PR plan_id IS the PR number (not an issue number). Check provider type before assuming plan_id semantics."
     score: 4
   - action: "using gh issue view on a plan ID without checking plan backend type"
     warning: "Planned PR plan IDs are PR numbers. Using gh issue view on a planned-PR plan produces a confusing 404. Route to gh pr view based on backend type."
@@ -91,7 +91,7 @@ The backend uses explicit `isinstance()` checks and conditional type conversion 
 
 ## Title Prefixing Behavior
 
-Planned PR titles (and issue-based plan titles) are prefixed with a label-based tag via `get_title_tag_from_labels()` in `packages/erk-shared/src/erk_shared/plan_utils.py:178-190`.
+Planned PR titles are prefixed with a label-based tag via `get_title_tag_from_labels()` in `packages/erk-shared/src/erk_shared/plan_utils.py:178-190`.
 
 <!-- Source: packages/erk-shared/src/erk_shared/plan_utils.py:178-190, get_title_tag_from_labels -->
 
@@ -122,7 +122,7 @@ For full details, see [Impl-Context Staging Directory](impl-context.md).
 
 ## plan-save Duplicate Detection Output Routing
 
-When `erk exec plan-save --format json` detects that a plan was already saved in the current session (via the `plan-saved-issue` marker), it returns `{"skipped_duplicate": true, "plan_number": <N>}`. This JSON is written to **stderr**, not stdout.
+When `erk exec plan-save --format json` detects that a plan was already saved in the current session (via the `plan-saved` marker), it returns `{"skipped_duplicate": true, "plan_number": <N>}`. This JSON is written to **stderr**, not stdout.
 
 Empty stdout from `plan-save` does not indicate failure. Always capture both streams:
 

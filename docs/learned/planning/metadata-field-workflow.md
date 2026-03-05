@@ -2,7 +2,7 @@
 title: Metadata Field Addition Workflow
 read_when:
   - "adding a new field to plan-header metadata"
-  - "extending plan issue schema"
+  - "extending plan metadata schema"
   - "coordinating metadata changes across files"
 last_audited: "2026-02-05 20:38 PT"
 audit_result: edited

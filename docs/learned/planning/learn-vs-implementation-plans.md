@@ -18,7 +18,7 @@ audit_result: clean
 
 # Learn Plans vs. Implementation Plans
 
-Erk has two plan types that share the same issue infrastructure (`erk-pr` base label, plan-header metadata, same lifecycle phases) but serve fundamentally different purposes. Understanding when to use each — and how they connect — prevents workflow mistakes and ensures documentation is created alongside the code it documents.
+Erk has two plan types that share the same draft PR infrastructure (`erk-pr` base label, plan-header metadata, same lifecycle phases) but serve fundamentally different purposes. Understanding when to use each — and how they connect — prevents workflow mistakes and ensures documentation is created alongside the code it documents.
 
 ## Decision Table
 
@@ -89,7 +89,7 @@ See `LearnStatusValue` in `packages/erk-shared/src/erk_shared/gateway/github/met
 | `null` / `not_started` | No learn workflow has run         | Default                                            |
 | `pending`              | Learn workflow in progress        | Async learn workflow                               |
 | `completed_no_plan`    | Learn ran, no docs needed         | `/erk:learn` (validation found nothing actionable) |
-| `completed_with_plan`  | Learn ran, plan issue created     | `/erk:learn` (saved plan issue)                    |
+| `completed_with_plan`  | Learn ran, plan created           | `/erk:learn` (saved plan)                          |
 | `pending_review`       | Documentation PR created directly | Direct doc PR workflow                             |
 | `plan_completed`       | Learn plan implemented and landed | `erk land` (when learn plan PR merges)             |
 
@@ -99,7 +99,7 @@ See `LearnStatusValue` in `packages/erk-shared/src/erk_shared/gateway/github/met
 
 **Creating a learn plan manually without `--learned-from-issue`**: The `learned_from_issue` field is what distinguishes a learn plan from an implementation plan in the plan-header. Without it, base branch detection defaults to trunk, status tracking breaks, and the TUI can't show the link between plans.
 
-**Running `/erk:learn` on a learn plan issue**: Creates a documentation cycle. The learn command rejects this with a clear error.
+**Running `/erk:learn` on a learn plan**: Creates a documentation cycle. The learn command rejects this with a clear error.
 
 **Overriding `--base` on learn plan dispatch without reason**: The auto-detected parent branch is almost always correct. Override only when the parent branch has been deleted from the remote.
 

@@ -32,8 +32,8 @@
 - **[learn-workflow.md](learn-workflow.md)** — using /erk:learn skill, understanding learn status tracking, auto-updating parent plans when learn plans land
 - **[lifecycle-stage-consolidation.md](lifecycle-stage-consolidation.md)** — adding or modifying lifecycle_stage write points, understanding the impl stage consolidation from implementing/implemented, working with plan lifecycle stage transitions
 - **[lifecycle.md](lifecycle.md)** — creating a plan, closing a plan, understanding plan states
-- **[metadata-block-fallback.md](metadata-block-fallback.md)** — extracting plan content from GitHub issue comments, debugging 'no plan content found' errors in replan or plan-implement, working with older erk-plan issues that lack metadata blocks
-- **[metadata-field-workflow.md](metadata-field-workflow.md)** — adding a new field to plan-header metadata, extending plan issue schema, coordinating metadata changes across files
+- **[metadata-block-fallback.md](metadata-block-fallback.md)** — extracting plan content from GitHub issue comments, debugging 'no plan content found' errors in replan or plan-implement, working with older erk-plans that lack metadata blocks
+- **[metadata-field-workflow.md](metadata-field-workflow.md)** — adding a new field to plan-header metadata, extending plan metadata schema, coordinating metadata changes across files
 - **[metadata-update-patterns.md](metadata-update-patterns.md)** — writing plan dispatch metadata updates, choosing between assertive and best-effort metadata operations, working with write_dispatch_metadata or maybe_update_plan_dispatch_metadata
 - **[next-steps-output.md](next-steps-output.md)** — modifying next-steps output after plan save or submit, understanding PlanNextSteps, adding new next-steps commands to plan output
 - **[no-changes-handling.md](no-changes-handling.md)** — implementing erk-impl workflow, debugging no-changes scenarios, understanding erk-impl error handling
@@ -42,7 +42,7 @@
 - **[parallel-audit-pattern.md](parallel-audit-pattern.md)** — designing parallel agent workflows for bulk operations, implementing multi-agent batch processing, understanding how audit-scan or learn commands parallelize work
 - **[plan-backend-migration.md](plan-backend-migration.md)** — migrating exec scripts from direct GitHubIssues to PlanBackend, implementing LBYL pattern for plan existence checks, handling PlanNotFound vs PlanHeaderNotFoundError
 - **[plan-creation-pathways.md](plan-creation-pathways.md)** — understanding how plans are created in erk, adding a new plan creation entry point, debugging which code path created a plan
-- **[plan-execution-patterns.md](plan-execution-patterns.md)** — implementing a plan from a GitHub issue, understanding branch naming and worktree isolation, designing PR submission workflows for plans
+- **[plan-execution-patterns.md](plan-execution-patterns.md)** — implementing a plan from a GitHub draft PR, understanding branch naming and worktree isolation, designing PR submission workflows for plans
 - **[plan-header-privatization.md](plan-header-privatization.md)** — migrating callers of plan_header.py functions, understanding why plan_header functions are being privatized, working with PlanBackend metadata operations
 - **[plan-id-semantics.md](plan-id-semantics.md)** — calling github.get_pr() or github.get_issue() with a plan_id, writing code that handles plan IDs, debugging 404 errors when fetching plan metadata
 - **[plan-lookup-strategy.md](plan-lookup-strategy.md)** — debugging plan lookup issues, understanding plan file discovery, troubleshooting wrong plan saved
