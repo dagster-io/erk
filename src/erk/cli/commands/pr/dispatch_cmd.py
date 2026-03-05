@@ -220,8 +220,8 @@ def _dispatch_planned_pr_plan(
     # Sync local branch ref to remote (no checkout required)
     user_output(f"Syncing branch: {click.style(branch_name, fg='cyan')}")
     ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
-    branch_checked_out = ctx.git.worktree.is_branch_checked_out(repo.root, branch_name)
-    if branch_checked_out is None:
+    worktree_with_branch = ctx.git.worktree.is_branch_checked_out(repo.root, branch_name)
+    if worktree_with_branch is None:
         ctx.git.branch.create_branch(repo.root, branch_name, f"origin/{branch_name}", force=True)
 
     # Commit impl-context files directly to branch (no checkout required)
