@@ -87,6 +87,7 @@ class HelpScreen(ModalScreen):
             with Vertical(classes="help-section"):
                 yield Label("Filter & Sort", classes="help-section-title")
                 yield Label("/       Start filter mode", classes="help-binding")
+                yield Label("a       Toggle all users / my plans", classes="help-binding")
                 yield Label("t       Filter to Graphite stack", classes="help-binding")
                 yield Label("o       Filter to objective plans", classes="help-binding")
                 yield Label("Esc     Clear filter / exit filter", classes="help-binding")

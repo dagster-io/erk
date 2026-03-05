@@ -48,6 +48,7 @@ class StatusBar(Static):
         self._fetch_timings: FetchTimings | None = None
         self._message: str | None = None
         self._sort_mode: str | None = None
+        self._author_filter: str | None = None
         self._operations: dict[str, _OperationState] = {}
         self._last_updated_op_id: str | None = None
 
@@ -147,6 +148,15 @@ class StatusBar(Static):
         self._sort_mode = mode
         self._update_display()
 
+    def set_author_filter(self, label: str | None) -> None:
+        """Set the author filter display label.
+
+        Args:
+            label: Author filter label (e.g., "all", "schrockn"), or None to hide
+        """
+        self._author_filter = label
+        self._update_display()
+
     def _update_display(self) -> None:
         """Render the status bar content."""
         # Active operations take priority
@@ -177,6 +187,10 @@ class StatusBar(Static):
         # Item count with view-specific noun
         parts.append(f"{self._plan_count} {self._noun}")
 
+        # Author filter
+        if self._author_filter is not None:
+            parts.append(f"author: {self._author_filter}")
+
         # Sort mode
         if self._sort_mode:
             parts.append(f"sorted {self._sort_mode}")
@@ -195,6 +209,8 @@ class StatusBar(Static):
             parts.append(f"next: {self._seconds_remaining}s")
 
         # Key hints
-        parts.append("1-3:views Enter:open /:filter t:stack o:obj s:sort r:refresh q:quit ?:help")
+        parts.append(
+            "1-3:views Enter:open /:filter a:users t:stack o:obj s:sort r:refresh q:quit ?:help"
+        )
 
         self.update(" │ ".join(parts))
