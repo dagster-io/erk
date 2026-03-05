@@ -1,0 +1,1104 @@
+<session>
+  <meta branch="plnd/astro-starlight-docs-v2-03-05-0554" />
+  <meta model="claude-opus-4-6" />
+  <user>▐▛███▜▌   Claude Code v2.1.69
+▝▜█████▛▘  Opus 4.6 · Claude Max
+  ▘▘ ▝▝    ~/.erk/repos/erk/worktrees/erk-slot-01
+
+╭─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Plan to implement                                                                                                                                               │
+│                                                                                                                                                                 │
+│ Rebase Conflict Resolution                                                                                                                                      │
+│                                                                                                                                                                 │
+│ Context                                                                                                                                                         │
+│                                                                                                                                                                 │
+│ Rebasing plnd/astro-starlight-docs-v2-03-05-0554 onto 78f3043a2 (main). Two files have merge conflicts.                                                         │
+│                                                                                                                                                                 │
+│ Conflicts                                                                                                                                                       │
+│                                                                                                                                                                 │
+│ Both conflicts are identical in nature — HEAD (main) added "erk-skill-onboarding" which the rebasing branch didn't have.                                        │
+│                                                                                                                                                                 │
+│ 1. src/erk/capabilities/skills/bundled.py (line 26-29)                                                                                                          │
+│                                                                                                                                                                 │
+│ - HEAD: adds "erk-skill-onboarding" to _UNBUNDLED_SKILLS                                                                                                        │
+│ - Branch: doesn't have it                                                                                                                                       │
+│ - Resolution: Keep "erk-skill-onboarding" (from main) alongside existing entries                                                                                │
+│                                                                                                                                                                 │
+│ 2. src/erk/core/capabilities/codex_portable.py (line 46-49)                                                                                                     │
+│                                                                                                                                                                 │
+│ - HEAD: adds "erk-skill-onboarding" to claude_only_skills()                                                                                                     │
+│ - Branch: doesn't have it                                                                                                                                       │
+│ - Resolution: Keep "erk-skill-onboarding" (from main) alongside existing entries                                                                                │
+│                                                                                                                                                                 │
+│ Steps                                                                                                                                                           │
+│                                                                                                                                                                 │
+│ 1. Edit both files to resolve conflicts (keep "erk-skill-onboarding", remove conflict markers)                                                                  │
+│ 2. git add both files                                                                                                                                           │
+│ 3. git rebase --continue                                                                                                                                        │
+│ 4. Repeat for any further conflicts in remaining 5 commits                                                                                                      │
+│ 5. Push with gt submit or git push --force-with-lease                                                                                                           │
+╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+⏺ Let me read both conflicted files.
+
+⏺ Read(src/erk/capabilities/skills/bundled.py)
+  ⎿  Read 106 lines
+
+⏺ Read(src/erk/core/capabilities/codex_portable.py)
+  ⎿  Read 53 lines
+
+⏺ Resolving both conflicts — keeping "erk-skill-onboarding" from main.
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/src/erk/capabilities/skills/bundled.py)
+  ⎿  PreToolUse:Edit hook error
+  ⎿  Removed 3 lines
+      23          "learned-docs",  # has its own capability class (LearnedDocsCapability)
+      24          "rename-swarm",
+      25          "session-inspector",
+      26 -&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+      26          "erk-skill-onboarding",
+      28 -=======
+      29 -&gt;&gt;&gt;&gt;&gt;&gt;&gt; 1b1a882c0 (WIP: Prepare for PR submission)
+      27          "skill-creator",
+      28      }
+      29  )
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/src/erk/core/capabilities/codex_portable.py)
+  ⎿  PreToolUse:Edit hook error
+  ⎿  Removed 3 lines
+      43              "command-creator",
+      44              "cli-skill-creator",
+      45              "rename-swarm",
+      46 -&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+      46              "erk-skill-onboarding",
+      48 -=======
+      49 -&gt;&gt;&gt;&gt;&gt;&gt;&gt; 1b1a882c0 (WIP: Prepare for PR submission)
+      47              "skill-creator",
+      48          }
+      49      )
+
+⏺ Now stage and continue the rebase.
+
+⏺ Bash(git add src/erk/capabilities/skills/bundled.py src/erk/core/capabilities/codex_portable.py &amp;&amp; GIT_EDITOR=true git rebase --continue)
+  ⎿  Rebasing (2/6)dropping 79d1690a744e557c27c8fdb355842421b5498db1 Add skill-creator skill and fix CI integration -- patch contents already upstream
+     Rebasing (3/6)dropping dd8dd7ee84a6628585096c927a4012b6e5f5e686 cp -- patch contents already upstream
+     Rebasing (4/6)dropping 7137c881c0283757e01715c790dcc2853ba6ad5f cp -- patch contents already upstream
+     Rebasing (5/6)Rebasing (6/6)Successfully rebased and updated refs/heads/plnd/astro-starlight-docs-v2-03-05-0554.
+
+⏺ Rebase completed successfully. 3 commits were dropped as already upstream, and the remaining commits applied cleanly. Let me verify the state.
+
+⏺ Bash(git log --oneline -8)
+  ⎿  4b044c5a1 Add plan for PR #8759
+     186fa3b1b Add plan: Plan: Create Astro/Starlight v2 Docs Site for Erk
+     78f3043a2 Add skill-creator skill and fix CI integration (#8758)
+     b076bc72f Release version 0.9.5 (#8753)
+     d29fd053e Fix StatusBar MarkupError crash from subprocess error display (#8733)
+     5c3924bd9 Merge branch 'release-0.9.5'
+     3131b4db9 Consolidate Documentation from 18 Merged Erk-Learn Plans (#8701)
+     8093bcbf9 Release version 0.9.5
+
+⏺ Rebase is clean — branch plnd/astro-starlight-docs-v2-03-05-0554 is now on top of 78f3043a2 (main). Ready to push when you want — shall I run gt submit
+  --no-interactive or git push --force-with-lease?
+
+❯ /exit
+  ⎿  Goodbye!
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+❯ 
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ➜  (git:erk) (wt:erk-slot-01) (br:plnd/astro-starlight-docs-v2-03-05-0554) | (gh:#8759 st:👀 chks:[✅:13]) │ (O)                                   22202 tokens
+  ⏵⏵ bypass permissions on (shift+tab to cycle) · PR #8759                                                                       current: 2.1.69 · latest: 2.1.69
+
+Resume this session with:
+claude --resume de0cd655-49ac-4428-b1c5-4651fd565a09
+(erk) ➜  erk-slot-01 git:(plnd/astro-starlight-docs-v2-03-05-0554) make pull_master
+git -C /Users/schrockn/code/erk pull origin master
+From https://github.com/dagster-io/erk
+ * branch                master     -&gt; FETCH_HEAD
+Already up to date.
+(erk) ➜  erk-slot-01 git:(plnd/astro-starlight-docs-v2-03-05-0554) git diff master
+(erk) ➜  erk-slot-01 git:(plnd/astro-starlight-docs-v2-03-05-0554) erk impl -d
+Auto-detected plan #8759 from branch
+Detected plan #8759
+Fetching plan from GitHub...
+Plan: Create Astro/Starlight v2 docs site
+Creating impl folder with plan...
+✓ Created impl folder
+Saving plan reference for PR linking...
+✓ Saved plan reference: https://github.com/dagster-io/erk/pull/8759
+Launching Claude...
+
+ ▐▛███▜▌   Claude Code v2.1.69
+▝▜█████▛▘  Opus 4.6 · Claude Max
+  ▘▘ ▝▝    ~/.erk/repos/erk/worktrees/erk-slot-01
+
+❯ /erk:plan-implement
+  ⎿  Interrupted · What should Claude do instead?
+
+Resume this session with:
+claude --resume 499b6317-e98f-47f1-958a-d7d9bfd53dcd
+(erk) ➜  erk-slot-01 git:(plnd/astro-starlight-docs-v2-03-05-0554) erk dispatch
+Usage: erk [OPTIONS] COMMAND [ARGS]...
+Try 'erk -h' for help.
+
+Error: No such command 'dispatch'.
+(erk) ➜  erk-slot-01 git:(plnd/astro-starlight-docs-v2-03-05-0554) erk pr dispatch
+Checking GitHub authentication...
+Syncing trunk with remote...
+Auto-detected PR #8759 from context
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8759...
+
+✓ All 1 plan(s) validated
+
+  #8759: Create Astro/Starlight v2 docs site
+
+Dispatching PR #8759...
+
+Fetching plan content...
+Syncing branch: plnd/astro-starlight-docs-v2-03-05-0554
+Traceback (most recent call last):
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/packages/erk-shared/src/erk_shared/subprocess_utils.py", line 122, in run_subprocess_with_context
+    result = subprocess.run(
+        cmd,
+    ...&lt;8 lines&gt;...
+        **kwargs,
+    )
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '['git', 'branch', '-f', 'plnd/astro-starlight-docs-v2-03-05-0554', 'origin/plnd/astro-starlight-docs-v2-03-05-0554']' returned non-zero exit status 128.
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/.venv/bin/erk", line 10, in &lt;module&gt;
+    sys.exit(main())
+             ~~~~^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/src/erk/cli/cli.py", line 230, in main
+    cli()
+    ~~~^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/.venv/lib/python3.13/site-packages/click/core.py", line 1485, in __call__
+    return self.main(*args, **kwargs)
+           ~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/.venv/lib/python3.13/site-packages/click/core.py", line 1406, in main
+    rv = self.invoke(ctx)
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/.venv/lib/python3.13/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/.venv/lib/python3.13/site-packages/click/core.py", line 1873, in invoke
+    return _process_result(sub_ctx.command.invoke(sub_ctx))
+                           ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/.venv/lib/python3.13/site-packages/click/core.py", line 1269, in invoke
+    return ctx.invoke(self.callback, **ctx.params)
+           ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/.venv/lib/python3.13/site-packages/click/core.py", line 824, in invoke
+    return callback(*args, **kwargs)
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/.venv/lib/python3.13/site-packages/click/decorators.py", line 46, in new_func
+    return f(get_current_context().obj, *args, **kwargs)
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/src/erk/cli/commands/pr/dispatch_cmd.py", line 530, in pr_dispatch
+    result = _dispatch_planned_pr_plan(
+        ctx,
+    ...&lt;4 lines&gt;...
+        ref=ref,
+    )
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/src/erk/cli/commands/pr/dispatch_cmd.py", line 223, in _dispatch_planned_pr_plan
+    ctx.git.branch.create_branch(repo.root, branch_name, f"origin/{branch_name}", force=True)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py", line 52, in create_branch
+    run_subprocess_with_context(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        cmd=cmd,
+        ^^^^^^^^
+        operation_context=f"create branch '{branch_name}' from '{start_point}'",
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        cwd=cwd,
+        ^^^^^^^^
+    )
+    ^
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/packages/erk-shared/src/erk_shared/subprocess_utils.py", line 162, in run_subprocess_with_context
+    raise RuntimeError(error_msg) from e
+RuntimeError: Failed to create branch 'plnd/astro-starlight-docs-v2-03-05-0554' from 'origin/plnd/astro-starlight-docs-v2-03-05-0554'
+Command: git branch -f plnd/astro-starlight-docs-v2-03-05-0554 origin/plnd/astro-starlight-docs-v2-03-05-0554
+Exit code: 128
+stderr: fatal: cannot force update the branch 'plnd/astro-starlight-docs-v2-03-05-0554' used by worktree at '/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01'
+(erk) ➜  erk-slot-01 git:(plnd/astro-starlight-docs-v2-03-05-0554)
+
+diagnose issue</user>
+  <usage input_tokens="3" cache_creation_input_tokens="19629" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 19629}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01VG9PBb9W8yyifg3nHy4pb1">
+    <param name="query">select:Read,Agent,Grep</param>
+    <param name="max_results">3</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="19629" cache_read_input_tokens="0" output_tokens="270" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 19629, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VG9PBb9W8yyifg3nHy4pb1">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="4208" cache_read_input_tokens="19629" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4208}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>The error is straightforward: `erk pr dispatch` calls `git branch -f &lt;branch&gt; origin/&lt;branch&gt;` to sync the branch with remote, but git refuses because that branch is currently checked out in the worktree you're running the command from.
+
+Let me look at the dispatch code to understand the full context.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="4208" cache_read_input_tokens="19629" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4208}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01D2vCRcCXEK1SvJx6Gzxzi6">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">200</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4208" cache_read_input_tokens="19629" output_tokens="308" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4208, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01D2vCRcCXEK1SvJx6Gzxzi6">
+   200→        ctx: ErkContext with git operations
+   201→        repo: Repository context
+   202→        validated: Validated planned PR information
+   203→        submitted_by: GitHub username of submitter
+   204→        base_branch: Base branch for PR
+   205→
+   206→    Returns:
+   207→        DispatchResult with URLs and identifiers.
+   208→    """
+   209→    plan_number = validated.number
+   210→    branch_name = validated.branch_name
+   211→
+   212→    # Fetch plan content via PlanBackend
+   213→    user_output("Fetching plan content...")
+   214→    result = ctx.plan_store.get_plan(repo.root, str(plan_number))
+   215→    if isinstance(result, PlanNotFound):
+   216→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number}: plan content not found")
+   217→        raise SystemExit(1)
+   218→    plan = result
+   219→
+   220→    # Sync local branch ref to remote (no checkout required)
+   221→    user_output(f"Syncing branch: {click.style(branch_name, fg='cyan')}")
+   222→    ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+   223→    ctx.git.branch.create_branch(repo.root, branch_name, f"origin/{branch_name}", force=True)
+   224→
+   225→    # Commit impl-context files directly to branch (no checkout required)
+   226→    user_output("Committing plan to branch...")
+   227→    files = build_impl_context_files(
+   228→        plan_content=plan.body,
+   229→        plan_id=str(plan_number),
+
+... [20 lines omitted] ...
+
+   245→    if isinstance(push_result, PushError):
+   246→        raise UserFacingCliError(push_result.message)
+  </tool_result>
+  <assistant>The bug is on line 223. The comment on line 220 says "no checkout required" — the intent is to update the branch ref without checking it out. But `git branch -f` can't update a branch that's currently checked out.
+
+**Root cause:** `_dispatch_planned_pr_plan` assumes the dispatch branch isn't checked out in the current worktree. When you run `erk pr dispatch` from the same worktree that has the branch checked out, `git branch -f` fails.
+
+**The fix should be:** When the branch is already checked out in the current worktree, skip the `create_branch` call (the local branch is already up to date, or use `git reset` / `git merge --ff-only` instead). Alternatively, detect this case and use `git checkout` + `git pull` or simply skip the sync if the branch is already current.
+
+Let me check what `create_branch` is doing and whether there's already a pattern for this.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1040" cache_read_input_tokens="23837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1040}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019f6gMNKh8g4W5awQGNLxsL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py</param>
+    <param name="offset">35</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1040" cache_read_input_tokens="23837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1040}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019f6gMNKh8g4W5awQGNLxsL">
+    35→        if force:
+    36→            cmd.append("-f")
+    37→        cmd.extend([branch_name, start_point])
+    38→        # LBYL: Check if branch already exists before creating (skip for force mode)
+    39→        if not force:
+    40→            check_result = run_subprocess_with_context(
+    41→                cmd=["git", "show-ref", "--verify", f"refs/heads/{branch_name}"],
+    42→                operation_context=f"check if branch '{branch_name}' exists",
+    43→                cwd=cwd,
+    44→                check=False,
+    45→            )
+    46→            if check_result.returncode == 0:
+    47→                return BranchAlreadyExists(
+    48→                    branch_name=branch_name,
+    49→                    message=f"Branch '{branch_name}' already exists",
+    50→                )
+    51→
+    52→        run_subprocess_with_context(
+    53→            cmd=cmd,
+    54→            operation_context=f"create branch '{branch_name}' from '{start_point}'",
+    55→            cwd=cwd,
+    56→        )
+    57→        return BranchCreated()
+    58→
+    59→    def delete_branch(self, cwd: Path, branch_name: str, *, force: bool) -&gt; None:
+    60→        """Delete a local branch.
+    61→
+    62→        Idempotent: if branch doesn't exist, returns successfully.
+    63→        """
+    64→        # LBYL: Check if branch exists before attempting delete
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012RsyZ2wsyy776DZ6NnRnTM">
+    <param name="pattern">def current_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1040" cache_read_input_tokens="23837" output_tokens="476" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1040, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012RsyZ2wsyy776DZ6NnRnTM">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01BAGzc34VEBgmBUx7EKcM9T">
+    <param name="pattern">current_branch|checked_out_branch|head_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="947" cache_read_input_tokens="24877" output_tokens="143" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 947, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BAGzc34VEBgmBUx7EKcM9T">
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/printing.py:44:    def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -&gt; bool:
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/printing.py:46:        return self._wrapped.check_merge_conflicts(cwd, base_branch, head_branch)
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/abc.py:60:    def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -&gt; bool:
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/abc.py:66:            head_branch: Head branch to merge from
+packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py:32:        current_branch: str | None = None
+packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py:38:                current_branch = None
+packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py:43:                current_branch = branch_ref.replace("refs/heads/", "")
+packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py:45:                worktrees.append(WorktreeInfo(path=current_path, branch=current_branch))
+packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py:47:                current_branch = None
+packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py:50:            worktrees.append(WorktreeInfo(path=current_path, branch=current_branch))
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/real.py:73:    def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -&gt; bool:
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/real.py:76:            ["git", "merge-tree", "--write-tree", base_branch, head_branch],
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py:63:    def get_current_branch(self, cwd: Path) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py:65:        return self._wrapped.get_current_branch(cwd)
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/dry_run.py:50:    def check_merge_conflicts(self, cwd: Path, base_branch: str, head_branch: str) -&gt; bool:
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/dry_run.py:52:        return self._wrapped.check_merge_conflicts(cwd, base_branch, head_branch)
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py:93:    def get_current_branch(self, cwd: Path) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/git/fake.py:91:    - checked_out_branches: Branches checked out via checkout_branch()
+packages/erk-shared/src/erk_shared/gateway/git/fake.py:98:            current_branches={wt1: "main"},
+packages/erk-shared/src/erk_shared/gateway/git/fake.py:112:        assert (repo, "feature") in git_ops.checked_out_branches
+packages/erk-shared/src/erk_shared/gateway/git/fake.py:120:        current_branches: dict[Path, str | None] | None = None,
+packages/erk-shared/src/erk_shared/gateway/git/fake.py:177:            current_branches: Mapping of cwd -&gt; current branch
+packages/erk-shared/src/erk_shared/gateway/git/fake.py:204:            merge_conflicts: Mapping of (base_branch, head_branch) -&gt; has conflicts bool
+packages/erk-shared/src/erk_shared/gateway/git/fake.py:239:        self._current_branches = current_branches or {}
+packages/erk-shared/src/erk_shared/gateway/git/fake.py:289:        self._checked_out_branches: list[tuple[Path, str]] = []
+packages/erk-shared/src/erk_shared/gateway/git/fake.py:351:            current_branches=self._current_branches,
+packages/erk-shared/src/erk_shared/gateway/git/fake.py:371:            checked_out_branches=self._checked_out_branches,
+packages/erk-shared/src/erk_shared/gateway/git/fake.py:545:    def checked_out_branches(self) -&gt; list[tuple[Path, str]]:
+packages/erk-shared/src/erk_shared/gateway/git/fake.py:551:        return self._checked_out_branches.copy()
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py:27:    - checked_out_branches: Branches checked out via checkout_branch()
+
+... [21 lines omitted] ...
+  </tool_result>
+  <assistant>Good — there's `get_current_branch` available. Here's the diagnosis:
+
+## Diagnosis
+
+**Bug location:** `src/erk/cli/commands/pr/dispatch_cmd.py:223`
+
+**What happens:**
+1. `_dispatch_planned_pr_plan` calls `ctx.git.branch.create_branch(repo.root, branch_name, f"origin/{branch_name}", force=True)` to sync the local branch ref to the remote
+2. This runs `git branch -f &lt;branch&gt; origin/&lt;branch&gt;` 
+3. Git refuses because the branch is checked out in the current worktree
+
+**Why it happens:** The code was designed for dispatch from a *different* worktree (e.g., root worktree on `master`). When you run `erk pr dispatch` from the worktree that has the plan branch checked out, it hits this wall.
+
+**Fix options:**
+1. **Check if branch is current, skip the sync** — If the branch is already checked out, the user presumably has it up to date (or can be told to pull). Use `ctx.git.branch.get_current_branch(repo.root)` to detect this and skip the `create_branch` call.
+2. **Use `git reset --hard origin/&lt;branch&gt;` instead** — This works on the checked-out branch but is destructive to local changes.
+3. **Use `git merge --ff-only origin/&lt;branch&gt;`** — Safe fast-forward that works on the checked-out branch.
+
+Option 1 is simplest and safest. The `commit_files_to_branch` on line 236 also manipulates the branch via plumbing commands — want me to check if that also has issues when the branch is checked out?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2513" cache_read_input_tokens="25824" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2513}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01NpWt6N49PYWHgXNFALfjpb">
+    <param name="pattern">def commit_files_to_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2513" cache_read_input_tokens="25824" output_tokens="542" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2513, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NpWt6N49PYWHgXNFALfjpb">
+Found 5 files
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/printing.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_015dc9fMbVxzuHMvKw1vbsc5">
+    <param name="pattern">def commit_files_to_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="691" cache_read_input_tokens="28337" output_tokens="164" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 691, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015dc9fMbVxzuHMvKw1vbsc5">
+71:    def commit_files_to_branch(
+72-        self,
+73-        cwd: Path,
+74-        *,
+75-        branch: str,
+76-        files: dict[str, str],
+77-        message: str,
+78-    ) -&gt; None:
+79-        """Create a commit on a branch using git plumbing (no checkout)."""
+80-        # Get parent commit SHA
+81-        parent_sha = run_subprocess_with_context(
+82-            cmd=["git", "rev-parse", branch],
+83-            operation_context=f"resolve branch {branch}",
+84-            cwd=cwd,
+85-        ).stdout.strip()
+86-
+87-        # Create temporary index file to avoid touching the real index
+88-        tmp_fd, tmp_index = tempfile.mkstemp(suffix=".idx", prefix="erk-plan-")
+89-        os.close(tmp_fd)
+90-        try:
+91-            env = os.environ.copy()
+92-            env["GIT_INDEX_FILE"] = tmp_index
+93-
+94-            # Read parent tree into temp index
+95-            run_subprocess_with_context(
+96-                cmd=["git", "read-tree", parent_sha],
+97-                operation_context="read parent tree into temp index",
+98-                cwd=cwd,
+99-                env=env,
+100-            )
+
+... [31 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KmhDVy95aXrTTk8xf2GJPq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py</param>
+    <param name="offset">131</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1014" cache_read_input_tokens="29028" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1014, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KmhDVy95aXrTTk8xf2GJPq">
+   131→                cwd=cwd,
+   132→            ).stdout.strip()
+   133→
+   134→            # Update branch ref
+   135→            run_subprocess_with_context(
+   136→                cmd=["git", "update-ref", f"refs/heads/{branch}", commit_sha],
+   137→                operation_context=f"update ref for {branch}",
+   138→                cwd=cwd,
+   139→            )
+   140→        finally:
+   141→            Path(tmp_index).unlink(missing_ok=True)
+   142→
+   143→    # ============================================================================
+   144→    # Query Operations
+   145→    # ============================================================================
+  </tool_result>
+  <assistant>Interesting — `commit_files_to_branch` uses `git update-ref` (line 136), which **does** work on checked-out branches (unlike `git branch -f`). So the commit step would succeed; only the sync step on line 223 fails.
+
+## Full Diagnosis
+
+| Step | Command | Works on checked-out branch? |
+|------|---------|------------------------------|
+| Line 223: sync branch | `git branch -f` | **No** — this is the bug |
+| Line 236: commit files | `git update-ref` | Yes |
+| Line 242: push | `git push` | Yes |
+
+**The fix:** In `_dispatch_planned_pr_plan`, before the `create_branch` call, check if the branch is currently checked out. If so, either skip the sync or use a method that works on checked-out branches (like `git update-ref` directly, or `git reset`).
+
+The simplest correct fix: check `get_current_branch`, and if it matches, skip the `create_branch` and just let `commit_files_to_branch` work directly on the current HEAD. Note that `commit_files_to_branch` uses `git rev-parse branch` to get the parent SHA, which works fine whether the branch is checked out or not.
+
+Want me to implement the fix?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="30042" output_tokens="309" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 315, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>plan a fix yes</user>
+  <assistant>
+
+I already have strong understanding from the prior diagnosis. Let me just verify the test patterns and the ABC interface for `create_branch` to ensure the plan is complete.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1660" cache_read_input_tokens="30357" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1660}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01WP1SGXcS2BBZ8kgdWX5DFX">
+    <param name="description">Explore dispatch tests and branch ABC</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic. Read relevant ...[truncated 921 chars]...D to diverge from the working tree.
+
+Report all findings with file paths and line numbers.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1660" cache_read_input_tokens="30357" output_tokens="422" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1660, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WP1SGXcS2BBZ8kgdWX5DFX">
+Perfect! Now I have all the information needed. Let me compile the comprehensive findings:
+
+## Summary of Findings
+
+### 1. Test Setup for `_dispatch_planned_pr_plan`
+
+**Test File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/tests/commands/pr/test_dispatch.py` (Lines 21-139)
+
+**Key Test Configuration:**
+- Uses `FakeGit` with pre-configured state:
+  - `current_branches={env.cwd: "main"}` (line 83)
+  - `local_branches={env.cwd: ["main"]}` (line 84)
+  - `remote_branches={env.cwd: ["origin/main", f"origin/{plan_branch}"]}` (line 87)
+  - `branch_heads={"main": "abc123", "origin/main": "abc123"}` (line 89)
+
+- Uses `FakeGitHub`, `FakeGraphite`, and `PlannedPRBackend` together
+- Creates a `PRDetails` with metadata blocks for the plan
+- The test verifies workflow is triggered with `plan_backend="planned_pr"` (lines 118-124)
+
+### 2. `create_branch` Signature and Return Types
+
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py` (Lines 26-41)
+
+```python
+@abstractmethod
+def create_branch(
+    self, cwd: Path, branch_name: str, start_point: str, *, force: bool
+) -&gt; BranchCreated | BranchAlreadyExists:
+```
+
+
+... [162 lines omitted] ...
+
+    Returns create_branch_error if configured, otherwise BranchCreated.
+    if self._create_branch_error is not None:
+        return self._create_branch_error
+        click.style("Error: ", fg="red")
+**The Gap:** If the `branch_name` (the plan branch) happens to be checked out in another worktree, the `update_local_ref` call (line 136 in real.py) will cause HEAD in that worktree to diverge from the working tree without warning.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3357" cache_read_input_tokens="32017" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3357}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Great findings. There's already an `is_branch_checked_out` utility. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3357" cache_read_input_tokens="32017" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3357}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_012ZgddEmDp8DZW9bnZrdEih">
+    <param name="query">select:Write,ExitPlanMode</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3357" cache_read_input_tokens="32017" output_tokens="1233" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3357, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012ZgddEmDp8DZW9bnZrdEih">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01EfiwNt8hVdxKdFzifs4BHF">
+    <param name="file_path">/Users/schrockn/.claude/plans/wise-swinging-feigenbaum.md</param>
+    <param name="content"># Fix: `erk pr dispatch` fails when branch is checked out in current worktree
+
+## Context
+...[truncated 3668 chars]... slot worktree with plan branch checked out, run `erk pr dispatch` and verify it succeeds
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2148" cache_read_input_tokens="35374" output_tokens="1190" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2148, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EfiwNt8hVdxKdFzifs4BHF">
+File created successfully at: /Users/schrockn/.claude/plans/wise-swinging-feigenbaum.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01F1Wo4G7XH4huUowGMav3ks">
+    <param name="plan"># Fix: `erk pr dispatch` fails when branch is checked out in current worktree
+
+## Context
+...[truncated 3668 chars]... slot worktree with plan branch checked out, run `erk pr dispatch` and verify it succeeds
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1570" cache_read_input_tokens="37522" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1570, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01F1Wo4G7XH4huUowGMav3ks">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/wise-swinging-feigenbaum.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: `erk pr dispatch` fails when branch is checked out in current worktree
+Current context: (wt:erk-slot-01) (br:plnd/astro-starlight-docs-v2-03-05-0554) (pr:#8759) (plan:#8759)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/astr"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 5611bf25-f053-42ff-aeda-062e0cdaeb70 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/wise-swinging-feigenbaum.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01YKSWA5qDEwFZpvR53ouhVt">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="689" cache_read_input_tokens="39092" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 689, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YKSWA5qDEwFZpvR53ouhVt">
+
+  </tool_result>
+  <assistant>Here's the plan:
+
+## Fix: `erk pr dispatch` fails when branch is checked out in current worktree
+
+**Context:** `erk pr dispatch` crashes with `fatal: cannot force update the branch used by worktree` when run from a worktree that has the plan branch checked out. Line 223 of `dispatch_cmd.py` uses `git branch -f` which git prohibits on checked-out branches.
+
+**Fix:** Before the `create_branch` call, use the existing `ctx.git.worktree.is_branch_checked_out()` utility. If the branch is checked out, skip the `create_branch` sync. The subsequent `commit_files_to_branch` uses `git update-ref` which works fine on checked-out branches. Accept the minor working tree divergence (`.erk/impl-context/` files exist in git but not on disk — these are only needed by the remote agent).
+
+**Files:** `src/erk/cli/commands/pr/dispatch_cmd.py` (main fix), `tests/commands/pr/test_dispatch.py` (new test case)</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1327" cache_read_input_tokens="39781" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1327}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01TbLLwgmk5HhKdXdMDkBRRN">
+    <param name="questions">[{'question': '📋 Fix: `erk pr dispatch` fails when branch is checked out in current worktr...[truncated 467 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1327" cache_read_input_tokens="39781" output_tokens="516" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1327, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TbLLwgmk5HhKdXdMDkBRRN">
+User has answered your questions: "📋 Fix: `erk pr dispatch` fails when branch is checked out in current worktree
+Current context: (wt:erk-slot-01) (br:plnd/astro-starlight-docs-v2-03-05-0554) (pr:#8759) (plan:#8759)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01VLEZzdTwqT6poegSgG2Q1w">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="749" cache_read_input_tokens="41108" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 749, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VLEZzdTwqT6poegSgG2Q1w">
+
+  </tool_result>
+  <assistant>
+
+User chose "Create new branch and planned PR". Running `/erk:plan-save` to save the plan as a draft PR.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="663" cache_read_input_tokens="41857" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 663}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01V9QfiFGPpBQxnVSM7YGUMz">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="663" cache_read_input_tokens="41857" output_tokens="87" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 663, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V9QfiFGPpBQxnVSM7YGUMz">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="5611bf25-f053-42ff-aeda-062e0cdaeb70" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="5611bf25-f053-42ff-aeda-062e0cdaeb70" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "5611bf25-f053-42ff-aeda-062e0cdaeb70" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "5611bf25-f053-42ff-aeda-062e0cdaeb70" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "5611bf25-f053-42ff-aeda-062e0cdaeb70" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "5611bf25-f053-42ff-aeda-062e0cdaeb70" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2298" cache_read_input_tokens="42520" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2298}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Step 1:** No flags passed — all flags empty.
+
+**Step 2:** Branch slug from title "Fix: `erk pr dispatch` fails when branch is checked out in current worktree" → `fix-dispatch-checkedout-branch`
+
+**Step 3:** Summary: "When erk pr dispatch is run from a worktree that has the plan branch checked out, git branch -f fails because git prohibits force-updating a checked-out branch. The fix uses the existing is_branch_checked_out utility to skip the sync when unnecessary, since the subsequent commit_files_to_branch uses git update-ref which works on checked-out branches."
+
+**Step 4:** Running save command.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2298" cache_read_input_tokens="42520" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2298}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01RYa6SbbRhFMkDPyiKbk2xS">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2298" cache_read_input_tokens="42520" output_tokens="340" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2298, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RYa6SbbRhFMkDPyiKbk2xS">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01GQTXfACFg9TwtA6PWEqEzs">
+    <param name="command">erk exec plan-save --format json --session-id="5611bf25-f053-42ff-aeda-062e0cdaeb70" --bra...[truncated 296 chars]...ubsequent commit_files_to_branch uses git update-ref which works on checked-out branches."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3481" cache_read_input_tokens="44818" output_tokens="232" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3481, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GQTXfACFg9TwtA6PWEqEzs">
+{"success": true, "plan_number": 8764, "plan_url": "https://github.com/dagster-io/erk/pull/8764", "title": "[erk-plan] Fix: `erk pr dispatch` fails when branch is checked out in current worktree", "branch_name": "plnd/fix-dispatch-checkedout-br-03-05-0823", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/.erk/scratch/sessions/5611bf25-f053-42ff-aeda-062e0cdaeb70/plan_snapshots/000001-f8e5e832"}
+  </tool_result>
+  <assistant>**Step 5:** No objective linked — skipping verification.
+
+**Step 6:** N/A (no objective).
+
+**Step 7:** Pushing planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="529" cache_read_input_tokens="48299" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 529}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01TiPR75ACX5dQPnBJgvDX45">
+    <param name="command">erk exec upload-impl-session --session-id "5611bf25-f053-42ff-aeda-062e0cdaeb70" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="529" cache_read_input_tokens="48299" output_tokens="174" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 529, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TiPR75ACX5dQPnBJgvDX45">
+{"uploaded": true, "plan_id": 8759}
+  </tool_result>
+  <assistant>Plan saved as draft PR #8764.
+
+**Plan "Fix: `erk pr dispatch` fails when branch is checked out in current worktree" saved as draft PR #8764**
+URL: https://github.com/dagster-io/erk/pull/8764</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="199" cache_read_input_tokens="48828" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 199}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01R8UYs5V5YjFFaC3F5RwFe5">
+    <param name="plan"># Fix: `erk pr dispatch` fails when branch is checked out in current worktree
+
+## Context
+...[truncated 3668 chars]... slot worktree with plan branch checked out, run `erk pr dispatch` and verify it succeeds
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="199" cache_read_input_tokens="48828" output_tokens="101" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 199, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01R8UYs5V5YjFFaC3F5RwFe5">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8764 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8764:
+  In current wt:    source "$(erk br co --for-plan 8764 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8764 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8764 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8764 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8764:
+  In current wt:  erk br co --for-plan 8764
+  In new wt:      erk br co --new-slot --for-plan 8764
+
+Dispatch plan #8764:
+  CLI command:    erk pr dispatch 8764
+  Slash command:  /erk:pr-dispatch 8764
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan #8764 saved. Next steps:
+
+**Implement plan #8764:**
+```
+In current wt:    source "$(erk br co --for-plan 8764 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --for-plan 8764 --script)" &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 8764 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 8764 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout plan #8764:**
+```
+In current wt:  erk br co --for-plan 8764
+In new wt:      erk br co --new-slot --for-plan 8764
+```
+
+**Dispatch plan #8764:**
+```
+CLI command:    erk pr dispatch 8764
+Slash command:  /erk:pr-dispatch 8764
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="595" cache_read_input_tokens="49027" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 595}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "5611bf25-f053-42ff-aeda-062e0cdaeb70" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>
+
+The most recent plan is #8764. Dispatching it.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="907" cache_read_input_tokens="49622" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 907}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AiXp8RaKwLiGrPLcTcJNUg">
+    <param name="command">erk pr dispatch 8764</param>
+    <param name="description">Dispatch plan #8764 for remote AI implementation</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="907" cache_read_input_tokens="49622" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 907, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AiXp8RaKwLiGrPLcTcJNUg">
+Exit code 1
+Checking GitHub authentication...
+Syncing trunk with remote...
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8764...
+
+✓ All 1 plan(s) validated
+
+  #8764: [erk-plan] Fix: `erk pr dispatch` fails when branch is checked out in current worktree
+
+Dispatching PR #8764...
+
+Fetching plan content...
+Syncing branch: plnd/fix-dispatch-checkedout-br-03-05-0823
+Committing plan to branch...
+✓ Branch pushed to remote
+
+Dispatching workflow: plan-implement.yml
+Traceback (most recent call last):
+  File "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-01/packages/erk-shared/src/erk_shared/subprocess_utils.py", line 122, in run_subprocess_with_context
+    result = subprocess.run(
+        cmd,
+    ...&lt;8 lines&gt;...
+        **kwargs,
+    )
+  File "/Users/schrockn/.local/share/uv/python/cpython-3.13.1-macos-aarch64-none/lib/python3.13/subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+
+... [154 lines omitted] ...
+
+subprocess.CalledProcessError: Command '['gh', 'api', '--method', 'POST', 'repos/{owner}/{repo}/actions/workflows/plan-implement.yml/dispatches', '--input', '-']' returned non-zero exit status 1.
+The above exception was the direct cause of the following exception:
+    raise RuntimeError(error_msg) from e
+RuntimeError: Failed to trigger workflow 'plan-implement.yml'
+stdout: {"message":"Failed to run workflow dispatch","documentation_url":"https://docs.github.com/rest/actions/workflows#create-a-workflow-dispatch-event","status":"500"}
+stderr: gh: Failed to run workflow dispatch (HTTP 500)
+    raise CalledProcessError(retcode, process.args,
+subprocess.CalledProcessError: Command '['gh', 'api', '--method', 'POST', 'repos/{owner}/{repo}/actions/workflows/plan-implement.yml/dispatches', '--input', '-']' returned non-zero exit status 1.
+The above exception was the direct cause of the following exception:
+    raise RuntimeError(error_msg) from e
+RuntimeError: Failed to trigger workflow 'plan-implement.yml'
+stdout: {"message":"Failed to run workflow dispatch","documentation_url":"https://docs.github.com/rest/actions/workflows#create-a-workflow-dispatch-event","status":"500"}
+stderr: gh: Failed to run workflow dispatch (HTTP 500)
+  </tool_result>
+  <assistant>Dispatch failed — but not from the original bug. This time the branch sync and push succeeded (note: it worked because this was dispatched from a worktree that does **not** have that branch checked out). The failure is a **GitHub API HTTP 500** when triggering the `plan-implement.yml` workflow dispatch. That's a GitHub server-side error, not something in erk's code.
+
+You could retry later, or check if the `plan-implement.yml` workflow exists and is enabled in the repo's Actions settings.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3482" cache_read_input_tokens="50529" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3482, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+</session>
