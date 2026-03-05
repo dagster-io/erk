@@ -73,11 +73,26 @@ def pr_teleport(ctx: ErkContext, pr_number: int, new_slot: bool, force: bool) ->
         raise SystemExit(1)
 
     branch_name = pr.head_ref_name
+    base_ref_name = pr.base_ref_name
 
     if new_slot:
-        _teleport_new_slot(ctx, repo, pr_number=pr_number, branch_name=branch_name, force=force)
+        _teleport_new_slot(
+            ctx,
+            repo,
+            pr_number=pr_number,
+            branch_name=branch_name,
+            base_ref_name=base_ref_name,
+            force=force,
+        )
     else:
-        _teleport_in_place(ctx, repo, pr_number=pr_number, branch_name=branch_name, force=force)
+        _teleport_in_place(
+            ctx,
+            repo,
+            pr_number=pr_number,
+            branch_name=branch_name,
+            base_ref_name=base_ref_name,
+            force=force,
+        )
 
 
 def _teleport_in_place(
@@ -86,6 +101,7 @@ def _teleport_in_place(
     *,
     pr_number: int,
     branch_name: str,
+    base_ref_name: str,
     force: bool,
 ) -> None:
     """Teleport by force-resetting the current branch to match remote."""
@@ -131,6 +147,9 @@ def _teleport_in_place(
     # Reset working tree to match the new branch head
     ctx.git.branch.checkout_branch(cwd, branch_name)
 
+    # Reconstruct Graphite stack if applicable
+    _reconstruct_graphite_stack(ctx, repo, branch_name=branch_name, base_ref_name=base_ref_name)
+
     user_output(
         click.style("Teleported ", fg="green")
         + click.style(branch_name, fg="cyan", bold=True)
@@ -144,6 +163,7 @@ def _teleport_new_slot(
     *,
     pr_number: int,
     branch_name: str,
+    base_ref_name: str,
     force: bool,
 ) -> None:
     """Teleport into a new worktree slot, force-updating the branch."""
@@ -159,6 +179,9 @@ def _teleport_new_slot(
     # Fetch and force-update local branch to match remote
     _fetch_and_update_branch(ctx, repo, branch_name=branch_name, pr_number=pr_number)
 
+    # Reconstruct Graphite stack if applicable
+    _reconstruct_graphite_stack(ctx, repo, branch_name=branch_name, base_ref_name=base_ref_name)
+
     # Create worktree slot
     worktree_path, _already_existed = ensure_branch_has_worktree(
         ctx, repo, branch_name=branch_name, no_slot=False, force=force
@@ -170,6 +193,50 @@ def _teleport_new_slot(
         + click.style(f" (PR #{pr_number}) into ", fg="green")
         + click.style(str(worktree_path), fg="cyan", bold=True)
     )
+
+
+def _reconstruct_graphite_stack(
+    ctx: ErkContext,
+    repo: RepoContext,
+    *,
+    branch_name: str,
+    base_ref_name: str,
+) -> None:
+    """Fetch base branch and register Graphite stack tracking after teleport.
+
+    Only runs when:
+    - base_ref_name is not trunk (stacked PR)
+    - Graphite is enabled (branch_manager.is_graphite_managed())
+    """
+    # LBYL: Check if this is a stacked PR (base is not trunk)
+    trunk = ctx.git.branch.detect_trunk_branch(repo.root)
+    if base_ref_name == trunk:
+        return  # Not a stacked PR
+
+    if not ctx.branch_manager.is_graphite_managed():
+        return  # Graphite not enabled
+
+    # LBYL: Fetch base branch if not already local
+    local_branches = ctx.git.branch.list_local_branches(repo.root)
+    if base_ref_name not in local_branches:
+        ctx.console.info(f"Fetching base branch '{base_ref_name}'...")
+        ctx.git.remote.fetch_branch(repo.root, "origin", base_ref_name)
+        ctx.branch_manager.create_tracking_branch(
+            repo.root, base_ref_name, f"origin/{base_ref_name}"
+        )
+
+    # Register teleported branch with Graphite
+    # Teleport force-resets the branch, so SHA divergence is guaranteed
+    parent = ctx.branch_manager.get_parent_branch(repo.root, branch_name)
+    if parent is None:
+        # Untracked: do fresh registration
+        ctx.console.info("Tracking branch with Graphite...")
+        ctx.branch_manager.track_branch(repo.root, branch_name, base_ref_name)
+    else:
+        # Already tracked: retrack to fix SHA divergence after force-reset
+        # Use graphite_branch_ops directly (if available) for retrack-specific logic
+        if ctx.graphite_branch_ops is not None:
+            ctx.graphite_branch_ops.retrack_branch(repo.root, branch_name)
 
 
 def _confirm_overwrite(ctx: ErkContext, *, cwd: Path, branch_name: str) -> None:
