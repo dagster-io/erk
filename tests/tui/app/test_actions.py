@@ -5,6 +5,7 @@ import pytest
 from erk.tui.app import ErkDashApp
 from erk.tui.data.types import PlanFilters
 from erk.tui.screens.launch_screen import LaunchScreen
+from erk.tui.screens.objective_nodes_screen import ObjectiveNodesScreen
 from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
 from erk.tui.widgets.status_bar import StatusBar
 from erk_shared.gateway.clipboard.fake import FakeClipboard
@@ -89,6 +90,115 @@ class TestActionViewComments:
 
             assert len(app.screen_stack) > 1
             assert isinstance(app.screen_stack[-1], UnresolvedCommentsScreen)
+
+
+_V2_ROADMAP_BODY = """\
+# Objective
+
+### Phase 1: Foundation
+
+<!-- erk:metadata-block:objective-roadmap -->
+<details>
+<summary><code>objective-roadmap</code></summary>
+
+```yaml
+schema_version: '2'
+steps:
+- id: '1.1'
+  description: Setup infra
+  status: done
+  plan: null
+  pr: null
+```
+
+</details>
+<!-- /erk:metadata-block:objective-roadmap -->
+"""
+
+
+class TestActionViewNodes:
+    """Tests for action_view_nodes (b key)."""
+
+    @pytest.mark.asyncio
+    async def test_no_selected_row_does_nothing(self) -> None:
+        """No selected row → early return, no screen pushed."""
+        provider = FakePlanDataProvider(plans=[])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            initial_stack_len = len(app.screen_stack)
+
+            await pilot.press("b")
+            await pilot.pause()
+
+            assert len(app.screen_stack) == initial_stack_len
+
+    @pytest.mark.asyncio
+    async def test_not_objectives_view_does_nothing(self) -> None:
+        """In Plans view, pressing 'b' does nothing."""
+        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan")])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            initial_stack_len = len(app.screen_stack)
+
+            await pilot.press("b")
+            await pilot.pause()
+
+            assert len(app.screen_stack) == initial_stack_len
+
+    @pytest.mark.asyncio
+    async def test_empty_plan_body_shows_status_message(self) -> None:
+        """Objective row with empty plan_body → status bar shows message."""
+        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Objective")])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("3")  # Switch to Objectives view
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("b")
+            await pilot.pause()
+
+            status_bar = app.query_one(StatusBar)
+            assert status_bar._message == "No objective body available"
+
+    @pytest.mark.asyncio
+    async def test_plan_body_pushes_nodes_screen(self) -> None:
+        """Objective row with plan_body → pushes ObjectiveNodesScreen."""
+        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Objective", plan_body=_V2_ROADMAP_BODY)]
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("3")  # Switch to Objectives view
+            await pilot.pause()
+            await pilot.pause()
+
+            await pilot.press("b")
+            await pilot.pause()
+            await pilot.pause()
+
+            assert len(app.screen_stack) > 1
+            assert isinstance(app.screen_stack[-1], ObjectiveNodesScreen)
 
 
 class TestActionLaunch:

@@ -9,7 +9,12 @@ from erk_shared.plan_store.conversion import header_str
 from erk_shared.plan_store.types import Plan
 
 
-def compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -> str:
+def compute_lifecycle_display(
+    plan: Plan,
+    *,
+    has_workflow_run: bool,
+    linked_pr_state: str | None,
+) -> str:
     """Compute lifecycle stage display string for a plan.
 
     Reads lifecycle_stage from plan header fields if present, otherwise
@@ -22,12 +27,27 @@ def compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -> str:
     Args:
         plan: Plan with header_fields and metadata populated
         has_workflow_run: Whether the plan has an associated workflow run
+        linked_pr_state: PR state from linked PR (e.g. "MERGED", "CLOSED", "OPEN").
+            Used for issue-backed plans where pr_state is not in plan.metadata.
 
     Returns:
         Display string (may contain Rich markup for color)
     """
     # Read from header fields first
     stage = header_str(plan.header_fields, LIFECYCLE_STAGE)
+
+    # Terminal PR states override header field (header may be stale).
+    # Check explicit linked_pr_state first, then fall back to metadata.
+    effective_pr_state = linked_pr_state
+    if effective_pr_state is None and plan.metadata:
+        raw = plan.metadata.get("pr_state")
+        if isinstance(raw, str):
+            effective_pr_state = raw
+
+    if effective_pr_state == "MERGED":
+        stage = "merged"
+    elif effective_pr_state == "CLOSED":
+        stage = "closed"
 
     # Fall back to inferring from PR metadata
     if stage is None and plan.metadata:
