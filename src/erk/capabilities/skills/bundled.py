@@ -14,6 +14,19 @@ from erk.core.capabilities.codex_portable import codex_portable_skills
 from erk.core.capabilities.skill_capability import SkillCapability
 from erk_shared.context.types import AgentBackend
 
+_UNBUNDLED_SKILLS: frozenset[str] = frozenset(
+    {
+        "ci-iteration",
+        "cli-skill-creator",
+        "cmux",
+        "command-creator",
+        "learned-docs",  # has its own capability class (LearnedDocsCapability)
+        "rename-swarm",
+        "session-inspector",
+        "skill-creator",
+    }
+)
+
 _REQUIRED_BUNDLED_SKILLS: frozenset[str] = frozenset(
     {
         "erk-diff-analysis",
@@ -42,6 +55,11 @@ def bundled_skills() -> dict[str, str]:
         "pr-operations": "Pull request operations",
         "pr-feedback-classifier": "PR feedback classification",
     }
+
+
+def unbundled_skills() -> frozenset[str]:
+    """Skills in .claude/skills/ that are intentionally not bundled with erk."""
+    return _UNBUNDLED_SKILLS
 
 
 def is_required_bundled_skill(skill_name: str) -> bool:
