@@ -12,19 +12,17 @@ Output:
     JSON with pr_info, review_threads, and discussion_comments sections
 
 Exit Codes:
-    0: Success (or graceful error with JSON output)
-    1: Context not initialized
+    0: Always (success or error communicated via JSON)
 """
 
 from __future__ import annotations
 
-import json
 from concurrent.futures import ThreadPoolExecutor
 from typing import TypedDict
 
 import click
 
-from erk.cli.script_output import exit_with_error, handle_non_ideal_exit
+from erk.cli.script_output import exit_with_error, handle_non_ideal_exit, success_json
 from erk_shared.context.helpers import (
     get_current_branch,
     require_github,
@@ -148,13 +146,12 @@ def get_pr_feedback(ctx: click.Context, pr: int | None, include_resolved: bool) 
     # Filter out threads with invalid IDs
     valid_threads = [t for t in threads if t.id]
 
-    result = {
-        "success": True,
-        "pr_number": pr_details.number,
-        "pr_url": pr_details.url,
-        "pr_title": pr_details.title,
-        "review_threads": [_format_thread(t) for t in valid_threads],
-        "discussion_comments": [_format_discussion_comment(c) for c in comments],
-    }
-    click.echo(json.dumps(result, indent=2))
-    raise SystemExit(0)
+    success_json(
+        {
+            "pr_number": pr_details.number,
+            "pr_url": pr_details.url,
+            "pr_title": pr_details.title,
+            "review_threads": [_format_thread(t) for t in valid_threads],
+            "discussion_comments": [_format_discussion_comment(c) for c in comments],
+        }
+    )

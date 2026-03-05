@@ -33,6 +33,7 @@ from erk.cli.commands.exec.scripts.create_pr_from_session import (
     create_pr_from_session,
 )
 from erk.cli.commands.exec.scripts.dash_data import dash_data
+from erk.cli.commands.exec.scripts.describe import describe
 from erk.cli.commands.exec.scripts.detect_plan_from_branch import (
     detect_plan_from_branch,
 )
@@ -189,6 +190,7 @@ exec_group.add_command(cleanup_impl_context, name="cleanup-impl-context")
 exec_group.add_command(cmux_sync_workspace, name="cmux-sync-workspace")
 exec_group.add_command(create_pr_from_session, name="create-pr-from-session")
 exec_group.add_command(dash_data, name="dash-data")
+exec_group.add_command(describe, name="describe")
 exec_group.add_command(create_impl_context_from_plan, name="create-impl-context-from-plan")
 exec_group.add_command(detect_plan_from_branch, name="detect-plan-from-branch")
 exec_group.add_command(detect_trunk_branch, name="detect-trunk-branch")

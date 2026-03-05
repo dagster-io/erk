@@ -28,6 +28,26 @@ def handle_non_ideal_exit(func: Callable[..., Any]) -> Callable[..., Any]:
     return wrapper
 
 
+def success_json(data: dict[str, Any], **kwargs: Any) -> NoReturn:
+    """Output JSON success envelope and exit 0."""
+    click.echo(json.dumps({"success": True, **data, **kwargs}))
+    raise SystemExit(0)
+
+
+def error_json(error_type: str, message: str, **details: Any) -> NoReturn:
+    """Output JSON error envelope and exit 0. Replaces ad-hoc patterns."""
+    click.echo(
+        json.dumps({"success": False, "error_type": error_type, "message": message, **details})
+    )
+    raise SystemExit(0)
+
+
+def dry_run_json(action: str, **details: Any) -> NoReturn:
+    """Output JSON dry-run envelope and exit 0."""
+    click.echo(json.dumps({"success": True, "dry_run": True, "action": action, **details}))
+    raise SystemExit(0)
+
+
 def exit_with_error(error_type: str, message: str) -> NoReturn:
     """Output JSON error and exit with code 0.
 
