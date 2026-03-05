@@ -1,8 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Fix planning/ docs terminology (Objective #8381, Nodes 6.1 + 6.2)",
+  "plan_id": "8775",
+  "url": "https://github.com/dagster-io/erk/pull/8775",
+  "created_at": "2026-03-05T18:55:57.395599",
+  "synced_at": "2026-03-05T18:55:57.395599",
+  "labels": [],
   "objective_id": 8381,
-  "node_ids": [
-    "6.1"
-  ]
+  "node_ids": null
 }
