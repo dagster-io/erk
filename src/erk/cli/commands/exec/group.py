@@ -89,6 +89,9 @@ from erk.cli.commands.exec.scripts.objective_apply_landed_update import (
 from erk.cli.commands.exec.scripts.objective_fetch_context import (
     objective_fetch_context,
 )
+from erk.cli.commands.exec.scripts.objective_plan_setup import (
+    objective_plan_setup,
+)
 from erk.cli.commands.exec.scripts.objective_link_pr import (
     objective_link_pr,
 )
@@ -123,6 +126,9 @@ from erk.cli.commands.exec.scripts.push_session import push_session
 from erk.cli.commands.exec.scripts.quick_submit import quick_submit
 from erk.cli.commands.exec.scripts.rebase_with_conflict_resolution import (
     rebase_with_conflict_resolution,
+)
+from erk.cli.commands.exec.scripts.resolve_objective_ref import (
+    resolve_objective_ref,
 )
 from erk.cli.commands.exec.scripts.register_one_shot_plan import (
     register_one_shot_plan,
@@ -226,6 +232,7 @@ exec_group.add_command(objective_render_roadmap, name="objective-render-roadmap"
 exec_group.add_command(objective_save_to_issue, name="objective-save-to-issue")
 exec_group.add_command(objective_apply_landed_update, name="objective-apply-landed-update")
 exec_group.add_command(objective_fetch_context, name="objective-fetch-context")
+exec_group.add_command(objective_plan_setup, name="objective-plan-setup")
 exec_group.add_command(objective_link_pr, name="objective-link-pr")
 exec_group.add_command(objective_update_after_land, name="objective-update-after-land")
 exec_group.add_command(objective_post_action_comment, name="objective-post-action-comment")
@@ -242,6 +249,7 @@ exec_group.add_command(push_session, name="push-session")
 exec_group.add_command(quick_submit, name="quick-submit")
 exec_group.add_command(rebase_with_conflict_resolution, name="rebase-with-conflict-resolution")
 exec_group.add_command(register_one_shot_plan, name="register-one-shot-plan")
+exec_group.add_command(resolve_objective_ref, name="resolve-objective-ref")
 exec_group.add_command(resolve_review_thread, name="resolve-review-thread")
 exec_group.add_command(resolve_review_threads, name="resolve-review-threads")
 exec_group.add_command(run_review, name="run-review")

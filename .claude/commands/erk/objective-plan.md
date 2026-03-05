@@ -1,7 +1,7 @@
 ---
 description: Create an implementation plan from an objective node
 argument-hint: "<objective-number-or-url> [--node <node-id>]"
-allowed-tools: Bash, Task, Skill, AskUserQuestion, EnterPlanMode
+allowed-tools: Bash, Skill, AskUserQuestion, EnterPlanMode
 ---
 
 # /erk:objective-plan
@@ -31,147 +31,46 @@ Parse `$ARGUMENTS` for `--node <node-id>`. If `--node` is present along with an 
 /erk:system:objective-plan-node <objective-number> --node <node-id>
 ```
 
-This skips the interactive selection flow (Steps 1-5 below) since the node is already known. The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving.
+This skips the interactive selection flow (Steps 1-4 below) since the node is already known. The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving.
 
 **STOP here** — do not proceed to the steps below.
 
-### Step 1: Parse Issue Reference (Interactive Flow)
+### Step 1: Resolve Objective Reference
 
-If `--node` was NOT provided, proceed with the full interactive flow.
-
-Parse `$ARGUMENTS` to extract the objective reference:
-
-- If argument is a URL: extract objective number from path
-- If argument is a number: use directly
-- If no argument provided: try to infer from current branch (see below), then prompt if no default
-
-**Getting default objective from current branch:**
-
-If no argument is provided, try to infer the objective from the current branch:
-
-1. Get current branch name:
-
-   ```bash
-   git rev-parse --abbrev-ref HEAD
-   ```
-
-2. **Extract objective from branch name directly:**
-   - Pattern: `^pl(?:an(?:ned)?|nd)/[Oo](\d+)-` (e.g., `plnd/O8762-some-slug-01-15-1430`)
-   - If matched, use the extracted number as the objective and inform the user:
-     "Using objective #<number> from branch name. Run with explicit argument to override."
-   - If matched, skip the plan metadata lookup below and proceed to Step 2.
-
-3. Check if `ref.json` exists in `.erk/impl-context/<branch>/` and extract the plan ID from it. If not found, check for legacy P-prefix pattern for backwards compatibility:
-   - Legacy pattern: `^P(\d+)-` (e.g., `P5731-some-title-01-23-2354`)
-   - Current format: Branch names use `plnd/` prefix; plan ID is resolved via plan-ref.json
-
-4. If plan found, get its objective:
-
-   ```bash
-   erk exec get-plan-metadata <plan-number> objective_issue
-   ```
-
-   This returns JSON like:
-
-   ```json
-   {
-     "success": true,
-     "value": 123,
-     "issue_number": 5731,
-     "field": "objective_issue"
-   }
-   ```
-
-   or if no objective:
-
-   ```json
-   {
-     "success": true,
-     "value": null,
-     "issue_number": 5731,
-     "field": "objective_issue"
-   }
-   ```
-
-5. If `value` is not null, use it as the default and inform the user:
-   "Using objective #<value> from current branch's plan #<plan-number>. Run with explicit argument to override."
-
-If no default found from current branch, prompt user using AskUserQuestion with "What objective issue should I work from?"
-
-### Step 2: Launch Task Agent for Data Fetching
-
-Use the Task tool with `subagent_type: "general-purpose"` and `model: "haiku"` to fetch and parse objective data:
-
-**Task Prompt:**
-
-```
-Fetch and validate objective #<objective-number> and return a structured summary.
-
-CRITICAL: Do NOT write scripts or code. Only use the Bash tool to run the erk CLI commands listed below.
-
-Instructions:
-1. Run: erk exec get-issue-body <objective-number>
-2. Validate this is an objective:
-   - Check for 'erk-objective' label
-   - If 'erk-plan' label instead: return error "This is an erk-plan PR, not an objective"
-   - If neither label: include warning but proceed
-3. Create objective context marker:
-   erk exec marker create --session-id "${CLAUDE_SESSION_ID}" --associated-objective <objective-number> objective-context
-4. Run: erk objective check <objective-number> --json-output --allow-legacy
-5. Format the JSON output from step 4 into the structured summary below. Do NOT write Python or any other scripts to parse the data — just read the JSON output directly and format it yourself.
-
-OBJECTIVE: #<number> — <title>
-STATUS: <OPEN|CLOSED>
-
-ROADMAP:
-| Node | Phase | Description | Status |
-| 1.1 | Phase 1 | <description> | done (PR #123) |
-| 1.2 | Phase 1 | <description> | pending |
-| 2.1 | Phase 2 | <description> | blocked |
-
-PENDING_NODES:
-- 1.2: <description>
-- 3.1: <description>
-
-RECOMMENDED: <node-id or "none">
-
-WARNINGS: <any warnings about labels, roadmap format, etc., or "none">
-
-Status mapping:
-- "pending" → "pending"
-- "done" → "done (PR #XXX)"
-- "in_progress" → "plan in progress (#XXX)"
-- "blocked" → "blocked"
-- "skipped" → "skipped"
-
-Only include nodes with status "pending" in PENDING_NODES section.
-Use the "next_step" field from check output as RECOMMENDED.
-```
-
-Replace `<objective-number>` with the objective number from Step 1.
-
-**Important:** The Task agent handles all JSON parsing and marker creation. The main conversation only receives the formatted summary.
-
-### Step 3: Verify Objective Context Marker
-
-Verify the marker was created by the Task agent:
+Strip `--node` from `$ARGUMENTS` if present, then run:
 
 ```bash
-erk exec marker read --session-id "${CLAUDE_SESSION_ID}" objective-context
+erk exec resolve-objective-ref $ARGUMENTS
 ```
 
-If this returns a value matching the objective issue number, proceed.
-If it fails or returns wrong value, STOP and report:
-"ERROR: objective-context marker not created. Re-run the marker command manually:
-erk exec marker create --session-id '${CLAUDE_SESSION_ID}' --associated-objective <issue-number> objective-context"
+**Interpret the JSON result:**
+- If `"resolved": true` with `"source": "branch_name"` or `"source": "plan_metadata"`: Inform user "Using objective #N from {source}. Run with explicit argument to override."
+- If `"resolved": true` with `"source": "argument"`: Use the `objective_number` directly.
+- If `"resolved": false`: Use AskUserQuestion to ask "What objective issue should I work from?"
 
-### Step 4: Load Objective Skill
+### Step 2: Fetch and Set Up Objective Context
+
+Run:
+
+```bash
+erk exec objective-plan-setup <objective-number> --session-id "${CLAUDE_SESSION_ID}"
+```
+
+**Interpret the JSON result:**
+- If `"success": false` with `"error": "not_found"`: Report error and exit.
+- If `"success": false` with `"error": "is_plan"`: Redirect to `/erk:plan-implement`.
+- If `"success": false` with `"error": "validation_error"`: Report error and exit.
+- If `"success": true`: Continue with the roadmap data.
+
+Display any `"warnings"` to the user.
+
+### Step 3: Load Objective Skill
 
 Load the `objective` skill for format templates and guidance.
 
-### Step 5: Display Roadmap and Prompt User
+### Step 4: Display Roadmap and Prompt User
 
-Display the roadmap table from the Task agent's output to the user.
+Display the roadmap table from the `roadmap.phases` data in the JSON output.
 
 Then use AskUserQuestion to ask which node to plan:
 
@@ -183,20 +82,20 @@ Which node should I create a plan for?
 - (Other - specify node number or description)
 ```
 
-**Filtering rules (based on JSON `status` field):**
+**Filtering rules (based on node `status` field from phases):**
 
 - **Show as options:** Nodes with status `"pending"`
 - **Show but deprioritize:** Nodes with status `"in_progress"` - still selectable via "Other" but not recommended
 - **Hide from options:** Nodes with status `"done"`, `"blocked"`, or `"skipped"`
 
-**Recommendation rule:** Use the `next_step` field from the roadmap check JSON as the recommended option. If `next_step` is null, no node is recommended.
+**Recommendation rule:** Use `roadmap.next_node` from the JSON as the recommended option. If `next_node` is null, no node is recommended.
 
 If all nodes are complete or have plans in progress, report appropriately:
 
 - All complete: "All roadmap nodes are complete! Consider closing the objective."
 - All have plans: "All pending nodes have plans in progress. You can still select one via 'Other' to create a parallel plan."
 
-### Step 6: Invoke Inner Skill
+### Step 5: Invoke Inner Skill
 
 After the user selects a node, invoke the inner skill via the Skill tool:
 
