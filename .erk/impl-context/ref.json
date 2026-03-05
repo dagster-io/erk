@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Toggle Author Filter in erk TUI"
+  "plan_id": "8763",
+  "url": "https://github.com/dagster-io/erk/pull/8763",
+  "created_at": "2026-03-05T08:14:10.298722",
+  "synced_at": "2026-03-05T08:14:10.298722",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
