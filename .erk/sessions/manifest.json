@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "plan_id": 8755,
+  "sessions": [
+    {
+      "session_id": "10d73410-913c-401a-8f64-ab337de24409",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-05T00:20:41.275254+00:00",
+      "files": [
+        "impl-10d73410-913c-401a-8f64-ab337de24409-10d73410-913c-401a-8f64-ab337de24409-part1.xml",
+        "impl-10d73410-913c-401a-8f64-ab337de24409-10d73410-913c-401a-8f64-ab337de24409-part2.xml",
+        "impl-10d73410-913c-401a-8f64-ab337de24409-10d73410-913c-401a-8f64-ab337de24409-part3.xml"
+      ]
+    }
+  ]
+}
