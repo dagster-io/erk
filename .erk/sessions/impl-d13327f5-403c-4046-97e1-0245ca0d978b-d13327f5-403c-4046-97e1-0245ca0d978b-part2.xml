@@ -18,4 +18,173 @@
   "plan_number": 8766
 }
   </tool_result>
+  <tool_result tool="toolu_01EsXYF5uqVbhwNEnTZfk4RS">
+{"uploaded": true, "plan_id": 8766}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01JZGJNUVYy12EveRsF6cEBE">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="72841" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JZGJNUVYy12EveRsF6cEBE">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FJvwbGMkUEYL8NjJNRXbCd">
+    <param name="command">ls /home/runner/work/erk/erk/.erk/impl-context/ 2&gt;/dev/null &amp;&amp; echo "exists" || echo "does not exist"</param>
+    <param name="description">Check if impl-context dir exists</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="73173" cache_creation="{'ephemeral_5m_input_tokens': 105, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FJvwbGMkUEYL8NjJNRXbCd">
+plan.md
+plnd--O8762-add-frontmatter-life-03-05-0831
+ref.json
+run-info.json
+exists
+  </tool_result>
+  <assistant>The impl-context has loose files. Let me clean it up manually:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="73278" cache_creation="{'ephemeral_5m_input_tokens': 162, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01DTMoepSCW6GbMZQhDh5bPx">
+    <param name="command">git rm -rf .erk/impl-context/ 2&gt;/dev/null; git commit -m "Clean up impl context" 2&gt;/dev/null; git push 2&gt;/dev/null; echo "done"</param>
+    <param name="description">Clean up impl-context and push</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="73278" cache_creation="{'ephemeral_5m_input_tokens': 162, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DTMoepSCW6GbMZQhDh5bPx">
+On branch plnd/O8762-add-frontmatter-life-03-05-0831
+Your branch is up to date with 'origin/plnd/O8762-add-frontmatter-life-03-05-0831'.
+
+Changes not staged for commit:
+  (use "git add &lt;file&gt;..." to update what will be committed)
+  (use "git restore &lt;file&gt;..." to discard changes in working directory)
+	modified:   docs/learned/integrations/github-review-decision.md
+	modified:   docs/learned/tui/status-indicators.md
+	modified:   src/erk/agent_docs/models.py
+	modified:   src/erk/agent_docs/operations.py
+	modified:   tests/unit/agent_docs/test_operations.py
+	modified:   tests/unit/agent_docs/test_validate_frontmatter.py
+
+no changes added to commit (use "git add" and/or "git commit -a")
+done
+  </tool_result>
+  <assistant>The impl-context wasn't tracked in git (it was in .gitignore likely). The changes are unstaged. Now let me submit via `erk pr submit`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="625" cache_read_input_tokens="73440" cache_creation="{'ephemeral_5m_input_tokens': 625, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01NYd8h8zHBkNuKHCxX8btnz">
+    <param name="command">git add -A &amp;&amp; git status</param>
+    <param name="description">Stage all changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="625" cache_read_input_tokens="73440" cache_creation="{'ephemeral_5m_input_tokens': 625, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NYd8h8zHBkNuKHCxX8btnz">
+On branch plnd/O8762-add-frontmatter-life-03-05-0831
+Your branch is up to date with 'origin/plnd/O8762-add-frontmatter-life-03-05-0831'.
+
+Changes to be committed:
+  (use "git restore --staged &lt;file&gt;..." to unstage)
+	modified:   docs/learned/integrations/github-review-decision.md
+	modified:   docs/learned/tui/status-indicators.md
+	modified:   src/erk/agent_docs/models.py
+	modified:   src/erk/agent_docs/operations.py
+	modified:   tests/unit/agent_docs/test_operations.py
+	modified:   tests/unit/agent_docs/test_validate_frontmatter.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01RAwYaaQoUWhCJLo9fskE2a">
+    <param name="command">git commit -m "$(cat &lt;&lt;'EOF'
+Add lifecycle field to learned doc frontmatter schema
+
+Add Li...[truncated 319 chars]...de](https://claude.com/claude-code)
+
+Co-Authored-By: Claude &lt;noreply@anthropic.com&gt;
+EOF
+)"</param>
+    <param name="description">Commit implementation changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="316" cache_read_input_tokens="74065" cache_creation="{'ephemeral_5m_input_tokens': 316, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RAwYaaQoUWhCJLo9fskE2a">
+[plnd/O8762-add-frontmatter-life-03-05-0831 412266be9] Add lifecycle field to learned doc frontmatter schema
+ 6 files changed, 222 insertions(+), 2 deletions(-)
+  </tool_result>
+  <assistant>Now submit via `erk pr submit`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="515" cache_read_input_tokens="74381" cache_creation="{'ephemeral_5m_input_tokens': 515, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01BqoRtxQCx6w9Nc35iEkRbU">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="515" cache_read_input_tokens="74381" cache_creation="{'ephemeral_5m_input_tokens': 515, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BqoRtxQCx6w9Nc35iEkRbU">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #8766 found (already exists)
+
+Phase 2: Getting diff
+
+Phase 3: Fetching plan context
+   Incorporating plan #8766
+   Linked to Objective #8762: Objective: Knowledge Promotion Pipeline
+
+Phase 4: Generating PR description
+   Reading diff file...
+   Diff loaded (11,507 chars)
+   Analyzing changes with Claude...
+   Still waiting... (3s)
+   Still waiting... (6s)
+   PR description generated
+
+Phase 5: Graphite enhancement
+
+Phase 6: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+  Action:      Updated PR #8766
+
+... [4 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EpnmKpyT2i62bmBGF8TW3a">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="412" cache_read_input_tokens="74896" cache_creation="{'ephemeral_5m_input_tokens': 412, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01WEEaBgMMo4tZJx66MmW3bN">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="412" cache_read_input_tokens="74896" cache_creation="{'ephemeral_5m_input_tokens': 412, 'ephemeral_1h_input_tokens': 0}" output_tokens="155" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EpnmKpyT2i62bmBGF8TW3a">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8766
+}
+  </tool_result>
+  <tool_result tool="toolu_01WEEaBgMMo4tZJx66MmW3bN">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01RKeZsswkpDneTHkb4NfAQf">
+    <param name="todos">[{'content': 'Add Lifecycle type and fields to AgentDocFrontmatter in models.py', 'status'...[truncated 758 chars]... issues'}, {'content': 'Submit PR', 'status': 'completed', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="462" cache_read_input_tokens="75308" cache_creation="{'ephemeral_5m_input_tokens': 462, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RKeZsswkpDneTHkb4NfAQf">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan #8766 implementation complete. PR submitted: https://github.com/dagster-io/erk/pull/8766
+
+## Summary
+
+**Changes made across 4 source files + 2 pre-existing prettier fixes:**
+
+1. **`src/erk/agent_docs/models.py`** — Added `Lifecycle = Literal["raw", "staged", "promoted"]` type alias and two new optional fields (`lifecycle`, `promoted_to`) to `AgentDocFrontmatter`
+
+2. **`src/erk/agent_docs/operations.py`** — Added validation for `lifecycle` (must be valid literal value), `promoted_to` (must be non-empty string), and cross-validation (promoted requires promoted_to and vice versa). Added filter in `collect_valid_docs` to exclude promoted docs from index generation while preserving tripwire collection.
+
+3. **`tests/unit/agent_docs/test_validate_frontmatter.py`** — Added 9 tests covering all lifecycle/promoted_to validation cases (accepts raw/staged/promoted, rejects invalid values, cross-validation, empty string rejection, default None)
+
+4. **`tests/unit/agent_docs/test_operations.py`** — Added 2 tests verifying promoted docs are excluded from index but their tripwires are still collected
+
+All 5,897 tests pass, all CI checks green.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="75770" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>
