@@ -710,6 +710,36 @@ class RealGitHub(GitHub):
             return None
         return log_text
 
+    def get_pr_comment(self, repo_root: Path, comment_id: int) -> str | None:
+        """Fetch a single PR/issue comment by its ID.
+
+        Args:
+            repo_root: Repository root directory
+            comment_id: GitHub comment ID
+
+        Returns:
+            Comment body text, or None if the comment doesn't exist
+        """
+        # GH-API-AUDIT: REST - get a single issue comment
+        result = run_subprocess_with_context(
+            cmd=[
+                "gh",
+                "api",
+                f"repos/{{owner}}/{{repo}}/issues/comments/{comment_id}",
+                "--jq",
+                ".body",
+            ],
+            operation_context=f"fetch comment {comment_id}",
+            cwd=repo_root,
+            check=False,
+        )
+        if result.returncode != 0:
+            return None
+        body = result.stdout.strip()
+        if not body:
+            return None
+        return body
+
     def get_prs_linked_to_issues(
         self,
         location: GitHubRepoLocation,

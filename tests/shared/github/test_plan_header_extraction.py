@@ -10,6 +10,7 @@ from erk_shared.gateway.github.metadata.core import find_metadata_block, render_
 from erk_shared.gateway.github.metadata.plan_header import (
     create_plan_header_block,
     extract_plan_header_branch_name,
+    extract_plan_header_ci_summary_comment_id,
     extract_plan_header_last_learn_at,
     extract_plan_header_last_learn_session,
     extract_plan_header_learn_materials_branch,
@@ -20,6 +21,7 @@ from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_objective_issue,
     extract_plan_header_remote_impl_run_id,
     extract_plan_header_remote_impl_session_id,
+    update_plan_header_ci_summary_comment_id,
     update_plan_header_learn_event,
     update_plan_header_learn_materials_branch,
     update_plan_header_learn_plan_completed,
@@ -1730,3 +1732,48 @@ def test_update_plan_header_learn_materials_branch_raises_for_missing_block() ->
 
     with pytest.raises(ValueError, match="plan-header block not found"):
         update_plan_header_learn_materials_branch(body, "learn/123")
+
+
+# === CI Summary Comment ID Field Tests ===
+
+
+def test_extract_plan_header_ci_summary_comment_id_returns_int_when_present() -> None:
+    """extract_plan_header_ci_summary_comment_id returns int when field is set."""
+    body = format_plan_header_body_for_test()
+    updated_body = update_plan_header_ci_summary_comment_id(body, 98765)
+
+    result = extract_plan_header_ci_summary_comment_id(updated_body)
+    assert result == 98765
+
+
+def test_extract_plan_header_ci_summary_comment_id_returns_none_when_missing() -> None:
+    """extract_plan_header_ci_summary_comment_id returns None when field is absent."""
+    body = format_plan_header_body_for_test()
+
+    result = extract_plan_header_ci_summary_comment_id(body)
+    assert result is None
+
+
+def test_update_plan_header_ci_summary_comment_id_round_trips() -> None:
+    """update then extract round-trips the comment ID value."""
+    body = format_plan_header_body_for_test()
+
+    updated_body = update_plan_header_ci_summary_comment_id(body, 12345)
+
+    # Verify round-trip
+    result = extract_plan_header_ci_summary_comment_id(updated_body)
+    assert result == 12345
+
+    # Verify original fields preserved
+    block = find_metadata_block(updated_body, "plan-header")
+    assert block is not None
+    assert block.data["created_at"] == "2024-01-15T10:30:00Z"
+    assert block.data["created_by"] == "test-user"
+
+
+def test_update_plan_header_ci_summary_comment_id_raises_for_missing_block() -> None:
+    """update_plan_header_ci_summary_comment_id raises ValueError if no plan-header."""
+    body = "Some content without plan-header"
+
+    with pytest.raises(ValueError, match="plan-header block not found"):
+        update_plan_header_ci_summary_comment_id(body, 12345)

@@ -70,6 +70,10 @@ class PrintingGitHub(PrintingBase, GitHub):
         """Get ci-summarize job logs (read-only, no printing)."""
         return self._wrapped.get_ci_summary_logs(repo_root, run_id)
 
+    def get_pr_comment(self, repo_root: Path, comment_id: int) -> str | None:
+        """Get a PR comment by ID (read-only, no printing)."""
+        return self._wrapped.get_pr_comment(repo_root, comment_id)
+
     def get_prs_linked_to_issues(
         self,
         location: GitHubRepoLocation,

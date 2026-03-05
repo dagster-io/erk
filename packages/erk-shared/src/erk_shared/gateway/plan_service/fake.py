@@ -177,11 +177,12 @@ class FakePlanService(PlanService):
         """
         self._review_threads_by_pr[pr_number] = threads
 
-    def fetch_ci_summaries(self, pr_number: int) -> dict[str, str]:
+    def fetch_ci_summaries(self, pr_number: int, *, comment_id: int | None) -> dict[str, str]:
         """Fake CI summaries fetch implementation.
 
         Args:
             pr_number: The PR number to fetch summaries for
+            comment_id: Optional GitHub comment ID (unused in fake)
 
         Returns:
             Configured mapping of check name to summary text, or empty dict

@@ -100,6 +100,7 @@ class PlanRowData:
     checks_display: str
     checks_passing: bool | None
     checks_counts: tuple[int, int] | None
+    ci_summary_comment_id: int | None
     worktree_name: str
     exists_locally: bool
     local_impl_display: str

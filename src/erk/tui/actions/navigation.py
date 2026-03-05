@@ -191,6 +191,7 @@ class NavigationActionsMixin:
                 full_title=row.full_title,
                 passing_count=passing_count,
                 total_count=total_count,
+                ci_summary_comment_id=row.ci_summary_comment_id,
             )
         )
 

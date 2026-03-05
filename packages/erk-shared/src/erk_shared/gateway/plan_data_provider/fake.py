@@ -284,13 +284,15 @@ class FakePlanDataProvider(PlanDataProvider):
         """
         self._review_threads_by_pr[pr_number] = threads
 
-    def fetch_ci_summaries(self, pr_number: int) -> dict[str, str]:
+    def fetch_ci_summaries(self, pr_number: int, *, comment_id: int | None) -> dict[str, str]:
         """Fake CI summaries fetch implementation.
 
         Returns configured summaries for a PR, or empty dict.
+        The comment_id parameter is accepted but ignored in the fake.
 
         Args:
             pr_number: The PR number to fetch summaries for
+            comment_id: Optional GitHub comment ID (ignored in fake)
 
         Returns:
             Configured mapping of check name to summary text, or empty dict
@@ -329,6 +331,7 @@ def make_plan_row(
     comment_counts: tuple[int, int] | None = None,
     checks_passing: bool | None = None,
     checks_counts: tuple[int, int] | None = None,
+    ci_summary_comment_id: int | None = None,
     learn_status: str | None = None,
     learn_plan_issue: int | None = None,
     learn_plan_issue_closed: bool | None = None,
@@ -460,6 +463,7 @@ def make_plan_row(
         checks_display="-",
         checks_passing=checks_passing,
         checks_counts=checks_counts,
+        ci_summary_comment_id=ci_summary_comment_id,
         worktree_name=worktree_name,
         exists_locally=exists_locally,
         local_impl_display="-",

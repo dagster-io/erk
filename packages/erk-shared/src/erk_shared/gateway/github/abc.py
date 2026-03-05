@@ -209,6 +209,21 @@ class GitHub(ABC):
         ...
 
     @abstractmethod
+    def get_pr_comment(self, repo_root: Path, comment_id: int) -> str | None:
+        """Fetch a single PR/issue comment by its ID.
+
+        Uses the GitHub REST API to retrieve the comment body.
+
+        Args:
+            repo_root: Repository root directory
+            comment_id: GitHub comment ID
+
+        Returns:
+            Comment body text, or None if the comment doesn't exist
+        """
+        ...
+
+    @abstractmethod
     def get_prs_linked_to_issues(
         self,
         location: GitHubRepoLocation,

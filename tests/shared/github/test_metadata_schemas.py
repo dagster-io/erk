@@ -9,6 +9,7 @@ import warnings
 import pytest
 
 from erk_shared.gateway.github.metadata.schemas import (
+    CI_SUMMARY_COMMENT_ID,
     CREATED_AT,
     CREATED_BY,
     CREATED_FROM_SESSION,
@@ -697,6 +698,54 @@ class TestPlanHeaderSchema:
         with pytest.raises(ValueError, match="plan_comment_id must be positive when provided"):
             schema.validate(data)
 
+    def test_valid_with_ci_summary_comment_id(self) -> None:
+        """Valid plan-header with ci_summary_comment_id field."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "ci_summary_comment_id": 87654321,
+        }
+        schema.validate(data)  # Should not raise
+
+    def test_null_ci_summary_comment_id_is_valid(self) -> None:
+        """Null ci_summary_comment_id is valid (not set yet)."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "ci_summary_comment_id": None,
+        }
+        schema.validate(data)  # Should not raise
+
+    def test_non_integer_ci_summary_comment_id_raises(self) -> None:
+        """Non-integer ci_summary_comment_id raises ValueError."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "ci_summary_comment_id": "87654321",
+        }
+        with pytest.raises(ValueError, match="ci_summary_comment_id must be an integer or null"):
+            schema.validate(data)
+
+    def test_zero_ci_summary_comment_id_raises(self) -> None:
+        """Zero ci_summary_comment_id raises ValueError."""
+        schema = PlanHeaderSchema()
+        data = {
+            "schema_version": "2",
+            "created_at": "2024-01-15T10:30:00Z",
+            "created_by": "testuser",
+            "ci_summary_comment_id": 0,
+        }
+        with pytest.raises(
+            ValueError, match="ci_summary_comment_id must be positive when provided"
+        ):
+            schema.validate(data)
+
     def test_get_key(self) -> None:
         """get_key returns correct key."""
         schema = PlanHeaderSchema()
@@ -716,6 +765,7 @@ class TestPlanHeaderFieldConstants:
         """Optional field constants have correct string values."""
         assert WORKTREE_NAME == "worktree_name"
         assert PLAN_COMMENT_ID == "plan_comment_id"
+        assert CI_SUMMARY_COMMENT_ID == "ci_summary_comment_id"
         assert LAST_DISPATCHED_RUN_ID == "last_dispatched_run_id"
         assert LAST_DISPATCHED_NODE_ID == "last_dispatched_node_id"
         assert LAST_DISPATCHED_AT == "last_dispatched_at"

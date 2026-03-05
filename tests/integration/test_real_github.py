@@ -1241,3 +1241,70 @@ def test_get_pr_check_runs_empty_rollup(monkeypatch: MonkeyPatch) -> None:
         result = ops.get_pr_check_runs(Path("/repo"), 42)
 
         assert result == []
+
+
+# ============================================================================
+# get_pr_comment() Tests
+# ============================================================================
+
+
+def test_get_pr_comment_success(monkeypatch: MonkeyPatch) -> None:
+    """Test get_pr_comment returns comment body on success."""
+    called_with: list[list[str]] = []
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        called_with.append(cmd)
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="This is the comment body\n",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGitHub.for_test()
+        result = ops.get_pr_comment(Path("/repo"), 99999)
+
+        assert result == "This is the comment body"
+        assert len(called_with) == 1
+        cmd = called_with[0]
+        assert cmd[0:2] == ["gh", "api"]
+        assert "issues/comments/99999" in cmd[2]
+        assert "--jq" in cmd
+        assert ".body" in cmd
+
+
+def test_get_pr_comment_returns_none_on_failure(monkeypatch: MonkeyPatch) -> None:
+    """Test get_pr_comment returns None when gh api returns non-zero."""
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=1,
+            stdout="",
+            stderr="Not Found",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGitHub.for_test()
+        result = ops.get_pr_comment(Path("/repo"), 99999)
+
+        assert result is None
+
+
+def test_get_pr_comment_returns_none_on_empty_body(monkeypatch: MonkeyPatch) -> None:
+    """Test get_pr_comment returns None when body is empty."""
+
+    def mock_run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
+        return subprocess.CompletedProcess(
+            args=cmd,
+            returncode=0,
+            stdout="  \n",
+            stderr="",
+        )
+
+    with mock_subprocess_run(monkeypatch, mock_run):
+        ops = RealGitHub.for_test()
+        result = ops.get_pr_comment(Path("/repo"), 99999)
+
+        assert result is None
