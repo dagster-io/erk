@@ -1,8 +1,17 @@
-"""Unit tests for list_cmd helper functions (_compute_slug, _compute_enriched_fields)."""
+"""Unit tests for list_cmd helper functions."""
 
 from datetime import UTC, datetime
 
-from erk.cli.commands.objective.list_cmd import _compute_enriched_fields, _compute_slug
+from erk.cli.commands.objective.list_cmd import (
+    _compute_enriched_fields,
+    _compute_next_node_fields,
+    _compute_slug,
+)
+from erk_shared.gateway.github.metadata.dependency_graph import (
+    DependencyGraph,
+    ObjectiveNode,
+)
+from erk_shared.gateway.github.metadata.roadmap import RoadmapNode, RoadmapPhase
 from erk_shared.plan_store.types import Plan, PlanState
 
 NOW = datetime.now(UTC)
@@ -142,3 +151,113 @@ def test_enriched_fields_valid_roadmap() -> None:
     assert fields["state"] != "-"
     assert fields["next_node"] == "1.2"
     assert fields["deps_state"] == "ready"
+
+
+# --- _compute_next_node_fields tests ---
+
+
+def _make_node(
+    *,
+    id: str,
+    status: str = "pending",
+    pr: str | None = None,
+    depends_on: tuple[str, ...] = (),
+) -> ObjectiveNode:
+    return ObjectiveNode(
+        id=id,
+        description=f"Node {id}",
+        status=status,
+        pr=pr,
+        depends_on=depends_on,
+        slug=None,
+    )
+
+
+def _make_phases_from_nodes(nodes: list[RoadmapNode]) -> list[RoadmapPhase]:
+    return [RoadmapPhase(number=1, suffix="", name="Phase 1", nodes=nodes)]
+
+
+def _roadmap_node(
+    *,
+    id: str,
+    status: str = "pending",
+    pr: str | None = None,
+    depends_on: tuple[str, ...] | None = None,
+) -> RoadmapNode:
+    return RoadmapNode(
+        id=id,
+        description=f"Node {id}",
+        status=status,
+        pr=pr,
+        depends_on=depends_on,
+        slug=None,
+    )
+
+
+def test_next_node_fields_no_next_result() -> None:
+    """All nodes done => no next node, returns dashes."""
+    nodes = (_make_node(id="1.1", status="done"),)
+    graph = DependencyGraph(nodes=nodes)
+    phases = _make_phases_from_nodes([_roadmap_node(id="1.1", status="done")])
+
+    next_node, deps_state, deps = _compute_next_node_fields(graph, phases)
+
+    assert next_node == "-"
+    assert deps_state == "-"
+    assert deps == "-"
+
+
+def test_next_node_fields_ready_deps() -> None:
+    """Next node has deps all done => deps_state is 'ready'."""
+    nodes = (
+        _make_node(id="1.1", status="done"),
+        _make_node(id="1.2", status="pending", depends_on=("1.1",)),
+    )
+    graph = DependencyGraph(nodes=nodes)
+    phases = _make_phases_from_nodes([
+        _roadmap_node(id="1.1", status="done"),
+        _roadmap_node(id="1.2", status="pending", depends_on=("1.1",)),
+    ])
+
+    next_node, deps_state, deps = _compute_next_node_fields(graph, phases)
+
+    assert next_node == "1.2"
+    assert deps_state == "ready"
+    assert deps == "-"
+
+
+def test_next_node_fields_blocking_dep_with_pr() -> None:
+    """Next node has an in_progress dep with a PR => deps shows the PR."""
+    nodes = (
+        _make_node(id="1.1", status="in_progress", pr="#200"),
+        _make_node(id="1.2", status="pending", depends_on=("1.1",)),
+    )
+    graph = DependencyGraph(nodes=nodes)
+    phases = _make_phases_from_nodes([
+        _roadmap_node(id="1.1", status="in_progress", pr="#200"),
+        _roadmap_node(id="1.2", status="pending", depends_on=("1.1",)),
+    ])
+
+    next_node, deps_state, deps = _compute_next_node_fields(graph, phases)
+
+    assert next_node == "1.2"
+    assert deps_state == "in progress"
+    assert "#200" in deps
+
+
+def test_next_node_fields_own_pr_shown() -> None:
+    """Next node's own active PR is included in deps."""
+    nodes = (
+        _make_node(id="1.1", status="done"),
+        _make_node(id="1.2", status="in_progress", pr="#300", depends_on=("1.1",)),
+    )
+    graph = DependencyGraph(nodes=nodes)
+    phases = _make_phases_from_nodes([
+        _roadmap_node(id="1.1", status="done"),
+        _roadmap_node(id="1.2", status="in_progress", pr="#300", depends_on=("1.1",)),
+    ])
+
+    next_node, deps_state, deps = _compute_next_node_fields(graph, phases)
+
+    assert next_node == "1.2"
+    assert "#300" in deps
