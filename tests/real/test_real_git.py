@@ -132,3 +132,49 @@ def test_branch_exists_on_remote_with_whitespace() -> None:
 
         # Assert: Verify result (whitespace stripped before checking)
         assert exists is True
+
+
+def test_get_remote_ref_returns_sha() -> None:
+    """Test git ls-remote returns SHA when ref exists."""
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(
+            stdout="abc123def456789\trefs/heads/feature-branch\n",
+            returncode=0,
+        )
+        ops = RealGit()
+        sha = ops.remote.get_remote_ref(Path("/test/repo"), "origin", "feature-branch")
+
+        mock_run.assert_called_once()
+        call_args = mock_run.call_args
+        assert call_args[0][0] == ["git", "ls-remote", "origin", "feature-branch"]
+        assert call_args[1]["cwd"] == Path("/test/repo")
+        assert call_args[1]["capture_output"] is True
+        assert call_args[1]["text"] is True
+        assert call_args[1]["check"] is False
+        assert sha == "abc123def456789"
+
+
+def test_get_remote_ref_returns_none_when_not_exists() -> None:
+    """Test git ls-remote returns None when ref doesn't exist."""
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(
+            stdout="",
+            returncode=0,
+        )
+        ops = RealGit()
+        sha = ops.remote.get_remote_ref(Path("/test/repo"), "origin", "nonexistent")
+
+        assert sha is None
+
+
+def test_get_remote_ref_returns_none_on_error() -> None:
+    """Test git ls-remote returns None on command failure."""
+    with patch("subprocess.run") as mock_run:
+        mock_run.return_value = MagicMock(
+            stdout="",
+            returncode=128,
+        )
+        ops = RealGit()
+        sha = ops.remote.get_remote_ref(Path("/test/repo"), "origin", "bad-ref")
+
+        assert sha is None

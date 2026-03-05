@@ -29,6 +29,7 @@ from erk.cli.ensure import UserFacingCliError
 from erk.core.commit_message_generator import CommitMessageGenerator
 from erk.core.context import ErkContext
 from erk.core.plan_context_provider import PlanContext, PlanContextProvider
+from erk_shared.gateway.git.abc import BranchDivergence
 from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
 from erk_shared.gateway.github.issues.types import IssueNotFound
 from erk_shared.gateway.github.label_ops import add_labels_resilient
@@ -277,11 +278,19 @@ def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | S
     effective_force = state.force or is_plan_impl
 
     # Pre-check: detect remote divergence before gt submit
-    if ctx.git.branch.branch_exists_on_remote(state.repo_root, "origin", state.branch_name):
-        ctx.git.remote.fetch_branch(state.repo_root, "origin", state.branch_name)
-        divergence = ctx.git.branch.is_branch_diverged_from_remote(
-            state.cwd, state.branch_name, "origin"
-        )
+    # Use lightweight ls-remote to check if remote SHA matches local (avoids full fetch)
+    remote_sha = ctx.git.remote.get_remote_ref(state.repo_root, "origin", state.branch_name)
+    if remote_sha is not None:
+        local_sha = ctx.git.branch.get_branch_head(state.repo_root, state.branch_name)
+        if local_sha == remote_sha:
+            # SHAs match: no divergence possible, skip expensive fetch
+            divergence = BranchDivergence(is_diverged=False, ahead=0, behind=0)
+        else:
+            # SHAs differ: need full fetch to determine ahead/behind counts
+            ctx.git.remote.fetch_branch(state.repo_root, "origin", state.branch_name)
+            divergence = ctx.git.branch.is_branch_diverged_from_remote(
+                state.cwd, state.branch_name, "origin"
+            )
         if divergence.behind > 0 and not effective_force:
             ahead_msg = (
                 f" and ahead by {divergence.ahead} commit(s)" if divergence.ahead > 0 else ""

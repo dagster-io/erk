@@ -128,6 +128,28 @@ class RealGitRemoteOps(GitRemoteOps):
             return PullRebaseError(message=str(e))
         return PullRebaseResult()
 
+    def get_remote_ref(self, repo_root: Path, remote: str, ref: str) -> str | None:
+        """Get the commit SHA of a ref on a remote without fetching objects."""
+        result = subprocess.run(
+            ["git", "ls-remote", remote, ref],
+            cwd=repo_root,
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=_GIT_NETWORK_TIMEOUT,
+            env=copied_env_for_git_subprocess(),
+        )
+        if result.returncode != 0:
+            return None
+        # ls-remote output: "<sha>\t<ref>\n" — may have multiple lines for ambiguous refs
+        # Take the first line's SHA
+        output = result.stdout.strip()
+        if not output:
+            return None
+        first_line = output.split("\n")[0]
+        sha = first_line.split("\t")[0].strip()
+        return sha if sha else None
+
     def get_remote_url(self, repo_root: Path, remote: str) -> str:
         """Get the URL for a git remote.
 

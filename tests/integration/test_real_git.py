@@ -1377,3 +1377,76 @@ def test_get_merge_base_nonexistent_ref(tmp_path: Path) -> None:
 
     # Assert: Should return None (graceful degradation)
     assert merge_base is None
+
+
+def test_get_remote_ref_returns_sha_for_existing_branch(tmp_path: Path) -> None:
+    """Test get_remote_ref returns the SHA of a branch that exists on a remote."""
+    remote_repo = tmp_path / "remote"
+    remote_repo.mkdir()
+    local_repo = tmp_path / "local"
+
+    init_git_repo(remote_repo, "main")
+
+    # Get the commit SHA on the remote
+    result = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=remote_repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    expected_sha = result.stdout.strip()
+
+    # Clone the remote so we have an origin
+    subprocess.run(
+        ["git", "clone", str(remote_repo), str(local_repo)],
+        check=True,
+        capture_output=True,
+    )
+
+    git_ops = RealGit()
+
+    # Act: Get the remote ref for refs/heads/main
+    sha = git_ops.remote.get_remote_ref(local_repo, "origin", "refs/heads/main")
+
+    # Assert: Should match the remote HEAD commit
+    assert sha == expected_sha
+
+
+def test_get_remote_ref_returns_none_for_nonexistent_ref(tmp_path: Path) -> None:
+    """Test get_remote_ref returns None when the ref does not exist on the remote."""
+    remote_repo = tmp_path / "remote"
+    remote_repo.mkdir()
+    local_repo = tmp_path / "local"
+
+    init_git_repo(remote_repo, "main")
+
+    subprocess.run(
+        ["git", "clone", str(remote_repo), str(local_repo)],
+        check=True,
+        capture_output=True,
+    )
+
+    git_ops = RealGit()
+
+    # Act: Query a ref that doesn't exist
+    sha = git_ops.remote.get_remote_ref(local_repo, "origin", "refs/heads/nonexistent-branch")
+
+    # Assert
+    assert sha is None
+
+
+def test_get_remote_ref_returns_none_for_invalid_remote(tmp_path: Path) -> None:
+    """Test get_remote_ref returns None when the remote is unreachable."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    init_git_repo(repo, "main")
+
+    git_ops = RealGit()
+
+    # Act: Query against a remote that doesn't exist
+    sha = git_ops.remote.get_remote_ref(repo, "nonexistent-remote", "refs/heads/main")
+
+    # Assert: Should return None (graceful degradation)
+    assert sha is None
