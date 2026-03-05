@@ -6,26 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from erk_mcp.__main__ import _parse_args, _parse_int_env, main
-
-
-class TestParseIntEnv:
-    """Tests for _parse_int_env helper."""
-
-    def test_returns_default_when_env_not_set(self) -> None:
-        with patch.dict("os.environ", {}, clear=False):
-            result = _parse_int_env("ERK_MCP_PORT_NOTSET", 9000)
-        assert result == 9000
-
-    def test_returns_int_from_env(self) -> None:
-        with patch.dict("os.environ", {"ERK_MCP_PORT": "8080"}):
-            result = _parse_int_env("ERK_MCP_PORT", 9000)
-        assert result == 8080
-
-    def test_raises_on_non_integer_env(self) -> None:
-        with patch.dict("os.environ", {"ERK_MCP_PORT": "notanumber"}):
-            with pytest.raises(ValueError, match="ERK_MCP_PORT"):
-                _parse_int_env("ERK_MCP_PORT", 9000)
+from erk_mcp.__main__ import _parse_args, main
 
 
 class TestParseArgs:
@@ -43,10 +24,10 @@ class TestParseArgs:
             args = _parse_args([])
         assert args.host == "127.0.0.1"
 
-    def test_env_var_port_override(self) -> None:
+    def test_env_var_port_does_not_override_default(self) -> None:
         with patch.dict("os.environ", {"ERK_MCP_PORT": "8888"}):
             args = _parse_args([])
-        assert args.port == 8888
+        assert args.port == 9000
 
     def test_cli_host_flag(self) -> None:
         args = _parse_args(["--host", "192.168.1.1"])
