@@ -282,10 +282,32 @@ def check_duplicate_markers(reviews: list[ParsedReview]) -> dict[str, list[str]]
     return {marker: files for marker, files in marker_to_files.items() if len(files) > 1}
 
 
+def _filter_excluded_files(
+    *,
+    changed_files: list[str],
+    exclude_patterns: tuple[str, ...],
+) -> list[str]:
+    """Filter out files matching exclude patterns.
+
+    Args:
+        changed_files: List of file paths to filter.
+        exclude_patterns: Gitignore-style glob patterns to exclude.
+
+    Returns:
+        Files that do not match any exclude pattern.
+    """
+    if not exclude_patterns:
+        return changed_files
+
+    exclude_spec = pathspec.PathSpec.from_lines("gitignore", exclude_patterns)
+    return [f for f in changed_files if not exclude_spec.match_file(f)]
+
+
 def discover_matching_reviews(
     *,
     reviews_dir: Path,
     changed_files: list[str],
+    exclude_patterns: tuple[str, ...] = (),
 ) -> DiscoveryResult:
     """Discover reviews that match the PR's changed files.
 
@@ -299,6 +321,12 @@ def discover_matching_reviews(
     Returns:
         DiscoveryResult with matching reviews, skipped reviews, and errors.
     """
+    # Filter out excluded files before matching
+    filtered_files = _filter_excluded_files(
+        changed_files=changed_files,
+        exclude_patterns=exclude_patterns,
+    )
+
     review_files = discover_review_files(reviews_dir)
 
     valid_reviews: list[ParsedReview] = []
@@ -340,7 +368,7 @@ def discover_matching_reviews(
 
     for review in valid_reviews:
         has_match = False
-        for changed_file in changed_files:
+        for changed_file in filtered_files:
             if _matches_any_path(
                 filename=changed_file,
                 review_paths=review.frontmatter.paths,

@@ -223,6 +223,48 @@ Post findings.
         assert "### Files Reviewed" in details_content
         assert "### Activity Log" in details_content
 
+    def test_prompt_includes_exclude_section(self) -> None:
+        """Prompt includes file exclusion section when patterns provided."""
+        review = _make_review(
+            name="Test Review",
+            marker="<!-- test -->",
+            body="Body.",
+        )
+
+        prompt = assemble_review_prompt(
+            review=review,
+            repository="owner/repo",
+            pr_number=123,
+            base_branch=None,
+            exclude_patterns=(".claude/skills/", "vendor/"),
+        )
+
+        assert "## File Exclusions" in prompt
+        assert "`.claude/skills/`" in prompt
+        assert "`vendor/`" in prompt
+        # Exclusion section should appear before collect step
+        exclusion_pos = prompt.index("## File Exclusions")
+        collect_pos = prompt.index("## Step 4: Collect Violations")
+        assert exclusion_pos < collect_pos
+
+    def test_prompt_no_exclude_section_when_empty(self) -> None:
+        """Prompt does not include exclusion section when no patterns."""
+        review = _make_review(
+            name="Test Review",
+            marker="<!-- test -->",
+            body="Body.",
+        )
+
+        prompt = assemble_review_prompt(
+            review=review,
+            repository="owner/repo",
+            pr_number=123,
+            base_branch=None,
+            exclude_patterns=(),
+        )
+
+        assert "## File Exclusions" not in prompt
+
 
 class TestAssembleLocalPrompt:
     """Tests for local mode prompt assembly."""
@@ -292,6 +334,29 @@ class TestAssembleLocalPrompt:
         assert "Output Violations" in prompt
         assert "**Test Review Violation**" in prompt
         assert "Summary" in prompt
+
+    def test_local_prompt_includes_exclude_section(self) -> None:
+        """Local prompt includes file exclusion section when patterns provided."""
+        review = _make_review(
+            name="Test Review",
+            marker="<!-- test -->",
+            body="Body.",
+        )
+
+        prompt = assemble_review_prompt(
+            review=review,
+            repository="test/repo",
+            pr_number=None,
+            base_branch="main",
+            exclude_patterns=(".claude/skills/",),
+        )
+
+        assert "## File Exclusions" in prompt
+        assert "`.claude/skills/`" in prompt
+        # Exclusion section should appear before output step
+        exclusion_pos = prompt.index("## File Exclusions")
+        output_pos = prompt.index("## Step 3: Output Violations")
+        assert exclusion_pos < output_pos
 
 
 class TestAssembleValidation:

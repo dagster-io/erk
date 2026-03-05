@@ -4,6 +4,7 @@ from pathlib import Path
 
 from erk.review.models import ParsedReview, ReviewFrontmatter
 from erk.review.parsing import (
+    _filter_excluded_files,
     check_duplicate_markers,
     discover_matching_reviews,
     discover_review_files,
@@ -487,3 +488,109 @@ Body.
             changed_files=["README.md"],
         )
         assert len(result.reviews) == 0
+
+
+class TestFilterExcludedFiles:
+    """Tests for file exclusion filtering."""
+
+    def test_no_patterns_returns_all_files(self) -> None:
+        """Return all files when no exclude patterns specified."""
+        files = ["src/main.py", "tests/test_main.py"]
+
+        result = _filter_excluded_files(changed_files=files, exclude_patterns=())
+
+        assert result == files
+
+    def test_excludes_matching_files(self) -> None:
+        """Exclude files matching gitignore-style patterns."""
+        files = [
+            "src/main.py",
+            ".claude/skills/skill-creator/scripts/run_eval.py",
+            ".claude/skills/skill-creator/eval-viewer/generate_review.py",
+            "tests/test_main.py",
+        ]
+
+        result = _filter_excluded_files(
+            changed_files=files,
+            exclude_patterns=(".claude/skills/",),
+        )
+
+        assert result == ["src/main.py", "tests/test_main.py"]
+
+    def test_multiple_exclude_patterns(self) -> None:
+        """Exclude files matching any of multiple patterns."""
+        files = ["src/main.py", "vendor/lib.py", ".claude/skills/foo.py"]
+
+        result = _filter_excluded_files(
+            changed_files=files,
+            exclude_patterns=(".claude/skills/", "vendor/"),
+        )
+
+        assert result == ["src/main.py"]
+
+
+class TestDiscoverMatchingReviewsWithExcludes:
+    """Tests for discovery with exclude patterns."""
+
+    def test_exclude_prevents_review_trigger(self, tmp_path: Path) -> None:
+        """Reviews don't trigger when all matching files are excluded."""
+        reviews_dir = tmp_path / "reviews"
+        reviews_dir.mkdir()
+
+        (reviews_dir / "python.md").write_text(
+            """\
+---
+name: Python Review
+paths:
+  - "**/*.py"
+marker: "<!-- python -->"
+---
+
+Body.
+""",
+            encoding="utf-8",
+        )
+
+        # Only excluded .py files changed
+        result = discover_matching_reviews(
+            reviews_dir=reviews_dir,
+            changed_files=[
+                ".claude/skills/foo/bar.py",
+                ".claude/skills/baz/qux.py",
+            ],
+            exclude_patterns=(".claude/skills/",),
+        )
+
+        assert len(result.reviews) == 0
+        assert "python.md" in result.skipped
+
+    def test_exclude_with_non_excluded_files_still_triggers(self, tmp_path: Path) -> None:
+        """Reviews trigger when non-excluded files match."""
+        reviews_dir = tmp_path / "reviews"
+        reviews_dir.mkdir()
+
+        (reviews_dir / "python.md").write_text(
+            """\
+---
+name: Python Review
+paths:
+  - "**/*.py"
+marker: "<!-- python -->"
+---
+
+Body.
+""",
+            encoding="utf-8",
+        )
+
+        result = discover_matching_reviews(
+            reviews_dir=reviews_dir,
+            changed_files=[
+                "src/main.py",
+                ".claude/skills/foo/bar.py",
+            ],
+            exclude_patterns=(".claude/skills/",),
+        )
+
+        assert len(result.reviews) == 1
+        assert result.reviews[0].frontmatter.name == "Python Review"

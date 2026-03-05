@@ -122,6 +122,9 @@ exclude = [".claude/skills/"]
 python-version = "3.11"
 python = ".venv"
 
+[tool.erk.reviews]
+exclude = [".claude/skills/"]
+
 [tool.pytest.ini_options]
 addopts = "-q"
 testpaths = ["tests", "packages/erk-dev/tests", "packages/erk-statusline/tests"]
