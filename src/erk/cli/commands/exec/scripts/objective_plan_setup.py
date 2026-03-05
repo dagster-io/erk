@@ -22,17 +22,12 @@ import click
 from erk.cli.commands.objective.check_cmd import (
     ERK_OBJECTIVE_LABEL,
     ObjectiveValidationError,
-    ObjectiveValidationSuccess,
     validate_objective,
 )
 from erk_shared.context.helpers import require_issues, require_repo_root
 from erk_shared.gateway.github.issues.abc import GitHubIssues
 from erk_shared.gateway.github.issues.types import IssueNotFound
-from erk_shared.gateway.github.metadata.dependency_graph import (
-    compute_graph_summary,
-    find_graph_next_node,
-    phases_from_graph,
-)
+from erk_shared.gateway.github.metadata.dependency_graph import phases_from_graph
 from erk_shared.gateway.github.metadata.roadmap import serialize_phases
 from erk_shared.scratch.scratch import get_scratch_dir
 
