@@ -1,0 +1,637 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>Last login: Mon Mar  2 14:43:40 on ttys049
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-61/.envrc
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-61/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61
+-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61/.venv (3.13.1)
+Activated: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-61
+direnv: export +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT ~PATH
+➜  erk-slot-61 git:(plnd/centralize-metadata-block-03-02-1324) erk-activate
+direnv: loading ~/code/erk/.envrc
+direnv: loading ~/code/erk/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/code/erk
+-&gt; Activating venv: /Users/schrockn/code/erk/.venv (3.13.1)
+Activated: /Users/schrockn/code/erk
+direnv: export +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT ~PATH
+-&gt; cd /Users/schrockn/code/erk
+-&gt; Activating venv: /Users/schrockn/code/erk/.venv (3.13.1)
+Activated: /Users/schrockn/code/erk
+(erk) ➜  erk git:(master) erk dash
+ac^C
+Aborted!
+(erk) ➜  erk git:(master) erk dash
+╭────────────────────────────────────────────────────────────────────── Traceback (most recent call last) ──────────────────────────────────────────────────────────────────────╮
+│ /Users/schrockn/code/erk/src/erk/tui/operations/streaming.py:31 in _update_operation                                                                                          │
+│                                                                                                                                                                               │
+│   28 │   def _update_operation(self: ErkDashApp, *, op_id: str, progress: str) -&gt; None:                                                                                       │
+│   29 │   │   """Update the progress line for a background operation."""                                                                                                       │
+│   30 │   │   if self._status_bar is not None:                                                                                                                                 │
+│ ❱ 31 │   │   │   self._status_bar.update_operation(op_id=op_id, progress=progress)                                                                                            │
+│   32 │                                                                                                                                                                        │
+│   33 │   def _finish_operation(self: ErkDashApp, *, op_id: str) -&gt; None:                                                                                                      │
+│   34 │   │   """Remove a completed background operation from the status bar."""                                                                                               │
+│                                                                                                                                                                               │
+│ ╭────────────────────────────────────────────── locals ──────────────────────────────────────────────╮                                                                        │
+│ │    op_id = 'address-pr-8710'                                                                       │                                                                        │
+│ │ progress = "subprocess.CalledProcessError: Command '['gh', 'api', 'repos/{owner}/{repo}/acti"+107  │                                                                        │
+│ │     self = ErkDashApp(title='ErkDashApp', classes={'-dark-mode'}, pseudo_classes={'blur', 'dark'}) │                                                                        │
+│ ╰────────────────────────────────────────────────────────────────────────────────────────────────────╯                                                                        │
+│                                                                                                                                                                               │
+│ /Users/schrockn/code/erk/src/erk/tui/widgets/status_bar.py:109 in update_operation                                                                                            │
+│                                                                                                                                                                               │
+│   106 │   │   │   progress=progress,                                                                                                                                          │
+│   107 │   │   )                                                                                                                                                               │
+│   108 │   │   self._last_updated_op_id = op_id                                                                                                                                │
+│ ❱ 109 │   │   self._update_display()                                                                                                                                          │
+│   110 │                                                                                                                                                                       │
+│   111 │   def finish_operation(self, *, op_id: str) -&gt; None:                                                                                                                  │
+│   112 │   │   """Remove a completed operation.                                                                                                                                │
+│                                                                                                                                                                               │
+│ ╭───────────────────────────────────────────── locals ──────────────────────────────────────────────╮                                                                         │
+│ │    op_id = 'address-pr-8710'                                                                      │                                                                         │
+│ │ progress = "subprocess.CalledProcessError: Command '['gh', 'api', 'repos/{owner}/{repo}/acti"+107 │                                                                         │
+│ │     self = StatusBar(classes='running')                                                           │                                                                         │
+│ ╰───────────────────────────────────────────────────────────────────────────────────────────────────╯                                                                         │
+│                                                                                                                                                                               │
+│ /Users/schrockn/code/erk/src/erk/tui/widgets/status_bar.py:167 in _update_display                                                                                             │
+│                                                                                                                                                                               │
+│   164 │   │   │   │   display = f" [{len(self._operations)} ops] {op.label}"                                                                                                  │
+│   165 │   │   │   if op.progress:                                                                                                                                             │
+│   166 │   │   │   │   display += f" {op.progress}"                                                                                                                            │
+│ ❱ 167 │   │   │   self.update(display)                                                                                                                                        │
+│   168 │   │   │   return                                                                                                                                                      │
+│   169 │   │                                                                                                                                                                   │
+│   170 │   │   # Transient messages take second priority                                                                                                                       │
+│                                                                                                                                                                               │
+│ ╭──────────────────────────────────────────────────────────────────────────────── locals ─────────────────────────────────────────────────────────────────────────────────╮   │
+│ │ display = ' [2 ops] Dispatching address for PR #8710... subprocess.CalledProcessError: Comm'+152                                                                        │   │
+│ │      op = _OperationState(label='Dispatching address for PR #8710...', progress="subprocess.CalledProcessError: Command '['gh', 'api', 'repos/{owner}/{repo}/acti"+107) │   │
+│ │   op_id = 'address-pr-8710'                                                                                                                                             │   │
+│ │    self = StatusBar(classes='running')                                                                                                                                  │   │
+│ ╰─────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯   │
+│                                                                                                                                                                               │
+│ /Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/textual/widgets/_static.py:94 in update                                                                           │
+│                                                                                                                                                                               │
+│   91 │   │   """                                                                                                                                                              │
+│   92 │   │                                                                                                                                                                    │
+│   93 │   │   self.__content = content                                                                                                                                         │
+│ ❱ 94 │   │   self.__visual = visualize(self, content, markup=self._render_markup)                                                                                             │
+│   95 │   │   self.refresh(layout=layout)                                                                                                                                      │
+│   96                                                                                                                                                                          │
+│                                                                                                                                                                               │
+│ ╭───────────────────────────────────────────── locals ─────────────────────────────────────────────╮                                                                          │
+│ │ content = ' [2 ops] Dispatching address for PR #8710... subprocess.CalledProcessError: Comm'+152 │                                                                          │
+│ │  layout = True                                                                                   │                                                                          │
+│ │    self = StatusBar(classes='running')                                                           │                                                                          │
+│ ╰──────────────────────────────────────────────────────────────────────────────────────────────────╯                                                                          │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+MarkupError: Expected markup value (found "--jq', '.workflow_runs']' returned non-zero exit status 1.").
+(erk) ➜  erk git:(master)
+
+debug</user>
+  <thinking>The user is seeing a `MarkupError` crash in the TUI dashboard. The error occurs because a `subprocess.CalledProcessError` message containing special characters (like `'`, `[`, `]`) is being passed to Textual's `Static.update()` method, which interprets it as Rich markup and fails to parse it.
+
+Let me trace the error:
+
+1. `streaming.py:31` calls `self._status_bar.update_operation(op_id=op_id, progress=progress)`
+2. `status_bar.py:109` calls `self._update_display()`
+3. `status_bar.py:167` calls `self.update(display)` - this is Textual's `Static.update()`
+
+
+4. Textual tries to parse the content as Rich markup, but the progress string contains subprocess error messages with characters like brackets and quotes that Rich can't handle.
+
+The solution is to either escape the progress text before updating or disable markup parsing on the StatusBar widget. Let me check the relevant code to see which approach makes sense.</thinking>
+  <usage input_tokens="3" cache_creation_input_tokens="32724" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 32724}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>The crash is clear: a `subprocess.CalledProcessError` message containing Rich markup characters (`[`, `]`) is passed to Textual's `Static.update()`, which tries to parse it as markup. Let me look at the relevant files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="32724" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 32724}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01R7xbSNxQyjsnYC74Zs1v9V">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/widgets/status_bar.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="32724" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 32724}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01R7xbSNxQyjsnYC74Zs1v9V">
+     1→"""Status bar widget for TUI dashboard."""
+     2→
+     3→from dataclasses import dataclass
+     4→
+     5→from textual.widgets import Static
+     6→
+     7→from erk.tui.data.types import FetchTimings
+     8→
+     9→
+    10→@dataclass(frozen=True)
+    11→class _OperationState:
+    12→    """State for a single tracked background operation."""
+    13→
+    14→    label: str
+    15→    progress: str
+    16→
+    17→
+    18→class StatusBar(Static):
+    19→    """Footer status bar showing plan count, refresh status, and messages.
+    20→
+    21→    Displays:
+    22→    - Plan count
+    23→    - Last update time
+    24→    - Time until next refresh
+    25→    - Action messages (e.g., command to copy)
+    26→    - Key bindings hint
+    27→    - Active operation progress
+    28→    """
+    29→
+    30→    DEFAULT_CSS = """
+
+... [171 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LPwwHXM1a6gx3jQxM3uwAj">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/operations/streaming.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="32724" cache_read_input_tokens="0" output_tokens="490" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 32724, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LPwwHXM1a6gx3jQxM3uwAj">
+     1→"""Streaming operation infrastructure for TUI background tasks."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import subprocess
+     6→from typing import TYPE_CHECKING
+     7→
+     8→import click
+     9→
+    10→from erk.tui.operations.types import OperationResult
+    11→
+    12→if TYPE_CHECKING:
+    13→    from erk.tui.app import ErkDashApp
+    14→
+    15→
+    16→class StreamingOperationsMixin:
+    17→    """Mixin providing operation lifecycle tracking and streaming subprocess execution.
+    18→
+    19→    Methods access self._status_bar, self._provider, and self.call_from_thread
+    20→    which are provided by ErkDashApp at runtime through inheritance.
+    21→    """
+    22→
+    23→    def _start_operation(self: ErkDashApp, *, op_id: str, label: str) -&gt; None:
+    24→        """Register a background operation in the status bar."""
+    25→        if self._status_bar is not None:
+    26→            self._status_bar.start_operation(op_id=op_id, label=label)
+    27→
+    28→    def _update_operation(self: ErkDashApp, *, op_id: str, progress: str) -&gt; None:
+    29→        """Update the progress line for a background operation."""
+    30→        if self._status_bar is not None:
+
+... [48 lines omitted] ...
+  </tool_result>
+  <thinking>The bug is clear. The `StatusBar` extends `Static` which by default treats content as Rich markup. When the progress string contains `[` and `]` characters (from the subprocess error message), Rich tries to parse them as markup tags and fails.
+
+The fix is simple: escape the markup in the display string before passing to `self.update()`. We can use `rich.markup.escape()` or set `markup=False` on the Static widget.
+
+Let me check if `StatusBar` uses any Rich markup intentionally in its display strings.
+
+Looking at the code, the display strings are plain text - no Rich markup is used. So the simplest fix is to pass `markup=False` in the `__init__` call to `super().__init__()`.
+
+
+I'm verifying that the Static widget accepts a `markup` parameter and checking whether any of the status bar messages actually use Rich markup formatting.</thinking>
+  <usage input_tokens="1" cache_creation_input_tokens="5740" cache_read_input_tokens="32724" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5740}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The bug is straightforward. `StatusBar` extends Textual's `Static` widget, which by default interprets content as Rich markup. When a `subprocess.CalledProcessError` message containing `[` and `]` characters hits `self.update()`, Rich tries to parse them as markup tags and crashes.
+
+Looking at the code, `StatusBar` never uses Rich markup in any of its display strings — it's all plain text. The fix is to disable markup parsing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5740" cache_read_input_tokens="32724" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5740}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_018m7sNkscSfAyCUCcQpMgwe">
+    <param name="file_path">/Users/schrockn/.claude/plans/twinkly-squishing-gosling.md</param>
+    <param name="content"># Fix: StatusBar MarkupError crash on subprocess error messages
+
+## Context
+
+`erk dash` cr...[truncated 775 chars]...d operation that fails (e.g., dispatch address for a PR) — confirm no `MarkupError` crash
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5740" cache_read_input_tokens="32724" output_tokens="847" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5740, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018m7sNkscSfAyCUCcQpMgwe">
+File created successfully at: /Users/schrockn/.claude/plans/twinkly-squishing-gosling.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01CwttCuaNkhUQSwbH5Qt8Ew">
+    <param name="plan"># Fix: StatusBar MarkupError crash on subprocess error messages
+
+## Context
+
+`erk dash` cr...[truncated 775 chars]...d operation that fails (e.g., dispatch address for a PR) — confirm no `MarkupError` crash
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="981" cache_read_input_tokens="38464" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 981, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CwttCuaNkhUQSwbH5Qt8Ew">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/twinkly-squishing-gosling.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: StatusBar MarkupError crash on subprocess error messages
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create a plan PR on new branch" - Create a new branch, save plan as draft PR, and stop. Does NOT proceed to implementation.
+  2. "Just implement on the current branch without creating a PR." - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage editing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create a plan PR on new branch':
+  1. Run /erk:plan-save
+  2. STOP - Do NOT call ExitPlanMode. The plan-save command handles everything.
+     Stay in plan mode and let the user exit manually if desired.
+
+If user chooses 'Just implement on the current branch without creating a PR.':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 0ef30d90-faab-4bd0-8d40-4344d6d55ca9 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+
+... [9 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Fix: StatusBar MarkupError crash on subprocess error messages
+
+## Context
+
+`erk dash` crashes with `MarkupError` when a background operation's progress text contains Rich markup characters (`[`, `]`). This happens because `StatusBar` extends Textual's `Static` widget, which interprets content as Rich markup by default. When a `subprocess.CalledProcessError` message like `Command '['gh', 'api', ...]'` is displayed, Rich fails to parse the brackets as markup.
+
+## Fix
+
+**File:** `src/erk/tui/widgets/status_bar.py:42`
+
+Pass `markup=False` to `super().__init__()` in `StatusBar.__init__`. No display strings in the status bar use Rich markup, so this is safe.
+
+```python
+# Before
+super().__init__()
+
+# After
+super().__init__(markup=False)
+```
+
+Single-line change. No other files affected.
+
+## Verification
+
+1. Run `erk dash` — confirm it starts without errors
+2. Trigger a background operation that fails (e.g., dispatch address for a PR) — confirm no `MarkupError` crash
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="728" cache_read_input_tokens="39445" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 728}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_015cH4oTL2QBVkL7JyGHEfQd">
+    <param name="questions">[{'question': '📋 Fix: StatusBar MarkupError crash on subprocess error messages\nCurrent co...[truncated 443 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="728" cache_read_input_tokens="39445" output_tokens="506" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 728, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015cH4oTL2QBVkL7JyGHEfQd">
+User has answered your questions: "📋 Fix: StatusBar MarkupError crash on subprocess error messages
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create a plan PR on new branch". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_013bsqtftLyxn15beQ93X6KW">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="588" cache_read_input_tokens="40173" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 588, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013bsqtftLyxn15beQ93X6KW">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type` and `--objective` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, branch slug, summary, and optional flags:
+
+```bash
+erk exec plan-save --format json --session-id="0ef30d90-faab-4bd0-8d40-4344d6d55ca9" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "0ef30d90-faab-4bd0-8d40-4344d6d55ca9" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+If `branch_name` is present in the JSON, display the same next-steps block as the success case below.
+
+If `branch_name` is absent, display only: `View PR: &lt;plan_url&gt;`
+
+Return immediately (skip Steps 5, 6 above if not already executed).
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+**Slot options block:**
+
+The "OR exit Claude Code first" section should show both slot allocation options, with the recommended one listed first based on trunk detection:
+
+If **on trunk = true** (new-wt recommended → "In new wt" listed first):
+
+```
+OR exit Claude Code first, then run one of:
+
+Implement plan #&lt;plan_number&gt;:
+  In new wt:        source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+  In current wt:       source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+
+Checkout plan #&lt;plan_number&gt;:
+  In new wt:  erk br co --new-slot --for-plan &lt;plan_number&gt;
+  In current wt: erk br co --for-plan &lt;plan_number&gt;
+
+Dispatch to queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+If **on trunk = false** (same slot recommended → "Here" listed first):
+
+```
+OR exit Claude Code first, then run one of:
+
+Implement plan #&lt;plan_number&gt;:
+  In current wt:       source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan &lt;plan_number&gt; --script)" &amp;&amp; erk implement -d
+
+Checkout plan #&lt;plan_number&gt;:
+  In current wt: erk br co --for-plan &lt;plan_number&gt;
+  In new wt:  erk br co --new-slot --for-plan &lt;plan_number&gt;
+
+Dispatch to queue: erk pr dispatch &lt;plan_number&gt;
+```
+
+**Next steps block:**
+
+```
+Next steps:
+
+View PR: &lt;plan_url&gt;
+
+In Claude Code:
+  Dispatch to queue: /erk:pr-dispatch — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+  Checkout plan #&lt;plan_number&gt;:  erk br co --for-plan &lt;plan_number&gt;
+  Dispatch to queue:             erk pr dispatch &lt;plan_number&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+If the JSON output contains `slot_name` and `slot_objective_updated: true`, also display: `Slot objective updated: &lt;slot_name&gt; → #&lt;objective-number&gt;`
+
+**Note:** Slot objective updates are handled automatically by `plan-save` when an objective is linked via the session marker - no separate command call needed.
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "0ef30d90-faab-4bd0-8d40-4344d6d55ca9" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "0ef30d90-faab-4bd0-8d40-4344d6d55ca9" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "0ef30d90-faab-4bd0-8d40-4344d6d55ca9" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+**Branch slug:** `fix-statusbar-markup-error`
+
+**Plan summary:** Fix MarkupError crash in erk dash when background operation progress text contains Rich markup characters like brackets. Disable markup parsing on the StatusBar widget since it only displays plain text.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2862" cache_read_input_tokens="40761" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2862}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015uxCTb38YrzJNK6g35Maxw">
+    <param name="command">erk exec plan-save --format json --session-id="0ef30d90-faab-4bd0-8d40-4344d6d55ca9" --bra...[truncated 142 chars]...ackets. Disable markup parsing on the StatusBar widget since it only displays plain text."</param>
+    <param name="description">Save plan as draft PR</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2862" cache_read_input_tokens="40761" output_tokens="240" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2862, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015uxCTb38YrzJNK6g35Maxw">
+{"success": true, "plan_number": 8733, "plan_url": "https://github.com/dagster-io/erk/pull/8733", "title": "[erk-plan] Fix: StatusBar MarkupError crash on subprocess error messages", "branch_name": "plnd/fix-statusbar-markup-error-03-04-1404", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/0ef30d90-faab-4bd0-8d40-4344d6d55ca9/plan_snapshots/000001-9c4daa94"}
+  </tool_result>
+  <assistant>Now pushing the planning session:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="619" cache_read_input_tokens="43623" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 619}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018hQDLLVQA3exdxURPbCNCF">
+    <param name="command">erk exec upload-impl-session --session-id "0ef30d90-faab-4bd0-8d40-4344d6d55ca9" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="619" cache_read_input_tokens="43623" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 619, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018hQDLLVQA3exdxURPbCNCF">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan **"Fix: StatusBar MarkupError crash on subprocess error messages"** saved as draft PR **#8733**.
+
+URL: https://github.com/dagster-io/erk/pull/8733
+
+**Next steps:**
+
+View PR: https://github.com/dagster-io/erk/pull/8733
+
+In Claude Code:
+  Dispatch to queue: `/erk:pr-dispatch` — Dispatch plan for remote agent implementation
+
+OR exit Claude Code first, then run one of:
+
+Implement plan #8733:
+  In new wt:        `source "$(erk br co --new-slot --for-plan 8733 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --new-slot --for-plan 8733 --script)" &amp;&amp; erk implement -d`
+  In current wt:    `source "$(erk br co --for-plan 8733 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --for-plan 8733 --script)" &amp;&amp; erk implement -d`
+
+Checkout plan #8733:
+  In new wt:      `erk br co --new-slot --for-plan 8733`
+  In current wt:  `erk br co --for-plan 8733`
+
+Dispatch to queue: `erk pr dispatch 8733`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="151" cache_read_input_tokens="44242" output_tokens="335" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 151, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+</session>
