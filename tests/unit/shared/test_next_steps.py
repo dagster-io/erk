@@ -83,7 +83,7 @@ class TestPlanNextSteps:
             plan_number=42,
             url="https://github.com/org/repo/pull/42",
         )
-        assert steps.dispatch_slash_command == "/erk:pr-dispatch 42"
+        assert steps.dispatch_slash_command == "/erk:pr-dispatch"
 
 
 class TestFormatPlanNextStepsPlain:
@@ -105,7 +105,7 @@ class TestFormatPlanNextStepsPlain:
     def test_contains_dispatch(self) -> None:
         output = format_plan_next_steps_plain(42, url="https://github.com/org/repo/pull/42")
         assert "erk pr dispatch 42" in output
-        assert "/erk:pr-dispatch 42" in output
+        assert "/erk:pr-dispatch" in output
         assert "Dispatch plan #42:" in output
 
     def test_contains_checkout_new_slot(self) -> None:
