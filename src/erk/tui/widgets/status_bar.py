@@ -39,7 +39,7 @@ class StatusBar(Static):
 
     def __init__(self) -> None:
         """Initialize status bar."""
-        super().__init__()
+        super().__init__(markup=False)
         self._plan_count = 0
         self._noun = "plans"
         self._seconds_remaining = 0

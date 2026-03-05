@@ -61,3 +61,21 @@ class TestStatusBar:
         assert bar._last_update == "14:30:45"
         assert bar._fetch_duration == 1.5
         assert bar._fetch_timings is None
+
+    def test_operation_progress_with_bracket_characters(self) -> None:
+        """StatusBar handles bracket characters in operation progress text.
+
+        Subprocess error messages like "Command '['gh', 'pr']' returned..."
+        contain bracket characters that Rich interprets as markup tags,
+        causing MarkupError crashes when markup=True. This test verifies
+        that StatusBar can display such text without error.
+        """
+        bar = StatusBar()
+        bar.start_operation(op_id="test", label="Running command")
+        # This text mimics subprocess.CalledProcessError output, which
+        # contains brackets that Rich would parse as markup tags
+        bar.update_operation(
+            op_id="test",
+            progress="Command '['gh', 'pr', 'diff']' returned non-zero exit status 1",
+        )
+        bar._update_display()
