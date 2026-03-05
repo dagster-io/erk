@@ -13,6 +13,11 @@ from pathlib import Path
 
 import click
 
+from erk.cli.activation import (
+    activation_config_activate_only,
+    ensure_worktree_activate_script,
+    print_activation_instructions,
+)
 from erk.cli.commands.checkout_helpers import ensure_branch_has_worktree
 from erk.cli.commands.pr.checkout_cmd import _fetch_and_update_branch
 from erk.cli.ensure import Ensure
@@ -88,17 +93,36 @@ def _teleport_in_place(
     current_branch = ctx.git.branch.get_current_branch(cwd)
 
     if current_branch != branch_name:
-        ctx.console.error(
-            f"Current branch is '{current_branch}', but PR #{pr_number} is on '{branch_name}'.\n\n"
-            f"Either checkout the correct branch first, or use --new-slot to create a worktree."
-        )
-        raise SystemExit(1)
+        # Check if the target branch is already checked out in another worktree
+        existing = ctx.git.worktree.find_worktree_for_branch(repo.root, branch_name)
+        if existing is not None:
+            user_output(
+                f"PR #{pr_number} branch "
+                + click.style(f"'{branch_name}'", fg="cyan", bold=True)
+                + " is already checked out at "
+                + click.style(str(existing), fg="cyan", bold=True)
+            )
+            script_path = ensure_worktree_activate_script(
+                worktree_path=existing,
+                post_create_commands=None,
+            )
+            print_activation_instructions(
+                script_path,
+                source_branch=None,
+                force=False,
+                config=activation_config_activate_only(),
+                copy=True,
+                same_worktree=False,
+            )
+            raise SystemExit(0)
+        # Branch not in any worktree — proceed; checkout below will switch branches
 
     # Fetch latest remote state
     ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
 
-    # Show divergence info and confirm
-    if not force:
+    # Show divergence info and confirm (only if the branch already exists locally)
+    local_branches = ctx.git.branch.list_local_branches(repo.root)
+    if branch_name in local_branches and not force:
         _confirm_overwrite(ctx, cwd=cwd, branch_name=branch_name)
 
     # Force-reset local branch to match remote

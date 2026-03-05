@@ -3,6 +3,7 @@
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
+from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails
@@ -67,8 +68,8 @@ def test_teleport_cross_repo_errors() -> None:
         assert "cross-repository" in result.output
 
 
-def test_teleport_wrong_branch_errors() -> None:
-    """Teleport errors when current branch doesn't match PR branch."""
+def test_teleport_wrong_branch_switches_and_teleports() -> None:
+    """Teleport automatically switches branch when it's not yet checked out."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         pr = _make_pr_details(123, "feature-branch")
@@ -77,12 +78,39 @@ def test_teleport_wrong_branch_errors() -> None:
             git_common_dirs={env.cwd: env.git_dir},
             default_branches={env.cwd: "main"},
             current_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main"]},  # feature-branch doesn't exist yet
+            remote_branches={env.cwd: ["origin/main", "origin/feature-branch"]},
+        )
+        ctx = build_workspace_test_context(env, git=git, github=github)
+        result = runner.invoke(pr_group, ["teleport", "123", "--force"], obj=ctx)
+        assert result.exit_code == 0
+        assert "Teleported" in result.output
+        assert "feature-branch" in result.output
+
+
+def test_teleport_wrong_branch_exists_in_other_worktree() -> None:
+    """Teleport prints activation instructions when branch is already checked out elsewhere."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        other_worktree_path = env.repo.worktrees_dir / "other"
+        pr = _make_pr_details(123, "feature-branch")
+        github = FakeGitHub(pr_details={123: pr})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            current_branches={env.cwd: "main"},
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch="main", is_root=True),
+                    WorktreeInfo(path=other_worktree_path, branch="feature-branch", is_root=False),
+                ]
+            },
         )
         ctx = build_workspace_test_context(env, git=git, github=github)
         result = runner.invoke(pr_group, ["teleport", "123"], obj=ctx)
-        assert result.exit_code == 1
+        assert result.exit_code == 0
         assert "feature-branch" in result.output
-        assert "--new-slot" in result.output
+        assert str(other_worktree_path) in result.output
 
 
 def test_teleport_in_place_with_force() -> None:
