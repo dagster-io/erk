@@ -123,4 +123,3 @@ The bottom line: worktrees give you isolated working directories with shared git
 ## See Also
 
 - [The Workflow](the-workflow.md) - How worktrees fit into plan-oriented development
-- [Why GitHub Issues](why-github-issues.md) - How plans connect to worktrees

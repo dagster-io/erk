@@ -25,8 +25,8 @@ Tier 1: check-submission (gate)
     │
 Tier 2: fix-formatting (auto-fix, independent of parallel jobs)
     │
-Tier 3: ┌──────┬──────┬───────────┬────┬────────────┬─────────────┐
-         format  lint  docs-check  ty  unit-tests  integration
+Tier 3: ┌──────┬──────┬───────────┬────┬────────────┬─────────────┬──────────────┐
+         format  lint  docs-check  ty  unit-tests  integration  erk-mcp-tests
 ```
 
 ### Tier 1: Gate
@@ -41,16 +41,17 @@ This ordering is intentional: fix-formatting runs early to clean up code before 
 
 ### Tier 3: Parallel Validation
 
-Six jobs run in parallel, all depending on both `check-submission` AND `fix-formatting`:
+Seven jobs run in parallel, all depending on both `check-submission` AND `fix-formatting`:
 
-| Job                 | Purpose                               |
-| ------------------- | ------------------------------------- |
-| `format`            | ruff format --check                   |
-| `lint`              | ruff check                            |
-| `docs-check`        | Documentation compliance              |
-| `ty`                | Type checking                         |
-| `unit-tests`        | Unit tests (matrix: Python 3.11-3.14) |
-| `integration-tests` | Integration tests                     |
+| Job                 | Purpose                                 |
+| ------------------- | --------------------------------------- |
+| `format`            | ruff format --check                     |
+| `lint`              | ruff check                              |
+| `docs-check`        | Documentation compliance                |
+| `ty`                | Type checking                           |
+| `unit-tests`        | Unit tests (matrix: Python 3.11-3.14)   |
+| `integration-tests` | Integration tests                       |
+| `erk-mcp-tests`     | MCP package tests (`make test-erk-mcp`) |
 
 ## Cancellation Mechanism
 
@@ -64,7 +65,7 @@ The `concurrency` block groups runs by branch ref and cancels in-progress runs w
 
 **`ci-summarize`** depends on all validation jobs and runs only on failure. It uses a lightweight model to summarize CI failures for developers.
 
-**`autofix`** depends on all validation jobs: format, lint, fix-formatting, docs-check, ty, unit-tests, and integration-tests. It runs after all checks complete to have full failure context. Currently disabled via kill-switch (`false &&` guard).
+**`autofix`** depends on all validation jobs: format, lint, fix-formatting, docs-check, ty, unit-tests, integration-tests, and erk-mcp-tests. It runs after all checks complete to have full failure context. Currently disabled via kill-switch (`false &&` guard).
 
 ## Related Documentation
 

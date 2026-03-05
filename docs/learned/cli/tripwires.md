@@ -112,6 +112,8 @@ Rules triggered by matching actions in code.
 
 **modifying learn plan skip guards in land_learn.py** → Read [Land-Learn Integration](land-learn-integration.md) first. Learn plan creation may skip silently when no sessions exist. Check land-learn-integration.md before modifying skip guards.
 
+**moving uv sync or uv pip install inside the VIRTUAL_ENV guard** → Read [Activation Scripts](activation-scripts.md) first. uv sync and uv pip install run OUTSIDE the guard (always execute, even on re-entry). This ensures deps stay current after branch switches in reused slots. Only venv activation, .env loading, and shell completion go inside the guard.
+
 **mutating SubmitState fields directly** → Read [PR Submit Pipeline Architecture](pr-submit-pipeline.md) first. SubmitState is frozen. Use dataclasses.replace(state, field=value) to create new state.
 
 **parsing roadmap tables to update PR cells** → Read [Update Objective Node Command](commands/update-objective-node.md) first. Use the update-objective-node command instead of manual parsing. The command encodes table structure knowledge once rather than duplicating it across callers.
@@ -130,7 +132,7 @@ Rules triggered by matching actions in code.
 
 **removing a workflow command or CLI entry** → Read [Incomplete Command Removal Pattern](incomplete-command-removal.md) first. Read incomplete-command-removal.md first. Search all string references before removing. String-based dispatch maps like WORKFLOW_COMMAND_MAP aren't caught by type checkers.
 
-**removing the VIRTUAL_ENV guard from activation scripts** → Read [Activation Scripts](activation-scripts.md) first. Guard prevents double activation when direnv and temp script both source activation. Removing it causes duplicate package installs.
+**removing the VIRTUAL_ENV guard from activation scripts** → Read [Activation Scripts](activation-scripts.md) first. Guard prevents double activation when direnv and temp script both source activation. Removing it causes duplicate venv activation and .env loading. Moving uv sync OUTSIDE the guard is correct — guard only protects venv activation, .env loading, and shell completion.
 
 **renaming CLI commands without checking workflow files** → Read [Command Rename Checklist](command-rename-checklist.md) first. After renaming CLI commands, grep .github/workflows/\*.yml for stale references.
 

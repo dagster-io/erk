@@ -84,6 +84,16 @@ This is why `validate_objective()` returns `ObjectiveValidationError` (couldn't 
 
 - Update-time validation: `update_objective_node()` in `update_objective_node.py`
 
+## Objectives Without a Roadmap Block
+
+Objectives can exist without a roadmap block. When the issue body has no `objective-roadmap` metadata block:
+
+- `parse_roadmap()` returns `([], [])` — empty phases, no errors
+- `has_metadata_block(body, BlockKeys.OBJECTIVE_ROADMAP)` returns `False`
+- `validate_objective()` adds check: `"Roadmap: none (objective has no roadmap)"` and **skips checks 3-7** (all roadmap-dependent), returning early with `passed=True`
+
+This is the "valid roadmap-free objective" case — useful for objectives that track progress via description or comments rather than structured roadmap tables.
+
 ## Related Documentation
 
 - [Roadmap Parser](roadmap-parser.md) — Parser usage, status inference, and command reference

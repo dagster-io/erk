@@ -94,6 +94,20 @@ This is a shorthand for `--ref $(git branch --show-current)`. It reads the curre
 
 In `_dispatch_workflow_impl()`, if `ref` is provided it's used directly, bypassing the REST API call. When `None`, the gateway calls `_get_default_branch()` to fetch and cache the default branch.
 
+## Two-Stage Plan Auto-Detection
+
+When `erk pr dispatch` is called without explicit plan numbers, it detects the plan via two-stage fallback:
+
+<!-- Source: src/erk/cli/commands/pr/dispatch_cmd.py, _detect_plan_number_from_context -->
+
+See `_detect_plan_number_from_context()` in `src/erk/cli/commands/pr/dispatch_cmd.py` for the implementation.
+
+**Stage 1**: Check local `.erk/impl-context/<branch>/ref.json` (no network). Fast path — works when a plan has been set up locally.
+
+**Stage 2**: Call `resolve_plan_id_for_branch()` on the plan backend (GitHub API). Matches the branch name against open plan PRs. Used when no local impl-context exists (e.g., dispatching from a raw branch).
+
+This two-stage pattern matches the `implement` and `land` commands for consistency.
+
 ## Related Documentation
 
 - [Remote Workflow Template](remote-workflow-template.md) - How dispatched workflows execute

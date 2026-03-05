@@ -37,10 +37,20 @@ See [Shell Activation Pattern](../cli/shell-activation-pattern.md) for the full 
 
 ## Format Functions
 
-| Function                         | Context    | Output format |
-| -------------------------------- | ---------- | ------------- |
-| `format_plan_next_steps_plain()` | CLI output | Plain text    |
-| `format_next_steps_markdown()`   | PR body    | Markdown      |
+| Function                         | Context                         | Output format |
+| -------------------------------- | ------------------------------- | ------------- |
+| `format_plan_next_steps_plain()` | CLI output, exit-plan-mode-hook | Plain text    |
+| `format_next_steps_markdown()`   | PR body                         | Markdown      |
+
+`format_plan_next_steps_plain()` is called in `exit_plan_mode_hook.py` when handling the plan-saved marker (Step 2 "what next?" output shown after saving a plan).
+
+## `PlanNumberEvent`
+
+<!-- Source: packages/erk-shared/src/erk_shared/core/prompt_executor.py, PlanNumberEvent -->
+
+`PlanNumberEvent` is a typed event emitted by the prompt executor when Claude's output contains a plan number. See `PlanNumberEvent` in `packages/erk-shared/src/erk_shared/core/prompt_executor.py` for the frozen dataclass definition.
+
+`PlanNumberEvent.number` is a proper `int` (no string conversion needed). Contrast with `PrNumberEvent` which carries the PR number for created/updated PRs — both are in `erk_shared.core.prompt_executor` and are part of the `ExecutorEvent` union.
 
 ## Slash Command Constants
 
