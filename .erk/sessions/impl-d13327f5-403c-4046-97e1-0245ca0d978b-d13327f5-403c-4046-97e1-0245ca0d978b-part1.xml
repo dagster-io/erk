@@ -1,0 +1,1353 @@
+<session>
+  <meta branch="plnd/O8762-add-frontmatter-life-03-05-0831" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8766&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8766` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll implement plan #8766. Let me start by setting up the implementation environment.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28367" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28367, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01BvnhaZdiZsXbCDrs72kr4B">
+    <param name="command">erk exec setup-impl --issue 8766</param>
+    <param name="description">Set up implementation for plan #8766</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28367" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28367, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BvnhaZdiZsXbCDrs72kr4B">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--O8762-add-frontmatter-life-03-05-0831", "plan_number": 8766, "plan_url": "https://github.com/dagster-io/erk/pull/8766", "branch": "plnd/O8762-add-frontmatter-life-03-05-0831", "plan_title": "[erk-plan] Plan: Add `lifecycle` field to learned doc frontmatter schema", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8766, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/O8762-add-frontmatter-life-03-05-0831', syncing with remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="28367" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01LQPSCojG3kNZx1tyXesG8n">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--O8762-add-frontmatter-life-03-05-0831/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="28367" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LQPSCojG3kNZx1tyXesG8n">
+     1→# Plan: Add `lifecycle` field to learned doc frontmatter schema
+     2→
+     3→**Part of Objective #8762, Node 1.1**
+     4→
+     5→## Context
+     6→
+     7→Erk's learned docs currently have no lifecycle tracking. A doc created 6 months ago looks identical to one created yesterday. To support the knowledge promotion pipeline (learned docs → skills), we need frontmatter metadata that tracks where a doc is in its lifecycle: raw (fresh from session extraction), staged (reviewed, accurate), or promoted (absorbed into a skill).
+     8→
+     9→This is the foundation node — Phase 2 (the promotion command and pipeline integration) depends on this metadata existing.
+    10→
+    11→## Changes
+    12→
+    13→### 1. Add `Lifecycle` type and fields to `AgentDocFrontmatter`
+    14→
+    15→**File:** `src/erk/agent_docs/models.py`
+    16→
+    17→- Add `Lifecycle = Literal["raw", "staged", "promoted"]`
+    18→- Add two optional fields to `AgentDocFrontmatter`:
+    19→  - `lifecycle: Lifecycle | None` — defaults to None (treated as "raw" by consumers)
+    20→  - `promoted_to: str | None` — skill name, only valid when lifecycle is "promoted"
+    21→
+    22→### 2. Add validation for the new fields
+    23→
+    24→**File:** `src/erk/agent_docs/operations.py` (in `validate_agent_doc_frontmatter`)
+    25→
+    26→- Validate `lifecycle`: if present, must be one of "raw", "staged", "promoted"
+    27→- Validate `promoted_to`: if present, must be a non-empty string
+    28→- Cross-validate: if `lifecycle` is "promoted", `promoted_to` must be present
+    29→- Cross-validate: if `promoted_to` is present, `lifecycle` must be "promoted"
+    30→
+
+... [61 lines omitted] ...
+
+    46→- `test_lifecycle_rejects_invalid_value` — lifecycle: "unknown" produces error
+    47→- `test_lifecycle_rejects_non_string` — lifecycle: 42 produces error
+    48→- `test_promoted_to_requires_lifecycle_promoted` — promoted_to without lifecycle: "promoted" produces error
+    49→- `test_lifecycle_promoted_requires_promoted_to` — lifecycle: "promoted" without promoted_to produces error
+    50→- `test_promoted_to_rejects_empty_string` — promoted_to: "" produces error
+  </tool_result>
+  <assistant>Good, I have the plan. Let me now create todo entries and load the necessary context. First, let me read the relevant source files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1775" cache_read_input_tokens="28732" cache_creation="{'ephemeral_5m_input_tokens': 1775, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01HjoTbjqDcaQdMdWHZudXRr">
+    <param name="todos">[{'content': 'Add Lifecycle type and fields to AgentDocFrontmatter in models.py', 'status'...[truncated 744 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1775" cache_read_input_tokens="28732" cache_creation="{'ephemeral_5m_input_tokens': 1775, 'ephemeral_1h_input_tokens': 0}" output_tokens="329" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HjoTbjqDcaQdMdWHZudXRr">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014EXB5U8N8WLdSXtjm2RWEB">
+    <param name="command">erk exec impl-signal started --session-id "d13327f5-403c-4046-97e1-0245ca0d978b" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="30507" cache_creation="{'ephemeral_5m_input_tokens': 362, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01PsqRmoVZwfW911BDuae9BJ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/agent_docs/models.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="30507" cache_creation="{'ephemeral_5m_input_tokens': 362, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01HLLjkWbd1ZPMDbnWaj39bk">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/agent_docs/operations.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="362" cache_read_input_tokens="30507" cache_creation="{'ephemeral_5m_input_tokens': 362, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014EXB5U8N8WLdSXtjm2RWEB">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8766
+}
+  </tool_result>
+  <tool_result tool="toolu_01PsqRmoVZwfW911BDuae9BJ">
+     1→"""Models for agent documentation frontmatter.
+     2→
+     3→This module defines the frontmatter schema for agent documentation files.
+     4→"""
+     5→
+     6→from dataclasses import dataclass
+     7→from typing import Literal
+     8→
+     9→# "clean" — audit found no issues, doc content matches codebase reality
+    10→# "edited" — audit found issues and the doc was updated to fix them
+    11→AuditResult = Literal["clean", "edited"]
+    12→
+    13→
+    14→@dataclass(frozen=True)
+    15→class Tripwire:
+    16→    """A single action-triggered rule.
+    17→
+    18→    Tripwires are "if you're about to do X, consult Y" rules that detect
+    19→    action patterns and route agents to documentation before mistakes happen.
+    20→
+    21→    Attributes:
+    22→        action: The action pattern that triggers (gerund phrase, e.g., "writing to /tmp/").
+    23→        warning: Brief explanation of why and what to do instead.
+    24→        pattern: Optional regex for mechanical diff matching in code review.
+    25→    """
+    26→
+    27→    action: str
+    28→    warning: str
+    29→    pattern: str | None
+    30→
+
+... [144 lines omitted] ...
+
+    59→        frontmatter: Parsed frontmatter, or None if parsing failed.
+    60→        errors: List of validation errors.
+    65→    errors: tuple[str, ...]
+    70→        return len(self.errors) == 0 and self.frontmatter is not None
+   126→        warning: Brief explanation of why and what to do instead.
+   133→    warning: str
+   160→        errors: List of validation errors.
+   166→    errors: tuple[str, ...]
+  </tool_result>
+  <tool_result tool="toolu_01HLLjkWbd1ZPMDbnWaj39bk">
+     1→"""Operations for agent documentation management.
+     2→
+     3→This module provides functionality for validating and syncing agent documentation
+     4→files with frontmatter metadata.
+     5→"""
+     6→
+     7→import re
+     8→from collections import defaultdict
+     9→from collections.abc import Callable, Mapping
+    10→from pathlib import Path
+    11→from typing import Any, cast, get_args
+    12→
+    13→import click
+    14→
+    15→from erk.agent_docs.models import (
+    16→    AgentDocFrontmatter,
+    17→    AgentDocValidationResult,
+    18→    AuditResult,
+    19→    CategoryInfo,
+    20→    CategoryTripwireStats,
+    21→    CollectedTripwire,
+    22→    DocInfo,
+    23→    SyncResult,
+    24→    Tripwire,
+    25→    TripwiresIndexValidationResult,
+    26→)
+    27→from erk_shared.core.frontmatter import parse_markdown_frontmatter
+    28→from erk_shared.gateway.agent_docs.abc import AgentDocs
+    29→
+    30→
+
+... [918 lines omitted] ...
+
+    41→        raise click.ClickException(f"Configured docs.path does not exist: {docs_path}")
+   135→        Tuple of (tripwires, errors). If validation succeeds,
+   136→        errors is empty and tripwires contains parsed Tripwire objects.
+   138→    errors: list[str] = []
+   142→        errors.append("Field 'tripwires' must be a list")
+   143→        return [], errors
+   147→            errors.append(f"Field 'tripwires[{i}]' must be an object")
+   153→        warning = item_dict.get("warning")
+   156→            errors.append(f"Field 'tripwires[{i}].action' is required")
+   158→            errors.append(f"Field 'tripwires[{i}].action' must be a string")
+   160→        if not warning:
+   161→            errors.append(f"Field 'tripwires[{i}].warning' is required")
+   162→        elif not isinstance(warning, str):
+   163→            errors.append(f"Field 'tripwires[{i}].warning' must be a string")
+   170→                errors.append(f"Field 'tripwires[{i}].pattern' must be a string")
+   172→                errors.append(f"Field 'tripwires[{i}].pattern' must not be empty")
+   176→                except re.error as e:
+   177→                    errors.append(f"Field 'tripwires[{i}].pattern' is not a valid regex: {e}")
+   182→        if isinstance(action, str) and action and isinstance(warning, str) and warning:
+   183→            tripwires.append(Tripwire(action=action, warning=warning, pattern=pattern))
+   185→    return tripwires, errors
+   197→        Tuple of (frontmatter, errors). If validation succeeds,
+   198→        errors is empty. If validation fails, frontmatter is None.
+   200→    errors: list[str] = []
+   205→        errors.append("Missing required field: title")
+   207→        errors.append("Field 'title' must be a string")
+   212→        errors.append("Missing required field: read_when")
+   214→        errors.append("Field 'read_when' must be a list")
+   216→        errors.append("Field 'read_when' must not be empty")
+   220→                errors.append(f"Field 'read_when[{i}]' must be a string")
+   226→        tripwires, tripwire_errors = _validate_tripwires(tripwires_data)
+   227→        errors.extend(tripwire_errors)
+   234→            errors.append("Field 'last_audited' must be a string")
+   236→            errors.append(
+   248→            errors.append("Field 'audit_result' must be a string")
+   250→            errors.append(
+   256→    if errors:
+   257→        return None, errors
+   279→        Validation result with any errors found.
+   282→    if result.error is not None:
+   286→            errors=(result.error,),
+   289→    # result.error is None means result.metadata is not None
+   291→    frontmatter, validation_errors = validate_agent_doc_frontmatter(result.metadata)
+   295→        errors=tuple(validation_errors),
+   359→                    errors=("File does not exist",),
+   397→                    warning=tripwire.warning,
+   492→            f"{tripwire.warning}"
+   899→        Validation result with any errors found.
+   906→            errors=("tripwires-index.md does not exist. Run 'erk docs sync' to generate it.",),
+   930→    errors: list[str] = []
+   932→        errors.append(
+   938→        is_valid=len(errors) == 0,
+   939→        errors=tuple(errors),
+  </tool_result>
+  <assistant>Now let me also look at the existing test files to understand patterns:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="14324" cache_read_input_tokens="30869" cache_creation="{'ephemeral_5m_input_tokens': 14324, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_016mED2jntLD9RsFjC84jEnR">
+    <param name="pattern">tests/unit/agent_docs/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14324" cache_read_input_tokens="30869" cache_creation="{'ephemeral_5m_input_tokens': 14324, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016mED2jntLD9RsFjC84jEnR">
+/home/runner/work/erk/erk/tests/unit/agent_docs/__init__.py
+/home/runner/work/erk/erk/tests/unit/agent_docs/test_validate_tripwires.py
+/home/runner/work/erk/erk/tests/unit/agent_docs/test_operations.py
+/home/runner/work/erk/erk/tests/unit/agent_docs/test_validate_frontmatter.py
+/home/runner/work/erk/erk/tests/unit/agent_docs/test_generate_tripwires_doc.py
+/home/runner/work/erk/erk/tests/unit/agent_docs/test_resolve_docs_project_root.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Tj7EzcteBQsh3PG1Td944w">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/agent_docs/test_validate_frontmatter.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="265" cache_read_input_tokens="45193" cache_creation="{'ephemeral_5m_input_tokens': 265, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NoDXH864FB5dfqEjqVStWw">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/agent_docs/test_operations.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="265" cache_read_input_tokens="45193" cache_creation="{'ephemeral_5m_input_tokens': 265, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Tj7EzcteBQsh3PG1Td944w">
+     1→"""Tests for validate_agent_doc_frontmatter."""
+     2→
+     3→from erk.agent_docs.operations import validate_agent_doc_frontmatter
+     4→
+     5→
+     6→def test_valid_frontmatter_without_audit_fields() -&gt; None:
+     7→    data: dict[str, object] = {
+     8→        "title": "My Doc",
+     9→        "read_when": ["editing code"],
+    10→    }
+    11→    result, errors = validate_agent_doc_frontmatter(data)
+    12→
+    13→    assert result is not None
+    14→    assert errors == []
+    15→    assert result.last_audited is None
+    16→    assert result.audit_result is None
+    17→
+    18→
+    19→def test_valid_frontmatter_with_audit_fields() -&gt; None:
+    20→    data: dict[str, object] = {
+    21→        "title": "My Doc",
+    22→        "read_when": ["editing code"],
+    23→        "last_audited": "2026-02-01 20:34 PT",
+    24→        "audit_result": "clean",
+    25→    }
+    26→    result, errors = validate_agent_doc_frontmatter(data)
+    27→
+    28→    assert result is not None
+    29→    assert errors == []
+    30→    assert result.last_audited == "2026-02-01 20:34 PT"
+
+... [126 lines omitted] ...
+
+    40→    result, errors = validate_agent_doc_frontmatter(data)
+    43→    assert errors == []
+    53→    result, errors = validate_agent_doc_frontmatter(data)
+    56→    assert len(errors) == 1
+    57→    assert "must be 'clean' or 'edited'" in errors[0]
+    58→    assert "'pending'" in errors[0]
+    67→    result, errors = validate_agent_doc_frontmatter(data)
+    70→    assert len(errors) == 1
+    71→    assert "Field 'audit_result' must be a string" in errors[0]
+    80→    result, errors = validate_agent_doc_frontmatter(data)
+    83→    assert len(errors) == 1
+    84→    assert "Field 'last_audited' must be a string" in errors[0]
+    93→    result, errors = validate_agent_doc_frontmatter(data)
+    96→    assert len(errors) == 1
+    97→    assert "must match format 'YYYY-MM-DD HH:MM PT'" in errors[0]
+    98→    assert "'2026-02-08'" in errors[0]
+   107→    result, errors = validate_agent_doc_frontmatter(data)
+   110→    assert errors == []
+   120→    result, errors = validate_agent_doc_frontmatter(data)
+   123→    assert len(errors) == 1
+   124→    assert "must match format 'YYYY-MM-DD HH:MM PT'" in errors[0]
+   133→    result, errors = validate_agent_doc_frontmatter(data)
+   136→    assert len(errors) == 1
+   137→    assert "must match format 'YYYY-MM-DD HH:MM PT'" in errors[0]
+   140→def test_multiple_audit_errors_reported() -&gt; None:
+   147→    result, errors = validate_agent_doc_frontmatter(data)
+   150→    assert len(errors) == 2
+  </tool_result>
+  <tool_result tool="toolu_01NoDXH864FB5dfqEjqVStWw">
+     1→"""Layer 4 tests for agent_docs operations using FakeAgentDocs.
+     2→
+     3→Tests business logic functions (discover, validate, collect_tripwires, sync)
+     4→against in-memory fakes for fast, deterministic verification.
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→
+     9→from erk.agent_docs.operations import (
+    10→    collect_tripwires,
+    11→    discover_agent_docs,
+    12→    sync_agent_docs,
+    13→    validate_agent_docs,
+    14→    validate_tripwires_index,
+    15→)
+    16→from erk_shared.gateway.agent_docs.fake import FakeAgentDocs
+    17→
+    18→PROJECT_ROOT = Path("/fake/repo")
+    19→
+    20→VALID_DOC = """\
+    21→---
+    22→title: Test Document
+    23→read_when:
+    24→  - editing test code
+    25→---
+    26→
+    27→# Test Document
+    28→
+    29→Some content.
+    30→"""
+
+... [285 lines omitted] ...
+
+    39→    warning: Follow the 5-place pattern.
+    41→    warning: Use run_subprocess_with_context instead.
+   120→def test_validate_valid_doc_has_no_errors() -&gt; None:
+   126→    assert results[0].errors == ()
+   129→def test_validate_invalid_doc_has_errors() -&gt; None:
+   135→    assert len(results[0].errors) &gt; 0
+   139→    """If discover finds a file but read_file returns None, report error."""
+   165→    assert tripwires[0].warning == "Follow the 5-place pattern."
+   277→    assert "does not exist" in result.errors[0]
+  </tool_result>
+  <assistant>I have good context now. Let me also check the FakeAgentDocs to understand the fake pattern:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6666" cache_read_input_tokens="45458" cache_creation="{'ephemeral_5m_input_tokens': 6666, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_017dQsZLShYvsoVaxfPVjP5d">
+    <param name="description">Find FakeAgentDocs implementation</param>
+    <param name="prompt">Find and read the FakeAgentDocs class implementation. It's imported from `erk_shared.gateway.agent_docs.fake`. Search in the codebase and return the full file content.</param>
+    <param name="subagent_type">Explore</param>
+    <param name="model">haiku</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6666" cache_read_input_tokens="45458" cache_creation="{'ephemeral_5m_input_tokens': 6666, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017dQsZLShYvsoVaxfPVjP5d">
+Perfect! Here is the complete file content for the **FakeAgentDocs** class:
+
+## File Path
+`/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_docs/fake.py`
+
+## Full File Content
+
+```python
+"""Fake AgentDocs implementation for testing.
+
+FakeAgentDocs is an in-memory implementation backed by a dict[str, str]
+mapping relative paths to content. Enables fast and deterministic tests.
+"""
+
+from pathlib import Path
+
+from erk_shared.gateway.agent_docs.abc import AgentDocs
+
+
+class FakeAgentDocs(AgentDocs):
+    """In-memory fake implementation backed by dict.
+
+    This class has NO public setup methods. All state is provided via constructor
+    or captured during execution.
+    """
+
+    def __init__(
+        self,
+        *,
+        files: dict[str, str],
+
+... [94 lines omitted] ...
+  </tool_result>
+  <assistant>I have all the context I need. Let me start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1259" cache_read_input_tokens="52124" cache_creation="{'ephemeral_5m_input_tokens': 1259, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01YXpBKR9xfFxMV6YFBX1Rhg">
+    <param name="todos">[{'content': 'Add Lifecycle type and fields to AgentDocFrontmatter in models.py', 'status'...[truncated 748 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1259" cache_read_input_tokens="52124" cache_creation="{'ephemeral_5m_input_tokens': 1259, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YXpBKR9xfFxMV6YFBX1Rhg">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 1: Add Lifecycle type and fields to models.py</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="53383" cache_creation="{'ephemeral_5m_input_tokens': 348, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_018BFXKzwNkHHam7zoHfdEYr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/agent_docs/models.py</param>
+    <param name="old_string"># "clean" — audit found no issues, doc content matches codebase reality
+# "edited" — audit found issues and the doc was updated to fix them
+AuditResult = Literal["clean", "edited"]</param>
+    <param name="new_string"># "clean" — audit found no issues, doc content matches codebase reality
+# "edited" — audit...[truncated 193 chars]...orbed into a skill (requires promoted_to)
+Lifecycle = Literal["raw", "staged", "promoted"]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="348" cache_read_input_tokens="53383" cache_creation="{'ephemeral_5m_input_tokens': 348, 'ephemeral_1h_input_tokens': 0}" output_tokens="280" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018BFXKzwNkHHam7zoHfdEYr">
+The file /home/runner/work/erk/erk/src/erk/agent_docs/models.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011q4CfRskz9iQ3SJUTiB6xf">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/agent_docs/models.py</param>
+    <param name="old_string">    title: str
+    read_when: list[str]
+    tripwires: list[Tripwire]
+    last_audited: str | None
+    audit_result: AuditResult | None</param>
+    <param name="new_string">    title: str
+    read_when: list[str]
+    tripwires: list[Tripwire]
+    last_audited: str | None
+    audit_result: AuditResult | None
+    lifecycle: Lifecycle | None
+    promoted_to: str | None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="53731" cache_creation="{'ephemeral_5m_input_tokens': 323, 'ephemeral_1h_input_tokens': 0}" output_tokens="228" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011q4CfRskz9iQ3SJUTiB6xf">
+The file /home/runner/work/erk/erk/src/erk/agent_docs/models.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_015BAxVTut1cMPxFXMwo3bET">
+    <param name="todos">[{'content': 'Add Lifecycle type and fields to AgentDocFrontmatter in models.py', 'status'...[truncated 750 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="271" cache_read_input_tokens="54054" cache_creation="{'ephemeral_5m_input_tokens': 271, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015BAxVTut1cMPxFXMwo3bET">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 2: Add validation for lifecycle/promoted_to in operations.py
+
+I need to update the import to include `Lifecycle`, add validation logic, and update the constructor call.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="54325" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01KYSRdPtCgwk34ipFhA5mQG">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/agent_docs/operations.py</param>
+    <param name="old_string">from erk.agent_docs.models import (
+    AgentDocFrontmatter,
+    AgentDocValidationResult,...[truncated 56 chars]...Tripwire,
+    DocInfo,
+    SyncResult,
+    Tripwire,
+    TripwiresIndexValidationResult,
+)</param>
+    <param name="new_string">from erk.agent_docs.models import (
+    AgentDocFrontmatter,
+    AgentDocValidationResult,...[truncated 71 chars]...ocInfo,
+    Lifecycle,
+    SyncResult,
+    Tripwire,
+    TripwiresIndexValidationResult,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="54325" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KYSRdPtCgwk34ipFhA5mQG">
+The file /home/runner/work/erk/erk/src/erk/agent_docs/operations.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the lifecycle/promoted_to validation after the audit_result validation block:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="382" cache_read_input_tokens="54659" cache_creation="{'ephemeral_5m_input_tokens': 382, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01NXbCzEve9bTwsNXp2t8b67">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/agent_docs/operations.py</param>
+    <param name="old_string">    # Check audit_result (optional)
+    audit_result: AuditResult | None = None
+    audit_...[truncated 375 chars]...     else:
+            audit_result = cast(AuditResult, audit_result_data)
+
+    if errors:</param>
+    <param name="new_string">    # Check audit_result (optional)
+    audit_result: AuditResult | None = None
+    audit_...[truncated 1848 chars]...s.append("Field 'promoted_to' is only valid when lifecycle is 'promoted'")
+
+    if errors:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="382" cache_read_input_tokens="54659" cache_creation="{'ephemeral_5m_input_tokens': 382, 'ephemeral_1h_input_tokens': 0}" output_tokens="878" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NXbCzEve9bTwsNXp2t8b67">
+The file /home/runner/work/erk/erk/src/erk/agent_docs/operations.py has been updated successfully.
+  </tool_result>
+  <assistant>Wait, that cross-validation logic is overly complex. Let me simplify it. The condition should be: if lifecycle is "promoted" and promoted_to wasn't provided (or had errors making it None), we need to report an error. But we need to distinguish between "promoted_to wasn't provided at all" vs "promoted_to was provided but had a validation error".
+
+Let me rethink this:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="921" cache_read_input_tokens="55041" cache_creation="{'ephemeral_5m_input_tokens': 921, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01DJzimmuDpCxBupiQvvtp7n">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/agent_docs/operations.py</param>
+    <param name="old_string">    # Cross-validate lifecycle and promoted_to
+    if lifecycle == "promoted" and promoted...[truncated 244 chars]...":
+        errors.append("Field 'promoted_to' is only valid when lifecycle is 'promoted'")</param>
+    <param name="new_string">    # Cross-validate lifecycle and promoted_to
+    if lifecycle == "promoted" and promoted...[truncated 146 chars]...":
+        errors.append("Field 'promoted_to' is only valid when lifecycle is 'promoted'")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="921" cache_read_input_tokens="55041" cache_creation="{'ephemeral_5m_input_tokens': 921, 'ephemeral_1h_input_tokens': 0}" output_tokens="415" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DJzimmuDpCxBupiQvvtp7n">
+The file /home/runner/work/erk/erk/src/erk/agent_docs/operations.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `AgentDocFrontmatter` constructor call to include the new fields:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="681" cache_read_input_tokens="55962" cache_creation="{'ephemeral_5m_input_tokens': 681, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Vi8cihwtDT2KrJBZf5wn8a">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/agent_docs/operations.py</param>
+    <param name="old_string">    return AgentDocFrontmatter(
+        title=title,
+        read_when=cast(list[str], rea...[truncated 7 chars]...tripwires,
+        last_audited=last_audited,
+        audit_result=audit_result,
+    ), []</param>
+    <param name="new_string">    return AgentDocFrontmatter(
+        title=title,
+        read_when=cast(list[str], rea...[truncated 69 chars]...sult=audit_result,
+        lifecycle=lifecycle,
+        promoted_to=promoted_to,
+    ), []</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="681" cache_read_input_tokens="55962" cache_creation="{'ephemeral_5m_input_tokens': 681, 'ephemeral_1h_input_tokens': 0}" output_tokens="286" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Vi8cihwtDT2KrJBZf5wn8a">
+The file /home/runner/work/erk/erk/src/erk/agent_docs/operations.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01GzvDNBoFDuMN9fkrCPYmLG">
+    <param name="todos">[{'content': 'Add Lifecycle type and fields to AgentDocFrontmatter in models.py', 'status'...[truncated 752 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="329" cache_read_input_tokens="56643" cache_creation="{'ephemeral_5m_input_tokens': 329, 'ephemeral_1h_input_tokens': 0}" output_tokens="292" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GzvDNBoFDuMN9fkrCPYmLG">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 3: Filter promoted docs from index generation in collect_valid_docs
+
+The plan says to skip docs with `lifecycle: promoted` when building category/uncategorized doc lists, but still collect their tripwires.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="56972" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_0111MiNghXSdhnKLheRqcTXH">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/agent_docs/operations.py</param>
+    <param name="old_string">        result = validate_agent_doc_content(rel_path, content)
+        if not result.is_va...[truncated 440 chars]...gories[category].append(doc_info)
+        else:
+            uncategorized.append(doc_info)</param>
+    <param name="new_string">        result = validate_agent_doc_content(rel_path, content)
+        if not result.is_va...[truncated 591 chars]...gories[category].append(doc_info)
+        else:
+            uncategorized.append(doc_info)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="56972" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0111MiNghXSdhnKLheRqcTXH">
+The file /home/runner/work/erk/erk/src/erk/agent_docs/operations.py has been updated successfully.
+  </tool_result>
+  <assistant>Note that `collect_tripwires` is a separate function that doesn't go through `collect_valid_docs`, so tripwires from promoted docs will still be collected. This matches the plan's requirement.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="580" cache_read_input_tokens="57306" cache_creation="{'ephemeral_5m_input_tokens': 580, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01X9PM9hR8Rj8rP5s8vz8qwB">
+    <param name="todos">[{'content': 'Add Lifecycle type and fields to AgentDocFrontmatter in models.py', 'status'...[truncated 754 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="580" cache_read_input_tokens="57306" cache_creation="{'ephemeral_5m_input_tokens': 580, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01X9PM9hR8Rj8rP5s8vz8qwB">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 4: Add frontmatter validation tests</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="379" cache_read_input_tokens="57886" cache_creation="{'ephemeral_5m_input_tokens': 379, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0163hejELJ4aepQLCtPrVoer">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/agent_docs/test_validate_frontmatter.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="379" cache_read_input_tokens="57886" cache_creation="{'ephemeral_5m_input_tokens': 379, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0163hejELJ4aepQLCtPrVoer">
+     1→"""Tests for validate_agent_doc_frontmatter."""
+     2→
+     3→from erk.agent_docs.operations import validate_agent_doc_frontmatter
+     4→
+     5→
+     6→def test_valid_frontmatter_without_audit_fields() -&gt; None:
+     7→    data: dict[str, object] = {
+     8→        "title": "My Doc",
+     9→        "read_when": ["editing code"],
+    10→    }
+    11→    result, errors = validate_agent_doc_frontmatter(data)
+    12→
+    13→    assert result is not None
+    14→    assert errors == []
+    15→    assert result.last_audited is None
+    16→    assert result.audit_result is None
+    17→
+    18→
+    19→def test_valid_frontmatter_with_audit_fields() -&gt; None:
+    20→    data: dict[str, object] = {
+    21→        "title": "My Doc",
+    22→        "read_when": ["editing code"],
+    23→        "last_audited": "2026-02-01 20:34 PT",
+    24→        "audit_result": "clean",
+    25→    }
+    26→    result, errors = validate_agent_doc_frontmatter(data)
+    27→
+    28→    assert result is not None
+    29→    assert errors == []
+    30→    assert result.last_audited == "2026-02-01 20:34 PT"
+
+... [126 lines omitted] ...
+
+    40→    result, errors = validate_agent_doc_frontmatter(data)
+    43→    assert errors == []
+    53→    result, errors = validate_agent_doc_frontmatter(data)
+    56→    assert len(errors) == 1
+    57→    assert "must be 'clean' or 'edited'" in errors[0]
+    58→    assert "'pending'" in errors[0]
+    67→    result, errors = validate_agent_doc_frontmatter(data)
+    70→    assert len(errors) == 1
+    71→    assert "Field 'audit_result' must be a string" in errors[0]
+    80→    result, errors = validate_agent_doc_frontmatter(data)
+    83→    assert len(errors) == 1
+    84→    assert "Field 'last_audited' must be a string" in errors[0]
+    93→    result, errors = validate_agent_doc_frontmatter(data)
+    96→    assert len(errors) == 1
+    97→    assert "must match format 'YYYY-MM-DD HH:MM PT'" in errors[0]
+    98→    assert "'2026-02-08'" in errors[0]
+   107→    result, errors = validate_agent_doc_frontmatter(data)
+   110→    assert errors == []
+   120→    result, errors = validate_agent_doc_frontmatter(data)
+   123→    assert len(errors) == 1
+   124→    assert "must match format 'YYYY-MM-DD HH:MM PT'" in errors[0]
+   133→    result, errors = validate_agent_doc_frontmatter(data)
+   136→    assert len(errors) == 1
+   137→    assert "must match format 'YYYY-MM-DD HH:MM PT'" in errors[0]
+   140→def test_multiple_audit_errors_reported() -&gt; None:
+   147→    result, errors = validate_agent_doc_frontmatter(data)
+   150→    assert len(errors) == 2
+  </tool_result>
+  <assistant>I also need to update the existing test that checks fields default to None, to also verify lifecycle and promoted_to:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2099" cache_read_input_tokens="58265" cache_creation="{'ephemeral_5m_input_tokens': 2099, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01SJBKMYxYPpKp7z8fUjPFas">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/agent_docs/test_validate_frontmatter.py</param>
+    <param name="old_string">    assert result is not None
+    assert errors == []
+    assert result.last_audited is None
+    assert result.audit_result is None
+
+
+def test_valid_frontmatter_with_audit_fields() -&gt; None:</param>
+    <param name="new_string">    assert result is not None
+    assert errors == []
+    assert result.last_audited is No...[truncated 63 chars]...ssert result.promoted_to is None
+
+
+def test_valid_frontmatter_with_audit_fields() -&gt; None:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2099" cache_read_input_tokens="58265" cache_creation="{'ephemeral_5m_input_tokens': 2099, 'ephemeral_1h_input_tokens': 0}" output_tokens="263" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SJBKMYxYPpKp7z8fUjPFas">
+The file /home/runner/work/erk/erk/tests/unit/agent_docs/test_validate_frontmatter.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the lifecycle-specific tests at the end of the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="60364" cache_creation="{'ephemeral_5m_input_tokens': 311, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01HxXAQADjUaWdtSruF7ant4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/agent_docs/test_validate_frontmatter.py</param>
+    <param name="old_string">def test_multiple_audit_errors_reported() -&gt; None:
+    data: dict[str, object] = {
+       ...[truncated 145 chars]...alidate_agent_doc_frontmatter(data)
+
+    assert result is None
+    assert len(errors) == 2</param>
+    <param name="new_string">def test_multiple_audit_errors_reported() -&gt; None:
+    data: dict[str, object] = {
+       ...[truncated 3429 chars]...ert errors == []
+    assert result.lifecycle is None
+    assert result.promoted_to is None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="60364" cache_creation="{'ephemeral_5m_input_tokens': 311, 'ephemeral_1h_input_tokens': 0}" output_tokens="1333" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HxXAQADjUaWdtSruF7ant4">
+The file /home/runner/work/erk/erk/tests/unit/agent_docs/test_validate_frontmatter.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01HgmfVNJmAj7aeVisNQ6qdV">
+    <param name="todos">[{'content': 'Add Lifecycle type and fields to AgentDocFrontmatter in models.py', 'status'...[truncated 756 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1604" cache_read_input_tokens="60675" cache_creation="{'ephemeral_5m_input_tokens': 1604, 'ephemeral_1h_input_tokens': 0}" output_tokens="292" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HgmfVNJmAj7aeVisNQ6qdV">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 5: Add promoted doc filtering tests
+
+I need to add tests verifying that promoted docs are excluded from the index but their tripwires are still collected. I'll add these to the existing `test_operations.py` file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="62279" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01ANi9SGSx2bH4Kka2kBfnY4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/agent_docs/test_operations.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="62279" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ANi9SGSx2bH4Kka2kBfnY4">
+     1→"""Layer 4 tests for agent_docs operations using FakeAgentDocs.
+     2→
+     3→Tests business logic functions (discover, validate, collect_tripwires, sync)
+     4→against in-memory fakes for fast, deterministic verification.
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→
+     9→from erk.agent_docs.operations import (
+    10→    collect_tripwires,
+    11→    discover_agent_docs,
+    12→    sync_agent_docs,
+    13→    validate_agent_docs,
+    14→    validate_tripwires_index,
+    15→)
+    16→from erk_shared.gateway.agent_docs.fake import FakeAgentDocs
+    17→
+    18→PROJECT_ROOT = Path("/fake/repo")
+    19→
+    20→VALID_DOC = """\
+    21→---
+    22→title: Test Document
+    23→read_when:
+    24→  - editing test code
+    25→---
+    26→
+    27→# Test Document
+    28→
+    29→Some content.
+    30→"""
+
+... [285 lines omitted] ...
+
+    39→    warning: Follow the 5-place pattern.
+    41→    warning: Use run_subprocess_with_context instead.
+   120→def test_validate_valid_doc_has_no_errors() -&gt; None:
+   126→    assert results[0].errors == ()
+   129→def test_validate_invalid_doc_has_errors() -&gt; None:
+   135→    assert len(results[0].errors) &gt; 0
+   139→    """If discover finds a file but read_file returns None, report error."""
+   165→    assert tripwires[0].warning == "Follow the 5-place pattern."
+   277→    assert "does not exist" in result.errors[0]
+  </tool_result>
+  <assistant>I need to add a promoted doc fixture and the two filtering tests. Let me add them:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4395" cache_read_input_tokens="62613" cache_creation="{'ephemeral_5m_input_tokens': 4395, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_018eL1CgYhEnLoCHn5hPjuV3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/agent_docs/test_operations.py</param>
+    <param name="old_string">from erk.agent_docs.operations import (
+    collect_tripwires,
+    discover_agent_docs,
+  ...[truncated 26 chars]...  validate_tripwires_index,
+)
+from erk_shared.gateway.agent_docs.fake import FakeAgentDocs</param>
+    <param name="new_string">from erk.agent_docs.operations import (
+    collect_tripwires,
+    collect_valid_docs,
+   ...[truncated 50 chars]...  validate_tripwires_index,
+)
+from erk_shared.gateway.agent_docs.fake import FakeAgentDocs</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4395" cache_read_input_tokens="62613" cache_creation="{'ephemeral_5m_input_tokens': 4395, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018eL1CgYhEnLoCHn5hPjuV3">
+The file /home/runner/work/erk/erk/tests/unit/agent_docs/test_operations.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the promoted doc fixtures and tests at the end of the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="338" cache_read_input_tokens="67008" cache_creation="{'ephemeral_5m_input_tokens': 338, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_018Xb5kVZgg9EJbmtH9eVQ3K">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/agent_docs/test_operations.py</param>
+    <param name="old_string">def test_validate_tripwires_index_missing_category() -&gt; None:
+    """Index is invalid when...[truncated 328 chars]...rt not result.is_valid
+    assert "architecture/tripwires.md" in result.missing_from_index</param>
+    <param name="new_string">def test_validate_tripwires_index_missing_category() -&gt; None:
+    """Index is invalid when...[truncated 1805 chars]...== "creating a new gateway"
+    assert tripwires[0].doc_path == "architecture/promoted.md"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="338" cache_read_input_tokens="67008" cache_creation="{'ephemeral_5m_input_tokens': 338, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018Xb5kVZgg9EJbmtH9eVQ3K">
+The file /home/runner/work/erk/erk/tests/unit/agent_docs/test_operations.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01Ubgmvwm8YYKmDNfCiGfh7p">
+    <param name="todos">[{'content': 'Add Lifecycle type and fields to AgentDocFrontmatter in models.py', 'status'...[truncated 758 chars]...ng issues'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1182" cache_read_input_tokens="67346" cache_creation="{'ephemeral_5m_input_tokens': 1182, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ubgmvwm8YYKmDNfCiGfh7p">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Phase 6: Run CI and fix any issues
+
+Let me first check if there's a post-plan-implement CI hook:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="68528" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_0111PA5CjRneCG2N8tZYJGBG">
+    <param name="pattern">.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="68528" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0111PA5CjRneCG2N8tZYJGBG">
+/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XtVvsNEjaR2sUnsxmoezZZ">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="137" cache_read_input_tokens="68862" cache_creation="{'ephemeral_5m_input_tokens': 137, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XtVvsNEjaR2sUnsxmoezZZ">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01RAyYcygJEQ1ehZdoQqch17">
+    <param name="skill">ci-iteration</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="68999" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RAyYcygJEQ1ehZdoQqch17">
+Launching skill: ci-iteration
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/ci-iteration
+
+# CI Iteration
+
+## Overview
+
+Run the specified CI target and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
+
+## Sub-Agent Policy
+
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  &lt;- MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+**FORBIDDEN**:
+
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
+- Giving sub-agents prompts like "fix issues" or "iterate until passing"
+
+**REQUIRED**:
+
+- Sub-agents run ONE command and report results
+- Parent agent decides what to fix based on reports
+
+## Core Workflow
+
+### 1. Initial Run
+
+Use the devrun agent to run the specified make target from the repository root:
+
+```
+Task tool with:
+- subagent_type: devrun
+- description: "Run [make target] from repo root"
+- prompt: "Change to repository root and execute: [make target]"
+```
+
+### 2. Parse Failures
+
+Analyze the output to identify which check(s) failed:
+
+- **Ruff lint failures**: "ruff check" errors
+- **Format failures**: "ruff format --check" or files needing reformatting
+- **Prettier failures**: Markdown files needing formatting
+- **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
+- **ty failures**: Type errors with file paths and line numbers
+- **Test failures**: pytest failures with test names and assertion errors
+
+### 3. Apply Targeted Fixes
+
+Based on failure type, apply appropriate fixes:
+
+| Failure Type | Fix Command                                 |
+| ------------ | ------------------------------------------- |
+| Ruff lint    | `make fix` via devrun                       |
+| Ruff format  | `make format` via devrun                    |
+| Prettier     | `make prettier` via devrun                  |
+| Sync-Kit     | `erk sync` directly                         |
+| MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
+| ty           | Edit files to fix type annotations          |
+| Tests        | Read and edit source/test files             |
+
+### 4. Verify and Repeat
+
+After applying fixes, run the make target again via devrun. Continue the cycle: run -&gt; identify failures -&gt; fix -&gt; verify.
+
+## Iteration Control
+
+**Safety Limits:**
+
+- **Maximum iterations**: 10 attempts
+- **Stuck detection**: If the same error appears 3 times in a row, stop
+- **Progress tracking**: Use TodoWrite to show iteration progress
+
+## Progress Reporting
+
+Use TodoWrite to track progress:
+
+```
+Iteration 1: Fixing lint errors
+Iteration 2: Fixing format errors
+Iteration 3: Fixing type errors in src/erk/cli/commands/switch.py
+Iteration 4: All checks passed
+```
+
+## When to Stop
+
+**SUCCESS**: Stop when the make target exits with code 0 (all checks passed)
+
+**STUCK**: Stop and report to user if:
+
+1. You've completed 10 iterations without success
+2. The same error persists after 3 fix attempts
+3. You encounter an error you cannot automatically fix
+
+## Reporting Formats
+
+### Success Format
+
+```markdown
+## Finalization Status: SUCCESS
+
+All CI checks passed after N iteration(s):
+
+(check) **Lint (ruff check)**: PASSED
+
+(check) **Format (ruff format --check)**: PASSED
+
+(check) **Prettier**: PASSED
+
+(check) **AGENTS.md Standard (md-check)**: PASSED
+
+(check) **ty**: PASSED
+
+(check) **Tests**: PASSED
+
+(check) **Sync-Kit (erk check)**: PASSED
+
+The code is ready for commit/PR.
+```
+
+**IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
+
+### Stuck Format
+
+```markdown
+## Finalization Status: STUCK
+
+I was unable to resolve the following issue after N attempts:
+
+**Check**: [lint/format/prettier/md-check/ty/test]
+
+**Error**:
+[Exact error message]
+
+**File**: [file path if applicable]
+
+**Attempted Fixes**:
+
+1. [What you tried first]
+2. [What you tried second]
+3. [What you tried third]
+
+**Next Steps**:
+[Suggest what needs to be done manually]
+```
+
+## Guidelines
+
+1. **Be systematic**: Fix one type of error at a time
+2. **Run full CI**: Always run the full make target, not individual checks
+3. **Use devrun agent**: Always use the Task tool with devrun agent for ALL make commands
+4. **Run from repo root**: Always ensure make commands execute from repository root
+5. **Track progress**: Use TodoWrite for every iteration
+6. **Don't guess**: Read files before making changes
+7. **Follow standards**: Adhere to AGENTS.md coding standards
+8. **Fail gracefully**: Report clearly when stuck
+9. **Be efficient**: Use targeted fixes (don't reformat everything for one lint error)
+
+## Example Flow
+
+```
+Iteration 1:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 5 lint errors, 2 files need formatting
+- Fix: Use Task tool with devrun agent to run make fix, then make format from repo root
+- Result: 3 lint errors remain
+
+Iteration 2:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 3 lint errors (imports)
+- Fix: Edit files to fix import issues
+- Result: All lint/format pass, 2 type errors
+
+Iteration 3:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 2 ty errors in switch.py:45 and switch.py:67
+- Fix: Add type annotations
+- Result: All checks pass
+
+SUCCESS
+```
+
+## Important Reminders
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>Let me run the CI checks:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1685" cache_read_input_tokens="69228" cache_creation="{'ephemeral_5m_input_tokens': 1685, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01KC9qfZnqSkjedxFYTLyuYG">
+    <param name="description">Run make fast-ci from repo root</param>
+    <param name="prompt">Change to the repository root at /home/runner/work/erk/erk and execute: make fast-ci
+
+Report the full output including any failures.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1685" cache_read_input_tokens="69228" cache_creation="{'ephemeral_5m_input_tokens': 1685, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KC9qfZnqSkjedxFYTLyuYG">
+The `make fast-ci` command failed with exit code 2. Here's the summary:
+
+**Status: FAILED**
+
+**Root cause:** Prettier formatting issues with 2 markdown files:
+- `docs/learned/integrations/github-review-decision.md`
+- `docs/learned/tui/status-indicators.md`
+
+**Full output breakdown:**
+
+**Passing checks:**
+- Lint: All checks passed
+- Format check: 1605 files already formatted
+- Markdown check: OK
+- Exec reference check: OK
+- Type checking (ty): All checks passed
+- Unit tests (erk): 5609 passed in 21.92s
+- Tests (erk-dev): 136 passed in 4.23s
+- Tests (erk-statusline): 115 passed in 0.81s
+- Tests (erk-mcp): 27 passed
+
+**Failing check:**
+- Prettier formatting: Code style issues found in 2 files
+  - `docs/learned/integrations/github-review-decision.md`
+  - `docs/learned/tui/status-indicators.md`
+
+The Prettier warning indicates these markdown files need formatting. All the actual tests and linting passed successfully, but the CI fails because of the formatting issues in the documentation files.
+agentId: a12e81f (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All tests pass. The only failures are prettier formatting on 2 pre-existing docs files unrelated to my changes. Let me fix them anyway:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="695" cache_read_input_tokens="70913" cache_creation="{'ephemeral_5m_input_tokens': 695, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_017q6jT9FU3YECyLMmjgrG9j">
+    <param name="description">Run make prettier to fix formatting</param>
+    <param name="prompt">Change to the repository root at /home/runner/work/erk/erk and execute: make prettier
+
+Report the full output.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="695" cache_read_input_tokens="70913" cache_creation="{'ephemeral_5m_input_tokens': 695, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017q6jT9FU3YECyLMmjgrG9j">
+prettier passed: All matched files use Prettier code style!
+
+All 434+ markdown files were checked and are properly formatted. The command ran successfully with no formatting issues detected.
+agentId: ad9aba4 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>Prettier auto-fixed. Let me re-run fast-ci to confirm everything is green:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="226" cache_read_input_tokens="71608" cache_creation="{'ephemeral_5m_input_tokens': 226, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_015wWYJVxwFDQjrMeCEFkjCG">
+    <param name="description">Re-run make fast-ci to verify</param>
+    <param name="prompt">Change to the repository root at /home/runner/work/erk/erk and execute: make fast-ci
+
+Report the full output including pass/fail status for each check.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="226" cache_read_input_tokens="71608" cache_creation="{'ephemeral_5m_input_tokens': 226, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015wWYJVxwFDQjrMeCEFkjCG">
+## Fast CI Results: PASSED
+
+All checks passed successfully. Here's the summary:
+
+**Lint:** All checks passed
+
+**Format Check:** 1605 files already formatted
+
+**Prettier Check:** All matched files use Prettier code style
+
+**Markdown Check:** Passed
+
+**Exec Reference Check:** .claude/skills/erk-exec/reference.md is up to date
+
+**Type Checking (ty):** All checks passed
+
+**Unit Tests (erk):** 5609 passed in 12.46s
+
+**Tests (erk-dev):** 136 passed in 4.32s
+
+**Tests (erk-statusline):** 115 passed in 0.80s
+
+**Tests (erk-mcp):** 27 passed
+
+**AGENTS.md standard:** PASSED - All CLAUDE.md and AGENTS.md files properly paired (19 files checked, 0 violations)
+
+**Total Status:** All CI checks passed with a combined test count of 5,897 passing tests across all test suites.
+agentId: a82c04c (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All 5,897 tests pass and all CI checks are green. Let me proceed to submit.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="649" cache_read_input_tokens="71834" cache_creation="{'ephemeral_5m_input_tokens': 649, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01NPCAVbZzYYZ5W7ATHiLjy8">
+    <param name="todos">[{'content': 'Add Lifecycle type and fields to AgentDocFrontmatter in models.py', 'status'...[truncated 760 chars]...ssues'}, {'content': 'Submit PR', 'status': 'in_progress', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="649" cache_read_input_tokens="71834" cache_creation="{'ephemeral_5m_input_tokens': 649, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NPCAVbZzYYZ5W7ATHiLjy8">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>### Steps 9-11: Signal ended, upload session, clean up impl context</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="358" cache_read_input_tokens="72483" cache_creation="{'ephemeral_5m_input_tokens': 358, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>

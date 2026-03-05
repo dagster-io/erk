@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "plan_id": 8766,
+  "sessions": [
+    {
+      "session_id": "d13327f5-403c-4046-97e1-0245ca0d978b",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-05T17:30:27.627856+00:00",
+      "files": [
+        "impl-d13327f5-403c-4046-97e1-0245ca0d978b-d13327f5-403c-4046-97e1-0245ca0d978b-part1.xml",
+        "impl-d13327f5-403c-4046-97e1-0245ca0d978b-d13327f5-403c-4046-97e1-0245ca0d978b-part2.xml",
+        "impl-d13327f5-403c-4046-97e1-0245ca0d978b-d13327f5-403c-4046-97e1-0245ca0d978b-part3.xml",
+        "impl-d13327f5-403c-4046-97e1-0245ca0d978b-d13327f5-403c-4046-97e1-0245ca0d978b-part4.xml",
+        "impl-d13327f5-403c-4046-97e1-0245ca0d978b-d13327f5-403c-4046-97e1-0245ca0d978b-part5.xml",
+        "impl-d13327f5-403c-4046-97e1-0245ca0d978b-d13327f5-403c-4046-97e1-0245ca0d978b-part6.xml"
+      ]
+    }
+  ]
+}
