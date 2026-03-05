@@ -92,22 +92,28 @@ def test_copy_checkout_not_available_when_worktree_branch_none() -> None:
     assert "copy_checkout" not in cmd_ids
 
 
-def test_copy_pr_checkout_available_when_pr_exists() -> None:
-    """copy_pr_checkout should be available when PR number exists."""
+def test_checkout_and_teleport_available_when_pr_exists() -> None:
+    """Checkout and teleport commands should be available when PR number exists."""
     row = make_plan_row(123, "Test", pr_number=456)
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
-    assert "copy_pr_checkout" in cmd_ids
+    assert "copy_pr_checkout_script" in cmd_ids
+    assert "copy_pr_checkout_plain" in cmd_ids
+    assert "copy_teleport" in cmd_ids
+    assert "copy_teleport_new_slot" in cmd_ids
 
 
-def test_copy_pr_checkout_not_available_when_no_pr() -> None:
-    """copy_pr_checkout should not be available when no PR number."""
+def test_checkout_and_teleport_not_available_when_no_pr() -> None:
+    """Checkout and teleport commands should not be available when no PR number."""
     row = make_plan_row(123, "Test")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     commands = get_available_commands(ctx)
     cmd_ids = [cmd.id for cmd in commands]
-    assert "copy_pr_checkout" not in cmd_ids
+    assert "copy_pr_checkout_script" not in cmd_ids
+    assert "copy_pr_checkout_plain" not in cmd_ids
+    assert "copy_teleport" not in cmd_ids
+    assert "copy_teleport_new_slot" not in cmd_ids
 
 
 def test_close_plan_always_available() -> None:
@@ -309,13 +315,37 @@ def test_display_name_copy_checkout_falls_back_to_pr() -> None:
     assert get_display_name(cmd, ctx) == "erk pr co 456"
 
 
-def test_display_name_copy_pr_checkout_shows_pr() -> None:
-    """copy_pr_checkout should show the PR number in the full command."""
+def test_display_name_copy_pr_checkout_script_shows_pr() -> None:
+    """copy_pr_checkout_script should show the PR number in the source command."""
     row = make_plan_row(5831, "Test Plan", pr_number=456)
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
-    cmd = next(c for c in get_all_commands() if c.id == "copy_pr_checkout")
-    expected = 'source "$(erk pr checkout 456 --script --sync)"'
+    cmd = next(c for c in get_all_commands() if c.id == "copy_pr_checkout_script")
+    expected = 'source "$(erk pr checkout 456 --script)"'
     assert get_display_name(cmd, ctx) == expected
+
+
+def test_display_name_copy_pr_checkout_plain_shows_pr() -> None:
+    """copy_pr_checkout_plain should show the PR number."""
+    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    cmd = next(c for c in get_all_commands() if c.id == "copy_pr_checkout_plain")
+    assert get_display_name(cmd, ctx) == "erk pr checkout 456"
+
+
+def test_display_name_copy_teleport_shows_pr() -> None:
+    """copy_teleport should show the PR number."""
+    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    cmd = next(c for c in get_all_commands() if c.id == "copy_teleport")
+    assert get_display_name(cmd, ctx) == "erk pr teleport 456"
+
+
+def test_display_name_copy_teleport_new_slot_shows_pr() -> None:
+    """copy_teleport_new_slot should show the PR number with --new-slot."""
+    row = make_plan_row(5831, "Test Plan", pr_number=456)
+    ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+    cmd = next(c for c in get_all_commands() if c.id == "copy_teleport_new_slot")
+    assert get_display_name(cmd, ctx) == "erk pr teleport 456 --new-slot"
 
 
 def test_display_name_copy_cmux_sync() -> None:
@@ -601,7 +631,10 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
         "open_pr",
         "open_run",
         "copy_checkout",
-        "copy_pr_checkout",
+        "copy_pr_checkout_script",
+        "copy_pr_checkout_plain",
+        "copy_teleport",
+        "copy_teleport_new_slot",
         "copy_cmux_sync",
         "copy_dispatch",
         "copy_replan",
@@ -807,7 +840,10 @@ def test_commands_available_in_plans_view() -> None:
         "open_pr",
         "open_run",
         "copy_checkout",
-        "copy_pr_checkout",
+        "copy_pr_checkout_script",
+        "copy_pr_checkout_plain",
+        "copy_teleport",
+        "copy_teleport_new_slot",
         "copy_dispatch",
         "copy_replan",
         "copy_land",
@@ -828,8 +864,8 @@ def test_get_copy_text_returns_display_name_for_valid_command() -> None:
     """get_copy_text returns display name for a valid, available command."""
     row = make_plan_row(123, "Test", pr_number=456)
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
-    result = get_copy_text("copy_pr_checkout", ctx)
-    expected = 'source "$(erk pr checkout 456 --script --sync)"'
+    result = get_copy_text("copy_pr_checkout_script", ctx)
+    expected = 'source "$(erk pr checkout 456 --script)"'
     assert result == expected
 
 
@@ -843,9 +879,9 @@ def test_get_copy_text_returns_none_for_unknown_command() -> None:
 
 def test_get_copy_text_returns_none_for_unavailable_command() -> None:
     """get_copy_text returns None when command is not available in context."""
-    row = make_plan_row(123, "Test")  # No pr_number, so copy_pr_checkout unavailable
+    row = make_plan_row(123, "Test")  # No pr_number, so checkout/teleport unavailable
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
-    result = get_copy_text("copy_pr_checkout", ctx)
+    result = get_copy_text("copy_pr_checkout_script", ctx)
     assert result is None
 
 

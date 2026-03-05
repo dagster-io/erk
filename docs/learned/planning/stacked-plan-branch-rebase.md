@@ -67,5 +67,5 @@ This implementation mirrors the stacked PR checkout pattern in `_checkout_pr()` 
 
 ## Related Documentation
 
-- [Planned PR Branch Sync](planned-pr-branch-sync.md) - How plan branches sync with remote
+- [Planned PR Branch Teleport](planned-pr-branch-teleport.md) - How plan branches teleport from remote
 - [Planned PR Lifecycle](planned-pr-lifecycle.md) - PR body format and stage transitions

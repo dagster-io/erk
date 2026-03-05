@@ -1,24 +1,24 @@
 ---
-title: Planned PR Branch Sync
+title: Planned PR Branch Teleport
 read_when:
   - "implementing or debugging planned-PR plan setup"
-  - "understanding branch sync during plan implementation"
+  - "understanding branch teleport during plan implementation"
   - "working with setup_impl_from_pr for planned PR plans"
   - "debugging divergence between local and remote plan branches"
 tripwires:
-  - action: "implementing planned-PR plan without syncing with remote"
-    warning: "Before implementing a planned-PR plan, always sync with remote: fetch_branch -> checkout/create_tracking -> pull_rebase"
+  - action: "implementing planned-PR plan without teleporting from remote"
+    warning: "Before implementing a planned-PR plan, always teleport from remote: fetch_branch -> checkout/create_tracking -> pull_rebase"
   - action: "detecting plan backend by checking backend type directly"
     warning: "Use github.get_pr() + pr_result.head_ref_name to discover the plan branch. There is only one backend (planned-PR)."
   - action: "creating a new branch for a planned-PR plan"
     warning: "Planned PR plans already have a branch created during plan-save. Reuse the existing branch, don't create a new one."
   - action: "committing to planned-PR plan branches after checkout without pulling remote"
-    warning: "Both setup_impl_from_pr.py and submit.py use the same three-step sync: fetch_branch -> checkout/create_tracking -> pull_rebase. Skipping pull_rebase causes non-fast-forward push failures."
+    warning: "Both setup_impl_from_pr.py and submit.py use the same three-step teleport: fetch_branch -> checkout/create_tracking -> pull_rebase. Skipping pull_rebase causes non-fast-forward push failures."
 ---
 
-# Planned PR Branch Sync
+# Planned PR Branch Teleport
 
-When implementing a planned-PR plan, the local branch must be synced with remote because plan-save creates the branch and pushes it, then checks out the original branch. Remote may receive additional commits before implementation runs.
+When implementing a planned-PR plan, the local branch must be teleported from remote because plan-save creates the branch and pushes it, then checks out the original branch. Remote may receive additional commits before implementation runs.
 
 ## The Problem
 
@@ -27,9 +27,9 @@ When implementing a planned-PR plan, the local branch must be synced with remote
 3. Time passes (remote CI may add commits, user may re-plan)
 4. `plan-implement` runs and needs the latest branch state
 
-## Three-Step Sync Sequence
+## Three-Step Teleport Sequence
 
-In `setup_impl_from_pr.py`, the sync follows this pattern:
+In `setup_impl_from_pr.py`, the teleport follows this pattern:
 
 ```
 fetch_branch → checkout/create_tracking → pull_rebase
@@ -63,21 +63,21 @@ The branch name is discovered via a lightweight GitHub PR query. Detection uses 
 
 <!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py -->
 
-Calls `github.get_pr(repo_root, plan_number)` and reads `pr_result.head_ref_name` to discover the plan branch name. This is a planned-PR plan (reuse the existing branch and sync with remote).
+Calls `github.get_pr(repo_root, plan_number)` and reads `pr_result.head_ref_name` to discover the plan branch name. This is a planned-PR plan (reuse the existing branch and teleport from remote).
 
 ## Idempotent Design
 
 `setup-impl-from-pr` is safe to run multiple times:
 
-- If already on the correct branch, it syncs with remote
-- If branch exists locally, it checks out and syncs
+- If already on the correct branch, it teleports from remote
+- If branch exists locally, it checks out and teleports
 - If branch only exists on remote, it creates tracking and checks out
 
 This is why `plan-implement` always calls `setup-impl-from-pr` even when `.erk/impl-context/` already exists with plan tracking.
 
 ## Pattern Consistency: Setup and Submit
 
-Both `setup_impl_from_pr.py` and `submit_pipeline.py` use an identical three-step sync pattern when working with draft-PR plan branches:
+Both `setup_impl_from_pr.py` and `submit_pipeline.py` use an identical three-step teleport pattern when working with draft-PR plan branches:
 
 <!-- Source: src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py, setup_impl_from_pr -->
 <!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, push_and_create_pr -->

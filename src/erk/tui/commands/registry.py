@@ -86,12 +86,28 @@ def _display_copy_checkout(ctx: CommandContext) -> str:
     return "erk br co <branch>"
 
 
-def _display_copy_pr_checkout(ctx: CommandContext) -> str:
-    """Display name for copy_pr_checkout command."""
+def _display_copy_pr_checkout_script(ctx: CommandContext) -> str:
+    """Display name for copy_pr_checkout_script command."""
     if ctx.row.pr_number:
-        pr = ctx.row.pr_number
-        return f'source "$(erk pr checkout {pr} --script --sync)"'
+        return f'source "$(erk pr checkout {ctx.row.pr_number} --script)"'
     return "checkout"
+
+
+def _display_copy_pr_checkout_plain(ctx: CommandContext) -> str:
+    """Display name for copy_pr_checkout_plain command."""
+    if ctx.row.pr_number:
+        return f"erk pr checkout {ctx.row.pr_number}"
+    return "checkout"
+
+
+def _display_copy_teleport(ctx: CommandContext) -> str:
+    """Display name for copy_teleport command."""
+    return f"erk pr teleport {ctx.row.pr_number}"
+
+
+def _display_copy_teleport_new_slot(ctx: CommandContext) -> str:
+    """Display name for copy_teleport_new_slot command."""
+    return f"erk pr teleport {ctx.row.pr_number} --new-slot"
 
 
 def _display_cmux_sync(ctx: CommandContext) -> str:
@@ -362,14 +378,44 @@ def get_all_commands() -> list[CommandDefinition]:
             get_display_name=_display_copy_checkout,
         ),
         CommandDefinition(
-            id="copy_pr_checkout",
-            name="checkout && sync",
-            description="sync",
+            id="copy_pr_checkout_script",
+            name="erk pr checkout --script",
+            description="checkout (cd)",
             category=CommandCategory.COPY,
             shortcut="e",
             launch_key=None,
             is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
-            get_display_name=_display_copy_pr_checkout,
+            get_display_name=_display_copy_pr_checkout_script,
+        ),
+        CommandDefinition(
+            id="copy_pr_checkout_plain",
+            name="erk pr checkout",
+            description="checkout",
+            category=CommandCategory.COPY,
+            shortcut=None,
+            launch_key=None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
+            get_display_name=_display_copy_pr_checkout_plain,
+        ),
+        CommandDefinition(
+            id="copy_teleport",
+            name="erk pr teleport",
+            description="teleport",
+            category=CommandCategory.COPY,
+            shortcut=None,
+            launch_key=None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
+            get_display_name=_display_copy_teleport,
+        ),
+        CommandDefinition(
+            id="copy_teleport_new_slot",
+            name="erk pr teleport --new-slot",
+            description="teleport (new slot)",
+            category=CommandCategory.COPY,
+            shortcut=None,
+            launch_key=None,
+            is_available=lambda ctx: _is_plan_view(ctx) and ctx.row.pr_number is not None,
+            get_display_name=_display_copy_teleport_new_slot,
         ),
         CommandDefinition(
             id="copy_cmux_sync",
@@ -535,7 +581,7 @@ def get_copy_text(command_id: str, ctx: CommandContext) -> str | None:
     duplication across app.py and plan_detail_screen.py.
 
     Args:
-        command_id: The command ID (e.g., "copy_pr_checkout")
+        command_id: The command ID (e.g., "copy_pr_checkout_script")
         ctx: The command context (row, view_mode, cmux_integration)
 
     Returns:

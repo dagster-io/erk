@@ -135,7 +135,7 @@ def test_generates_footer_with_checkout_command() -> None:
 
         _, updated_body = github.updated_pr_bodies[0]
         assert "New body" in updated_body
-        assert "erk pr checkout" in updated_body
+        assert "erk pr teleport" in updated_body
         # No issue closing reference (planned-PR only)
         assert "Closes #" not in updated_body
 

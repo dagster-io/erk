@@ -60,4 +60,4 @@ The dim styling signals informational output (not an error or warning).
 ## Related Documentation
 
 - [PR Submit Pipeline](../cli/pr-submit-pipeline.md) — Pipeline that uses this pattern
-- [Planned PR Branch Sync](../planning/planned-pr-branch-sync.md) — Why plan branches diverge
+- [Planned PR Branch Teleport](../planning/planned-pr-branch-teleport.md) — Why plan branches diverge

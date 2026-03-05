@@ -49,7 +49,7 @@ Quick reference for all `erk exec` subcommands.
 | `get-plan-info`                   | Retrieve plan info from the appropriate backend.                            |
 | `get-plan-metadata`               | Extract a metadata field from a plan's plan-header block.                   |
 | `get-plans-for-objective`         | Fetch erk-plans linked to an objective.                                     |
-| `get-pr-body-footer`              | Generate PR body footer with checkout command.                              |
+| `get-pr-body-footer`              | Generate PR body footer with teleport command.                              |
 | `get-pr-commits`                  | Fetch PR commits using REST API (avoids GraphQL rate limits).               |
 | `get-pr-context`                  | Output JSON with branch, PR, diff, commits, and plan context.               |
 | `get-pr-discussion-comments`      | Fetch PR discussion comments for agent context injection.                   |
@@ -504,7 +504,7 @@ Fetch erk-plans linked to an objective.
 
 ### get-pr-body-footer
 
-Generate PR body footer with checkout command.
+Generate PR body footer with teleport command.
 
 **Usage:** `erk exec get-pr-body-footer`
 
