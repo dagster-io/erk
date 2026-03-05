@@ -249,8 +249,8 @@ class TestPlanDetailScreenCopyActions:
             assert clipboard.last_copied == "erk br co feature-123"
 
     @pytest.mark.asyncio
-    async def test_copy_pr_checkout_shortcut_e(self) -> None:
-        """Pressing 'e' in detail screen copies PR checkout command."""
+    async def test_copy_pr_checkout_script_shortcut_e(self) -> None:
+        """Pressing 'e' in detail screen copies PR checkout (cd) command."""
         clipboard = FakeClipboard()
         provider = FakePlanDataProvider(
             plans=[
@@ -277,7 +277,7 @@ class TestPlanDetailScreenCopyActions:
             await pilot.press("e")
             await pilot.pause()
 
-            assert clipboard.last_copied == 'source "$(erk pr checkout 456 --script --sync)"'
+            assert clipboard.last_copied == 'source "$(erk pr checkout 456 --script)"'
 
 
 class TestPlanDetailScreenRebaseKeybinding:

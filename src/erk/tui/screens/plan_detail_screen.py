@@ -57,7 +57,7 @@ class PlanDetailScreen(ModalScreen):
         Binding("r", "open_run", "Run"),
         # Copy section
         Binding("c", "copy_checkout", "Checkout"),
-        Binding("e", "copy_pr_checkout", "PR Checkout"),
+        Binding("e", "copy_pr_checkout_script", "PR Checkout"),
         Binding("y", "copy_output_logs", "Copy Logs"),
         Binding("1", "copy_prepare", "Prepare"),
         Binding("4", "copy_prepare_activate", "Activate"),
@@ -350,12 +350,12 @@ class PlanDetailScreen(ModalScreen):
         cmd = f"erk br co {self._row.worktree_branch}"
         self._copy_and_notify(cmd)
 
-    def action_copy_pr_checkout(self) -> None:
-        """Copy PR checkout command to clipboard."""
+    def action_copy_pr_checkout_script(self) -> None:
+        """Copy PR checkout (with cd) command to clipboard."""
         ctx = CommandContext(
             row=self._row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
         )
-        text = get_copy_text("copy_pr_checkout", ctx)
+        text = get_copy_text("copy_pr_checkout_script", ctx)
         if text is not None:
             self._copy_and_notify(text)
 
@@ -664,7 +664,12 @@ class PlanDetailScreen(ModalScreen):
             executor.copy_to_clipboard(cmd)
             executor.notify(f"Copied: {cmd}", severity=None)
 
-        elif command_id == "copy_pr_checkout":
+        elif command_id in (
+            "copy_pr_checkout_script",
+            "copy_pr_checkout_plain",
+            "copy_teleport",
+            "copy_teleport_new_slot",
+        ):
             ctx = CommandContext(
                 row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
             )
@@ -958,7 +963,7 @@ class PlanDetailScreen(ModalScreen):
                     view_mode=self._view_mode,
                     cmux_integration=self._cmux_integration,
                 )
-                pr_checkout_cmd = get_copy_text("copy_pr_checkout", ctx)
+                pr_checkout_cmd = get_copy_text("copy_pr_checkout_script", ctx)
                 if pr_checkout_cmd:
                     with Container(classes="command-row"):
                         yield CopyableLabel(pr_checkout_cmd, pr_checkout_cmd)

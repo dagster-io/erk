@@ -54,7 +54,12 @@ class PaletteActionsMixin:
         elif command_id == "copy_checkout":
             self._copy_checkout_command(row)
 
-        elif command_id == "copy_pr_checkout":
+        elif command_id in (
+            "copy_pr_checkout_script",
+            "copy_pr_checkout_plain",
+            "copy_teleport",
+            "copy_teleport_new_slot",
+        ):
             ctx = CommandContext(
                 row=row, view_mode=self._view_mode, cmux_integration=self._cmux_integration
             )

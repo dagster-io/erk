@@ -99,13 +99,43 @@ class TestExecuteCommandCopyCommands:
         expected_msg = "No branch associated with this plan is checked out in a local worktree"
         assert expected_msg in executor.notifications
 
-    def test_copy_pr_checkout_copies_command(self) -> None:
-        """copy_pr_checkout copies the PR checkout command."""
+    def test_copy_pr_checkout_script_copies_command(self) -> None:
+        """copy_pr_checkout_script copies the PR checkout command with --script."""
         row = make_plan_row(123, "Test", pr_number=456)
         executor = FakeCommandExecutor()
         screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
-        screen.execute_command("copy_pr_checkout")
-        expected_cmd = 'source "$(erk pr checkout 456 --script --sync)"'
+        screen.execute_command("copy_pr_checkout_script")
+        expected_cmd = 'source "$(erk pr checkout 456 --script)"'
+        assert executor.copied_texts == [expected_cmd]
+        assert f"Copied: {expected_cmd}" in executor.notifications
+
+    def test_copy_pr_checkout_plain_copies_command(self) -> None:
+        """copy_pr_checkout_plain copies the plain PR checkout command."""
+        row = make_plan_row(123, "Test", pr_number=456)
+        executor = FakeCommandExecutor()
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
+        screen.execute_command("copy_pr_checkout_plain")
+        expected_cmd = "erk pr checkout 456"
+        assert executor.copied_texts == [expected_cmd]
+        assert f"Copied: {expected_cmd}" in executor.notifications
+
+    def test_copy_teleport_copies_command(self) -> None:
+        """copy_teleport copies the teleport command."""
+        row = make_plan_row(123, "Test", pr_number=456)
+        executor = FakeCommandExecutor()
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
+        screen.execute_command("copy_teleport")
+        expected_cmd = "erk pr teleport 456"
+        assert executor.copied_texts == [expected_cmd]
+        assert f"Copied: {expected_cmd}" in executor.notifications
+
+    def test_copy_teleport_new_slot_copies_command(self) -> None:
+        """copy_teleport_new_slot copies the teleport --new-slot command."""
+        row = make_plan_row(123, "Test", pr_number=456)
+        executor = FakeCommandExecutor()
+        screen = PlanDetailScreen(row=row, executor=executor, view_mode=ViewMode.PLANS)
+        screen.execute_command("copy_teleport_new_slot")
+        expected_cmd = "erk pr teleport 456 --new-slot"
         assert executor.copied_texts == [expected_cmd]
         assert f"Copied: {expected_cmd}" in executor.notifications
 
