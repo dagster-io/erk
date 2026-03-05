@@ -1,0 +1,1127 @@
+<session>
+  <meta branch="plnd/fix-dispatch-checkedout-br-03-05-0823" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8764&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8764` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll implement plan #8764. Let me start by setting up the implementation environment.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28374" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28374, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01RQ4CtD6ALWTrC2XRk3ZHcR">
+    <param name="command">erk exec setup-impl --issue 8764</param>
+    <param name="description">Set up implementation for plan #8764</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28374" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28374, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RQ4CtD6ALWTrC2XRk3ZHcR">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-dispatch-checkedout-br-03-05-0823", "plan_number": 8764, "plan_url": "https://github.com/dagster-io/erk/pull/8764", "branch": "plnd/fix-dispatch-checkedout-br-03-05-0823", "plan_title": "[erk-plan] Fix: `erk pr dispatch` fails when branch is checked out in current worktree", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8764, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/fix-dispatch-checkedout-br-03-05-0823', syncing with remote...
+  </tool_result>
+  <assistant>Implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="364" cache_read_input_tokens="28374" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015LeWfUJcpWkyoZ1vq4td1G">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--fix-dispatch-checkedout-br-03-05-0823/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="364" cache_read_input_tokens="28374" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015LeWfUJcpWkyoZ1vq4td1G">
+     1→# Fix: `erk pr dispatch` fails when branch is checked out in current worktree
+     2→
+     3→## Context
+     4→
+     5→`erk pr dispatch` crashes with `fatal: cannot force update the branch used by worktree` when run from a worktree that has the plan branch checked out. The command uses `git branch -f &lt;branch&gt; origin/&lt;branch&gt;` to sync the local branch ref to remote, but git refuses to force-update a checked-out branch.
+     6→
+     7→This is a common scenario: user runs `erk impl -d` which checks out the plan branch in a slot worktree, then runs `erk pr dispatch` from that same worktree.
+     8→
+     9→## Root Cause
+    10→
+    11→`dispatch_cmd.py:223` calls `ctx.git.branch.create_branch(..., force=True)` which runs `git branch -f`. Git prohibits this on checked-out branches.
+    12→
+    13→The subsequent `commit_files_to_branch` (line 236) uses `git update-ref` which **does** work on checked-out branches but leaves the working tree diverged from HEAD (the new commit has impl-context files that aren't in the working tree).
+    14→
+    15→## Fix
+    16→
+    17→**When the dispatch branch is checked out, skip the `create_branch` sync and reset the working tree after the plumbing commit.**
+    18→
+    19→### Files to modify
+    20→
+    21→**1. `src/erk/cli/commands/pr/dispatch_cmd.py` (~line 220-241)**
+    22→
+    23→Before the `create_branch` call, check if the branch is checked out:
+    24→
+    25→```python
+    26→# Sync local branch ref to remote (no checkout required)
+    27→user_output(f"Syncing branch: {click.style(branch_name, fg='cyan')}")
+    28→ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+    29→branch_checked_out = ctx.git.worktree.is_branch_checked_out(repo.root, branch_name)
+    30→if branch_checked_out is None:
+
+... [47 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I understand the plan. Now let me set up todos and load the necessary context.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1538" cache_read_input_tokens="28738" cache_creation="{'ephemeral_5m_input_tokens': 1538, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01SrdWwvAdi5MQwYRNYcrREZ">
+    <param name="todos">[{'content': 'Read dispatch_cmd.py and understand current code around line 220-241', 'stat...[truncated 549 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1538" cache_read_input_tokens="28738" cache_creation="{'ephemeral_5m_input_tokens': 1538, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SrdWwvAdi5MQwYRNYcrREZ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017wnmtnM3gPqJdJzyGuN2HE">
+    <param name="command">erk exec impl-signal started --session-id "e1736aa2-3485-4028-9f16-e914c4c67a0f" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="30276" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017wnmtnM3gPqJdJzyGuN2HE">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8764
+}
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_014uX2vLrZ5QZMuhiEhEbnUa">
+    <param name="todos">[{'content': 'Read dispatch_cmd.py and understand current code around line 220-241', 'stat...[truncated 553 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="154" cache_read_input_tokens="30591" cache_creation="{'ephemeral_5m_input_tokens': 154, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014uX2vLrZ5QZMuhiEhEbnUa">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me read the relevant source files in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="30745" cache_creation="{'ephemeral_5m_input_tokens': 297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015CHaRZ3iSqyLJ2nEWPHhaY">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="30745" cache_creation="{'ephemeral_5m_input_tokens': 297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01NVcdNPjN6xzxjkdfdLGTxh">
+    <param name="pattern">tests/commands/pr/test_dispatch*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="30745" cache_creation="{'ephemeral_5m_input_tokens': 297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01TwF4LqnUTNJnUnjin7EQQo">
+    <param name="pattern">is_branch_checked_out</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="30745" cache_creation="{'ephemeral_5m_input_tokens': 297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015CHaRZ3iSqyLJ2nEWPHhaY">
+     1→"""Dispatch plans for remote AI implementation via GitHub Actions."""
+     2→
+     3→import logging
+     4→import tomllib
+     5→from dataclasses import dataclass
+     6→from datetime import UTC, datetime
+     7→from pathlib import Path
+     8→
+     9→import click
+    10→
+    11→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+    12→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    13→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    14→from erk.cli.commands.slot.common import is_placeholder_branch
+    15→from erk.cli.constants import (
+    16→    DISPATCH_WORKFLOW_METADATA_NAME,
+    17→    DISPATCH_WORKFLOW_NAME,
+    18→    ERK_PLAN_LABEL,
+    19→)
+    20→from erk.cli.core import discover_repo_context
+    21→from erk.cli.ensure import Ensure, UserFacingCliError
+    22→from erk.core.context import ErkContext
+    23→from erk.core.repo_discovery import RepoContext
+    24→from erk_shared.gateway.git.remote_ops.types import PushError
+    25→from erk_shared.gateway.github.metadata.core import (
+    26→    create_submission_queued_block,
+    27→    render_erk_issue_event,
+    28→)
+    29→from erk_shared.gateway.github.parsing import (
+    30→    construct_pr_url,
+
+... [527 lines omitted] ...
+
+   155→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number} not found")
+   161→            click.style("Error: ", fg="red")
+   170→            click.style("Error: ", fg="red") + f"PR #{plan_number} is {pr_result.state}\n\n"
+   216→        user_output(click.style("Error: ", fg="red") + f"PR #{plan_number}: plan content not found")
+   245→    if isinstance(push_result, PushError):
+   246→        raise UserFacingCliError(push_result.message)
+   292→    except Exception as e:
+   294→            click.style("Warning: ", fg="yellow") + f"Failed to update dispatch metadata: {e}"
+   304→    except Exception as e:
+   305→        logger.warning("Failed to update PR body with workflow run link: %s", e)
+   336→    except Exception as e:
+   338→            click.style("Warning: ", fg="yellow")
+   339→            + f"Failed to post queued comment: {e}\n"
+   459→            click.style("Error: ", fg="red")
+   469→                click.style("Error: ", fg="red")
+   482→                click.style("Error: ", fg="red") + f"Base branch '{base}' does not exist on remote"
+  </tool_result>
+  <tool_result tool="toolu_01TwF4LqnUTNJnUnjin7EQQo">
+Found 2 files
+src/erk/cli/commands/wt/create_cmd.py
+src/erk/cli/commands/stack/move_cmd.py
+  </tool_result>
+  <tool_result tool="toolu_01NVcdNPjN6xzxjkdfdLGTxh">
+/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py
+  </tool_result>
+  <assistant>Now let me read the test file and also check the worktree ABC for the `is_branch_checked_out` method.</assistant>
+  <usage input_tokens="71" cache_creation_input_tokens="7743" cache_read_input_tokens="31042" cache_creation="{'ephemeral_5m_input_tokens': 7743, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01NUGXHtro7iaWipiM5XNuYz">
+    <param name="todos">[{'content': 'Read dispatch_cmd.py and understand current code around line 220-241', 'stat...[truncated 555 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="71" cache_creation_input_tokens="7743" cache_read_input_tokens="31042" cache_creation="{'ephemeral_5m_input_tokens': 7743, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NUGXHtro7iaWipiM5XNuYz">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DmbHUcijUyBkSoBdJRy8FT">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="396" cache_read_input_tokens="38785" cache_creation="{'ephemeral_5m_input_tokens': 396, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_016q7mHU6AdoVsYB6HY1gnhM">
+    <param name="pattern">is_branch_checked_out</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="glob">**/worktree/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="396" cache_read_input_tokens="38785" cache_creation="{'ephemeral_5m_input_tokens': 396, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DmbHUcijUyBkSoBdJRy8FT">
+     1→"""Tests for erk pr dispatch command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk_shared.gateway.git.fake import FakeGit
+     7→from erk_shared.gateway.github.fake import FakeGitHub
+     8→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+     9→from erk_shared.gateway.github.metadata.core import MetadataBlock, render_metadata_block
+    10→from erk_shared.gateway.github.types import PRDetails
+    11→from erk_shared.gateway.graphite.fake import FakeGraphite
+    12→from erk_shared.gateway.graphite.types import BranchMetadata
+    13→from erk_shared.gateway.time.fake import FakeTime
+    14→from erk_shared.impl_folder import build_plan_ref_json
+    15→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    16→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    17→from tests.test_utils.context_builders import build_workspace_test_context
+    18→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    19→
+    20→
+    21→def test_dispatch_planned_pr_plan_triggers_workflow_with_planned_pr_backend() -&gt; None:
+    22→    """Test that dispatching a planned-PR plan triggers workflow with plan_backend=planned_pr.
+    23→
+    24→    Planned-PR plans already have a branch and PR. Dispatch should:
+    25→    - Validate the PR has the erk-plan label and is OPEN
+    26→    - Sync local branch ref to remote and commit impl-context via git plumbing
+    27→    - Trigger workflow with plan_backend="planned_pr" in inputs
+    28→    - NOT create a new branch or PR
+    29→    """
+    30→    runner = CliRunner()
+
+... [445 lines omitted] ...
+
+   135→        # Verify: no warnings, dispatch metadata written successfully
+   136→        assert "Warning:" not in result.output
+   328→    """Test that dispatch with no arguments and no context gives helpful error."""
+  </tool_result>
+  <tool_result tool="toolu_016q7mHU6AdoVsYB6HY1gnhM">
+packages/erk-shared/src/erk_shared/gateway/git/worktree/printing.py:37:    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/printing.py:39:        return self._wrapped.is_branch_checked_out(repo_root, branch)
+packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py:42:    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py:44:        return self._wrapped.is_branch_checked_out(repo_root, branch)
+packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py:158:    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py:157:    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py:92:    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+  </tool_result>
+  <assistant>Let me check the FakeGit class to understand how worktree data is configured in tests, and see how `is_branch_checked_out` is implemented in the fake:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7353" cache_read_input_tokens="39181" cache_creation="{'ephemeral_5m_input_tokens': 7353, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018y5Zp2YcaRX9v5AXSbaMb4">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py</param>
+    <param name="offset">140</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7353" cache_read_input_tokens="39181" cache_creation="{'ephemeral_5m_input_tokens': 7353, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014yLDyoJaimrGti3ZPMAL3Z">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py</param>
+    <param name="offset">85</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7353" cache_read_input_tokens="39181" cache_creation="{'ephemeral_5m_input_tokens': 7353, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018y5Zp2YcaRX9v5AXSbaMb4">
+   140→            ]
+   141→        # Track the removal
+   142→        self._removed_worktrees.append(path)
+   143→        # Remove from existing_paths so path_exists() returns False after deletion
+   144→        self._existing_paths.discard(path)
+   145→
+   146→    def prune_worktrees(self, repo_root: Path) -&gt; None:
+   147→        """Prune stale worktree metadata (no-op for in-memory fake)."""
+   148→        pass
+   149→
+   150→    def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+   151→        """Find worktree path for given branch name in fake data."""
+   152→        worktrees = self.list_worktrees(repo_root)
+   153→        for wt in worktrees:
+   154→            if wt.branch == branch:
+   155→                return wt.path
+   156→        return None
+   157→
+   158→    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+   159→        """Check if a branch is already checked out in any worktree."""
+   160→        return self.find_worktree_for_branch(repo_root, branch)
+   161→
+   162→    def is_worktree_clean(self, worktree_path: Path) -&gt; bool:
+   163→        """Check if worktree has no uncommitted changes, staged changes, or untracked files."""
+   164→        # Check if path exists (LBYL pattern)
+   165→        if worktree_path not in self._existing_paths:
+   166→            return False
+   167→
+   168→        # Check if worktree is marked as dirty
+   169→        if worktree_path in self._dirty_worktrees:
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014yLDyoJaimrGti3ZPMAL3Z">
+    85→
+    86→        Returns:
+    87→            Path to worktree if branch is checked out, None otherwise
+    88→        """
+    89→        ...
+    90→
+    91→    @abstractmethod
+    92→    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+    93→        """Check if a branch is already checked out in any worktree.
+    94→
+    95→        Args:
+    96→            repo_root: Path to the git repository root
+    97→            branch: Branch name to check
+    98→
+    99→        Returns:
+   100→            Path to the worktree where branch is checked out, or None if not checked out.
+   101→        """
+   102→        ...
+   103→
+   104→    @abstractmethod
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now I need to understand how FakeGit's worktree data is set up. Let me check how `list_worktrees` works in the fake and what data structures feed into `is_branch_checked_out`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1278" cache_read_input_tokens="46534" cache_creation="{'ephemeral_5m_input_tokens': 1278, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0185415H7q5Bfi5WiK21M8ED">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py</param>
+    <param name="offset">1</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1278" cache_read_input_tokens="46534" cache_creation="{'ephemeral_5m_input_tokens': 1278, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_015utt9yqdtqviedBchd1Zeg">
+    <param name="pattern">worktree_entries|list_worktrees</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1278" cache_read_input_tokens="46534" cache_creation="{'ephemeral_5m_input_tokens': 1278, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0185415H7q5Bfi5WiK21M8ED">
+     1→"""Fake worktree operations for testing.
+     2→
+     3→FakeWorktree is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→import os
+     8→from pathlib import Path
+     9→
+    10→from erk_shared.gateway.git.abc import WorktreeInfo
+    11→from erk_shared.gateway.git.worktree.abc import Worktree
+    12→
+    13→
+    14→class FakeWorktree(Worktree):
+    15→    """In-memory fake implementation of git worktree operations.
+    16→
+    17→    State Management:
+    18→    -----------------
+    19→    This fake maintains mutable state to simulate git's stateful behavior.
+    20→    Operations like add_worktree, move_worktree modify internal state.
+    21→    State changes are visible to subsequent method calls within the same test.
+    22→
+    23→    Constructor Injection:
+    24→    ---------------------
+    25→    All INITIAL state is provided via constructor (immutable after construction).
+    26→    Runtime mutations occur through operation methods.
+    27→    Tests should construct fakes with complete initial state.
+    28→
+    29→    Mutation Tracking:
+    30→    -----------------
+
+... [55 lines omitted] ...
+
+    43→        add_worktree_error: str | None = None,
+    44→        remove_worktree_error: str | None = None,
+    52→            add_worktree_error: If set, add_worktree raises RuntimeError with this message
+    53→            remove_worktree_error: Error message to raise from remove_worktree() for error injection
+    60→        self._add_worktree_error = add_worktree_error
+    61→        self._remove_worktree_error = remove_worktree_error
+  </tool_result>
+  <tool_result tool="toolu_015utt9yqdtqviedBchd1Zeg">
+68:    def list_worktrees(self, repo_root: Path) -&gt; list[WorktreeInfo]:
+152:        worktrees = self.list_worktrees(repo_root)
+  </tool_result>
+  <assistant>Now let me check how FakeGit is constructed and how worktree data gets to it, so I know how to configure the test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1886" cache_read_input_tokens="47812" cache_creation="{'ephemeral_5m_input_tokens': 1886, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01GRFRMgd1wbb47z5RacPQWr">
+    <param name="pattern">class FakeGit</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1886" cache_read_input_tokens="47812" cache_creation="{'ephemeral_5m_input_tokens': 1886, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GRFRMgd1wbb47z5RacPQWr">
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py:13:class FakeGitBranchOps(GitBranchOps):
+packages/erk-shared/src/erk_shared/gateway/git/config_ops/fake.py:19:class FakeGitConfigOps(GitConfigOps):
+packages/erk-shared/src/erk_shared/gateway/git/tag_ops/fake.py:10:class FakeGitTagOps(GitTagOps):
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/fake.py:12:class FakeGitRebaseOps(GitRebaseOps):
+packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/fake.py:8:class FakeGitAnalysisOps(GitAnalysisOps):
+packages/erk-shared/src/erk_shared/gateway/git/fake.py:64:class FakeGit(Git):
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py:36:class FakeGitCommitOps(GitCommitOps):
+packages/erk-shared/src/erk_shared/gateway/git/status_ops/fake.py:10:class FakeGitStatusOps(GitStatusOps):
+packages/erk-shared/src/erk_shared/gateway/git/repo_ops/fake.py:8:class FakeGitRepoOps(GitRepoOps):
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py:21:class FakeGitRemoteOps(GitRemoteOps):
+  </tool_result>
+  <tool_use name="Read" id="toolu_016KsZhm1vhBqqw9rVkcw9ur">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="offset">64</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="618" cache_read_input_tokens="49698" cache_creation="{'ephemeral_5m_input_tokens': 618, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016KsZhm1vhBqqw9rVkcw9ur">
+    64→class FakeGit(Git):
+    65→    """In-memory fake implementation of git operations.
+    66→
+    67→    State Management:
+    68→    -----------------
+    69→    This fake maintains mutable state to simulate git's stateful behavior.
+    70→    Operations like add_worktree, checkout_branch modify internal state.
+    71→    State changes are visible to subsequent method calls within the same test.
+    72→
+    73→    When to Use Mutation:
+    74→    --------------------
+    75→    - Operations that simulate stateful external systems (git, databases)
+    76→    - When tests need to verify sequences of operations
+    77→    - When simulating side effects visible to production code
+    78→
+    79→    Constructor Injection:
+    80→    ---------------------
+    81→    All INITIAL state is provided via constructor (immutable after construction).
+    82→    Runtime mutations occur through operation methods.
+    83→    Tests should construct fakes with complete initial state.
+    84→
+    85→    Mutation Tracking:
+    86→    -----------------
+    87→    This fake tracks mutations for test assertions via read-only properties:
+    88→    - deleted_branches: Branches deleted via delete_branch()
+    89→    - added_worktrees: Worktrees added via add_worktree()
+    90→    - removed_worktrees: Worktrees removed via remove_worktree()
+    91→    - checked_out_branches: Branches checked out via checkout_branch()
+    92→
+    93→    Examples:
+
+... [55 lines omitted] ...
+
+   135→        delete_branch_raises: dict[str, Exception] | None = None,
+   138→        tracking_branch_failures: dict[str, str] | None = None,
+  </tool_result>
+  <assistant>Now let me also check how `create_branch` is tracked in the fake to understand how to verify it was NOT called:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1730" cache_read_input_tokens="50316" cache_creation="{'ephemeral_5m_input_tokens': 1730, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Xrj5eaRGRuyvcXD5EbF1nc">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1730" cache_read_input_tokens="50316" cache_creation="{'ephemeral_5m_input_tokens': 1730, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0113x6S5roiKUYrsi6zB8Q2m">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py</param>
+    <param name="offset">1</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1730" cache_read_input_tokens="50316" cache_creation="{'ephemeral_5m_input_tokens': 1730, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Xrj5eaRGRuyvcXD5EbF1nc">
+     1→"""Fake Git branch operations for testing."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import subprocess
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, WorktreeInfo
+     9→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    10→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    11→
+    12→
+    13→class FakeGitBranchOps(GitBranchOps):
+    14→    """In-memory fake implementation of Git branch operations.
+    15→
+    16→    State Management:
+    17→    -----------------
+    18→    This fake maintains mutable state to simulate git's stateful behavior.
+    19→    Operations like create_branch, checkout_branch modify internal state.
+    20→    State changes are visible to subsequent method calls within the same test.
+    21→
+    22→    Mutation Tracking:
+    23→    -----------------
+    24→    This fake tracks mutations for test assertions via read-only properties:
+    25→    - created_branches: Branches created via create_branch()
+    26→    - deleted_branches: Branches deleted via delete_branch()
+    27→    - checked_out_branches: Branches checked out via checkout_branch()
+    28→    - detached_checkouts: Refs checked out via checkout_detached()
+    29→    - created_tracking_branches: Tracking branches created via create_tracking_branch()
+    30→    """
+
+... [343 lines omitted] ...
+
+    48→        delete_branch_raises: dict[str, Exception] | None = None,
+    49→        tracking_branch_failures: dict[str, str] | None = None,
+    50→        create_branch_error: BranchAlreadyExists | None = None,
+    51→        ahead_behind_raises: RuntimeError | None = None,
+    68→            delete_branch_raises: Mapping of branch name -&gt; exception to raise on delete
+    69→            tracking_branch_failures: Mapping of branch name -&gt; error message to raise
+    71→            create_branch_error: If set, create_branch returns this error instead of BranchCreated
+    72→            ahead_behind_raises: If set, get_ahead_behind() raises this error
+    95→        self._tracking_branch_failures = (
+    96→            tracking_branch_failures if tracking_branch_failures is not None else {}
+    98→        self._create_branch_error = create_branch_error
+   117→        Returns create_branch_error if configured, otherwise BranchCreated.
+   119→        if self._create_branch_error is not None:
+   120→            return self._create_branch_error
+   127→        If delete_branch_raises contains a CalledProcessError, it is wrapped in
+   128→        RuntimeError to match run_subprocess_with_context behavior.
+   130→        # Check if we should raise an exception for this branch
+   133→            # Wrap CalledProcessError in RuntimeError to match run_subprocess_with_context
+   134→            if isinstance(exc, subprocess.CalledProcessError):
+   135→                raise RuntimeError(f"Failed to delete branch {branch_name}") from exc
+   150→                    msg = f"fatal: '{branch}' is already checked out at '{wt.path}'"
+   151→                    raise RuntimeError(msg)
+   183→        if branch in self._tracking_branch_failures:
+   184→            error_msg = self._tracking_branch_failures[branch]
+   185→            raise subprocess.CalledProcessError(
+   186→                returncode=1, cmd=["git", "branch", "--track", branch, remote_ref], stderr=error_msg
+   320→            RuntimeError: If the specified branch doesn't exist
+   324→            error_msg = (
+   325→                f"Error: Configured trunk branch '{name}' does not exist in repository.\n"
+   328→            raise RuntimeError(error_msg)
+  </tool_result>
+  <tool_result tool="toolu_0113x6S5roiKUYrsi6zB8Q2m">
+     1→"""High-level git operations interface.
+     2→
+     3→This module provides a clean abstraction over git subprocess calls, making the
+     4→codebase more testable and maintainable.
+     5→
+     6→Architecture:
+     7→- Git: Abstract base class defining the interface
+     8→- RealGit: Production implementation using subprocess
+     9→- Standalone functions: Convenience wrappers delegating to module singleton
+    10→"""
+    11→
+    12→from __future__ import annotations
+    13→
+    14→from abc import ABC, abstractmethod
+    15→from dataclasses import dataclass
+    16→from pathlib import Path
+    17→from typing import TYPE_CHECKING, NamedTuple
+    18→
+    19→if TYPE_CHECKING:
+    20→    from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+    21→    from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    22→    from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+    23→    from erk_shared.gateway.git.config_ops.abc import GitConfigOps
+    24→    from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+    25→    from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+    26→    from erk_shared.gateway.git.repo_ops.abc import GitRepoOps
+    27→    from erk_shared.gateway.git.status_ops.abc import GitStatusOps
+    28→    from erk_shared.gateway.git.tag_ops.abc import GitTagOps
+    29→    from erk_shared.gateway.git.worktree.abc import Worktree
+    30→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>I now have a clear understanding of the code. Let me also check how `FakeGit` exposes `created_branches` (to verify we can assert on it):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6941" cache_read_input_tokens="52046" cache_creation="{'ephemeral_5m_input_tokens': 6941, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01A6iG1TxyP7zY28rsqJkSjs">
+    <param name="pattern">created_branches</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6941" cache_read_input_tokens="52046" cache_creation="{'ephemeral_5m_input_tokens': 6941, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01A6iG1TxyP7zY28rsqJkSjs">
+298:        self._created_branches: list[
+369:            created_branches=self._created_branches,
+519:    def created_branches(self) -&gt; list[tuple[Path, str, str, bool]]:
+525:        return self._created_branches.copy()
+  </tool_result>
+  <assistant>Good. `FakeGit` exposes `created_branches` property. Now let me also quickly check how worktrees are configured in the existing test and the `WorktreeInfo` type:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="58987" cache_creation="{'ephemeral_5m_input_tokens': 254, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01NZXTmAe9tXxTvTRQhpZJ17">
+    <param name="pattern">class WorktreeInfo</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="58987" cache_creation="{'ephemeral_5m_input_tokens': 254, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NZXTmAe9tXxTvTRQhpZJ17">
+48:class WorktreeInfo:
+49-    """Information about a single git worktree."""
+50-
+51-    path: Path
+52-    branch: str | None
+53-    is_root: bool = False
+54-
+55-
+56-@dataclass(frozen=True)
+57-class BranchSyncInfo:
+58-    """Sync status for a branch relative to its upstream."""
+  </tool_result>
+  <assistant>I now have all the context I need. Let me update my progress and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="524" cache_read_input_tokens="59241" cache_creation="{'ephemeral_5m_input_tokens': 524, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01JrqQ8Uy7jvfFxaA8NW8uZN">
+    <param name="todos">[{'content': 'Read dispatch_cmd.py and understand current code around line 220-241', 'stat...[truncated 557 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="524" cache_read_input_tokens="59241" cache_creation="{'ephemeral_5m_input_tokens': 524, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JrqQ8Uy7jvfFxaA8NW8uZN">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me implement the fix. The change is in `_dispatch_planned_pr_plan` at line 220-223. Before calling `create_branch`, check if the branch is checked out. If it is, skip the `create_branch` call:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="316" cache_read_input_tokens="59765" cache_creation="{'ephemeral_5m_input_tokens': 316, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01843hBhRW3N3XkexuokmLAM">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="old_string">    # Sync local branch ref to remote (no checkout required)
+    user_output(f"Syncing bra...[truncated 94 chars]... ctx.git.branch.create_branch(repo.root, branch_name, f"origin/{branch_name}", force=True)</param>
+    <param name="new_string">    # Sync local branch ref to remote (no checkout required)
+    user_output(f"Syncing bra...[truncated 299 chars]... ctx.git.branch.create_branch(repo.root, branch_name, f"origin/{branch_name}", force=True)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="316" cache_read_input_tokens="59765" cache_creation="{'ephemeral_5m_input_tokens': 316, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01843hBhRW3N3XkexuokmLAM">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/dispatch_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01TmFkngen9GKd74LrUNCn1S">
+    <param name="todos">[{'content': 'Read dispatch_cmd.py and understand current code around line 220-241', 'stat...[truncated 559 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="474" cache_read_input_tokens="60081" cache_creation="{'ephemeral_5m_input_tokens': 474, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TmFkngen9GKd74LrUNCn1S">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me add the test case. The test needs to set up a scenario where the `current_branches` maps the cwd to the plan branch AND the worktrees contain an entry for that branch, so `is_branch_checked_out` returns a non-None path:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="60555" cache_creation="{'ephemeral_5m_input_tokens': 297, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NDj3abJcaYYyDagJRU7EAT">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py</param>
+    <param name="offset">460</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="60555" cache_creation="{'ephemeral_5m_input_tokens': 297, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NDj3abJcaYYyDagJRU7EAT">
+   460→
+   461→        result = runner.invoke(
+   462→            cli, ["pr", "dispatch", "42", "--base", "main", "--ref", "custom-branch"], obj=ctx
+   463→        )
+   464→
+   465→        assert len(fake_gh.triggered_workflows) &gt;= 1, (
+   466→            f"Expected workflow trigger\nOutput: {result.output}"
+   467→        )
+   468→        _workflow_name, _inputs, ref = fake_gh.triggered_workflows[0]
+   469→        assert ref == "custom-branch"
+   470→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Now let me check the `build_workspace_test_context` to understand how worktrees are plumbed through:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="408" cache_read_input_tokens="60852" cache_creation="{'ephemeral_5m_input_tokens': 408, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_013L8wSYdccL2qkHSx7sCJAn">
+    <param name="pattern">def build_workspace_test_context</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="408" cache_read_input_tokens="60852" cache_creation="{'ephemeral_5m_input_tokens': 408, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013L8wSYdccL2qkHSx7sCJAn">
+Found 1 file
+tests/test_utils/context_builders.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QYccDkVmpk946UmCmsdhQF">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/context_builders.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="168" cache_read_input_tokens="61260" cache_creation="{'ephemeral_5m_input_tokens': 168, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QYccDkVmpk946UmCmsdhQF">
+     1→"""Shared context builders for test scenarios.
+     2→
+     3→This module provides reusable context builder functions to eliminate duplication
+     4→across test files. These builders encapsulate common patterns for setting up
+     5→ErkContext with appropriate fake implementations.
+     6→"""
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.core.fakes import FakePlanListService
+    10→from erk_shared.core.plan_list_service import PlanListData
+    11→from erk_shared.gateway.git.dry_run import DryRunGit
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.github.fake import FakeGitHub
+    14→from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+    15→from erk_shared.plan_store.types import Plan
+    16→from tests.fakes.shell import FakeShell
+    17→from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
+    18→
+    19→
+    20→def build_workspace_test_context(
+    21→    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    22→    *,
+    23→    dry_run: bool = False,
+    24→    use_graphite: bool = False,
+    25→    current_branch: str | None = None,
+    26→    **kwargs,
+    27→) -&gt; ErkContext:
+    28→    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+    29→
+    30→    This builder provides a standard context configuration for workspace manipulation
+
+... [123 lines omitted] ...
+
+   137→    warnings: tuple[str, ...] = (),
+   145→            warnings=warnings,
+  </tool_result>
+  <assistant>Good. Now I understand the full picture. The key insight is that the FakeGit constructor accepts a `worktrees` parameter (mapping `repo_root -&gt; list[WorktreeInfo]`), which feeds into `FakeWorktree.list_worktrees()`, which in turn feeds `is_branch_checked_out()`. 
+
+In the existing test, no `worktrees` are configured, so `is_branch_checked_out` returns `None` (branch not checked out). For the new test, I need to configure `worktrees` with a `WorktreeInfo` entry that has the plan branch.
+
+Let me add the test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2297" cache_read_input_tokens="61428" cache_creation="{'ephemeral_5m_input_tokens': 2297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01GCTjsZAvT1Zp7yycPmwbz5">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py</param>
+    <param name="old_string">from erk.cli.cli import cli
+from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub</param>
+    <param name="new_string">from erk.cli.cli import cli
+from erk_shared.gateway.git.abc import WorktreeInfo
+from erk_shared.gateway.git.fake import FakeGit
+from erk_shared.gateway.github.fake import FakeGitHub</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2297" cache_read_input_tokens="61428" cache_creation="{'ephemeral_5m_input_tokens': 2297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GCTjsZAvT1Zp7yycPmwbz5">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the new test at the end of the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="619" cache_read_input_tokens="63725" cache_creation="{'ephemeral_5m_input_tokens': 619, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01F8qoj5vkhm7S1x3PT7y5YH">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py</param>
+    <param name="old_string">        assert len(fake_gh.triggered_workflows) &gt;= 1, (
+            f"Expected workflow tr...[truncated 39 chars]..._name, _inputs, ref = fake_gh.triggered_workflows[0]
+        assert ref == "custom-branch"</param>
+    <param name="new_string">        assert len(fake_gh.triggered_workflows) &gt;= 1, (
+            f"Expected workflow tr...[truncated 3417 chars]...n to branch..." in result.output
+        assert "Branch pushed to remote" in result.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="619" cache_read_input_tokens="63725" cache_creation="{'ephemeral_5m_input_tokens': 619, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01F8qoj5vkhm7S1x3PT7y5YH">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_016YkvNSobH6pFG7BQxiMdyo">
+    <param name="todos">[{'content': 'Read dispatch_cmd.py and understand current code around line 220-241', 'stat...[truncated 561 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1285" cache_read_input_tokens="64344" cache_creation="{'ephemeral_5m_input_tokens': 1285, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016YkvNSobH6pFG7BQxiMdyo">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me run the tests to verify the changes work:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="65629" cache_creation="{'ephemeral_5m_input_tokens': 297, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_013x7WPR5brhdQ9nnfbZa5Jw">
+    <param name="description">Run dispatch tests</param>
+    <param name="prompt">Run pytest on the dispatch test file and report results:
+```
+pytest tests/commands/pr/test_dispatch.py -v
+```
+Report the output verbatim. Do NOT modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="65629" cache_creation="{'ephemeral_5m_input_tokens': 297, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013x7WPR5brhdQ9nnfbZa5Jw">
+pytest passed: 6 passed in 1.62s
+
+All tests in `/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py` passed successfully.
+agentId: a339381 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All 6 tests pass (5 existing + 1 new). Now let me run the broader CI checks:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="224" cache_read_input_tokens="65926" cache_creation="{'ephemeral_5m_input_tokens': 224, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_016VsEorDJkDKJspucpXfgUj">
+    <param name="description">Run ruff and ty checks</param>
+    <param name="prompt">Run these commands and report results. Do NOT modify any files.
+
+1. `ruff check src/erk/cl...[truncated 73 chars]...mmands/pr/dispatch_cmd.py tests/commands/pr/test_dispatch.py`
+
+Report the output verbatim.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="224" cache_read_input_tokens="65926" cache_creation="{'ephemeral_5m_input_tokens': 224, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016VsEorDJkDKJspucpXfgUj">
+## Results
+
+**ruff check**: FAILED - 1 error found
+
+```
+E501 Line too long (116 &gt; 100)
+   --&gt; tests/commands/pr/test_dispatch.py:532:101
+```
+
+Line 532 exceeds the 100-character limit by 16 characters.
+
+---
+
+**ty check**: FAILED - 3 diagnostics found
+
+```
+error[invalid-argument-type]: Argument to function `build_plan_stage_body` is incorrect
+  --&gt; tests/commands/pr/test_dispatch.py:50:13
+   |
+50 |             summary=None,
+   |             ^^^^^^^^^^^^ Expected `str`, found `None`
+
+error[invalid-argument-type]: Argument to function `build_plan_stage_body` is incorrect
+  --&gt; tests/commands/pr/test_dispatch.py:159:9
+   |
+159 |         summary=None,
+   |         ^^^^^^^^^^^^ Expected `str`, found `None`
+
+error[invalid-argument-type]: Argument to function `build_plan_stage_body` is incorrect
+  --&gt; tests/commands/pr/test_dispatch.py:398:13
+
+... [7 lines omitted] ...
+  </tool_result>
+  <assistant>The ruff error is in my new code (line too long). The ty errors are pre-existing (they're in the existing test code, not my changes). Let me fix the ruff issue:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="576" cache_read_input_tokens="66150" cache_creation="{'ephemeral_5m_input_tokens': 576, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01EBPx5xZJhQCdsEsQ42TWv2">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py</param>
+    <param name="offset">528</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="576" cache_read_input_tokens="66150" cache_creation="{'ephemeral_5m_input_tokens': 576, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EBPx5xZJhQCdsEsQ42TWv2">
+   528→
+   529→        result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)
+   530→
+   531→        # Verify: dispatch succeeded
+   532→        assert result.exit_code == 0, f"Expected success, got exit code {result.exit_code}\nOutput: {result.output}"
+   533→        assert "Traceback" not in result.output
+   534→
+   535→        # Verify: create_branch was NOT called (would fail on checked-out branch)
+   536→        assert len(git.created_branches) == 0, (
+   537→            f"create_branch should not be called when branch is checked out, "
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PaPXVcWFJQQE8kR2P2LnFq">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py</param>
+    <param name="old_string">        assert result.exit_code == 0, f"Expected success, got exit code {result.exit_code}\nOutput: {result.output}"</param>
+    <param name="new_string">        assert result.exit_code == 0, (
+            f"Expected success, got exit code {result.exit_code}\n"
+            f"Output: {result.output}"
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="626" cache_read_input_tokens="66726" cache_creation="{'ephemeral_5m_input_tokens': 626, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PaPXVcWFJQQE8kR2P2LnFq">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify the fix passes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="233" cache_read_input_tokens="67352" cache_creation="{'ephemeral_5m_input_tokens': 233, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01WvghcWdCJ2NKGApR21oTgc">
+    <param name="description">Re-run lint and tests</param>
+    <param name="prompt">Run these commands and report results. Do NOT modify any files.
+
+1. `ruff check src/erk/cl...[truncated 34 chars]...ispatch.py`
+2. `pytest tests/commands/pr/test_dispatch.py -v`
+
+Report the output verbatim.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="233" cache_read_input_tokens="67352" cache_creation="{'ephemeral_5m_input_tokens': 233, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WvghcWdCJ2NKGApR21oTgc">
+## Results
+
+**ruff check:** passed
+```
+All checks passed!
+```
+
+**pytest:** passed
+```
+============================== test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0, asyncio_default_fixture_loop_scope=function, asyncio_default_fixture_loop_scope=function
+collected 6 items
+
+tests/commands/pr/test_dispatch.py ......                                [100%]
+
+============================== 6 passed in 0.72s ===============================
+```
+agentId: a95b634 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All checks pass. Let me now clean up the impl context and submit.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="622" cache_read_input_tokens="67585" cache_creation="{'ephemeral_5m_input_tokens': 622, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_019h4NumqNEtEaD6xoF7uWyS">
+    <param name="todos">[{'content': 'Read dispatch_cmd.py and understand current code around line 220-241', 'stat...[truncated 563 chars]...hecks'}, {'content': 'Submit PR', 'status': 'in_progress', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="622" cache_read_input_tokens="67585" cache_creation="{'ephemeral_5m_input_tokens': 622, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019h4NumqNEtEaD6xoF7uWyS">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01756r126ZXuut5KkQ6EdLS8">
+    <param name="command">erk exec impl-signal ended --session-id "e1736aa2-3485-4028-9f16-e914c4c67a0f" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="68207" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01J2H7Q5bw2UioQmyvTjBJ9z">
+    <param name="command">erk exec upload-impl-session --session-id "e1736aa2-3485-4028-9f16-e914c4c67a0f" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="68207" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01756r126ZXuut5KkQ6EdLS8">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8764
+}
+  </tool_result>
+</session>
