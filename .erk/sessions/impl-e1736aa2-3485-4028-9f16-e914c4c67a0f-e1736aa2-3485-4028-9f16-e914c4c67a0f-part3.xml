@@ -1,51 +1,109 @@
 <session>
-  <meta source="agent-a339381" />
+  <meta source="agent-a142901" />
   <meta branch="plnd/fix-dispatch-checkedout-br-03-05-0823" />
   <meta model="claude-haiku-4-5-20251001" />
-  <user>Run pytest on the dispatch test file and report results:
-```
-pytest tests/commands/pr/test_dispatch.py -v
-```
-Report the output verbatim. Do NOT modify any files.</user>
-  <assistant>I'll run pytest on the dispatch test file and report the results.</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="12301" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 12301, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Bash" id="toolu_01RAd1RgRJJR4geRH3Ch2LQY">
-    <param name="command">uv run pytest tests/commands/pr/test_dispatch.py -v</param>
-    <param name="description">Run pytest on dispatch test file with verbose output</param>
+  <user>Run these commands and report results. Do NOT modify any files.
+
+1. `ruff check src/erk/cli/commands/pr/dispatch_cmd.py tests/commands/pr/test_dispatch.py`
+2. `ty check src/erk/cli/commands/pr/dispatch_cmd.py tests/commands/pr/test_dispatch.py`
+
+Report the output verbatim.</user>
+  <assistant>I'll run both commands and report the results.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5885" cache_read_input_tokens="6462" cache_creation="{'ephemeral_5m_input_tokens': 5885, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Qv3HAo1GieYe8WBkcbwaFh">
+    <param name="command">uv run ruff check src/erk/cli/commands/pr/dispatch_cmd.py tests/commands/pr/test_dispatch.py</param>
+    <param name="description">Check ruff linting on dispatch command and test files</param>
   </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="12301" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 12301, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01RAd1RgRJJR4geRH3Ch2LQY">
-============================= test session starts ==============================
-platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
-rootdir: /home/runner/work/erk/erk
-configfile: pyproject.toml
-plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
-asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
-collected 6 items
+  <usage input_tokens="3" cache_creation_input_tokens="5885" cache_read_input_tokens="6462" cache_creation="{'ephemeral_5m_input_tokens': 5885, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014uaZDBnsXC88XtbkckfMGw">
+    <param name="command">uv run ty check src/erk/cli/commands/pr/dispatch_cmd.py tests/commands/pr/test_dispatch.py</param>
+    <param name="description">Check type annotations on dispatch command and test files</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5885" cache_read_input_tokens="6462" cache_creation="{'ephemeral_5m_input_tokens': 5885, 'ephemeral_1h_input_tokens': 0}" output_tokens="213" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qv3HAo1GieYe8WBkcbwaFh">
+Exit code 1
+E501 Line too long (116 &gt; 100)
+   --&gt; tests/commands/pr/test_dispatch.py:532:101
+    |
+531 |         # Verify: dispatch succeeded
+532 |         assert result.exit_code == 0, f"Expected success, got exit code {result.exit_code}\nOutput: {result.output}"
+    |                                                                                                     ^^^^^^^^^^^^^^^^
+533 |         assert "Traceback" not in result.output
+    |
 
-tests/commands/pr/test_dispatch.py ......                                [100%]
-
-============================== 6 passed in 1.62s ===============================
-   Building erk-dev @ file:///home/runner/work/erk/erk/packages/erk-dev
-Downloading babel (9.7MiB)
-Downloading ruff (10.7MiB)
-Downloading mkdocs (3.7MiB)
-Downloading aiohttp (1.7MiB)
-Downloading ty (10.3MiB)
-Downloading mkdocs-material (8.9MiB)
-Downloading libcst (2.2MiB)
- Downloaded aiohttp
- Downloaded mkdocs
-      Built erk-dev @ file:///home/runner/work/erk/erk/packages/erk-dev
- Downloaded libcst
- Downloaded ty
- Downloaded ruff
- Downloaded babel
- Downloaded mkdocs-material
-Installed 58 packages in 353ms
+Found 1 error.
   </tool_result>
-  <assistant>pytest passed: 6 passed in 1.62s
+  <tool_result tool="toolu_014uaZDBnsXC88XtbkckfMGw">
+Exit code 1
+error[invalid-argument-type]: Argument to function `build_plan_stage_body` is incorrect
+  --&gt; tests/commands/pr/test_dispatch.py:50:13
+   |
+48 |             plan_header,
+49 |             "# Plan: Test Draft PR Plan\n\n- Step 1: Do something\n- Step 2: Do something else",
+50 |             summary=None,
+   |             ^^^^^^^^^^^^ Expected `str`, found `None`
+51 |         )
+   |
+info: Function defined here
+  --&gt; packages/erk-shared/src/erk_shared/plan_store/planned_pr_lifecycle.py:91:5
+   |
+91 | def build_plan_stage_body(metadata_body: str, plan_content: str, *, summary: str) -&gt; str:
+   |     ^^^^^^^^^^^^^^^^^^^^^                                           ------------ Parameter declared here
+92 |     """Build Stage 1 body: details-wrapped plan + metadata at bottom.
+   |
+info: rule `invalid-argument-type` is enabled by default
 
-All tests in `/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py` passed successfully.</assistant>
-  <usage input_tokens="6" cache_creation_input_tokens="503" cache_read_input_tokens="12301" cache_creation="{'ephemeral_5m_input_tokens': 503, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+error[invalid-argument-type]: Argument to function `build_plan_stage_body` is incorrect
+   --&gt; tests/commands/pr/test_dispatch.py:159:9
+    |
+157 |         plan_header,
+158 |         "# Plan: Auto-detect Test\n\n- Step 1: Do something",
+159 |         summary=None,
+    |         ^^^^^^^^^^^^ Expected `str`, found `None`
+160 |     )
+161 |     return PRDetails(
+    |
+info: Function defined here
+
+... [27 lines omitted] ...
+
+error[invalid-argument-type]: Argument to function `build_plan_stage_body` is incorrect
+  </tool_result>
+  <assistant>## Results
+
+**ruff check**: FAILED - 1 error found
+
+```
+E501 Line too long (116 &gt; 100)
+   --&gt; tests/commands/pr/test_dispatch.py:532:101
+```
+
+Line 532 exceeds the 100-character limit by 16 characters.
+
+---
+
+**ty check**: FAILED - 3 diagnostics found
+
+```
+error[invalid-argument-type]: Argument to function `build_plan_stage_body` is incorrect
+  --&gt; tests/commands/pr/test_dispatch.py:50:13
+   |
+50 |             summary=None,
+   |             ^^^^^^^^^^^^ Expected `str`, found `None`
+
+error[invalid-argument-type]: Argument to function `build_plan_stage_body` is incorrect
+  --&gt; tests/commands/pr/test_dispatch.py:159:9
+   |
+159 |         summary=None,
+   |         ^^^^^^^^^^^^ Expected `str`, found `None`
+
+error[invalid-argument-type]: Argument to function `build_plan_stage_body` is incorrect
+  --&gt; tests/commands/pr/test_dispatch.py:398:13
+   |
+398 |             summary=None,
+   |             ^^^^^^^^^^^^ Expected `str`, found `None`
+```
+
+The `build_plan_stage_body` function signature requires `summary: str` (non-optional), but test calls are passing `summary=None`.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1158" cache_read_input_tokens="12347" cache_creation="{'ephemeral_5m_input_tokens': 1158, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
 </session>
