@@ -121,10 +121,8 @@ class FilterActionsMixin:
 
         self.action_refresh()
 
-        if self._show_all_users:
-            self.notify("Showing all users", timeout=2)
-        else:
-            self.notify("Showing my plans", timeout=2)
+        msg = "Showing all users" if self._show_all_users else "Showing my plans"
+        self.notify(msg, timeout=2)
 
     def action_toggle_sort(self: ErkDashApp) -> None:
         """Toggle between sort modes."""
