@@ -3,6 +3,7 @@
 from click.testing import CliRunner
 
 from erk.cli.cli import cli
+from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
@@ -467,3 +468,80 @@ def test_dispatch_with_ref_option_threads_ref_to_workflow() -> None:
         )
         _workflow_name, _inputs, ref = fake_gh.triggered_workflows[0]
         assert ref == "custom-branch"
+
+
+def test_dispatch_skips_create_branch_when_branch_is_checked_out() -> None:
+    """Test that dispatch skips force-updating the branch when it's checked out in a worktree.
+
+    When the plan branch is already checked out (e.g., user ran erk impl -d which
+    checked out the plan branch in the current slot), git refuses 'git branch -f'
+    with 'cannot force update the branch used by worktree'. Dispatch should skip
+    create_branch in that case and still commit and push successfully.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner) as env:
+        plan_branch = "draft-pr-plan-branch"
+        pr_42 = _make_pr_42(plan_branch=plan_branch)
+
+        fake_gh = FakeGitHub(
+            authenticated=True,
+            polled_run_id="12345",
+            pr_details={42: pr_42},
+            prs_by_branch={plan_branch: pr_42},
+        )
+        fake_issues = FakeGitHubIssues()
+        fake_time = FakeTime()
+        planned_pr_backend = PlannedPRBackend(fake_gh, fake_issues, time=fake_time)
+
+        # Simulate: plan branch is checked out in the current worktree
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            current_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", plan_branch]},
+            default_branches={env.cwd: "main"},
+            remote_urls={(env.cwd, "origin"): "https://github.com/test-owner/test-repo.git"},
+            remote_branches={env.cwd: ["origin/main", f"origin/{plan_branch}"]},
+            repository_roots={env.cwd: env.cwd},
+            branch_heads={"main": "abc123", "origin/main": "abc123"},
+            worktrees={
+                env.cwd: [
+                    WorktreeInfo(path=env.cwd, branch=plan_branch, is_root=True),
+                ]
+            },
+        )
+
+        graphite = FakeGraphite(
+            authenticated=True,
+            branches={
+                "main": BranchMetadata(
+                    name="main", parent=None, children=[], is_trunk=True, commit_sha=None
+                ),
+            },
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            graphite=graphite,
+            github=fake_gh,
+            issues=fake_issues,
+            use_graphite=True,
+            plan_store=planned_pr_backend,
+        )
+
+        result = runner.invoke(cli, ["pr", "dispatch", "42", "--base", "main"], obj=ctx)
+
+        # Verify: workflow was triggered successfully
+        assert len(fake_gh.triggered_workflows) >= 1, (
+            f"Expected workflow trigger\nOutput: {result.output}"
+        )
+        inputs = fake_gh.triggered_workflows[0][1]
+        assert inputs["plan_backend"] == "planned_pr"
+        assert inputs["branch_name"] == plan_branch
+
+        # Verify: create_branch was NOT called (branch was checked out)
+        assert len(git.created_branches) == 0, (
+            f"Expected no create_branch calls, got: {git.created_branches}"
+        )
+
+        assert "Traceback" not in result.output
