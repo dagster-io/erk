@@ -290,6 +290,7 @@ def test_teleport_already_tracked_retracks() -> None:
         result = runner.invoke(pr_group, ["teleport", "123", "--force"], obj=ctx)
         assert result.exit_code == 0
         assert "Tracking branch with Graphite" not in result.output  # Already tracked
-        # Verify retrack was called - check git's tracked branches (which should be empty since graphite_branch_ops.retrack was called)
+        # Verify retrack was called - check git's tracked branches
+        # (should be empty since graphite_branch_ops.retrack was called)
         # The retrack happens via graphite_branch_ops, so we just verify no fresh track happened
         assert len(git.created_tracking_branches) == 0  # Fresh tracking not called
