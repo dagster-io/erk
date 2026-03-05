@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Fix planning/ docs terminology (Objective #8381, Nodes 6.1 + 6.2)",
+  "objective_id": 8381,
+  "node_ids": [
+    "6.1"
+  ]
+}
