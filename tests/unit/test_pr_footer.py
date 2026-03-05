@@ -45,7 +45,7 @@ class TestBuildPrBodyFooter:
     def test_builds_footer_with_checkout_command(self) -> None:
         """Test building footer includes checkout command."""
         footer = build_pr_body_footer(42)
-        assert "erk pr checkout 42" in footer
+        assert "erk pr teleport 42" in footer
         assert "Closes" not in footer
 
     def test_includes_horizontal_rule(self) -> None:

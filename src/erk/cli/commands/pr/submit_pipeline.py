@@ -522,7 +522,7 @@ def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | Subm
     # Add footer if missing
     pr_details = ctx.github.get_pr(state.repo_root, pr_number)
     current_body = "" if isinstance(pr_details, PRNotFound) else pr_details.body
-    has_footer = "erk pr checkout" in current_body
+    has_footer = "erk pr teleport" in current_body or "erk pr checkout" in current_body
     if not has_footer:
         footer = build_pr_body_footer(pr_number)
         ctx.github.update_pr_body(state.repo_root, pr_number, current_body + footer)

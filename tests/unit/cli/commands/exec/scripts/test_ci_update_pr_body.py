@@ -63,7 +63,7 @@ def test_build_pr_body_includes_summary_and_footer() -> None:
     assert "## Summary" in body
     assert "This is the summary" in body
     assert "Closes #" not in body
-    assert "erk pr checkout 123" in body
+    assert "erk pr teleport 123" in body
 
 
 def test_build_pr_body_includes_workflow_link_when_provided() -> None:
@@ -722,7 +722,7 @@ def test_build_pr_body_no_closes_reference() -> None:
     assert "## Summary" in body
     assert "This is the summary" in body
     assert "Closes #" not in body
-    assert "erk pr checkout 123" in body
+    assert "erk pr teleport 123" in body
 
 
 def test_impl_planned_pr_preserves_metadata_and_adds_plan_section(tmp_path: Path) -> None:

@@ -256,9 +256,9 @@ def build_pr_body_footer(
     parts.append("\n---\n")
 
     parts.append(
-        f"\nTo checkout this PR in a fresh worktree and environment locally, run:\n\n"
+        f"\nTo replicate this PR locally, run:\n\n"
         f"```\n"
-        f'source "$(erk pr checkout {pr_number} --script)"\n'
+        f"erk pr teleport {pr_number}\n"
         f"```\n"
     )
 

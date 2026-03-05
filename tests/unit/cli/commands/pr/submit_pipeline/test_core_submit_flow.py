@@ -319,7 +319,7 @@ def test_existing_pr_adds_footer_if_missing(tmp_path: Path) -> None:
     assert isinstance(result, SubmitState)
     assert result.was_created is False
     assert result.pr_number == 42
-    # Footer should have been added (body didn't contain "erk pr checkout")
+    # Footer should have been added (body didn't contain "erk pr teleport")
     assert len(fake_github.updated_pr_bodies) == 1
     updated_body = fake_github.updated_pr_bodies[0][1]
-    assert "erk pr checkout" in updated_body
+    assert "erk pr teleport" in updated_body

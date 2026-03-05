@@ -10,8 +10,8 @@ import re
 def has_body_footer(body: str) -> bool:
     """Check if PR body already contains a footer section.
 
-    Checks for the 'erk pr checkout' marker that is included in the
-    standard PR footer.
+    Checks for 'erk pr teleport' or 'erk pr checkout' markers
+    that are included in the standard PR footer.
 
     Args:
         body: The PR body text to check
@@ -19,20 +19,20 @@ def has_body_footer(body: str) -> bool:
     Returns:
         True if the body already contains a footer section
     """
-    return "erk pr checkout" in body
+    return "erk pr teleport" in body or "erk pr checkout" in body
 
 
 def has_checkout_footer_for_pr(body: str, pr_number: int) -> bool:
-    """Check if PR body contains checkout footer for a specific PR number.
+    """Check if PR body contains teleport/checkout footer for a specific PR number.
 
-    Used to validate that a PR's body contains the correct checkout command.
-    This is more strict than has_body_footer() as it validates the PR number.
+    Accepts both 'erk pr teleport' and 'erk pr checkout' formats.
 
     Args:
         body: The PR body text to check
         pr_number: The PR number to validate against
 
     Returns:
-        True if the body contains 'erk pr checkout <pr_number>'
+        True if the body contains 'erk pr teleport <pr_number>'
+            or 'erk pr checkout <pr_number>'
     """
-    return bool(re.search(rf"erk pr checkout {pr_number}\b", body))
+    return bool(re.search(rf"erk pr (teleport|checkout) {pr_number}\b", body))
