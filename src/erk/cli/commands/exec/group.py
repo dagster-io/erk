@@ -89,11 +89,11 @@ from erk.cli.commands.exec.scripts.objective_apply_landed_update import (
 from erk.cli.commands.exec.scripts.objective_fetch_context import (
     objective_fetch_context,
 )
-from erk.cli.commands.exec.scripts.objective_plan_setup import (
-    objective_plan_setup,
-)
 from erk.cli.commands.exec.scripts.objective_link_pr import (
     objective_link_pr,
+)
+from erk.cli.commands.exec.scripts.objective_plan_setup import (
+    objective_plan_setup,
 )
 from erk.cli.commands.exec.scripts.objective_post_action_comment import (
     objective_post_action_comment,
@@ -127,14 +127,14 @@ from erk.cli.commands.exec.scripts.quick_submit import quick_submit
 from erk.cli.commands.exec.scripts.rebase_with_conflict_resolution import (
     rebase_with_conflict_resolution,
 )
-from erk.cli.commands.exec.scripts.resolve_objective_ref import (
-    resolve_objective_ref,
-)
 from erk.cli.commands.exec.scripts.register_one_shot_plan import (
     register_one_shot_plan,
 )
 from erk.cli.commands.exec.scripts.reply_to_discussion_comment import (
     reply_to_discussion_comment,
+)
+from erk.cli.commands.exec.scripts.resolve_objective_ref import (
+    resolve_objective_ref,
 )
 from erk.cli.commands.exec.scripts.resolve_review_thread import (
     resolve_review_thread,
