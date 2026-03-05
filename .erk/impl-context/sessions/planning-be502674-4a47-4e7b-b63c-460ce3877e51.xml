@@ -1,0 +1,851 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>i think we should consider changing the name of "sync" to "teleport" to match the claude code language. as in we are "teleporting" the branch from remote to local</user>
+  <usage input_tokens="3" cache_creation_input_tokens="10344" cache_read_input_tokens="4835" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10344}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore what "sync" currently refers to in the codebase and understand the scope of this change.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="10344" cache_read_input_tokens="4835" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10344}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01VnCyhjzsbQr6poJ1D1p21P">
+    <param name="query">select:Agent,Grep,Read</param>
+    <param name="max_results">3</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="10344" cache_read_input_tokens="4835" output_tokens="163" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10344, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VnCyhjzsbQr6poJ1D1p21P">
+
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01SMhKo3WogMmrBZz9SXm2QU">
+    <param name="description">Explore sync/teleport usage</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 731 chars]...de/, docs/learned/, tests/. Focus on branch-related sync, not docs sync or changelog sync.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4061" cache_read_input_tokens="15179" output_tokens="330" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4061, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SMhKo3WogMmrBZz9SXm2QU">
+Perfect! Now I have a comprehensive understanding. Let me create a detailed summary of all the sync-related code for the user.
+
+## Summary: "Sync" Concept in Erk - Branch Synchronization from Remote
+
+I've completed a thorough search of the erk codebase for all references to "sync" (specifically branch sync from remote to local) and related concepts. Here are my findings:
+
+### 1. **CLI Commands Related to "Sync" (Branch Operations)**
+
+**Primary Command:**
+- `/Users/schrockn/code/erk/src/erk/cli/commands/pr/reconcile_with_remote_cmd.py` - The main CLI command `erk pr reconcile-with-remote`
+  - Registered in `/Users/schrockn/code/erk/src/erk/cli/commands/pr/__init__.py` (line 42)
+  - Wraps `/erk:reconcile-with-remote` slash command
+  - Handles branch divergence with remote, fetch, rebase, and conflict resolution
+
+**Secondary Sync Operations (embedded in larger workflows):**
+- `/Users/schrockn/code/erk/src/erk/cli/commands/pr/submit_pipeline.py` (lines 265, 404) - Auto-sync during PR submission
+  - Calls `git.remote.fetch_branch()` at line 265
+  - Calls `git.remote.pull_rebase()` at line 404
+- `/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py` (lines 87-103) - Three-step sync for plan setup
+  - Implements the documented "three-step sync" pattern
+  - Calls `fetch_branch()`, then `checkout_branch()` or `create_tracking_branch()`, then `pull_rebase()`
+
+### 2. **The "Sync" Concept - What Does It Do?**
+
+Branch sync in erk is a **three-step operation** that brings a local branch in sync with its remote tracking branch:
+
+**Step 1: Fetch** (`git.remote.fetch_branch()`)
+- Fetches the named branch from origin to make remote state available locally
+
+**Step 2: Checkout or Create Tracking**
+
+... [96 lines omitted] ...
+
+- Resolves "Branch has been updated remotely" errors from `gt submit`
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2388" cache_read_input_tokens="19240" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2388}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good exploration. Let me read the key files to understand the current state better.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2388" cache_read_input_tokens="19240" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2388}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Qtj6T6WRnaq2hMxbM19YJj">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/planning/planned-pr-branch-sync.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2388" cache_read_input_tokens="19240" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2388}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qtj6T6WRnaq2hMxbM19YJj">
+     1→---
+     2→title: Planned PR Branch Sync
+     3→read_when:
+     4→  - "implementing or debugging planned-PR plan setup"
+     5→  - "understanding branch sync during plan implementation"
+     6→  - "working with setup_impl_from_pr for planned PR plans"
+     7→  - "debugging divergence between local and remote plan branches"
+     8→tripwires:
+     9→  - action: "implementing planned-PR plan without syncing with remote"
+    10→    warning: "Before implementing a planned-PR plan, always sync with remote: fetch_branch -&gt; checkout/create_tracking -&gt; pull_rebase"
+    11→  - action: "detecting plan backend by checking backend type directly"
+    12→    warning: "Use github.get_pr() + pr_result.head_ref_name to discover the plan branch. There is only one backend (planned-PR)."
+    13→  - action: "creating a new branch for a planned-PR plan"
+    14→    warning: "Planned PR plans already have a branch created during plan-save. Reuse the existing branch, don't create a new one."
+    15→  - action: "committing to planned-PR plan branches after checkout without pulling remote"
+    16→    warning: "Both setup_impl_from_pr.py and submit.py use the same three-step sync: fetch_branch -&gt; checkout/create_tracking -&gt; pull_rebase. Skipping pull_rebase causes non-fast-forward push failures."
+    17→---
+    18→
+    19→# Planned PR Branch Sync
+    20→
+    21→When implementing a planned-PR plan, the local branch must be synced with remote because plan-save creates the branch and pushes it, then checks out the original branch. Remote may receive additional commits before implementation runs.
+    22→
+    23→## The Problem
+    24→
+    25→1. `plan_save` creates a branch, pushes it to remote, creates draft PR
+    26→2. `plan_save` checks out the original branch (user continues working)
+    27→3. Time passes (remote CI may add commits, user may re-plan)
+    28→4. `plan-implement` runs and needs the latest branch state
+    29→
+    30→## Three-Step Sync Sequence
+
+... [79 lines omitted] ...
+
+    87→PR #7697 added the missing `pull_rebase()` call to the submit path. Without it, the submit path would attempt to push commits onto a branch that had diverged from remote, causing non-fast-forward push failures.
+  </tool_result>
+  <tool_use name="Read" id="toolu_0115LeHtxKaDdQCLFCd2crJQ">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/reconcile-with-remote.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2388" cache_read_input_tokens="19240" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2388}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0115LeHtxKaDdQCLFCd2crJQ">
+     1→---
+     2→description: Reconcile branch with remote and resolve divergence intelligently
+     3→---
+     4→
+     5→# Reconcile With Remote
+     6→
+     7→Resolve "Branch X has been updated remotely" errors by reconciling with remote and handling any resulting conflicts.
+     8→
+     9→## Steps
+    10→
+    11→1. **Fetch remote state**
+    12→
+    13→   ```bash
+    14→   git fetch origin
+    15→   ```
+    16→
+    17→2. **Get current branch name**
+    18→
+    19→   ```bash
+    20→   BRANCH=$(git rev-parse --abbrev-ref HEAD)
+    21→   ```
+    22→
+    23→3. **Diagnose divergence** - Understand what changed on each side:
+    24→
+    25→   ```bash
+    26→   # Commits only on remote (what we need to incorporate)
+    27→   git log --oneline HEAD..origin/$BRANCH
+    28→
+    29→   # Commits only on local (our work that might be lost)
+    30→   git log --oneline origin/$BRANCH..HEAD
+
+... [98 lines omitted] ...
+
+    42→   | 0                   | 1+                 | Already ahead (shouldn't trigger this error)       |
+    84→   &gt; Without this step, `gt restack` will fail with a "diverged from tracking" error because Graphite's cached SHAs no longer match the rebased commits.
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HnNAJ9cd6D4YpziCHBc5ao">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2388" cache_read_input_tokens="19240" output_tokens="389" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2388, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HnNAJ9cd6D4YpziCHBc5ao">
+     1→"""Set up .erk/impl-context/ folder from GitHub PR in current worktree.
+     2→
+     3→This exec command fetches a plan from a GitHub PR, creates a feature branch,
+     4→checks it out, and creates the .erk/impl-context/ folder structure for implementation.
+     5→
+     6→Usage:
+     7→    erk exec setup-impl-from-pr &lt;plan-number&gt; [--session-id &lt;id&gt;]
+     8→
+     9→Output:
+    10→    Structured JSON output with success status and folder details
+    11→
+    12→Exit Codes:
+    13→    0: Success (.erk/impl-context/ folder created, branch checked out)
+    14→    1: Error (PR not found, plan fetch failed, git operations failed)
+    15→
+    16→Examples:
+    17→    $ erk exec setup-impl-from-pr 1028
+    18→    {"success": true, "impl_path": "/path/to/.erk/impl-context",
+    19→     "plan_number": 1028, "branch": "P1028-..."}
+    20→"""
+    21→
+    22→import json
+    23→from pathlib import Path
+    24→
+    25→import click
+    26→
+    27→from erk_shared.context.helpers import (
+    28→    require_branch_manager,
+    29→    require_cwd,
+    30→    require_git,
+
+... [265 lines omitted] ...
+
+    36→from erk_shared.gateway.git.remote_ops.types import PullRebaseError
+    59→        raise click.ClickException(msg)
+   104→        if isinstance(pull_result, PullRebaseError):
+   105→            error_output = {
+   107→                "error": "pull_rebase_failed",
+   109→                    f"Failed to sync branch '{branch_name}' with remote: {pull_result.message}"
+   112→            click.echo(json.dumps(error_output), err=True)
+   169→        error_output = {
+   171→            "error": "plan_not_found",
+   174→        click.echo(json.dumps(error_output), err=True)
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="8847" cache_read_input_tokens="21628" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8847}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01TAW1gmZynMtCenPb8syp7X">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8847" cache_read_input_tokens="21628" output_tokens="292" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8847, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TAW1gmZynMtCenPb8syp7X">
+
+  </tool_result>
+  <assistant>I found the relevant code. Here's what I see:
+
+**Current "sync" usage** (branch remote→local context):
+- `_checkout_plan_branch()` in `setup_impl_from_pr.py` — uses `needs_sync` variable, prints "syncing with remote..."
+- `submit_pipeline.py` — similar three-step sync during PR submission  
+- `planned-pr-branch-sync.md` — documentation describing the "Three-Step Sync Sequence"
+- `reconcile-with-remote` — a separate, heavier operation for resolving divergence/conflicts
+
+**Separate "sync" concepts** (NOT branch-related, should stay as-is):
+- `erk docs sync` — syncs documentation index
+- `erk artifact sync` — syncs bundled artifacts
+- `pr_sync_commit` — syncs PR metadata</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1537" cache_read_input_tokens="30475" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1537}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01N6zdJpZTXHEwSZFiV6URMB">
+    <param name="questions">[{'question': "What's the scope of this rename? The three-step fetch→checkout→pull_rebase ...[truncated 737 chars]...ut this and want to discuss further before committing to scope."}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1537" cache_read_input_tokens="30475" output_tokens="494" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1537, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N6zdJpZTXHEwSZFiV6URMB">
+User has answered your questions: "What's the scope of this rename? The three-step fetch→checkout→pull_rebase pattern is called 'sync' internally. Should we also rename `reconcile-with-remote` to something like `teleport` or `teleport-from-remote`, or keep reconcile separate since it handles conflict resolution too?"="Terminology only". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_016ZavkE2W3hr9VzQARBP9ND">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="27900" cache_read_input_tokens="4849" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 27900, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016ZavkE2W3hr9VzQARBP9ND">
+
+  </tool_result>
+  <assistant>Now let me check the exact locations that need changing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="368" cache_read_input_tokens="32749" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 368}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01AZ2MCWmAzHezWEcVbFwknx">
+    <param name="pattern">needs_sync|syncing with remote|sync.*branch|branch.*sync</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="368" cache_read_input_tokens="32749" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 368}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AZ2MCWmAzHezWEcVbFwknx">
+src/erk/cli/commands/wt/create_from_cmd.py:103:    display_sync_status(ctx, worktree_path=result.worktree_path, branch=branch, script=script)
+src/erk/tui/screens/plan_detail_screen.py:776:                    self.app._cmux_sync_async(op_id, row.pr_number, row.pr_head_branch)
+src/erk/tui/operations/workers.py:125:    def _cmux_sync_async(self: ErkDashApp, op_id: str, pr_number: int, branch: str) -&gt; None:
+src/erk/cli/commands/wt/list_cmd.py:21:def _get_sync_status(ctx: ErkContext, worktree_path: Path, branch: str | None) -&gt; str:
+src/erk/cli/commands/wt/list_cmd.py:22:    """Get sync status description for a branch.
+src/erk/cli/commands/wt/list_cmd.py:52:def _format_sync_from_batch(all_sync: dict[str, BranchSyncInfo], branch: str | None) -&gt; str:
+src/erk/cli/commands/wt/list_cmd.py:56:        all_sync: Dict mapping branch name to BranchSyncInfo
+src/erk/cli/commands/wt/list_cmd.py:65:    info = all_sync.get(branch)
+src/erk/cli/commands/wt/list_cmd.py:210:    # Fetch all branch sync info in a single git call (batch operation for performance)
+src/erk/cli/commands/wt/list_cmd.py:211:    all_sync_info = ctx.git.branch.get_all_branch_sync_info(repo.root)
+src/erk/cli/commands/wt/list_cmd.py:261:    root_sync = _format_sync_from_batch(all_sync_info, root_branch)
+src/erk/cli/commands/wt/list_cmd.py:268:            root_name, root_branch_display, root_pr_cell, root_sync, root_last_cell, root_impl_cell
+src/erk/cli/commands/wt/list_cmd.py:271:        table.add_row(root_name, root_branch_display, root_pr_cell, root_sync, root_impl_cell)
+src/erk/cli/commands/wt/list_cmd.py:300:        sync_cell = _format_sync_from_batch(all_sync_info, branch)
+src/erk/cli/commands/wt/list_cmd.py:308:            table.add_row(name_cell, branch_display, pr_cell, sync_cell, last_cell, impl_cell)
+src/erk/cli/commands/wt/list_cmd.py:310:            table.add_row(name_cell, branch_display, pr_cell, sync_cell, impl_cell)
+src/erk/cli/commands/wt/list_cmd.py:328:    """List worktrees with branch, PR, sync, and implementation info.
+src/erk/cli/commands/wt/list_cmd.py:334:    - sync: Ahead/behind status vs tracking branch
+src/erk/tui/actions/palette.py:151:                self._cmux_sync_async(op_id, row.pr_number, row.pr_head_branch)
+src/erk/cli/activation.py:207:# Always sync deps (idempotent — handles branch switches in reused slots)
+src/erk/cli/commands/checkout_helpers.py:149:            "or 'git reset --hard origin/&lt;branch&gt;' to sync"
+src/erk/cli/commands/checkout_helpers.py:328:        display_sync_status(ctx, worktree_path=worktree_path, branch=branch_name, script=script)
+src/erk/cli/commands/exec/scripts/download_remote_session.py:7:    erk exec download-remote-session --session-branch async-learn/123 --session-id abc-123
+src/erk/cli/commands/exec/scripts/download_remote_session.py:17:    $ erk exec download-remote-session --session-branch async-learn/123 --session-id abc-123
+src/erk/cli/commands/exec/scripts/download_remote_session.py:139:    help="Git branch containing the session (e.g., async-learn/123)",
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:89:    """Check for preprocessed session manifest on async-learn branch.
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:99:    session_branch = f"async-learn/{plan_id}"
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py:178:    # Check for preprocessed manifest on async-learn branch
+src/erk/cli/commands/branch/checkout_cmd.py:249:        display_sync_status(ctx, worktree_path=target_path, branch=branch, script=script)
+src/erk/cli/commands/pr/dispatch_helpers.py:77:            f"To fix, sync your local branch:\n"
+
+... [25 lines omitted] ...
+
+src/erk/cli/commands/exec/scripts/cmux_sync_workspace.py:16:    1: Error - cmux/checkout/sync failed or branch lookup failed
+src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:109:                    f"Failed to sync branch '{branch_name}' with remote: {pull_result.message}"
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Qiq15jYQSkFcs3317mVMEQ">
+    <param name="pattern">needs_sync|syncing with remote|sync.*branch|branch.*sync</param>
+    <param name="path">/Users/schrockn/code/erk/tests</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="368" cache_read_input_tokens="32749" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 368}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015SfUcTorBbcWbEqvBtNaZp">
+    <param name="pattern">sync</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="368" cache_read_input_tokens="32749" output_tokens="383" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 368, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Qiq15jYQSkFcs3317mVMEQ">
+tests/unit/branch_manager/test_graphite_branch_manager.py:17:    """Test that create_branch works when local and remote are in sync."""
+tests/unit/branch_manager/test_graphite_branch_manager.py:24:            "origin/parent-branch": "abc123",  # In sync
+tests/unit/branch_manager/test_graphite_branch_manager.py:150:def test_create_branch_from_local_branch_no_remote_sync() -&gt; None:
+tests/unit/branch_manager/test_graphite_branch_manager.py:151:    """Test that create_branch from local branch doesn't do remote sync."""
+tests/unit/fakes/test_fake_github.py:1025:    """Test update_pr_body keeps prs_by_branch in sync."""
+tests/unit/fakes/test_fake_github.py:1060:    """Test close_pr keeps prs_by_branch in sync."""
+tests/tui/commands/test_registry.py:339:def test_copy_cmux_sync_unavailable_without_branch() -&gt; None:
+tests/tui/commands/test_registry.py:340:    """cmux_sync and copy_cmux_sync are unavailable when no head branch exists."""
+tests/unit/commands/wt/test_list_helpers.py:21:    """Test sync status returns 'current' when branch is up-to-date."""
+tests/unit/commands/wt/test_list_helpers.py:72:def test_get_sync_status_none_branch() -&gt; None:
+tests/unit/commands/wt/test_list_helpers.py:73:    """Test sync status returns '-' when branch is None (detached HEAD)."""
+tests/unit/commands/wt/test_list_helpers.py:240:    """Test sync status from batch returns 'current' when branch is up-to-date."""
+tests/unit/commands/wt/test_list_helpers.py:283:def test_format_sync_from_batch_none_branch() -&gt; None:
+tests/unit/commands/wt/test_list_helpers.py:284:    """Test sync status from batch returns '-' when branch is None (detached HEAD)."""
+tests/unit/commands/wt/test_list_helpers.py:292:def test_format_sync_from_batch_branch_not_found() -&gt; None:
+tests/unit/commands/wt/test_list_helpers.py:293:    """Test sync status from batch returns '-' when branch not in dict."""
+tests/unit/commands/wt/test_list_helpers.py:307:    all_sync = {"feature": BranchSyncInfo(branch="feature", upstream=None, ahead=0, behind=0)}
+tests/commands/display/list/test_basic.py:54:        # New format has columns: worktree, branch, pr, sync, impl
+tests/tui/app/test_async_operations.py:1057:            app._cmux_sync_async("test-op", 456, "test-branch")
+tests/tui/app/test_async_operations.py:1100:            app._cmux_sync_async("test-op", 456, "test-branch")
+tests/tui/app/test_async_operations.py:1130:            app._cmux_sync_async("test-op", 456, "test-branch")
+tests/tui/app/test_command_palette.py:211:    async def test_execute_palette_command_land_pr_with_no_branch(self) -&gt; None:
+tests/tui/app/test_app_filtering.py:106:    async def test_t_on_row_without_branch_shows_message(self) -&gt; None:
+tests/tui/app/test_app_filtering.py:126:    async def test_t_on_branch_not_in_stack_shows_message(self) -&gt; None:
+tests/commands/branch/test_checkout_cmd.py:498:    """Test that stale assignment with wrong branch is synced and target gets a new slot.
+tests/commands/branch/test_checkout_cmd.py:546:        # Lazy tip sync corrects the assignment, then target-branch gets a new slot.
+tests/commands/branch/test_checkout_cmd.py:558:    With lazy tip sync, the assignment is corrected to reflect the actual branch
+tests/commands/branch/test_checkout_cmd.py:1490:    """--for-plan syncs stale local parent branch with origin before gt track.
+tests/unit/cli/commands/slot/test_common.py:694:def test_sync_no_changes_when_branches_match(tmp_path: Path) -&gt; None:
+tests/unit/cli/commands/slot/test_common.py:695:    """Returns same state and synced_count=0 when all branches match."""
+
+... [48 lines omitted] ...
+
+tests/unit/cli/commands/exec/scripts/test_fetch_sessions.py:17:        """Error when async-learn branch doesn't exist on remote."""
+  </tool_result>
+  <tool_result tool="toolu_015SfUcTorBbcWbEqvBtNaZp">
+No matches found
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6116" cache_read_input_tokens="33117" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6116}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01QTesGjkiAuKFiy3ZpB363A">
+    <param name="pattern">sync|teleport</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-i">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6116" cache_read_input_tokens="33117" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6116}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QTesGjkiAuKFiy3ZpB363A">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_017jmGzmcg9gAguGseAhiBwj">
+    <param name="pattern">sync|teleport</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_update.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6116" cache_read_input_tokens="33117" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6116}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017jmGzmcg9gAguGseAhiBwj">
+160:            click.echo(f"Branch {branch_name} synced")
+  </tool_result>
+  <tool_use name="Read" id="toolu_019vw7jtERDzrKcPEpDXy3xe">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_update.py</param>
+    <param name="offset">140</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="39233" output_tokens="117" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 686, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019vw7jtERDzrKcPEpDXy3xe">
+   140→    if isinstance(raw_branch, str):
+   141→        branch_name = raw_branch
+   142→        git = require_git(ctx)
+   143→        git.commit.commit_files_to_branch(
+   144→            repo_root,
+   145→            branch=branch_name,
+   146→            files={f"{IMPL_CONTEXT_DIR}/plan.md": plan_content.strip()},
+   147→            message=f"Update plan: {new_title}",
+   148→        )
+   149→        push_result = git.remote.push_to_remote(
+   150→            cwd, "origin", branch_name, set_upstream=False, force=False
+   151→        )
+   152→        branch_updated = not isinstance(push_result, PushError)
+   153→
+   154→    # Step 6: Output success
+   155→    if output_format == "display":
+   156→        click.echo(f"Plan #{plan_number} updated")
+   157→        click.echo(f"Title: {full_title}")
+   158→        click.echo(f"URL: {plan_result.url}")
+   159→        if branch_updated:
+   160→            click.echo(f"Branch {branch_name} synced")
+   161→        elif branch_name is not None:
+   162→            click.echo(f"Warning: branch push to {branch_name} failed")
+   163→    else:
+   164→        click.echo(
+   165→            json.dumps(
+   166→                {
+   167→                    "success": True,
+   168→                    "plan_number": plan_number,
+   169→                    "plan_url": plan_result.url,
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="551" cache_read_input_tokens="39919" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 551}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good — `submit_pipeline.py` doesn't use "sync" at all, and `plan_update.py:160` says "Branch synced" for a local→remote push (opposite direction, not a teleport).
+
+The scope is narrow. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="551" cache_read_input_tokens="39919" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 551}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01V1eK3H8VpCfSgsk78PERZw">
+    <param name="file_path">/Users/schrockn/.claude/plans/nested-wobbling-newt.md</param>
+    <param name="content"># Rename "sync" to "teleport" for remote→local branch operations
+
+## Context
+
+Claude Code ...[truncated 2069 chars]...4. Grep for remaining "sync" references in setup_impl_from_pr to confirm none were missed
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="551" cache_read_input_tokens="39919" output_tokens="1042" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 551, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V1eK3H8VpCfSgsk78PERZw">
+File created successfully at: /Users/schrockn/.claude/plans/nested-wobbling-newt.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01LAPD1sZdcUwvYUiusxQsbt">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1282" cache_read_input_tokens="40470" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1282, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LAPD1sZdcUwvYUiusxQsbt">
+
+  </tool_result>
+  <assistant>Small, focused rename — 3 source files plus a doc rename. The key insight is that only the remote→local branch pattern in `setup_impl_from_pr.py` uses "sync" in this teleport sense; other "sync" usages in the codebase are different concepts.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="732" cache_read_input_tokens="41752" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 732}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01EfDd2ohBC2gUshWBmM8owr">
+    <param name="plan"># Rename "sync" to "teleport" for remote→local branch operations
+
+## Context
+
+Claude Code ...[truncated 2069 chars]...4. Grep for remaining "sync" references in setup_impl_from_pr to confirm none were missed
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="732" cache_read_input_tokens="41752" output_tokens="103" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 732, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EfDd2ohBC2gUshWBmM8owr">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/nested-wobbling-newt.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Rename "sync" to "teleport" for remote→local branch operations
+Current context: (wt:erk) (br:master) (plan:#8751)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id be502674-4a47-4e7b-b63c-460ce3877e51 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+## Rename "sync" to "teleport" for remote→local branch operations
+
+### Context
+
+Claude Code uses "teleport" terminology for bringing a remote branch to local. Erk currently calls this pattern "sync" in the three-step sequence (fetch → checkout → pull_rebase). Renaming aligns erk's vocabulary with Claude Code.
+
+**Scope:** Terminology-only rename for the remote→local branch pattern. Does NOT touch:
+- `reconcile-with-remote` (stays as-is — it handles conflict resolution)
+- `erk docs sync`, `erk artifact sync`, `pr_sync_commit` (different concepts)
+- `plan_update.py` "Branch synced" (local→remote push, opposite direction)
+- `wt list` sync status column (ahead/behind display, different concept)
+
+### Changes
+
+**1. `src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py`**
+- `needs_sync` → `needs_teleport`
+- Docstring: "Fetch, checkout, and **teleport** a planned-PR plan branch"
+- Comments: "just sync" → "just teleport", "no sync needed" → "no teleport needed"
+- User message: "syncing with remote..." → "teleporting from remote..."
+- Error message: "Failed to sync branch" → "Failed to teleport branch"
+
+**2. `docs/learned/planning/planned-pr-branch-sync.md`**
+- Rename to `planned-pr-branch-teleport.md`
+- Update title, frontmatter, and body to use "teleport" terminology
+- "Three-Step Sync Sequence" → "Three-Step Teleport Sequence"
+
+**3. Update references** to the renamed doc file
+
+**4. `tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py`**
+- Update comments referencing "sync" → "teleport"
+
+### Verification
+- Run ruff/ty checks, run the setup_impl_from_pr tests, run `erk docs sync` to regenerate index
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="752" cache_read_input_tokens="42484" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 752}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_018VFGwSXHc3Rdmketoo8njS">
+    <param name="questions">[{'question': 'Rename "sync" to "teleport" for remote→local branch operations\nCurrent con...[truncated 401 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="752" cache_read_input_tokens="42484" output_tokens="721" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 752, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018VFGwSXHc3Rdmketoo8njS">
+User has answered your questions: "Rename "sync" to "teleport" for remote→local branch operations
+Current context: (wt:erk) (br:master) (plan:#8751)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01DGJuKU7L6uaUDkNjoujBZK">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="39292" cache_read_input_tokens="4835" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 39292, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DGJuKU7L6uaUDkNjoujBZK">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_012Xya9R8sUkX6osffZBDgi7">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="562" cache_read_input_tokens="44127" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 562, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012Xya9R8sUkX6osffZBDgi7">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="be502674-4a47-4e7b-b63c-460ce3877e51" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="be502674-4a47-4e7b-b63c-460ce3877e51" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "be502674-4a47-4e7b-b63c-460ce3877e51" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "be502674-4a47-4e7b-b63c-460ce3877e51" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "be502674-4a47-4e7b-b63c-460ce3877e51" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "be502674-4a47-4e7b-b63c-460ce3877e51" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2277" cache_read_input_tokens="44689" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2277}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll save the plan now.
+
+**Branch slug:** `rename-sync-teleport`
+
+**Summary:** Renames the "sync" terminology to "teleport" in the three-step remote-to-local branch pattern used during plan implementation setup. Aligns erk vocabulary with Claude Code's teleport concept while leaving unrelated sync operations unchanged.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2277" cache_read_input_tokens="44689" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2277}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01NGZ7PRYwwEWqyW1jZaHpKD">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2277" cache_read_input_tokens="44689" output_tokens="251" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2277, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NGZ7PRYwwEWqyW1jZaHpKD">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01C98ujfHpKbHV57V17qMc2s">
+    <param name="command">erk exec plan-save --format json --session-id="be502674-4a47-4e7b-b63c-460ce3877e51" --bra...[truncated 169 chars]...lary with Claude Code teleport concept while leaving unrelated sync operations unchanged."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3389" cache_read_input_tokens="46966" output_tokens="211" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3389, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C98ujfHpKbHV57V17qMc2s">
+{"success": true, "plan_number": 8767, "plan_url": "https://github.com/dagster-io/erk/pull/8767", "title": "[erk-plan] Rename \"sync\" to \"teleport\" for remote\u2192local branch operations", "branch_name": "plnd/rename-sync-teleport-03-05-0838", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/be502674-4a47-4e7b-b63c-460ce3877e51/plan_snapshots/000001-76551e22"}
+  </tool_result>
+  <assistant>Plan saved as draft PR #8767: https://github.com/dagster-io/erk/pull/8767
+
+Now pushing the planning session:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1688" cache_read_input_tokens="50355" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1688}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Cd4Yd5twuSLLmG7oxUwitz">
+    <param name="command">erk exec upload-impl-session --session-id "be502674-4a47-4e7b-b63c-460ce3877e51" 2&gt;/dev/null || true</param>
+    <param name="description">Upload planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1688" cache_read_input_tokens="50355" output_tokens="173" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1688, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Cd4Yd5twuSLLmG7oxUwitz">
+{"uploaded": true, "plan_id": 8751}
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01SwRvfmX5KSpp3MJnkbKjFJ">
+    <param name="plan"># Rename "sync" to "teleport" for remote→local branch operations
+
+## Context
+
+Claude Code ...[truncated 2069 chars]...4. Grep for remaining "sync" references in setup_impl_from_pr to confirm none were missed
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="52043" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SwRvfmX5KSpp3MJnkbKjFJ">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8767 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8767:
+  In current wt:    source "$(erk br co --for-plan 8767 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8767 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8767 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8767 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8767:
+  In current wt:  erk br co --for-plan 8767
+  In new wt:      erk br co --new-slot --for-plan 8767
+
+Dispatch plan #8767:
+  CLI command:    erk pr dispatch 8767
+  Slash command:  /erk:pr-dispatch 8767
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan saved as **draft PR #8767**. Here are your next steps:
+
+**Implement plan #8767:**
+```
+In current wt:    source "$(erk br co --for-plan 8767 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --for-plan 8767 --script)" &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 8767 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 8767 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout plan #8767:**
+```
+In current wt:  erk br co --for-plan 8767
+In new wt:      erk br co --new-slot --for-plan 8767
+```
+
+**Dispatch plan #8767:**
+```
+CLI command:    erk pr dispatch 8767
+Slash command:  /erk:pr-dispatch 8767
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="423" cache_read_input_tokens="52241" output_tokens="257" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 423, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
