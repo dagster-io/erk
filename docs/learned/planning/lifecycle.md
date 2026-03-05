@@ -106,7 +106,7 @@ Plan save operations are idempotent within a session. The `plan-save` command:
 
 1. Checks if a plan was already created for this session ID
 2. If found, returns the existing issue instead of creating a duplicate
-3. Uses `_get_existing_saved_issue()` helper to query GitHub
+3. Queries GitHub for an existing plan saved by this session
 
 This prevents duplicate issues when retry loops occur (e.g., hook blocking → retry → would-be duplicate).
 

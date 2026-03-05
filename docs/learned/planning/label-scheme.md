@@ -17,13 +17,13 @@ Erk uses a two-label scheme for plans: a **base label** for universal identifica
 
 ## Label Taxonomy
 
-| Label              | Purpose                           | Applied To               |
-| ------------------ | --------------------------------- | ------------------------ |
-| `erk-planned-pr`   | Base label — identifies all plans | All plan/learn issues    |
-| `erk-plan`         | Type label — implementation plans | Regular plans            |
-| `erk-learn`        | Type label — documentation plans  | Learn plans              |
-| `erk-objective`    | Separate system — objectives      | Objective issues         |
-| `erk-consolidated` | Consolidation marker              | Consolidated learn plans |
+| Label              | Purpose                           | Applied To                |
+| ------------------ | --------------------------------- | ------------------------- |
+| `erk-planned-pr`   | Base label — identifies all plans | All plans and learn plans |
+| `erk-plan`         | Type label — implementation plans | Regular plans             |
+| `erk-learn`        | Type label — documentation plans  | Learn plans               |
+| `erk-objective`    | Separate system — objectives      | Objective issues          |
+| `erk-consolidated` | Consolidation marker              | Consolidated learn plans  |
 
 ## Two-Label Assignment
 
