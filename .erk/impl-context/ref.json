@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Plan: Create Astro/Starlight v2 Docs Site for Erk"
+  "plan_id": "8759",
+  "url": "https://github.com/dagster-io/erk/pull/8759",
+  "created_at": "2026-03-05T05:57:43.232274",
+  "synced_at": "2026-03-05T05:57:43.232274",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
