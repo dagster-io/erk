@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Rename \"sync\" to \"teleport\" for remote\u2192local branch operations"
+}
