@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Plan: Add `lifecycle` field to learned doc frontmatter schema",
+  "objective_id": 8762,
+  "node_ids": [
+    "1.1"
+  ]
+}
