@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Add print statement to __main__.py"
+  "plan_id": "8779",
+  "url": "https://github.com/dagster-io/erk/pull/8779",
+  "created_at": "2026-03-05T11:48:40.383787",
+  "synced_at": "2026-03-05T11:48:40.383787",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
