@@ -4,8 +4,8 @@ read_when:
   - "designing CLI flag requirements"
   - "implementing conditional flag requirements"
   - "documenting flag combinations"
-last_audited: "2026-02-16 14:20 PT"
-audit_result: clean
+last_audited: "2026-03-05 00:00 PT"
+audit_result: edited
 ---
 
 # CLI Flag Patterns
@@ -21,22 +21,17 @@ Some flags are only required in certain contexts or combinations. Document these
 The `--dangerous` flag is required by default but can be disabled via config:
 
 ```python
+from erk.cli.ensure import Ensure
+
 @click.command()
 @click.option("-d", "--dangerous", is_flag=True)
 @click.pass_obj
 def my_command(ctx: ErkContext, *, dangerous: bool) -> None:
-    # Require --dangerous unless config disables requirement
-    if not dangerous:
-        require_flag = (
-            ctx.global_config is None
-            or ctx.global_config.require_dangerous_flag
-        )
-        if require_flag:
-            raise click.UsageError(
-                "Missing option '--dangerous'.\n"
-                "To disable: erk config set require_dangerous_flag false"
-            )
+    # Centralized check via Ensure.dangerous_flag()
+    Ensure.dangerous_flag(ctx, dangerous=dangerous)
 ```
+
+The `Ensure.dangerous_flag()` helper in `src/erk/cli/ensure.py` centralizes this check. It reads the config key `require_dangerous_flag_for_implicitly_dangerous_operations` and raises `click.UsageError` with a remediation message when the flag is missing.
 
 ### Pattern: Flag Required in Combination
 
@@ -82,7 +77,7 @@ Include in help text:
     "--dangerous",
     is_flag=True,
     help="Acknowledge that this command may modify files. "
-         "To disable: erk config set require_dangerous_flag false",
+         "To disable: erk config set require_dangerous_flag_for_implicitly_dangerous_operations false",
 )
 ```
 
@@ -124,7 +119,7 @@ def my_command(...) -> None:
     To disable the --dangerous flag requirement:
 
     \b
-      erk config set require_dangerous_flag false
+      erk config set require_dangerous_flag_for_implicitly_dangerous_operations false
     """
 ```
 

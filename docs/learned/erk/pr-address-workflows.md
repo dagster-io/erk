@@ -8,7 +8,7 @@ read_when:
 tripwires:
   - action: "resolving a review thread when the comment is a discussion comment (not a review thread)"
     warning: "Review threads and discussion comments use different GitHub APIs. resolve-review-threads only handles review threads. Discussion comments are resolved differently (or not at all)."
-last_audited: "2026-02-16 14:20 PT"
+last_audited: "2026-03-05 00:00 PT"
 audit_result: clean
 ---
 

@@ -24,8 +24,7 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [config](config/tripwires.md)               | 3         | `config/` code                           |
 | [configuration](configuration/tripwires.md) | 1         | `configuration/` code                    |
 | [documentation](documentation/tripwires.md) | 30        | `documentation/` code                    |
-| [erk](erk/tripwires.md)                     | 26        | `erk/` code                              |
-| [erk-dev](erk-dev/tripwires.md)             | 1         | `erk-dev/` code                          |
+| [erk](erk/tripwires.md)                     | 27        | `erk/` code                              |
 | [gateway](gateway/tripwires.md)             | 5         | `gateway/` code                          |
 | [hooks](hooks/tripwires.md)                 | 4         | `.claude/hooks/`, hook development       |
 | [integrations](integrations/tripwires.md)   | 19        | `integrations/` code                     |

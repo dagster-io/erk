@@ -1,6 +1,6 @@
 ---
 title: CLI Options Validation
-last_audited: "2026-02-16 14:20 PT"
+last_audited: "2026-03-05 00:00 PT"
 audit_result: edited
 read_when:
   - "adding new CLI options or flags"
@@ -57,6 +57,26 @@ Use `Ensure.*` static methods from `src/erk/cli/ensure.py`. These methods:
 | Config field required    | `Ensure.config_field_set(config, "token", "...")` | Depends on loaded config state       |
 | Branch must exist        | `Ensure.git_branch_exists(ctx, root, branch)`     | Depends on git state                 |
 | Value must be truthy     | `Ensure.truthy(value, "...")`                     | Generic condition check              |
+
+## Centralized Validation: Ensure.dangerous_flag()
+
+<!-- Source: src/erk/cli/ensure.py, Ensure.dangerous_flag -->
+
+The `--dangerous` flag validation is centralized in `Ensure.dangerous_flag(ctx, *, dangerous=bool)`. This static method checks the config key `require_dangerous_flag_for_implicitly_dangerous_operations` and raises `click.UsageError` with a remediation message when the flag is missing.
+
+Used across three commands that invoke Claude with `--dangerously-skip-permissions`:
+
+- `address_cmd.py`
+- `rebase_cmd.py`
+- `diverge_fix_cmd.py`
+
+```python
+@click.command()
+@click.option("-d", "--dangerous", is_flag=True)
+@click.pass_obj
+def my_command(ctx: ErkContext, *, dangerous: bool) -> None:
+    Ensure.dangerous_flag(ctx, dangerous=dangerous)
+```
 
 ## Anti-Pattern: Don't Validate at Both Layers
 

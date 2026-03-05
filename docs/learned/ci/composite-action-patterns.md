@@ -11,8 +11,8 @@ tripwires:
     warning: "NEVER duplicate secret validation across workflows — use erk-remote-setup's consolidated validation."
   - action: "Include cache keys for downloaded binaries"
     warning: "NEVER skip cache keys for downloaded binaries — cache saves 10-20s per workflow run."
-last_audited: "2026-02-16 14:20 PT"
-audit_result: clean
+last_audited: "2026-03-05 00:00 PT"
+audit_result: edited
 ---
 
 # Composite Action Patterns
@@ -21,15 +21,29 @@ GitHub Actions composite actions encapsulate reusable setup steps. Erk uses them
 
 ## Available Composite Actions
 
-| Action               | Purpose                                     | Inputs                                                    |
-| -------------------- | ------------------------------------------- | --------------------------------------------------------- |
-| `erk-remote-setup`   | Full remote workflow environment setup      | `erk-pat`, `anthropic-api-key`, `claude-code-oauth-token` |
-| `setup-claude-code`  | Install Claude Code CLI with caching        | None                                                      |
-| `setup-python-uv`    | Install Python and uv, sync dependencies    | `python-version` (default: "3.12")                        |
-| `setup-graphite`     | Install Graphite CLI for stack management   | None                                                      |
-| `setup-claude-erk`   | Install erk tools (assumes uv/claude exist) | None                                                      |
-| `setup-prettier`     | Install Node.js and Prettier                | None                                                      |
-| `check-impl-context` | Check if `.erk/impl-context/` folder exists | None (outputs: `skip`)                                    |
+| Action               | Purpose                                      | Inputs                                                    |
+| -------------------- | -------------------------------------------- | --------------------------------------------------------- |
+| `erk-remote-setup`   | Full remote workflow environment setup       | `erk-pat`, `anthropic-api-key`, `claude-code-oauth-token` |
+| `setup-claude-code`  | Install Claude Code CLI with caching         | None                                                      |
+| `setup-python-uv`    | Install Python and uv via astral-sh/setup-uv | `python-version` (default: "3.12")                        |
+| `setup-graphite`     | Install Graphite CLI for stack management    | None                                                      |
+| `setup-claude-erk`   | Install erk tools (assumes uv/claude exist)  | None                                                      |
+| `setup-prettier`     | Install Node.js and Prettier                 | None                                                      |
+| `check-impl-context` | Check if `.erk/impl-context/` folder exists  | None (outputs: `skip`)                                    |
+
+## Python/UV Setup: astral-sh Migration
+
+<!-- Source: .github/actions/setup-python-uv/action.yml:13-15 -->
+
+The `setup-python-uv` action uses `astral-sh/setup-uv@v5` which manages both Python installation and uv in a single step.
+
+**Previous approach:** `actions/setup-python@v5` + `pip install uv`. This downloaded Python from python.org, which was slow (15+ minute timeouts) and unreliable in CI.
+
+**Current approach:** `astral-sh/setup-uv@v5` installs uv first, then uv manages the Python installation via its own cache at `~/.cache/uv/`. Benefits:
+
+- Eliminates python.org download timeouts
+- Built-in caching for both uv and Python
+- Consistent with remote workflows that also use uv for dependency management
 
 ## Why Composite Actions Over Repeated Steps
 
