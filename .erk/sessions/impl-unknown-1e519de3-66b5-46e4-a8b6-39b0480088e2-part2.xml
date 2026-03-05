@@ -1,0 +1,1112 @@
+<session>
+  <meta source="agent-add7f8c" />
+  <meta branch="plnd/enrich-objective-list-cli-03-05-1107" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand how the TUI objectives tab builds its enriched row data. The plan references `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py` (lines 780-840).
+
+Please:
+1. Read that reference file around lines 780-840 to understand `_build_row_data()`
+2. Find the imports and implementations of:
+   - `extract_objective_slug` from `erk_shared.gateway.github.metadata.core`
+   - `parse_roadmap` from `erk_shared.gateway.github.metadata.roadmap`
+   - `build_graph`, `compute_graph_summary`, `build_state_sparkline`, `find_graph_next_node`, `_TERMINAL_STATUSES` from `erk_shared.gateway.github.metadata.dependency_graph`
+3. Understand what `plan_data.plans` objects look like - what fields they have (especially `body`, `updated_at`, `metadata`)
+4. Look at the `ObjectiveListService.get_objective_list_data()` method to understand the data available
+5. Check what `format_relative_time` does
+
+Return all the code snippets and type signatures needed to implement the enriched CLI columns.</user>
+  <assistant>I'll help you understand the TUI objectives tab's enriched row data building. Let me start by checking the documentation and then exploring the reference file.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18948" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18948, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DAdLddBEEqpJXaqhgwbiBz">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18948" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18948, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01E2L8cnsMyrhRpEnJvmEM76">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="offset">780</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18948" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18948, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DAdLddBEEqpJXaqhgwbiBz">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01E2L8cnsMyrhRpEnJvmEM76">
+   780→        # Compute slug display
+   781→        objective_slug_display = "-"
+   782→        if plan.body:
+   783→            slug = extract_objective_slug(plan.body)
+   784→            if slug is not None:
+   785→                objective_slug_display = slug[:25]
+   786→            elif plan.title:
+   787→                stripped = plan.title.removeprefix("Objective: ")
+   788→                objective_slug_display = stripped[:25]
+   789→
+   790→        # Parse roadmap for objective-specific fields
+   791→        objective_done_nodes = 0
+   792→        objective_total_nodes = 0
+   793→        objective_progress_display = "-"
+   794→        objective_state_display = "-"
+   795→        objective_deps_display = "-"
+   796→        objective_next_node_display = "-"
+   797→        objective_deps_plans: list[tuple[str, str]] = []
+   798→        if plan.body:
+   799→            phases, _errors = parse_roadmap(plan.body)
+   800→            if phases:
+   801→                graph = build_graph(phases)
+   802→                summary = compute_graph_summary(graph)
+   803→                objective_done_nodes = summary["done"]
+   804→                objective_total_nodes = summary["total_nodes"]
+   805→                objective_progress_display = f"{objective_done_nodes}/{objective_total_nodes}"
+   806→                objective_state_display = build_state_sparkline(graph.nodes)
+   807→                next_node = find_graph_next_node(graph, phases)
+   808→                if next_node is not None:
+   809→                    objective_next_node_display = next_node["id"]
+
+... [45 lines omitted] ...
+  </tool_result>
+  <assistant>Good! Now let me read more to see the full context and find where `plan_data` comes from:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2559" cache_read_input_tokens="18948" cache_creation="{'ephemeral_5m_input_tokens': 2559, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QiM3XH7WHpYqx1iLQgxPDN">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="offset">750</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2559" cache_read_input_tokens="18948" cache_creation="{'ephemeral_5m_input_tokens': 2559, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01NXsphgvEym2pS4XHiKjVd3">
+    <param name="pattern">def extract_objective_slug</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2559" cache_read_input_tokens="18948" cache_creation="{'ephemeral_5m_input_tokens': 2559, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VaxhbborRrvnrcVDKidud5">
+    <param name="pattern">def parse_roadmap</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2559" cache_read_input_tokens="18948" cache_creation="{'ephemeral_5m_input_tokens': 2559, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014ea3UJMSgdpjMY8dPNNbKA">
+    <param name="pattern">def build_graph|def compute_graph_summary|def build_state_sparkline|def find_graph_next_node|_TERMINAL_STATUSES</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2559" cache_read_input_tokens="18948" cache_creation="{'ephemeral_5m_input_tokens': 2559, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QiM3XH7WHpYqx1iLQgxPDN">
+   750→                    owner = parts[-4]
+   751→                    repo_name = parts[-3]
+   752→                    run_url = (
+   753→                        f"https://github.com/{owner}/{repo_name}/actions/runs/{workflow_run.run_id}"
+   754→                    )
+   755→            run_id_display = format_workflow_run_id(workflow_run, run_url)
+   756→            run_state_display = format_workflow_outcome(workflow_run)
+   757→
+   758→        # Log entries (empty for now - will be fetched on demand in the modal)
+   759→        log_entries: tuple[tuple[str, str, str], ...] = ()
+   760→
+   761→        # Build learn_run_url for pending status
+   762→        learn_run_url: str | None = None
+   763→        if learn_run_id is not None and plan.url is not None:
+   764→            parts = plan.url.split("/")
+   765→            if len(parts) &gt;= 5:
+   766→                owner = parts[-4]
+   767→                repo_name = parts[-3]
+   768→                learn_run_url = (
+   769→                    f"https://github.com/{owner}/{repo_name}/actions/runs/{learn_run_id}"
+   770→                )
+   771→
+   772→        # Format objective display
+   773→        objective_url = (
+   774→            f"https://github.com/{self._location.repo_id.owner}/{self._location.repo_id.repo}/issues/{objective_issue}"
+   775→            if objective_issue is not None
+   776→            else None
+   777→        )
+   778→        objective_display = f"#{objective_issue}" if objective_issue is not None else "-"
+   779→
+
+... [75 lines omitted] ...
+
+   799→            phases, _errors = parse_roadmap(plan.body)
+  </tool_result>
+  <tool_result tool="toolu_01NXsphgvEym2pS4XHiKjVd3">
+Found 1 file
+packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py
+  </tool_result>
+  <tool_result tool="toolu_01VaxhbborRrvnrcVDKidud5">
+Found 1 file
+packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py
+  </tool_result>
+  <tool_result tool="toolu_014ea3UJMSgdpjMY8dPNNbKA">
+Found 2 files
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py
+packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py
+  </tool_result>
+  <assistant>Now let me read the imports and the actual function definitions:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2471" cache_read_input_tokens="21507" cache_creation="{'ephemeral_5m_input_tokens': 2471, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Y3C2NuUsDpMCFchCkiRsKE">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="offset">1</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2471" cache_read_input_tokens="21507" cache_creation="{'ephemeral_5m_input_tokens': 2471, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GtENzTafmewhE1qm3dbv5g">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2471" cache_read_input_tokens="21507" cache_creation="{'ephemeral_5m_input_tokens': 2471, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QzjbvxDLkCirLmhycgCFCw">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2471" cache_read_input_tokens="21507" cache_creation="{'ephemeral_5m_input_tokens': 2471, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y3C2NuUsDpMCFchCkiRsKE">
+     1→"""Real implementation of PlanDataProvider for production use."""
+     2→
+     3→import logging
+     4→import subprocess
+     5→from datetime import datetime
+     6→from pathlib import Path
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk.core.display_utils import (
+    10→    format_relative_time,
+    11→    format_workflow_outcome,
+    12→    format_workflow_run_id,
+    13→    get_workflow_run_state,
+    14→)
+    15→from erk.core.pr_utils import select_display_pr
+    16→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    17→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+    18→from erk.tui.sorting.types import BranchActivity
+    19→from erk_shared.gateway.browser.abc import BrowserLauncher
+    20→from erk_shared.gateway.clipboard.abc import Clipboard
+    21→from erk_shared.gateway.github.ci_summary_parsing import parse_ci_summaries
+    22→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    23→from erk_shared.gateway.github.metadata.core import (
+    24→    extract_objective_from_comment,
+    25→    extract_objective_header_comment_id,
+    26→    extract_objective_slug,
+    27→)
+    28→from erk_shared.gateway.github.metadata.dependency_graph import (
+    29→    _TERMINAL_STATUSES,
+    30→    build_graph,
+
+... [55 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01QzjbvxDLkCirLmhycgCFCw">
+     1→"""Shared parser, serializer, and data types for objective roadmap operations.
+     2→
+     3→This module provides:
+     4→- Data types: RoadmapNodeStatus, RoadmapNode, RoadmapPhase
+     5→- Parsing: parse_roadmap() (v2 frontmatter only)
+     6→- Frontmatter: validate, parse, group, update
+     7→- Utilities: compute_summary(), find_next_node(), serialize_phases()
+     8→
+     9→Previously split across objective_roadmap_shared.py and
+    10→objective_roadmap_frontmatter.py in the erk package. Consolidated
+    11→here to eliminate the circular dependency between erk_shared and erk.
+    12→"""
+    13→
+    14→import re
+    15→from collections.abc import Mapping
+    16→from dataclasses import dataclass, replace
+    17→from typing import Literal, cast
+    18→
+    19→import yaml
+    20→
+    21→from erk_shared.gateway.github.metadata.core import (
+    22→    extract_raw_metadata_blocks,
+    23→    parse_metadata_block_body,
+    24→)
+    25→from erk_shared.gateway.github.metadata.types import BlockKeys
+    26→
+    27→RoadmapNodeStatus = Literal["pending", "planning", "done", "in_progress", "blocked", "skipped"]
+    28→
+    29→
+    30→@dataclass(frozen=True)
+
+... [731 lines omitted] ...
+
+    66→        Tuple of (steps, errors). If validation succeeds,
+    67→        errors is empty. If validation fails, steps is None.
+    69→    errors: list[str] = []
+    74→        errors.append("Missing required field: schema_version")
+    75→        return None, errors
+    78→        errors.append(f"Unsupported schema_version: {schema_version}")
+    79→        return None, errors
+    87→        errors.append("Missing required field: nodes (or steps for v2)")
+    88→        return None, errors
+    90→        errors.append("Field 'steps' must be a list")
+    91→        return None, errors
+    97→            errors.append(f"Step {i} is not a mapping")
+    98→            return None, errors
+   105→                errors.append(f"Step {i} missing required field: {field}")
+   106→                return None, errors
+   118→            errors.append(f"Step {i} field 'id' must be a string")
+   119→            return None, errors
+   121→            errors.append(f"Step {i} field 'description' must be a string")
+   122→            return None, errors
+   124→            errors.append(f"Step {i} field 'status' must be a string")
+   125→            return None, errors
+   128→            errors.append(f"Step {i} field 'status' must be one of: {valid_statuses}")
+   129→            return None, errors
+   131→            errors.append(f"Step {i} field 'pr' must be a string or null")
+   132→            return None, errors
+   138→                errors.append(f"Step {i} field 'depends_on' must be a list or null")
+   139→                return None, errors
+   142→                    errors.append(f"Step {i} field 'depends_on' item {j} must be a string")
+   143→                    return None, errors
+   148→            errors.append(f"Step {i} field 'slug' must be a string or null")
+   149→            return None, errors
+   162→    return steps, errors
+   182→    except ValueError:
+   184→    steps, _errors = validate_roadmap_frontmatter(data)
+   191→        "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n"
+   423→        ``(phases, validation_errors)`` on success, or ``None`` when the
+   442→    steps, errors = validate_roadmap_frontmatter(data)
+   448→    return (phases, errors)
+   451→_LEGACY_FORMAT_ERROR = (
+   462→        (phases, validation_errors)
+   480→    # Block exists but failed to parse — legacy/broken format
+   481→    return ([], [_LEGACY_FORMAT_ERROR])
+  </tool_result>
+  <tool_result tool="toolu_01GtENzTafmewhE1qm3dbv5g">
+     1→"""Core operations for creating, rendering, and parsing metadata blocks."""
+     2→
+     3→import logging
+     4→import re
+     5→from typing import Any
+     6→
+     7→import yaml
+     8→
+     9→from erk_shared.gateway.github.metadata.registry import (
+    10→    BlockCategory,
+    11→    get_block_type,
+    12→)
+    13→from erk_shared.gateway.github.metadata.schemas import (
+    14→    ImplementationStatusSchema,
+    15→    ObjectiveHeaderSchema,
+    16→    PlanSchema,
+    17→    SubmissionQueuedSchema,
+    18→    WorkflowStartedSchema,
+    19→    WorktreeCreationSchema,
+    20→)
+    21→from erk_shared.gateway.github.metadata.types import (
+    22→    BlockKeys,
+    23→    MetadataBlock,
+    24→    MetadataBlockError,
+    25→    MetadataBlockSchema,
+    26→    MetadataParseResult,
+    27→    RawMetadataBlock,
+    28→)
+    29→from erk_shared.output.next_steps import format_next_steps_markdown
+    30→
+
+... [868 lines omitted] ...
+
+    52→        ValueError: If schema validation fails
+    65→    &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    85→    return f"""&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   162→        status: Current status (pending, in_progress, complete, failed)
+   380→    &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   391→        raise ValueError("plan-body block must have 'content' field")
+   395→    return f"""&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   537→        ValueError: If body format is invalid or YAML parsing fails
+   548→        raise ValueError("Body does not match expected &lt;details&gt; structure")
+   552→    # Parse YAML (strict - raises on error)
+   555→    except yaml.YAMLError as e:
+   556→        raise ValueError(f"Failed to parse YAML content: {e}") from e
+   559→        raise ValueError(f"YAML content is not a dict, got {type(data).__name__}")
+   572→    Errors are collected in the result rather than logged silently.
+   578→        MetadataParseResult with parsed blocks, content blocks, and any errors
+   581→    errors: list[MetadataBlockError] = []
+   600→        except ValueError as e:
+   601→            errors.append(MetadataBlockError(key=raw_block.key, message=str(e)))
+   606→        errors=tuple(errors),
+   689→        ValueError: If block not found
+   697→        rf"(?:&lt;!-- WARNING: Machine-generated\. Manual edits may break erk tooling\. --&gt;\n)*"
+   704→        raise ValueError(f"Metadata block '{key}' not found in body")
+   772→    &lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   782→    return f"""&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+   877→        ValueError: If objective-header block not found or invalid
+   881→        raise ValueError("objective-header block not found in issue body")
+  </tool_result>
+  <assistant>Now let me read the dependency_graph module:</assistant>
+  <usage input_tokens="9733" cache_creation_input_tokens="11728" cache_read_input_tokens="23978" cache_creation="{'ephemeral_5m_input_tokens': 11728, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018LphFrDpJ7jhRESfUJR3rZ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py</param>
+  </tool_use>
+  <usage input_tokens="9733" cache_creation_input_tokens="11728" cache_read_input_tokens="23978" cache_creation="{'ephemeral_5m_input_tokens': 11728, 'ephemeral_1h_input_tokens': 0}" output_tokens="101" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018LphFrDpJ7jhRESfUJR3rZ">
+     1→"""Dependency graph representation for objective roadmaps.
+     2→
+     3→Provides ObjectiveNode and DependencyGraph types that model node dependencies
+     4→explicitly, plus a graph_from_phases() parser that infers sequential dependencies
+     5→from existing RoadmapPhase/RoadmapNode data.
+     6→"""
+     7→
+     8→from collections import Counter
+     9→from dataclasses import dataclass
+    10→
+    11→from erk_shared.gateway.github.metadata.roadmap import (
+    12→    RoadmapNode,
+    13→    RoadmapNodeStatus,
+    14→    RoadmapPhase,
+    15→    group_nodes_by_phase,
+    16→    parse_v2_roadmap,
+    17→)
+    18→
+    19→_TERMINAL_STATUSES: set[RoadmapNodeStatus] = {"done", "skipped"}
+    20→
+    21→_STATUS_ORDER: dict[RoadmapNodeStatus, int] = {
+    22→    "pending": 0,
+    23→    "blocked": 1,
+    24→    "planning": 2,
+    25→    "in_progress": 3,
+    26→    "done": 4,
+    27→    "skipped": 4,
+    28→}
+    29→
+    30→_STATUS_SYMBOLS: dict[RoadmapNodeStatus, str] = {
+
+... [292 lines omitted] ...
+
+   309→        (graph, enriched_phases, errors) or None if body is not v2 format.
+   314→    phases, errors = v2_result
+   316→    return (graph, phases, errors)
+  </tool_result>
+  <assistant>Now let me find the format_relative_time function and understand the plan data structure better:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="14029" cache_read_input_tokens="35706" cache_creation="{'ephemeral_5m_input_tokens': 14029, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015NXiC6eLXqyrLeNM7BUVS8">
+    <param name="pattern">def format_relative_time</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="14029" cache_read_input_tokens="35706" cache_creation="{'ephemeral_5m_input_tokens': 14029, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017dTRFtXsksx8Gx7bTkhXow">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="offset">600</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="14029" cache_read_input_tokens="35706" cache_creation="{'ephemeral_5m_input_tokens': 14029, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017dTRFtXsksx8Gx7bTkhXow">
+   600→        plan_id: int,
+   601→        pr_linkages: dict[int, list[PullRequestInfo]],
+   602→        workflow_run: WorkflowRun | None,
+   603→        worktree_by_plan_id: dict[int, tuple[str, str | None]],
+   604→        use_graphite: bool,
+   605→    ) -&gt; PlanRowData:
+   606→        """Build a single PlanRowData from plan and related data."""
+   607→        full_title = plan.title
+   608→
+   609→        # Worktree info
+   610→        worktree_name = ""
+   611→        worktree_branch: str | None = None
+   612→        exists_locally = False
+   613→
+   614→        if plan_id in worktree_by_plan_id:
+   615→            worktree_name, worktree_branch = worktree_by_plan_id[plan_id]
+   616→            exists_locally = True
+   617→
+   618→        # Extract from pre-parsed header fields (no repeated YAML parsing)
+   619→        local_impl_str: str | None = None
+   620→        remote_impl_str: str | None = None
+   621→        learn_status: str | None = None
+   622→        learn_plan_issue: int | None = None
+   623→        learn_plan_pr: int | None = None
+   624→        learn_run_id: str | None = None
+   625→        if plan.header_fields:
+   626→            extracted = header_str(plan.header_fields, WORKTREE_NAME)
+   627→            if extracted and not worktree_name:
+   628→                worktree_name = extracted
+   629→            local_impl_str = header_str(plan.header_fields, LAST_LOCAL_IMPL_AT)
+
+... [125 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_015NXiC6eLXqyrLeNM7BUVS8">
+Found 4 files
+src/erk/core/command_log.py
+src/erk/core/display_utils.py
+src/erk/cli/commands/exec/scripts/list_sessions.py
+src/erk/cli/commands/cc/session/list_cmd.py
+  </tool_result>
+  <assistant>Let me read the display_utils to see the format_relative_time implementation:</assistant>
+  <usage input_tokens="2463" cache_creation_input_tokens="473" cache_read_input_tokens="49735" cache_creation="{'ephemeral_5m_input_tokens': 473, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01HDQx54YLGtYa8tepELmZc8">
+    <param name="pattern">def format_relative_time</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/core/display_utils.py</param>
+    <param name="output_mode">content</param>
+    <param name="type">py</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="2463" cache_creation_input_tokens="473" cache_read_input_tokens="49735" cache_creation="{'ephemeral_5m_input_tokens': 473, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HDQx54YLGtYa8tepELmZc8">
+475:def format_relative_time(iso_timestamp: str | None, now: datetime | None = None) -&gt; str:
+476-    """Format ISO timestamp as human-readable relative time.
+477-
+478-    Args:
+479-        iso_timestamp: ISO 8601 timestamp string, or None
+480-        now: Optional current time for testing (defaults to datetime.now(UTC))
+481-
+482-    Returns:
+483-        Relative time string like "just now", "5m ago", "2h ago", "3d ago"
+484-        Returns empty string if iso_timestamp is None or invalid
+485-    """
+486-    from datetime import UTC
+487-
+488-    if iso_timestamp is None:
+489-        return ""
+490-
+  </tool_result>
+  <assistant>Let me get more of this function and also look for the Plan object type:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="2854" cache_read_input_tokens="50208" cache_creation="{'ephemeral_5m_input_tokens': 2854, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Y4sFCPPH2tUd9wrpYpUxQx">
+    <param name="pattern">def format_relative_time</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/core/display_utils.py</param>
+    <param name="output_mode">content</param>
+    <param name="type">py</param>
+    <param name="-A">40</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="2854" cache_read_input_tokens="50208" cache_creation="{'ephemeral_5m_input_tokens': 2854, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01X5zwJotf1QzEmUsh6V6HoA">
+    <param name="pattern">class Plan</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="2854" cache_read_input_tokens="50208" cache_creation="{'ephemeral_5m_input_tokens': 2854, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y4sFCPPH2tUd9wrpYpUxQx">
+475:def format_relative_time(iso_timestamp: str | None, now: datetime | None = None) -&gt; str:
+476-    """Format ISO timestamp as human-readable relative time.
+477-
+478-    Args:
+479-        iso_timestamp: ISO 8601 timestamp string, or None
+480-        now: Optional current time for testing (defaults to datetime.now(UTC))
+481-
+482-    Returns:
+483-        Relative time string like "just now", "5m ago", "2h ago", "3d ago"
+484-        Returns empty string if iso_timestamp is None or invalid
+485-    """
+486-    from datetime import UTC
+487-
+488-    if iso_timestamp is None:
+489-        return ""
+490-
+491-    # Parse ISO timestamp
+492-    try:
+493-        # Handle ISO format with timezone (e.g., "2025-01-15T10:30:00+00:00")
+494-        dt = datetime.fromisoformat(iso_timestamp)
+495-        # Ensure timezone-aware
+496-        if dt.tzinfo is None:
+497-            dt = dt.replace(tzinfo=UTC)
+498-    except ValueError:
+499-        return ""
+500-
+501-    # Get current time
+502-    current_time = now if now is not None else datetime.now(UTC)
+503-
+504-    # Calculate difference
+
+... [11 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01X5zwJotf1QzEmUsh6V6HoA">
+Found 11 files
+packages/erk-shared/src/erk_shared/scratch/plan_snapshots.py
+packages/erk-shared/src/erk_shared/output/next_steps.py
+packages/erk-shared/src/erk_shared/plan_store/backend.py
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+packages/erk-shared/src/erk_shared/plan_store/types.py
+packages/erk-shared/src/erk_shared/impl_folder.py
+packages/erk-shared/src/erk_shared/objective_fetch_context_result.py
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py
+packages/erk-shared/src/erk_shared/core/plan_list_service.py
+packages/erk-shared/src/erk_shared/core/prompt_executor.py
+  </tool_result>
+  <assistant>Let me read the Plan types:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1150" cache_read_input_tokens="53062" cache_creation="{'ephemeral_5m_input_tokens': 1150, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016JcvF2hWRDCBmVki7ojyfn">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/types.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1150" cache_read_input_tokens="53062" cache_creation="{'ephemeral_5m_input_tokens': 1150, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016JcvF2hWRDCBmVki7ojyfn">
+     1→"""Core types for provider-agnostic plan storage."""
+     2→
+     3→from dataclasses import dataclass, field
+     4→from datetime import datetime
+     5→from enum import Enum
+     6→
+     7→
+     8→class PlanState(Enum):
+     9→    """State of a plan."""
+    10→
+    11→    OPEN = "OPEN"
+    12→    CLOSED = "CLOSED"
+    13→
+    14→
+    15→@dataclass(frozen=True)
+    16→class Plan:
+    17→    """Provider-agnostic representation of a plan.
+    18→
+    19→    Fields:
+    20→        plan_identifier: Provider-specific ID as string
+    21→            (GitHub: "42", Jira: "PROJ-123", Linear: UUID)
+    22→        title: Plan title
+    23→        body: Plan body/description
+    24→        state: Plan state (OPEN or CLOSED)
+    25→        url: Web URL to view the plan
+    26→        labels: List of label names
+    27→        assignees: List of assignee usernames
+    28→        created_at: Creation timestamp
+    29→        updated_at: Last update timestamp
+    30→        metadata: Provider-specific fields (e.g., {"number": 42} for GitHub)
+
+... [63 lines omitted] ...
+
+    79→class PlanHeaderNotFoundError(RuntimeError):
+  </tool_result>
+  <assistant>Now let me look at the complete _build_row_data function to see what fields are being populated:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1163" cache_read_input_tokens="54212" cache_creation="{'ephemeral_5m_input_tokens': 1163, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ESYqwp3CFFVcXZzoE49hsH">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="offset">850</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1163" cache_read_input_tokens="54212" cache_creation="{'ephemeral_5m_input_tokens': 1163, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ESYqwp3CFFVcXZzoE49hsH">
+   850→
+   851→        # Compute lifecycle display from header or infer from metadata
+   852→        lifecycle_display = _compute_lifecycle_display(
+   853→            plan, has_workflow_run=workflow_run is not None
+   854→        )
+   855→
+   856→        # Compute status indicators separately for the "sts" column
+   857→        status_display = compute_status_indicators(
+   858→            lifecycle_display,
+   859→            is_draft=pr_is_draft,
+   860→            has_conflicts=pr_has_conflicts,
+   861→            review_decision=pr_review_decision,
+   862→            checks_passing=pr_checks_passing,
+   863→            has_unresolved_comments=pr_has_unresolved_comments,
+   864→            is_stacked=pr_is_stacked,
+   865→        )
+   866→
+   867→        return PlanRowData(
+   868→            plan_id=plan_id,
+   869→            plan_url=plan.url,
+   870→            pr_number=pr_number,
+   871→            pr_url=pr_url,
+   872→            pr_display=pr_display,
+   873→            checks_display=checks_display,
+   874→            checks_passing=pr_checks_passing,
+   875→            checks_counts=pr_checks_counts,
+   876→            worktree_name=worktree_name,
+   877→            exists_locally=exists_locally,
+   878→            local_impl_display=local_impl_display,
+   879→            remote_impl_display=remote_impl_display,
+
+... [154 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now let me also check the PlanRowData type to see all the fields:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="3091" cache_read_input_tokens="55375" cache_creation="{'ephemeral_5m_input_tokens': 3091, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01UxDKh87rVBrA89fjxa3gND">
+    <param name="pattern">class PlanRowData</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3091" cache_read_input_tokens="55375" cache_creation="{'ephemeral_5m_input_tokens': 3091, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UxDKh87rVBrA89fjxa3gND">
+Found 1 file
+src/erk/tui/data/types.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SppPEbPkQN7qWBEFX7fWvS">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="188" cache_read_input_tokens="58466" cache_creation="{'ephemeral_5m_input_tokens': 188, 'ephemeral_1h_input_tokens': 0}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SppPEbPkQN7qWBEFX7fWvS">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from datetime import datetime
+     7→
+     8→from erk_shared.gateway.github.types import IssueFilterState
+     9→
+    10→
+    11→@dataclass(frozen=True)
+    12→class PlanRowData:
+    13→    """Row data for displaying a plan in the TUI table.
+    14→
+    15→    Contains pre-formatted display strings and raw data needed for actions.
+    16→    Immutable to ensure table state consistency.
+    17→
+    18→    **Display vs Raw convention:** Many data points have both a raw field (for
+    19→    logic/predicates) and a display field (for table rendering). Raw fields are
+    20→    often nullable (None when absent), while display fields are always strings
+    21→    (dash "-" or empty when absent). Use raw fields in availability predicates
+    22→    (``ctx.row.pr_number is not None``), display fields for rendering.
+    23→
+    24→    Attributes:
+    25→
+    26→        plan_id: GitHub issue number (e.g., 123). Never None.
+    27→        plan_url: Full URL to the GitHub issue. None when unavailable.
+    28→        full_title: Complete untruncated plan title. Empty string possible.
+    29→        plan_body: Raw issue body text (markdown). Empty string possible.
+    30→
+
+... [201 lines omitted] ...
+
+    56→        run_conclusion: Run conclusion ("success", "failure", "cancelled").
+   168→    warnings: tuple[str, ...] = ()
+  </tool_result>
+  <assistant>Perfect! Now let me get the rest of the display_utils to see the complete format_relative_time:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="5545" cache_read_input_tokens="58654" cache_creation="{'ephemeral_5m_input_tokens': 5545, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VJ4Pn3gj3q2QYnw7vRJcjv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/display_utils.py</param>
+    <param name="offset">475</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="5545" cache_read_input_tokens="58654" cache_creation="{'ephemeral_5m_input_tokens': 5545, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VJ4Pn3gj3q2QYnw7vRJcjv">
+   475→def format_relative_time(iso_timestamp: str | None, now: datetime | None = None) -&gt; str:
+   476→    """Format ISO timestamp as human-readable relative time.
+   477→
+   478→    Args:
+   479→        iso_timestamp: ISO 8601 timestamp string, or None
+   480→        now: Optional current time for testing (defaults to datetime.now(UTC))
+   481→
+   482→    Returns:
+   483→        Relative time string like "just now", "5m ago", "2h ago", "3d ago"
+   484→        Returns empty string if iso_timestamp is None or invalid
+   485→    """
+   486→    from datetime import UTC
+   487→
+   488→    if iso_timestamp is None:
+   489→        return ""
+   490→
+   491→    # Parse ISO timestamp
+   492→    try:
+   493→        # Handle ISO format with timezone (e.g., "2025-01-15T10:30:00+00:00")
+   494→        dt = datetime.fromisoformat(iso_timestamp)
+   495→        # Ensure timezone-aware
+   496→        if dt.tzinfo is None:
+   497→            dt = dt.replace(tzinfo=UTC)
+   498→    except ValueError:
+   499→        return ""
+   500→
+   501→    # Get current time
+   502→    current_time = now if now is not None else datetime.now(UTC)
+   503→
+   504→    # Calculate difference
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! Now I have all the information needed. Let me create a comprehensive summary document.
+
+## Summary: TUI Objectives Tab Enriched Row Data Building
+
+Based on my analysis of the reference code in `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py` (lines 780-840), here's the complete understanding of how enriched objective row data is built:
+
+### 1. Core Function: `_build_row_data()` (lines 780-840)
+
+The method processes objective data through four main phases:
+
+#### Phase 1: Extract Objective Slug (lines 780-788)
+```python
+objective_slug_display = "-"
+if plan.body:
+    slug = extract_objective_slug(plan.body)
+    if slug is not None:
+        objective_slug_display = slug[:25]
+    elif plan.title:
+        stripped = plan.title.removeprefix("Objective: ")
+        objective_slug_display = stripped[:25]
+```
+
+**Function signature:**
+```python
+def extract_objective_slug(issue_body: str) -&gt; str | None:
+    """Extract slug from objective-header metadata block.
+    
+    Args:
+        issue_body: Issue body containing objective-header block
+    
+    Returns:
+        slug value if found, None if block is missing or field is unset
+    """
+    return extract_metadata_value(issue_body, BlockKeys.OBJECTIVE_HEADER, "slug")
+```
+- **Source file:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py` (lines 828-837)
+- **Extracts the `slug` field from the `objective-header` metadata block** (max 25 chars truncation)
+- Falls back to plan title if slug not found
+
+#### Phase 2: Parse Roadmap and Build Graph (lines 790-840)
+```python
+objective_done_nodes = 0
+objective_total_nodes = 0
+objective_progress_display = "-"
+objective_state_display = "-"
+objective_deps_display = "-"
+objective_next_node_display = "-"
+objective_deps_plans: list[tuple[str, str]] = []
+if plan.body:
+    phases, _errors = parse_roadmap(plan.body)
+    if phases:
+        graph = build_graph(phases)
+        summary = compute_graph_summary(graph)
+        objective_done_nodes = summary["done"]
+        objective_total_nodes = summary["total_nodes"]
+        objective_progress_display = f"{objective_done_nodes}/{objective_total_nodes}"
+        objective_state_display = build_state_sparkline(graph.nodes)
+        next_node = find_graph_next_node(graph, phases)
+        # ... dependency analysis ...
+```
+
+### 2. Key Function Signatures and Implementations
+
+#### `parse_roadmap()` - Roadmap Parser
+**Source:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/roadmap.py` (lines 458-481)
+
+```python
+def parse_roadmap(body: str) -&gt; tuple[list[RoadmapPhase], list[str]]:
+    """Parse roadmap from v2 YAML frontmatter in objective-roadmap metadata block.
+    
+    Returns:
+        (phases, validation_errors)
+    """
+    # Returns empty list if no roadmap block exists (valid roadmap-free objective)
+    # Returns ([], [error_message]) if block exists but failed to parse (legacy format)
+```
+
+**RoadmapPhase dataclass:**
+```python
+@dataclass(frozen=True)
+class RoadmapPhase:
+    """A phase in the objective roadmap."""
+    number: int
+    suffix: str  # Letter suffix, e.g. "A" for "Phase 1A", "" for "Phase 1"
+    name: str
+    nodes: list[RoadmapNode]
+```
+
+**RoadmapNode dataclass:**
+```python
+@dataclass(frozen=True)
+class RoadmapNode:
+    """A single node in a roadmap phase."""
+    id: str
+    description: str
+    status: RoadmapNodeStatus  # Literal["pending", "planning", "done", "in_progress", "blocked", "skipped"]
+    pr: str | None  # None or "#456" (PR number)
+    depends_on: tuple[str, ...] | None  # None = not specified, () = no deps
+    slug: str | None
+```
+
+#### `build_graph()` - Graph Construction
+**Source:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py` (lines 181-187)
+
+```python
+def build_graph(phases: list[RoadmapPhase]) -&gt; DependencyGraph:
+    """Build graph from phases, using explicit deps when available."""
+    all_nodes = [node for phase in phases for node in phase.nodes]
+    has_explicit_deps = any(node.depends_on is not None for node in all_nodes)
+    if has_explicit_deps:
+        return graph_from_nodes(all_nodes)
+    return graph_from_phases(phases)
+```
+
+**DependencyGraph dataclass:**
+```python
+@dataclass(frozen=True)
+class DependencyGraph:
+    """A directed acyclic graph of objective nodes with dependency edges."""
+    nodes: tuple[ObjectiveNode, ...]
+    
+    def min_dep_status(self, node_id: str) -&gt; RoadmapNodeStatus | None:
+        """Lowest status among a node's upstream dependencies."""
+        # Returns None when node has no dependencies or not found
+```
+
+**ObjectiveNode dataclass:**
+```python
+@dataclass(frozen=True)
+class ObjectiveNode:
+    """A node in the objective dependency graph."""
+    id: str
+    description: str
+    status: RoadmapNodeStatus
+    pr: str | None
+    depends_on: tuple[str, ...]  # Empty tuple if no deps
+    slug: str | None
+```
+
+#### `compute_graph_summary()` - Summary Statistics
+**Source:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py` (lines 217-231)
+
+```python
+def compute_graph_summary(graph: DependencyGraph) -&gt; dict[str, int]:
+    """Compute summary statistics from graph nodes directly.
+    
+    Returns dict with keys:
+        - "total_nodes": Total count
+        - "pending": Count of pending nodes
+        - "planning": Count of planning nodes
+        - "done": Count of done nodes
+        - "in_progress": Count of in-progress nodes
+        - "blocked": Count of blocked nodes
+        - "skipped": Count of skipped nodes
+    """
+```
+
+#### `build_state_sparkline()` - Status Visualization
+**Source:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py` (lines 234-245)
+
+```python
+def build_state_sparkline(nodes: tuple[ObjectiveNode, ...]) -&gt; str:
+    """Build a compact sparkline showing each node's status in position order.
+    
+    Symbols:
+        - ✓ (done)
+        - ▶ (in_progress)
+        - ◐ (planning)
+        - ○ (pending)
+        - ⊘ (blocked)
+        - - (skipped)
+    
+    Returns:
+        Sparkline string like "✓✓✓▶▶○○○○"
+    """
+    _STATUS_SYMBOLS: dict[RoadmapNodeStatus, str] = {
+        "done": "✓",
+        "in_progress": "▶",
+        "planning": "◐",
+        "pending": "○",
+        "blocked": "⊘",
+        "skipped": "-",
+    }
+```
+
+#### `find_graph_next_node()` - Next Node Detection
+**Source:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py` (lines 255-293)
+
+```python
+def find_graph_next_node(
+    graph: DependencyGraph, phases: list[RoadmapPhase]
+) -&gt; dict[str, str] | None:
+    """Find the next actionable node by graph order.
+    
+    Tries pending nodes first, then planning, then in_progress.
+    This ensures objectives with only in_progress or planning remaining steps
+    still show a "next step" in the TUI.
+    
+    Returns:
+        Dict with {id, description, phase, status} or None if no actionable nodes.
+    
+    Example return:
+        {
+            "id": "1.1",
+            "slug": "setup",
+            "description": "Initialize project structure",
+            "phase": "Phase 1: Planning",
+            "status": "pending"
+        }
+    """
+```
+
+#### `_TERMINAL_STATUSES` - Status Constants
+**Source:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py` (line 19)
+
+```python
+_TERMINAL_STATUSES: set[RoadmapNodeStatus] = {"done", "skipped"}
+
+_STATUS_ORDER: dict[RoadmapNodeStatus, int] = {
+    "pending": 0,
+    "blocked": 1,
+    "planning": 2,
+    "in_progress": 3,
+    "done": 4,
+    "skipped": 4,
+}
+```
+
+### 3. Plan Object Structure
+
+**Source:** `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/types.py` (lines 15-48)
+
+```python
+@dataclass(frozen=True)
+class Plan:
+    """Provider-agnostic representation of a plan."""
+    
+    plan_identifier: str  # Provider-specific ID (GitHub issue number as string)
+    title: str           # Plan title
+    body: str            # Plan body/description (markdown with metadata blocks)
+    state: PlanState     # OPEN or CLOSED
+    url: str             # Web URL to the plan
+    labels: list[str]    # Label names
+    assignees: list[str] # Assignee usernames
+    created_at: datetime # Creation timestamp
+    updated_at: datetime # Last update timestamp
+    metadata: dict[str, object]  # Provider-specific fields
+    objective_id: int | None     # Parent objective issue number
+    header_fields: dict[str, object]  # Pre-parsed plan-header metadata fields
+```
+
+**Key fields for objective enrichment:**
+- **`plan.body`** - Contains objective-header and objective-roadmap metadata blocks
+- **`plan.metadata`**  - Contains fields like `"author"` (GitHub login)
+- **`plan.updated_at`** and **`plan.created_at`** - Datetime objects (already parsed)
+- **`plan.labels`** - List of label strings (used to detect `"erk-learn"`)
+
+### 4. Time Formatting Function
+
+**Source:** `/home/runner/work/erk/erk/src/erk/core/display_utils.py` (lines 475-534)
+
+```python
+def format_relative_time(iso_timestamp: str | None, now: datetime | None = None) -&gt; str:
+    """Format ISO timestamp as human-readable relative time.
+    
+    Args:
+        iso_timestamp: ISO 8601 timestamp string, or None
+        now: Optional current time for testing (defaults to datetime.now(UTC))
+    
+    Returns:
+        Relative time string:
+        - "just now" (within 30 seconds)
+        - "5m ago" (minutes)
+        - "2h ago" (hours)
+        - "3d ago" (days)
+        - "2w ago" (weeks)
+        - "1mo ago" (months)
+        - Empty string if iso_timestamp is None or invalid
+    """
+    # Parses ISO 8601 with timezone handling
+    # Returns empty string on parse failure
+```
+
+**Usage in row building:**
+```python
+# Format created/updated times
+updated_display = format_relative_time(plan.updated_at.isoformat()) or "-"
+created_display = format_relative_time(plan.created_at.isoformat()) or "-"
+
+# But note: plan.updated_at/created_at are already datetime objects
+# so isoformat() converts them to ISO string for format_relative_time()
+```
+
+### 5. Dependency Analysis and Blocking Plan Collection
+
+**Lines 816-840 (from reference):**
+
+```python
+# Collect blocking dep PR numbers for the next node
+target = next((n for n in graph.nodes if n.id == next_node["id"]), None)
+if target is not None and target.depends_on:
+    node_map = {n.id: n for n in graph.nodes}
+    for dep_id in target.depends_on:
+        if dep_id in node_map:
+            dep = node_map[dep_id]
+            if dep.status not in _TERMINAL_STATUSES and dep.pr is not None:
+                num = dep.pr.lstrip("#")
+                repo_id = self._location.repo_id
+                url = f"https://github.com/{repo_id.owner}/{repo_id.repo}/pull/{num}"
+                objective_deps_plans.append((dep.pr, url))
+
+# Also show the next node's own PR if it has one (active work indicator)
+if (
+    target is not None
+    and target.pr is not None
+    and target.status not in _TERMINAL_STATUSES
+):
+    existing_prs = {pr_ref for pr_ref, _ in objective_deps_plans}
+    if target.pr not in existing_prs:
+        num = target.pr.lstrip("#")
+        repo_id = self._location.repo_id
+        url = f"https://github.com/{repo_id.owner}/{repo_id.repo}/pull/{num}"
+        objective_deps_plans.append((target.pr, url))
+```
+
+**Result**: `objective_deps_plans` is a `list[tuple[str, str]]` with:
+- First element: PR reference like `"#7911"`
+- Second element: Full GitHub PR URL
+
+### 6. Resulting PlanRowData Fields
+
+**Source:** `/home/runner/work/erk/erk/src/erk/tui/data/types.py` (lines 11-150)
+
+The objective-related fields populated are:
+
+```python
+objective_issue: int | None                    # Objective issue number
+objective_url: str | None                      # Full URL to objective issue
+objective_display: str                         # Formatted "#123" or "-"
+objective_done_nodes: int                      # Count of done nodes
+objective_total_nodes: int                     # Total nodes count
+objective_progress_display: str                # "3/7" format or "-"
+objective_slug_display: str                    # Max 25 chars slug/title
+objective_state_display: str                   # Sparkline like "✓✓✓▶▶○○○○"
+objective_deps_display: str                    # "ready", "in progress", etc.
+objective_deps_plans: tuple[tuple[str, str], ...] # [(pr_ref, url), ...]
+objective_next_node_display: str               # Node ID like "1.1" or "-"
+```
+
+### 7. Key Data Dependencies
+
+For implementing CLI enriched columns, you'll need:
+
+1. **Plan object fields:**
+   - `plan.body` - to extract slug and parse roadmap
+   - `plan.updated_at`, `plan.created_at` - datetime objects
+   - `plan.labels` - to detect learn plans
+   - `plan.metadata` - for author
+
+2. **Header fields (pre-parsed):**
+   - `OBJECTIVE_ISSUE` - extracted via `header_int(plan.header_fields, OBJECTIVE_ISSUE)`
+   - Various status fields
+
+3. **Metadata block parsing:**
+   - `extract_objective_slug(plan.body)` - returns `str | None`
+   - `parse_roadmap(plan.body)` - returns `tuple[list[RoadmapPhase], list[str]]`
+
+4. **Graph operations:**
+   - `build_graph(phases)` - converts to DependencyGraph
+   - `compute_graph_summary(graph)` - returns dict with "done", "total_nodes", etc.
+   - `build_state_sparkline(graph.nodes)` - returns emoji sparkline string
+   - `find_graph_next_node(graph, phases)` - returns next node dict or None
+
+All necessary imports are available from:
+- `erk_shared.gateway.github.metadata.core` - slug extraction
+- `erk_shared.gateway.github.metadata.roadmap` - roadmap parsing
+- `erk_shared.gateway.github.metadata.dependency_graph` - graph operations and constants</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="949" cache_read_input_tokens="64199" cache_creation="{'ephemeral_5m_input_tokens': 949, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
