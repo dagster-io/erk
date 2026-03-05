@@ -1,0 +1,8 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Agent-DX Framework: Output Envelope Helpers + Describe Command + First Port",
+  "objective_id": 8760,
+  "node_ids": [
+    "1.1,1.2,1.3"
+  ]
+}
