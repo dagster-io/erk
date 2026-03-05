@@ -1,12 +1,14 @@
 """Modal screen displaying objective node breakdown with PR status."""
 
+from rich.text import Text
 from textual import work
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, Vertical
 from textual.screen import ModalScreen
-from textual.widgets import Label, Markdown
+from textual.widgets import DataTable, Label
 
+from erk.core.display_utils import strip_rich_markup
 from erk.tui.data.types import PlanRowData
 from erk_shared.gateway.github.metadata.dependency_graph import (
     _STATUS_SYMBOLS,
@@ -17,80 +19,68 @@ from erk_shared.gateway.github.metadata.roadmap import RoadmapPhase
 from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
 
 
-def _format_node_line(
-    node: ObjectiveNode,
-    *,
-    pr_lookup: dict[int, PlanRowData],
-    is_next: bool,
-) -> str:
-    """Format a single node as a markdown list item.
-
-    Args:
-        node: The objective node to format
-        pr_lookup: Mapping of PR number to PlanRowData
-        is_next: Whether this is the next actionable node
-
-    Returns:
-        Markdown list item string
-    """
-    symbol = _STATUS_SYMBOLS.get(node.status, "?")
-    marker = ">>>" if is_next else "  -"
-    desc = node.description[:50]
-    status_str = node.status.replace("_", " ")
-
-    if node.pr is None:
-        return f"{marker} **{node.id}** {symbol} {status_str:<12} {desc}"
-
-    pr_num = int(node.pr.lstrip("#"))
-    pr_data = pr_lookup.get(pr_num)
-    if pr_data is None:
-        return f"{marker} **{node.id}** {symbol} {status_str:<12} {desc}  #{pr_num}"
-
-    pr_state = pr_data.pr_state or "DRAFT"
-    run_state = pr_data.run_state_display if pr_data.run_state_display != "-" else ""
-    parts = [f"{marker} **{node.id}** {symbol} {status_str:<12} {desc}"]
-    parts.append(f"  #{pr_num} {pr_state}")
-    if pr_data.checks_counts is not None:
-        passing, total = pr_data.checks_counts
-        parts.append(f" checks:{passing}/{total}")
-    if run_state:
-        parts.append(f" run:{run_state}")
-    return "".join(parts)
-
-
-def _format_nodes_by_phase(
+def _build_table_rows(
     phases: list[RoadmapPhase],
     *,
     graph_nodes: tuple[ObjectiveNode, ...],
     pr_lookup: dict[int, PlanRowData],
     next_node_id: str | None,
-) -> str:
-    """Format all nodes grouped by phase as markdown.
+) -> list[tuple[str | Text, ...]]:
+    """Build table row tuples grouped by phase.
 
     Args:
         phases: Roadmap phases for grouping
-        graph_nodes: All graph nodes (for looking up ObjectiveNode by ID)
+        graph_nodes: All graph nodes
         pr_lookup: Mapping of PR number to PlanRowData
-        next_node_id: ID of the next actionable node (for highlighting)
+        next_node_id: ID of the next actionable node
 
     Returns:
-        Markdown-formatted string with nodes grouped by phase
+        List of row tuples matching column order:
+        (id, sts, description, pr, stage, sts2, branch, run-id, run, chks, author)
     """
+    empty_pr_cols = ("-", "-", "-", "-", "-", "-", "-")
     node_map = {n.id: n for n in graph_nodes}
-    parts: list[str] = []
+    rows: list[tuple[str | Text, ...]] = []
 
     for phase in phases:
-        parts.append(f"## Phase {phase.number}{phase.suffix}: {phase.name}")
-        parts.append("")
+        # Phase separator row (11 columns)
+        phase_label = Text(f"Phase {phase.number}{phase.suffix}: {phase.name}", style="bold")
+        rows.append(("", "", phase_label, "", "", "", "", "", "", "", ""))
+
         for roadmap_node in phase.nodes:
             obj_node = node_map.get(roadmap_node.id)
             if obj_node is None:
                 continue
-            is_next = obj_node.id == next_node_id
-            parts.append(_format_node_line(obj_node, pr_lookup=pr_lookup, is_next=is_next))
-        parts.append("")
 
-    return "\n".join(parts)
+            is_next = obj_node.id == next_node_id
+            id_cell = f">>> {obj_node.id}" if is_next else obj_node.id
+            symbol = _STATUS_SYMBOLS.get(obj_node.status, "?")
+            desc = obj_node.description[:30]
+
+            # PR-related columns default
+            pr_cell = "-"
+            pr_enriched = empty_pr_cols
+
+            if obj_node.pr is not None:
+                pr_str = obj_node.pr.lstrip("#")
+                if pr_str.isdigit():
+                    pr_num = int(pr_str)
+                    pr_cell = f"#{pr_num}"
+                    pr_data = pr_lookup.get(pr_num)
+                    if pr_data is not None:
+                        stage = strip_rich_markup(pr_data.lifecycle_display)
+                        status = pr_data.status_display
+                        branch = pr_data.pr_head_branch or pr_data.worktree_branch or "-"
+                        run_id = strip_rich_markup(pr_data.run_id_display)
+                        run_text = strip_rich_markup(pr_data.run_state_display)
+                        run_emoji = run_text.split(" ", 1)[0] if run_text.strip() else "-"
+                        chks = strip_rich_markup(pr_data.checks_display)
+                        author = pr_data.author
+                        pr_enriched = (stage, status, branch, run_id, run_emoji, chks, author)
+
+            rows.append((id_cell, symbol, desc, pr_cell, *pr_enriched))
+
+    return rows
 
 
 class ObjectiveNodesScreen(ModalScreen):
@@ -100,6 +90,8 @@ class ObjectiveNodesScreen(ModalScreen):
         Binding("escape", "dismiss", "Close"),
         Binding("q", "dismiss", "Close"),
         Binding("space", "dismiss", "Close"),
+        Binding("j", "cursor_down", "Down", show=False),
+        Binding("k", "cursor_up", "Up", show=False),
     ]
 
     DEFAULT_CSS = """
@@ -109,7 +101,7 @@ class ObjectiveNodesScreen(ModalScreen):
 
     #nodes-dialog {
         width: 90%;
-        max-width: 120;
+        max-width: 160;
         height: 80%;
         background: $surface;
         border: solid $primary;
@@ -142,8 +134,9 @@ class ObjectiveNodesScreen(ModalScreen):
         overflow-y: auto;
     }
 
-    #nodes-content {
+    #nodes-table {
         width: 100%;
+        height: 1fr;
     }
 
     #nodes-footer {
@@ -203,11 +196,19 @@ class ObjectiveNodesScreen(ModalScreen):
         """Fetch node data when screen mounts."""
         self._fetch_nodes()
 
+    def action_cursor_down(self) -> None:
+        table = self.query_one("#nodes-table", DataTable)
+        table.action_cursor_down()
+
+    def action_cursor_up(self) -> None:
+        table = self.query_one("#nodes-table", DataTable)
+        table.action_cursor_up()
+
     @work(thread=True)
     def _fetch_nodes(self) -> None:
         """Parse objective body and fetch PR details in background thread."""
         error: str | None = None
-        content: str = ""
+        table_rows: list[tuple[str | Text, ...]] = []
 
         try:
             result = parse_graph(self._plan_body)
@@ -222,7 +223,9 @@ class ObjectiveNodesScreen(ModalScreen):
                 pr_numbers: set[int] = set()
                 for node in graph.nodes:
                     if node.pr is not None:
-                        pr_numbers.add(int(node.pr.lstrip("#")))
+                        pr_str = node.pr.lstrip("#")
+                        if pr_str.isdigit():
+                            pr_numbers.add(int(pr_str))
 
                 # Fetch PR data
                 pr_lookup: dict[int, PlanRowData] = {}
@@ -230,7 +233,7 @@ class ObjectiveNodesScreen(ModalScreen):
                     pr_rows = self._provider.fetch_plans_by_ids(pr_numbers)
                     pr_lookup = {row.plan_id: row for row in pr_rows}
 
-                content = _format_nodes_by_phase(
+                table_rows = _build_table_rows(
                     phases,
                     graph_nodes=graph.nodes,
                     pr_lookup=pr_lookup,
@@ -239,13 +242,13 @@ class ObjectiveNodesScreen(ModalScreen):
         except Exception as e:
             error = str(e)
 
-        self.app.call_from_thread(self._on_nodes_loaded, content, error)
+        self.app.call_from_thread(self._on_nodes_loaded, table_rows, error)
 
-    def _on_nodes_loaded(self, content: str, error: str | None) -> None:
-        """Handle nodes loaded - update the display.
+    def _on_nodes_loaded(self, table_rows: list[tuple[str | Text, ...]], error: str | None) -> None:
+        """Handle nodes loaded - populate the DataTable.
 
         Args:
-            content: Formatted markdown content
+            table_rows: List of row tuples for the table
             error: Error message if fetch failed, or None
         """
         container = self.query_one("#nodes-content-container", Container)
@@ -255,8 +258,24 @@ class ObjectiveNodesScreen(ModalScreen):
             container.mount(Label(f"Error: {error}", id="nodes-error"))
             return
 
-        if not content.strip():
+        if not table_rows:
             container.mount(Label("(No nodes found)", id="nodes-error"))
             return
 
-        container.mount(Markdown(content, id="nodes-content"))
+        table = DataTable(id="nodes-table", cursor_type="row")
+        container.mount(table)
+
+        table.add_column("id", key="id", width=6)
+        table.add_column("sts", key="sts", width=3)
+        table.add_column("description", key="description", width=30)
+        table.add_column("pr", key="pr", width=6)
+        table.add_column("stage", key="stage", width=8)
+        table.add_column("sts", key="sts2", width=7)
+        table.add_column("branch", key="branch", width=35)
+        table.add_column("run-id", key="run_id", width=10)
+        table.add_column("run", key="run", width=3)
+        table.add_column("chks", key="chks", width=5)
+        table.add_column("author", key="author", width=9)
+
+        for row in table_rows:
+            table.add_row(*row)
