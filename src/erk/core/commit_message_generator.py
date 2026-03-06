@@ -135,15 +135,11 @@ class CommitMessageGenerator:
         system_prompt = get_commit_message_prompt(request.repo_root)
 
         result_holder: list[LlmResponse | NoApiKey | LlmCallFailed] = []
-        error_holder: list[Exception] = []
 
         def _run_call() -> None:
-            try:
-                result_holder.append(
-                    self._llm_caller.call(user_prompt, system_prompt=system_prompt, max_tokens=4096)
-                )
-            except Exception as exc:
-                error_holder.append(exc)
+            result_holder.append(
+                self._llm_caller.call(user_prompt, system_prompt=system_prompt, max_tokens=4096)
+            )
 
         thread = threading.Thread(target=_run_call, daemon=True)
         start_time = self._time.monotonic()
@@ -154,17 +150,6 @@ class CommitMessageGenerator:
             if thread.is_alive():
                 elapsed = int(self._time.monotonic() - start_time)
                 yield ProgressEvent(f"Still waiting... ({elapsed}s)")
-
-        if error_holder:
-            yield CompletionEvent(
-                CommitMessageResult(
-                    success=False,
-                    title=None,
-                    body=None,
-                    error_message=f"LLM call failed: {error_holder[0]}",
-                )
-            )
-            return
 
         if not result_holder:
             yield CompletionEvent(

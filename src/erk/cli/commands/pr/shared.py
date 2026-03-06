@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import queue
 import threading
-import time as time_module
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -32,6 +31,7 @@ from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
+from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_store.conversion import header_str
 from erk_shared.plan_store.planned_pr_lifecycle import build_original_plan_section
 from erk_shared.plan_store.types import PlanNotFound
@@ -352,6 +352,7 @@ def run_commit_message_generation(
     commit_messages: list[str] | None,
     plan_context: PlanContext | None,
     debug: bool,
+    time: Time,
 ) -> CommitMessageResult:
     """Run commit message generation and return result.
 
@@ -391,7 +392,7 @@ def run_commit_message_generation(
         event_queue.put(None)
 
     thread = threading.Thread(target=_produce, daemon=True)
-    start = time_module.monotonic()
+    start = time.monotonic()
     thread.start()
 
     result: CommitMessageResult | None = None
@@ -399,7 +400,7 @@ def run_commit_message_generation(
         try:
             event = event_queue.get(timeout=_PROGRESS_TIMEOUT_SECONDS)
         except queue.Empty:
-            elapsed = int(time_module.monotonic() - start)
+            elapsed = int(time.monotonic() - start)
             render_progress(ProgressEvent(f"Still waiting... ({elapsed}s)"))
             continue
 
@@ -407,7 +408,7 @@ def run_commit_message_generation(
             break
         if isinstance(event, ProgressEvent):
             render_progress(event)
-            start = time_module.monotonic()
+            start = time.monotonic()
         elif isinstance(event, CompletionEvent):
             result = event.result
 
