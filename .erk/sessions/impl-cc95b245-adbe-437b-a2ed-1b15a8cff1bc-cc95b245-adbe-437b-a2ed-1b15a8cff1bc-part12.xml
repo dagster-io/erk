@@ -1,0 +1,1505 @@
+<session>
+  <meta source="agent-a73975c" />
+  <meta branch="plnd/add-erk-reconcile-rename-d-03-06-0728" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand specific types used in the land/reconcile flow. Find and read:
+
+1. The PRDetails type and PRNotFound type - search for their definitions
+2. The PoolState type - search for its definition
+3. The SlotAssignment type - search for its definition
+4. The `get_pr_for_branch` method on the GitHub ABC to see its return type
+5. `src/erk/cli/commands/slot/common.py` - specifically `find_branch_assignment` and `execute_unassign` imports
+6. The `resolve_plan_id_for_branch` method on the plan backend ABC
+7. The `find_worktree_for_branch` method on the worktree ABC
+8. The `find_sessions_for_plan` method on the plan backend ABC
+9. The `ErkContext` class to understand what `ctx.git`, `ctx.github`, etc. expose
+10. `src/erk/cli/commands/land_cmd.py` lines 380-460 to see `_cleanup_non_slot_worktree` pattern
+
+Return file paths and content for all findings.</user>
+  <assistant>I'll help you understand these types and methods used in the land/reconcile flow. Let me start by checking the documentation and then systematically finding these definitions.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18953" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18953, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017bENxr1DV3oPHDrS8SU461">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18953" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18953, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PoM7yPHdERjGbvdyLuuRzr">
+    <param name="pattern">PRDetails|PRNotFound</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18953" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18953, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Adjor7J72XUuFFaPtf8emT">
+    <param name="pattern">class PoolState</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18953" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18953, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PSB4xoNahyGKZjkcbrY5tY">
+    <param name="pattern">class SlotAssignment</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18953" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18953, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017bENxr1DV3oPHDrS8SU461">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01PoM7yPHdERjGbvdyLuuRzr">
+Found 158 files
+docs/learned/architecture/tripwires.md
+tests/commands/pr/test_submit.py
+src/erk/cli/commands/pr/submit_pipeline.py
+tests/unit/plan_store/test_conversion.py
+tests/unit/plan_store/test_planned_pr_backend.py
+tests/unit/gateways/gt/fake_ops.py
+tests/unit/gateways/github/test_label_ops.py
+tests/unit/gateways/github/test_real.py
+tests/unit/fakes/test_fake_github.py
+tests/unit/entity_store/test_entity_state.py
+tests/unit/entity_store/test_github_entity.py
+tests/unit/cli/test_ensure_ideal.py
+tests/unit/cli/commands/slot/test_repair_cmd.py
+tests/unit/cli/commands/pr/submit_pipeline/test_capture_existing_pr_body.py
+tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py
+tests/unit/cli/commands/pr/test_dispatch_cmd.py
+tests/unit/cli/commands/pr/test_metadata_helpers.py
+tests/unit/cli/commands/pr/test_shared.py
+tests/unit/cli/commands/land/test_resolvers.py
+tests/unit/cli/commands/land/test_validate_pr_for_landing.py
+tests/unit/cli/commands/land/pipeline/test_create_learn_issue.py
+tests/unit/cli/commands/land/pipeline/test_merge_pr.py
+tests/unit/cli/commands/land/pipeline/test_resolve_plan_id.py
+tests/unit/cli/commands/land/pipeline/test_resolve_target.py
+tests/unit/cli/commands/land/pipeline/test_run_execution_pipeline.py
+tests/unit/cli/commands/land/pipeline/test_run_validation_pipeline.py
+tests/unit/cli/commands/land/pipeline/test_validate_pr.py
+
+... [129 lines omitted] ...
+
+tests/commands/land/test_branch_errors.py
+docs/learned/architecture/discriminated-union-error-handling.md
+  </tool_result>
+  <tool_result tool="toolu_01Adjor7J72XUuFFaPtf8emT">
+Found 1 file
+src/erk/core/worktree_pool.py
+  </tool_result>
+  <tool_result tool="toolu_01PSB4xoNahyGKZjkcbrY5tY">
+Found 1 file
+src/erk/core/worktree_pool.py
+  </tool_result>
+  <assistant>Now let me search for more type definitions and read the key files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="4563" cache_read_input_tokens="18953" cache_creation="{'ephemeral_5m_input_tokens': 4563, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01QJo7YtGemKDXf7qQ1iMRXD">
+    <param name="pattern">get_pr_for_branch</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4563" cache_read_input_tokens="18953" cache_creation="{'ephemeral_5m_input_tokens': 4563, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01YJP7bg2QMqzE98SKSie8DF">
+    <param name="pattern">resolve_plan_id_for_branch</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4563" cache_read_input_tokens="18953" cache_creation="{'ephemeral_5m_input_tokens': 4563, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LtjqvsyDNw3ZTHHHxYBCLE">
+    <param name="pattern">find_worktree_for_branch</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4563" cache_read_input_tokens="18953" cache_creation="{'ephemeral_5m_input_tokens': 4563, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01NmWACUHSGLFaBJBTetsgjy">
+    <param name="pattern">find_sessions_for_plan</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4563" cache_read_input_tokens="18953" cache_creation="{'ephemeral_5m_input_tokens': 4563, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YUGm39BhyyiRMCK2WUEXVc">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="4563" cache_read_input_tokens="18953" cache_creation="{'ephemeral_5m_input_tokens': 4563, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YUGm39BhyyiRMCK2WUEXVc">
+     1→"""Type definitions for GitHub operations."""
+     2→
+     3→from dataclasses import dataclass, field
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→from typing import Any, Literal, TypedDict
+     7→
+     8→from erk_shared.non_ideal_state import EnsurableResult
+     9→
+    10→PRState = Literal["OPEN", "MERGED", "CLOSED"]
+    11→
+    12→MergeableStatus = Literal["MERGEABLE", "CONFLICTING", "UNKNOWN"]
+    13→
+    14→
+    15→class StatusCheckRollupData(TypedDict, total=False):
+    16→    state: str
+    17→    contexts: dict[str, Any]
+    18→
+    19→
+    20→def _epoch_sentinel() -&gt; datetime:
+    21→    """Return the epoch sentinel datetime used as default for missing PR timestamps."""
+    22→    return datetime(2000, 1, 1, tzinfo=UTC)
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class BodyText:
+    27→    """Body content as inline text.
+    28→
+    29→    Used when the body content is a string that should be passed directly
+    30→    to the GitHub API using -f body={content} syntax.
+
+... [367 lines omitted] ...
+
+    92→        conclusion: Result when completed ("success", "failure", "cancelled", etc.).
+   111→class MergeError:
+   112→    """Error result from merging a PR. Implements NonIdealState."""
+   118→    def error_type(self) -&gt; str:
+   119→        return "merge-failed"
+   126→    Used as part of union return types for LBYL-style error handling.
+   200→WorkflowRunConclusion = Literal["success", "failure", "cancelled", "skipped"]
+   239→    Raises AttributeError when accessed as a string, preventing silent bugs
+   249→        raise AttributeError(msg)
+   260→        raise AttributeError(msg)
+   280→    Accessing unavailable fields raises AttributeError.
+   326→        raise AttributeError(msg)
+   330→        raise AttributeError(msg)
+   353→            str(value)  # Trigger the error
+   365→            str(value)  # Trigger the error
+  </tool_result>
+  <tool_result tool="toolu_01QJo7YtGemKDXf7qQ1iMRXD">
+Found 66 files
+docs/learned/architecture/tripwires.md
+src/erk/cli/commands/pr/submit_pipeline.py
+tests/unit/gateways/gt/fake_ops.py
+tests/unit/fakes/test_fake_branch_manager.py
+tests/unit/fakes/test_fake_github.py
+tests/unit/cli/commands/pr/test_metadata_helpers.py
+tests/unit/cli/commands/exec/scripts/test_objective_fetch_context.py
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py
+tests/commands/pr/test_view.py
+tests/commands/implement/test_issue_mode.py
+src/erk/cli/commands/wt/delete_cmd.py
+src/erk/cli/commands/slot/diagnostics.py
+src/erk/cli/commands/pr/check_cmd.py
+src/erk/cli/commands/pr/rewrite_cmd.py
+src/erk/cli/commands/navigation_helpers.py
+src/erk/cli/commands/land_cmd.py
+src/erk/cli/commands/land_pipeline.py
+src/erk/cli/commands/launch_cmd.py
+src/erk/cli/commands/exec/scripts/update_pr_description.py
+src/erk/cli/commands/exec/scripts/set_local_review_marker.py
+src/erk/cli/commands/exec/scripts/set_pr_description.py
+src/erk/cli/commands/exec/scripts/setup_impl.py
+src/erk/cli/commands/exec/scripts/pr_sync_commit.py
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py
+src/erk/cli/commands/exec/scripts/objective_fetch_context.py
+src/erk/cli/commands/exec/scripts/get_pr_context.py
+src/erk/cli/commands/exec/scripts/get_pr_review_comments.py
+src/erk/cli/commands/exec/scripts/get_pr_view.py
+src/erk/cli/commands/exec/scripts/ci_update_pr_body.py
+
+... [37 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01YJP7bg2QMqzE98SKSie8DF">
+Found 23 files
+tests/unit/plan_store/test_planned_pr_backend.py
+tests/unit/cli/commands/pr/test_dispatch_cmd.py
+tests/commands/pr/test_rewrite.py
+tests/commands/land/test_get_objective_for_branch.py
+tests/commands/land/test_plan_issue_closure.py
+src/erk/cli/commands/pr/view_cmd.py
+src/erk/cli/commands/objective_helpers.py
+src/erk/cli/commands/pr/dispatch_cmd.py
+src/erk/cli/commands/pr/metadata_helpers.py
+src/erk/cli/commands/learn/learn_cmd.py
+src/erk/cli/commands/land_cmd.py
+src/erk/cli/commands/land_pipeline.py
+src/erk/cli/commands/launch_cmd.py
+src/erk/cli/commands/implement_shared.py
+src/erk/cli/commands/exec/scripts/track_learn_evaluation.py
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py
+packages/erk-shared/src/erk_shared/plan_store/backend.py
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py
+docs/learned/planning/tripwires.md
+docs/learned/planning/metadata-update-patterns.md
+docs/learned/planning/branch-name-inference.md
+docs/learned/planning/branch-plan-resolution.md
+docs/learned/erk/dispatch-ref-config.md
+  </tool_result>
+  <tool_result tool="toolu_01NmWACUHSGLFaBJBTetsgjy">
+Found 11 files
+tests/unit/plan_store/test_plan_backend_interface.py
+tests/unit/cli/commands/land/test_land_learn.py
+tests/commands/land/test_learn_skip_remote.py
+src/erk/cli/commands/learn/learn_cmd.py
+src/erk/cli/commands/land_learn.py
+src/erk/cli/commands/exec/scripts/get_learn_sessions.py
+packages/erk-shared/src/erk_shared/plan_store/backend.py
+docs/learned/sessions/discovery-fallback.md
+docs/learned/sessions/lifecycle.md
+docs/learned/planning/session-preprocessing.md
+docs/learned/architecture/session-discovery.md
+  </tool_result>
+  <tool_result tool="toolu_01LtjqvsyDNw3ZTHHHxYBCLE">
+Found 28 files
+docs/learned/architecture/tripwires.md
+packages/erk-shared/src/erk_shared/gateway/git/abc.py
+tests/unit/cli/commands/land/test_cleanup_and_navigate.py
+tests/commands/navigation/test_up.py
+tests/commands/navigation/test_down.py
+tests/commands/navigation/test_graphite_find_worktrees.py
+tests/commands/navigation/test_stack_navigation.py
+tests/commands/land/test_up_flag.py
+src/erk/cli/commands/pr/teleport_cmd.py
+src/erk/cli/commands/pr/checkout_cmd.py
+src/erk/cli/commands/pr/dispatch_helpers.py
+src/erk/cli/commands/navigation_helpers.py
+src/erk/cli/commands/land_cmd.py
+src/erk/cli/commands/land_pipeline.py
+src/erk/cli/commands/checkout_helpers.py
+packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/worktree/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/worktree/printing.py
+packages/erk-shared/src/erk_shared/gateway/git/worktree/real.py
+packages/erk-shared/src/erk_shared/gateway/git/__init__.py
+packages/erk-shared/src/erk_shared/__init__.py
+docs/learned/erk/index.md
+docs/learned/erk/tripwires.md
+docs/learned/erk/worktree-branch-mismatch.md
+docs/learned/architecture/worktree-dispatch-detection.md
+docs/learned/architecture/multi-worktree-state.md
+docs/learned/architecture/gateway-abc-implementation.md
+  </tool_result>
+  <assistant>Now let me read the other key files:</assistant>
+  <usage input_tokens="4861" cache_creation_input_tokens="2809" cache_read_input_tokens="23516" cache_creation="{'ephemeral_5m_input_tokens': 2809, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01V8F19sJAPDXg5KmPNbM3DF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/worktree_pool.py</param>
+  </tool_use>
+  <usage input_tokens="4861" cache_creation_input_tokens="2809" cache_read_input_tokens="23516" cache_creation="{'ephemeral_5m_input_tokens': 2809, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AFG2gNUaZxrTWWjaysmCQP">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="4861" cache_creation_input_tokens="2809" cache_read_input_tokens="23516" cache_creation="{'ephemeral_5m_input_tokens': 2809, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017T4HhPWsWeiHsAw5ei3i6v">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="4861" cache_creation_input_tokens="2809" cache_read_input_tokens="23516" cache_creation="{'ephemeral_5m_input_tokens': 2809, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SKaGsxsQ5XGu9zX7QsW9tH">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="4861" cache_creation_input_tokens="2809" cache_read_input_tokens="23516" cache_creation="{'ephemeral_5m_input_tokens': 2809, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V8F19sJAPDXg5KmPNbM3DF">
+     1→"""Worktree pool state management.
+     2→
+     3→Provides dataclasses and persistence functions for managing a pool of
+     4→pre-created worktrees that can be assigned to branches on demand.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import json
+    10→from dataclasses import dataclass
+    11→from pathlib import Path
+    12→
+    13→
+    14→@dataclass(frozen=True)
+    15→class SlotInfo:
+    16→    """Represents an initialized pool slot.
+    17→
+    18→    A slot that has been pre-created with a worktree and placeholder branch,
+    19→    ready for assignment to feature branches.
+    20→
+    21→    Attributes:
+    22→        name: The pool slot identifier (e.g., "erk-slot-01")
+    23→    """
+    24→
+    25→    name: str
+    26→
+    27→
+    28→@dataclass(frozen=True)
+    29→class SlotAssignment:
+    30→    """Represents a branch assignment to a worktree slot.
+
+... [123 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01AFG2gNUaZxrTWWjaysmCQP">
+     1→"""Abstract base class for GitHub operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from abc import ABC, abstractmethod
+     6→from pathlib import Path
+     7→from typing import TYPE_CHECKING
+     8→
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.types import (
+    11→    BodyContent,
+    12→    GitHubRepoLocation,
+    13→    IssueFilterState,
+    14→    MergeError,
+    15→    MergeResult,
+    16→    PRCheckRun,
+    17→    PRDetails,
+    18→    PRListState,
+    19→    PRNotFound,
+    20→    PRReviewThread,
+    21→    PullRequestInfo,
+    22→    WorkflowRun,
+    23→)
+    24→
+    25→if TYPE_CHECKING:
+    26→    from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→
+    28→
+    29→class GitHub(ABC):
+    30→    """Abstract interface for GitHub operations.
+
+... [125 lines omitted] ...
+
+    77→    ) -&gt; MergeResult | MergeError:
+    91→            MergeResult on success, MergeError on failure
+  </tool_result>
+  <tool_result tool="toolu_017T4HhPWsWeiHsAw5ei3i6v">
+     1→"""Abstract interface for plan storage backends.
+     2→
+     3→PlanBackend is a BACKEND, not a gateway. Backends compose gateways (like GitHubIssues)
+     4→and should NOT have fake implementations. To test code that uses a PlanBackend,
+     5→inject fake gateways into the real backend implementation.
+     6→
+     7→Example:
+     8→    # Testing with fake gateway
+     9→    fake_issues = FakeGitHubIssues()
+    10→    fake_github = FakeGitHub(issues_gateway=fake_issues)
+    11→    backend = PlannedPRBackend(fake_github, fake_issues, time=FakeTime())
+    12→    result = backend.create_plan(...)
+    13→
+    14→    # Assert on gateway mutations
+    15→    assert fake_issues.created_issues[0][0] == "expected title"
+    16→
+    17→See: .claude/skills/fake-driven-testing/references/gateway-architecture.md
+    18→for the full gateway vs backend architecture.
+    19→"""
+    20→
+    21→from __future__ import annotations
+    22→
+    23→from abc import ABC, abstractmethod
+    24→from collections.abc import Mapping
+    25→from pathlib import Path
+    26→
+    27→from erk_shared.gateway.github.metadata.schemas import (
+    28→    CREATED_FROM_SESSION,
+    29→    LAST_LEARN_SESSION,
+    30→    LAST_LOCAL_IMPL_SESSION,
+
+... [75 lines omitted] ...
+
+    99→            RuntimeError: If provider fails
+  </tool_result>
+  <tool_result tool="toolu_01SKaGsxsQ5XGu9zX7QsW9tH">
+     1→"""Abstract interface for git worktree operations.
+     2→
+     3→This module provides a clean abstraction over git worktree subprocess calls,
+     4→making the codebase more testable and maintainable.
+     5→
+     6→Architecture:
+     7→- Worktree: Abstract base class defining the interface
+     8→- RealWorktree: Production implementation using subprocess
+     9→- FakeWorktree: In-memory implementation for testing
+    10→"""
+    11→
+    12→from abc import ABC, abstractmethod
+    13→from pathlib import Path
+    14→
+    15→# Re-export WorktreeInfo from the main git.abc module for backwards compatibility
+    16→from erk_shared.gateway.git.abc import WorktreeInfo
+    17→
+    18→
+    19→class Worktree(ABC):
+    20→    """Abstract interface for git worktree operations.
+    21→
+    22→    All implementations (real and fake) must implement this interface.
+    23→    """
+    24→
+    25→    @abstractmethod
+    26→    def list_worktrees(self, repo_root: Path) -&gt; list[WorktreeInfo]:
+    27→        """List all worktrees in the repository."""
+    28→        ...
+    29→
+    30→    @abstractmethod
+
+... [75 lines omitted] ...
+
+    50→            RuntimeError: If the worktree add operation fails.
+    69→            RuntimeError: If the worktree remove operation fails.
+  </tool_result>
+  <assistant>Now let me continue reading more of these files and check the slot common and land_cmd files:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="11281" cache_read_input_tokens="26325" cache_creation="{'ephemeral_5m_input_tokens': 11281, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KGbQNCZ9CEcVXmx6yS8ZWG">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="offset">150</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11281" cache_read_input_tokens="26325" cache_creation="{'ephemeral_5m_input_tokens': 11281, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014pRPzGHQMkQ7eyfVJpim4w">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="offset">100</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11281" cache_read_input_tokens="26325" cache_creation="{'ephemeral_5m_input_tokens': 11281, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Y1bnTiZUyrj22WZ5YNdGYr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/slot/common.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11281" cache_read_input_tokens="26325" cache_creation="{'ephemeral_5m_input_tokens': 11281, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01WwNix7VjeDEguUEXDWoREt">
+    <param name="pattern">**/slot/common.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="11281" cache_read_input_tokens="26325" cache_creation="{'ephemeral_5m_input_tokens': 11281, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KGbQNCZ9CEcVXmx6yS8ZWG">
+   150→        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+   151→    ) -&gt; list[WorkflowRun]:
+   152→        """List workflow runs for a specific workflow.
+   153→
+   154→        Args:
+   155→            repo_root: Repository root directory
+   156→            workflow: Workflow filename (e.g., "implement-plan.yml")
+   157→            limit: Maximum number of runs to return (default: 50)
+   158→            user: Optional GitHub username to filter runs by (maps to --user flag)
+   159→
+   160→        Returns:
+   161→            List of workflow runs, ordered by creation time (newest first)
+   162→        """
+   163→        ...
+   164→
+   165→    @abstractmethod
+   166→    def get_workflow_run(self, repo_root: Path, run_id: str) -&gt; WorkflowRun | None:
+   167→        """Get details for a specific workflow run by ID.
+   168→
+   169→        Args:
+   170→            repo_root: Repository root directory
+   171→            run_id: GitHub Actions run ID
+   172→
+   173→        Returns:
+   174→            WorkflowRun with status and conclusion, or None if not found
+   175→        """
+   176→        ...
+   177→
+   178→    @abstractmethod
+   179→    def get_run_logs(self, repo_root: Path, run_id: str) -&gt; str:
+
+... [75 lines omitted] ...
+
+   190→            RuntimeError: If gh CLI command fails
+  </tool_result>
+  <tool_result tool="toolu_014pRPzGHQMkQ7eyfVJpim4w">
+   100→        """
+   101→        ...
+   102→
+   103→    @abstractmethod
+   104→    def get_provider_name(self) -&gt; str:
+   105→        """Get the name of the provider.
+   106→
+   107→        Returns:
+   108→            Provider name (e.g., "github", "gitlab", "linear")
+   109→        """
+   110→        ...
+   111→
+   112→    @abstractmethod
+   113→    def get_metadata_field(
+   114→        self,
+   115→        repo_root: Path,
+   116→        plan_id: str,
+   117→        field_name: str,
+   118→    ) -&gt; object | PlanNotFound:
+   119→        """Get a single metadata field from a plan.
+   120→
+   121→        Args:
+   122→            repo_root: Repository root directory
+   123→            plan_id: Provider-specific identifier
+   124→            field_name: Name of the metadata field to read
+   125→
+   126→        Returns:
+   127→            Field value (may be None if unset), or PlanNotFound if plan doesn't exist
+   128→        """
+   129→        ...
+
+... [75 lines omitted] ...
+
+   165→            RuntimeError: If provider fails or plan not found
+   196→            RuntimeError: If plan not found
+  </tool_result>
+  <tool_result tool="toolu_01Y1bnTiZUyrj22WZ5YNdGYr">
+     1→"""Shared utilities for slot commands."""
+     2→
+     3→import re
+     4→import shutil
+     5→from dataclasses import dataclass
+     6→from pathlib import Path
+     7→
+     8→import click
+     9→
+    10→from erk.cli.activation import write_worktree_activate_script
+    11→from erk.core.context import ErkContext
+    12→from erk.core.repo_discovery import RepoContext, ensure_erk_metadata_dir
+    13→from erk.core.worktree_pool import PoolState, SlotAssignment, load_pool_state, save_pool_state
+    14→from erk_shared.gateway.console.abc import Console
+    15→from erk_shared.gateway.git.abc import Git
+    16→from erk_shared.impl_folder import IMPL_DIR_RELATIVE
+    17→from erk_shared.output.output import user_output
+    18→
+    19→
+    20→@dataclass(frozen=True)
+    21→class SlotAllocationResult:
+    22→    """Result of allocating a slot for a branch."""
+    23→
+    24→    slot_name: str
+    25→    worktree_path: Path
+    26→    already_assigned: bool  # True if branch was already in a slot
+    27→
+    28→
+    29→# Default pool configuration
+    30→DEFAULT_POOL_SIZE = 4
+
+... [706 lines omitted] ...
+
+   314→    3. Worktree has wrong branch → fix it or error if uncommitted changes
+   327→        - both None: Should not happen (raises SystemExit on error)
+   365→            click.style("Error: ", fg="red")
+   453→    """Handle pool-full condition: prompt to unassign oldest or error.
+   458→    - If non-interactive (no TTY): error with instructions
+   466→        SlotAssignment to unassign, or None if user declined/error
+   478→            f"Error: Pool is full ({state.pool_size} slots). "
+  </tool_result>
+  <tool_result tool="toolu_01WwNix7VjeDEguUEXDWoREt">
+/home/runner/work/erk/erk/src/erk/cli/commands/slot/common.py
+  </tool_result>
+  <assistant>Now let me continue reading and get the remaining functions and classes:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="12173" cache_read_input_tokens="37606" cache_creation="{'ephemeral_5m_input_tokens': 12173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WSWwuNBtUEVJz2hRy6yTeH">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">380</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="12173" cache_read_input_tokens="37606" cache_creation="{'ephemeral_5m_input_tokens': 12173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AnANRwN3Z3UmVCZyvGzKEQ">
+    <param name="command">grep -n "class ErkContext" packages/erk-shared/src/erk_shared -r</param>
+    <param name="description">Find ErkContext class definition</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="12173" cache_read_input_tokens="37606" cache_creation="{'ephemeral_5m_input_tokens': 12173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01W5pnQCvhft4mEJ4daAi9Lb">
+    <param name="command">find . -name "*.py" -exec grep -l "class ErkContext" {} \;</param>
+    <param name="description">Find all files with ErkContext class</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="12173" cache_read_input_tokens="37606" cache_creation="{'ephemeral_5m_input_tokens': 12173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WSWwuNBtUEVJz2hRy6yTeH">
+   380→    user_output(click.style("✓", fg="green") + " Released slot and deleted branch")
+   381→
+   382→
+   383→def _cleanup_root_worktree(cleanup: CleanupContext) -&gt; None:
+   384→    """Handle cleanup for root worktree: delete branch, skip worktree removal."""
+   385→    assert cleanup.worktree_path is not None
+   386→
+   387→    if not cleanup.cleanup_confirmed:
+   388→        user_output("Branch preserved.")
+   389→        return
+   390→
+   391→    trunk = cleanup.ctx.git.branch.detect_trunk_branch(cleanup.main_repo_root)
+   392→    cleanup.ctx.branch_manager.checkout_branch(cleanup.worktree_path, trunk)
+   393→
+   394→    _ensure_branch_not_checked_out(
+   395→        cleanup.ctx, repo_root=cleanup.main_repo_root, branch=cleanup.branch
+   396→    )
+   397→    cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch, force=True)
+   398→    user_output(click.style("✓", fg="green") + " Deleted branch (root worktree preserved)")
+   399→
+   400→
+   401→def _cleanup_non_slot_worktree(cleanup: CleanupContext) -&gt; None:
+   402→    """Handle cleanup for non-slot worktree: delete branch and remove worktree."""
+   403→    # worktree_path is guaranteed non-None since we're in a non-slot worktree
+   404→    assert cleanup.worktree_path is not None
+   405→
+   406→    # Check for uncommitted changes before switching branches
+   407→    Ensure.invariant(
+   408→        not cleanup.ctx.git.status.has_uncommitted_changes(cleanup.worktree_path),
+   409→        f"Worktree has uncommitted changes at {cleanup.worktree_path}.\n"
+
+... [55 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01AnANRwN3Z3UmVCZyvGzKEQ">
+packages/erk-shared/src/erk_shared/context/context.py:59:class ErkContext:
+  </tool_result>
+  <tool_result tool="toolu_01W5pnQCvhft4mEJ4daAi9Lb">
+./packages/erk-shared/src/erk_shared/context/context.py
+  </tool_result>
+  <assistant>Let me read the ErkContext class and continue with the GitHub ABC for get_pr_for_branch:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1893" cache_read_input_tokens="49779" cache_creation="{'ephemeral_5m_input_tokens': 1893, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015JbSbCJEQquDq3daRwao8n">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="offset">59</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1893" cache_read_input_tokens="49779" cache_creation="{'ephemeral_5m_input_tokens': 1893, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013aMJFX6aTNapVgfkbcGfZu">
+    <param name="command">grep -n "def get_pr_for_branch" packages/erk-shared/src/erk_shared -r</param>
+    <param name="description">Find get_pr_for_branch method</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1893" cache_read_input_tokens="49779" cache_creation="{'ephemeral_5m_input_tokens': 1893, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01U29Hh3C4Bzm1NtR5MCA3MJ">
+    <param name="command">grep -n "def resolve_plan_id_for_branch" packages/erk-shared/src/erk_shared -r</param>
+    <param name="description">Find resolve_plan_id_for_branch method</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1893" cache_read_input_tokens="49779" cache_creation="{'ephemeral_5m_input_tokens': 1893, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015JbSbCJEQquDq3daRwao8n">
+    59→class ErkContext:
+    60→    """Immutable context holding all dependencies for erk and erk-kits operations.
+    61→
+    62→    Created at CLI entry point and threaded through the application via Click's
+    63→    context system. Frozen to prevent accidental modification at runtime.
+    64→
+    65→    This unified context combines functionality that was previously split across
+    66→    multiple context types (erk.core.context.ErkContext and erk_kits.context).
+    67→
+    68→    Note:
+    69→    - global_config may be None only during init command before config is created.
+    70→      All other commands should have a valid GlobalConfig.
+    71→
+    72→    Field naming conventions:
+    73→    - github_issues property -&gt; issues (renamed for consistency)
+    74→    - repo_root property -&gt; repo.root (access via repo property or require_repo_root helper)
+    75→    """
+    76→
+    77→    # Gateway integrations (from erk_shared)
+    78→    git: Git  # Note: branch ops accessed via git.branch subgateway
+    79→    github: GitHub  # Note: issues accessed via github.issues property
+    80→    github_admin: GitHubAdmin  # GitHub Actions admin operations
+    81→    graphite: Graphite
+    82→    graphite_branch_ops: GraphiteBranchOps | None  # None when Graphite disabled
+    83→    console: Console  # TTY detection, user feedback, and confirmation prompts
+    84→    time: Time
+    85→    erk_installation: ErkInstallation  # ~/.erk/ installation data (config, pool state)
+    86→    claude_installation: ClaudeInstallation  # ~/.claude/ installation data (sessions, settings)
+    87→    agent_docs: AgentDocs  # docs/learned/ file access
+    88→    plan_store: PlanBackend
+
+... [75 lines omitted] ...
+
+   131→            RuntimeError: If not in a git repository
+   134→            raise RuntimeError("Not in a git repository")
+  </tool_result>
+  <tool_result tool="toolu_01U29Hh3C4Bzm1NtR5MCA3MJ">
+packages/erk-shared/src/erk_shared/plan_store/backend.py:265:    def resolve_plan_id_for_branch(self, repo_root: Path, branch_name: str) -&gt; str | None:
+packages/erk-shared/src/erk_shared/plan_store/planned_pr.py:118:    def resolve_plan_id_for_branch(self, repo_root: Path, branch_name: str) -&gt; str | None:
+  </tool_result>
+  <tool_result tool="toolu_013aMJFX6aTNapVgfkbcGfZu">
+packages/erk-shared/src/erk_shared/gateway/github/printing.py:213:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:195:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/fake.py:689:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1368:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:405:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+packages/erk-shared/src/erk_shared/gateway/branch_manager/git.py:28:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PrInfo | None:
+packages/erk-shared/src/erk_shared/gateway/branch_manager/fake.py:54:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PrInfo | None:
+packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py:32:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PrInfo | None:
+packages/erk-shared/src/erk_shared/gateway/branch_manager/abc.py:27:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PrInfo | None:
+  </tool_result>
+  <assistant>Now let me read the remaining methods and the ABC definitions:</assistant>
+  <usage input_tokens="143" cache_creation_input_tokens="2385" cache_read_input_tokens="51672" cache_creation="{'ephemeral_5m_input_tokens': 2385, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01S3fH7DmHyADRgk92tTFPS3">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="offset">400</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="143" cache_creation_input_tokens="2385" cache_read_input_tokens="51672" cache_creation="{'ephemeral_5m_input_tokens': 2385, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DwmpKASREVQBa2p5CW2A1h">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="offset">265</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="143" cache_creation_input_tokens="2385" cache_read_input_tokens="51672" cache_creation="{'ephemeral_5m_input_tokens': 2385, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CKwG7Tywutftm4XyoTd5TV">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+    <param name="limit">58</param>
+  </tool_use>
+  <usage input_tokens="143" cache_creation_input_tokens="2385" cache_read_input_tokens="51672" cache_creation="{'ephemeral_5m_input_tokens': 2385, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NidYcjfsVNALtCAbCUuH4R">
+    <param name="command">grep -n "execute_unassign" src/erk/cli/commands/slot -r</param>
+    <param name="description">Search for execute_unassign function</param>
+  </tool_use>
+  <usage input_tokens="143" cache_creation_input_tokens="2385" cache_read_input_tokens="51672" cache_creation="{'ephemeral_5m_input_tokens': 2385, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S3fH7DmHyADRgk92tTFPS3">
+   400→            PRDetails with all PR fields, or PRNotFound if PR doesn't exist
+   401→        """
+   402→        ...
+   403→
+   404→    @abstractmethod
+   405→    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+   406→        """Get comprehensive PR details for a branch.
+   407→
+   408→        Args:
+   409→            repo_root: Repository root directory
+   410→            branch: Branch name to look up
+   411→
+   412→        Returns:
+   413→            PRDetails if a PR exists for the branch, PRNotFound otherwise
+   414→        """
+   415→        ...
+   416→
+   417→    @abstractmethod
+   418→    def list_prs(
+   419→        self,
+   420→        repo_root: Path,
+   421→        *,
+   422→        state: PRListState,
+   423→        labels: list[str] | None = None,
+   424→        author: str | None = None,
+   425→        draft: bool | None = None,
+   426→    ) -&gt; dict[str, PullRequestInfo]:
+   427→        """List PRs for the repository, keyed by head branch name.
+   428→
+   429→        Fetches PRs from GitHub API in a single REST API call.
+
+... [25 lines omitted] ...
+
+   442→            Empty dict if no PRs match or on API failure.
+  </tool_result>
+  <tool_result tool="toolu_01DwmpKASREVQBa2p5CW2A1h">
+   265→    def resolve_plan_id_for_branch(self, repo_root: Path, branch_name: str) -&gt; str | None:
+   266→        """Resolve plan identifier for a branch without fetching the full plan.
+   267→
+   268→        Lightweight resolution that does NOT verify the plan exists.
+   269→        Returns None if the branch is not associated with a plan.
+   270→
+   271→        For GitHubPlanBackend this is a zero-cost regex operation.
+   272→        Future backends (e.g., PlannedPRBackend) may require an API call.
+   273→
+   274→        Args:
+   275→            repo_root: Repository root directory
+   276→            branch_name: Git branch name
+   277→
+   278→        Returns:
+   279→            Plan identifier string if branch is a plan branch, None otherwise
+   280→        """
+   281→        ...
+   282→
+   283→    # Write operations
+   284→
+   285→    @abstractmethod
+   286→    def create_plan(
+   287→        self,
+   288→        *,
+   289→        repo_root: Path,
+   290→        title: str,
+   291→        content: str,
+   292→        labels: tuple[str, ...],
+   293→        metadata: Mapping[str, object],
+   294→        summary: str,
+
+... [25 lines omitted] ...
+
+   310→            RuntimeError: If provider fails
+  </tool_result>
+  <tool_result tool="toolu_01CKwG7Tywutftm4XyoTd5TV">
+     1→"""Unified context for erk and erk-kits operations.
+     2→
+     3→This module provides ErkContext - the unified context that holds all dependencies
+     4→for erk and erk-kits operations.
+     5→
+     6→The ABCs for erk-specific services (PromptExecutor, ConfigStore, ScriptWriter,
+     7→PlanListService) are defined in erk_shared.core, enabling
+     8→proper type hints without circular imports. Real implementations remain in erk.
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→from dataclasses import dataclass
+    14→from pathlib import Path
+    15→from typing import TYPE_CHECKING
+    16→
+    17→from erk_shared.context.types import (
+    18→    GlobalConfig,
+    19→    LoadedConfig,
+    20→    NoRepoSentinel,
+    21→    RepoContext,
+    22→)
+    23→
+    24→if TYPE_CHECKING:
+    25→    from erk.artifacts.paths import ErkPackageInfo
+    26→    from erk_shared.core.objective_list_service import ObjectiveListService
+    27→
+    28→from erk_shared.core.llm_caller import LlmCaller
+    29→from erk_shared.core.plan_list_service import PlanListService
+    30→from erk_shared.core.prompt_executor import PromptExecutor
+
+... [33 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01NidYcjfsVNALtCAbCUuH4R">
+src/erk/cli/commands/slot/unassign_cmd.py:31:def execute_unassign(
+src/erk/cli/commands/slot/unassign_cmd.py:199:    result = execute_unassign(ctx, repo, state, assignment)
+grep: src/erk/cli/commands/slot/__pycache__/unassign_cmd.cpython-312.pyc: binary file matches
+  </tool_result>
+  <assistant>Perfect! Let me read the execute_unassign function:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3127" cache_read_input_tokens="54057" cache_creation="{'ephemeral_5m_input_tokens': 3127, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TTM5un41zYVimAKLyTpbuT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/slot/unassign_cmd.py</param>
+    <param name="offset">31</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3127" cache_read_input_tokens="54057" cache_creation="{'ephemeral_5m_input_tokens': 3127, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KrCMYGWkrj6LA9FBpfXk7C">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/slot/unassign_cmd.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3127" cache_read_input_tokens="54057" cache_creation="{'ephemeral_5m_input_tokens': 3127, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TTM5un41zYVimAKLyTpbuT">
+    31→def execute_unassign(
+    32→    ctx: ErkContext,
+    33→    repo: RepoContext,
+    34→    state: PoolState,
+    35→    assignment: SlotAssignment,
+    36→) -&gt; UnassignResult:
+    37→    """Execute the unassign operation for a pool slot.
+    38→
+    39→    This function handles:
+    40→    - Checking for uncommitted changes
+    41→    - Getting or creating placeholder branch
+    42→    - Checking out placeholder branch
+    43→    - Removing assignment from pool state
+    44→
+    45→    Args:
+    46→        ctx: ErkContext with git operations
+    47→        repo: Repository context
+    48→        state: Current pool state
+    49→        assignment: The assignment to remove
+    50→
+    51→    Returns:
+    52→        UnassignResult with branch name, slot name, and trunk branch
+    53→
+    54→    Raises:
+    55→        SystemExit: If worktree has uncommitted changes or placeholder branch cannot be determined
+    56→    """
+    57→    # Check for uncommitted changes before switching branches
+    58→    if ctx.git.status.has_uncommitted_changes(assignment.worktree_path):
+    59→        user_output(
+    60→            f"Error: Worktree has uncommitted changes at {assignment.worktree_path}.\n"
+
+... [95 lines omitted] ...
+
+    69→            f"Error: Could not determine placeholder branch for slot {assignment.slot_name}."
+    81→            user_output(f"Error: {create_result.message}")
+  </tool_result>
+  <tool_result tool="toolu_01KrCMYGWkrj6LA9FBpfXk7C">
+     1→"""Slot unassign command - remove a branch assignment from a pool slot."""
+     2→
+     3→from dataclasses import dataclass
+     4→from pathlib import Path
+     5→
+     6→import click
+     7→
+     8→from erk.cli.commands.slot.common import get_placeholder_branch_name
+     9→from erk.cli.core import discover_repo_context
+    10→from erk.core.context import ErkContext
+    11→from erk.core.repo_discovery import RepoContext
+    12→from erk.core.worktree_pool import (
+    13→    PoolState,
+    14→    SlotAssignment,
+    15→    load_pool_state,
+    16→    save_pool_state,
+    17→)
+    18→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    19→from erk_shared.output.output import user_output
+    20→
+    21→
+    22→@dataclass(frozen=True)
+    23→class UnassignResult:
+    24→    """Result of an unassign operation."""
+    25→
+    26→    branch_name: str
+    27→    slot_name: str
+    28→    trunk_branch: str
+    29→
+    30→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! Now let me get the find_sessions_for_plan concrete method details and check the worktree ABC one more time:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2390" cache_read_input_tokens="57184" cache_creation="{'ephemeral_5m_input_tokens': 2390, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XzHXa3mZ7YS563XxKa12vN">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="offset">169</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2390" cache_read_input_tokens="57184" cache_creation="{'ephemeral_5m_input_tokens': 2390, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01C8AgG6mr3GJbH7vZCyCHBD">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py</param>
+    <param name="offset">78</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2390" cache_read_input_tokens="57184" cache_creation="{'ephemeral_5m_input_tokens': 2390, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GVghKYTsXWPj8wr1W2YzE4">
+    <param name="command">grep -A 5 "^def find_sessions_for_plan" packages/erk-shared/src/erk_shared/plan_store/backend.py</param>
+    <param name="description">Get context of find_sessions_for_plan method</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2390" cache_read_input_tokens="57184" cache_creation="{'ephemeral_5m_input_tokens': 2390, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XzHXa3mZ7YS563XxKa12vN">
+   169→    # Session discovery (concrete — uses get_plan + get_comments)
+   170→
+   171→    def find_sessions_for_plan(
+   172→        self,
+   173→        repo_root: Path,
+   174→        plan_id: str,
+   175→    ) -&gt; SessionsForPlan:
+   176→        """Find all Claude Code sessions associated with a plan.
+   177→
+   178→        Extracts session IDs from:
+   179→        1. created_from_session in plan-header (planning session)
+   180→        2. last_local_impl_session in plan-header (most recent impl session)
+   181→        3. impl-started/impl-ended comments (all implementation sessions)
+   182→        4. last_learn_session in plan-header (most recent learn session)
+   183→        5. learn-invoked comments (previous learn sessions)
+   184→
+   185→        This is a concrete method that delegates to the abstract ``get_plan``
+   186→        and ``get_comments`` methods, so every backend gets it for free.
+   187→
+   188→        Args:
+   189→            repo_root: Repository root directory
+   190→            plan_id: Provider-specific identifier
+   191→
+   192→        Returns:
+   193→            SessionsForPlan with all discovered session IDs
+   194→
+   195→        Raises:
+   196→            RuntimeError: If plan not found
+   197→        """
+   198→        plan = self.get_plan(repo_root, plan_id)
+
+... [25 lines omitted] ...
+
+   201→            raise RuntimeError(msg)
+  </tool_result>
+  <tool_result tool="toolu_01C8AgG6mr3GJbH7vZCyCHBD">
+    78→    @abstractmethod
+    79→    def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+    80→        """Find worktree path for given branch name.
+    81→
+    82→        Args:
+    83→            repo_root: Repository root path
+    84→            branch: Branch name to search for
+    85→
+    86→        Returns:
+    87→            Path to worktree if branch is checked out, None otherwise
+    88→        """
+    89→        ...
+    90→
+    91→    @abstractmethod
+    92→    def is_branch_checked_out(self, repo_root: Path, branch: str) -&gt; Path | None:
+    93→        """Check if a branch is already checked out in any worktree.
+    94→
+    95→        Args:
+    96→            repo_root: Path to the git repository root
+    97→            branch: Branch name to check
+    98→
+    99→        Returns:
+   100→            Path to the worktree where branch is checked out, or None if not checked out.
+   101→        """
+   102→        ...
+   103→
+   104→    @abstractmethod
+   105→    def is_worktree_clean(self, worktree_path: Path) -&gt; bool:
+   106→        """Check if worktree has no uncommitted changes, staged changes, or untracked files.
+   107→
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01GVghKYTsXWPj8wr1W2YzE4">
+
+  </tool_result>
+  <assistant>Perfect! Now I have all the information needed. Let me compile the comprehensive findings document:
+
+## Summary of Type Definitions and Methods Used in Land/Reconcile Flow
+
+I've located all the requested type definitions and methods. Here are the findings organized by category:
+
+### 1. **PRDetails and PRNotFound Types**
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/types.py`
+
+```python
+@dataclass(frozen=True)
+class PRNotFound:
+    """Result when a PR lookup finds no matching PR.
+    
+    Used as part of union return types for LBYL-style error handling.
+    """
+    pr_number: int | None = None  # Set when looking up by number
+    branch: str | None = None  # Set when looking up by branch
+
+
+@dataclass(frozen=True)
+class PRDetails(EnsurableResult):
+    """Comprehensive PR information from a single GitHub API call.
+    
+    This dataclass contains all commonly-needed PR fields, allowing call sites
+    to fetch everything they need in one API call instead of multiple separate
+    calls for title, body, base branch, etc.
+    """
+    # Identity
+    number: int
+    url: str
+    
+    # Content
+    title: str
+    body: str
+    
+    # State
+    state: str  # "OPEN", "MERGED", "CLOSED"
+    is_draft: bool
+    
+    # Structure
+    base_ref_name: str
+    head_ref_name: str
+    is_cross_repository: bool
+    
+    # Mergeability
+    mergeable: MergeableStatus
+    merge_state_status: str  # "CLEAN", "BLOCKED", "UNSTABLE", "DIRTY"
+    
+    # Metadata
+    owner: str
+    repo: str
+    labels: tuple[str, ...] = ()
+    created_at: datetime = field(default_factory=_epoch_sentinel)
+    updated_at: datetime = field(default_factory=_epoch_sentinel)
+    author: str = ""
+```
+
+### 2. **PoolState Type**
+**File**: `/home/runner/work/erk/erk/src/erk/core/worktree_pool.py`
+
+```python
+@dataclass(frozen=True)
+class PoolState:
+    """Represents the complete state of the worktree pool.
+    
+    Attributes:
+        version: Schema version for forward compatibility
+        pool_size: Maximum number of slots in the pool
+        slots: Tuple of initialized slots (may or may not have assignments)
+        assignments: Tuple of current slot assignments (immutable)
+    """
+    version: str
+    pool_size: int
+    slots: tuple[SlotInfo, ...]
+    assignments: tuple[SlotAssignment, ...]
+    
+    @classmethod
+    def test(
+        cls,
+        *,
+        version: str | None = None,
+        pool_size: int | None = None,
+        slots: tuple[SlotInfo, ...] | None = None,
+        assignments: tuple[SlotAssignment, ...] | None = None,
+    ) -&gt; PoolState:
+        """Create a PoolState with sensible test defaults."""
+        return cls(
+            version=version if version is not None else "1.0",
+            pool_size=pool_size if pool_size is not None else 4,
+            slots=slots if slots is not None else (),
+            assignments=assignments if assignments is not None else (),
+        )
+```
+
+### 3. **SlotAssignment Type**
+**File**: `/home/runner/work/erk/erk/src/erk/core/worktree_pool.py`
+
+```python
+@dataclass(frozen=True)
+class SlotAssignment:
+    """Represents a branch assignment to a worktree slot.
+    
+    Attributes:
+        slot_name: The pool slot identifier (e.g., "erk-slot-01")
+        branch_name: The git branch assigned to this slot
+        assigned_at: ISO timestamp when the assignment was made
+        worktree_path: Filesystem path to the worktree directory
+    """
+    slot_name: str
+    branch_name: str
+    assigned_at: str
+    worktree_path: Path
+```
+
+### 4. **GitHub ABC `get_pr_for_branch` Method**
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py` (lines 404-415)
+
+```python
+@abstractmethod
+def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+    """Get comprehensive PR details for a branch.
+    
+    Args:
+        repo_root: Repository root directory
+        branch: Branch name to look up
+    
+    Returns:
+        PRDetails if a PR exists for the branch, PRNotFound otherwise
+    """
+    ...
+```
+
+**Return type**: `PRDetails | PRNotFound` (discriminated union for LBYL error handling)
+
+### 5. **Slot Common Functions: `find_branch_assignment` and `execute_unassign`**
+**File**: `/home/runner/work/erk/erk/src/erk/cli/commands/slot/common.py`
+
+**`find_branch_assignment` (lines 202-215)**:
+```python
+def find_branch_assignment(state: PoolState, branch_name: str) -&gt; SlotAssignment | None:
+    """Find if a branch is already assigned to a slot.
+    
+    Args:
+        state: Current pool state
+        branch_name: Branch to search for
+    
+    Returns:
+        SlotAssignment if found, None otherwise
+    """
+    for assignment in state.assignments:
+        if assignment.branch_name == branch_name:
+            return assignment
+    return None
+```
+
+**File**: `/home/runner/work/erk/erk/src/erk/cli/commands/slot/unassign_cmd.py`
+
+**`execute_unassign` (lines 31-110)**:
+```python
+def execute_unassign(
+    ctx: ErkContext,
+    repo: RepoContext,
+    state: PoolState,
+    assignment: SlotAssignment,
+) -&gt; UnassignResult:
+    """Execute the unassign operation for a pool slot.
+    
+    This function handles:
+    - Checking for uncommitted changes
+    - Getting or creating placeholder branch
+    - Checking out placeholder branch
+    - Removing assignment from pool state
+    
+    Args:
+        ctx: ErkContext with git operations
+        repo: Repository context
+        state: Current pool state
+        assignment: The assignment to remove
+    
+    Returns:
+        UnassignResult with branch name, slot name, and trunk branch
+    
+    Raises:
+        SystemExit: If worktree has uncommitted changes or placeholder branch cannot be determined
+    """
+```
+
+Also includes **UnassignResult dataclass** (lines 22-28):
+```python
+@dataclass(frozen=True)
+class UnassignResult:
+    """Result of an unassign operation."""
+    branch_name: str
+    slot_name: str
+    trunk_branch: str
+```
+
+### 6. **PlanBackend ABC `resolve_plan_id_for_branch` Method**
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py` (lines 265-281)
+
+```python
+@abstractmethod
+def resolve_plan_id_for_branch(self, repo_root: Path, branch_name: str) -&gt; str | None:
+    """Resolve plan identifier for a branch without fetching the full plan.
+    
+    Lightweight resolution that does NOT verify the plan exists.
+    Returns None if the branch is not associated with a plan.
+    
+    For GitHubPlanBackend this is a zero-cost regex operation.
+    Future backends (e.g., PlannedPRBackend) may require an API call.
+    
+    Args:
+        repo_root: Repository root directory
+        branch_name: Git branch name
+    
+    Returns:
+        Plan identifier string if branch is a plan branch, None otherwise
+    """
+    ...
+```
+
+**Return type**: `str | None`
+
+### 7. **Worktree ABC `find_worktree_for_branch` Method**
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/abc.py` (lines 78-89)
+
+```python
+@abstractmethod
+def find_worktree_for_branch(self, repo_root: Path, branch: str) -&gt; Path | None:
+    """Find worktree path for given branch name.
+    
+    Args:
+        repo_root: Repository root path
+        branch: Branch name to search for
+    
+    Returns:
+        Path to worktree if branch is checked out, None otherwise
+    """
+    ...
+```
+
+**Return type**: `Path | None`
+
+### 8. **PlanBackend ABC `find_sessions_for_plan` Method (Concrete)**
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py` (lines 171-218)
+
+```python
+def find_sessions_for_plan(
+    self,
+    repo_root: Path,
+    plan_id: str,
+) -&gt; SessionsForPlan:
+    """Find all Claude Code sessions associated with a plan.
+    
+    Extracts session IDs from:
+    1. created_from_session in plan-header (planning session)
+    2. last_local_impl_session in plan-header (most recent impl session)
+    3. impl-started/impl-ended comments (all implementation sessions)
+    4. last_learn_session in plan-header (most recent learn session)
+    5. learn-invoked comments (previous learn sessions)
+    
+    This is a concrete method that delegates to the abstract ``get_plan``
+    and ``get_comments`` methods, so every backend gets it for free.
+    
+    Args:
+        repo_root: Repository root directory
+        plan_id: Provider-specific identifier
+    
+    Returns:
+        SessionsForPlan with all discovered session IDs
+    
+    Raises:
+        RuntimeError: If plan not found
+    """
+    plan = self.get_plan(repo_root, plan_id)
+    if isinstance(plan, PlanNotFound):
+        msg = f"Plan {plan_id} not found"
+        raise RuntimeError(msg)
+    
+    planning_session_id = header_str(plan.header_fields, CREATED_FROM_SESSION)
+    metadata_impl_session = header_str(plan.header_fields, LAST_LOCAL_IMPL_SESSION)
+    metadata_learn_session = header_str(plan.header_fields, LAST_LEARN_SESSION)
+    
+    comments = self.get_comments(repo_root, plan_id)
+    comment_impl_sessions = extract_implementation_sessions(comments)
+    comment_learn_sessions = extract_learn_sessions(comments)
+    
+    # Combine implementation sessions: metadata first, then from comments
+    implementation_session_ids: list[str] = []
+    impl_seen: set[str] = set()
+    if metadata_impl_session is not None:
+        implementation_session_ids.append(metadata_impl_session)
+        impl_seen.add(metadata_impl_session)
+    for session_id in comment_impl_sessions:
+        if session_id not in impl_seen:
+            # ... continues
+```
+
+**Return type**: `SessionsForPlan`
+
+### 9. **ErkContext Class**
+**File**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py` (lines 59-155)
+
+```python
+@dataclass(frozen=True)
+class ErkContext:
+    """Immutable context holding all dependencies for erk and erk-kits operations.
+    
+    Created at CLI entry point and threaded through the application via Click's
+    context system. Frozen to prevent accidental modification at runtime.
+    """
+    
+    # Gateway integrations (from erk_shared)
+    git: Git  # Note: branch ops accessed via git.branch subgateway
+    github: GitHub  # Note: issues accessed via github.issues property
+    github_admin: GitHubAdmin  # GitHub Actions admin operations
+    graphite: Graphite
+    graphite_branch_ops: GraphiteBranchOps | None  # None when Graphite disabled
+    console: Console  # TTY detection, user feedback, and confirmation prompts
+    time: Time
+    erk_installation: ErkInstallation  # ~/.erk/ installation data (config, pool state)
+    claude_installation: ClaudeInstallation  # ~/.claude/ installation data (sessions, settings)
+    agent_docs: AgentDocs  # docs/learned/ file access
+    plan_store: PlanBackend
+    prompt_executor: PromptExecutor
+    llm_caller: LlmCaller
+    
+    # Shell/CLI integrations (moved to erk_shared)
+    shell: Shell
+    completion: Completion
+    codespace: Codespace
+    agent_launcher: AgentLauncher
+    
+    # Erk-specific services
+    script_writer: ScriptWriter
+    codespace_registry: CodespaceRegistry
+    plan_list_service: PlanListService
+    objective_list_service: ObjectiveListService
+    
+    # Paths
+    cwd: Path  # Current working directory at CLI invocation
+    
+    # Repository context
+    repo: RepoContext | NoRepoSentinel
+    repo_info: RepoInfo | None  # None when not in a GitHub repo
+    
+    # Configuration
+    global_config: GlobalConfig | None
+    local_config: LoadedConfig
+    
+    # Package info (only needed by artifact commands; None for most commands)
+    package_info: ErkPackageInfo | None = None
+    
+    # HTTP client for GitHub REST/GraphQL API
+    http_client: HttpClient | None = None
+    
+    # Mode flags
+    dry_run: bool = False
+    debug: bool = False
+    
+    @property
+    def repo_root(self) -&gt; Path:
+        """Convenience property - get repo root from repo."""
+        if isinstance(self.repo, NoRepoSentinel):
+            raise RuntimeError("Not in a git repository")
+        return self.repo.root
+    
+    @property
+    def trunk_branch(self) -&gt; str | None:
+        """Get the trunk branch name from git detection."""
+        if isinstance(self.repo, NoRepoSentinel):
+            return None
+        return self.git.branch.detect_trunk_branch(self.repo.root)
+    
+    @property
+    def issues(self) -&gt; GitHubIssues:
+        """Access to issue operations via the composed GitHub gateway."""
+        return self.github.issues
+```
+
+**Key exposures**:
+- `ctx.git` - Git gateway for all git operations
+- `ctx.github` - GitHub gateway (with `.issues` property for issue operations)
+- `ctx.console` - Console for user interaction
+- `ctx.plan_store` - Plan backend for plan operations
+- `ctx.time` - Time provider for testable timestamps
+
+### 10. **land_cmd.py `_cleanup_non_slot_worktree` Pattern**
+**File**: `/home/runner/work/erk/erk/src/erk/cli/commands/land_cmd.py` (lines 401-452)
+
+```python
+def _cleanup_non_slot_worktree(cleanup: CleanupContext) -&gt; None:
+    """Handle cleanup for non-slot worktree: delete branch and remove worktree."""
+    # worktree_path is guaranteed non-None since we're in a non-slot worktree
+    assert cleanup.worktree_path is not None
+    
+    # Check for uncommitted changes before switching branches
+    Ensure.invariant(
+        not cleanup.ctx.git.status.has_uncommitted_changes(cleanup.worktree_path),
+        f"Worktree has uncommitted changes at {cleanup.worktree_path}.\n"
+        "Commit or stash your changes before landing.",
+    )
+    
+    if not cleanup.cleanup_confirmed:
+        user_output("Branch and worktree preserved.")
+        return
+    
+    # Checkout detached HEAD at trunk before deleting feature branch
+    trunk_branch = cleanup.ctx.git.branch.detect_trunk_branch(cleanup.main_repo_root)
+    cleanup.ctx.branch_manager.checkout_detached(cleanup.worktree_path, trunk_branch)
+    
+    # Defensive: verify checkout succeeded before deletion
+    _ensure_branch_not_checked_out(
+        cleanup.ctx, repo_root=cleanup.main_repo_root, branch=cleanup.branch
+    )
+    cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch, force=True)
+    
+    # Escape process cwd out of worktree before removal
+    cleanup.ctx.git.worktree.safe_chdir(cleanup.main_repo_root)
+    
+    # Remove the worktree directory
+    worktree_name = cleanup.worktree_path.name
+    if not cleanup.force:
+        proceed = cleanup.ctx.console.confirm(
+            f"Remove worktree directory '{worktree_name}'?",
+            default=True,
+        )
+        if not proceed:
+            user_output(f"Worktree '{worktree_name}' preserved (branch already deleted).")
+            return
+    cleanup.ctx.git.worktree.remove_worktree(
+        cleanup.main_repo_root, cleanup.worktree_path, force=True
+    )
+    _prune_worktrees_safe(cleanup.ctx.git, cleanup.main_repo_root)
+    
+    user_output(
+        click.style("✓", fg="green") + f" Deleted branch and removed worktree '{worktree_name}'"
+    )
+```
+
+**Key Pattern Elements**:
+- Uses `Ensure.invariant()` for safety checks
+- Checks uncommitted changes before touching branches
+- Uses `checkout_detached()` to escape feature branch before deletion
+- Defensive verification with `_ensure_branch_not_checked_out()`
+- Uses `safe_chdir()` to escape process cwd before worktree removal
+- Interactive confirmation via `console.confirm()`
+
+All findings are from production code in the erk repository. The types use discriminated unions (`|`) for LBYL-style error handling per the project's Python standards.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2020" cache_read_input_tokens="59574" cache_creation="{'ephemeral_5m_input_tokens': 2020, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
