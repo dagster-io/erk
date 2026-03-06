@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Rename cmux sync \u2192 cmux checkout"
+}
