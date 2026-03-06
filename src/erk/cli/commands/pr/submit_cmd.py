@@ -24,45 +24,6 @@ from erk.cli.commands.pr.submit_pipeline import (
     run_submit_pipeline,
 )
 from erk.core.context import ErkContext
-from erk_shared.output.output import user_output
-
-# Set to False to disable polling for PR in Graphite cache after submission.
-# This feature ensures the status line can immediately display the PR number.
-ENABLE_PR_CACHE_POLLING = True
-
-# Polling configuration for PR cache
-PR_CACHE_POLL_MAX_WAIT_SECONDS = 10.0
-PR_CACHE_POLL_INTERVAL_SECONDS = 0.5
-
-
-def _wait_for_pr_in_cache(
-    ctx: ErkContext,
-    repo_root: Path,
-    branch: str,
-    *,
-    max_wait_seconds: float,
-    poll_interval: float,
-) -> bool:
-    """Wait for PR to appear in Graphite cache after submission.
-
-    Args:
-        ctx: Erk context
-        repo_root: Repository root path
-        branch: Branch name to check
-        max_wait_seconds: Maximum time to wait
-        poll_interval: Time between checks
-
-    Returns:
-        True if PR found in cache, False if timeout
-    """
-    start = ctx.time.now()
-    user_output("  Waiting for PR to appear in Graphite cache...")
-    while (ctx.time.now() - start).total_seconds() < max_wait_seconds:
-        prs = ctx.graphite.get_prs_from_graphite(ctx.git, repo_root)
-        if branch in prs:
-            return True
-        ctx.time.sleep(poll_interval)
-    return False
 
 
 def _make_clickable(url: str) -> str:
@@ -186,15 +147,5 @@ def pr_submit(
 
     if isinstance(result, SubmitError):
         raise click.ClickException(result.message)
-
-    # Wait for PR to appear in Graphite cache for immediate status line display
-    if ENABLE_PR_CACHE_POLLING and result.graphite_url is not None:
-        _wait_for_pr_in_cache(
-            ctx,
-            result.repo_root,
-            result.branch_name,
-            max_wait_seconds=PR_CACHE_POLL_MAX_WAIT_SECONDS,
-            poll_interval=PR_CACHE_POLL_INTERVAL_SECONDS,
-        )
 
     _print_summary(result)
