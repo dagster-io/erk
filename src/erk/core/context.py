@@ -20,7 +20,6 @@ from erk.artifacts.paths import ErkPackageInfo as ErkPackageInfo
 from erk.cli.config import load_config, load_local_config, merge_configs_with_local
 from erk.core.codex_prompt_executor import CodexPromptExecutor
 from erk.core.completion import RealCompletion
-from erk.core.health_checks.runner import RealHealthCheckRunner
 from erk.core.prompt_executor import ClaudePromptExecutor
 from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
 from erk.core.script_writer import RealScriptWriter
@@ -671,7 +670,9 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     # 12. Create package info
     package_info = ErkPackageInfo.from_project_dir(cwd)
 
-    # 13. Create health check runner
+    # 13. Create health check runner (inline import: circular dependency with health_checks)
+    from erk.core.health_checks.runner import RealHealthCheckRunner
+
     health_check_runner = RealHealthCheckRunner()
 
     # 14. Create context with all values
