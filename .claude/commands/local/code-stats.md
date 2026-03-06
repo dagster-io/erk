@@ -22,9 +22,16 @@ Analyzes merged PRs and categorizes them by type (user-facing features, bug fixe
 /local:code-stats "last quarter"     # Business date ranges
 ```
 
+## User Input
+
+```
+$ARGUMENTS
+```
+
 ## Implementation
 
-1. **Interpret the user's input** (`$ARGUMENTS`) as a date expression and convert it to `YYYY-MM-DD` format. You are an LLM — use your judgment to parse any date expression the user provides. Examples:
+1. **Read the User Input block above.** If it is empty or blank, use a default of 30 days before today. Otherwise, interpret it as a date expression and convert it to `YYYY-MM-DD` format. Examples:
+   - `since jan 1 2026` → `2026-01-01` (strip "since", parse the date)
    - `01-01-2026` → `2026-01-01`
    - `last 2 weeks` → calculate 14 days before today
    - `since January` → `2026-01-01` (current year)
@@ -32,7 +39,6 @@ Analyzes merged PRs and categorizes them by type (user-facing features, bug fixe
    - `last quarter` → first day of previous quarter
    - `yesterday` → yesterday's date
    - `2025-12-01` → `2025-12-01`
-   - Empty/no argument → 30 days ago from today
 
 2. **Run the Python script** with the resolved `YYYY-MM-DD` date:
 
