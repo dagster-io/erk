@@ -1,0 +1,287 @@
+<session>
+  <meta branch="plnd/consolidate-14-learn-docs-03-06-1529" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_015EF2C79qLFJp9C24hDSB6S">
+No matches found
+  </tool_result>
+  <tool_result tool="toolu_01H25sfe6Korh9joBvPsxUFf">
+/home/runner/work/erk/erk/docs/learned/tui/streaming-output.md
+  </tool_result>
+  <assistant>No existing doc mentions CI check formatting. The best place to add this tripwire is to the TUI architecture doc since it's a shared module concern. Let me check what docs exist.</assistant>
+  <usage input_tokens="34" cache_creation_input_tokens="750" cache_read_input_tokens="116483" cache_creation="{'ephemeral_5m_input_tokens': 750, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01UdtDtxFAUDrL26fkQq5QKU">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/architecture.md</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="34" cache_creation_input_tokens="750" cache_read_input_tokens="116483" cache_creation="{'ephemeral_5m_input_tokens': 750, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UdtDtxFAUDrL26fkQq5QKU">
+     1→---
+     2→title: TUI Architecture Overview
+     3→read_when:
+     4→  - "understanding TUI structure"
+     5→  - "implementing TUI components"
+     6→  - "working with TUI data providers"
+     7→tripwires:
+     8→  - action: "reusing same DOM element id across loading/empty/content states"
+     9→    warning: "query_one() returns wrong element silently when id is reused across lifecycle phases. Use unique IDs per phase."
+    10→  - action: "calling widget methods directly from @work(thread=True) background threads"
+    11→    warning: "Direct widget calls from background threads cause silent UI corruption. Must use self.app.call_from_thread(callback, ...)."
+    12→  - action: "extending PlanDataProvider ABC"
+    13→    warning: "Requires 3-file update: abc.py + real.py + fake.py. Fake must initialize new dict in __init__. Missing init causes AttributeError at test time."
+    14→  - action: "adding a DataTable column with add_column(key=...)"
+    15→    warning: "Column key is a data binding contract — must match data field name. Silent failure when mismatched."
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>I'll add the tripwire to the TUI architecture doc's frontmatter since it's the broadest TUI doc. The tripwire will then be picked up by `erk docs sync` into the auto-generated tripwires.md.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="558" cache_read_input_tokens="117233" cache_creation="{'ephemeral_5m_input_tokens': 558, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011vVZEm5FiYe5TEEgv5UR88">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/architecture.md</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="558" cache_read_input_tokens="117233" cache_creation="{'ephemeral_5m_input_tokens': 558, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011vVZEm5FiYe5TEEgv5UR88">
+     1→---
+     2→title: TUI Architecture Overview
+     3→read_when:
+     4→  - "understanding TUI structure"
+     5→  - "implementing TUI components"
+     6→  - "working with TUI data providers"
+     7→tripwires:
+     8→  - action: "reusing same DOM element id across loading/empty/content states"
+     9→    warning: "query_one() returns wrong element silently when id is reused across lifecycle phases. Use unique IDs per phase."
+    10→  - action: "calling widget methods directly from @work(thread=True) background threads"
+    11→    warning: "Direct widget calls from background threads cause silent UI corruption. Must use self.app.call_from_thread(callback, ...)."
+    12→  - action: "extending PlanDataProvider ABC"
+    13→    warning: "Requires 3-file update: abc.py + real.py + fake.py. Fake must initialize new dict in __init__. Missing init causes AttributeError at test time."
+    14→  - action: "adding a DataTable column with add_column(key=...)"
+    15→    warning: "Column key is a data binding contract — must match data field name. Silent failure when mismatched."
+    16→  - action: "moving @on decorated event handlers to a mixin"
+    17→    warning: "Textual's _MessagePumpMeta only scans class.__dict__, not inherited methods. Event handlers on mixins are silently ignored."
+    18→last_audited: "2026-02-17 18:30 PT"
+    19→audit_result: clean
+    20→---
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01SxnMrumngYARY7kDjKXLsc">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/architecture.md</param>
+    <param name="old_string">  - action: "moving @on decorated event handlers to a mixin"
+    warning: "Textual's _MessagePumpMeta only scans class.__dict__, not inherited methods. Event handlers on mixins are silently ignored."</param>
+    <param name="new_string">  - action: "moving @on decorated event handlers to a mixin"
+    warning: "Textual's _Mess...[truncated 231 chars]...e, format_summary_blockquote, format_check_runs) instead of duplicating formatting logic."</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1063" cache_read_input_tokens="117791" cache_creation="{'ephemeral_5m_input_tokens': 1063, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SxnMrumngYARY7kDjKXLsc">
+The file /home/runner/work/erk/erk/docs/learned/tui/architecture.md has been updated successfully.
+  </tool_result>
+  <assistant>**Step 11: Add LLM-intelligent parameter pattern note** — Add to commands docs.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="322" cache_read_input_tokens="118854" cache_creation="{'ephemeral_5m_input_tokens': 322, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012c11y3Tc94ANVVM7qLnm1f">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/commands/optimization-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="322" cache_read_input_tokens="118854" cache_creation="{'ephemeral_5m_input_tokens': 322, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012c11y3Tc94ANVVM7qLnm1f">
+     1→---
+     2→title: Command Optimization Patterns
+     3→read_when:
+     4→  - "reducing command file size"
+     5→  - "using @ reference in commands"
+     6→  - "modularizing command content"
+     7→last_audited: "2026-02-17 16:00 PT"
+     8→audit_result: clean
+     9→---
+    10→
+    11→# Command Optimization Patterns
+    12→
+    13→Patterns for reducing command file size and context consumption through modularization.
+    14→
+    15→## Why Command Size Matters
+    16→
+    17→Since Claude Code 2.1.0, commands and skills are equivalent - both are loaded when invoked. Command text in `.claude/commands/` behaves identically to skills in `.claude/skills/`.
+    18→
+    19→| Content Type        | When Loaded                           | Optimization Impact                 |
+    20→| ------------------- | ------------------------------------- | ----------------------------------- |
+    21→| Command/skill text  | When invoked (unless cached)          | High - reduce aggressively          |
+    22→| `@` referenced docs | Once per session (cached after first) | Medium - extract reference material |
+    23→
+    24→## The @ Reference Pattern
+    25→
+    26→### Syntax
+    27→
+    28→Place an `@` reference on its own line to include external documentation:
+    29→
+    30→```markdown
+
+... [91 lines omitted] ...
+
+    57→| Reference tables           | Coding standards, error codes   | Loaded once, referenced many times |
+    93→- Same error 3x → STUCK
+  </tool_result>
+  <assistant>The optimization-patterns.md is about file size optimization, not parameter patterns. Let me check what existing docs in commands/ cover. The plan says to add to an existing command patterns doc or as a note in `architecture/task-context-isolation.md`. Let me check if that file exists.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1950" cache_read_input_tokens="119176" cache_creation="{'ephemeral_5m_input_tokens': 1950, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_0112ZSK6sKeUr6DioQPEvL7v">
+    <param name="pattern">docs/learned/architecture/task-context-isolation.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1950" cache_read_input_tokens="119176" cache_creation="{'ephemeral_5m_input_tokens': 1950, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0112ZSK6sKeUr6DioQPEvL7v">
+/home/runner/work/erk/erk/docs/learned/architecture/task-context-isolation.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_012Ghp8XYisVsXKfwSz3pt8i">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/task-context-isolation.md</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="164" cache_read_input_tokens="121126" cache_creation="{'ephemeral_5m_input_tokens': 164, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012Ghp8XYisVsXKfwSz3pt8i">
+     1→---
+     2→title: Task Context Isolation Pattern
+     3→read_when:
+     4→  - "fetching large JSON responses from APIs"
+     5→  - "parsing PR review comments or GitHub issues"
+     6→  - "analyzing verbose API responses that pollute context"
+     7→  - "need to reduce context window usage"
+     8→  - "returning structured data from subagents"
+     9→  - "choosing between context: fork vs manual Task delegation"
+    10→last_audited: "2026-02-16 00:00 PT"
+    11→audit_result: clean
+    12→---
+    13→
+    14→# Task Context Isolation Pattern
+    15→
+    16→## The Problem
+    17→
+    18→Large API responses stay in the main conversation context indefinitely, wasting tokens on data the parent agent doesn't need. A PR review comment fetch can consume 2,500-3,000 tokens of raw JSON when the parent only needs thread IDs and action summaries (~750 tokens).
+    19→
+    20→This pattern achieves 65-70% context reduction by processing verbose data in isolated subagent contexts.
+    21→
+    22→## The Insight
+    23→
+    24→**Subagent contexts are disposable.** When a Task completes, its context (including all the verbose API responses) disappears. Only the Task's final output enters the parent conversation.
+    25→
+    26→This creates an isolation boundary: fetch and process in the subagent, return only compact summaries to the parent.
+    27→
+    28→## Decision: context: fork vs Manual Task
+    29→
+    30→| Aspect               | `context: fork`                   | Manual Task                             |
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>The task-context-isolation doc is about context window management, not about LLM parameter patterns. The best place for this note is in the `commands/optimization-patterns.md` since it's about how commands handle user input. Let me add it there as a new section.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1026" cache_read_input_tokens="121290" cache_creation="{'ephemeral_5m_input_tokens': 1026, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01VJ9bc2rBedkGeiuZgLBkFP">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/commands/optimization-patterns.md</param>
+    <param name="old_string">## Related Documentation
+
+- [Context Analysis](../sessions/context-analysis.md) - Analyzin...[truncated 11 chars]...Delegation](../planning/agent-delegation.md) - Delegating to agents (another optimization)</param>
+    <param name="new_string">## LLM-Intelligent Parameter Pattern
+
+For user-facing parameters that accept flexible inpu...[truncated 1063 chars]...Delegation](../planning/agent-delegation.md) - Delegating to agents (another optimization)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1026" cache_read_input_tokens="121290" cache_creation="{'ephemeral_5m_input_tokens': 1026, 'ephemeral_1h_input_tokens': 0}" output_tokens="537" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VJ9bc2rBedkGeiuZgLBkFP">
+The file /home/runner/work/erk/erk/docs/learned/commands/optimization-patterns.md has been updated successfully.
+  </tool_result>
+  <assistant>Now let me update all the todo statuses:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="579" cache_read_input_tokens="122316" cache_creation="{'ephemeral_5m_input_tokens': 579, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01SATh56jMyYVyVuG2R9rmGW">
+    <param name="todos">[{'content': 'Step 1: Update git-plumbing-patterns.md (from #8798)', 'status': 'completed'...[truncated 1733 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="579" cache_read_input_tokens="122316" cache_creation="{'ephemeral_5m_input_tokens': 579, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SATh56jMyYVyVuG2R9rmGW">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me run `erk docs sync` and verify the stale references are gone.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="697" cache_read_input_tokens="122895" cache_creation="{'ephemeral_5m_input_tokens': 697, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01MHk8XkCEQkWA58uCPj2iZT">
+    <param name="command">erk docs sync 2&gt;&amp;1</param>
+    <param name="description">Run erk docs sync to regenerate index files</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="697" cache_read_input_tokens="122895" cache_creation="{'ephemeral_5m_input_tokens': 697, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MHk8XkCEQkWA58uCPj2iZT">
+Scanning docs...
+Generating root index...
+Generating category indexes...
+Collecting tripwires...
+Generating tripwire files...
+Generating tripwires index...
+Updated 2 file(s):
+  ~ tui/tripwires.md
+  ~ tripwires-index.md
+
+Unchanged: 53 file(s)
+
+Tripwires: 824 collected
+  architecture: 182 (26 with patterns)
+  capabilities: 13
+  changelog: 3
+  checklists: 1
+  ci: 55
+  claude-code: 3
+  cli: 88
+  commands: 7
+  config: 3
+  configuration: 1
+  documentation: 30
+  erk: 26
+  gateway: 5
+  hooks: 4
+  integrations: 19
+  objectives: 45
+  planning: 125
+
+... [13 lines omitted] ...
+  </tool_result>
+  <assistant>Good, `erk docs sync` updated the TUI tripwires file (picking up our new CI check formatting tripwire) and the tripwires index (60 tui tripwires, up from 59).
+
+Now let me verify the stale references are gone:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="432" cache_read_input_tokens="123592" cache_creation="{'ephemeral_5m_input_tokens': 432, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_017SomRavRX3ixSgNwsUcBJt">
+    <param name="pattern">tests/unit/core/test_capabilities\.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="432" cache_read_input_tokens="123592" cache_creation="{'ephemeral_5m_input_tokens': 432, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017SomRavRX3ixSgNwsUcBJt">
+No files found
+  </tool_result>
+  <assistant>All stale references removed. Let me also spot-check a couple of the docs against source code as the plan's verification step requires.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="189" cache_read_input_tokens="124024" cache_creation="{'ephemeral_5m_input_tokens': 189, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01P88nbKjghZLxr45ztRzLRY">
+    <param name="todos">[{'content': 'Step 1: Update git-plumbing-patterns.md (from #8798)', 'status': 'completed'...[truncated 1735 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="189" cache_read_input_tokens="124024" cache_creation="{'ephemeral_5m_input_tokens': 189, 'ephemeral_1h_input_tokens': 0}" output_tokens="673" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01P88nbKjghZLxr45ztRzLRY">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me signal the end, upload the session, and clean up impl context, then run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="715" cache_read_input_tokens="124213" cache_creation="{'ephemeral_5m_input_tokens': 715, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_017Bfi1gQAjuQco5yoM9GUAH">
+    <param name="command">erk exec impl-signal ended --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="715" cache_read_input_tokens="124213" cache_creation="{'ephemeral_5m_input_tokens': 715, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_014AF2yEbVvvX7T3TQosxp61">
+    <param name="command">erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="715" cache_read_input_tokens="124213" cache_creation="{'ephemeral_5m_input_tokens': 715, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01FtXivNrMQpSLq4wqzVjxnt">
+    <param name="command">erk exec cleanup-impl-context 2&gt;&amp;1</param>
+    <param name="description">Clean up impl context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="715" cache_read_input_tokens="124213" cache_creation="{'ephemeral_5m_input_tokens': 715, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017Bfi1gQAjuQco5yoM9GUAH">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8842
+}
+  </tool_result>
+</session>
