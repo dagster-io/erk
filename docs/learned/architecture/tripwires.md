@@ -38,6 +38,8 @@ Rules triggered by matching actions in code.
 
 **adding a new CLI entry point that calls plan or objective services** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. Must validate ctx.http_client is not None before calling service methods. Follow the pattern in existing entry points (pr list, pr duplicate-check, objective list, exec dash-data).
 
+**adding a new call site for run_commit_message_generation without time parameter** → Read [Progress Feedback Two-Layer Threading](progress-feedback-threading.md) first. The time parameter is required for test isolation. Pass time=ctx.time from the ErkContext.
+
 **adding a new field to ErkContext dataclass** → Read [Erk Architecture Patterns](erk-architecture.md) first. Update ALL factory functions. Grep: `grep -r 'ErkContext(' packages/erk-shared/src/ src/erk/core/context.py` to find all construction sites. Missing a factory causes runtime errors or silent None values.
 
 **adding a new field to agent-produced JSON without updating normalization** → Read [Agent Schema Enforcement](agent-schema-enforcement.md) first. Add the field to CANONICAL_FIELDS and any aliases to FIELD_ALIASES in the normalization script. Without this, the field may be stripped during normalization.
@@ -129,6 +131,8 @@ Rules triggered by matching actions in code.
 **calling resolve_impl_dir() without passing branch_name** → Read [Impl-Folder Discovery Algorithm](impl-folder-discovery.md) first. Branch-scoped lookup is skipped when branch_name is None. Always pass the current branch to get deterministic resolution. Discovery fallback scans for ANY subdirectory with plan.md, which may find the wrong plan.
 
 **calling save_plan_ref with positional arguments** → Read [PlanRef Architecture](plan-ref-architecture.md) first. All parameters after `impl_dir` are keyword-only. Positional calls will fail at runtime.
+
+**calling time.sleep() or time.monotonic() directly in progress feedback code** → Read [Progress Feedback Two-Layer Threading](progress-feedback-threading.md) first. Use ctx.time.sleep() and ctx.time.monotonic() for testability. All production call sites pass time=ctx.time.
 
 **changing a gateway method signature** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Search for ALL callers with grep before changing. PR #6329 migrated 8 call sites across 7 files. Missing a call site causes runtime errors.
 
@@ -227,6 +231,8 @@ Rules triggered by matching actions in code.
 **modifying PR footer format** → Read [PR Footer Format Validation](pr-footer-validation.md) first. Update generator, parser, AND validator in sync. Add support for new format BEFORE deprecating old format. Never break parsing of existing PRs.
 
 **modifying PermissionMode enum or permission mode mappings** → Read [PermissionMode Abstraction](permission-modes.md) first. permission_mode_to_claude() (and future permission_mode_to_codex()) must stay in sync. Update both when changing mappings.
+
+**modifying artifact allowlist loading without updating both config files** → Read [HealthCheckRunner Gateway Pattern](health-check-runner-gateway.md) first. Allowlist loads from both .erk/config.toml and .erk/config.local.toml, merging results into a frozenset.
 
 **modifying render_metadata_block() or parse_metadata_block_body()** → Read [Metadata Blocks Reference](metadata-blocks.md) first. The canonical implementation lives in packages/erk-shared/src/erk_shared/gateway/github/metadata/core.py (the former metadata_blocks.py was deleted in PR #8425). Ensure all callers import from this module.
 
@@ -339,6 +345,8 @@ Rules triggered by matching actions in code.
 **using git stash in scripts that have running processes dependent on working tree state** → Read [Git Operation Patterns](git-operation-patterns.md) first. git stash changes working tree state which affects running processes. If code is executing from the working tree (e.g., Python scripts), stashing can cause import errors or missing file errors in the running process.
 
 **using if/else on a discriminated union without isinstance() for type narrowing** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Type checkers require isinstance() for narrowing. 'if result.is_error' or 'if not result' does not narrow. Use 'if isinstance(result, ErrorType):' for correct narrowing in both branches.
+
+**using monkeypatch to stub health check results in doctor tests** → Read [HealthCheckRunner Gateway Pattern](health-check-runner-gateway.md) first. Use FakeHealthCheckRunner with constructor-injected results instead. The HealthCheckRunner gateway eliminates all monkeypatch in doctor tests.
 
 **using mutable list fields directly for mutation tracking in fakes** → Read [Fake Mutation Tracking](fake-mutation-tracking.md) first. Expose mutation tracking via @property returning tuple or .copy(). Internal lists should be private. See fake-mutation-tracking.md.
 

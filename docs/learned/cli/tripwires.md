@@ -110,6 +110,8 @@ Rules triggered by matching actions in code.
 
 **making session_id a required parameter for a new command** → Read [Session ID Availability and Propagation](session-management.md) first. Check the fail-hard vs degrade decision table below. Most commands should accept session_id as optional.
 
+**manually deleting branches that were merged via GitHub web UI** → Read [erk reconcile Command](commands/reconcile.md) first. Use erk reconcile instead. It handles the full lifecycle: learn PR creation, objective updates, slot cleanup, branch deletion, and worktree removal.
+
 **modifying learn plan skip guards in land_learn.py** → Read [Land-Learn Integration](land-learn-integration.md) first. Learn plan creation may skip silently when no sessions exist. Check land-learn-integration.md before modifying skip guards.
 
 **moving uv sync or uv pip install inside the VIRTUAL_ENV guard** → Read [Activation Scripts](activation-scripts.md) first. uv sync and uv pip install run OUTSIDE the guard (always execute, even on re-entry). This ensures deps stay current after branch switches in reused slots. Only venv activation, .env loading, and shell completion go inside the guard.

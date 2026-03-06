@@ -30,7 +30,7 @@ Rules triggered by matching actions in code.
 
 **adding new parameters to gateway methods without truth-table test coverage** → Read [Exec Script Testing Patterns](exec-script-testing.md) first. When adding boolean parameters to gateway methods, the truth-table testing pattern covers all boolean combinations. Bot reviewers enforce this coverage.
 
-**allowing `import X as Y` because it's a common convention (e.g., `import pandas as pd`)** → Read [Import Alias vs Re-Export Detection](alias-verification-pattern.md) first. Erk prohibits ALL gratuitous import aliases. The only exception is resolving genuine name collisions between two modules.
+**allowing `import X as Y` for internal/project imports because it's convenient** → Read [Import Alias vs Re-Export Detection](alias-verification-pattern.md) first. Erk prohibits gratuitous import aliases for internal/project imports. Exceptions: genuine name collisions and well-known library aliases (pandas as pd, numpy as np, dagster as dg, matplotlib.pyplot as plt).
 
 **asking devrun agent to fix errors or make tests pass** → Read [Devrun Agent - Read-Only Design](devrun-agent.md) first. Devrun is READ-ONLY. It runs commands and reports results. The parent agent must handle all fixes.
 

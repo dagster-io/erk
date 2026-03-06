@@ -7,8 +7,8 @@ read_when:
 tripwires:
   - action: "flagging `import X as X` or `from .mod import Y as Y` as a violation"
     warning: "The `X as X` form is an explicit re-export marker, not an alias. Only flag when the alias differs from the original name."
-  - action: "allowing `import X as Y` because it's a common convention (e.g., `import pandas as pd`)"
-    warning: "Erk prohibits ALL gratuitous import aliases. The only exception is resolving genuine name collisions between two modules."
+  - action: "allowing `import X as Y` for internal/project imports because it's convenient"
+    warning: "Erk prohibits gratuitous import aliases for internal/project imports. Exceptions: genuine name collisions and well-known library aliases (pandas as pd, numpy as np, dagster as dg, matplotlib.pyplot as plt)."
 ---
 
 # Import Alias vs Re-Export Detection
@@ -27,8 +27,8 @@ This is cross-cutting because the rule affects all Python files, the re-export e
 | Named import         | `from foo import Bar`                          | Normal usage                  | Yes        |
 | Re-export marker     | `from .internal import Widget as Widget`       | Explicit public API re-export | Yes        |
 | Collision resolution | `from datetime import datetime as dt_datetime` | Two modules export same name  | Yes (rare) |
+| Well-known lib alias | `import pandas as pd`                          | Community-standard convention | Yes        |
 | Gratuitous alias     | `import foo as f`                              | Shorthand for convenience     | **No**     |
-| Convention alias     | `import pandas as pd`                          | Common but forbidden in erk   | **No**     |
 
 The critical detection challenge: `import X as X` and `import X as Y` differ only in whether the alias matches the original name. A naive "flag everything with `as`" approach produces false positives on re-exports. A regex negative lookahead (`(?!\1\b)`) or AST-based comparison handles this correctly.
 
@@ -36,9 +36,22 @@ The critical detection challenge: `import X as X` and `import X as Y` differ onl
 
 Ruff's `ICN` (import conventions) rules enforce _specific_ alias conventions (e.g., requiring `import pandas as pd`), which is the opposite of erk's goal. No standard linter rule maps to "reject all aliases except identity re-exports." Enforcement currently relies on agent awareness via the dignified-python skill and code review rather than automated tooling.
 
-## The One Exception
+## Exceptions
 
-Genuine name collisions — where two different modules export identically-named symbols needed in the same file — are the only case where aliasing is acceptable. This is rare enough that it should be commented when it occurs, explaining which collision is being resolved.
+### Exception 1: Genuine Name Collisions
+
+Where two different modules export identically-named symbols needed in the same file. This is rare enough that it should be commented when it occurs, explaining which collision is being resolved.
+
+### Exception 2: Well-Known Library Aliases
+
+Standard library aliases are acceptable:
+
+- `import pandas as pd`
+- `import numpy as np`
+- `import dagster as dg`
+- `import matplotlib.pyplot as plt`
+
+Internal/project aliasing remains prohibited.
 
 ## Related Documentation
 
