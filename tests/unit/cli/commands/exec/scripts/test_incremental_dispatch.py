@@ -73,6 +73,8 @@ def test_incremental_dispatch_success(tmp_path: Path) -> None:
     assert ".erk/impl-context/plan.md" in branch_commits[0].files
     assert "My Incremental Plan" in branch_commits[0].files[".erk/impl-context/plan.md"]
     assert ".erk/impl-context/ref.json" in branch_commits[0].files
+    assert "Incremental dispatch" in branch_commits[0].message
+    assert "My Incremental Plan" in branch_commits[0].message
 
     # Verify workflow was triggered
     assert len(fake_github.triggered_workflows) == 1

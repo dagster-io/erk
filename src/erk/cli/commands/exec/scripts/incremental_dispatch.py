@@ -128,7 +128,7 @@ def incremental_dispatch(
         repo_root,
         branch=branch_name,
         files=files,
-        message=f"Add incremental plan for PR #{pr_number}",
+        message=f"Incremental dispatch for PR #{pr_number}\n\n{plan_content}",
     )
 
     # If branch is checked out, sync index for committed files to avoid stale staged changes
