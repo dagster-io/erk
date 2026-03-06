@@ -1,0 +1,1084 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>2e0bb588e7d878057c7b73a5924dae86ac25b4bb
+
+this had additional suggested follow. what was it. look at the pr</user>
+  <usage input_tokens="3" cache_creation_input_tokens="15286" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15286}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01JbFFDpLxYgvejmKQcRZrnW">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15286" cache_read_input_tokens="0" output_tokens="118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15286, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JbFFDpLxYgvejmKQcRZrnW">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016CDpudcdtjbmnQUkNPdrcL">
+    <param name="command">gh pr list --search "2e0bb588e" --state merged --json number,title --limit 5 2&gt;/dev/null || gh log --oneline 2e0bb588e 2&gt;/dev/null; git log --oneline 2e0bb588e -1</param>
+    <param name="description">Find PR associated with commit 2e0bb588e</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3262" cache_read_input_tokens="15286" output_tokens="144" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3262, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016CDpudcdtjbmnQUkNPdrcL">
+[{"number":8786,"title":"Optimize PR submit pipeline by caching Graphite auth checks and eliminating redundant API calls"}]
+2e0bb588e Optimize PR submit pipeline by caching Graphite auth checks and eliminating redundant API calls (#8786)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01UFF6zbgwbkhFLEZJZNKRkD">
+    <param name="command">gh pr view 8786 --json body --jq '.body'</param>
+    <param name="description">Get PR #8786 body for follow-up suggestions</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="18548" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 216, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UFF6zbgwbkhFLEZJZNKRkD">
+## Summary
+
+This change reduces unnecessary GitHub and Graphite API calls in the PR submit pipeline by caching authentication and branch tracking status during the prepare_state step, and constructing the PR URL from git remote metadata instead of making additional API requests.
+
+## Key Changes
+
+- Cache Graphite authentication and branch tracking status in SubmitState during prepare_state to avoid redundant checks in push_and_create_pr and enhance_with_graphite functions
+- Replace should_enhance_with_graphite() call with direct cached boolean checks in push_and_create_pr
+- Eliminate GitHub API call for PR URL construction in _core_submit_flow by parsing git remote URL instead
+- Reuse pre-captured existing_pr_body from capture_existing_pr_body step instead of making another get_pr call
+- Remove redundant GitHub and Graphite API calls from finalize_pr function
+
+&lt;details&gt;
+&lt;summary&gt;Files Changed&lt;/summary&gt;
+
+### Modified (13 files)
+- `src/erk/cli/commands/pr/submit_pipeline.py` - Caching strategy, API call elimination, state field additions
+- `tests/unit/cli/commands/pr/submit_pipeline/test_*.py` - Updated state initialization with new cached fields
+
+&lt;/details&gt;
+
+**Remotely executed:** [Run #22742773899](https://github.com/dagster-io/erk/actions/runs/22742773899)
+
+---
+
+
+To replicate this PR locally, run:
+
+```
+erk pr teleport 8786
+
+... [127 lines omitted] ...
+
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <assistant>The PR's plan has a **Follow-on Work** section with two items:
+
+1. **Parallelize `extract_diff` + `fetch_plan_context` with ThreadPoolExecutor** — these two steps are independent and I/O-bound but currently run sequentially, adding 500-2500ms of wall time
+2. **Reduce PR cache polling from 10s to 3s or make conditional** — after submit, `_wait_for_pr_in_cache` polls Graphite cache for up to 10 seconds purely for status line display</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2348" cache_read_input_tokens="18764" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2348}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_011A8TxyyhvLYs1zhMPKeus6">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2348" cache_read_input_tokens="18764" output_tokens="204" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2348, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011A8TxyyhvLYs1zhMPKeus6">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="957" cache_read_input_tokens="21112" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 957}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01EUboQfD74Doi4TCUFULtvQ">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="957" cache_read_input_tokens="21112" output_tokens="219" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 957, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EUboQfD74Doi4TCUFULtvQ">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01Qdy5F3pQHRiZzqVvKntYNJ">
+    <param name="questions">[{'question': 'Would you like to plan the implementation of either follow-up item?', 'head...[truncated 447 chars]...'Just wanted to know what the follow-ups were, no action needed'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1470" cache_read_input_tokens="22069" output_tokens="229" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1470, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Qdy5F3pQHRiZzqVvKntYNJ">
+User has answered your questions: "Would you like to plan the implementation of either follow-up item?"="i want to dig in and understand 2" user notes: i want to dig in and understand 2. You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="23539" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 297}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the PR cache polling code.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="23539" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 297}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01L5GnSadjqrSZyqrJ3VcVR6">
+    <param name="query">select:Read,Grep</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="297" cache_read_input_tokens="23539" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 297, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01L5GnSadjqrSZyqrJ3VcVR6">
+
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Af1FzCra9nBSMubyNbswsw">
+    <param name="pattern">_wait_for_pr_in_cache</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1775" cache_read_input_tokens="23836" output_tokens="126" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1775, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Af1FzCra9nBSMubyNbswsw">
+src/erk/cli/commands/pr/submit_cmd.py:38:def _wait_for_pr_in_cache(
+src/erk/cli/commands/pr/submit_cmd.py:192:        _wait_for_pr_in_cache(
+src/erk/cli/commands/exec/scripts/push_and_create_pr.py:83:        _wait_for_pr_in_cache(erk_ctx, result.repo_root, result.branch_name)
+src/erk/cli/commands/exec/scripts/push_and_create_pr.py:103:def _wait_for_pr_in_cache(
+tests/commands/pr/test_submit_pr_cache_polling.py:14:    _wait_for_pr_in_cache,
+tests/commands/pr/test_submit_pr_cache_polling.py:113:def test_wait_for_pr_in_cache_finds_pr_immediately() -&gt; None:
+tests/commands/pr/test_submit_pr_cache_polling.py:144:    result = _wait_for_pr_in_cache(
+tests/commands/pr/test_submit_pr_cache_polling.py:157:def test_wait_for_pr_in_cache_polls_until_found() -&gt; None:
+tests/commands/pr/test_submit_pr_cache_polling.py:193:    result = _wait_for_pr_in_cache(
+tests/commands/pr/test_submit_pr_cache_polling.py:209:def test_wait_for_pr_in_cache_times_out() -&gt; None:
+tests/commands/pr/test_submit_pr_cache_polling.py:232:    result = _wait_for_pr_in_cache(
+tests/commands/pr/test_submit_pr_cache_polling.py:245:def test_wait_for_pr_in_cache_uses_correct_poll_interval() -&gt; None:
+tests/commands/pr/test_submit_pr_cache_polling.py:281:    result = _wait_for_pr_in_cache(
+tests/commands/pr/test_submit_pr_cache_polling.py:295:def test_wait_for_pr_in_cache_different_branch() -&gt; None:
+tests/commands/pr/test_submit_pr_cache_polling.py:328:    result = _wait_for_pr_in_cache(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RQBjKqoR4U3Ajsiei3Hphe">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/submit_cmd.py</param>
+    <param name="offset">30</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="922" cache_read_input_tokens="25611" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 922}" output_tokens="21" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RQBjKqoR4U3Ajsiei3Hphe">
+    30→# This feature ensures the status line can immediately display the PR number.
+    31→ENABLE_PR_CACHE_POLLING = True
+    32→
+    33→# Polling configuration for PR cache
+    34→PR_CACHE_POLL_MAX_WAIT_SECONDS = 10.0
+    35→PR_CACHE_POLL_INTERVAL_SECONDS = 0.5
+    36→
+    37→
+    38→def _wait_for_pr_in_cache(
+    39→    ctx: ErkContext,
+    40→    repo_root: Path,
+    41→    branch: str,
+    42→    *,
+    43→    max_wait_seconds: float,
+    44→    poll_interval: float,
+    45→) -&gt; bool:
+    46→    """Wait for PR to appear in Graphite cache after submission.
+    47→
+    48→    Args:
+    49→        ctx: Erk context
+    50→        repo_root: Repository root path
+    51→        branch: Branch name to check
+    52→        max_wait_seconds: Maximum time to wait
+    53→        poll_interval: Time between checks
+    54→
+    55→    Returns:
+    56→        True if PR found in cache, False if timeout
+    57→    """
+    58→    start = ctx.time.now()
+    59→    user_output("  Waiting for PR to appear in Graphite cache...")
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01LPgC1BBMSxp5bTshteG4q4">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/push_and_create_pr.py</param>
+    <param name="offset">75</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="922" cache_read_input_tokens="25611" output_tokens="219" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 922, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LPgC1BBMSxp5bTshteG4q4">
+    75→        }
+    76→        click.echo(json.dumps(error_output, indent=2))
+    77→        sys.exit(1)
+    78→
+    79→    assert isinstance(result, SubmitState)
+    80→
+    81→    # Wait for PR to appear in Graphite cache for status line
+    82→    if result.graphite_url is not None:
+    83→        _wait_for_pr_in_cache(erk_ctx, result.repo_root, result.branch_name)
+    84→
+    85→    output = {
+    86→        "success": True,
+    87→        "branch": result.branch_name,
+    88→        "pr": {
+    89→            "number": result.pr_number,
+    90→            "url": result.pr_url,
+    91→            "was_created": result.was_created,
+    92→        },
+    93→        "graphite_url": result.graphite_url,
+    94→        "plan_id": result.plan_id,
+    95→    }
+    96→    click.echo(json.dumps(output, indent=2))
+    97→
+    98→
+    99→_PR_CACHE_POLL_MAX_WAIT_SECONDS = 10.0
+   100→_PR_CACHE_POLL_INTERVAL_SECONDS = 0.5
+   101→
+   102→
+   103→def _wait_for_pr_in_cache(
+   104→    ctx: ErkContext,
+
+... [12 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me see how the polling is called from submit_cmd.py and understand what it's for.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2660" cache_read_input_tokens="26533" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2660}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0119XGjNUEEe35cwkejvbcK1">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/submit_cmd.py</param>
+    <param name="offset">170</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2660" cache_read_input_tokens="26533" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2660, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0119XGjNUEEe35cwkejvbcK1">
+   170→
+   171→    click.echo(click.style("🚀 Submitting PR...", bold=True))
+   172→    click.echo("")
+   173→    sys.stdout.flush()
+   174→
+   175→    state = make_initial_state(
+   176→        cwd=Path.cwd(),
+   177→        use_graphite=not no_graphite,
+   178→        force=force,
+   179→        debug=debug,
+   180→        session_id=session_id,
+   181→        skip_description=skip_description,
+   182→        quiet=False,
+   183→    )
+   184→
+   185→    result = run_submit_pipeline(ctx, state)
+   186→
+   187→    if isinstance(result, SubmitError):
+   188→        raise click.ClickException(result.message)
+   189→
+   190→    # Wait for PR to appear in Graphite cache for immediate status line display
+   191→    if ENABLE_PR_CACHE_POLLING and result.graphite_url is not None:
+   192→        _wait_for_pr_in_cache(
+   193→            ctx,
+   194→            result.repo_root,
+   195→            result.branch_name,
+   196→            max_wait_seconds=PR_CACHE_POLL_MAX_WAIT_SECONDS,
+   197→            poll_interval=PR_CACHE_POLL_INTERVAL_SECONDS,
+   198→        )
+   199→
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01RnAndgjtNNq7bNzqKVnGhm">
+    <param name="pattern">get_prs_from_graphite</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="534" cache_read_input_tokens="29193" output_tokens="111" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 534, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RnAndgjtNNq7bNzqKVnGhm">
+Found 19 files
+tests/unit/cli/commands/exec/scripts/test_exit_plan_mode_hook.py
+packages/erk-shared/src/erk_shared/gateway/graphite/real.py
+src/erk/cli/commands/pr/submit_cmd.py
+tests/integration/test_dryrun_integration.py
+tests/unit/fakes/test_fake_graphite.py
+tests/unit/gateways/graphite/test_graphite_disabled.py
+packages/erk-shared/src/erk_shared/gateway/graphite/abc.py
+packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py
+packages/erk-shared/src/erk_shared/gateway/graphite/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/graphite/fake.py
+packages/erk-shared/src/erk_shared/gateway/graphite/printing.py
+packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py
+src/erk/cli/commands/exec/scripts/push_and_create_pr.py
+tests/commands/pr/test_submit_pr_cache_polling.py
+docs/learned/architecture/gateway-hierarchy.md
+src/erk/status/collectors/github.py
+src/erk/cli/commands/branch/list_cmd.py
+tests/integration/test_graphite.py
+.claude/skills/gt/references/gt-reference.md
+  </tool_result>
+  <assistant>Let me check what `get_prs_from_graphite` actually does — this is what's being called repeatedly during polling.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="589" cache_read_input_tokens="29727" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 589}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_013irRVhJEdujjLfSQAPFqwp">
+    <param name="pattern">def get_prs_from_graphite</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="589" cache_read_input_tokens="29727" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 589}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013irRVhJEdujjLfSQAPFqwp">
+packages/erk-shared/src/erk_shared/gateway/graphite/printing.py:35:    def get_prs_from_graphite(self, git_ops: Git, repo_root: Path) -&gt; dict[str, PullRequestInfo]:
+packages/erk-shared/src/erk_shared/gateway/graphite/abc.py:40:    def get_prs_from_graphite(self, git_ops: Git, repo_root: Path) -&gt; dict[str, PullRequestInfo]:
+packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py:64:    def get_prs_from_graphite(self, git_ops: Git, repo_root: Path) -&gt; dict[str, PullRequestInfo]:
+packages/erk-shared/src/erk_shared/gateway/graphite/real.py:48:    def get_prs_from_graphite(self, git_ops: Git, repo_root: Path) -&gt; dict[str, PullRequestInfo]:
+packages/erk-shared/src/erk_shared/gateway/graphite/fake.py:86:    def get_prs_from_graphite(self, git_ops: Git, repo_root: Path) -&gt; dict[str, PullRequestInfo]:
+packages/erk-shared/src/erk_shared/gateway/graphite/dry_run.py:39:    def get_prs_from_graphite(self, git_ops: Git, repo_root: Path) -&gt; dict[str, PullRequestInfo]:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_016x3v4kMBCFevFny56yiaFG">
+    <param name="pattern">status.line|status_line|statusline</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/status</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="-i">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="589" cache_read_input_tokens="29727" output_tokens="276" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 589, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016x3v4kMBCFevFny56yiaFG">
+No files found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DsPtboisj2h8HZnFgSbWa6">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/graphite/real.py</param>
+    <param name="offset">45</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="713" cache_read_input_tokens="30316" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 713}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DsPtboisj2h8HZnFgSbWa6">
+    45→        """
+    46→        return f"https://app.graphite.com/github/pr/{repo_id.owner}/{repo_id.repo}/{pr_number}"
+    47→
+    48→    def get_prs_from_graphite(self, git_ops: Git, repo_root: Path) -&gt; dict[str, PullRequestInfo]:
+    49→        """Get PR information from Graphite's .git/.graphite_pr_info file."""
+    50→        git_dir = git_ops.repo.get_git_common_dir(repo_root)
+    51→        if git_dir is None:
+    52→            return {}
+    53→
+    54→        pr_info_file = git_dir / ".graphite_pr_info"
+    55→        if not pr_info_file.exists():
+    56→            return {}
+    57→
+    58→        data = read_graphite_json_file(pr_info_file, "Graphite PR info")
+    59→
+    60→        # parse_graphite_pr_info expects JSON string, so convert back
+    61→        return parse_graphite_pr_info(json.dumps(data))
+    62→
+    63→    def get_all_branches(self, git_ops: Git, repo_root: Path) -&gt; dict[str, BranchMetadata]:
+    64→        """Get all gt-tracked branches with metadata.
+    65→
+    66→        Reads .git/.graphite_cache_persist and enriches with commit SHAs from git.
+    67→        Returns empty dict if cache doesn't exist or git operations fail.
+    68→
+    69→        Results are cached based on file mtime - the cache is automatically
+    70→        invalidated when the underlying file changes, whether from erk operations
+    71→        or external gt commands.
+    72→        """
+    73→        git_dir = git_ops.repo.get_git_common_dir(repo_root)
+    74→        if git_dir is None:
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Awode2u6HkHaAifDPLi6Eo">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/status/collectors/github.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="713" cache_read_input_tokens="30316" output_tokens="181" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 713, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Awode2u6HkHaAifDPLi6Eo">
+     1→"""GitHub PR collector."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.core.context import ErkContext
+     6→from erk.status.collectors.base import StatusCollector
+     7→from erk.status.models.status_data import PullRequestStatus
+     8→
+     9→
+    10→class GitHubPRCollector(StatusCollector):
+    11→    """Collects GitHub pull request information."""
+    12→
+    13→    @property
+    14→    def name(self) -&gt; str:
+    15→        """Name identifier for this collector."""
+    16→        return "pr"
+    17→
+    18→    def is_available(self, ctx: ErkContext, worktree_path: Path) -&gt; bool:
+    19→        """Check if PR information should be fetched.
+    20→
+    21→        Args:
+    22→            ctx: Erk context
+    23→            worktree_path: Path to worktree
+    24→
+    25→        Returns:
+    26→            True if worktree exists
+    27→        """
+    28→        return worktree_path.exists()
+    29→
+    30→    def collect(
+
+... [46 lines omitted] ...
+  </tool_result>
+  <assistant>Here's what I found about the PR cache polling:
+
+## How it works
+
+**What it polls:** `get_prs_from_graphite` reads `.git/.graphite_pr_info` — a local JSON file that Graphite writes after `gt submit`. It's a **local file read**, not a network call.
+
+**Why it exists:** After `gt submit` creates/updates a PR, there's a delay before Graphite updates `.graphite_pr_info`. The polling ensures the PR is in the local cache so the **status line collector** (`GitHubPRCollector` at `src/erk/status/collectors/github.py`) can immediately display PR info (number, URL, state) without making GitHub API calls.
+
+**Two call sites:**
+1. `submit_cmd.py:192` — interactive `erk pr submit` (guarded by `ENABLE_PR_CACHE_POLLING` flag)
+2. `push_and_create_pr.py:83` — exec script variant (always runs when graphite_url is set)
+
+**Config:** 10s max wait, 0.5s poll interval = up to 20 file reads before timeout.
+
+**The trade-off:** You wait up to 10s after submit so the status line immediately shows PR info. If it times out, the status line just won't show PR info until Graphite eventually updates the file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1888" cache_read_input_tokens="31029" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1888}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_015GqQqAWVRmDG3wNNWSJwo9">
+    <param name="questions">[{'question': 'What specifically do you want to understand or decide about the cache polli...[truncated 215 chars]... had what I needed from the code walkthrough, no further action'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1888" cache_read_input_tokens="31029" output_tokens="467" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1888, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015GqQqAWVRmDG3wNNWSJwo9">
+User has answered your questions: "What specifically do you want to understand or decide about the cache polling?"="this should absolutely not be in the erk pr submit critical path. anything to help the statusline should only be in the statusline" user notes: this should absolutely not be in the erk pr submit critical path. anything to help the statusline should only be in the statusline. You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="571" cache_read_input_tokens="32917" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 571}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Clear direction. Let me look at what cleanup is needed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="571" cache_read_input_tokens="32917" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 571}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Q3RAoBsyQiH5BWdXnCdN43">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/submit_cmd.py</param>
+    <param name="offset">1</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="571" cache_read_input_tokens="32917" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 571}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q3RAoBsyQiH5BWdXnCdN43">
+     1→"""Submit current branch as a pull request.
+     2→
+     3→Runs a linear pipeline of functions transforming a frozen SubmitState:
+     4→1. Prepare state (resolve repo, branch, parent, issue)
+     5→2. Commit WIP changes
+     6→3. Push and create/find PR (Graphite-first or core path)
+     7→4. Extract diff for AI
+     8→5. Fetch plan context
+     9→6. Generate AI PR description
+    10→7. Enhance with Graphite (if applicable)
+    11→8. Finalize PR metadata
+    12→"""
+    13→
+    14→import sys
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.pr.shared import require_claude_available
+    20→from erk.cli.commands.pr.submit_pipeline import (
+    21→    SubmitError,
+    22→    SubmitState,
+    23→    make_initial_state,
+    24→    run_submit_pipeline,
+    25→)
+    26→from erk.core.context import ErkContext
+    27→from erk_shared.output.output import user_output
+    28→
+    29→# Set to False to disable polling for PR in Graphite cache after submission.
+    30→# This feature ensures the status line can immediately display the PR number.
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UafZWcRuGKEuRimg3Rqqj8">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/push_and_create_pr.py</param>
+    <param name="offset">1</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="571" cache_read_input_tokens="32917" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 571}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UafZWcRuGKEuRimg3Rqqj8">
+     1→"""Push branch and create/find PR, outputting JSON.
+     2→
+     3→Runs the first three steps of the submit pipeline (prepare_state,
+     4→commit_wip, push_and_create_pr) with quiet=True so no progress output
+     5→pollutes stdout. On success, outputs structured JSON with branch, PR,
+     6→and Graphite info for agent consumption.
+     7→
+     8→Usage:
+     9→    erk exec push-and-create-pr
+    10→    erk exec push-and-create-pr --force
+    11→    erk exec push-and-create-pr --no-graphite
+    12→
+    13→Exit Codes:
+    14→    0: Success (JSON output on stdout)
+    15→    1: Error (JSON error output on stdout)
+    16→"""
+    17→
+    18→import json
+    19→import sys
+    20→from pathlib import Path
+    21→
+    22→import click
+    23→
+    24→from erk.cli.commands.pr.submit_pipeline import (
+    25→    SubmitError,
+    26→    SubmitState,
+    27→    make_initial_state,
+    28→    run_push_and_create_pipeline,
+    29→)
+    30→from erk.core.context import ErkContext
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QPWa9ecBsqZTysW7FmEKzd">
+    <param name="file_path">/Users/schrockn/code/erk/tests/commands/pr/test_submit_pr_cache_polling.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="571" cache_read_input_tokens="32917" output_tokens="474" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 571, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QPWa9ecBsqZTysW7FmEKzd">
+     1→"""Tests for PR cache polling in erk pr submit command.
+     2→
+     3→These tests verify that after PR submission with Graphite, the command
+     4→waits for the PR to appear in Graphite's cache before exiting. This ensures
+     5→the status line can immediately display the PR number.
+     6→"""
+     7→
+     8→from datetime import datetime, timedelta
+     9→from pathlib import Path
+    10→
+    11→from erk.cli.commands.pr.submit_cmd import (
+    12→    PR_CACHE_POLL_INTERVAL_SECONDS,
+    13→    PR_CACHE_POLL_MAX_WAIT_SECONDS,
+    14→    _wait_for_pr_in_cache,
+    15→)
+    16→from erk.core.context import context_for_test
+    17→from erk_shared.gateway.git.abc import Git
+    18→from erk_shared.gateway.git.fake import FakeGit
+    19→from erk_shared.gateway.github.types import PullRequestInfo
+    20→from erk_shared.gateway.graphite.fake import FakeGraphite
+    21→from erk_shared.gateway.time.abc import Time
+    22→
+    23→
+    24→class ProgressingFakeTime(Time):
+    25→    """FakeTime that advances on each now() call for testing polling loops.
+    26→
+    27→    Each call to now() returns a time that is `increment` seconds later than
+    28→    the previous call. This allows testing timeout logic without sleeping.
+    29→    """
+    30→
+
+... [308 lines omitted] ...
+  </tool_result>
+  <assistant>This is straightforward — remove the cache polling from the submit critical path entirely. The task is simple enough to skip the agent phases and go straight to the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11533" cache_read_input_tokens="33488" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11533}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01D2vA4DBdUBXrBZVYA4SuxZ">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11533" cache_read_input_tokens="33488" output_tokens="108" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11533, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01D2vA4DBdUBXrBZVYA4SuxZ">
+
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>no plan it</user>
+  <usage input_tokens="3" cache_creation_input_tokens="45574" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 45574}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01Lt9ycgPJ3e7T1wzemsBndy">
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="45574" cache_read_input_tokens="0" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 45574, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Lt9ycgPJ3e7T1wzemsBndy">
+User has approved exiting plan mode. You can now proceed.
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>no make a plan</user>
+  <usage input_tokens="3" cache_creation_input_tokens="363" cache_read_input_tokens="45574" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 363}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="EnterPlanMode" id="toolu_017sqHeb7D6AKbr5Btv3PbAW">
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="363" cache_read_input_tokens="45574" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 363, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017sqHeb7D6AKbr5Btv3PbAW">
+Entered plan mode. You should now focus on exploring the codebase and designing an implementation approach.
+
+In plan mode, you should:
+1. Thoroughly explore the codebase to understand existing patterns
+2. Identify similar features and architectural approaches
+3. Consider multiple approaches and their trade-offs
+4. Use AskUserQuestion if you need to clarify the approach
+5. Design a concrete implementation strategy
+6. When ready, use ExitPlanMode to present your plan for approval
+
+Remember: DO NOT write or edit any files yet. This is a read-only exploration and planning phase.
+  </tool_result>
+  <tool_use name="Write" id="toolu_01FRdPPH9s4Vb9WpBV8wunz2">
+    <param name="file_path">/Users/schrockn/.claude/plans/iterative-soaring-clarke.md</param>
+    <param name="content"># Remove PR Cache Polling from Submit Critical Path
+
+## Context
+
+After `erk pr submit` com...[truncated 1500 chars]...tests the removed polling behavior
+
+## Verification
+
+```
+pytest tests/commands/pr/ -x
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="45937" output_tokens="656" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 334, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FRdPPH9s4Vb9WpBV8wunz2">
+File created successfully at: /Users/schrockn/.claude/plans/iterative-soaring-clarke.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01EGtGC5jzmaQhLtyp8RJ7sh">
+    <param name="plan"># Remove PR Cache Polling from Submit Critical Path
+
+## Context
+
+After `erk pr submit` com...[truncated 1500 chars]...tests the removed polling behavior
+
+## Verification
+
+```
+pytest tests/commands/pr/ -x
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="48418" cache_read_input_tokens="0" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 48418, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EGtGC5jzmaQhLtyp8RJ7sh">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/iterative-soaring-clarke.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Remove PR Cache Polling from Submit Critical Path
+Current context: (wt:erk) (br:master) (plan:#8751)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 35a73068-af48-4bfa-ba15-5751d4eb0aa4 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>## Plan: Remove PR Cache Polling from Submit Critical Path
+
+**Context:** After `erk pr submit` completes, the command blocks up to 10 seconds polling `.git/.graphite_pr_info` waiting for Graphite to update it — purely so the status line can show PR info immediately. This polling has no business being in the submit critical path. The status line should handle its own data freshness.
+
+**Files to modify:**
+
+- `src/erk/cli/commands/pr/submit_cmd.py` — remove `_wait_for_pr_in_cache`, the 4 module-level constants, and the polling block after `run_submit_pipeline`
+- `src/erk/cli/commands/exec/scripts/push_and_create_pr.py` — remove `_wait_for_pr_in_cache` function and its call
+- `tests/commands/pr/test_submit_pr_cache_polling.py` — delete (tests the removed behavior)
+
+**Verification:** `pytest tests/commands/pr/ -x`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="681" cache_read_input_tokens="48418" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 681}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_011f9m4mvp5cEC6SsmeGsZPe">
+    <param name="questions">[{'question': '📋 Remove PR Cache Polling from Submit Critical Path\nCurrent context: (wt:e...[truncated 391 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="681" cache_read_input_tokens="48418" output_tokens="454" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 681, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011f9m4mvp5cEC6SsmeGsZPe">
+User has answered your questions: "📋 Remove PR Cache Polling from Submit Critical Path
+Current context: (wt:erk) (br:master) (plan:#8751)
+
+What would you like to do with this plan?"="Create new branch and planned PR. Stays on current branch.". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01NHVoaAy5b2PHeBu1gRHBwL">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="548" cache_read_input_tokens="49099" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 548, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NHVoaAy5b2PHeBu1gRHBwL">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_0111k2xt8CSJdjy4CBzXj9wb">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="562" cache_read_input_tokens="49647" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 562, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0111k2xt8CSJdjy4CBzXj9wb">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="35a73068-af48-4bfa-ba15-5751d4eb0aa4" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="35a73068-af48-4bfa-ba15-5751d4eb0aa4" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "35a73068-af48-4bfa-ba15-5751d4eb0aa4" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "35a73068-af48-4bfa-ba15-5751d4eb0aa4" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "35a73068-af48-4bfa-ba15-5751d4eb0aa4" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "35a73068-af48-4bfa-ba15-5751d4eb0aa4" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2373" cache_read_input_tokens="50209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2373}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01AzSbwgjgvRkkFeMcWjR3xQ">
+    <param name="command">erk exec plan-save --format json --session-id="35a73068-af48-4bfa-ba15-5751d4eb0aa4" --bra...[truncated 240 chars]...ath, since status line data freshness belongs in the status line, not the submit command."</param>
+    <param name="description">Save plan as draft PR</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2373" cache_read_input_tokens="50209" output_tokens="367" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2373, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AzSbwgjgvRkkFeMcWjR3xQ">
+{"success": true, "plan_number": 8794, "plan_url": "https://github.com/dagster-io/erk/pull/8794", "title": "[erk-plan] Remove PR Cache Polling from Submit Critical Path", "branch_name": "plnd/remove-pr-cache-polling-03-05-1701", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/35a73068-af48-4bfa-ba15-5751d4eb0aa4/plan_snapshots/000001-f3d9b392"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011qgEQDiuhAktGexJc2Bn8a">
+    <param name="command">erk exec push-session --session-id "35a73068-af48-4bfa-ba15-5751d4eb0aa4" --stage planning --source local --plan-id 8794 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="540" cache_read_input_tokens="52582" output_tokens="126" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 540, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011qgEQDiuhAktGexJc2Bn8a">
+
+  </tool_result>
+  <assistant>Plan saved as draft PR **#8794**  
+URL: https://github.com/dagster-io/erk/pull/8794</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="152" cache_read_input_tokens="53122" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 152}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_015uqdMdN2x6tuZRBjjLwMf3">
+    <param name="plan"># Remove PR Cache Polling from Submit Critical Path
+
+## Context
+
+After `erk pr submit` com...[truncated 1500 chars]...tests the removed polling behavior
+
+## Verification
+
+```
+pytest tests/commands/pr/ -x
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="152" cache_read_input_tokens="53122" output_tokens="71" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 152, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015uqdMdN2x6tuZRBjjLwMf3">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8794 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8794:
+  In current wt:    source "$(erk br co --for-plan 8794 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8794 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8794 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8794 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8794:
+  In current wt:  erk br co --for-plan 8794
+  In new wt:      erk br co --new-slot --for-plan 8794
+
+Dispatch plan #8794:
+  CLI command:    erk pr dispatch 8794
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Implement plan #8794:
+```
+In current wt:    source "$(erk br co --for-plan 8794 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --for-plan 8794 --script)" &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 8794 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 8794 --script)" &amp;&amp; erk implement -d
+```
+
+Checkout plan #8794:
+```
+In current wt:  erk br co --for-plan 8794
+In new wt:      erk br co --new-slot --for-plan 8794
+```
+
+Dispatch plan #8794:
+```
+CLI command:    erk pr dispatch 8794
+Slash command:  /erk:pr-dispatch
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="562" cache_read_input_tokens="53274" output_tokens="233" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 562, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "35a73068-af48-4bfa-ba15-5751d4eb0aa4" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>
+
+The most recent plan in this conversation is **#8794**.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="49864" cache_read_input_tokens="4864" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 49864}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GQDAsV2rLFChA4fXiPogjf">
+    <param name="command">erk pr dispatch 8794</param>
+    <param name="description">Dispatch plan #8794 for remote implementation</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="49864" cache_read_input_tokens="4864" output_tokens="117" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 49864, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GQDAsV2rLFChA4fXiPogjf">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Syncing master with origin/master...
+✓ master synced with origin/master
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8794...
+
+✓ All 1 plan(s) validated
+
+  #8794: [erk-plan] Remove PR Cache Polling from Submit Critical Path
+
+Dispatching PR #8794...
+
+Fetching plan content...
+Syncing branch: plnd/remove-pr-cache-polling-03-05-1701
+Committing plan to branch...
+✓ Branch pushed to remote
+
+Dispatching workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow dispatched.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Q82RRAGTCFhWEAPySqC7RD">
+    <param name="command">erk exec marker delete --session-id "35a73068-af48-4bfa-ba15-5751d4eb0aa4" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="474" cache_read_input_tokens="54728" output_tokens="111" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 474, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Q82RRAGTCFhWEAPySqC7RD">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Plan #8794 dispatched for remote implementation.
+
+- **Plan**: https://github.com/dagster-io/erk/pull/8794
+- **Workflow**: https://github.com/dagster-io/erk/actions/runs/22744115588</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="142" cache_read_input_tokens="55202" output_tokens="65" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 142, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>
