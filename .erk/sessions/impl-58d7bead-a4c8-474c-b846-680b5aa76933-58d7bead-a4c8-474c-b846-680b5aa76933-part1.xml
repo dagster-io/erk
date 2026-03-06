@@ -974,4 +974,147 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
     <param name="description">Upload session for async learn</param>
   </tool_use>
   <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="97941" cache_creation="{'ephemeral_5m_input_tokens': 153, 'ephemeral_1h_input_tokens': 0}" output_tokens="117" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NYNyyU2HHKYU1xEJgxuHWo">
+{"uploaded": true, "plan_id": 8849}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EKMTqGYfpZXXZZSVe1gANS">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="142" cache_read_input_tokens="98094" cache_creation="{'ephemeral_5m_input_tokens': 142, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EKMTqGYfpZXXZZSVe1gANS">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <assistant>Now let me check if there's a post-plan-implement CI hook:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="98236" cache_creation="{'ephemeral_5m_input_tokens': 105, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01RciPDTQPtH6btLtFnT6TdV">
+    <param name="command">test -f /home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md &amp;&amp; cat /home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md || echo "No CI hook found"</param>
+    <param name="description">Check for CI hook</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="105" cache_read_input_tokens="98236" cache_creation="{'ephemeral_5m_input_tokens': 105, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RciPDTQPtH6btLtFnT6TdV">
+# Post-Implementation CI
+
+Run CI validation after plan implementation using `make fast-ci`.
+
+Load the `ci-iteration` skill for the iterative fix workflow.
+  </tool_result>
+  <assistant>Let me run the fast CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="416" cache_read_input_tokens="98341" cache_creation="{'ephemeral_5m_input_tokens': 416, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01JzNF7V5zKoNRzwHcdWXTED">
+    <param name="description">Run fast CI checks</param>
+    <param name="prompt">Run `make fast-ci` and report all output. This is a CI validation step.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="416" cache_read_input_tokens="98341" cache_creation="{'ephemeral_5m_input_tokens': 416, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JzNF7V5zKoNRzwHcdWXTED">
+The `make fast-ci` command failed with exit code 2 due to **Prettier formatting issues** in 2 files. Here's the summary:
+
+**FAILED: Prettier formatting check**
+
+Two files need formatting:
+- `docs/learned/integrations/github-review-decision.md`
+- `docs/learned/tui/status-indicators.md`
+
+Run `prettier --write` to fix these files.
+
+**PASSED checks:**
+- Lint (ruff): All checks passed
+- Type checking (ty): All checks passed  
+- Unit Tests (erk): 5647 passed in 21.77s
+- Unit Tests (erk-dev): 136 passed in 4.05s
+- Unit Tests (erk-statusline): 115 passed in 0.78s
+- Unit Tests (erk-mcp): 24 passed
+- Markdown checks: OK
+- Exec reference check: OK
+
+The CI validation is blocked only by the Prettier formatting issues in those two markdown files.
+agentId: a086d89 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All our tests pass (5647 unit tests passed). The only failure is Prettier formatting on 2 unrelated markdown docs. Let me fix those:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="384" cache_read_input_tokens="98757" cache_creation="{'ephemeral_5m_input_tokens': 384, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_0134SDaAAbTtXvtYb6XeQy3K">
+    <param name="description">Fix prettier formatting</param>
+    <param name="prompt">Run `prettier --write docs/learned/integrations/github-review-decision.md docs/learned/tui/status-indicators.md` and report the result.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="384" cache_read_input_tokens="98757" cache_creation="{'ephemeral_5m_input_tokens': 384, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0134SDaAAbTtXvtYb6XeQy3K">
+prettier passed: Both files formatted successfully
+
+- `/home/runner/work/erk/erk/docs/learned/integrations/github-review-decision.md` (62ms)
+- `/home/runner/work/erk/erk/docs/learned/tui/status-indicators.md` (22ms)
+agentId: ab14d92 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>
+
+Now let me submit the PR:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="481" cache_read_input_tokens="99141" cache_creation="{'ephemeral_5m_input_tokens': 481, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01SJLPxiLFmsazL3YCrrKm5h">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="481" cache_read_input_tokens="99141" cache_creation="{'ephemeral_5m_input_tokens': 481, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SJLPxiLFmsazL3YCrrKm5h">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #8849 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #8849
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (177,108 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+  Action:      Updated PR #8849
+
+... [4 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0192YbsNH4s2xmyZNSZhLXdU">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="411" cache_read_input_tokens="99622" cache_creation="{'ephemeral_5m_input_tokens': 411, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0192YbsNH4s2xmyZNSZhLXdU">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8849
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DAiuY5b7ZhtW4wTm3Xwde9">
+    <param name="command">erk pr check --stage=impl</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="335" cache_read_input_tokens="100033" cache_creation="{'ephemeral_5m_input_tokens': 335, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DAiuY5b7ZhtW4wTm3Xwde9">
+Exit code 1
+Checking PR #8849 for branch plnd/split-preprocess-session-t-03-06-1138...
+
+[FAIL] .erk/impl-context/ still present (should be removed before submission)
+[PASS] Plan reference found (#8849)
+[PASS] PR body contains checkout footer
+
+1 check failed
+  </tool_result>
 </session>
