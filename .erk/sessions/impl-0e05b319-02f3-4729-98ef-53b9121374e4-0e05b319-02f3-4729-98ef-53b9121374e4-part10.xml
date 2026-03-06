@@ -1,0 +1,446 @@
+<session>
+  <meta source="agent-a61b69a" />
+  <meta branch="plnd/fast-api-pr-description-03-05-1730" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>I need to update `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py` to fix integration tests after a refactor.
+
+**Context**: `CommitMessageGenerator` now uses `ctx.llm_caller` (an `LlmCaller`) instead of `ctx.prompt_executor` (a `PromptExecutor`). Tests that set up `FakePromptExecutor` with `simulated_prompt_output` also need to pass `llm_caller=FakeLlmCaller(response=LlmResponse(text=...))` with the same text to the context builder.
+
+**Changes needed**:
+
+1. Add these imports at the top (after the existing imports):
+```python
+from erk_shared.core.fakes import FakeLlmCaller
+from erk_shared.core.llm_caller import LlmResponse
+```
+
+2. For every test (or helper function) that creates a `FakePromptExecutor` with `simulated_prompt_output=&lt;some_text&gt;`, add a corresponding `FakeLlmCaller` and pass it to the context builder.
+
+Wherever you see:
+```python
+executor = FakePromptExecutor(
+    available=True,
+    simulated_prompt_output="&lt;text&gt;",
+)
+```
+
+Add after it:
+```python
+llm_caller = FakeLlmCaller(response=LlmResponse(text="&lt;text&gt;"))
+```
+(using the exact same text)
+
+And wherever the context builder is called with that executor, also pass `llm_caller=llm_caller`.
+
+Check if there's a helper function like `_make_pr_fakes()` that creates the executor — if so, update it to also create and return a `FakeLlmCaller`. Then update all callers of that helper to unpack the new return value and pass it to the context builder.
+
+**IMPORTANT**: 
+- Keep all existing code and behavior
+- Only add `llm_caller` lines and `llm_caller=llm_caller` kwargs — don't change anything else
+- Use the EXACT same text string
+- For tests without `simulated_prompt_output`, do NOT add `llm_caller`
+
+Read the file, make all necessary edits, and verify with `uv run ruff format --check` on the file.</user>
+  <assistant>I'll start by reading the test file to understand its structure and identify where changes are needed.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16445" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16445, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01QbYT7gpL3YHrPfFMEFwgWf">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16445" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16445, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QbYT7gpL3YHrPfFMEFwgWf">
+     1→"""Tests for erk exec update-pr-description command.
+     2→
+     3→These tests verify the CLI layer behavior of the update-pr-description exec command.
+     4→The command generates an AI-powered PR title/body and updates the PR on GitHub,
+     5→preserving existing header and footer metadata.
+     6→"""
+     7→
+     8→from datetime import UTC, datetime
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.update_pr_description import update_pr_description
+    13→from erk_shared.gateway.git.fake import FakeGit
+    14→from erk_shared.gateway.github.fake import FakeGitHub
+    15→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    16→from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+    17→from erk_shared.gateway.github.metadata.plan_header import format_plan_content_comment
+    18→from erk_shared.gateway.github.types import PRDetails
+    19→from erk_shared.gateway.graphite.fake import FakeGraphite
+    20→from erk_shared.gateway.graphite.types import BranchMetadata
+    21→from erk_shared.gateway.time.fake import FakeTime
+    22→from erk_shared.impl_folder import get_impl_dir
+    23→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    24→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    25→from tests.fakes.prompt_executor import FakePromptExecutor
+    26→from tests.test_utils.context_builders import build_workspace_test_context
+    27→from tests.test_utils.env_helpers import ErkIsolatedFsEnv, erk_isolated_fs_env
+    28→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    29→
+    30→
+
+... [426 lines omitted] ...
+
+    87→    prompt_error: str | None = None,
+   135→        simulated_prompt_output=prompt_output if prompt_error is None else None,
+   136→        simulated_prompt_error=prompt_error,
+  </tool_result>
+  <assistant>Now I need to analyze the file to identify all places where `FakePromptExecutor` is created with `simulated_prompt_output` and update them. Let me identify the key areas:
+
+1. The `_make_standard_fakes` helper function (lines 78-139) - creates executor with `prompt_output` parameter
+2. Several individual test functions that create `FakePromptExecutor` directly
+
+Let me make the necessary edits:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="10476" cache_read_input_tokens="16445" cache_creation="{'ephemeral_5m_input_tokens': 10476, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01LPrXBtT1Y2o6pR9YV2N7Uq">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="old_string">from datetime import UTC, datetime
+
+from click.testing import CliRunner
+
+from erk.cli.commands.exec.scripts.update_pr_description import update_pr_description</param>
+    <param name="new_string">from datetime import UTC, datetime
+
+from click.testing import CliRunner
+
+from erk.cli.comm...[truncated 57 chars]..._shared.core.fakes import FakeLlmCaller
+from erk_shared.core.llm_caller import LlmResponse</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="10476" cache_read_input_tokens="16445" cache_creation="{'ephemeral_5m_input_tokens': 10476, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LPrXBtT1Y2o6pR9YV2N7Uq">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JfMMHJXqmy8C8qLQ9JiMk2">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="old_string">def _make_standard_fakes(
+    env: ErkIsolatedFsEnv,
+    *,
+    branch_name: str = "featur...[truncated 1857 chars]...    simulated_prompt_error=prompt_error,
+    )
+
+    return git, graphite, github, executor</param>
+    <param name="new_string">def _make_standard_fakes(
+    env: ErkIsolatedFsEnv,
+    *,
+    branch_name: str = "featur...[truncated 1958 chars]...e=LlmResponse(text=prompt_output))
+
+    return git, graphite, github, executor, llm_caller</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="392" cache_read_input_tokens="26921" cache_creation="{'ephemeral_5m_input_tokens': 392, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JfMMHJXqmy8C8qLQ9JiMk2">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to update all the calls to `_make_standard_fakes` to unpack the new return value and pass `llm_caller` to the context builder:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1474" cache_read_input_tokens="27313" cache_creation="{'ephemeral_5m_input_tokens': 1474, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AKj86YuqYigQrAzP9TPXiC">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="old_string">def test_success_updates_pr() -&gt; None:
+    """Test successful update-pr-description genera...[truncated 778 chars]...d_pr_bodies[0]
+        assert pr_number == 42
+        assert "awesome new feature" in body</param>
+    <param name="new_string">def test_success_updates_pr() -&gt; None:
+    """Test successful update-pr-description genera...[truncated 813 chars]...d_pr_bodies[0]
+        assert pr_number == 42
+        assert "awesome new feature" in body</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1474" cache_read_input_tokens="27313" cache_creation="{'ephemeral_5m_input_tokens': 1474, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AKj86YuqYigQrAzP9TPXiC">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019mNQ1e1d9Cbct4V6GsY229">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="old_string">def test_generates_footer_with_checkout_command() -&gt; None:
+    """Test that updated body i...[truncated 621 chars]...No issue closing reference (planned-PR only)
+        assert "Closes #" not in updated_body</param>
+    <param name="new_string">def test_generates_footer_with_checkout_command() -&gt; None:
+    """Test that updated body i...[truncated 656 chars]...No issue closing reference (planned-PR only)
+        assert "Closes #" not in updated_body</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="889" cache_read_input_tokens="28787" cache_creation="{'ephemeral_5m_input_tokens': 889, 'ephemeral_1h_input_tokens': 0}" output_tokens="589" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019mNQ1e1d9Cbct4V6GsY229">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to handle the test at line 279 (`test_uses_graphite_parent`) which creates a `FakePromptExecutor` directly:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="642" cache_read_input_tokens="29676" cache_creation="{'ephemeral_5m_input_tokens': 642, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0123tXeaVvnkusG9YrLTedqW">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="old_string">        pr_details = _make_pr_details(number=99, branch="branch-2")
+        github = FakeG...[truncated 284 chars]...        env, git=git, graphite=graphite, github=github, prompt_executor=executor
+        )</param>
+    <param name="new_string">        pr_details = _make_pr_details(number=99, branch="branch-2")
+        github = FakeG...[truncated 410 chars]...raphite=graphite, github=github, prompt_executor=executor, llm_caller=llm_caller
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="642" cache_read_input_tokens="29676" cache_creation="{'ephemeral_5m_input_tokens': 642, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0123tXeaVvnkusG9YrLTedqW">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to handle the test at line 351 (`test_no_plan_context_after_pxxxx_removal`) which calls `_make_standard_fakes`:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="644" cache_read_input_tokens="30318" cache_creation="{'ephemeral_5m_input_tokens': 644, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016Swu3FjZN1k6rXsgoAwLKa">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="old_string">        git, graphite, github, executor = _make_standard_fakes(
+            env,
+         ...[truncated 866 chars]...       plan_store=PlannedPRBackend(github, fake_github_issues, time=FakeTime()),
+        )</param>
+    <param name="new_string">        git, graphite, github, executor, llm_caller = _make_standard_fakes(
+            en...[truncated 913 chars]...       plan_store=PlannedPRBackend(github, fake_github_issues, time=FakeTime()),
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="644" cache_read_input_tokens="30318" cache_creation="{'ephemeral_5m_input_tokens': 644, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016Swu3FjZN1k6rXsgoAwLKa">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to handle the last test at line 418 (`test_update_pr_description_planned_pr_backend_preserves_metadata`) which calls `_make_standard_fakes`:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="884" cache_read_input_tokens="30962" cache_creation="{'ephemeral_5m_input_tokens': 884, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MHADgcSdJja4JqCAG9tMEJ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="old_string">        git, graphite, github, executor = _make_standard_fakes(
+            env,
+         ...[truncated 224 chars]...            plan_store=PlannedPRBackend(github, github.issues, time=FakeTime()),
+        )</param>
+    <param name="new_string">        git, graphite, github, executor, llm_caller = _make_standard_fakes(
+            en...[truncated 271 chars]...            plan_store=PlannedPRBackend(github, github.issues, time=FakeTime()),
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="884" cache_read_input_tokens="30962" cache_creation="{'ephemeral_5m_input_tokens': 884, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MHADgcSdJja4JqCAG9tMEJ">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify the file with ruff format:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="572" cache_read_input_tokens="31846" cache_creation="{'ephemeral_5m_input_tokens': 572, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HuFgpp5aDoxf1KYgFXe7R3">
+    <param name="command">uv run ruff format --check tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="description">Check formatting of updated test file</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="572" cache_read_input_tokens="31846" cache_creation="{'ephemeral_5m_input_tokens': 572, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HuFgpp5aDoxf1KYgFXe7R3">
+Exit code 1
+Would reformat: tests/unit/cli/commands/exec/scripts/test_update_pr_description.py
+1 file would be reformatted
+  </tool_result>
+  <assistant>Let me format the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="32418" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01GaREarmVAHL3Y5aFvijhQD">
+    <param name="command">uv run ruff format tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="description">Format the updated test file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="32418" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GaREarmVAHL3Y5aFvijhQD">
+1 file reformatted
+  </tool_result>
+  <assistant>Good! Now let me verify the file again to make sure it's properly formatted:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1272" cache_read_input_tokens="32590" cache_creation="{'ephemeral_5m_input_tokens': 1272, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Goez9zJMX1c5uxfH5pSKuv">
+    <param name="command">uv run ruff format --check tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="description">Verify file is properly formatted</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1272" cache_read_input_tokens="32590" cache_creation="{'ephemeral_5m_input_tokens': 1272, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Goez9zJMX1c5uxfH5pSKuv">
+1 file already formatted
+  </tool_result>
+  <assistant>Perfect! Let me now read the updated file to verify all changes are correct:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="137" cache_read_input_tokens="33862" cache_creation="{'ephemeral_5m_input_tokens': 137, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JtQ4a5zFCvEPEaHSSgvkCo">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="offset">1</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="137" cache_read_input_tokens="33862" cache_creation="{'ephemeral_5m_input_tokens': 137, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JtQ4a5zFCvEPEaHSSgvkCo">
+     1→"""Tests for erk exec update-pr-description command.
+     2→
+     3→These tests verify the CLI layer behavior of the update-pr-description exec command.
+     4→The command generates an AI-powered PR title/body and updates the PR on GitHub,
+     5→preserving existing header and footer metadata.
+     6→"""
+     7→
+     8→from datetime import UTC, datetime
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.update_pr_description import update_pr_description
+    13→from erk_shared.core.fakes import FakeLlmCaller
+    14→from erk_shared.core.llm_caller import LlmResponse
+    15→from erk_shared.gateway.git.fake import FakeGit
+    16→from erk_shared.gateway.github.fake import FakeGitHub
+    17→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    18→from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+    19→from erk_shared.gateway.github.metadata.plan_header import format_plan_content_comment
+    20→from erk_shared.gateway.github.types import PRDetails
+    21→from erk_shared.gateway.graphite.fake import FakeGraphite
+    22→from erk_shared.gateway.graphite.types import BranchMetadata
+    23→from erk_shared.gateway.time.fake import FakeTime
+    24→from erk_shared.impl_folder import get_impl_dir
+    25→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    26→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    27→from tests.fakes.prompt_executor import FakePromptExecutor
+    28→from tests.test_utils.context_builders import build_workspace_test_context
+    29→from tests.test_utils.env_helpers import ErkIsolatedFsEnv, erk_isolated_fs_env
+    30→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+
+... [125 lines omitted] ...
+
+    89→    prompt_error: str | None = None,
+   137→        simulated_prompt_output=prompt_output if prompt_error is None else None,
+   138→        simulated_prompt_error=prompt_error,
+  </tool_result>
+  <assistant>Perfect! Let me check one key section to ensure the pattern is correct across all tests:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="2363" cache_read_input_tokens="33999" cache_creation="{'ephemeral_5m_input_tokens': 2363, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01F4JKFRiW2RhtS1b9hHTuTB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="offset">230</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="2363" cache_read_input_tokens="33999" cache_creation="{'ephemeral_5m_input_tokens': 2363, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F4JKFRiW2RhtS1b9hHTuTB">
+   230→        result = runner.invoke(update_pr_description, [], obj=ctx)
+   231→
+   232→        assert result.exit_code != 0
+   233→        assert "No pull request found" in result.output
+   234→
+   235→
+   236→def test_success_updates_pr() -&gt; None:
+   237→    """Test successful update-pr-description generates title/body and updates PR."""
+   238→    runner = CliRunner()
+   239→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+   240→        git, graphite, github, executor, llm_caller = _make_standard_fakes(env)
+   241→
+   242→        ctx = build_workspace_test_context(
+   243→            env,
+   244→            git=git,
+   245→            graphite=graphite,
+   246→            github=github,
+   247→            prompt_executor=executor,
+   248→            llm_caller=llm_caller,
+   249→        )
+   250→
+   251→        result = runner.invoke(update_pr_description, [], obj=ctx)
+   252→
+   253→        assert result.exit_code == 0
+   254→        assert "PR #42 updated" in result.output
+   255→        assert "Add awesome feature" in result.output
+   256→
+   257→        # Verify PR was updated on GitHub
+   258→        assert len(github.updated_pr_titles) == 1
+   259→        assert github.updated_pr_titles[0] == (42, "Add awesome feature")
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! Let me verify the formatting and completeness by running a quick check on the file:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="990" cache_read_input_tokens="36362" cache_creation="{'ephemeral_5m_input_tokens': 990, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01BcvGejzMcAHSGPyheDAnBH">
+    <param name="command">grep -n "llm_caller" /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="description">Verify all llm_caller additions</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="990" cache_read_input_tokens="36362" cache_creation="{'ephemeral_5m_input_tokens': 990, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BcvGejzMcAHSGPyheDAnBH">
+14:from erk_shared.core.llm_caller import LlmResponse
+141:    llm_caller = FakeLlmCaller(response=LlmResponse(text=prompt_output))
+143:    return git, graphite, github, executor, llm_caller
+240:        git, graphite, github, executor, llm_caller = _make_standard_fakes(env)
+248:            llm_caller=llm_caller,
+271:        git, graphite, github, executor, llm_caller = _make_standard_fakes(
+281:            llm_caller=llm_caller,
+350:        llm_caller = FakeLlmCaller(
+360:            llm_caller=llm_caller,
+400:        git, graphite, github, executor, llm_caller = _make_standard_fakes(
+428:            llm_caller=llm_caller,
+451:        git, graphite, github, executor, llm_caller = _make_standard_fakes(
+463:            llm_caller=llm_caller,
+  </tool_result>
+  <assistant>Perfect! Let me verify that the tests that shouldn't have llm_caller don't have it:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="514" cache_read_input_tokens="37352" cache_creation="{'ephemeral_5m_input_tokens': 514, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LfYahQzehiLfhkCUp6GDiG">
+    <param name="command">grep -A5 "test_fails_when_claude_not_available\|test_fails_when_not_on_branch\|test_fails_...[truncated 69 chars]..._description.py | grep -E "(def test_|executor =|build_workspace_test_context|llm_caller)"</param>
+    <param name="description">Check tests without simulated_prompt_output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="514" cache_read_input_tokens="37352" cache_creation="{'ephemeral_5m_input_tokens': 514, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LfYahQzehiLfhkCUp6GDiG">
+def test_fails_when_claude_not_available() -&gt; None:
+def test_fails_when_not_on_branch() -&gt; None:
+def test_fails_when_no_pr() -&gt; None:
+  </tool_result>
+  <assistant>Let me check those tests more carefully:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="258" cache_read_input_tokens="37866" cache_creation="{'ephemeral_5m_input_tokens': 258, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018pLV3c218NbV4PqE9kUXJs">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="offset">146</param>
+    <param name="limit">90</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="258" cache_read_input_tokens="37866" cache_creation="{'ephemeral_5m_input_tokens': 258, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018pLV3c218NbV4PqE9kUXJs">
+   146→def test_fails_when_claude_not_available() -&gt; None:
+   147→    """Test that command fails when Claude CLI is not available."""
+   148→    runner = CliRunner()
+   149→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+   150→        git = FakeGit(
+   151→            git_common_dirs={env.cwd: env.git_dir},
+   152→            local_branches={env.cwd: ["main"]},
+   153→            default_branches={env.cwd: "main"},
+   154→        )
+   155→
+   156→        executor = FakePromptExecutor(available=False)
+   157→
+   158→        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+   159→
+   160→        result = runner.invoke(update_pr_description, [], obj=ctx)
+   161→
+   162→        assert result.exit_code != 0
+   163→        assert "Claude CLI not found" in result.output
+   164→
+   165→
+   166→def test_fails_when_not_on_branch() -&gt; None:
+   167→    """Test that command fails when not on a branch."""
+   168→    runner = CliRunner()
+   169→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+   170→        git = FakeGit(
+   171→            git_common_dirs={env.cwd: env.git_dir},
+   172→            repository_roots={env.cwd: env.git_dir},
+   173→            local_branches={env.cwd: ["main"]},
+   174→            default_branches={env.cwd: "main"},
+   175→            trunk_branches={env.git_dir: "main"},
+
+... [65 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! As I can see, the three tests that don't have `simulated_prompt_output` (`test_fails_when_claude_not_available`, `test_fails_when_not_on_branch`, and `test_fails_when_no_pr`) correctly do NOT have `llm_caller` added, which is exactly what the user requested.
+
+Now let me create a summary of the changes:
+
+## Summary
+
+I've successfully updated `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py` to fix the integration tests after the refactor from `PromptExecutor` to `LlmCaller`.
+
+### Changes Made
+
+1. **Added imports** (lines 13-14):
+   - `from erk_shared.core.fakes import FakeLlmCaller`
+   - `from erk_shared.core.llm_caller import LlmResponse`
+
+2. **Updated `_make_standard_fakes` helper function** (lines 80-143):
+   - Modified return type to include `FakeLlmCaller` in the tuple
+   - Added creation of `FakeLlmCaller` with the same text as `FakePromptExecutor` (line 141)
+   - Returns the new `llm_caller` as part of the tuple
+
+3. **Updated all tests that use `_make_standard_fakes`**:
+   - `test_success_updates_pr` - unpacks and passes `llm_caller`
+   - `test_generates_footer_with_checkout_command` - unpacks and passes `llm_caller`
+   - `test_no_plan_context_after_pxxxx_removal` - unpacks and passes `llm_caller`
+   - `test_update_pr_description_planned_pr_backend_preserves_metadata` - unpacks and passes `llm_caller`
+
+4. **Updated `test_uses_graphite_parent`** (lines 338-349):
+   - Created `FakeLlmCaller` directly with the same text as the `FakePromptExecutor`
+   - Passed it to `build_workspace_test_context`
+
+5. **Correctly left unchanged** the three tests without `simulated_prompt_output`:
+   - `test_fails_when_claude_not_available`
+   - `test_fails_when_not_on_branch`
+   - `test_fails_when_no_pr`
+
+### Verification
+
+- All changes maintain the exact same text strings between `FakePromptExecutor` and `FakeLlmCaller`
+- The file passes `ruff format --check` with no issues
+- No existing code or behavior was modified beyond adding the required `llm_caller` parameter</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1484" cache_read_input_tokens="38124" cache_creation="{'ephemeral_5m_input_tokens': 1484, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

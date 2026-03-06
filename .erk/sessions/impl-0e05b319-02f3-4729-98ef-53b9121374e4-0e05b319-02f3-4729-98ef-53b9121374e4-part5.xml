@@ -1,0 +1,840 @@
+<session>
+  <meta branch="plnd/fast-api-pr-description-03-05-1730" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_019pAQXYfWtVFAKKSeVWExbU">
+   358→            github=github,
+   359→            prompt_executor=executor,
+   360→            llm_caller=llm_caller,
+   361→        )
+   362→
+   363→        result = runner.invoke(update_pr_description, [], obj=ctx)
+   364→
+   365→        assert result.exit_code == 0
+   366→
+   367→        # Verify the prompt was called with correct branches
+   368→        assert len(executor.prompt_calls) == 1
+   369→        prompt, _system_prompt, _dangerous = executor.prompt_calls[0]
+   370→        # Should contain branch-1 as parent (Graphite parent)
+   371→        assert "branch-1" in prompt
+   372→        assert "branch-2" in prompt
+   373→
+   374→
+   375→def test_no_plan_context_after_pxxxx_removal() -&gt; None:
+   376→    """Test that plan content from old issue-comment mechanism is NOT embedded.
+   377→
+   378→    With PlannedPRBackend, get_plan_for_branch returns the feature PR on the branch
+   379→    (PR #42 with empty body). The plan content from issue #123's comment is NOT used.
+   380→    The "Fix the bug." text from comment #1000 should not appear in the PR description.
+   381→
+   382→    Note: plan-ref.json exists in .impl/ but PlannedPRBackend.get_plan_for_branch
+   383→    doesn't read it. Future work may restore plan context via plan-ref.json lookup.
+   384→    """
+   385→    runner = CliRunner()
+   386→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+   387→        plan_body = format_plan_header_body_for_test(plan_comment_id=1000)
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>This test also needs updating — it checks `executor.prompt_calls` but the AI generation now goes through `llm_caller`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1137" cache_read_input_tokens="54164" cache_creation="{'ephemeral_5m_input_tokens': 1137, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01JAXA3CLuT6sGnT6srybcFp">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="old_string">        # Verify the prompt was called with correct branches
+        assert len(executor.p...[truncated 111 chars]... (Graphite parent)
+        assert "branch-1" in prompt
+        assert "branch-2" in prompt</param>
+    <param name="new_string">        # Verify the LLM was called with correct branches
+        assert len(llm_caller.ca...[truncated 77 chars]... (Graphite parent)
+        assert "branch-1" in prompt
+        assert "branch-2" in prompt</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1137" cache_read_input_tokens="54164" cache_creation="{'ephemeral_5m_input_tokens': 1137, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JAXA3CLuT6sGnT6srybcFp">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the full CI checks again:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="364" cache_read_input_tokens="55301" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01LZk6rXv2RzMyEFwsavN7ND">
+    <param name="description">Run CI checks round 2</param>
+    <param name="prompt">Run the CI checks for this Python project. Execute these commands in order and report all ...[truncated 218 chars]...n tests
+
+Report any failures with full output so I can fix them. If all pass, report that.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="364" cache_read_input_tokens="55301" cache_creation="{'ephemeral_5m_input_tokens': 364, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LZk6rXv2RzMyEFwsavN7ND">
+## CI Check Results
+
+**Status: 1 failure**
+
+### Results Summary
+
+1. **Ruff Linting**: PASSED
+   - `All checks passed!`
+
+2. **Ruff Format Check**: PASSED
+   - `1607 files already formatted`
+
+3. **Pytest Tests**: FAILED
+   - 1 test failure in `/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py`
+
+### Test Failure Details
+
+**File**: `tests/erk_shared/gateway/plan_data_provider/test_real_routing.py`
+
+**Test**: `TestPlanDataProviderRouting::test_routes_to_objective_service_when_erk_objective_label_present`
+
+**Error Type**: `TypeError`
+
+**Error Message**: `'&gt;' not supported between instances of 'MagicMock' and 'int'`
+
+**Location**: `src/erk/tui/data/types.py:180` in the `summary()` method
+
+**Root Cause**: The test mocks `get_objective_list_data()` but the returned mock object has `api_ms` and other timing fields as `MagicMock` objects. When `FetchTimings.summary()` tries to compare these mock objects with integers in the line:
+
+```python
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>
+
+The test failure in `test_real_routing.py` is unrelated to our changes — it's a pre-existing mock issue in TUI code where `MagicMock` objects don't support comparison. Let me verify it's not caused by our changes:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1215" cache_read_input_tokens="55665" cache_creation="{'ephemeral_5m_input_tokens': 1215, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01UBebGE9jM1AQ7VuUwYdgeD">
+    <param name="command">git diff --name-only HEAD~5..HEAD</param>
+    <param name="description">Check files changed in recent commits</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1215" cache_read_input_tokens="55665" cache_creation="{'ephemeral_5m_input_tokens': 1215, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UBebGE9jM1AQ7VuUwYdgeD">
+src/erk/cli/commands/pr/submit_pipeline.py
+tests/commands/pr/test_submit.py
+tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff_and_fetch_plan_context.py
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012vf5Dvv1xm5NN9wei4nafi">
+    <param name="command">git stash &amp;&amp; uv run pytest tests/erk_shared/gateway/plan_data_provider/test_real_routing.p...[truncated 22 chars]...s_to_objective_service_when_erk_objective_label_present -x --timeout=30 -q 2&gt;&amp;1 | tail -15</param>
+    <param name="description">Verify test failure exists on base</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="216" cache_read_input_tokens="56880" cache_creation="{'ephemeral_5m_input_tokens': 216, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012vf5Dvv1xm5NN9wei4nafi">
+Saved working directory and index state WIP on plnd/fast-api-pr-description-03-05-1730: 6351c951c Remove plan staging dirs before implementation
+ERROR: usage: pytest [options] [file_or_dir] [file_or_dir] [...]
+pytest: error: unrecognized arguments: --timeout=30
+  inifile: /home/runner/work/erk/erk/pyproject.toml
+  rootdir: /home/runner/work/erk/erk
+  </tool_result>
+  <assistant>I see the system reminders show the test files still have the old `executor.prompt_calls` patterns — this is from the linter-modified snapshots. But I notice my edits from earlier were overwritten or there are additional occurrences. The key issue is that the background agents added `llm_caller` to the context builders but didn't change all the `executor.prompt_calls` assertions. Let me restore my stash first and then comprehensively fix all remaining `executor.prompt_calls` references in the affected test files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8190" cache_read_input_tokens="57096" cache_creation="{'ephemeral_5m_input_tokens': 8190, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01Hv2ExhrjTHDwfgrXEE9iwt">
+    <param name="command">git stash pop</param>
+    <param name="description">Restore working changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8190" cache_read_input_tokens="57096" cache_creation="{'ephemeral_5m_input_tokens': 8190, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Hv2ExhrjTHDwfgrXEE9iwt">
+On branch plnd/fast-api-pr-description-03-05-1730
+Your branch is up to date with 'origin/plnd/fast-api-pr-description-03-05-1730'.
+
+Changes not staged for commit:
+  (use "git add &lt;file&gt;..." to update what will be committed)
+  (use "git restore &lt;file&gt;..." to discard changes in working directory)
+	modified:   packages/erk-shared/src/erk_shared/core/fakes.py
+	modified:   packages/erk-shared/src/erk_shared/core/llm_caller.py
+	modified:   src/erk/cli/commands/exec/scripts/update_pr_description.py
+	modified:   src/erk/cli/commands/objective/plan_cmd.py
+	modified:   src/erk/cli/commands/one_shot_dispatch.py
+	modified:   src/erk/cli/commands/pr/rewrite_cmd.py
+	modified:   src/erk/cli/commands/pr/submit_pipeline.py
+	modified:   src/erk/core/commit_message_generator.py
+	modified:   src/erk/core/fast_llm.py
+	modified:   tests/commands/pr/test_rewrite.py
+	modified:   tests/commands/pr/test_submit.py
+	modified:   tests/commands/pr/test_submit_graphite_disabled.py
+	modified:   tests/core/test_commit_message_generator.py
+	modified:   tests/core/test_fast_llm.py
+	modified:   tests/unit/cli/commands/exec/scripts/test_update_pr_description.py
+
+no changes added to commit (use "git add" and/or "git commit -a")
+Dropped refs/stash@{0} (ae6867a26468aa29a86778d3e5adfc435322761b)
+  </tool_result>
+  <assistant>Now I see from the system reminders that `test_submit.py` still has the old `executor.prompt_calls` patterns at lines 594-597 and 731-738. My edits earlier may not have been saved properly since the linter modified the file. Let me check the current state:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="665" cache_read_input_tokens="65286" cache_creation="{'ephemeral_5m_input_tokens': 665, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01GtTrLiRFNjPny2YS3dsqQH">
+    <param name="pattern">executor\.prompt_calls</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="665" cache_read_input_tokens="65286" cache_creation="{'ephemeral_5m_input_tokens': 665, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GtTrLiRFNjPny2YS3dsqQH">
+140:        assert len(executor.prompt_calls) == 0
+  </tool_result>
+  <assistant>Good — only line 140 remains in `test_submit.py`, which is the `--skip-description` test asserting zero prompt calls. That's still valid. My edits from earlier did take effect.
+
+Now let me check the actual failing test. The system reminders showed the linter modified the file and some tests still use `FakePromptExecutor` with `simulated_prompt_output` but don't pass `llm_caller` to `build_workspace_test_context`. Let me check which tests still lack `llm_caller`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="591" cache_read_input_tokens="65951" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01HonDS1fq18ZGKo9UEJaLXX">
+    <param name="pattern">simulated_prompt_output</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="591" cache_read_input_tokens="65951" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HonDS1fq18ZGKo9UEJaLXX">
+205:            simulated_prompt_output="Add feature\n\nThis adds a new feature.",
+479:            simulated_prompt_output="Add feature\n\nThis adds a new feature.",
+576:            simulated_prompt_output="Add awesome feature\n\nThis PR adds an awesome new feature.",
+714:            simulated_prompt_output="Add feature 2\n\nThis adds feature 2.",
+817:            simulated_prompt_output="Title\n\nBody",
+916:            simulated_prompt_output="Title\n\nBody",
+1014:            simulated_prompt_output="Title\n\nBody",
+1102:            simulated_prompt_output="Title\n\nBody",
+1188:            simulated_prompt_output="Add feature\n\nThis adds a new feature.",
+1286:            simulated_prompt_output="Title\n\nBody",
+1439:            simulated_prompt_output="Title\n\nBody",
+1605:            simulated_prompt_output="Title\n\nBody",
+1705:            simulated_prompt_output="Title\n\nBody",
+1875:            simulated_prompt_output="Title\n\nBody",
+1973:            simulated_prompt_output="Title\n\nBody",
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01F5T43PoJWNZ4hNo7LyU4r3">
+    <param name="pattern">llm_caller=llm_caller</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="577" cache_read_input_tokens="66542" cache_creation="{'ephemeral_5m_input_tokens': 577, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01F5T43PoJWNZ4hNo7LyU4r3">
+217:            llm_caller=llm_caller,
+396:            llm_caller=llm_caller,
+491:            llm_caller=llm_caller,
+588:            llm_caller=llm_caller,
+726:            llm_caller=llm_caller,
+827:            llm_caller=llm_caller,
+926:            llm_caller=llm_caller,
+1024:            llm_caller=llm_caller,
+1112:            llm_caller=llm_caller,
+1200:            llm_caller=llm_caller,
+1296:            llm_caller=llm_caller,
+1449:            llm_caller=llm_caller,
+1615:            llm_caller=llm_caller,
+1715:            llm_caller=llm_caller,
+1885:            llm_caller=llm_caller,
+  </tool_result>
+  <assistant>15 `simulated_prompt_output` uses and 15 `llm_caller=llm_caller` — all match. Now let me check the specific failing test `test_pr_submit_success`. The CI said line 598 had `assert len(executor.prompt_calls) == 1` but from my grep, only line 140 has `executor.prompt_calls` left. The linter-modified snapshot in the system reminder is stale — my edits are in place.
+
+Let me check what the actual state of lines around 590-600 is:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="730" cache_read_input_tokens="67119" cache_creation="{'ephemeral_5m_input_tokens': 730, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01CxugWMadQCh4awh6zkhVt7">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="offset">557</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="730" cache_read_input_tokens="67119" cache_creation="{'ephemeral_5m_input_tokens': 730, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CxugWMadQCh4awh6zkhVt7">
+   557→                    parent=None,
+   558→                    children=["feature"],
+   559→                    is_trunk=True,
+   560→                    commit_sha=None,
+   561→                ),
+   562→            },
+   563→            # PR info for cache polling - ensures polling finds PR immediately
+   564→            pr_info={"feature": pr_info},
+   565→        )
+   566→
+   567→        github = FakeGitHub(
+   568→            authenticated=True,
+   569→            prs={"feature": pr_info},
+   570→            pr_details={123: pr_details},
+   571→            pr_bases={123: "main"},
+   572→        )
+   573→
+   574→        executor = FakePromptExecutor(
+   575→            available=True,
+   576→            simulated_prompt_output="Add awesome feature\n\nThis PR adds an awesome new feature.",
+   577→        )
+   578→        llm_caller = FakeLlmCaller(
+   579→            response=LlmResponse(text="Add awesome feature\n\nThis PR adds an awesome new feature.")
+   580→        )
+   581→
+   582→        ctx = build_workspace_test_context(
+   583→            env,
+   584→            git=git,
+   585→            github=github,
+   586→            graphite=graphite,
+
+... [25 lines omitted] ...
+  </tool_result>
+  <assistant>Good — the code is correctly updated. The CI failure I saw earlier was before this fix was applied. Now let me also check the `test_update_pr_description.py` stacked-branch test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="940" cache_read_input_tokens="67849" cache_creation="{'ephemeral_5m_input_tokens': 940, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01GvCfxgmPyWDqfrHSCDqDoy">
+    <param name="pattern">executor\.prompt_calls</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="940" cache_read_input_tokens="67849" cache_creation="{'ephemeral_5m_input_tokens': 940, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GvCfxgmPyWDqfrHSCDqDoy">
+No matches found
+  </tool_result>
+  <assistant>All cleaned up. But wait — I need to verify the `test_update_pr_description.py` file also has `llm_caller` being passed properly. The background agent may have only done partial work. Let me check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="567" cache_read_input_tokens="68789" cache_creation="{'ephemeral_5m_input_tokens': 567, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01TrMgoLbVaunSzQE2VPsejz">
+    <param name="pattern">llm_caller</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="567" cache_read_input_tokens="68789" cache_creation="{'ephemeral_5m_input_tokens': 567, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TrMgoLbVaunSzQE2VPsejz">
+14:from erk_shared.core.llm_caller import LlmResponse
+141:    llm_caller = FakeLlmCaller(response=LlmResponse(text=prompt_output))
+143:    return git, graphite, github, executor, llm_caller
+240:        git, graphite, github, executor, llm_caller = _make_standard_fakes(env)
+248:            llm_caller=llm_caller,
+271:        git, graphite, github, executor, llm_caller = _make_standard_fakes(
+281:            llm_caller=llm_caller,
+350:        llm_caller = FakeLlmCaller(
+360:            llm_caller=llm_caller,
+368:        assert len(llm_caller.calls) == 1
+369:        prompt = llm_caller.calls[0].prompt
+400:        git, graphite, github, executor, llm_caller = _make_standard_fakes(
+428:            llm_caller=llm_caller,
+451:        git, graphite, github, executor, llm_caller = _make_standard_fakes(
+463:            llm_caller=llm_caller,
+  </tool_result>
+  <assistant>Good, the `test_update_pr_description.py` is properly updated. Now let me check there aren't any tests in that file missing `llm_caller`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="498" cache_read_input_tokens="69356" cache_creation="{'ephemeral_5m_input_tokens': 498, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01AFRqC79JWZmmG2qepL75fs">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="offset">135</param>
+    <param name="limit">12</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="498" cache_read_input_tokens="69356" cache_creation="{'ephemeral_5m_input_tokens': 498, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AFRqC79JWZmmG2qepL75fs">
+   135→    executor = FakePromptExecutor(
+   136→        available=available,
+   137→        simulated_prompt_output=prompt_output if prompt_error is None else None,
+   138→        simulated_prompt_error=prompt_error,
+   139→    )
+   140→
+   141→    llm_caller = FakeLlmCaller(response=LlmResponse(text=prompt_output))
+   142→
+   143→    return git, graphite, github, executor, llm_caller
+   144→
+   145→
+   146→def test_fails_when_claude_not_available() -&gt; None:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Wait — the `_make_standard_fakes` always creates `FakeLlmCaller(response=LlmResponse(text=prompt_output))`, but when `prompt_error` is set, it should return a failure response. Let me check the error test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="766" cache_read_input_tokens="69854" cache_creation="{'ephemeral_5m_input_tokens': 766, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01TVYyhtR5BfT6zsH57Sp9WH">
+    <param name="pattern">prompt_error</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="766" cache_read_input_tokens="69854" cache_creation="{'ephemeral_5m_input_tokens': 766, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TVYyhtR5BfT6zsH57Sp9WH">
+89:    prompt_error: str | None = None,
+137:        simulated_prompt_output=prompt_output if prompt_error is None else None,
+138:        simulated_prompt_error=prompt_error,
+  </tool_result>
+  <assistant>The `_make_standard_fakes` helper accepts `prompt_error` but doesn't use it when constructing `FakeLlmCaller`. Let me check if any tests use that parameter:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="266" cache_read_input_tokens="70620" cache_creation="{'ephemeral_5m_input_tokens': 266, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_016UcrgV5HMGn5eK5RCtJU9R">
+    <param name="pattern">prompt_error="</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="266" cache_read_input_tokens="70620" cache_creation="{'ephemeral_5m_input_tokens': 266, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016UcrgV5HMGn5eK5RCtJU9R">
+No matches found
+  </tool_result>
+  <assistant>No test uses `prompt_error` in this file, so the `FakeLlmCaller` always getting `LlmResponse(text=prompt_output)` is fine. Now let me also check the `test_submit_graphite_disabled.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="566" cache_read_input_tokens="70886" cache_creation="{'ephemeral_5m_input_tokens': 566, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_011EHof4qUe765wfJaiDkbG3">
+    <param name="pattern">llm_caller</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_submit_graphite_disabled.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="566" cache_read_input_tokens="70886" cache_creation="{'ephemeral_5m_input_tokens': 566, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011EHof4qUe765wfJaiDkbG3">
+11:from erk_shared.core.llm_caller import LlmResponse
+84:        llm_caller = FakeLlmCaller(response=LlmResponse(text="fix: test change\n\nTest body"))
+91:            llm_caller=llm_caller,
+132:        llm_caller = FakeLlmCaller(response=LlmResponse(text="fix: test change\n\nTest body"))
+139:            llm_caller=llm_caller,
+  </tool_result>
+  <assistant>Good. Now let me also check for `simulated_prompt_output` in `test_submit_graphite_disabled.py` to make sure every one with that has a corresponding `llm_caller`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="330" cache_read_input_tokens="71452" cache_creation="{'ephemeral_5m_input_tokens': 330, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01WD3xS9M9hM5n3mZZnzff3c">
+    <param name="pattern">simulated_prompt_output</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_submit_graphite_disabled.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="330" cache_read_input_tokens="71452" cache_creation="{'ephemeral_5m_input_tokens': 330, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WD3xS9M9hM5n3mZZnzff3c">
+81:            simulated_prompt_output="fix: test change\n\nTest body",
+129:            simulated_prompt_output="fix: test change\n\nTest body",
+  </tool_result>
+  <assistant>2 occurrences, 2 `llm_caller` additions. All good. Now let me also verify test_submit.py has 15 `simulated_prompt_output` and 15 `llm_caller=llm_caller` (need to check one more that's for the error case):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="604" cache_read_input_tokens="71782" cache_creation="{'ephemeral_5m_input_tokens': 604, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01J8cKmVqFbRnvfjoW4ttGQh">
+    <param name="pattern">simulated_prompt_error</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="604" cache_read_input_tokens="71782" cache_creation="{'ephemeral_5m_input_tokens': 604, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01J8cKmVqFbRnvfjoW4ttGQh">
+386:            simulated_prompt_error="Claude CLI execution failed",
+  </tool_result>
+  <assistant>That's 1 error case + 15 output cases = 16 total FakePromptExecutors with AI output. And 15 `llm_caller=llm_caller`. Let me check the error test has it too:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="232" cache_read_input_tokens="72386" cache_creation="{'ephemeral_5m_input_tokens': 232, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014YM5XPqDEyzHRrPN3Wv4zM">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="offset">380</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="232" cache_read_input_tokens="72386" cache_creation="{'ephemeral_5m_input_tokens': 232, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014YM5XPqDEyzHRrPN3Wv4zM">
+   380→            pr_bases={123: "main"},
+   381→        )
+   382→
+   383→        # Configure executor to fail on prompt
+   384→        executor = FakePromptExecutor(
+   385→            available=True,
+   386→            simulated_prompt_error="Claude CLI execution failed",
+   387→        )
+   388→        llm_caller = FakeLlmCaller(response=LlmCallFailed(message="Claude CLI execution failed"))
+   389→
+   390→        ctx = build_workspace_test_context(
+   391→            env,
+   392→            git=git,
+   393→            github=github,
+   394→            graphite=graphite,
+   395→            prompt_executor=executor,
+   396→            llm_caller=llm_caller,
+   397→        )
+   398→
+   399→        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+   400→
+   401→        assert result.exit_code != 0
+   402→        assert "Failed to generate message" in result.output
+   403→
+   404→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>All properly wired. Now there's one more test at line 1973 that has `simulated_prompt_output`. Let me check it too:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="888" cache_read_input_tokens="72618" cache_creation="{'ephemeral_5m_input_tokens': 888, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01WZXLjB8JzxuZAevWH4YUry">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="offset">1963</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="888" cache_read_input_tokens="72618" cache_creation="{'ephemeral_5m_input_tokens': 888, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WZXLjB8JzxuZAevWH4YUry">
+  1963→
+  1964→        github = FakeGitHub(
+  1965→            authenticated=True,
+  1966→            prs={"feature": pr_info},
+  1967→            pr_details={123: pr_details},
+  1968→            pr_bases={123: "main"},
+  1969→        )
+  1970→
+  1971→        executor = FakePromptExecutor(
+  1972→            available=True,
+  1973→            simulated_prompt_output="Title\n\nBody",
+  1974→        )
+  1975→
+  1976→        ctx = build_workspace_test_context(
+  1977→            env,
+  1978→            git=git,
+  1979→            github=github,
+  1980→            graphite=graphite,
+  1981→            prompt_executor=executor,
+  1982→        )
+  1983→
+  1984→        result = runner.invoke(pr_group, ["submit"], obj=ctx)
+  1985→
+  1986→        assert result.exit_code == 0
+  1987→        # gt submit should have been called (no remote branch to check)
+  1988→        assert len(graphite.submit_stack_calls) == 1
+  1989→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+
+... [2 lines omitted] ...
+  </tool_result>
+  <assistant>This test at line 1976 is MISSING `llm_caller=llm_caller`. It'll use the default `FakeLlmCaller` from `build_workspace_test_context` which returns `LlmResponse(text="test-slug")` — so the generated title will be "test-slug" instead of "Title". But since this test only checks `result.exit_code == 0` and `len(graphite.submit_stack_calls) == 1`, it should still pass. Let me check if there are any other tests missing `llm_caller`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="550" cache_read_input_tokens="73506" cache_creation="{'ephemeral_5m_input_tokens': 550, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_019X4S3EET5GBMJEbVBPuiyi">
+    <param name="command">python3 -c "
+import re
+
+with open('tests/commands/pr/test_submit.py') as f:
+    content = ...[truncated 578 chars]...if not found_llm:
+            print(f'Line {i+1}: MISSING llm_caller - {line.strip()}')
+"
+</param>
+    <param name="description">Find tests missing llm_caller</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="550" cache_read_input_tokens="73506" cache_creation="{'ephemeral_5m_input_tokens': 550, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019X4S3EET5GBMJEbVBPuiyi">
+Line 1973: MISSING llm_caller - simulated_prompt_output="Title\n\nBody",
+  </tool_result>
+  <assistant>Only one missing at line 1973. Since that test doesn't assert on the generated content (only checks exit code and graphite calls), the default `FakeLlmCaller` will work fine. But let me add it for consistency:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="852" cache_read_input_tokens="74056" cache_creation="{'ephemeral_5m_input_tokens': 852, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01SicqFvkL6MLWCvximiZpCC">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_p...[truncated 344 chars]...en called (no remote branch to check)
+        assert len(graphite.submit_stack_calls) == 1</param>
+    <param name="new_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_p...[truncated 458 chars]...en called (no remote branch to check)
+        assert len(graphite.submit_stack_calls) == 1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="852" cache_read_input_tokens="74056" cache_creation="{'ephemeral_5m_input_tokens': 852, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SicqFvkL6MLWCvximiZpCC">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me run the tests to verify everything passes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="540" cache_read_input_tokens="74908" cache_creation="{'ephemeral_5m_input_tokens': 540, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01UMKNETnn6p4u6377wnVo2A">
+    <param name="description">Run full CI checks round 3</param>
+    <param name="prompt">Run the CI checks for this Python project. Execute these commands in order and report all ...[truncated 226 chars]...
+Report any failures with full output so I can fix them. If all pass, report that clearly.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="540" cache_read_input_tokens="74908" cache_creation="{'ephemeral_5m_input_tokens': 540, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UMKNETnn6p4u6377wnVo2A">
+## CI Results Summary
+
+**ruff check**: PASSED
+- All linting checks passed
+
+**ruff format**: PASSED  
+- 1607 files already formatted
+
+**pytest**: FAILED
+- 1 test failure found
+
+### Test Failure Details
+
+**File**: `tests/erk_shared/gateway/plan_data_provider/test_real_routing.py`
+
+**Test**: `TestPlanDataProviderRouting::test_routes_to_objective_service_when_erk_objective_label_present`
+
+**Error**: `TypeError: '&gt;' not supported between instances of 'MagicMock' and 'int'`
+
+**Location**: `src/erk/tui/data/types.py:180` in the `summary()` method
+
+**Root Cause**: The test is using `MagicMock` objects for timing values in the `FetchTimings` dataclass. When the `summary()` method tries to compare `ms &gt; threshold` (line 180), it fails because `ms` is a MagicMock, not a numeric value.
+
+**Problematic Code**:
+```python
+# src/erk/tui/data/types.py:180
+parts = [f"{label}:{ms / 1000:.1f}" for label, ms, threshold in entries if ms &gt; threshold]
+```
+
+The test needs to either:
+
+... [3 lines omitted] ...
+  </tool_result>
+  <assistant>
+
+Lint and format pass. The only test failure is in `test_real_routing.py` which is a pre-existing issue unrelated to our changes (MagicMock comparison in TUI code). Let me confirm it fails on the base branch too:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="990" cache_read_input_tokens="75448" cache_creation="{'ephemeral_5m_input_tokens': 990, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01B4w1inEQon16wQ6Aj3wNuA">
+    <param name="command">git stash &amp;&amp; uv run pytest tests/erk_shared/gateway/plan_data_provider/test_real_routing.p...[truncated 9 chars]...g::test_routes_to_objective_service_when_erk_objective_label_present -x -q 2&gt;&amp;1 | tail -10</param>
+    <param name="description">Check if test failure exists on base</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="990" cache_read_input_tokens="75448" cache_creation="{'ephemeral_5m_input_tokens': 990, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01B4w1inEQon16wQ6Aj3wNuA">
+Saved working directory and index state WIP on plnd/fast-api-pr-description-03-05-1730: 6351c951c Remove plan staging dirs before implementation
+            ("rows", self.row_building_ms, 100),
+        ]
+&gt;       parts = [f"{label}:{ms / 1000:.1f}" for label, ms, threshold in entries if ms &gt; threshold]
+                                                                                   ^^^^^^^^^^^^^^
+E       TypeError: '&gt;' not supported between instances of 'MagicMock' and 'int'
+
+src/erk/tui/data/types.py:180: TypeError
+=========================== short test summary info ============================
+FAILED tests/erk_shared/gateway/plan_data_provider/test_real_routing.py::TestPlanDataProviderRouting::test_routes_to_objective_service_when_erk_objective_label_present - TypeError: '&gt;' not supported between instances of 'MagicMock' and 'int'
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+  </tool_result>
+  <assistant>Confirmed — the test failure is pre-existing, not caused by our changes. It fails identically on the base commit.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5573" cache_read_input_tokens="76438" cache_creation="{'ephemeral_5m_input_tokens': 5573, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01YLVfoW5tEqN3ZGdw8CP2rr">
+    <param name="command">git stash pop</param>
+    <param name="description">Restore working changes</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5573" cache_read_input_tokens="76438" cache_creation="{'ephemeral_5m_input_tokens': 5573, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YLVfoW5tEqN3ZGdw8CP2rr">
+On branch plnd/fast-api-pr-description-03-05-1730
+Your branch is up to date with 'origin/plnd/fast-api-pr-description-03-05-1730'.
+
+Changes not staged for commit:
+  (use "git add &lt;file&gt;..." to update what will be committed)
+  (use "git restore &lt;file&gt;..." to discard changes in working directory)
+	modified:   packages/erk-shared/src/erk_shared/core/fakes.py
+	modified:   packages/erk-shared/src/erk_shared/core/llm_caller.py
+	modified:   src/erk/cli/commands/exec/scripts/update_pr_description.py
+	modified:   src/erk/cli/commands/objective/plan_cmd.py
+	modified:   src/erk/cli/commands/one_shot_dispatch.py
+	modified:   src/erk/cli/commands/pr/rewrite_cmd.py
+	modified:   src/erk/cli/commands/pr/submit_pipeline.py
+	modified:   src/erk/core/commit_message_generator.py
+	modified:   src/erk/core/fast_llm.py
+	modified:   tests/commands/pr/test_rewrite.py
+	modified:   tests/commands/pr/test_submit.py
+	modified:   tests/commands/pr/test_submit_graphite_disabled.py
+	modified:   tests/core/test_commit_message_generator.py
+	modified:   tests/core/test_fast_llm.py
+	modified:   tests/unit/cli/commands/exec/scripts/test_update_pr_description.py
+
+no changes added to commit (use "git add" and/or "git commit -a")
+Dropped refs/stash@{0} (a3270c19572a9654db457fa7be470cfbd8c60904)
+  </tool_result>
+  <assistant>Wait — the system reminder shows `test_submit.py` was modified by a linter and the snapshot shows it's reverted to the old code without `llm_caller`. That snapshot is stale though (from before my edits). Let me verify the actual file content hasn't been reverted by checking a few key spots:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="940" cache_read_input_tokens="82011" cache_creation="{'ephemeral_5m_input_tokens': 940, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_011tbTsLcZJGCk1A9JF2hyp7">
+    <param name="command">grep -c "llm_caller=llm_caller" tests/commands/pr/test_submit.py</param>
+    <param name="description">Count llm_caller occurrences in test_submit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="940" cache_read_input_tokens="82011" cache_creation="{'ephemeral_5m_input_tokens': 940, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011tbTsLcZJGCk1A9JF2hyp7">
+16
+  </tool_result>
+  <assistant>16 occurrences — good, all my edits are in place (15 from before + 1 I just added). Let me now run just the tests that matter for our changes to double-check, skipping the pre-existing broken test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="188" cache_read_input_tokens="82951" cache_creation="{'ephemeral_5m_input_tokens': 188, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01DKm7H7YEdgRrdhHmVgx8AW">
+    <param name="description">Run our changed tests</param>
+    <param name="prompt">Run these specific test files and report results:
+
+```
+uv run pytest tests/commands/pr/tes...[truncated 190 chars]...sts/core/test_fast_llm.py -x -q 2&gt;&amp;1 | tail -30
+```
+
+Report any failures with full output.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="188" cache_read_input_tokens="82951" cache_creation="{'ephemeral_5m_input_tokens': 188, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DKm7H7YEdgRrdhHmVgx8AW">
+**pytest passed:** All tests passed
+
+The test output shows 60 dots, indicating all 60 test cases in the specified files passed successfully. No failures or errors detected.
+
+**Summary:**
+- Tests run: 60
+- Passed: 60
+- Failed: 0
+- Files tested:
+  - `tests/commands/pr/test_submit.py`
+  - `tests/commands/pr/test_rewrite.py`
+  - `tests/commands/pr/test_submit_graphite_disabled.py`
+  - `tests/unit/cli/commands/exec/scripts/test_update_pr_description.py`
+  - `tests/core/test_commit_message_generator.py`
+  - `tests/core/test_fast_llm.py`
+agentId: a7f14d4 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>
+
+All 60 tests pass. CI checks are complete — lint, format, and all our tests pass. The only failing test is pre-existing and unrelated to our changes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="853" cache_read_input_tokens="83139" cache_creation="{'ephemeral_5m_input_tokens': 853, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01MqjYHqrceMdXH4qSoM4fyJ">
+    <param name="todos">[{'content': 'Extend LlmCaller ABC with max_tokens parameter', 'status': 'completed', 'act...[truncated 1809 chars]...hecks'}, {'content': 'Submit PR', 'status': 'in_progress', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="853" cache_read_input_tokens="83139" cache_creation="{'ephemeral_5m_input_tokens': 853, 'ephemeral_1h_input_tokens': 0}" output_tokens="567" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MqjYHqrceMdXH4qSoM4fyJ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me submit the PR. First let me clean up the impl context and then submit:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="693" cache_read_input_tokens="83992" cache_creation="{'ephemeral_5m_input_tokens': 693, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_018zto8CnEfoxFp2TpfajBct">
+    <param name="command">ls /home/runner/work/erk/erk/.erk/impl-context/ 2&gt;/dev/null &amp;&amp; echo "exists" || echo "no impl-context"</param>
+    <param name="description">Check impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="693" cache_read_input_tokens="83992" cache_creation="{'ephemeral_5m_input_tokens': 693, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018zto8CnEfoxFp2TpfajBct">
+plan.md
+plnd--fast-api-pr-description-03-05-1730
+ref.json
+run-info.json
+exists
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013qGvPSRKazqRe3vdetunPk">
+    <param name="command">rm -rf /home/runner/work/erk/erk/.erk/impl-context/plnd--fast-api-pr-description-03-05-1730</param>
+    <param name="description">Clean up plan staging dir</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="177" cache_read_input_tokens="84685" cache_creation="{'ephemeral_5m_input_tokens': 177, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013qGvPSRKazqRe3vdetunPk">
+
+  </tool_result>
+  <assistant>Now let me submit with `erk pr submit`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="138" cache_read_input_tokens="84862" cache_creation="{'ephemeral_5m_input_tokens': 138, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="SlashCommand" id="toolu_015m9XpuZP4rffNXQ9x2jD4W">
+    <param name="command">/local:quick-submit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="138" cache_read_input_tokens="84862" cache_creation="{'ephemeral_5m_input_tokens': 138, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015m9XpuZP4rffNXQ9x2jD4W">
+Launching command: /local:quick-submit
+  </tool_result>
+  <user>&lt;command-message&gt;local:quick-submit is running…&lt;/command-message&gt;
+&lt;command-name&gt;/local:quick-submit&lt;/command-name&gt;</user>
+  <user># Quick Submit
+
+Quickly commit all changes with a generic "update" message and submit to Graphite.
+
+## Usage
+
+```bash
+/quick-submit
+```
+
+## What This Command Does
+
+1. Stages all uncommitted changes
+2. Creates a commit with a generic "update" message (if there are changes)
+3. Submits the branch via Graphite (or git push if Graphite is not configured)
+4. Returns the PR URL on success
+
+This is a shortcut for rapid iteration when you don't need a detailed commit message.
+
+## Implementation Steps
+
+### Step 1: Stage and Commit Changes
+
+Run the following command from the repository root:
+
+```bash
+erk exec quick-submit
+```
+
+This command will:
+
+- Stage all changes in the working directory
+- Commit them with the message "update" if there are staged changes
+- Return a JSON response with the result
+
+### Step 2: Parse the Response
+
+The command outputs JSON with the following structure:
+
+```json
+{
+  "success": true,
+  "committed": true,
+  "message": "Changes submitted successfully",
+  "pr_url": "https://github.com/owner/repo/pull/123"
+}
+```
+
+Or on error:
+
+```json
+{
+  "success": false,
+  "error_type": "stage-failed|commit-failed|submit-failed",
+  "message": "Error description"
+}
+```
+
+**Decision logic:**
+
+- If `success` is `true`: Report the success message and PR URL to the user
+- If `success` is `false`: Display the error message and ask the user to fix the issue
+
+### Step 3: Report Results
+
+Display the result based on the response:
+
+**On success:**
+
+```
+Changes submitted successfully
+View PR: {pr_url}
+```
+
+**On failure:**
+
+```
+Error: {error_message}
+```
+
+If the error is `stage-failed` or `commit-failed`, suggest the user check their git state.
+If the error is `submit-failed`, suggest the user try `/erk:git-pr-push` as an alternative.
+
+## Error Handling
+
+- **No changes**: The command will still submit if there are already committed changes on the branch. No error is raised if there are no staged changes.
+- **Graphite not initialized**: Falls back to git push if the repository is not Graphite-managed.
+- **Submit fails**: Display the error and suggest `/erk:git-pr-push` as an alternative.
+
+## Notes
+
+- This is a shortcut for rapid iteration
+- Uses generic "update" commit message
+- For detailed commit messages, use `/erk:pr-submit` instead
+- For git-only workflows (no Graphite), use `/erk:git-pr-push`
+</user>
+  <tool_use name="Bash" id="toolu_01KVk4gdBpUsnVr4wzhk7NDW">
+    <param name="command">erk exec quick-submit 2&gt;&amp;1</param>
+    <param name="description">Quick submit all changes</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="756" cache_read_input_tokens="85000" cache_creation="{'ephemeral_5m_input_tokens': 756, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KVk4gdBpUsnVr4wzhk7NDW">
+⚠️  Your erk (0.9.6) doesn't match required (0.9.5)
+   You must update or erk may not work properly.
+   Update: uv sync
+
+  Staging all changes...
+  Checking for staged changes...
+  Committing changes...
+  Pushing to remote...
+  Getting PR URL...
+{
+  "success": true,
+  "staged_changes": true,
+  "committed": true,
+  "message": "Changes submitted successfully",
+  "pr_url": "https://github.com/dagster-io/erk/pull/8801"
+}
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_013UGiuAft2t5vmWJVY3ShKg">
+    <param name="todos">[{'content': 'Extend LlmCaller ABC with max_tokens parameter', 'status': 'completed', 'act...[truncated 1807 chars]... checks'}, {'content': 'Submit PR', 'status': 'completed', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="604" cache_read_input_tokens="85756" cache_creation="{'ephemeral_5m_input_tokens': 604, 'ephemeral_1h_input_tokens': 0}" output_tokens="607" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013UGiuAft2t5vmWJVY3ShKg">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Changes submitted successfully. PR: https://github.com/dagster-io/erk/pull/8801
+
+## Summary of changes
+
+Replaced the Claude CLI subprocess (`PromptExecutor`) with direct Anthropic API calls (`LlmCaller`) for PR description generation in `CommitMessageGenerator`. This should make PR description generation ~5x faster by eliminating subprocess overhead.
+
+**Key changes across 15 files:**
+
+- **`LlmCaller` ABC** (`llm_caller.py`): Added `max_tokens: int` parameter to `call()`
+- **`AnthropicLlmCaller`** (`fast_llm.py`): Pass through `max_tokens` instead of hardcoding 50
+- **`FakeLlmCaller`** (`fakes.py`): Converted from frozen dataclass to mutable class with `LlmCall` recording for test assertions
+- **`CommitMessageGenerator`** (`commit_message_generator.py`): Complete rewrite — now takes `LlmCaller` instead of `PromptExecutor`/`Time`/`model`. Removed dead code (`USE_SYSTEM_PROMPT_REPLACEMENT`, `_build_prompt`)
+- **3 construction sites** (`submit_pipeline.py`, `rewrite_cmd.py`, `update_pr_description.py`): Updated to `CommitMessageGenerator(ctx.llm_caller)`
+- **2 existing callers** (`plan_cmd.py`, `one_shot_dispatch.py`): Added `max_tokens=50`
+- **6 test files**: Updated to use `FakeLlmCaller` for integration tests</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="649" cache_read_input_tokens="86360" cache_creation="{'ephemeral_5m_input_tokens': 649, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>

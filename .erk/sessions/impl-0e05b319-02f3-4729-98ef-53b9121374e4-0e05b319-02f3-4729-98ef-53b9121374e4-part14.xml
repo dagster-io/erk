@@ -1,0 +1,324 @@
+<session>
+  <meta source="agent-a87e3fc" />
+  <meta branch="plnd/fast-api-pr-description-03-05-1730" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>I need to update `/home/runner/work/erk/erk/tests/commands/pr/test_submit_graphite_disabled.py` to fix integration tests after a refactor.
+
+**Context**: `CommitMessageGenerator` now uses `ctx.llm_caller` (an `LlmCaller`) instead of `ctx.prompt_executor` (a `PromptExecutor`). Tests that set up `FakePromptExecutor` with `simulated_prompt_output` also need to pass `llm_caller=FakeLlmCaller(response=LlmResponse(text=...))` with the same text to the context builder.
+
+**Changes needed**:
+
+1. Add these imports at the top (after the existing imports):
+```python
+from erk_shared.core.fakes import FakeLlmCaller
+from erk_shared.core.llm_caller import LlmResponse
+```
+
+2. For every test that creates a `FakePromptExecutor` with `simulated_prompt_output=&lt;some_text&gt;`, add a corresponding `FakeLlmCaller` and pass it to the context builder.
+
+Wherever you see:
+```python
+executor = FakePromptExecutor(
+    available=True,
+    simulated_prompt_output="&lt;text&gt;",
+)
+```
+
+Add after it:
+```python
+llm_caller = FakeLlmCaller(response=LlmResponse(text="&lt;text&gt;"))
+```
+(using the exact same text)
+
+And wherever the context builder is called with that executor, also pass `llm_caller=llm_caller`.
+
+**IMPORTANT**: 
+- Keep all existing code and behavior
+- Only add `llm_caller` lines and `llm_caller=llm_caller` kwargs — don't change anything else
+- Use the EXACT same text string
+- For tests without `simulated_prompt_output`, do NOT add `llm_caller`
+
+Read the file, make all necessary edits, and verify with `uv run ruff format --check` on the file.</user>
+  <assistant>I'll help you update the test file to fix the integration tests after the refactor. Let me start by reading the file to understand its current structure.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16368" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16368, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011DChfiq6mQ91jAVKdhSgeB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit_graphite_disabled.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16368" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16368, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011DChfiq6mQ91jAVKdhSgeB">
+     1→"""Tests for pr submit command with Graphite disabled.
+     2→
+     3→This file verifies that PR submission works correctly when Graphite
+     4→is disabled (use_graphite=False), using the core path (git push + gh pr create).
+     5→"""
+     6→
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.pr import pr_group
+    10→from erk_shared.gateway.git.fake import FakeGit
+    11→from erk_shared.gateway.github.fake import FakeGitHub
+    12→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    13→from tests.fakes.prompt_executor import FakePromptExecutor
+    14→from tests.test_utils.context_builders import build_workspace_test_context
+    15→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    16→
+    17→
+    18→def _make_pr_fixtures() -&gt; tuple[PullRequestInfo, PRDetails]:
+    19→    """Create standard PR fixtures for testing."""
+    20→    pr_info = PullRequestInfo(
+    21→        number=123,
+    22→        state="OPEN",
+    23→        url="https://github.com/owner/repo/pull/123",
+    24→        is_draft=False,
+    25→        title="Feature PR",
+    26→        checks_passing=True,
+    27→        owner="owner",
+    28→        repo="repo",
+    29→    )
+    30→    pr_details = PRDetails(
+
+... [143 lines omitted] ...
+
+    92→        # Should complete (may have warnings about Graphite but not fail)
+   138→        # Should work (may have other errors but not Graphite-related)
+   140→        assert "GraphiteDisabledError" not in result.output
+   143→def test_pr_submit_without_claude_shows_proper_error() -&gt; None:
+   144→    """PR submission shows Claude error, not Graphite error, when Claude unavailable."""
+   164→        # Should fail with Claude error, not Graphite error
+  </tool_result>
+  <assistant>Now I can see the file structure. I need to:
+1. Add the two new imports at the top
+2. Find all tests with `simulated_prompt_output` and add corresponding `FakeLlmCaller` instances
+3. Update the context builder calls to include `llm_caller` parameter
+
+Let me identify the tests that need updates:
+- `test_pr_submit_core_path_succeeds_without_graphite()` (lines 77-80) - has `simulated_prompt_output`
+- `test_pr_submit_no_graphite_flag_works_without_graphite()` (lines 122-125) - has `simulated_prompt_output`
+- `test_pr_submit_without_claude_shows_proper_error()` (line 153) - does NOT have `simulated_prompt_output`, so skip
+
+Let me make the edits:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="7321" cache_read_input_tokens="16368" cache_creation="{'ephemeral_5m_input_tokens': 7321, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011N8hSgMDReLmroQk13QHmD">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit_graphite_disabled.py</param>
+    <param name="old_string">from click.testing import CliRunner
+
+from erk.cli.commands.pr import pr_group
+from erk_sha...[truncated 245 chars]... build_workspace_test_context
+from tests.test_utils.env_helpers import erk_isolated_fs_env</param>
+    <param name="new_string">from click.testing import CliRunner
+
+from erk.cli.commands.pr import pr_group
+from erk_sha...[truncated 344 chars]... build_workspace_test_context
+from tests.test_utils.env_helpers import erk_isolated_fs_env</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="7321" cache_read_input_tokens="16368" cache_creation="{'ephemeral_5m_input_tokens': 7321, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011N8hSgMDReLmroQk13QHmD">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit_graphite_disabled.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015MtRapJ7ZzFr378LrycFCZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit_graphite_disabled.py</param>
+    <param name="old_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_p...[truncated 135 chars]...ub=github,
+            prompt_executor=executor,
+            use_graphite=False,
+        )</param>
+    <param name="new_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_p...[truncated 266 chars]...tor=executor,
+            llm_caller=llm_caller,
+            use_graphite=False,
+        )</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="674" cache_read_input_tokens="23689" cache_creation="{'ephemeral_5m_input_tokens': 674, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015MtRapJ7ZzFr378LrycFCZ">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:         executor = FakePromptExecutor(
+            available=True,
+            simulated_prompt_output="fix: test change\n\nTest body",
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            prompt_executor=executor,
+            use_graphite=False,
+        )&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Good, there are two instances. Let me update them one by one by providing more context:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="508" cache_read_input_tokens="24363" cache_creation="{'ephemeral_5m_input_tokens': 508, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012HNUW8iAHsTpRMDexuPPiQ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit_graphite_disabled.py</param>
+    <param name="old_string">def test_pr_submit_core_path_succeeds_without_graphite() -&gt; None:
+    """PR submission wor...[truncated 1311 chars]...e_graphite=False,
+        )
+
+        result = runner.invoke(pr_group, ["submit"], obj=ctx)</param>
+    <param name="new_string">def test_pr_submit_core_path_succeeds_without_graphite() -&gt; None:
+    """PR submission wor...[truncated 1442 chars]...e_graphite=False,
+        )
+
+        result = runner.invoke(pr_group, ["submit"], obj=ctx)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="508" cache_read_input_tokens="24363" cache_creation="{'ephemeral_5m_input_tokens': 508, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012HNUW8iAHsTpRMDexuPPiQ">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit_graphite_disabled.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015M3amDBFobngtFGhXCu5na">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit_graphite_disabled.py</param>
+    <param name="old_string">def test_pr_submit_no_graphite_flag_works_without_graphite() -&gt; None:
+    """--no-graphite...[truncated 1341 chars]...should work
+        result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)</param>
+    <param name="new_string">def test_pr_submit_no_graphite_flag_works_without_graphite() -&gt; None:
+    """--no-graphite...[truncated 1472 chars]...should work
+        result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1263" cache_read_input_tokens="24871" cache_creation="{'ephemeral_5m_input_tokens': 1263, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015M3amDBFobngtFGhXCu5na">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit_graphite_disabled.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify the file is correctly formatted by running ruff:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1148" cache_read_input_tokens="26134" cache_creation="{'ephemeral_5m_input_tokens': 1148, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XUgv7H98xFG67LQTLcXFZr">
+    <param name="command">uv run ruff format --check tests/commands/pr/test_submit_graphite_disabled.py</param>
+    <param name="description">Check ruff formatting on updated file</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1148" cache_read_input_tokens="26134" cache_creation="{'ephemeral_5m_input_tokens': 1148, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XUgv7H98xFG67LQTLcXFZr">
+1 file already formatted
+  </tool_result>
+  <assistant>Perfect! Let me also verify the file to show the final state:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="234" cache_read_input_tokens="27282" cache_creation="{'ephemeral_5m_input_tokens': 234, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WKGcxu1jMhgBRAMVfWJf71">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit_graphite_disabled.py</param>
+    <param name="offset">1</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="234" cache_read_input_tokens="27282" cache_creation="{'ephemeral_5m_input_tokens': 234, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WKGcxu1jMhgBRAMVfWJf71">
+     1→"""Tests for pr submit command with Graphite disabled.
+     2→
+     3→This file verifies that PR submission works correctly when Graphite
+     4→is disabled (use_graphite=False), using the core path (git push + gh pr create).
+     5→"""
+     6→
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands.pr import pr_group
+    10→from erk_shared.core.fakes import FakeLlmCaller
+    11→from erk_shared.core.llm_caller import LlmResponse
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.github.fake import FakeGitHub
+    14→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    15→from tests.fakes.prompt_executor import FakePromptExecutor
+    16→from tests.test_utils.context_builders import build_workspace_test_context
+    17→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    18→
+    19→
+    20→def _make_pr_fixtures() -&gt; tuple[PullRequestInfo, PRDetails]:
+    21→    """Create standard PR fixtures for testing."""
+    22→    pr_info = PullRequestInfo(
+    23→        number=123,
+    24→        state="OPEN",
+    25→        url="https://github.com/owner/repo/pull/123",
+    26→        is_draft=False,
+    27→        title="Feature PR",
+    28→        checks_passing=True,
+    29→        owner="owner",
+    30→        repo="repo",
+
+... [75 lines omitted] ...
+
+    97→        # Should complete (may have warnings about Graphite but not fail)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01AHs3m8TZY8jCfWNMyLMyzJ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit_graphite_disabled.py</param>
+    <param name="offset">100</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1579" cache_read_input_tokens="27516" cache_creation="{'ephemeral_5m_input_tokens': 1579, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AHs3m8TZY8jCfWNMyLMyzJ">
+   100→
+   101→
+   102→def test_pr_submit_no_graphite_flag_works_without_graphite() -&gt; None:
+   103→    """--no-graphite flag works when use_graphite is already False."""
+   104→    runner = CliRunner()
+   105→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+   106→        pr_info, pr_details = _make_pr_fixtures()
+   107→
+   108→        git = FakeGit(
+   109→            git_common_dirs={env.cwd: env.git_dir},
+   110→            repository_roots={env.cwd: env.git_dir},
+   111→            local_branches={env.cwd: ["main", "feature"]},
+   112→            default_branches={env.cwd: "main"},
+   113→            trunk_branches={env.git_dir: "main"},
+   114→            current_branches={env.cwd: "feature"},
+   115→            commits_ahead={(env.cwd, "main"): 1},
+   116→            remote_urls={(env.git_dir, "origin"): "git@github.com:owner/repo.git"},
+   117→            diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+# Test change"},
+   118→        )
+   119→
+   120→        github = FakeGitHub(
+   121→            authenticated=True,
+   122→            prs={"feature": pr_info},
+   123→            pr_details={123: pr_details},
+   124→            pr_bases={123: "main"},
+   125→        )
+   126→
+   127→        executor = FakePromptExecutor(
+   128→            available=True,
+   129→            simulated_prompt_output="fix: test change\n\nTest body",
+
+... [45 lines omitted] ...
+
+   146→        # Should work (may have other errors but not Graphite-related)
+   148→        assert "GraphiteDisabledError" not in result.output
+   151→def test_pr_submit_without_claude_shows_proper_error() -&gt; None:
+   152→    """PR submission shows Claude error, not Graphite error, when Claude unavailable."""
+  </tool_result>
+  <assistant>Perfect! The updates are complete. Let me run a quick verification to ensure the tests are syntactically correct:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1287" cache_read_input_tokens="29095" cache_creation="{'ephemeral_5m_input_tokens': 1287, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QuCogqzD8SEyMkBxHahqeH">
+    <param name="command">uv run python -m py_compile tests/commands/pr/test_submit_graphite_disabled.py</param>
+    <param name="description">Check Python syntax of updated file</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1287" cache_read_input_tokens="29095" cache_creation="{'ephemeral_5m_input_tokens': 1287, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QuCogqzD8SEyMkBxHahqeH">
+
+  </tool_result>
+  <assistant>Excellent! The file compiles successfully. Let me create a summary of the changes:
+
+## Summary
+
+Successfully updated `/home/runner/work/erk/erk/tests/commands/pr/test_submit_graphite_disabled.py` to fix integration tests after the `CommitMessageGenerator` refactor.
+
+### Changes Made:
+
+1. **Added new imports** (lines 10-11):
+   ```python
+   from erk_shared.core.fakes import FakeLlmCaller
+   from erk_shared.core.llm_caller import LlmResponse
+   ```
+
+2. **Updated `test_pr_submit_core_path_succeeds_without_graphite()`** (lines 84, 91):
+   - Added `FakeLlmCaller` with the same text as `simulated_prompt_output`
+   - Passed `llm_caller=llm_caller` to `build_workspace_test_context()`
+
+3. **Updated `test_pr_submit_no_graphite_flag_works_without_graphite()`** (lines 132, 139):
+   - Added `FakeLlmCaller` with the same text as `simulated_prompt_output`
+   - Passed `llm_caller=llm_caller` to `build_workspace_test_context()`
+
+4. **Left `test_pr_submit_without_claude_shows_proper_error()` unchanged**:
+   - This test doesn't use `simulated_prompt_output`, so no `llm_caller` was added
+
+### Verification:
+
+- ✅ File passes `ruff format --check` (already formatted)
+- ✅ File compiles successfully with `python -m py_compile`
+- ✅ All existing code and behavior preserved
+- ✅ Only added necessary `llm_caller` lines and kwargs as requested
+
+The tests are now ready to work with the refactored `CommitMessageGenerator` that uses `ctx.llm_caller` instead of `ctx.prompt_executor`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="147" cache_read_input_tokens="30382" cache_creation="{'ephemeral_5m_input_tokens': 147, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+</session>
