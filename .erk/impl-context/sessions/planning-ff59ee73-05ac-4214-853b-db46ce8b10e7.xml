@@ -1,0 +1,1163 @@
+<session>
+  <meta branch="plnd/split-test-capabilities-03-06-0146" />
+  <meta model="claude-opus-4-6" />
+  <user> User declined to answer questions
+
+❯ /plan
+  ⎿  Current Plan
+     /Users/schrockn/.claude/plans/prancy-floating-moon.md
+
+     Create module-to-subpackage skill
+
+     Context
+
+     During a session splitting test_capabilities.py (1,972 lines) into 11
+     submodules, we identified a repeatable process for converting monolithic Python
+     modules into subpackages. This skill captures that process so agents can execute
+      it reliably on any large module.
+
+     Plan
+
+     Create .claude/skills/module-to-subpackage/SKILL.md with the following
+     content:
+
+     ---
+     ---
+     name: module-to-subpackage
+     description: &gt;
+       Guide for converting a monolithic Python module into a subpackage with
+     submodules.
+       Use when breaking apart a large .py file into a directory of smaller modules,
+       splitting a module into a package, reorganizing a single file into
+     subdirectories,
+       or when a user says things like "split this module", "break this file apart",
+       "convert to subpackage", or "this file is too big". Also use when a user
+     identifies
+       a large Python file and wants to reorganize it without changing behavior.
+     ---
+
+     Module to Subpackage
+
+     Convert a monolithic Python module into a subpackage with submodules while
+     preserving all behavior. This is a pure mechanical reorganization — no logic
+     changes, no fixes to pre-existing issues, no improvements.
+
+     Core Principle: Pure Reorg
+
+     This refactoring must be behavior-preserving. Copy code verbatim. Do not:
+     - Fix pre-existing lint/style issues (they'll show up in review — resolve as
+     "pre-existing")
+     - Rename functions or change signatures
+     - "Improve" code while moving it
+     - Add or remove functionality
+
+     The goal is a clean diff that only moves code between files. Reviewers should be
+      able to verify the split is correct by confirming every line in the old file
+     appears in exactly one new file.
+
+     Phase 1: Structural Inventory
+
+     Understand the monolith before designing the split.
+
+     Scan for boundaries:
+     # Section headers and definitions with line numbers
+     grep -n "^# ==\|^class \|^def " &lt;file&gt;
+
+     Capture:
+     - All section comment blocks (these are natural split boundaries)
+     - All class definitions and their line ranges
+     - All top-level function definitions
+     - All imports at the top of the file
+     - Total count of top-level definitions (classes + functions)
+     - Any module-level helpers or constants
+
+     Why this matters: Section headers placed by the original author reveal the
+     intended logical grouping. Classes and functions without headers between them
+     likely belong together.
+
+     Phase 2: Target Discovery
+
+     Check if the destination already has structure.
+
+     Check for existing subpackage:
+     # If splitting foo.py, check for foo/ directory
+     ls &lt;target_directory&gt;/
+
+     Determine:
+     - Does the target directory already exist? (common for test files)
+     - Are there existing files that overlap with planned new files?
+     - Is there an __init__.py? (required for test directories in this project)
+     - What patterns do existing files in the directory follow?
+
+     If existing files overlap: You'll need to merge in Phase 5 rather than
+     create fresh.
+
+     Phase 3: Grouping Design
+
+     Map sections of the monolith to new files. Present this as a table for user
+     review before proceeding.
+
+     Grouping heuristics (in priority order):
+     1. Author's sections — Comment headers like # === Tests for Foo === are
+     the strongest signal
+     2. Feature cohesion — Code testing/implementing the same feature belongs
+     together
+     3. Import cohesion — Code sharing the same specialized imports likely
+     belongs together
+     4. Size balance — Avoid files with fewer than ~20 lines (merge with a
+     neighbor) or more than ~500 lines (split further)
+
+     File naming: Match the concept being grouped, not the original file name.
+     - test_capabilities.py → test_workflows.py, test_permissions.py,
+     test_registry.py
+     - utils.py → string_utils.py, path_utils.py, date_utils.py
+
+     Present a mapping table:
+
+     ┌──────────────┬───────────────────────────────┬──────────────────────┬────────┐
+     │   New file   │    Sections (line ranges)     │   What it contains   │ ~Lines │
+     ├──────────────┼───────────────────────────────┼──────────────────────┼────────┤
+     │ test_base.py │ CapabilityResult (47-58), ... │ Core data structures │ ~100   │
+     ├──────────────┼───────────────────────────────┼──────────────────────┼────────┤
+     │ ...          │ ...                           │ ...                  │ ...    │
+     └──────────────┴───────────────────────────────┴──────────────────────┴────────┘
+
+     Phase 4: Shared Code Placement
+
+     Identify code used across multiple sections and decide where it lives.
+
+     Types of shared code:
+     - Helper functions (e.g., _write_state_toml())
+     - Helper classes (e.g., _TestCapability)
+     - Constants and fixtures
+     - Module-level configuration
+
+     Placement rules:
+     - 1 consumer → place in that consumer's file
+     - 2 consumers → place in the primary consumer's file (the one that uses it
+     more)
+     - 3+ consumers → consider a _helpers.py or conftest.py (for test
+     fixtures), but only if truly necessary. Duplication across 2-3 files is often
+     preferable to an artificial shared module.
+
+     Phase 5: Execution
+
+     Create new files
+
+     For each file in the mapping:
+     1. Write the module docstring (brief, describes what this file tests/contains)
+     2. Add only the imports needed by the functions in this file
+     3. Copy the functions/classes verbatim from the monolith
+     4. Preserve section comment headers within the file
+
+     Merge into existing files
+
+     When a target file already exists:
+     1. Read the existing file completely
+     2. Compare tests/functions by behavior, not by name — two functions testing
+     the same thing with different names are duplicates
+     3. Append only non-duplicate code to the end of the existing file
+     4. Add appropriate section headers to separate old and new content
+
+     Fix mechanical issues
+
+     After creating all files:
+     # Fix import sorting (the most common issue after splitting)
+     uv run ruff check --fix &lt;new_files&gt;
+
+     Delete the original
+
+     Only after all new files are created and verified:
+     rm &lt;original_monolith.py&gt;
+
+     Phase 6: Verification
+
+     Count definitions:
+     # Before (from git history or memory)
+     grep -c "^def \|^class " &lt;original_file&gt;
+
+     # After (across all new files)
+     grep -rch "^def \|^class " &lt;new_files&gt; | paste -sd+ - | bc
+
+     The after count should equal or exceed the before count (excess comes from
+     pre-existing files that were merged into).
+
+     Check for dangling references:
+     # Ensure nothing imports or references the deleted file
+     grep -r "&lt;original_module_name&gt;" &lt;project_root&gt;
+
+     Run tests and linter (use devrun agent):
+     - Run the test suite for the affected directory
+     - Run linter checks
+     - Run type checker
+
+     Phase 7: PR Workflow
+
+     Pure reorg discipline
+
+     When review comments flag issues in the moved code:
+     - If the issue existed in the original file → resolve as pre-existing
+     - Reply: "Pre-existing: this [issue] was copied verbatim from the original
+     &lt;file&gt;. Not addressing in this pure reorg PR."
+     - Then resolve the thread
+
+     Load the pr-operations skill (@.claude/skills/pr-operations/) for correct
+     thread resolution commands. Key points:
+     - Use erk exec get-pr-review-comments to fetch threads with proper thread IDs
+     - Use erk exec resolve-review-thread --thread-id &lt;PRRT_id&gt; --comment "..." to
+     reply AND resolve
+     - Use erk exec resolve-review-threads for batch resolution
+     - Never use raw gh api for thread operations (replies without resolving)
+
+     Commit message
+
+     Format: Split &lt;module&gt; into &lt;subpackage&gt; subpackage (#&lt;PR&gt;)
+
+     The PR description should include:
+     - The mapping table from Phase 3
+     - Before/after definition counts
+     - Note that this is a pure reorg with no behavior changes
+
+     ---
+     Files to create
+
+     ┌──────────────────────────────────────────────┬─────────────────────────┐
+     │                     File                     │         Content         │
+     ├──────────────────────────────────────────────┼─────────────────────────┤
+     │ .claude/skills/module-to-subpackage/SKILL.md │ The skill content above │
+     └──────────────────────────────────────────────┴─────────────────────────┘
+
+     Verification
+
+     - Skill file parses valid YAML frontmatter
+     - Skill appears in erk cap list or skill registry (if applicable)
+     - Read the skill and verify it's complete and actionable
+
+     "/plan open" to edit this plan in VS Code
+
+plan this</user>
+  <usage input_tokens="3" cache_creation_input_tokens="17584" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17584}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the existing skill structure to validate this plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="17584" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17584}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_017wHKHeLs9z9xz8rhGVJvGx">
+    <param name="query">select:Agent,Read,Glob</param>
+    <param name="max_results">3</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17584" cache_read_input_tokens="0" output_tokens="156" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 17584, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_017wHKHeLs9z9xz8rhGVJvGx">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="3306" cache_read_input_tokens="17584" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3306}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01VpHyPbeQmtcGpqHSo4qwCG">
+    <param name="pattern">.claude/skills/*/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3306" cache_read_input_tokens="17584" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3306}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0186NuuXSPZP1BvgEoehF58d">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/skills/pr-operations/SKILL.md</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3306" cache_read_input_tokens="17584" output_tokens="166" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3306, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0186NuuXSPZP1BvgEoehF58d">
+     1→---
+     2→name: pr-operations
+     3→description: Use when working with PR review comments, resolving threads, or replying to discussion comments. Essential for understanding the correct erk exec commands for PR thread operations.
+     4→---
+     5→
+     6→# PR Operations Skill
+     7→
+     8→## Core Rule
+     9→
+    10→&gt; **CRITICAL: Use ONLY `erk exec` Commands for PR Thread Operations**
+    11→&gt;
+    12→&gt; - ❌ DO NOT use raw `gh api` calls for thread operations
+    13→&gt; - ❌ DO NOT use `gh pr` commands directly for thread resolution
+    14→&gt; - ✅ ONLY use `erk exec` commands listed below
+    15→&gt;
+    16→&gt; The `erk exec` commands handle thread resolution correctly. Raw API calls only reply without resolving.
+    17→
+    18→## Quick Reference
+    19→
+    20→| Command                       | Purpose                           | Key Point                          |
+    21→| ----------------------------- | --------------------------------- | ---------------------------------- |
+    22→| `get-pr-review-comments`      | Fetch unresolved review threads   | Returns threads with line info     |
+    23→| `get-pr-discussion-comments`  | Fetch PR discussion comments      | Returns top-level comments         |
+    24→| `resolve-review-thread`       | Reply AND resolve a single thread | Does both in one operation         |
+    25→| `resolve-review-threads`      | Batch resolve multiple threads    | JSON stdin, one call for N threads |
+    26→| `reply-to-discussion-comment` | Reply to discussion comment       | For non-code feedback              |
+    27→| `post-pr-inline-comment`      | Post new inline comment           | Creates new review thread          |
+    28→
+    29→## When to Use Each Command
+    30→
+  </tool_result>
+  <tool_result tool="toolu_01VpHyPbeQmtcGpqHSo4qwCG">
+/Users/schrockn/code/erk/.claude/skills/erk-diff-analysis/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/ci-iteration/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/command-creator/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/fake-driven-testing/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/gh/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/dignified-python/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/pr-operations/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/cli-skill-creator/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/gt/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/dignified-code-simplifier/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/erk-planning/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/learned-docs/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/objective/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/rename-swarm/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/session-inspector/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/pr-feedback-classifier/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/erk-exec/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/cli-push-down/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/erk-skill-onboarding/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/skill-creator/SKILL.md
+/Users/schrockn/code/erk/.claude/skills/cmux/SKILL.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GE7pAM77UkeNJmNVhAdDzr">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/skills/erk-skill-onboarding/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="483" cache_creation_input_tokens="759" cache_read_input_tokens="20890" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 759}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GE7pAM77UkeNJmNVhAdDzr">
+     1→---
+     2→name: erk-skill-onboarding
+     3→description: &gt;
+     4→  Guide for adding new skills to the erk project. Use when creating a new skill, registering
+     5→  a skill in bundled/unbundled registries, classifying codex portability, or debugging why a
+     6→  skill isn't appearing in tests or capability lists.
+     7→---
+     8→
+     9→# Erk Skill Onboarding
+    10→
+    11→Complete guide for adding a new skill to erk. Covers the decision tree, every file you need to touch, and which tests validate each registration.
+    12→
+    13→## Decision Tree
+    14→
+    15→Answer three questions to determine which files to update:
+    16→
+    17→### 1. Bundled or Unbundled?
+    18→
+    19→- **Bundled** = distributed to external projects via `erk init capability add &lt;name&gt;`
+    20→- **Unbundled** = lives in `.claude/skills/` but is only used within the erk repo itself
+    21→
+    22→### 2. Codex Portable or Claude-Only?
+    23→
+    24→- **Codex Portable** = works with any AI agent (no Claude-specific features like hooks, session logs, slash commands)
+    25→- **Claude-Only** = references Claude Code features (hooks, session logs, `$` skill references, slash commands)
+    26→
+    27→### 3. Required or Optional? (bundled only)
+    28→
+    29→- **Required** = auto-installed by `erk init` (core workflow skills)
+    30→- **Optional** = user opts in via `erk init capability add`
+
+... [123 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01AqwuwbcfcV3HNLPATqCyhC">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/skills/rename-swarm/SKILL.md</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="483" cache_creation_input_tokens="759" cache_read_input_tokens="20890" output_tokens="160" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 759, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AqwuwbcfcV3HNLPATqCyhC">
+     1→---
+     2→name: rename-swarm
+     3→description: Parallel bulk rename across many files using a swarm of haiku agents. Use when mechanically renaming identifiers, parameters, or keys across 5+ files.
+     4→---
+     5→
+     6→You are an expert at orchestrating parallel mechanical renames across large codebases using swarms of lightweight agents. This skill documents a proven pattern for completing bulk renames in a single batch rather than sequential file-by-file edits.
+     7→
+     8→## When to Use
+     9→
+    10→- Renaming an identifier, parameter, key, or variable across **5+ files**
+    11→- The renames are **mechanical** — same find-and-replace logic in each file, no reasoning required
+    12→- Files are **independent** — editing file A doesn't affect what needs to change in file B
+    13→- Examples: renaming `issue_number` to `plan_number`, renaming `old_func` to `new_func`, updating a key name across config consumers
+    14→
+    15→## When NOT to Use
+    16→
+    17→- **Cross-file cascading refactors** where renaming a shared type changes method signatures, requiring each file to adapt differently
+    18→- **Renames requiring judgment** — e.g., "rename this concept" where each call site needs context-aware naming
+    19→- **Fewer than 5 files** — sequential edits are simpler and have less overhead
+    20→- **Complex AST transforms** — use `libcst-refactor` agent instead
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3446" cache_read_input_tokens="21649" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3446}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check the registration files to confirm the exact code locations.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3446" cache_read_input_tokens="21649" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3446}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01YQEBcB3DW1G7sv8yJ6kh2p">
+    <param name="query">select:Grep</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3446" cache_read_input_tokens="21649" output_tokens="346" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3446, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01YQEBcB3DW1G7sv8yJ6kh2p">
+
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01MKEbV3XfZoQk6Uy7CjYbqs">
+    <param name="pattern">_UNBUNDLED_SKILLS</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/capabilities/skills/bundled.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1335" cache_read_input_tokens="25095" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1335}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MKEbV3XfZoQk6Uy7CjYbqs">
+17:_UNBUNDLED_SKILLS: frozenset[str] = frozenset(
+18-    {
+19-        "ci-iteration",
+20-        "cli-skill-creator",
+21-        "cmux",
+22-        "command-creator",
+23-        "learned-docs",  # has its own capability class (LearnedDocsCapability)
+24-        "rename-swarm",
+25-        "session-inspector",
+26-        "erk-skill-onboarding",
+27-        "skill-creator",
+28-    }
+29-)
+30-
+31-_REQUIRED_BUNDLED_SKILLS: frozenset[str] = frozenset(
+32-    {
+--
+63:    return _UNBUNDLED_SKILLS
+64-
+65-
+66-def is_required_bundled_skill(skill_name: str) -&gt; bool:
+67-    """Return True if the given skill name is a required bundled skill."""
+68-    return skill_name in _REQUIRED_BUNDLED_SKILLS
+69-
+70-
+71-class BundledSkillCapability(SkillCapability):
+72-    """Concrete SkillCapability for skills registered via bundled_skills() dict."""
+73-
+74-    def __init__(self, *, _skill_name: str, _description: str) -&gt; None:
+75-        self._skill_name = _skill_name
+
+... [3 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01SWnEr9LwZ5Bxx2idVogC29">
+    <param name="pattern">claude_only_skills</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/core/capabilities/codex_portable.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1335" cache_read_input_tokens="25095" output_tokens="259" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1335, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SWnEr9LwZ5Bxx2idVogC29">
+6:Skills in claude_only_skills() reference Claude-specific features like hooks,
+7-session logs, or Claude Code commands and cannot be ported to Codex.
+8-"""
+9-
+10-from functools import cache
+11-
+12-
+13-@cache
+14-def codex_portable_skills() -&gt; frozenset[str]:
+15-    """Skills that work with any AI coding agent (not Claude-specific)."""
+16-    return frozenset(
+17-        {
+18-            "cli-push-down",
+19-            "dignified-python",
+20-            "fake-driven-testing",
+21-            "erk-diff-analysis",
+--
+36:def claude_only_skills() -&gt; frozenset[str]:
+37-    """Skills that reference Claude-specific features (hooks, session logs, commands)."""
+38-    return frozenset(
+39-        {
+40-            "cmux",
+41-            "session-inspector",
+42-            "ci-iteration",
+43-            "command-creator",
+44-            "cli-skill-creator",
+45-            "rename-swarm",
+46-            "erk-skill-onboarding",
+47-            "skill-creator",
+48-        }
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I have all the information needed. This skill is:
+- **Unbundled** (erk-internal, not distributed)
+- **Claude-only** (references devrun agent, PR operations)
+
+Now let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1098" cache_read_input_tokens="26430" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1098}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01N6zhyUF4PB69HVceKeN8Xx">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1098" cache_read_input_tokens="26430" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1098, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01N6zhyUF4PB69HVceKeN8Xx">
+
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_017GJ1yfHngijsEofcm5c4MZ">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="523" cache_read_input_tokens="27528" output_tokens="79" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 523, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_017GJ1yfHngijsEofcm5c4MZ">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01MNwNN5fqT8HCFHLRsJWZ9w">
+    <param name="file_path">/Users/schrockn/.claude/plans/reactive-sprouting-sky.md</param>
+    <param name="content"># Create module-to-subpackage skill
+
+## Context
+
+During a session splitting `test_capabili...[truncated 1562 chars]...ests pass
+- Verify skill frontmatter parses (name matches directory, description present)
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="741" cache_read_input_tokens="28051" output_tokens="587" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 741, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MNwNN5fqT8HCFHLRsJWZ9w">
+File created successfully at: /Users/schrockn/.claude/plans/reactive-sprouting-sky.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01MRRkYxtiaUqvNPCMgR4eiz">
+    <param name="plan"># Create module-to-subpackage skill
+
+## Context
+
+During a session splitting `test_capabili...[truncated 1562 chars]...ests pass
+- Verify skill frontmatter parses (name matches directory, description present)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="626" cache_read_input_tokens="28792" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 626, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MRRkYxtiaUqvNPCMgR4eiz">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/reactive-sprouting-sky.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Create module-to-subpackage skill
+Current context: (wt:erk) (br:plnd/split-test-capabilities-03-06-0146) (pr:#8824)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/spli"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id ff59ee73-05ac-4214-853b-db46ce8b10e7 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/reactive-sprouting-sky.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Create module-to-subpackage skill
+
+## Context
+
+During a session splitting `test_capabilities.py` into submodules, a repeatable process was identified for converting monolithic Python modules into subpackages. This skill captures that process so agents can execute it reliably on any large module.
+
+## Plan
+
+### 1. Create skill file
+
+Create `.claude/skills/module-to-subpackage/SKILL.md` with the content from the existing plan (`prancy-floating-moon.md`). The skill covers 7 phases: structural inventory, target discovery, grouping design, shared code placement, execution, verification, and PR workflow.
+
+### 2. Register as unbundled + claude-only (3 file touches per onboarding skill)
+
+- **`src/erk/capabilities/skills/bundled.py`** — Add `"module-to-subpackage"` to `_UNBUNDLED_SKILLS` frozenset
+- **`src/erk/core/capabilities/codex_portable.py`** — Add `"module-to-subpackage"` to `claude_only_skills()`
+- No `pyproject.toml` changes needed (unbundled skills skip force-include)
+
+## Files to modify
+
+| File | Change |
+|------|--------|
+| `.claude/skills/module-to-subpackage/SKILL.md` | Create (skill content) |
+| `src/erk/capabilities/skills/bundled.py` | Add to `_UNBUNDLED_SKILLS` |
+| `src/erk/core/capabilities/codex_portable.py` | Add to `claude_only_skills()` |
+
+## Verification
+
+- Run `make fast-ci` via devrun agent to confirm registration tests pass
+- Verify skill frontmatter parses (name matches directory, description present)
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="655" cache_read_input_tokens="29418" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 655}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_014KUWEhqB8UycYQYthA6cxP">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="655" cache_read_input_tokens="29418" output_tokens="513" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 655, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_014KUWEhqB8UycYQYthA6cxP">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01PD3J9WfbBufxEoAZLZrwjM">
+    <param name="questions">[{'question': '📋 Create module-to-subpackage skill\nCurrent context: (wt:erk) (br:plnd/spl...[truncated 413 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1863" cache_read_input_tokens="30073" output_tokens="237" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1863, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PD3J9WfbBufxEoAZLZrwjM">
+User has answered your questions: "📋 Create module-to-subpackage skill
+Current context: (wt:erk) (br:plnd/split-test-capabilities-03-06-0146) (pr:#8824)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01NzVAND7Bf39w5zkvpyKY99">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="336" cache_read_input_tokens="31936" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 336, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01NzVAND7Bf39w5zkvpyKY99">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01D9GFAiFsLnugSfcPkwJA7c">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="568" cache_read_input_tokens="32272" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 568, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01D9GFAiFsLnugSfcPkwJA7c">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="ff59ee73-05ac-4214-853b-db46ce8b10e7" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="ff59ee73-05ac-4214-853b-db46ce8b10e7" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "ff59ee73-05ac-4214-853b-db46ce8b10e7" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "ff59ee73-05ac-4214-853b-db46ce8b10e7" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "ff59ee73-05ac-4214-853b-db46ce8b10e7" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "ff59ee73-05ac-4214-853b-db46ce8b10e7" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me execute the plan save steps.
+
+**Branch slug:** `create-module-to-subpackage-skill`
+
+**Plan summary:** Captures the repeatable process for converting monolithic Python modules into subpackages as a reusable skill. Creates the SKILL.md with a 7-phase workflow and registers it as an unbundled, Claude-only skill.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2384" cache_read_input_tokens="32840" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2384}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_015bSRcVoevEJoyQ7fmEo68i">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2384" cache_read_input_tokens="32840" output_tokens="158" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2384, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_015bSRcVoevEJoyQ7fmEo68i">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01TjJF3ECmagYBhdPiVCpkS1">
+    <param name="command">erk exec plan-save --format json --session-id="ff59ee73-05ac-4214-853b-db46ce8b10e7" --bra...[truncated 156 chars]...he SKILL.md with a 7-phase workflow and registers it as an unbundled, Claude-only skill." </param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3403" cache_read_input_tokens="35224" output_tokens="219" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3403, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TjJF3ECmagYBhdPiVCpkS1">
+{"success": true, "plan_number": 8825, "plan_url": "https://github.com/dagster-io/erk/pull/8825", "title": "[erk-plan] Create module-to-subpackage skill", "branch_name": "plnd/create-module-to-subpackag-03-06-0351", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/ff59ee73-05ac-4214-853b-db46ce8b10e7/plan_snapshots/000001-5c881673"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SBF8T1CtDeFnBh1JvXv2DP">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null | head -5</param>
+    <param name="description">Get session file path for push-session</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="381" cache_read_input_tokens="38627" output_tokens="111" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 381, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SBF8T1CtDeFnBh1JvXv2DP">
+SESSION_ID=ff59ee73-05ac-4214-853b-db46ce8b10e7
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/ff59ee73-05ac-4214-853b-db46ce8b10e7.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WtizrSnsGo7RNj8AcLN6dD">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 58 chars]...4214-853b-db46ce8b10e7" --stage planning --source local --plan-id 8825 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="202" cache_read_input_tokens="39008" output_tokens="202" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 202, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WtizrSnsGo7RNj8AcLN6dD">
+{"uploaded": true, "plan_id": 8825, "session_branch": "async-learn/8825", "session_id": "ff59ee73-05ac-4214-853b-db46ce8b10e7", "stage": "planning", "files": ["planning-ff59ee73-05ac-4214-853b-db46ce8b10e7-ff59ee73-05ac-4214-853b-db46ce8b10e7.xml"]}
+  </tool_result>
+  <assistant>Plan **"Create module-to-subpackage skill"** saved as draft PR **#8825**
+URL: https://github.com/dagster-io/erk/pull/8825</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="330" cache_read_input_tokens="39210" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 330}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01SLnC2CM3ARhHr6cXkCQc8o">
+    <param name="plan"># Create module-to-subpackage skill
+
+## Context
+
+During a session splitting `test_capabili...[truncated 1562 chars]...ests pass
+- Verify skill frontmatter parses (name matches directory, description present)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="330" cache_read_input_tokens="39210" output_tokens="83" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 330, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SLnC2CM3ARhHr6cXkCQc8o">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8825 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8825:
+  In current wt:    source "$(erk br co --for-plan 8825 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8825 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8825 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8825 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8825:
+  In current wt:  erk br co --for-plan 8825
+  In new wt:      erk br co --new-slot --for-plan 8825
+
+Dispatch plan #8825:
+  CLI command:    erk pr dispatch 8825
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan saved successfully. Here are your next steps:
+
+**Implement plan #8825:**
+- In current wt: `source "$(erk br co --for-plan 8825 --script)" &amp;&amp; erk implement`
+  - (dangerously): `source "$(erk br co --for-plan 8825 --script)" &amp;&amp; erk implement -d`
+- In new wt: `source "$(erk br co --new-slot --for-plan 8825 --script)" &amp;&amp; erk implement`
+  - (dangerously): `source "$(erk br co --new-slot --for-plan 8825 --script)" &amp;&amp; erk implement -d`
+
+**Checkout plan #8825:**
+- In current wt: `erk br co --for-plan 8825`
+- In new wt: `erk br co --new-slot --for-plan 8825`
+
+**Dispatch plan #8825:**
+- CLI command: `erk pr dispatch 8825`
+- Slash command: `/erk:pr-dispatch`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1661" cache_read_input_tokens="39540" output_tokens="250" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1661, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>looks like we lost a lot of context from the original plan i copied into this session</user>
+  <assistant>
+
+You're right — the plan file at `reactive-sprouting-sky.md` has my condensed version, but the original detailed plan was in `prancy-floating-moon.md`. Let me read both to see what we're working with.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="492" cache_read_input_tokens="41201" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 492}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LPuBcM3X911YV6rMLXaifS">
+    <param name="file_path">/Users/schrockn/.claude/plans/prancy-floating-moon.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="492" cache_read_input_tokens="41201" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 492}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Cvp5TkDYUK6cciVLJt5ho6">
+    <param name="file_path">/Users/schrockn/.claude/plans/reactive-sprouting-sky.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="492" cache_read_input_tokens="41201" output_tokens="182" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 492, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Cvp5TkDYUK6cciVLJt5ho6">
+     1→# Create module-to-subpackage skill
+     2→
+     3→## Context
+     4→
+     5→During a session splitting `test_capabilities.py` into submodules, a repeatable process was identified for converting monolithic Python modules into subpackages. This skill captures that process so agents can execute it reliably on any large module.
+     6→
+     7→## Plan
+     8→
+     9→### 1. Create skill file
+    10→
+    11→Create `.claude/skills/module-to-subpackage/SKILL.md` with the content from the existing plan (`prancy-floating-moon.md`). The skill covers 7 phases: structural inventory, target discovery, grouping design, shared code placement, execution, verification, and PR workflow.
+    12→
+    13→Key aspects of the skill content:
+    14→- YAML frontmatter with `name: module-to-subpackage` and description with trigger phrases
+    15→- Pure reorg discipline (no logic changes)
+    16→- Phase-based workflow from inventory through verification
+    17→- PR workflow guidance including pre-existing issue resolution pattern
+    18→
+    19→### 2. Register as unbundled + claude-only (3 file touches per onboarding skill)
+    20→
+    21→**`src/erk/capabilities/skills/bundled.py`** — Add `"module-to-subpackage"` to `_UNBUNDLED_SKILLS` frozenset (line ~17)
+    22→
+    23→**`src/erk/core/capabilities/codex_portable.py`** — Add `"module-to-subpackage"` to `claude_only_skills()` (line ~36)
+    24→
+    25→No `pyproject.toml` changes needed (unbundled skills skip force-include).
+    26→
+    27→## Files to modify
+    28→
+    29→| File | Change |
+    30→|------|--------|
+
+... [9 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01LPuBcM3X911YV6rMLXaifS">
+     1→# Create module-to-subpackage skill
+     2→
+     3→## Context
+     4→
+     5→During a session splitting `test_capabilities.py` (1,972 lines) into 11 submodules, we identified a repeatable process for converting monolithic Python modules into subpackages. This skill captures that process so agents can execute it reliably on any large module.
+     6→
+     7→## Plan
+     8→
+     9→Create `.claude/skills/module-to-subpackage/SKILL.md` with the following content:
+    10→
+    11→---
+    12→
+    13→```yaml
+    14→---
+    15→name: module-to-subpackage
+    16→description: &gt;
+    17→  Guide for converting a monolithic Python module into a subpackage with submodules.
+    18→  Use when breaking apart a large .py file into a directory of smaller modules,
+    19→  splitting a module into a package, reorganizing a single file into subdirectories,
+    20→  or when a user says things like "split this module", "break this file apart",
+    21→  "convert to subpackage", or "this file is too big". Also use when a user identifies
+    22→  a large Python file and wants to reorganize it without changing behavior.
+    23→---
+    24→```
+    25→
+    26→# Module to Subpackage
+    27→
+    28→Convert a monolithic Python module into a subpackage with submodules while preserving all behavior. This is a pure mechanical reorganization — no logic changes, no fixes to pre-existing issues, no improvements.
+    29→
+    30→## Core Principle: Pure Reorg
+
+... [178 lines omitted] ...
+  </tool_result>
+  <assistant>The original plan in `prancy-floating-moon.md` has the full skill content (lines 10-194). My condensed plan in `reactive-sprouting-sky.md` just references it. The PR #8825 body should have captured the full content from the plan file that was active at save time.
+
+The good news is all the content is still here — `prancy-floating-moon.md` has the complete SKILL.md content. Want me to implement now? I have everything I need:
+
+1. **SKILL.md content** — lines 12-194 of `prancy-floating-moon.md`
+2. **Registration** — add to `_UNBUNDLED_SKILLS` and `claude_only_skills()`
+3. **Verification** — run fast-ci via devrun</assistant>
+  <usage input_tokens="659" cache_creation_input_tokens="2969" cache_read_input_tokens="41693" output_tokens="186" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2969, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>i want you to update the planned pr 8825</user>
+  <usage input_tokens="3" cache_creation_input_tokens="1008" cache_read_input_tokens="44662" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1008}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the current PR body and then update it with the full plan content.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1008" cache_read_input_tokens="44662" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1008}" output_tokens="14" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01W4Q18uFUu62qYdL2pwAcks">
+    <param name="command">gh pr view 8825 --json body --jq '.body' | head -20</param>
+    <param name="description">Check current PR #8825 body</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1008" cache_read_input_tokens="44662" output_tokens="172" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1008, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01W4Q18uFUu62qYdL2pwAcks">
+Captures the repeatable process for converting monolithic Python modules into subpackages as a reusable skill. Creates the SKILL.md with a 7-phase workflow and registers it as an unbundled, Claude-only skill.
+
+&lt;details&gt;
+&lt;summary&gt;original-plan&lt;/summary&gt;
+
+# Create module-to-subpackage skill
+
+## Context
+
+During a session splitting `test_capabilities.py` into submodules, a repeatable process was identified for converting monolithic Python modules into subpackages. This skill captures that process so agents can execute it reliably on any large module.
+
+## Plan
+
+### 1. Create skill file
+
+Create `.claude/skills/module-to-subpackage/SKILL.md` with the content from the existing plan (`prancy-floating-moon.md`). The skill covers 7 phases: structural inventory, target discovery, grouping design, shared code placement, execution, verification, and PR workflow.
+
+Key aspects of the skill content:
+- YAML frontmatter with `name: module-to-subpackage` and description with trigger phrases
+- Pure reorg discipline (no logic changes)
+  </tool_result>
+  <assistant>Right — the PR body has the condensed plan, not the full skill content. Let me update it with the complete plan from `prancy-floating-moon.md`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="45670" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 435}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013o7t2PBX2Xe7XPPhPeg67t">
+    <param name="command">gh pr view 8825 --json body --jq '.body'</param>
+    <param name="description">Get full PR body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="435" cache_read_input_tokens="45670" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 435, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013o7t2PBX2Xe7XPPhPeg67t">
+Captures the repeatable process for converting monolithic Python modules into subpackages as a reusable skill. Creates the SKILL.md with a 7-phase workflow and registers it as an unbundled, Claude-only skill.
+
+&lt;details&gt;
+&lt;summary&gt;original-plan&lt;/summary&gt;
+
+# Create module-to-subpackage skill
+
+## Context
+
+During a session splitting `test_capabilities.py` into submodules, a repeatable process was identified for converting monolithic Python modules into subpackages. This skill captures that process so agents can execute it reliably on any large module.
+
+## Plan
+
+### 1. Create skill file
+
+Create `.claude/skills/module-to-subpackage/SKILL.md` with the content from the existing plan (`prancy-floating-moon.md`). The skill covers 7 phases: structural inventory, target discovery, grouping design, shared code placement, execution, verification, and PR workflow.
+
+Key aspects of the skill content:
+- YAML frontmatter with `name: module-to-subpackage` and description with trigger phrases
+- Pure reorg discipline (no logic changes)
+- Phase-based workflow from inventory through verification
+- PR workflow guidance including pre-existing issue resolution pattern
+
+### 2. Register as unbundled + claude-only (3 file touches per onboarding skill)
+
+**`src/erk/capabilities/skills/bundled.py`** — Add `"module-to-subpackage"` to `_UNBUNDLED_SKILLS` frozenset (line ~17)
+
+**`src/erk/core/capabilities/codex_portable.py`** — Add `"module-to-subpackage"` to `claude_only_skills()` (line ~36)
+
+No `pyproject.toml` changes needed (unbundled skills skip force-include).
+
+... [58 lines omitted] ...
+
+&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+  </tool_result>
+  <assistant>Now I need to construct the updated body with the full plan from `prancy-floating-moon.md`. I'll replace the `original-plan` details section with the full content.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1089" cache_read_input_tokens="46105" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1089}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Tb2eXgkQgfVBAyXnqaSipb">
+    <param name="command">cat &gt; /tmp/pr-body-8825.md &lt;&lt; 'ENDOFBODY'
+Captures the repeatable process for converting m...[truncated 8098 chars]...nt)
+
+&lt;/details&gt;
+ENDOFBODY
+echo "Body file written ($(wc -l &lt; /tmp/pr-body-8825.md) lines)"</param>
+    <param name="description">Write full plan body to temp file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1089" cache_read_input_tokens="46105" output_tokens="2324" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1089, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Tb2eXgkQgfVBAyXnqaSipb">
+Body file written (     219 lines)
+  </tool_result>
+  <assistant>Now I need to preserve the existing metadata block and append it to the new body.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2344" cache_read_input_tokens="47194" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2344}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SS2f1oYJL36s6qig8gT1y5">
+    <param name="command">gh pr view 8825 --json body --jq '.body' | sed -n '/&lt;!-- WARNING: Machine-generated/,$p' &gt;&gt; /tmp/pr-body-8825.md &amp;&amp; echo "Metadata appended ($(wc -l &lt; /tmp/pr-body-8825.md) total lines)"</param>
+    <param name="description">Append existing metadata block to new body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2344" cache_read_input_tokens="47194" output_tokens="165" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2344, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SS2f1oYJL36s6qig8gT1y5">
+Metadata appended (     261 total lines)
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016Y2snM8WLDLLMyYJ2yjGyp">
+    <param name="command">gh pr edit 8825 --body-file /tmp/pr-body-8825.md</param>
+    <param name="description">Update PR #8825 body with full plan content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="187" cache_read_input_tokens="49538" output_tokens="100" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 187, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016Y2snM8WLDLLMyYJ2yjGyp">
+https://github.com/dagster-io/erk/pull/8825
+  </tool_result>
+  <assistant>Updated PR #8825 with the full plan content — all 7 phases, registration steps, and verification criteria are now in the PR body.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="240" cache_read_input_tokens="49725" output_tokens="34" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 240, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>
