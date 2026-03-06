@@ -394,11 +394,6 @@ def test_doctor_shows_remediation_for_warnings() -> None:
             default_branches={env.cwd: "main"},
         )
 
-        # Create minimal settings.json so Claude settings check passes
-        settings_path = env.cwd / ".claude" / "settings.json"
-        settings_path.parent.mkdir(parents=True)
-        settings_path.write_text('{"permissions": {"allow": ["Bash(erk:*)"]}}', encoding="utf-8")
-
         fake_runner = FakeHealthCheckRunner(
             results=[
                 # A passing check (no warning)

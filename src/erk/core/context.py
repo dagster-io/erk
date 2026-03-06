@@ -670,7 +670,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     # 12. Create package info
     package_info = ErkPackageInfo.from_project_dir(cwd)
 
-    # 13. Create health check runner (inline import: circular dependency with health_checks)
+    # 13. Create health check runner
     from erk.core.health_checks.runner import RealHealthCheckRunner
 
     health_check_runner = RealHealthCheckRunner()
