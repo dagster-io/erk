@@ -81,6 +81,7 @@ packages = ["src/erk"]
 ".claude/agents/devrun.md" = "erk/data/claude/agents/devrun.md"
 ".claude/agents/learn" = "erk/data/claude/agents/learn"
 # Workflows: erk-managed GitHub workflows
+".github/workflows/code-reviews.yml" = "erk/data/github/workflows/code-reviews.yml"
 ".github/workflows/learn.yml" = "erk/data/github/workflows/learn.yml"
 ".github/workflows/one-shot.yml" = "erk/data/github/workflows/one-shot.yml"
 ".github/workflows/plan-implement.yml" = "erk/data/github/workflows/plan-implement.yml"

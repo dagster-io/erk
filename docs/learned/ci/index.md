@@ -3,7 +3,6 @@
 
 # Ci Documentation
 
-- **[autofix-job-needs.md](autofix-job-needs.md)** — modifying the autofix job's needs list in ci.yml, adding a new CI job that might block autofix, understanding autofix dependency design
 - **[automated-review-system.md](automated-review-system.md)** — understanding what automated reviews run on PRs, debugging unexpected review comments on a PR, adding a new automated review bot, understanding re-review triggers
 - **[check-state-classification.md](check-state-classification.md)** — modifying how CI check states are counted or displayed, understanding why planned PRs show 0/0 checks, working with PASSING_CHECK_RUN_STATES or SKIPPED_CHECK_RUN_STATES
 - **[ci-failure-summarization.md](ci-failure-summarization.md)** — working with CI failure summaries or ERK-CI-SUMMARY markers, modifying the ci-summarize workflow job, understanding how TUI displays CI failure details, debugging CI summary parsing or matching

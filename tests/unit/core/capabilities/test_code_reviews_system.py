@@ -4,6 +4,7 @@ Tests the unified code reviews workflow infrastructure installation.
 """
 
 from pathlib import Path
+from unittest.mock import patch
 
 from erk.capabilities.code_reviews_system import CodeReviewsSystemCapability
 
@@ -54,6 +55,37 @@ def test_install_fails_without_repo_root() -> None:
     result = capability.install(repo_root=None, backend="claude")
     assert result.success is False
     assert "requires repo_root" in result.message
+
+
+def test_install_copies_workflow_actions_and_reviews_dir(tmp_path: Path) -> None:
+    """Install copies the unified workflow, actions, and reviews directory."""
+    bundled_github_dir = tmp_path / "bundled-github"
+    workflow_dir = bundled_github_dir / "workflows"
+    workflow_dir.mkdir(parents=True)
+    (workflow_dir / "code-reviews.yml").write_text("name: code-reviews", encoding="utf-8")
+
+    action_code_dir = bundled_github_dir / "actions" / "setup-claude-code"
+    action_code_dir.mkdir(parents=True)
+    (action_code_dir / "action.yml").write_text("name: setup-claude-code", encoding="utf-8")
+
+    action_erk_dir = bundled_github_dir / "actions" / "setup-claude-erk"
+    action_erk_dir.mkdir(parents=True)
+    (action_erk_dir / "action.yml").write_text("name: setup-claude-erk", encoding="utf-8")
+
+    capability = CodeReviewsSystemCapability()
+
+    with patch(
+        "erk.capabilities.code_reviews_system.get_bundled_github_dir",
+        return_value=bundled_github_dir,
+    ):
+        result = capability.install(repo_root=tmp_path, backend="claude")
+
+    assert result.success is True
+    assert "code-reviews.yml" in result.message
+    assert (tmp_path / ".github" / "workflows" / "code-reviews.yml").exists()
+    assert (tmp_path / ".github" / "actions" / "setup-claude-code" / "action.yml").exists()
+    assert (tmp_path / ".github" / "actions" / "setup-claude-erk" / "action.yml").exists()
+    assert (tmp_path / ".erk" / "reviews").exists()
 
 
 def test_uninstall_fails_without_repo_root() -> None:

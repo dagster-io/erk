@@ -24,6 +24,8 @@ The system consists of:
 3. **Execution** via `erk exec run-review` - assembles prompt and invokes Claude
 4. **Workflow** in `.github/workflows/code-reviews.yml` - orchestrates discovery and parallel execution
 
+This workflow is intentionally separate from repo-local `ci.yml`. `ci.yml` owns formatting and validation for the erk repo itself; `code-reviews.yml` is the shipped `code-reviews-system` capability entrypoint that user projects install.
+
 ## Adding a New Code Review
 
 Create a markdown file in `.erk/reviews/`:
@@ -157,6 +159,16 @@ Use `--dry-run` to print the assembled prompt without running Claude.
 1. **discover** job runs `erk exec discover-reviews` and outputs a matrix
 2. **review** job runs in parallel for each matching review
 3. Each review job installs erk, Claude Code, and runs `erk exec run-review`
+
+## Capability Boundary
+
+The review system is split intentionally:
+
+- **`code-reviews-system` capability** installs `.github/workflows/code-reviews.yml`, `.github/actions/setup-claude-code/`, `.github/actions/setup-claude-erk/`, and creates `.erk/reviews/`
+- **Individual review capabilities** install review definition files into `.erk/reviews/`
+- **Repo-local `ci.yml`** does not execute reviews
+
+This keeps the shipped review API stable while allowing repo CI to evolve independently.
 
 ## Existing Reviews
 

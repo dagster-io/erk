@@ -9,7 +9,7 @@ tripwires:
   - action: "running only prettier after editing Python files"
     warning: "Prettier silently skips Python files. Always use 'make format' for .py files."
   - action: "pushing code without running formatters locally first"
-    warning: "Format-then-commit: run ruff format (Python) and prettier (Markdown) locally and commit the formatted output BEFORE pushing. CI format checks verify but do not auto-fix. Pushing unformatted code requires a second commit to fix."
+    warning: "Format-then-commit: run ruff format (Python) and prettier (Markdown) locally before pushing. CI may auto-fix same-repo PRs, but that causes a restart and does not help on master pushes or fork PRs."
     score: 6
 last_audited: "2026-02-16 14:20 PT"
 audit_result: clean
@@ -47,9 +47,9 @@ When in doubt, run both. The cost is negligible compared to a CI failure.
 ## Standard Iteration Pattern
 
 <!-- Source: Makefile, format and prettier targets -->
-<!-- Source: .github/workflows/ci.yml, format and prettier-check jobs -->
+<!-- Source: .github/workflows/ci.yml, format and fix-formatting jobs -->
 
-The CI workflow runs both format-check and prettier-check in parallel (see .github/workflows/ci.yml format and prettier jobs). To match this locally:
+The current CI workflow validates Python formatting in `format` and auto-fixes markdown/docs/Python formatting in `fix-formatting` before rerunning validation. To avoid restarts and fork/master failures, match that intent locally:
 
 1. **Edit files** (Edit tool or direct writes)
 2. **Format Python**: `make format` if you touched `.py` files
@@ -68,7 +68,7 @@ The alternative (auto-formatting on every edit) would introduce ambiguity about 
 ## Integration Points
 
 - **Edit tool behavior**: [Edit Tool Formatting](edit-tool-formatting.md) explains why Edit doesn't auto-format
-- **CI enforcement**: Both `fast-ci` and `all-ci` targets in Makefile run format-check and prettier-check
+- **CI enforcement**: `fix-formatting` mutates markdown/docs/Python formatting early; `format` still verifies Python formatting
 - **Make targets**: See Makefile:3-14 for formatter command definitions
 
 ## Related Documentation

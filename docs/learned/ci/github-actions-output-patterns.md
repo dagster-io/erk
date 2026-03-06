@@ -149,11 +149,11 @@ See the `check-submission` job in `.github/workflows/ci.yml` - it outputs `skip`
 
 ### Detecting PR Numbers
 
-For push events, finding the associated PR requires a GitHub API call. The `discover-pr` step in `.github/workflows/ci.yml` (autofix job) demonstrates the pattern: check `github.event_name` to determine whether the PR number is available directly or needs an API lookup, then set `pr_number` and `has_pr` outputs accordingly.
+For push-triggered workflows, finding the associated PR requires a GitHub API call. Use a small output-producing step that checks `github.event_name`, emits the PR number directly for `pull_request` events, and queries `gh api` for push events. See [GitHub Actions Label Queries](github-actions-label-queries.md) for the canonical pattern.
 
 ### Collecting Job Results
 
-Aggregating upstream job results into a single step's outputs enables downstream conditional logic. See the `failures` step in `.github/workflows/ci.yml` (autofix job) for how `needs.<job>.result` values are captured as individual outputs.
+Aggregating upstream job results into a single step's outputs enables downstream conditional logic when you do not want every later step to repeat the same `needs.<job>.result` checks. In the current repo CI, `ci-summarize` reads `needs.<job>.result` directly, but the output-aggregation pattern remains valid when multiple later steps need the same derived decision.
 
 ### Session Capture
 

@@ -85,6 +85,19 @@ def test_preflight_succeeds_with_code_reviews_system(tmp_path: Path) -> None:
     assert result.success is True
 
 
+def test_preflight_requires_code_reviews_not_ci_workflow(tmp_path: Path) -> None:
+    """Preflight keys off code-reviews.yml rather than repo-local ci.yml."""
+    workflow_dir = tmp_path / ".github" / "workflows"
+    workflow_dir.mkdir(parents=True)
+    (workflow_dir / "ci.yml").write_text("name: ci", encoding="utf-8")
+
+    capability = TripwiresReviewDefCapability()
+    result = capability.preflight(repo_root=tmp_path, backend="claude")
+
+    assert result.success is False
+    assert "code-reviews-system" in result.message
+
+
 def test_install_fails_without_repo_root() -> None:
     """Test install fails when repo_root is None."""
     capability = TripwiresReviewDefCapability()

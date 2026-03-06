@@ -17,16 +17,16 @@ audit_result: clean
 
 Prettier enforces deterministic markdown formatting that humans cannot replicate manually. Line wrapping rules, list spacing, heading consistency, and code fence normalization all follow complex algorithms that depend on context across the entire document.
 
-**The workflow is always: Edit → Format → CI.** Skipping the format step guarantees a CI failure on the prettier check job.
+**The workflow is always: Edit → Format → CI.** Skipping the format step either causes `fix-formatting` to push a restart commit or causes CI to fail outright on master pushes and fork PRs.
 
 ## The Core Constraint
 
 <!-- Source: Makefile, prettier and prettier-check targets -->
-<!-- Source: .github/workflows/ci.yml, prettier job -->
+<!-- Source: .github/workflows/ci.yml, fix-formatting job -->
 
-CI runs `prettier --check '**/*.md'` which fails if any markdown file differs from Prettier's canonical format. See the `prettier` job in `.github/workflows/ci.yml` and the `prettier-check` target in `Makefile`.
+CI runs `prettier --write '**/*.md' --ignore-path .gitignore` inside `fix-formatting`. On same-repo PRs it pushes an auto-fix commit; on `master` pushes or fork PRs it fails instead. See the `fix-formatting` job in `.github/workflows/ci.yml` and the `prettier`/`prettier-check` targets in `Makefile`.
 
-This constraint is **deliberate**: all committed markdown must be formatted consistently. There is no escape hatch for "committed but unformatted" files.
+This constraint is **deliberate**: all committed markdown must be formatted consistently. There is no supported steady state for "committed but unformatted" files.
 
 ## Standard Workflow
 
@@ -73,7 +73,7 @@ Counting characters and inserting line breaks manually. Prettier's wrapping cons
 
 ### ❌ Skipping Format Step
 
-Running `make fast-ci` immediately after editing markdown. The prettier-check will fail, forcing a second iteration.
+Running `make fast-ci` immediately after editing markdown. CI will either mutate the branch and restart or fail, forcing another iteration.
 
 ### ❌ Using Edit to Fix Formatting
 

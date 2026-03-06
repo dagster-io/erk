@@ -95,28 +95,25 @@ Without this trigger, marking a draft PR as ready wouldn't start CI until the ne
 
 ## When Job-Level Conditions Aren't Enough
 
-<!-- Source: .github/workflows/ci.yml, autofix job steps 166-397 -->
+<!-- Source: .github/workflows/code-reviews.yml, discover job -->
 
-The autofix job demonstrates why some checks must happen at step-level despite job-level gating:
+The `code-reviews.yml` workflow demonstrates why some checks must happen at step-level despite job-level gating.
 
-**For push events**, `github.event.pull_request` doesn't exist at job evaluation time. Job-level label checks are impossible. The workflow must:
+The job-level `if:` can cheaply skip draft PRs and `erk-plan-review` PRs before runner allocation. But the "local review passed" marker lives in the PR body and depends on the current HEAD SHA, so the workflow must:
 
-1. Allocate a runner (job-level condition passes for push events)
-2. Query GitHub API to find associated PR
-3. Fetch labels via API
-4. Gate subsequent steps based on result
+1. Allocate a runner
+2. Read the current PR body
+3. Compare the marker against the current `head.sha`
+4. Gate checkout and review discovery based on that result
 
-This asymmetry exists because push events are branch operations. GitHub doesn't implicitly resolve "what PR uses this branch?" until you ask via the API.
-
-See the autofix job in `.github/workflows/ci.yml` for the multi-step implementation: discover PR (via `github.event.pull_request.number` for PR events or `gh api` for push events), check for label, consolidate all conditions into a single boolean output, gate all subsequent steps on that output.
-
-For the deep dive on why this asymmetry exists and the defense-in-depth solution, see [GitHub Actions Label Queries](github-actions-label-queries.md).
+This is the right use of step-level gating: the decision depends on dynamic API state that is not available in the event payload.
 
 ## Output-Based Gating
 
 <!-- Source: .github/workflows/ci.yml, check-submission job outputs, format job conditions -->
+<!-- Source: .github/workflows/ci.yml, fix-formatting job outputs -->
 
-A different pattern: one job's results control whether downstream jobs execute.
+Two different output patterns control downstream execution in repo CI.
 
 The `check-submission` job declares outputs:
 
@@ -135,85 +132,44 @@ format:
 
 **Why this exists**: The `.erk/impl-context/` folder detection can't happen until after checkout, so it can't be a job-level condition based on event context. The check-submission job performs checkout, checks for the folder, and publishes a decision that later jobs consume.
 
-This pattern separates "should this workflow run?" (event-based, job-level) from "should this job run?" (state-based, after checkout). For full context on why `.erk/impl-context/` folders are special, see [Plan Implement Customization](plan-implement-customization.md).
+<!-- Source: .github/workflows/ci.yml, fix-formatting job outputs -->
 
-## Autofix Safety Pattern
+`fix-formatting` exposes a second output (`pushed`) that downstream validation jobs check alongside `check-submission.outputs.skip`. When `pushed` is `'true'`, downstream jobs skip because the auto-fix commit will trigger a fresh CI run on the corrected HEAD.
 
-<!-- Source: .github/workflows/ci.yml, autofix job condition lines 152-163 -->
+<!-- Source: .github/workflows/ci.yml, format job if: condition -->
 
-The autofix job combines event type checks with label/draft checks:
+See the `fix-formatting` job's `outputs:` block and the `format` job's `if:` condition in `.github/workflows/ci.yml` for the exact syntax.
 
-```yaml
-if: |
-  always() &&
-  github.ref_name != 'master' &&
-  github.ref_name != 'main' &&
-  (github.event_name == 'pull_request' || github.event_name == 'push') &&
-  (github.event_name != 'pull_request' || github.event.pull_request.draft != true) &&
-  (github.event_name != 'pull_request' || !contains(..., 'erk-plan-review')) &&
-  (needs.format.result == 'failure' || ...)
-```
+This pattern separates:
 
-**Why event type guards**: The label/draft checks reference `github.event.pull_request`, which only exists for `pull_request` events. Without the guard `github.event_name != 'pull_request' ||`, the checks would fail for push events.
-
-The guard pattern `(event != X || check_that_only_works_for_X)` creates safe evaluation: if the event type doesn't match, the guard short-circuits to `true` without evaluating the check.
-
-**Why `always()`**: Autofix must evaluate its condition even when upstream jobs fail (that's the point — fix the failures). Without `always()`, a failed format job would prevent autofix from even considering whether to run.
-
-## Path-Based Filtering (paths-ignore)
-
-<!-- Source: .github/workflows/ci.yml, on: push: paths-ignore -->
-
-The CI workflow uses `paths-ignore` on push events to skip CI when commits only touch ephemeral metadata directories:
-
-```yaml
-on:
-  push:
-    paths-ignore:
-      - ".erk/impl-context/**"
-      - ".worker-impl/**"
-```
-
-**Why paths-ignore instead of branches-ignore**: Branches like `planned/*` contain both metadata commits AND code commits. Using `branches-ignore` would skip CI for ALL pushes to those branches, including code changes. `paths-ignore` only skips CI when the push exclusively modifies the listed paths.
-
-| Directory            | Purpose                                   |
-| -------------------- | ----------------------------------------- |
-| `.erk/impl-context/` | Plan content committed during plan-save   |
-| `.worker-impl/`      | Worker implementation submission metadata |
-
-**When both metadata and code change in the same push**: `paths-ignore` allows CI to run because the push touches paths outside the ignore list.
+- "should repo validation run at all?" (`check-submission`)
+- "should validation run on this commit, or wait for the auto-fix rerun?" (`fix-formatting`)
 
 ## Plan-Review Branch Gating
 
 Plan-review branches are gated via the `erk-plan-review` **label** on their PRs, not via `branches-ignore`. The label-based gating is handled by the `!contains()` pattern described above.
 
-**Defense-in-depth** for plan-review PRs:
-
-1. **Label-based job conditions** (`!contains(...)`) — blocks pull_request events at job level
-2. **Step-level API queries** — blocks push events at step level in the autofix job
+In the current architecture, the active gates are job-level conditions in `.github/workflows/ci.yml` and `.github/workflows/code-reviews.yml`. If a future push-triggered workflow needs authoritative PR label checks, use the API-query pattern from [GitHub Actions Label Queries](github-actions-label-queries.md).
 
 ## Decision Table: Which Layer to Use
 
-| What you're checking                            | Use this layer                        | Why                                                   |
-| ----------------------------------------------- | ------------------------------------- | ----------------------------------------------------- |
-| Known ephemeral branch patterns (push events)   | Trigger filtering (`branches-ignore`) | Prevents workflow from queuing — zero cost            |
-| Branches with both metadata AND code            | Trigger filtering (`paths-ignore`)    | Skips CI only when push is metadata-only              |
-| Event type (PR opened, push, workflow_dispatch) | Trigger filtering (`on:`)             | No point queuing workflow for irrelevant events       |
-| PR draft state                                  | Job-level `if:`                       | Fast path — no runner allocation for drafts           |
-| PR labels (pull_request events)                 | Job-level `if:`                       | Fast path — no runner allocation for plan reviews     |
-| PR labels (push events)                         | Step-level API query                  | Required path — PR context doesn't exist at job level |
-| File existence after checkout                   | Step-level check → job output         | Can't know until checkout completes                   |
-| Upstream job failure                            | Downstream job `if:`                  | Use `needs.job.result` or job outputs                 |
+| What you're checking                            | Use this layer                      | Why                                                 |
+| ----------------------------------------------- | ----------------------------------- | --------------------------------------------------- |
+| Event type (PR opened, push, workflow_dispatch) | Trigger filtering (`on:`)           | No point queuing workflow for irrelevant events     |
+| PR draft state                                  | Job-level `if:`                     | Fast path — no runner allocation for drafts         |
+| PR labels (pull_request events)                 | Job-level `if:`                     | Fast path — no runner allocation for plan reviews   |
+| PR-body marker or dynamic API state             | Step-level check                    | Requires live API data not present in event payload |
+| File existence after checkout                   | Step-level check → job output       | Can't know until checkout completes                 |
+| Upstream auto-fix pushed a commit               | Downstream job `if:` via job output | Skip stale validation and wait for the rerun        |
+| Upstream job failure                            | Downstream job `if:`                | Use `needs.job.result` or job outputs               |
 
-## Why Both Job-Level and Step-Level Label Checks
+## Why Not Use Step-Level Checks For Everything
 
 **Q: Why not use only step-level API queries for all events?**
 
 A: Cost and queue pressure. Job-level conditions prevent runner allocation. If a pull_request event has the `erk-plan-review` label, the job-level condition rejects it before GitHub allocates a runner, saving CI minutes and reducing queue contention.
 
-Step-level queries require: runner allocation, checkout, API calls. This burns resources for cases that could be rejected immediately.
-
-The defense-in-depth approach uses the fast path when available (job-level for pull_request) and the required path when necessary (step-level for push).
+Step-level queries require runner allocation, API calls, and often checkout. Use them only when the decision genuinely depends on dynamic state that the event payload does not contain.
 
 ## Related Documentation
 
