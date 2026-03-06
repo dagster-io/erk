@@ -1,0 +1,3126 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>▐▛███▜▌   Claude Code v2.1.70
+▝▜█████▛▘  Opus 4.6 · Claude Max
+  ▘▘ ▝▝    ~/.erk/repos/erk/worktrees/erk-slot-03
+
+╭──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ Plan to implement                                                                                                                                                            │
+│                                                                                                                                                                              │
+│ Rebase Conflict Resolution                                                                                                                                                   │
+│                                                                                                                                                                              │
+│ Context                                                                                                                                                                      │
+│                                                                                                                                                                              │
+│ Rebasing branch plnd/split-plan-data-provider-03-06-0149 onto 2581324cf. One conflicted file.                                                                                │
+│                                                                                                                                                                              │
+│ Conflict: packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py                                                                                              │
+│                                                                                                                                                                              │
+│ The branch is converting this file from a full RealPlanDataProvider class implementation into a thin re-export stub (the real implementation moved to                        │
+│ erk/tui/data/real_provider.py). HEAD added changes to the old class body, but those are irrelevant since the class no longer lives here.                                     │
+│                                                                                                                                                                              │
+│ Resolution: Accept the branch's version — keep the re-export + __all__, remove the full class and all conflict markers:                                                      │
+│                                                                                                                                                                              │
+│ """Re-export RealPlanDataProvider from its new home for backwards compatibility.                                                                                             │
+│                                                                                                                                                                              │
+│ The canonical import is now:                                                                                                                                                 │
+│     from erk.tui.data.real_provider import RealPlanDataProvider                                                                                                              │
+│ """                                                                                                                                                                          │
+│                                                                                                                                                                              │
+│ from erk.tui.data.real_provider import RealPlanDataProvider                                                                                                                  │
+│                                                                                                                                                                              │
+│ __all__ = ["RealPlanDataProvider"]                                                                                                                                           │
+│                                                                                                                                                                              │
+│ Steps                                                                                                                                                                        │
+│                                                                                                                                                                              │
+│ 1. Write resolved real.py with the re-export stub above                                                                                                                      │
+│ 2. git add packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py                                                                                             │
+│ 3. git rebase --continue                                                                                                                                                     │
+│ 4. If more conflicts appear, repeat                                                                                                                                          │
+│ 5. Verify with git status and git log --oneline -5                                                                                                                           │
+│ 6. Push with gt submit --no-interactive or git push --force-with-lease                                                                                                       │
+╰──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+
+❯ Tool loaded.
+
+⏺ Write(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py)
+  ⎿  Error: File has not been read yet. Read it first before writing to it.
+
+❯ Tool loaded.
+
+⏺ Read(packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py)
+  ⎿  Read 979 lines
+
+⏺ Now I can write the resolved file.
+
+⏺ Write(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py)
+  ⎿  Removed 969 lines
+        6
+        7  from erk.tui.data.real_provider import RealPlanDataProvider
+        8
+        9 -&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD
+       10 -logger = logging.getLogger(__name__)
+       11 -
+       12 -
+       13 -class RealPlanDataProvider(PlanDataProvider):
+       14 -    """Production implementation that wraps PlanListService.
+       15 -
+       16 -    Transforms PlanListData into PlanRowData for TUI display.
+       17 -    """
+       18 -
+       19 -    def __init__(
+       20 -        self,
+       21 -        ctx: ErkContext,
+       22 -        *,
+       23 -        location: GitHubRepoLocation,
+       24 -        clipboard: Clipboard,
+       25 -        browser: BrowserLauncher,
+       26 -        http_client: HttpClient,
+       27 -    ) -&gt; None:
+       28 -        """Initialize with context and repository info.
+       29 -
+       30 -        Args:
+       31 -            ctx: ErkContext with all dependencies
+       32 -            location: GitHub repository location (local root + repo identity)
+       33 -            clipboard: Clipboard interface for copy operations
+       34 -            browser: BrowserLauncher interface for opening URLs
+       35 -            http_client: HTTP client for direct API calls (faster than subprocess)
+       36 -        """
+       37 -        self._ctx = ctx
+       38 -        self._location = location
+       39 -        self._clipboard = clipboard
+       40 -        self._browser = browser
+       41 -        self._http_client = http_client
+       42 -
+       43 -    @property
+       44 -    def repo_root(self) -&gt; Path:
+       45 -        """Get the repository root path."""
+       46 -        return self._location.root
+       47 -
+       48 -    @property
+       49 -    def clipboard(self) -&gt; Clipboard:
+       50 -        """Get the clipboard interface for copy operations."""
+       51 -        return self._clipboard
+       52 -
+       53 -    @property
+       54 -    def browser(self) -&gt; BrowserLauncher:
+       55 -        """Get the browser launcher interface for opening URLs."""
+       56 -        return self._browser
+       57 -
+       58 -    def fetch_plans(self, filters: PlanFilters) -&gt; tuple[list[PlanRowData], FetchTimings | None]:
+       59 -        """Fetch plans and transform to TUI row format.
+       60 -
+       61 -        Args:
+       62 -            filters: Filter options for the query
+       63 -
+       64 -        Returns:
+       65 -            Tuple of (list of PlanRowData for display, optional FetchTimings breakdown)
+       66 -        """
+       67 -        t_total_start = self._ctx.time.monotonic()
+       68 -
+       69 -        # Determine if we need workflow runs
+       70 -        needs_workflow_runs = filters.show_runs or filters.run_state is not None
+       71 -
+       72 -        # Route to the appropriate service based on the view's labels
+       73 -        # Objectives have their own dedicated service; all other queries
+       74 -        # (plans, learn plans, custom label combos) use the plan list service.
+       75 -        if "erk-objective" in filters.labels:
+       76 -            plan_data = self._ctx.objective_list_service.get_objective_list_data(
+       77 -                location=self._location,
+       78 -                state=filters.state,
+       79 -                limit=filters.limit,
+       80 -                skip_workflow_runs=not needs_workflow_runs,
+       81 -                creator=filters.creator,
+       82 -                exclude_labels=list(filters.exclude_labels) if filters.exclude_labels else None,
+       83 -                http_client=self._http_client,
+       84 -            )
+       85 -        else:
+       86 -            plan_data = self._ctx.plan_list_service.get_plan_list_data(
+       87 -                location=self._location,
+       88 -                labels=list(filters.labels),
+       89 -                state=filters.state,
+       90 -                limit=filters.limit,
+       91 -                skip_workflow_runs=not needs_workflow_runs,
+       92 -                creator=filters.creator,
+       93 -                exclude_labels=list(filters.exclude_labels) if filters.exclude_labels else None,
+       94 -                http_client=self._http_client,
+       95 -            )
+       96 -
+       97 -        # Build local worktree mapping
+       98 -        t_wt_start = self._ctx.time.monotonic()
+       99 -        worktree_by_plan_id = self._build_worktree_mapping()
+      100 -        t_wt_end = self._ctx.time.monotonic()
+      101 -
+      102 -        # Use pre-converted Plan objects from PlanListData
+      103 -        plans = plan_data.plans
+      104 -
+      105 -        # Transform to PlanRowData
+      106 -        t_rows_start = self._ctx.time.monotonic()
+      107 -        rows: list[PlanRowData] = []
+      108 -        global_config = self._ctx.global_config
+      109 -        use_graphite = global_config.use_graphite if global_config is not None else False
+      110 -
+      111 -        for plan in plans:
+      112 -            plan_id = int(plan.plan_identifier)
+      113 -
+      114 -            # Get workflow run for filtering
+      115 -            workflow_run = plan_data.workflow_runs.get(plan_id)
+      116 -
+      117 -            # Apply run_state filter
+      118 -            if filters.run_state is not None:
+      119 -                if workflow_run is None:
+      120 -                    continue
+      121 -                if get_workflow_run_state(workflow_run) != filters.run_state:
+      122 -                    continue
+      123 -
+      124 -            # Build row data
+      125 -            row = self._build_row_data(
+      126 -                plan=plan,
+      127 -                plan_id=plan_id,
+      128 -                pr_linkages=plan_data.pr_linkages,
+      129 -                workflow_run=workflow_run,
+      130 -                worktree_by_plan_id=worktree_by_plan_id,
+      131 -                use_graphite=use_graphite,
+      132 -            )
+      133 -            rows.append(row)
+      134 -        t_rows_end = self._ctx.time.monotonic()
+      135 -
+      136 -        # Build timing breakdown
+      137 -        # api_ms covers REST + GraphQL enrichment from PlanListData
+      138 -        # plan_parsing_ms covers body parsing from PlanListData
+      139 -        # workflow_runs_ms covers workflow run fetching from PlanListData
+      140 -        timings = FetchTimings(
+      141 -            rest_issues_ms=plan_data.api_ms,
+      142 -            graphql_enrich_ms=0.0,
+      143 -            plan_parsing_ms=plan_data.plan_parsing_ms,
+      144 -            workflow_runs_ms=plan_data.workflow_runs_ms,
+      145 -            worktree_mapping_ms=(t_wt_end - t_wt_start) * 1000,
+      146 -            row_building_ms=(t_rows_end - t_rows_start) * 1000,
+      147 -            total_ms=(t_rows_end - t_total_start) * 1000,
+      148 -            warnings=plan_data.warnings,
+      149 -        )
+      150 -
+      151 -        logger.info("fetch_plans timings: %s", timings.summary())
+      152 -
+      153 -        # Write timing to log file for post-execution analysis
+      154 -        self._append_timing_log(timings, len(rows))
+      155 -
+      156 -        return (rows, timings)
+      157 -
+      158 -    def close_plan(self, plan_id: int, plan_url: str) -&gt; list[int]:
+      159 -        """Close a plan and its linked PRs using direct HTTP calls.
+      160 -
+      161 -        This method uses the HTTP client directly instead of subprocess calls
+      162 -        for significantly faster execution in the TUI.
+      163 -
+      164 -        Args:
+      165 -            plan_id: The plan ID to close
+      166 -            plan_url: The plan URL for PR linkage lookup
+      167 -
+      168 -        Returns:
+      169 -            List of PR numbers that were also closed
+      170 -        """
+      171 -        # Parse owner/repo from issue URL
+      172 -        owner_repo = self._parse_owner_repo_from_url(plan_url)
+      173 -        if owner_repo is None:
+      174 -            return []
+      175 -        owner, repo = owner_repo
+      176 -
+      177 -        # Close linked PRs first
+      178 -        closed_prs = self._close_linked_prs_http(plan_id, owner, repo)
+      179 -
+      180 -        # Close the plan (issue) via HTTP
+      181 -        self._http_client.patch(
+      182 -            f"repos/{owner}/{repo}/issues/{plan_id}",
+      183 -            data={"state": "closed"},
+      184 -        )
+      185 -
+      186 -        return closed_prs
+      187 -
+      188 -    def _parse_owner_repo_from_url(self, url: str) -&gt; tuple[str, str] | None:
+      189 -        """Parse owner and repo from a GitHub URL.
+      190 -
+      191 -        Args:
+      192 -            url: GitHub URL (e.g., "https://github.com/owner/repo/issues/123")
+      193 -
+      194 -        Returns:
+      195 -            Tuple of (owner, repo) or None if parsing fails
+      196 -        """
+      197 -        # URL format: https://github.com/owner/repo/...
+      198 -        if not url.startswith("https://github.com/"):
+      199 -            return None
+      200 -        parts = url.split("/")
+      201 -        # parts: ['https:', '', 'github.com', 'owner', 'repo', ...]
+      202 -        if len(parts) &lt; 5:
+      203 -            return None
+      204 -        return (parts[3], parts[4])
+      205 -
+      206 -    def _close_linked_prs_http(
+      207 -        self,
+      208 -        plan_id: int,
+      209 -        owner: str,
+      210 -        repo: str,
+      211 -    ) -&gt; list[int]:
+      212 -        """Close all OPEN PRs linked to an issue using HTTP.
+      213 -
+      214 -        Uses the GitHub REST API via HTTP client for fast execution.
+      215 -
+      216 -        Args:
+      217 -            plan_id: The plan ID
+      218 -            owner: Repository owner
+      219 -            repo: Repository name
+      220 -
+      221 -        Returns:
+      222 -            List of PR numbers that were closed
+      223 -        """
+      224 -        # Use the existing gateway to get PR linkages (still efficient for read)
+      225 -        location = GitHubRepoLocation(
+      226 -            root=self._location.root,
+      227 -            repo_id=GitHubRepoId(owner=owner, repo=repo),
+      228 -        )
+      229 -        pr_linkages = self._ctx.github.get_prs_linked_to_issues(location, [plan_id])
+      230 -        linked_prs = pr_linkages.get(plan_id, [])
+      231 -
+      232 -        closed_prs: list[int] = []
+      233 -        for pr in linked_prs:
+      234 -            if pr.state == "OPEN":
+      235 -                # Close via HTTP client for speed
+      236 -                self._http_client.patch(
+      237 -                    f"repos/{owner}/{repo}/pulls/{pr.number}",
+      238 -                    data={"state": "closed"},
+      239 -                )
+      240 -                closed_prs.append(pr.number)
+      241 -
+      242 -        return closed_prs
+      243 -
+      244 -    def dispatch_to_queue(self, plan_id: int, plan_url: str) -&gt; None:
+      245 -        """Dispatch a plan to the implementation queue.
+      246 -
+      247 -        Runs 'erk pr dispatch' as a subprocess to handle the complex workflow
+      248 -        of creating branches, PRs, and triggering GitHub Actions.
+      249 -
+      250 -        Args:
+      251 -            plan_id: The plan ID to dispatch
+      252 -            plan_url: The plan URL (unused, kept for interface consistency)
+      253 -        """
+      254 -        # Run erk pr dispatch command from the repository root
+      255 -        # -f flag prevents blocking on existing branch prompts in TUI context
+      256 -        subprocess.run(
+      257 -            ["erk", "pr", "dispatch", str(plan_id), "-f"],
+      258 -            cwd=self._location.root,
+      259 -            check=True,
+      260 -            capture_output=True,
+      261 -        )
+      262 -
+      263 -    def fetch_branch_activity(self, rows: list[PlanRowData]) -&gt; dict[int, BranchActivity]:
+      264 -        """Fetch branch activity for plans that exist locally.
+      265 -
+      266 -        Args:
+      267 -            rows: List of plan rows to fetch activity for
+      268 -
+      269 -        Returns:
+      270 -            Mapping of plan_id to BranchActivity for plans with local worktrees.
+      271 -        """
+      272 -        result: dict[int, BranchActivity] = {}
+      273 -
+      274 -        # Get trunk branch
+      275 -        trunk = self._ctx.git.branch.detect_trunk_branch(self._location.root)
+      276 -
+      277 -        for row in rows:
+      278 -            # Only fetch for plans with local branches
+      279 -            if not row.exists_locally or row.worktree_branch is None:
+      280 -                continue
+      281 -
+      282 -            # Get commits on branch not in trunk
+      283 -            commits = self._ctx.git.branch.get_branch_commits_with_authors(
+      284 -                self._location.root,
+      285 -                row.worktree_branch,
+      286 -                trunk,
+      287 -                limit=1,  # Only need most recent
+      288 -            )
+      289 -
+      290 -            if commits:
+      291 -                # Parse ISO timestamp from git
+      292 -                timestamp_str = commits[0]["timestamp"]
+      293 -                commit_at = datetime.fromisoformat(timestamp_str)
+      294 -                result[row.plan_id] = BranchActivity(
+      295 -                    last_commit_at=commit_at,
+      296 -                    last_commit_author=commits[0]["author"],
+      297 -                )
+      298 -            else:
+      299 -                result[row.plan_id] = BranchActivity.empty()
+      300 -
+      301 -        return result
+      302 -
+      303 -    def fetch_plan_content(self, plan_id: int, plan_body: str) -&gt; str | None:
+      304 -        """Return plan content from the PR body.
+      305 -
+      306 -        Plans are PR-based: plan_body is the already-extracted content from
+      307 -        PlannedPRPlanListService. Return it directly.
+      308 -
+      309 -        Args:
+      310 -            plan_id: The GitHub PR number
+      311 -            plan_body: The extracted plan content from the PR body
+      312 -
+      313 -        Returns:
+      314 -            The plan content, or None if empty
+      315 -        """
+      316 -        return plan_body if plan_body.strip() else None
+      317 -
+      318 -    def fetch_objective_content(self, plan_id: int, plan_body: str) -&gt; str | None:
+      319 -        """Fetch objective content from the first comment of an issue.
+      320 -
+      321 -        Uses the objective_comment_id from the issue body metadata to fetch
+      322 -        the specific comment containing the objective content.
+      323 -
+      324 -        Args:
+      325 -            plan_id: The GitHub issue number
+      326 -            plan_body: The issue body (to extract objective_comment_id from metadata)
+      327 -
+      328 -        Returns:
+      329 -            The extracted objective content, or None if not found
+      330 -        """
+      331 -        comment_id = extract_objective_header_comment_id(plan_body)
+      332 -        if comment_id is None:
+      333 -            return None
+      334 -
+      335 -        owner = self._location.repo_id.owner
+      336 -        repo = self._location.repo_id.repo
+      337 -        endpoint = f"repos/{owner}/{repo}/issues/comments/{comment_id}"
+      338 -
+      339 -        response = self._http_client.get(endpoint)
+      340 -        comment_body = response.get("body", "")
+      341 -
+      342 -        return extract_objective_from_comment(comment_body)
+      343 -
+      344 -    def fetch_plans_by_ids(self, plan_ids: set[int]) -&gt; list[PlanRowData]:
+      345 -        """Fetch specific plans by their GitHub numbers.
+      346 -
+      347 -        Uses get_issues_by_numbers_with_pr_linkages (backed by the
+      348 -        issueOrPullRequest GraphQL query) for targeted fetching. Works
+      349 -        for both issue-backed and PR-backed plans.
+      350 -
+      351 -        Args:
+      352 -            plan_ids: Set of plan numbers to fetch (issue or PR numbers)
+      353 -
+      354 -        Returns:
+      355 -            List of PlanRowData objects sorted by plan_id
+      356 -        """
+      357 -        if not plan_ids:
+      358 -            return []
+      359 -
+      360 -        issues, pr_linkages = self._ctx.github.get_issues_by_numbers_with_pr_linkages(
+      361 -            location=self._location,
+      362 -            plan_numbers=list(plan_ids),
+      363 -        )
+      364 -
+      365 -        # Convert IssueInfo -&gt; Plan
+      366 -        plans = [github_issue_to_plan(issue) for issue in issues]
+      367 -
+      368 -        # Build worktree mapping
+      369 -        worktree_by_plan_id = self._build_worktree_mapping()
+      370 -
+      371 -        # Build row data
+      372 -        global_config = self._ctx.global_config
+      373 -        use_graphite = global_config.use_graphite if global_config is not None else False
+      374 -        rows: list[PlanRowData] = []
+      375 -        for plan in plans:
+      376 -            plan_id = int(plan.plan_identifier)
+      377 -            row = self._build_row_data(
+      378 -                plan=plan,
+      379 -                plan_id=plan_id,
+      380 -                pr_linkages=pr_linkages,
+      381 -                workflow_run=None,
+      382 -                worktree_by_plan_id=worktree_by_plan_id,
+      383 -                use_graphite=use_graphite,
+      384 -            )
+      385 -            rows.append(row)
+      386 -
+      387 -        rows.sort(key=lambda r: r.plan_id)
+      388 -        return rows
+      389 -
+      390 -    def fetch_plans_for_objective(self, objective_issue: int) -&gt; list[PlanRowData]:
+      391 -        """Fetch plans associated with a specific objective.
+      392 -
+      393 -        Fetches erk-plan issues in both open and closed states, then filters
+      394 -        client-side by objective_issue.
+      395 -
+      396 -        Args:
+      397 -            objective_issue: The objective issue number to filter by
+      398 -
+      399 -        Returns:
+      400 -            List of PlanRowData objects for plans linked to this objective
+      401 -        """
+      402 -        all_plans: list[PlanRowData] = []
+      403 -        for state in ("open", "closed"):
+      404 -            filters = PlanFilters(
+      405 -                labels=("erk-plan",),
+      406 -                state=state,
+      407 -                run_state=None,
+      408 -                limit=100,
+      409 -                show_prs=True,
+      410 -                show_runs=False,
+      411 -                exclude_labels=(),
+      412 -                creator=None,
+      413 -            )
+      414 -            rows, _timings = self.fetch_plans(filters)
+      415 -            all_plans.extend(rows)
+      416 -        return [row for row in all_plans if row.objective_issue == objective_issue]
+      417 -
+      418 -    def get_branch_stack(self, branch: str) -&gt; list[str] | None:
+      419 -        """Get the Graphite stack containing a branch.
+      420 -
+      421 -        Delegates to BranchManager which reads local Graphite cache (no network).
+      422 -
+      423 -        Args:
+      424 -            branch: The branch name to look up
+      425 -
+      426 -        Returns:
+      427 -            Ordered list of branch names in the stack, or None
+      428 -        """
+      429 -        return self._ctx.branch_manager.get_branch_stack(self._location.root, branch)
+      430 -
+      431 -    def fetch_check_runs(self, pr_number: int) -&gt; list[PRCheckRun]:
+      432 -        """Fetch failing check runs for a pull request.
+      433 -
+      434 -        Args:
+      435 -            pr_number: The PR number to fetch check runs for
+      436 -
+      437 -        Returns:
+      438 -            List of PRCheckRun for failing checks, sorted by name
+      439 -        """
+      440 -        return self._ctx.github.get_pr_check_runs(self._location.root, pr_number)
+      441 -
+      442 -    def fetch_unresolved_comments(self, pr_number: int) -&gt; list[PRReviewThread]:
+      443 -        """Fetch unresolved review threads for a pull request.
+      444 -
+      445 -        Args:
+      446 -            pr_number: The PR number to fetch threads for
+      447 -
+      448 -        Returns:
+      449 -            List of unresolved PRReviewThread objects sorted by (path, line)
+      450 -        """
+      451 -        return self._ctx.github.get_pr_review_threads(
+      452 -            self._location.root, pr_number, include_resolved=False
+      453 -        )
+      454 -
+      455 -    def fetch_ci_summaries(self, pr_number: int) -&gt; dict[str, str]:
+      456 -        """Fetch CI failure summaries for a pull request.
+      457 -
+      458 -        Finds the latest CI workflow run for this PR's head branch,
+      459 -        looks for a ci-summarize job, and parses its log markers.
+      460 -
+      461 -        Args:
+      462 -            pr_number: The PR number to fetch summaries for
+      463 -
+      464 -        Returns:
+      465 -            Mapping of check name to summary text, or empty dict
+      466 -        """
+      467 -        # Get PR details to find head branch
+      468 -        pr_result = self._ctx.github.get_pr(self._location.root, pr_number)
+      469 -        if isinstance(pr_result, PRNotFound):
+      470 -            return {}
+      471 -
+      472 -        # Find CI workflow runs for this PR's head branch
+      473 -        runs_by_branch = self._ctx.github.get_workflow_runs_by_branches(
+      474 -            self._location.root, "ci.yml", [pr_result.head_ref_name]
+      475 -        )
+      476 -        run = runs_by_branch.get(pr_result.head_ref_name)
+      477 -        if run is None:
+      478 -            return {}
+      479 -
+      480 -        # Fetch ci-summarize job logs
+      481 -        log_text = self._ctx.github.get_ci_summary_logs(self._location.root, str(run.run_id))
+      482 -        if log_text is None:
+      483 -            return {}
+      484 -
+      485 -        return parse_ci_summaries(log_text)
+      486 -
+      487 -    def _append_timing_log(self, timings: FetchTimings, row_count: int) -&gt; None:
+      488 -        """Append timing data to .erk/scratch/dash-timings.log for post-execution analysis.
+      489 -
+      490 -        Silently ignores all errors (sentinel paths in tests, missing directory,
+      491 -        permissions, etc.) since timing logs are strictly informational.
+      492 -
+      493 -        Args:
+      494 -            timings: Timing breakdown for this fetch cycle
+      495 -            row_count: Number of rows returned
+      496 -        """
+      497 -        try:
+      498 -            log_dir = self._location.root / ".erk" / "scratch"
+      499 -            if not log_dir.is_dir():
+      500 -                return
+      501 -            log_file = log_dir / "dash-timings.log"
+      502 -            timestamp = self._ctx.time.now().strftime("%Y-%m-%d %H:%M:%S")
+      503 -            line = f"{timestamp}  rows={row_count}  {timings.summary()}\n"
+      504 -            with open(log_file, "a") as f:
+      505 -                f.write(line)
+      506 -        except Exception:
+      507 -            logger.debug("Failed to write timing log", exc_info=True)
+      508 -
+      509 -    def _build_worktree_mapping(self) -&gt; dict[int, tuple[str, str | None]]:
+      510 -        """Build mapping of plan ID to (worktree name, branch).
+      511 -
+      512 -        Uses resolve_impl_dir() for unified discovery of implementation folders
+      513 -        (both legacy .impl/ and branch-scoped .erk/impl-context/).
+      514 -        Plan-ref.json is the sole source of truth for plan-to-branch mapping.
+      515 -
+      516 -        Returns:
+      517 -            Mapping of plan ID to tuple of (worktree_name, branch_name)
+      518 -        """
+      519 -        _ensure_erk_metadata_dir_from_context(self._ctx.repo)
+      520 -        worktree_by_plan_id: dict[int, tuple[str, str | None]] = {}
+      521 -        worktrees = self._ctx.git.worktree.list_worktrees(self._location.root)
+      522 -        for worktree in worktrees:
+      523 -            impl_dir = resolve_impl_dir(worktree.path, branch_name=worktree.branch)
+      524 -            if impl_dir is None:
+      525 -                continue
+      526 -            plan_ref = read_plan_ref(impl_dir)
+      527 -            if plan_ref is None or not plan_ref.plan_id.isdigit():
+      528 -                continue
+      529 -            plan_number = int(plan_ref.plan_id)
+      530 -            if plan_number not in worktree_by_plan_id:
+      531 -                worktree_by_plan_id[plan_number] = (
+      532 -                    worktree.path.name,
+      533 -                    worktree.branch,
+      534 -                )
+      535 -        return worktree_by_plan_id
+      536 -
+      537 -    def _build_row_data(
+      538 -        self,
+      539 -        *,
+      540 -        plan: Plan,
+      541 -        plan_id: int,
+      542 -        pr_linkages: dict[int, list[PullRequestInfo]],
+      543 -        workflow_run: WorkflowRun | None,
+      544 -        worktree_by_plan_id: dict[int, tuple[str, str | None]],
+      545 -        use_graphite: bool,
+      546 -    ) -&gt; PlanRowData:
+      547 -        """Build a single PlanRowData from plan and related data."""
+      548 -        full_title = plan.title
+      549 -
+      550 -        # Worktree info
+      551 -        worktree_name = ""
+      552 -        worktree_branch: str | None = None
+      553 -        exists_locally = False
+      554 -
+      555 -        if plan_id in worktree_by_plan_id:
+      556 -            worktree_name, worktree_branch = worktree_by_plan_id[plan_id]
+      557 -            exists_locally = True
+      558 -
+      559 -        # Extract from pre-parsed header fields (no repeated YAML parsing)
+      560 -        local_impl_str: str | None = None
+      561 -        remote_impl_str: str | None = None
+      562 -        learn_status: str | None = None
+      563 -        learn_plan_issue: int | None = None
+      564 -        learn_plan_pr: int | None = None
+      565 -        learn_run_id: str | None = None
+      566 -        if plan.header_fields:
+      567 -            extracted = header_str(plan.header_fields, WORKTREE_NAME)
+      568 -            if extracted and not worktree_name:
+      569 -                worktree_name = extracted
+      570 -            local_impl_str = header_str(plan.header_fields, LAST_LOCAL_IMPL_AT)
+      571 -            remote_impl_str = header_str(plan.header_fields, LAST_REMOTE_IMPL_AT)
+      572 -            learn_status = header_str(plan.header_fields, LEARN_STATUS)
+      573 -            learn_plan_issue = header_int(plan.header_fields, LEARN_PLAN_ISSUE)
+      574 -            learn_plan_pr = header_int(plan.header_fields, LEARN_PLAN_PR)
+      575 -            learn_run_id = header_str(plan.header_fields, LEARN_RUN_ID)
+      576 -
+      577 -        # Extract objective_issue from pre-parsed header fields
+      578 -        objective_issue = header_int(plan.header_fields, OBJECTIVE_ISSUE)
+      579 -
+      580 -        # Learn plan issue closed state is not fetched (too slow for N sequential calls).
+      581 -        # Falls back to open icon (📋) which is acceptable.
+      582 -        learn_plan_issue_closed: bool | None = None
+      583 -
+      584 -        # Format learn display (full text for detail modal, icon-only for table)
+      585 -        learn_display = _format_learn_display(
+      586 -            learn_status,
+      587 -            learn_plan_issue,
+      588 -            learn_plan_pr,
+      589 -            learn_plan_issue_closed=learn_plan_issue_closed,
+      590 -        )
+      591 -        learn_display_icon = _format_learn_display_icon(
+      592 -            learn_status,
+      593 -            learn_plan_issue,
+      594 -            learn_plan_pr,
+      595 -            learn_plan_issue_closed=learn_plan_issue_closed,
+      596 -        )
+      597 -
+      598 -        # Get datetime versions for storage (already parsed by YAML)
+      599 -        last_local_impl_at = header_datetime(plan.header_fields, LAST_LOCAL_IMPL_AT)
+      600 -        last_remote_impl_at = header_datetime(plan.header_fields, LAST_REMOTE_IMPL_AT)
+      601 -
+      602 -        # Format time displays
+      603 -        local_impl = format_relative_time(local_impl_str)
+      604 -        local_impl_display = local_impl if local_impl else "-"
+      605 -        remote_impl = format_relative_time(remote_impl_str)
+      606 -        remote_impl_display = remote_impl if remote_impl else "-"
+      607 -
+      608 -        # PR info
+      609 -        pr_number: int | None = None
+      610 -        pr_url: str | None = None
+      611 -        pr_title: str | None = None
+      612 -        pr_state: str | None = None
+      613 -        pr_head_branch: str | None = None
+      614 -        pr_display = "-"
+      615 -        checks_display = "-"
+      616 -
+      617 -        # Comment counts - "-" when no PR
+      618 -        resolved_comment_count = 0
+      619 -        total_comment_count = 0
+      620 -        comments_display = "-"
+      621 -
+      622 -        # PR status fields for lifecycle enrichment
+      623 -        pr_is_draft: bool | None = None
+      624 -        pr_has_conflicts: bool | None = None
+      625 -        pr_review_decision: str | None = None
+      626 -        pr_checks_passing: bool | None = None
+      627 -        pr_checks_counts: tuple[int, int] | None = None
+      628 -        pr_has_unresolved_comments: bool | None = None
+      629 -        pr_is_stacked: bool | None = None
+      630 -
+      631 -        if plan_id in pr_linkages:
+      632 -            issue_prs = pr_linkages[plan_id]
+      633 -            selected_pr = select_display_pr(issue_prs, exclude_pr_numbers=None)
+      634 -            if selected_pr is not None:
+      635 -                pr_number = selected_pr.number
+      636 -                pr_title = selected_pr.title
+      637 -                pr_state = selected_pr.state
+      638 -                pr_head_branch = selected_pr.head_branch
+      639 -                graphite_url = self._ctx.graphite.get_graphite_url(
+      640 -                    GitHubRepoId(selected_pr.owner, selected_pr.repo), selected_pr.number
+      641 -                )
+      642 -                pr_url = graphite_url if use_graphite and graphite_url else selected_pr.url
+      643 -                emoji = get_pr_status_emoji(selected_pr)
+      644 -                if selected_pr.will_close_target:
+      645 -                    emoji += "🔗"
+      646 -                pr_display = f"#{selected_pr.number} {emoji}"
+      647 -                checks_display = format_checks_cell(selected_pr)
+      648 -
+      649 -                # Extract status fields for lifecycle enrichment
+      650 -                pr_is_draft = selected_pr.is_draft
+      651 -                pr_has_conflicts = selected_pr.has_conflicts
+      652 -                pr_review_decision = selected_pr.review_decision
+      653 -                pr_checks_passing = selected_pr.checks_passing
+      654 -                pr_checks_counts = selected_pr.checks_counts
+      655 -                # Check Graphite local parent first (authoritative when available)
+      656 -                if pr_head_branch is not None:
+      657 -                    parent = self._ctx.branch_manager.get_parent_branch(
+      658 -                        self._location.root, pr_head_branch
+      659 -                    )
+      660 -                    if parent is not None:
+      661 -                        pr_is_stacked = parent not in ("master", "main")
+      662 -
+      663 -                # Fall back to GitHub base_ref_name when branch not tracked by Graphite
+      664 -                if pr_is_stacked is None and selected_pr.base_ref_name is not None:
+      665 -                    pr_is_stacked = selected_pr.base_ref_name not in ("master", "main")
+      666 -
+      667 -                # Get review thread counts from batched PR data
+      668 -                if selected_pr.review_thread_counts is not None:
+      669 -                    resolved_comment_count, total_comment_count = selected_pr.review_thread_counts
+      670 -                    comments_display = f"{resolved_comment_count}/{total_comment_count}"
+      671 -                    pr_has_unresolved_comments = total_comment_count &gt; resolved_comment_count
+      672 -                else:
+      673 -                    comments_display = "0/0"
+      674 -                    pr_has_unresolved_comments = False
+      675 -
+      676 -        # Workflow run info
+      677 -        run_id: str | None = None
+      678 -        run_status: str | None = None
+      679 -        run_conclusion: str | None = None
+      680 -        run_id_display = "-"
+      681 -        run_state_display = "-"
+      682 -        run_url: str | None = None
+      683 -
+      684 -        if workflow_run is not None:
+      685 -            run_id = str(workflow_run.run_id)
+      686 -            run_status = workflow_run.status
+      687 -            run_conclusion = workflow_run.conclusion
+      688 -            if plan.url:
+      689 -                parts = plan.url.split("/")
+      690 -                if len(parts) &gt;= 5:
+      691 -                    owner = parts[-4]
+      692 -                    repo_name = parts[-3]
+      693 -                    run_url = (
+      694 -                        f"https://github.com/{owner}/{repo_name}/actions/runs/{workflow_run.run_id}"
+      695 -                    )
+      696 -            run_id_display = format_workflow_run_id(workflow_run, run_url)
+      697 -            run_state_display = format_workflow_outcome(workflow_run)
+      698 -
+      699 -        # Log entries (empty for now - will be fetched on demand in the modal)
+      700 -        log_entries: tuple[tuple[str, str, str], ...] = ()
+      701 -
+      702 -        # Build learn_run_url for pending status
+      703 -        learn_run_url: str | None = None
+      704 -        if learn_run_id is not None and plan.url is not None:
+      705 -            parts = plan.url.split("/")
+      706 -            if len(parts) &gt;= 5:
+      707 -                owner = parts[-4]
+      708 -                repo_name = parts[-3]
+      709 -                learn_run_url = (
+      710 -                    f"https://github.com/{owner}/{repo_name}/actions/runs/{learn_run_id}"
+      711 -                )
+      712 -
+      713 -        # Format objective display
+      714 -        objective_url = (
+      715 -            f"https://github.com/{self._location.repo_id.owner}/{self._location.repo_id.repo}/issues/{objective_issue}"
+      716 -            if objective_issue is not None
+      717 -            else None
+      718 -        )
+      719 -        objective_display = f"#{objective_issue}" if objective_issue is not None else "-"
+      720 -
+      721 -        # Compute slug display
+      722 -        objective_slug_display = "-"
+      723 -        if plan.body:
+      724 -            slug = extract_objective_slug(plan.body)
+      725 -            if slug is not None:
+      726 -                objective_slug_display = slug[:25]
+      727 -            elif plan.title:
+      728 -                stripped = plan.title.removeprefix("Objective: ")
+      729 -                objective_slug_display = stripped[:25]
+      730 -
+      731 -        # Parse roadmap for objective-specific fields
+      732 -        objective_done_nodes = 0
+      733 -        objective_total_nodes = 0
+      734 -        objective_progress_display = "-"
+      735 -        objective_state_display = "-"
+      736 -        objective_deps_display = "-"
+      737 -        objective_next_node_display = "-"
+      738 -        objective_deps_plans: list[tuple[str, str]] = []
+      739 -        if plan.body:
+      740 -            phases, _errors = parse_roadmap(plan.body)
+      741 -            if phases:
+      742 -                graph = build_graph(phases)
+      743 -                summary = compute_graph_summary(graph)
+      744 -                objective_done_nodes = summary["done"]
+      745 -                objective_total_nodes = summary["total_nodes"]
+      746 -                objective_progress_display = f"{objective_done_nodes}/{objective_total_nodes}"
+      747 -                objective_state_display = build_state_sparkline(graph.nodes)
+      748 -                next_node = find_graph_next_node(graph, phases)
+      749 -                if next_node is not None:
+      750 -                    objective_next_node_display = next_node["id"]
+      751 -                    min_status = graph.min_dep_status(next_node["id"])
+      752 -                    if min_status is None or min_status in _TERMINAL_STATUSES:
+      753 -                        objective_deps_display = "ready"
+      754 -                    else:
+      755 -                        objective_deps_display = min_status.replace("_", " ")
+      756 -
+      757 -                    # Collect blocking dep PR numbers for the next node
+      758 -                    target = next((n for n in graph.nodes if n.id == next_node["id"]), None)
+      759 -                    if target is not None and target.depends_on:
+      760 -                        node_map = {n.id: n for n in graph.nodes}
+      761 -                        for dep_id in target.depends_on:
+      762 -                            if dep_id in node_map:
+      763 -                                dep = node_map[dep_id]
+      764 -                                if dep.status not in _TERMINAL_STATUSES and dep.pr is not None:
+      765 -                                    num = dep.pr.lstrip("#")
+      766 -                                    repo_id = self._location.repo_id
+      767 -                                    url = f"https://github.com/{repo_id.owner}/{repo_id.repo}/pull/{num}"
+      768 -                                    objective_deps_plans.append((dep.pr, url))
+      769 -
+      770 -                    # Also show the next node's own PR if it has one (active work indicator)
+      771 -                    if (
+      772 -                        target is not None
+      773 -                        and target.pr is not None
+      774 -                        and target.status not in _TERMINAL_STATUSES
+      775 -                    ):
+      776 -                        existing_prs = {pr_ref for pr_ref, _ in objective_deps_plans}
+      777 -                        if target.pr not in existing_prs:
+      778 -                            num = target.pr.lstrip("#")
+      779 -                            repo_id = self._location.repo_id
+      780 -                            url = f"https://github.com/{repo_id.owner}/{repo_id.repo}/pull/{num}"
+      781 -                            objective_deps_plans.append((target.pr, url))
+      782 -
+      783 -        # Format updated_at display
+      784 -        updated_display = format_relative_time(plan.updated_at.isoformat()) or "-"
+      785 -
+      786 -        # Format created_at display
+      787 -        created_display = format_relative_time(plan.created_at.isoformat()) or "-"
+      788 -
+      789 -        # Determine if this is a learn plan
+      790 -        is_learn_plan = "erk-learn" in plan.labels
+      791 -
+      792 -        # Compute lifecycle display from header or infer from metadata
+      793 -        lifecycle_display = _compute_lifecycle_display(
+      794 -            plan, has_workflow_run=workflow_run is not None, linked_pr_state=pr_state
+      795 -        )
+      796 -
+      797 -        # Compute status indicators separately for the "sts" column
+      798 -        status_display = compute_status_indicators(
+      799 -            lifecycle_display,
+      800 -            is_draft=pr_is_draft,
+      801 -            has_conflicts=pr_has_conflicts,
+      802 -            review_decision=pr_review_decision,
+      803 -            checks_passing=pr_checks_passing,
+      804 -            has_unresolved_comments=pr_has_unresolved_comments,
+      805 -            is_stacked=pr_is_stacked,
+      806 -        )
+      807 -
+      808 -        return PlanRowData(
+      809 -            plan_id=plan_id,
+      810 -            plan_url=plan.url,
+      811 -            pr_number=pr_number,
+      812 -            pr_url=pr_url,
+      813 -            pr_display=pr_display,
+      814 -            checks_display=checks_display,
+      815 -            checks_passing=pr_checks_passing,
+      816 -            checks_counts=pr_checks_counts,
+      817 -            worktree_name=worktree_name,
+      818 -            exists_locally=exists_locally,
+      819 -            local_impl_display=local_impl_display,
+      820 -            remote_impl_display=remote_impl_display,
+      821 -            run_id_display=run_id_display,
+      822 -            run_state_display=run_state_display,
+      823 -            run_url=run_url,
+      824 -            full_title=full_title,
+      825 -            plan_body=plan.body or "",
+      826 -            pr_title=pr_title,
+      827 -            pr_state=pr_state,
+      828 -            pr_head_branch=pr_head_branch,
+      829 -            worktree_branch=worktree_branch,
+      830 -            last_local_impl_at=last_local_impl_at,
+      831 -            last_remote_impl_at=last_remote_impl_at,
+      832 -            run_id=run_id,
+      833 -            run_status=run_status,
+      834 -            run_conclusion=run_conclusion,
+      835 -            log_entries=log_entries,
+      836 -            resolved_comment_count=resolved_comment_count,
+      837 -            total_comment_count=total_comment_count,
+      838 -            comments_display=comments_display,
+      839 -            learn_status=learn_status,
+      840 -            learn_plan_issue=learn_plan_issue,
+      841 -            learn_plan_issue_closed=learn_plan_issue_closed,
+      842 -            learn_plan_pr=learn_plan_pr,
+      843 -            learn_run_url=learn_run_url,
+      844 -            learn_display=learn_display,
+      845 -            learn_display_icon=learn_display_icon,
+      846 -            objective_issue=objective_issue,
+      847 -            objective_url=objective_url,
+      848 -            objective_display=objective_display,
+      849 -            objective_done_nodes=objective_done_nodes,
+      850 -            objective_total_nodes=objective_total_nodes,
+      851 -            objective_progress_display=objective_progress_display,
+      852 -            objective_slug_display=objective_slug_display,
+      853 -            objective_state_display=objective_state_display,
+      854 -            objective_deps_display=objective_deps_display,
+      855 -            objective_deps_plans=tuple(objective_deps_plans),
+      856 -            objective_next_node_display=objective_next_node_display,
+      857 -            updated_at=plan.updated_at,
+      858 -            updated_display=updated_display,
+      859 -            created_at=plan.created_at,
+      860 -            created_display=created_display,
+      861 -            author=str(plan.metadata.get("author", "")),
+      862 -            is_learn_plan=is_learn_plan,
+      863 -            lifecycle_display=lifecycle_display,
+      864 -            status_display=status_display,
+      865 -        )
+      866 -
+      867 -
+      868 -def _format_learn_display(
+      869 -    learn_status: str | None,
+      870 -    learn_plan_issue: int | None,
+      871 -    learn_plan_pr: int | None,
+      872 -    *,
+      873 -    learn_plan_issue_closed: bool | None,
+      874 -) -&gt; str:
+      875 -    """Format learn status for display with inline descriptions.
+      876 -
+      877 -    Args:
+      878 -        learn_status: Raw status value from plan header
+      879 -        learn_plan_issue: Issue number of generated learn plan
+      880 -        learn_plan_pr: PR number that implemented the learn plan
+      881 -        learn_plan_issue_closed: Whether the learn plan issue is closed
+      882 -
+      883 -    Returns:
+      884 -        Formatted display string based on status:
+      885 -        - None or "not_started" -&gt; "- not started"
+      886 -        - "pending" -&gt; "⟳ in progress"
+      887 -        - "completed_no_plan" -&gt; "∅ no insights"
+      888 -        - "completed_with_plan" + closed -&gt; "✅ #456" (using learn_plan_issue)
+      889 -        - "completed_with_plan" + open -&gt; "📋 #456" (using learn_plan_issue)
+      890 -        - "pending_review" -&gt; "🚧 #789" (using learn_plan_pr for draft PR)
+      891 -        - "plan_completed" -&gt; "✓ #12" (using learn_plan_pr)
+      892 -    """
+      893 -    if learn_status is None or learn_status == "not_started":
+      894 -        return "- not started"
+      895 -    if learn_status == "pending":
+      896 -        return "⟳ in progress"
+      897 -    if learn_status == "completed_no_plan":
+      898 -        return "∅ no insights"
+      899 -    if learn_status == "completed_with_plan" and learn_plan_issue is not None:
+      900 -        if learn_plan_issue_closed is True:
+      901 -            return f"✅ #{learn_plan_issue}"
+      902 -        return f"📋 #{learn_plan_issue}"
+      903 -    if learn_status == "pending_review" and learn_plan_pr is not None:
+      904 -        return f"🚧 #{learn_plan_pr}"
+      905 -    if learn_status == "plan_completed" and learn_plan_pr is not None:
+      906 -        return f"✓ #{learn_plan_pr}"
+      907 -    # Fallback for unknown status
+      908 -    return "- not started"
+      909 -
+      910 -
+      911 -def _format_learn_display_icon(
+      912 -    learn_status: str | None,
+      913 -    learn_plan_issue: int | None,
+      914 -    learn_plan_pr: int | None,
+      915 -    *,
+      916 -    learn_plan_issue_closed: bool | None,
+      917 -) -&gt; str:
+      918 -    """Format learn status as icon-only for table display.
+      919 -
+      920 -    Args:
+      921 -        learn_status: Raw status value from plan header
+      922 -        learn_plan_issue: Issue number of generated learn plan
+      923 -        learn_plan_pr: PR number that implemented the learn plan
+      924 -        learn_plan_issue_closed: Whether the learn plan issue is closed
+      925 -
+      926 -    Returns:
+      927 -        Icon-only display string based on status:
+      928 -        - None or "not_started" -&gt; "-"
+      929 -        - "pending" -&gt; "⟳"
+      930 -        - "completed_no_plan" -&gt; "∅"
+      931 -        - "completed_with_plan" + closed -&gt; "✅ #456" (using learn_plan_issue)
+      932 -        - "completed_with_plan" + open -&gt; "📋 #456" (using learn_plan_issue)
+      933 -        - "pending_review" -&gt; "🚧 #789" (using learn_plan_pr for draft PR)
+      934 -        - "plan_completed" -&gt; "✓ #12" (using learn_plan_pr)
+      935 -    """
+      936 -    if learn_status is None or learn_status == "not_started":
+      937 -        return "-"
+      938 -    if learn_status == "pending":
+      939 -        return "⟳"
+      940 -    if learn_status == "completed_no_plan":
+      941 -        return "∅"
+      942 -    if learn_status == "completed_with_plan" and learn_plan_issue is not None:
+      943 -        if learn_plan_issue_closed is True:
+      944 -            return f"✅ #{learn_plan_issue}"
+      945 -        return f"📋 #{learn_plan_issue}"
+      946 -    if learn_status == "pending_review" and learn_plan_pr is not None:
+      947 -        return f"🚧 #{learn_plan_pr}"
+      948 -    if learn_status == "plan_completed" and learn_plan_pr is not None:
+      949 -        return f"✓ #{learn_plan_pr}"
+      950 -    # Fallback for unknown status
+      951 -    return "-"
+      952 -
+      953 -
+      954 -def _compute_lifecycle_display(
+      955 -    plan: Plan,
+      956 -    *,
+      957 -    has_workflow_run: bool,
+      958 -    linked_pr_state: str | None,
+      959 -) -&gt; str:
+      960 -    """Compute lifecycle stage display string for a plan.
+      961 -
+      962 -    Delegates to lifecycle.compute_lifecycle_display. This wrapper preserves
+      963 -    the module-private name used by callers within this file.
+      964 -    """
+      965 -    from erk_shared.gateway.plan_data_provider.lifecycle import compute_lifecycle_display
+      966 -
+      967 -    return compute_lifecycle_display(
+      968 -        plan, has_workflow_run=has_workflow_run, linked_pr_state=linked_pr_state
+      969 -    )
+      970 -
+      971 -
+      972 -def _ensure_erk_metadata_dir_from_context(repo: RepoContext | NoRepoSentinel) -&gt; None:
+      973 -    """Ensure erk metadata directory exists, handling sentinel case."""
+      974 -    if isinstance(repo, RepoContext):
+      975 -        ensure_erk_metadata_dir(repo)
+      976 -=======
+        9  __all__ = ["RealPlanDataProvider"]
+      978 -&gt;&gt;&gt;&gt;&gt;&gt;&gt; 43d311103 (Add plan: Split PlanDataProvider: Separate Domain Service from TUI Data Assembly)
+
+⏺ Bash(git add packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py &amp;&amp; git rebase --continue)
+  ⎿  [detached HEAD 4d88c6df8] Add plan: Split PlanDataProvider: Separate Domain Service from TUI Data Assembly
+      39 files changed, 2454 insertions(+), 1673 deletions(-)
+      create mode 100644 packages/erk-shared/src/erk_shared/gateway/plan_service/__init__.py
+      create mode 100644 packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py
+      create mode 100644 packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py
+      create mode 100644 packages/erk-shared/src/erk_shared/gateway/plan_service/real.py
+      create mode 100644 src/erk/tui/data/fake_provider.py
+      create mode 100644 src/erk/tui/data/provider_abc.py
+      create mode 100644 src/erk/tui/data/real_provider.py
+     Successfully rebased and updated refs/heads/plnd/split-plan-data-provider-03-06-0149.
+
+⏺ Rebase completed successfully. Let me verify the state.
+
+⏺ Bash(git status &amp;&amp; echo "---" &amp;&amp; git log --oneline -5)
+  ⎿  On branch plnd/split-plan-data-provider-03-06-0149
+     Your branch and 'origin/plnd/split-plan-data-provider-03-06-0149' have diverged,
+     and have 8 and 5 different commits each, respectively.
+       (use "git pull" if you want to integrate the remote branch with yours)
+
+     nothing to commit, working tree clean
+     ---
+     4d88c6df8 Add plan: Split PlanDataProvider: Separate Domain Service from TUI Data Assembly
+     2581324cf Change `erk pr rebase` to use mechanical rebase with Claude TUI fallback (#8811)
+     614a2d0cd Add ObjectiveNodesScreen modal for objective node breakdown (b key) (#8778)
+     4bab14ab1 Add branch name to workflow run-name for better context (#8809)
+     a2c766e63 Extract CI check formatting to shared module (#8808)
+
+⏺ Rebase is clean — branch commit 4d88c6df8 is now on top of 2581324cf. Ready to push.
+
+⏺ Bash(gt submit --no-interactive)
+  ⎿  Running in non-interactive mode. Inline prompts to fill PR fields will be skipped and new PRs will be created in draft mode.
+
+     🥞 Validating that this Graphite stack is ready to submit...
+
+     ✏️ Preparing to submit PRs for the following branches...
+     ▸ plnd/split-plan-data-provider-03-06-0149 (Update code)
+
+     🚀 Pushing branches to remote...
+
+     📨 Creating/updating PRs...
+     plnd/split-plan-data-provider-03-06-0149: https://app.graphite.com/github/pr/dagster-io/erk/8804 (updated)
+
+⏺ Done. Rebase resolved and pushed. The branch plnd/split-plan-data-provider-03-06-0149 is rebased onto 2581324cf with the conflict resolved by keeping the re-export stub. PR
+  updated: https://app.graphite.com/github/pr/dagster-io/erk/8804
+
+✻ Cogitated for 40s
+
+❯ /erk:pr-preview-address
+
+⏺ I need to invoke the pr-feedback-classifier skill. Let me find the PR number for the current branch first.
+
+⏺ Bash(gh pr view --json number,title,url 2&gt;/dev/null || echo "NO_PR")
+  ⎿  {
+       "number": 8804,
+       "title": "[erk-plan] Split PlanDataProvider: Separate Domain Service from TUI Data Assembly",
+       "url": "https://github.com/dagster-io/erk/pull/8804"
+     }
+
+⏺ Now let me invoke the pr-feedback-classifier skill.
+
+❯ Tool loaded.
+
+⏺ Skill(pr-feedback-classifier)
+  ⎿  Done
+
+⏺ PR #8804: "[erk-plan] Split PlanDataProvider: Separate Domain Service from TUI Data Assembly"
+
+  Pre-Existing Items (Auto-Resolve) (1 total)
+
+  ┌─────┬────────┬──────────────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────┐
+  │  #  │  Type  │         Location         │                                              Summary                                              │
+  ├─────┼────────┼──────────────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+  │ 1   │ review │ plan_service/real.py:136 │ Bot: bare subprocess.run — use run_subprocess_with_context() wrapper (pre-existing in moved code) │
+  └─────┴────────┴──────────────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+  Actionable Items (2 total)
+
+  ┌─────┬────────┬──────────────────────────────┬────────────────┬───────────────────────────────────────────────────────────┬────────────┐
+  │  #  │  Type  │           Location           │ Classification │                          Summary                          │ Complexity │
+  ├─────┼────────┼──────────────────────────────┼────────────────┼───────────────────────────────────────────────────────────┼────────────┤
+  │ 2   │ review │ plan_data_provider/abc.py:9  │ actionable     │ Bot: __all__ re-export — use import X as X syntax instead │ local      │
+  ├─────┼────────┼──────────────────────────────┼────────────────┼───────────────────────────────────────────────────────────┼────────────┤
+  │ 3   │ review │ plan_data_provider/real.py:9 │ actionable     │ Bot: __all__ re-export — use import X as X syntax instead │ local      │
+  └─────┴────────┴──────────────────────────────┴────────────────┴───────────────────────────────────────────────────────────┴────────────┘
+
+  Informational Items (0 actionable, 8 discussion comments)
+
+  All 8 discussion comments are informational (plan metadata, workflow notifications, CI reviews).
+
+  Execution Plan Preview
+
+  Batch 0: Pre-Existing (Auto-Resolve) (auto-proceed, no code changes)
+  - Item #1: plan_service/real.py:136 — bare subprocess.run (pre-existing in moved code)
+
+  Batch 1: Local Fixes (auto-proceed)
+  - Item #2: plan_data_provider/abc.py:9 — __all__ re-export → import X as X
+  - Item #3: plan_data_provider/real.py:9 — __all__ re-export → import X as X
+
+  Statistics
+
+  - Pre-existing items (auto-resolve): 1
+  - Actionable items: 2
+  - Informational items: 0
+  - Informational discussion comments: 8
+  - Estimated batches: 2
+  - Auto-proceed batches: 2
+  - User confirmation batches: 0
+
+  ---
+  To address these comments, run: /erk:pr-address
+
+✻ Baked for 1m 1s
+
+❯ /erk:pr-address
+
+⏺ Let me load the prerequisite skill and run mode detection.
+
+⏺ Skill(pr-operations)
+  ⎿  Successfully loaded skill
+
+⏺ Bash(gh pr view --json labels -q '.labels[].name' 2&gt;/dev/null | grep -q '^erk-plan-review
+
+let's fix the race condition mentioned at the bottom &amp;&amp; echo "PLAN_REVIEW" || echo "NOT_PLAN_REVIEW")
+  ⎿  NOT_PLAN_REVIEW
+
+⏺ Bash(git ls-files --error-unmatch .erk/impl-context/plan.md &gt;/dev/null 2&gt;&amp;1 &amp;&amp; echo "PLAN_FILE" || echo "NOT_PLAN_FILE")
+  ⎿  NOT_PLAN_FILE
+
+⏺ Code Review Mode. I already have the classifier output from the preview. Let me proceed with the execution plan.
+
+  Execution Plan
+
+  Batch 0: Pre-Existing (Auto-Resolve) — 1 thread
+
+  ┌─────┬──────────────────────────┬───────────────────────────────────────────────────────┐
+  │  #  │         Location         │                        Summary                        │
+  ├─────┼──────────────────────────┼───────────────────────────────────────────────────────┤
+  │ 1   │ plan_service/real.py:136 │ Bot: bare subprocess.run (pre-existing in moved code) │
+  └─────┴──────────────────────────┴───────────────────────────────────────────────────────┘
+
+  Batch 1: Local Fixes — 2 threads
+
+  ┌─────┬──────────────────────────────┬────────────────────────────────────────┐
+  │  #  │           Location           │                Summary                 │
+  ├─────┼──────────────────────────────┼────────────────────────────────────────┤
+  │ 2   │ plan_data_provider/abc.py:9  │ Bot: __all__ re-export → import X as X │
+  ├─────┼──────────────────────────────┼────────────────────────────────────────┤
+  │ 3   │ plan_data_provider/real.py:9 │ Bot: __all__ re-export → import X as X │
+  └─────┴──────────────────────────────┴────────────────────────────────────────┘
+
+  ---
+  Batch 0: Auto-proceed (pre-existing, no code changes)
+  Batch 1: Auto-proceed (local fixes)
+
+  Starting execution.
+
+  ---
+  Batch 0: Pre-Existing (Auto-Resolve)
+
+⏺ Bash(echo '[{"thread_id": "PRRT_kwDOPxC3hc5yfKfP", "comment": "Pre-existing issue — this code was moved/restructured from plan_data_provider/real.py, not newly
+      introduced."}]' | erk exec resolve-review-threads)
+  ⎿  {
+       "success": true,
+       "results": [
+         {
+           "success": true,
+           "thread_id": "PRRT_kwDOPxC3hc5yfKfP",
+           "comment_added": true
+         }
+       ]
+     }
+
+⏺ Auto-resolved 1 pre-existing thread (bot comment on moved code). No code changes needed.
+
+  ---
+  Batch 1: Local Fixes
+
+  Both threads are about __all__ re-exports needing import X as X syntax. Let me read and fix both files.
+
+⏺ Read(packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py)
+  ⎿  Read 10 lines
+
+⏺ Read(packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py)
+  ⎿  Read 10 lines
+
+⏺ Both files need the same fix: replace __all__ with import X as X re-export syntax.
+
+❯ Tool loaded.
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py)
+  ⎿  Added 1 line, removed 3 lines
+      4      from erk.tui.data.provider_abc import PlanDataProvider
+      5  """
+      6
+      7 -from erk.tui.data.provider_abc import PlanDataProvider
+      8 -
+      9 -__all__ = ["PlanDataProvider"]
+      7 +from erk.tui.data.provider_abc import PlanDataProvider as PlanDataProvider
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py)
+  ⎿  Added 1 line, removed 3 lines
+      4      from erk.tui.data.real_provider import RealPlanDataProvider
+      5  """
+      6
+      7 -from erk.tui.data.real_provider import RealPlanDataProvider
+      8 -
+      9 -__all__ = ["RealPlanDataProvider"]
+      7 +from erk.tui.data.real_provider import RealPlanDataProvider as RealPlanDataProvider
+
+⏺ Now commit and resolve the threads.
+
+⏺ Bash(git add packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py &amp;&amp; git commit -m
+      "$(cat &lt;&lt;'EOF'
+      Address PR review comments (batch 1/1)
+
+      - Replace __all__ re-export with explicit `import X as X` syntax in abc.py
+      - Replace __all__ re-export with explicit `import X as X` syntax in real.py
+
+      Co-Authored-By: Claude Opus 4.6 &lt;noreply@anthropic.com&gt;
+      EOF
+      )")
+  ⎿  [plnd/split-plan-data-provider-03-06-0149 266912e06] Address PR review comments (batch 1/1)
+      2 files changed, 2 insertions(+), 6 deletions(-)
+
+⏺ Bash(echo '[{"thread_id": "PRRT_kwDOPxC3hc5yfLVm", "comment": "Fixed — replaced __all__ with explicit `import X as X` re-export syntax."}, {"thread_id":
+      "PRRT_kwDOPxC3hc5yfLYF", "comment": "Fixed — replaced __all__ with explicit `import X as X` re-export syntax."}]' | erk exec resolve-review-threads)
+  ⎿  {
+       "success": true,
+       "results": [
+         {
+           "success": true,
+           "thread_id": "PRRT_kwDOPxC3hc5yfLVm",
+           "comment_added": true
+         },
+         {
+           "success": true,
+           "thread_id": "PRRT_kwDOPxC3hc5yfLYF",
+           "comment_added": true
+         }
+       ]
+     }
+
+⏺ Batch 1 Complete
+
+  Addressed:
+  - abc.py:9 — Replaced __all__ with import PlanDataProvider as PlanDataProvider
+  - real.py:9 — Replaced __all__ with import RealPlanDataProvider as RealPlanDataProvider
+
+  Committed: 266912e06 "Address PR review comments (batch 1/1)"
+  Resolved threads: 2
+
+  ---
+  Phase 4: Final Verification
+
+❯ Tool loaded.
+
+❯ Tool loaded.
+
+❯ Tool loaded.
+
+⏺ Agent(Verify PR feedback resolved)
+  ⎿  Done (6 tool uses · 23.2k tokens · 30s)
+  (ctrl+o to expand)
+
+⏺ All threads resolved. Now push and update the PR.
+
+⏺ Bash(gt submit --no-interactive)
+  ⎿  Running in non-interactive mode. Inline prompts to fill PR fields will be skipped and new PRs will be created in draft mode.
+
+     🥞 Validating that this Graphite stack is ready to submit...
+
+     ✏️ Preparing to submit PRs for the following branches...
+     ▸ plnd/split-plan-data-provider-03-06-0149 (Update code)
+
+     🚀 Pushing branches to remote...
+
+     📨 Creating/updating PRs...
+     plnd/split-plan-data-provider-03-06-0149: https://app.graphite.com/github/pr/dagster-io/erk/8804 (updated)
+
+⏺ Bash(erk exec update-pr-description --session-id "31768c82-7453-459f-b2a2-a91693ac4df8")
+  ⎿  (No output)
+
+⏺ Bash(erk exec upload-impl-session --session-id "31768c82-7453-459f-b2a2-a91693ac4df8" 2&gt;/dev/null || true)
+  ⎿  {
+       "uploaded": false,
+       "reason": "no_impl_folder"
+     }
+
+⏺ All PR Comments Addressed
+
+  ┌──────────────────────────────┬───────┐
+  │            Metric            │ Count │
+  ├──────────────────────────────┼───────┤
+  │ Total comments               │ 3     │
+  ├──────────────────────────────┼───────┤
+  │ Pre-existing (auto-resolved) │ 1     │
+  ├──────────────────────────────┼───────┤
+  │ Actionable (code changes)    │ 2     │
+  ├──────────────────────────────┼───────┤
+  │ Batches                      │ 2     │
+  ├──────────────────────────────┼───────┤
+  │ Commits                      │ 1     │
+  └──────────────────────────────┴───────┘
+
+  All review threads resolved. All discussion comments informational (8 bot/metadata comments).
+
+  Next steps:
+  1. Wait for CI to pass
+  2. Request re-review if needed
+
+✻ Sautéed for 3m 10s
+
+❯ /local:statusline-refresh
+  ⎿  I'll trigger a status line refresh by generating minimal conversation activity.
+
+     🔄 Status line refreshed
+
+❯ /local:statusline-refresh
+  ⎿  I'll trigger a status line refresh by generating minimal conversation activity.
+
+     🔄 Status line refreshed
+
+❯ /local:debug-ci
+
+⏺ Bash(git branch --show-current)
+  ⎿  plnd/split-plan-data-provider-03-06-0149
+
+⏺ Bash(gh run list --branch plnd/split-plan-data-provider-03-06-0149 --json conclusion,name,databaseId,status --jq '.[] | select(.conclusion == "failure") | "\(.databaseId)
+      \(.name)"' | head -5)
+  ⎿  22749175222 ci
+     22746651582 ci
+
+⏺ Bash(gh run view 22749175222 --log-failed | head -100)
+  ⎿  ty UNKNOWN STEP    2026-03-06T04:33:22.5420101Z Current runner version: '2.332.0'
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5448886Z ##[group]Runner Image Provisioner
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5449629Z Hosted Compute Agent
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5450097Z Version: 20260213.493
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5450702Z Commit: 5c115507f6dd24b8de37d8bbe0bb4509d0cc0fa3
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5451318Z Build Date: 2026-02-13T00:28:41Z
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5451890Z Worker ID: {4ba493c3-58e6-4b98-9e0b-8bac038c7bc7}
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5452534Z Azure Region: northcentralus
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5453020Z ##[endgroup]
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5454326Z ##[group]Operating System
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5454840Z Ubuntu
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5455258Z 24.04.3
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5455653Z LTS
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5456072Z ##[endgroup]
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5456522Z ##[group]Runner Image
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5457189Z Image: ubuntu-24.04
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5457662Z Version: 20260302.42.1
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5458739Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260302.42/images/ubuntu/Ubuntu2404-Readme.md
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5459986Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260302.42
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5460787Z ##[endgroup]
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5461805Z ##[group]GITHUB_TOKEN Permissions
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5463869Z Actions: write
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5464328Z Contents: write
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5464760Z Metadata: read
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5465251Z Statuses: write
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5465690Z ##[endgroup]
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5467914Z Secret source: Actions
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5468602Z Prepare workflow directory
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5802435Z Prepare all required actions
+     ty UNKNOWN STEP    2026-03-06T04:33:22.5841419Z Getting action download info
+     ty UNKNOWN STEP    2026-03-06T04:33:22.8800341Z Download action repository 'actions/checkout@v4' (SHA:34e114876b0b11c390a56381ad16ebd13914f8d5)
+     ty UNKNOWN STEP    2026-03-06T04:33:23.0650958Z Complete job name: ty
+     ty UNKNOWN STEP    2026-03-06T04:33:23.1322900Z ##[group]Run actions/checkout@v4
+     ty UNKNOWN STEP    2026-03-06T04:33:23.1323831Z with:
+     ty UNKNOWN STEP    2026-03-06T04:33:23.1324234Z   repository: dagster-io/erk
+     ty UNKNOWN STEP    2026-03-06T04:33:23.1324956Z   token: ***
+     ty UNKNOWN STEP    2026-03-06T04:33:23.1325353Z   ssh-strict: true
+     ty UNKNOWN STEP    2026-03-06T04:33:23.1325796Z   ssh-user: git
+     ty UNKNOWN STEP    2026-03-06T04:33:23.1326230Z   persist-credentials: true
+     ty UNKNOWN STEP    2026-03-06T04:33:23.1326690Z   clean: true
+     ty UNKNOWN STEP    2026-03-06T04:33:23.1327514Z   sparse-checkout-cone-mode: true
+     ty UNKNOWN STEP    2026-03-06T04:33:23.1327987Z   fetch-depth: 1
+     ty UNKNOWN STEP    2026-03-06T04:33:23.1328431Z   fetch-tags: false
+     ty UNKNOWN STEP    2026-03-06T04:33:23.1328841Z   show-progress: true
+     ty UNKNOWN STEP    2026-03-06T04:33:23.1329277Z   lfs: false
+     ty UNKNOWN STEP    2026-03-06T04:33:23.1329664Z   submodules: false
+     ty UNKNOWN STEP    2026-03-06T04:33:23.1330153Z   set-safe-directory: true
+     ty UNKNOWN STEP    2026-03-06T04:33:23.1330906Z ##[endgroup]
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2370130Z Syncing repository: dagster-io/erk
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2371887Z ##[group]Getting Git version info
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2372577Z Working directory is '/home/runner/work/erk/erk'
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2373657Z [command]/usr/bin/git version
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2443562Z git version 2.53.0
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2467508Z ##[endgroup]
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2481806Z Temporarily overriding HOME='/home/runner/work/_temp/baa2e7d4-111d-4d24-a25c-3e302ad47045' before making global git config
+      changes
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2484247Z Adding repository directory to the temporary git global config as a safe directory
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2488419Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/erk/erk
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2525514Z Deleting the contents of '/home/runner/work/erk/erk'
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2529371Z ##[group]Initializing the repository
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2533754Z [command]/usr/bin/git init /home/runner/work/erk/erk
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2630364Z hint: Using 'master' as the name for the initial branch. This default branch name
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2631658Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2632967Z hint: to use in all of your new repositories, which will suppress this warning,
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2634161Z hint: call:
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2635031Z hint:
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2635953Z hint:      git config --global init.defaultBranch &lt;name&gt;
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2637473Z hint:
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2638402Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2639981Z hint: 'development'. The just-created branch can be renamed via this command:
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2641143Z hint:
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2641854Z hint:      git branch -m &lt;name&gt;
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2642609Z hint:
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2643606Z hint: Disable this message with "git config set advice.defaultBranchName false"
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2645199Z Initialized empty Git repository in /home/runner/work/erk/erk/.git/
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2647938Z [command]/usr/bin/git remote add origin https://github.com/dagster-io/erk
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2675681Z ##[endgroup]
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2677106Z ##[group]Disabling automatic garbage collection
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2680749Z [command]/usr/bin/git config --local gc.auto 0
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2706235Z ##[endgroup]
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2707650Z ##[group]Setting up auth
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2713580Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+     ty UNKNOWN STEP    2026-03-06T04:33:23.2740793Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand'
+     &amp;&amp; git config --local --unset-all 'core.sshCommand' || :"
+     ty UNKNOWN STEP    2026-03-06T04:33:23.3047999Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+     ty UNKNOWN STEP    2026-03-06T04:33:23.3078314Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp
+     'http\.https\:\/\/github\.com\/\.extraheader' &amp;&amp; git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+     ty UNKNOWN STEP    2026-03-06T04:33:23.3254712Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+     ty UNKNOWN STEP    2026-03-06T04:33:23.3280950Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp
+     remote.origin.url
+     ty UNKNOWN STEP    2026-03-06T04:33:23.3482213Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+     ty UNKNOWN STEP    2026-03-06T04:33:23.3513332Z ##[endgroup]
+     ty UNKNOWN STEP    2026-03-06T04:33:23.3514569Z ##[group]Fetching the repository
+     ty UNKNOWN STEP    2026-03-06T04:33:23.3523154Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin
+     +6ba37a8f595b382066549e56ddc8aa19f5a7738a:refs/remotes/pull/8804/merge
+     ty UNKNOWN STEP    2026-03-06T04:33:24.4299778Z From https://github.com/dagster-io/erk
+     ty UNKNOWN STEP    2026-03-06T04:33:24.4301519Z  * [new ref]         6ba37a8f595b382066549e56ddc8aa19f5a7738a -&gt; pull/8804/merge
+     ty UNKNOWN STEP    2026-03-06T04:33:24.4351017Z ##[endgroup]
+     ty UNKNOWN STEP    2026-03-06T04:33:24.4352370Z ##[group]Determining the checkout info
+     ty UNKNOWN STEP    2026-03-06T04:33:24.4353885Z ##[endgroup]
+     ty UNKNOWN STEP    2026-03-06T04:33:24.4357116Z [command]/usr/bin/git sparse-checkout disable
+     ty UNKNOWN STEP    2026-03-06T04:33:24.4399369Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+     ty UNKNOWN STEP    2026-03-06T04:33:24.4422375Z ##[group]Checking out the ref
+     ty UNKNOWN STEP    2026-03-06T04:33:24.4425967Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/8804/merge
+     ty UNKNOWN STEP    2026-03-06T04:33:24.5705372Z Note: switching to 'refs/remotes/pull/8804/merge'.
+
+
+⏺ The logs are mostly CI setup noise. Let me get the actual ty errors.
+
+⏺ Bash(gh run view 22749175222 --log-failed | grep -E '(error|Error|warning\[|FAILED)' | head -30)
+  ⎿  ty UNKNOWN STEP    2026-03-06T04:33:30.6839074Z error[missing-argument]: No argument provided for required parameter `linked_pr_state` of function
+     `compute_lifecycle_display`
+     ty UNKNOWN STEP    2026-03-06T04:33:30.6848702Z error[unresolved-attribute]: Attribute `browser` is not defined on `PlanDataProvider` in union `Unknown |
+     PlanDataProvider`
+     ty UNKNOWN STEP    2026-03-06T04:33:30.6854261Z error[unresolved-attribute]: Attribute `browser` is not defined on `PlanDataProvider` in union `Unknown |
+     PlanDataProvider`
+     ty UNKNOWN STEP    2026-03-06T04:33:30.6860258Z error[unresolved-attribute]: Attribute `clipboard` is not defined on `PlanDataProvider` in union `Unknown |
+     PlanDataProvider`
+     ty UNKNOWN STEP    2026-03-06T04:33:30.6866576Z error[unresolved-attribute]: Attribute `browser` is not defined on `PlanDataProvider` in union `Unknown |
+     PlanDataProvider`
+     ty UNKNOWN STEP    2026-03-06T04:33:30.6872779Z error[unresolved-attribute]: Attribute `repo_root` is not defined on `PlanDataProvider` in union `Unknown |
+     PlanDataProvider`
+     ty UNKNOWN STEP    2026-03-06T04:33:30.6878571Z error[unresolved-attribute]: Attribute `browser` is not defined on `PlanDataProvider` in union `Unknown |
+     PlanDataProvider`
+     ty UNKNOWN STEP    2026-03-06T04:33:30.6884253Z error[unresolved-attribute]: Attribute `browser` is not defined on `PlanDataProvider` in union `Unknown |
+     PlanDataProvider`
+     ty UNKNOWN STEP    2026-03-06T04:33:30.6888197Z error[unresolved-attribute]: Attribute `browser` is not defined on `PlanDataProvider` in union `Unknown |
+     PlanDataProvider`
+     ty UNKNOWN STEP    2026-03-06T04:33:30.6891885Z error[unresolved-attribute]: Attribute `clipboard` is not defined on `PlanDataProvider` in union `Unknown |
+     PlanDataProvider`
+     ty UNKNOWN STEP    2026-03-06T04:33:30.6904534Z make: *** [Makefile:21: ty] Error 1
+     ty UNKNOWN STEP    2026-03-06T04:33:30.6920440Z ##[error]Process completed with exit code 2.
+     unit-tests (3.14)  UNKNOWN STEP    2026-03-06T04:34:02.5763555Z E            +  where 1 = &lt;Result TypeError("compute_lifecycle_display() missing 1 required
+     keyword-only argument: 'linked_pr_state'")&gt;.exit_code
+     unit-tests (3.14)  UNKNOWN STEP    2026-03-06T04:34:02.5764638Z /home/runner/work/erk/erk/tests/commands/dash/test_action_state.py:52: AssertionError
+     unit-tests (3.14)  UNKNOWN STEP    2026-03-06T04:34:02.5779946Z E            +  where 1 = &lt;Result TypeError("compute_lifecycle_display() missing 1 required
+     keyword-only argument: 'linked_pr_state'")&gt;.exit_code
+     unit-tests (3.14)  UNKNOWN STEP    2026-03-06T04:34:02.5781027Z /home/runner/work/erk/erk/tests/commands/dash/test_action_state.py:86: AssertionError
+     unit-tests (3.14)  UNKNOWN STEP    2026-03-06T04:34:02.5832496Z E            +  where 1 = &lt;Result TypeError("compute_lifecycle_display() missing 1 required
+     keyword-only argument: 'linked_pr_state'")&gt;.exit_code
+     unit-tests (3.14)  UNKNOWN STEP    2026-03-06T04:34:02.5833659Z /home/runner/work/erk/erk/tests/commands/dash/test_action_state.py:137: AssertionError
+     unit-tests (3.14)  UNKNOWN STEP    2026-03-06T04:34:02.5854663Z E            +  where 1 = &lt;Result TypeError("compute_lifecycle_display() missing 1 required
+     keyword-only argument: 'linked_pr_state'")&gt;.exit_code
+     unit-tests (3.14)  UNKNOWN STEP    2026-03-06T04:34:02.5855748Z /home/runner/work/erk/erk/tests/commands/dash/test_action_state.py:187: AssertionError
+     unit-tests (3.14)  UNKNOWN STEP    2026-03-06T04:34:02.5876297Z E            +  where 1 = &lt;Result TypeError("compute_lifecycle_display() missing 1 required
+     keyword-only argument: 'linked_pr_state'")&gt;.exit_code
+     unit-tests (3.14)  UNKNOWN STEP    2026-03-06T04:34:02.5877341Z /home/runner/work/erk/erk/tests/commands/dash/test_action_state.py:237: AssertionError
+     unit-tests (3.14)  UNKNOWN STEP    2026-03-06T04:34:02.5898117Z E            +  where 1 = &lt;Result TypeError("compute_lifecycle_display() missing 1 required
+     keyword-only argument: 'linked_pr_state'")&gt;.exit_code
+     unit-tests (3.14)  UNKNOWN STEP    2026-03-06T04:34:02.5899209Z /home/runner/work/erk/erk/tests/commands/dash/test_filtering.py:66: AssertionError
+     unit-tests (3.14)  UNKNOWN STEP    2026-03-06T04:34:02.5920131Z E            +  where 1 = &lt;Result TypeError("compute_lifecycle_display() missing 1 required
+     keyword-only argument: 'linked_pr_state'")&gt;.exit_code
+     unit-tests (3.14)  UNKNOWN STEP    2026-03-06T04:34:02.5921204Z /home/runner/work/erk/erk/tests/commands/dash/test_filtering.py:117: AssertionError
+     unit-tests (3.14)  UNKNOWN STEP    2026-03-06T04:34:02.5944010Z E            +  where 1 = &lt;Result TypeError("compute_lifecycle_display() missing 1 required
+     keyword-only argument: 'linked_pr_state'")&gt;.exit_code
+     unit-tests (3.14)  UNKNOWN STEP    2026-03-06T04:34:02.5945066Z /home/runner/work/erk/erk/tests/commands/dash/test_filtering.py:174: AssertionError
+     unit-tests (3.14)  UNKNOWN STEP    2026-03-06T04:34:02.5963761Z E            +  where 1 = &lt;Result TypeError("compute_lifecycle_display() missing 1 required
+     keyword-only argument: 'linked_pr_state'")&gt;.exit_code
+     unit-tests (3.14)  UNKNOWN STEP    2026-03-06T04:34:02.5964866Z /home/runner/work/erk/erk/tests/commands/dash/test_filtering.py:218: AssertionError
+
+⏺ CI Failure Analysis
+
+  Branch: plnd/split-plan-data-provider-03-06-0149
+  PR: #8804
+
+  Failed Checks
+
+  1. ty (type checking)
+    - compute_lifecycle_display() missing required parameter linked_pr_state
+    - Multiple unresolved-attribute errors: browser, clipboard, repo_root not defined on PlanDataProvider ABC
+  2. unit-tests (3.14)
+    - 8 test failures in tests/commands/dash/test_action_state.py and tests/commands/dash/test_filtering.py
+    - All same root cause: compute_lifecycle_display() missing 1 required keyword-only argument: 'linked_pr_state'
+
+  Root Cause
+
+  The compute_lifecycle_display function signature was changed to require linked_pr_state as a keyword argument, but callers in src/erk/cli/commands/exec/scripts/dash_data.py
+  (and possibly others) weren't updated. Additionally, the PlanDataProvider ABC is missing browser, clipboard, and repo_root abstract properties that the TUI code accesses.
+
+  Suggested Fix
+
+  1. Find the caller of compute_lifecycle_display that's missing the linked_pr_state argument and add it
+  2. Add browser, clipboard, and repo_root as abstract properties on the PlanDataProvider ABC (or the new provider_abc.py)
+
+  Want me to investigate and fix these?
+
+✻ Churned for 46s
+
+❯ yes
+
+⏺ Let me investigate the failing code paths.
+
+⏺ Search(pattern: "compute_lifecycle_display", path: "src")
+  ⎿  Found 1 file (ctrl+o to expand)
+
+⏺ Search(pattern: "compute_lifecycle_display", path: "packages")
+  ⎿  Found 1 file (ctrl+o to expand)
+
+⏺ Read(src/erk/tui/data/provider_abc.py)
+  ⎿  Read 64 lines
+
+⏺ Search(pattern: "compute_lifecycle_display", path: "packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py")
+  ⎿  Found 1 file (ctrl+o to expand)
+
+⏺ Search(pattern: "compute_lifecycle_display", path: "src/erk/cli")
+  ⎿  Found 0 files
+
+⏺ Search(pattern: "\.(browser|clipboard|repo_root)\b", path: "src/erk/tui")
+  ⎿  Found 6 files (ctrl+o to expand)
+
+⏺ Search(pattern: "compute_lifecycle_display", path: "~/.erk/repos/erk/worktrees/erk-slot-03")
+  ⎿  Found 3 files (ctrl+o to expand)
+
+⏺ Read(packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py)
+  ⎿  Read 259 lines
+  ⎿  Loaded src/erk/tui/CLAUDE.md
+  ⎿  Loaded src/erk/tui/AGENTS.md
+
+⏺ Now let me find the callers that are missing linked_pr_state:
+
+⏺ Search(pattern: "compute_lifecycle_display", path: "src/erk/cli")
+  ⎿  Found 0 files
+
+⏺ Search(pattern: "from.*lifecycle.*import", path: "src/erk/cli")
+  ⎿  Found 9 files (ctrl+o to expand)
+
+⏺ Search(pattern: "compute_lifecycle_display|from.*lifecycle", path: "tests/commands/dash")
+  ⎿  Found 0 files
+
+⏺ The tests and CLI code don't directly call compute_lifecycle_display. The error must come from the dash_data.py script. Let me check that file since it was in the git status.
+
+⏺ Read(src/erk/cli/commands/exec/scripts/dash_data.py)
+  ⎿  Read 113 lines
+  ⎿  Loaded src/erk/cli/commands/exec/scripts/CLAUDE.md
+  ⎿  Loaded src/erk/cli/commands/exec/scripts/AGENTS.md
+
+⏺ Now I see — dash_data.py constructs RealPlanDataProvider without clipboard and browser. Let me check the new RealPlanDataProvider and the old ABC to understand the split.
+
+⏺ Read(src/erk/tui/data/real_provider.py)
+  ⎿  Read 682 lines
+
+⏺ Found the issue. Line 675 in real_provider.py calls compute_lifecycle_display(plan, has_workflow_run=has_workflow_run) but the function now requires linked_pr_state as a
+  keyword argument. The _compute_lifecycle_display wrapper doesn't pass it through.
+
+  Now let me check the browser/clipboard/repo_root issue — these are accessed on the provider but not on the ABC.
+
+⏺ Search(pattern: "\bprovider\.(browser|clipboard|repo_root)\b", path: "src/erk/tui")
+  ⎿  Found 0 files
+
+⏺ Search(pattern: "\b(self\._provider|app\.provider|self\.provider)\.(browser|clipboard|repo_root)\b", path: "src/erk/tui")
+  ⎿  Found 1 file (ctrl+o to expand)
+
+⏺ Search(pattern: "\.(browser|clipboard|repo_root)\b", path: "src/erk/tui")
+  ⎿  Found 6 files (ctrl+o to expand)
+
+⏺ Search(pattern: "\.(browser|clipboard|repo_root)\b", path: "src/erk/tui/app.py")
+  ⎿  Found 1 file (ctrl+o to expand)
+
+⏺ Bash(grep -n '\.\(browser\|clipboard\|repo_root\)' /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/tui/app.py /Users/schrockn/.erk/repos/erk/worktrees/e…)
+  ⎿  /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/tui/app.py:483:                self._service.browser.launch(row.plan_url)
+     /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/tui/app.py:493:                self._service.browser.launch(row.pr_url)
+     /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/tui/app.py:503:                success = self._service.clipboard.copy(row.worktree_name)
+     … +37 lines (ctrl+o to expand)
+
+⏺ I see — browser, clipboard, and repo_root are accessed on self._service (which is a PlanService) and on self._provider (a PlanDataProvider). The ty errors are about
+  PlanDataProvider missing these attributes. Let me check the PlanService ABC.
+
+⏺ Read(packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py)
+  ⎿  Read 134 lines
+
+⏺ Good — browser, clipboard, repo_root are on PlanService, not PlanDataProvider. The ty errors are about self._provider in objective_nodes_screen.py accessing those. Let me
+  check the type annotation there.
+
+⏺ Bash(grep -n '_provider' /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/tui/screens/objective_nodes_screen.py | head -10)
+  ⎿  25:from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+     249:        self._provider = provider
+     370:        self._provider.browser.launch(url)
+     … +7 lines (ctrl+o to expand)
+
+⏺ Read(src/erk/tui/screens/objective_nodes_screen.py)
+  ⎿  Read 20 lines
+
+⏺ Read(src/erk/tui/screens/objective_nodes_screen.py)
+  ⎿  Read 30 lines
+
+⏺ OK, so ObjectiveNodesScreen takes a PlanDataProvider but accesses .browser, .clipboard, .repo_root which are PlanService attributes. It needs both. Let me check how it's
+  instantiated to understand what it actually receives.
+
+⏺ Search(pattern: "ObjectiveNodesScreen", path: "src/erk/tui")
+  ⎿  Found 3 files (ctrl+o to expand)
+
+⏺ Bash(grep -n 'ObjectiveNodesScreen' /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/tui/actions/navigation.py)
+  ⎿  12:from erk.tui.screens.objective_nodes_screen import ObjectiveNodesScreen
+     209:            ObjectiveNodesScreen(
+
+⏺ Read(src/erk/tui/actions/navigation.py)
+  ⎿  Read 15 lines
+
+⏺ So ObjectiveNodesScreen receives self._provider (a PlanDataProvider) but accesses browser, clipboard, repo_root on it. These should be accessed from self._service (a
+  PlanService) instead. But looking at the ty errors more carefully, they say PlanDataProvider in union Unknown | PlanDataProvider — this is about the type annotation on
+  ObjectiveNodesScreen.__init__ which takes PlanDataProvider.
+
+  The cleanest fix is: ObjectiveNodesScreen should also accept a PlanService parameter for those operations. But this is a plan PR — the code was just moved. Let me check if
+  objective_nodes_screen.py was modified by this PR.
+
+⏺ Bash(git diff main -- src/erk/tui/screens/objective_nodes_screen.py | head -5)
+  ⎿  fatal: bad revision 'main'
+
+⏺ Bash(git diff HEAD~1 -- src/erk/tui/screens/objective_nodes_screen.py | head -30)
+  ⎿  (No output)
+
+⏺ Not changed by this PR. So the ty errors about browser/clipboard/repo_root on PlanDataProvider are pre-existing in the sense that objective_nodes_screen.py was already
+  accessing these before the split. But now that the import changed to the new PlanDataProvider ABC (which doesn't have those properties), ty catches it.
+
+  Let me check what objective_nodes_screen.py imports — it imports from the old location which re-exports the new ABC:
+
+  Line 25: from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider — this now re-exports the new PlanDataProvider from erk.tui.data.provider_abc which doesn't
+  have browser/clipboard/repo_root.
+
+  There are two issues to fix:
+
+  1. _compute_lifecycle_display missing linked_pr_state — the wrapper in real_provider.py:675 doesn't pass linked_pr_state to compute_lifecycle_display
+  2. ObjectiveNodesScreen accessing PlanService attributes via PlanDataProvider — needs to also take a PlanService
+
+  Let me fix both. First, the lifecycle issue (straightforward):
+
+⏺ Read(src/erk/tui/data/real_provider.py)
+  ⎿  Read 15 lines
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/tui/data/real_provider.py)
+  ⎿  Added 1 line, removed 1 line
+      545          is_learn_plan = "erk-learn" in plan.labels
+      546
+      547          lifecycle_display = _compute_lifecycle_display(
+      548 -            plan, has_workflow_run=workflow_run is not None
+      548 +            plan, has_workflow_run=workflow_run is not None, linked_pr_state=pr_state
+      549          )
+      550
+      551          status_display = compute_status_indicators(
+
+⏺ Now fix the wrapper function signature at the bottom of the file:
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/tui/data/real_provider.py)
+  ⎿  Added 6 lines, removed 2 lines
+      668      return "-"
+      669
+      670
+      671 -def _compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -&gt; str:
+      671 +def _compute_lifecycle_display(
+      672 +    plan: Plan, *, has_workflow_run: bool, linked_pr_state: str | None
+      673 +) -&gt; str:
+      674      """Compute lifecycle stage display string for a plan."""
+      675      from erk_shared.gateway.plan_data_provider.lifecycle import compute_lifecycle_display
+      676
+      675 -    return compute_lifecycle_display(plan, has_workflow_run=has_workflow_run)
+      677 +    return compute_lifecycle_display(
+      678 +        plan, has_workflow_run=has_workflow_run, linked_pr_state=linked_pr_state
+      679 +    )
+      680
+      681
+      682  def _ensure_erk_metadata_dir_from_context(repo: RepoContext | NoRepoSentinel) -&gt; None:
+
+⏺ Now fix the ObjectiveNodesScreen to accept and use PlanService for browser/clipboard/repo_root:
+
+⏺ Read(src/erk/tui/screens/objective_nodes_screen.py)
+  ⎿  Read 30 lines
+
+⏺ Read(src/erk/tui/screens/objective_nodes_screen.py)
+  ⎿  Read 25 lines
+
+⏺ Now I need to add a service parameter. Let me also check the call site:
+
+⏺ Read(src/erk/tui/actions/navigation.py)
+  ⎿  Read 30 lines
+
+⏺ Read(src/erk/tui/actions/navigation.py)
+  ⎿  Read 25 lines
+
+⏺ The ObjectiveNodesScreen needs access to both PlanDataProvider (for fetch_plans_by_ids) and PlanService (for browser/clipboard/repo_root). I need to add a service parameter.
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/tui/screens/objective_nodes_screen.py)
+  ⎿  Added 1 line
+      23  )
+      24  from erk_shared.gateway.github.metadata.roadmap import RoadmapPhase
+      25  from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+      26 +from erk_shared.gateway.plan_service.abc import PlanService
+      27
+      28
+      29  def _styled_stage(lifecycle_display: str) -&gt; str | Text:
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/tui/screens/objective_nodes_screen.py)
+  ⎿  Added 3 lines
+      234          self,
+      235          *,
+      236          provider: PlanDataProvider,
+      237 +        service: PlanService,
+      238          plan_id: int,
+      239          plan_body: str,
+      240          full_title: str,
+     ...
+      243
+      244          Args:
+      245              provider: Data provider for fetching PR details
+      246 +            service: Plan service for browser/clipboard/repo_root access
+      247              plan_id: The objective issue number
+      248              plan_body: The objective body text with roadmap metadata
+      249              full_title: The full objective title for display
+      250          """
+      251          super().__init__()
+      252          self._provider = provider
+      253 +        self._service = service
+      254          self._plan_id = plan_id
+      255          self._plan_body = plan_body
+      256          self._full_title = full_title
+
+⏺ Now replace all self._provider.browser, self._provider.clipboard, self._provider.repo_root with self._service.*:
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/tui/screens/objective_nodes_screen.py)
+  ⎿  Added 6 lines, removed 6 lines
+      371          url = row.pr_url or row.plan_url
+      372          if url is None:
+      373              return
+      374 -        self._provider.browser.launch(url)
+      374 +        self._service.browser.launch(url)
+      375
+      376      def action_open_objective(self) -&gt; None:
+      377          """Open the parent objective issue in browser."""
+     ...
+      380              if pr_data.plan_url is not None:
+      381                  base_url = pr_data.plan_url.rsplit("/", 2)[0]
+      382                  objective_url = f"{base_url}/issues/{self._plan_id}"
+      383 -                self._provider.browser.launch(objective_url)
+      383 +                self._service.browser.launch(objective_url)
+      384                  return
+      385
+      386      def action_open_detail(self) -&gt; None:
+     ...
+      394              PlanDetailScreen(
+      395                  row=row,
+      396                  clipboard=self._provider.clipboard,
+      397 -                browser=self._provider.browser,
+      397 +                browser=self._service.browser,
+      398                  repo_root=self._provider.repo_root,
+      399                  view_mode=ViewMode.PLANS,
+      400              )
+     ...
+      415
+      416          if command_id == "open_issue":
+      417              if row.plan_url:
+      418 -                self._provider.browser.launch(row.plan_url)
+      418 +                self._service.browser.launch(row.plan_url)
+      419                  self.notify(f"Opened plan #{row.plan_id}")
+      420
+      421          elif command_id == "open_pr":
+      422              url = row.pr_url or row.plan_url
+      423              if url:
+      424 -                self._provider.browser.launch(url)
+      424 +                self._service.browser.launch(url)
+      425                  self.notify(f"Opened PR #{row.pr_number or row.plan_id}")
+      426
+      427          elif command_id == "open_run":
+      428              if row.run_url:
+      429 -                self._provider.browser.launch(row.run_url)
+      429 +                self._service.browser.launch(row.run_url)
+      430                  self.notify(f"Opened run {row.run_id_display}")
+      431
+      432          elif command_id.startswith("copy_"):
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/tui/screens/objective_nodes_screen.py)
+  ⎿  Added 2 lines, removed 2 lines
+      393          self.app.push_screen(
+      394              PlanDetailScreen(
+      395                  row=row,
+      396 -                clipboard=self._provider.clipboard,
+      396 +                clipboard=self._service.clipboard,
+      397                  browser=self._service.browser,
+      398                  repo_root=self._provider.repo_root,
+      399                  view_mode=ViewMode.PLANS,
+     ...
+      433              ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
+      434              text = get_copy_text(command_id, ctx)
+      435              if text is not None:
+      436 -                self._provider.clipboard.copy(text)
+      436 +                self._service.clipboard.copy(text)
+      437                  self.notify(f"Copied: {text}", timeout=2)
+      438
+      439      @work(thread=True)
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/tui/screens/objective_nodes_screen.py)
+  ⎿  Added 1 line, removed 1 line
+      395                  row=row,
+      396                  clipboard=self._service.clipboard,
+      397                  browser=self._service.browser,
+      398 -                repo_root=self._provider.repo_root,
+      398 +                repo_root=self._service.repo_root,
+      399                  view_mode=ViewMode.PLANS,
+      400              )
+      401          )
+
+⏺ Now update the call site in navigation.py:
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/tui/actions/navigation.py)
+  ⎿  Added 1 line
+      208          self.push_screen(
+      209              ObjectiveNodesScreen(
+      210                  provider=self._provider,
+      211 +                service=self._service,
+      212                  plan_id=row.plan_id,
+      213                  plan_body=row.plan_body,
+      214                  full_title=row.full_title,
+
+⏺ Now I need to check if any tests instantiate ObjectiveNodesScreen and need updating:
+
+⏺ Search(pattern: "ObjectiveNodesScreen", path: "tests")
+  ⎿  Found 2 files (ctrl+o to expand)
+
+⏺ Bash(grep -n 'ObjectiveNodesScreen' /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/tui/screens/test_objective_nodes_screen.py)
+  ⎿  1:"""Tests for ObjectiveNodesScreen _build_table_rows formatting."""
+
+⏺ That file only tests a static method. Let me check the other test:
+
+⏺ Bash(grep -n 'ObjectiveNodesScreen' /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/tui/app/test_actions.py)
+  ⎿  8:from erk.tui.screens.objective_nodes_screen import ObjectiveNodesScreen
+     190:        """Objective row with plan_body → pushes ObjectiveNodesScreen."""
+     210:            assert isinstance(app.screen_stack[-1], ObjectiveNodesScreen)
+
+⏺ Read(tests/tui/app/test_actions.py)
+  ⎿  Read 30 lines
+  ⎿  Loaded tests/CLAUDE.md
+  ⎿  Loaded tests/AGENTS.md
+
+⏺ This test creates ErkDashApp with a FakePlanDataProvider and triggers action_view_nodes via key press. The ErkDashApp passes self._provider to ObjectiveNodesScreen. I need to
+   check how ErkDashApp stores the service.
+
+⏺ Bash(grep -n '_service\|_provider' /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/tui/app.py | head -20)
+  ⎿  41:from erk_shared.gateway.plan_service.abc import PlanService
+     126:        self._provider = provider
+     127:        self._service = service
+     … +8 lines (ctrl+o to expand)
+
+⏺ Good — ErkDashApp has both self._provider and self._service. Now let me check the constructor:
+
+⏺ Read(src/erk/tui/app.py)
+  ⎿  Read 35 lines
+
+⏺ Good. Now I need to check the tests that create ErkDashApp — they need to also pass service. Let me check the test helpers:
+
+⏺ Search(pattern: "ErkDashApp\(", path: "tests/tui")
+  ⎿  Found 13 files (ctrl+o to expand)
+
+⏺ That's a lot of test files. Let me check if there's a helper function that creates the app:
+
+⏺ Bash(grep -rn 'ErkDashApp(' /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/tui/app/test_actions.py | head -5)
+  ⎿  /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/tui/app/test_actions.py:24:        app = ErkDashApp(
+     /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/tui/app/test_actions.py:46:        app = ErkDashApp(
+     /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/tui/app/test_actions.py:67:        app = ErkDashApp(
+     … +3 lines (ctrl+o to expand)
+
+⏺ Read(tests/tui/app/test_actions.py)
+  ⎿  Read 10 lines
+
+⏺ Good — the tests already pass service=FakePlanService(). Let me check the FakePlanService:
+
+⏺ Search(pattern: "class FakePlanService", path: "~/.erk/repos/erk/worktrees/erk-slot-03")
+  ⎿  Found 1 file (ctrl+o to expand)
+
+⏺ Read(packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py)
+  ⎿  Read 199 lines
+
+⏺ Good, FakePlanService exists and has browser, clipboard, repo_root. The tests already pass it to ErkDashApp. Now let me also check the commands/provider.py since it
+  references ObjectiveNodesScreen:
+
+⏺ Bash(grep -n 'ObjectiveNodesScreen' /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/tui/commands/provider.py)
+  ⎿  17:    from erk.tui.screens.objective_nodes_screen import ObjectiveNodesScreen
+     276:    def _nodes_screen(self) -&gt; ObjectiveNodesScreen:
+     277:        """Get the ObjectiveNodesScreen from current screen context.
+     … +5 lines (ctrl+o to expand)
+
+⏺ That's just type checking, not construction. Now let me also check test_dash_data which is failing, to see how dash_data.py calls compute_lifecycle_display — the errors point
+   to tests/commands/dash/test_action_state.py:
+
+⏺ Read(tests/commands/dash/test_action_state.py)
+  ⎿  Read 60 lines
+  ⎿  Loaded tests/commands/CLAUDE.md
+  ⎿  Loaded tests/commands/AGENTS.md
+
+⏺ These tests use erk pr list command, not dash_data.py. The error compute_lifecycle_display() missing 1 required keyword-only argument: 'linked_pr_state' is happening inside
+  the flow. Let me trace: the tests call cli pr list → that uses RealPlanDataProvider (or a fake?) → which calls _compute_lifecycle_display → which calls
+  compute_lifecycle_display.
+
+  Wait — these tests are for erk pr list not erk exec dash-data. Let me check where pr list calls compute_lifecycle_display:
+
+⏺ Read(src/erk/cli/commands/pr/list_cmd.py)
+  ⎿  Read 30 lines
+
+⏺ Search(pattern: "compute_lifecycle_display", path: "src/erk/cli/commands/pr/list_cmd.py")
+  ⎿  Found 0 files
+
+⏺ So pr list doesn't call compute_lifecycle_display directly — it goes through RealPlanDataProvider.fetch_plans() which calls _build_row_data() which calls
+  _compute_lifecycle_display(). The fix I already made to real_provider.py should address this.
+
+  Now let me run the failing tests locally to verify:
+
+⏺ devrun(Run failing tests)
+  ⎿  Done (3 tool uses · 15.3k tokens · 16s)
+  (ctrl+o to expand)
+
+⏺ The dash tests pass now. One test in test_actions.py needs to pass service. Let me fix it:
+
+⏺ Read(tests/tui/app/test_actions.py)
+  ⎿  Read 15 lines
+
+⏺ Bash(grep -n 'from.*FakePlanService\|import.*FakePlanService' /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/tui/app/test_actions.py)
+  ⎿  13:from erk_shared.gateway.plan_service.fake import FakePlanService
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/tui/app/test_actions.py)
+  ⎿  Error: Found 4 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please
+     provide more context to uniquely identify the instance.
+     String:         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/tui/app/test_actions.py)
+  ⎿  Added 12 lines, removed 4 lines
+      133          """No selected row → early return, no screen pushed."""
+      134          provider = FakePlanDataProvider(plans=[])
+      135          filters = PlanFilters.default()
+      136 -        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+      136 +        app = ErkDashApp(
+      137 +            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+      138 +        )
+      139
+      140          async with app.run_test() as pilot:
+      141              await pilot.pause()
+     ...
+      153          """In Plans view, pressing 'b' does nothing."""
+      154          provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan")])
+      155          filters = PlanFilters.default()
+      154 -        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+      156 +        app = ErkDashApp(
+      157 +            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+      158 +        )
+      159
+      160          async with app.run_test() as pilot:
+      161              await pilot.pause()
+     ...
+      173          """Objective row with empty plan_body → status bar shows message."""
+      174          provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Objective")])
+      175          filters = PlanFilters.default()
+      172 -        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+      176 +        app = ErkDashApp(
+      177 +            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+      178 +        )
+      179
+      180          async with app.run_test() as pilot:
+      181              await pilot.pause()
+     ...
+      198              plans=[make_plan_row(123, "Test Objective", plan_body=_V2_ROADMAP_BODY)]
+      199          )
+      200          filters = PlanFilters.default()
+      195 -        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+      201 +        app = ErkDashApp(
+      202 +            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+      203 +        )
+      204
+      205          async with app.run_test() as pilot:
+      206              await pilot.pause()
+
+⏺ Now let me check for any other test files that might have the same issue (creating ErkDashApp without service):
+
+⏺ Bash(grep -rn 'ErkDashApp(' /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/ | grep -v 'service=')
+  ⎿  /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/tui/app/test_plan_detail_screen.py:25:        app = ErkDashApp(
+     /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/tui/app/test_plan_detail_screen.py:47:        app = ErkDashApp(
+     /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/tui/app/test_plan_detail_screen.py:75:        app = ErkDashApp(
+     … +88 lines (ctrl+o to expand)
+
+⏺ Wait — these are multi-line calls. Let me check if they already have service= on subsequent lines:
+
+⏺ Bash(grep -A2 'ErkDashApp(' /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/tui/app/test_plan_detail_screen.py | head -10)
+  ⎿          app = ErkDashApp(
+                 provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+             )
+     … +7 lines (ctrl+o to expand)
+
+⏺ Good — those already have service=. Let me check the ones that showed as not having it:
+
+⏺ Bash(grep -A2 'ErkDashApp(' /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/tui/screens/test_check_runs_screen.py | tail -5)
+  ⎿      app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+         async with app.run_test() as pilot:
+
+⏺ This one is missing service=. Let me check which other test files are actually missing it (single-line calls without service):
+
+⏺ Bash(grep -rn 'ErkDashApp(provider=provider, filters=' /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/ | grep -v 'service=')
+  ⎿  /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/tui/screens/test_check_runs_screen.py:190:    app = ErkDashApp(provider=provider, filters=filters, refresh_
+     interval=0)
+
+⏺ Just one more. Let me fix it:
+
+⏺ Read(tests/tui/screens/test_check_runs_screen.py)
+  ⎿  Read 10 lines
+
+⏺ Bash(grep -n 'from.*FakePlanService\|import.*FakePlanService' /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/tui/screens/test_check_runs_screen.py)
+  ⎿  No matches found
+
+⏺ Need to add the import:
+
+⏺ Read(tests/tui/screens/test_check_runs_screen.py)
+  ⎿  Read 15 lines
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/tui/screens/test_check_runs_screen.py)
+  ⎿  Added 1 line
+       9  from erk.tui.screens.check_runs_screen import CheckRunsScreen
+      10  from erk_shared.gateway.github.types import PRCheckRun
+      11  from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+      12 +from erk_shared.gateway.plan_service.fake import FakePlanService
+      13
+      14
+      15  def _make_check_run(
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/tui/screens/test_check_runs_screen.py)
+  ⎿  Added 3 lines, removed 1 line
+      188      provider.set_ci_summaries(42, {"lint": "- Unused import in foo.py"})
+      189
+      190      filters = PlanFilters.default()
+      191 -    app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+      191 +    app = ErkDashApp(
+      192 +        provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+      193 +    )
+      194
+      195      async with app.run_test() as pilot:
+      196          await pilot.pause()
+
+⏺ Now let me also check test_app_filtering.py and the test_check_runs_screen.py uses of FakePlanDataProvider - the fake's __init__ might also need checking:
+
+⏺ Read(src/erk/tui/data/fake_provider.py)
+  ⎿  Read 319 lines
+
+⏺ Good — FakePlanDataProvider and make_plan_row are defined in fake_provider.py. The re-export from erk_shared/gateway/plan_data_provider/fake.py still works. Now let me check
+  if there's also a re-export stub for the fake:
+
+⏺ Read(packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py)
+  ⎿  Read 512 lines
+
+⏺ I see — the old FakePlanDataProvider in erk_shared/gateway/plan_data_provider/fake.py still has browser/clipboard/repo_root/close_plan/dispatch_to_queue etc. — it's a merged
+  fake with both PlanDataProvider and PlanService responsibilities. This hasn't been fully split yet. The check_runs_screen test uses this old fake which still works for
+  browser/clipboard access. But the ty errors are about the PlanDataProvider ABC type annotation not having those properties.
+
+  The key issue is: test_check_runs_screen.py uses FakePlanDataProvider from the old location which is the fat fake. It should use the new slim FakePlanDataProvider +
+  FakePlanService. But that's a broader refactor. For now, fixing the service= parameter and letting the old fake's extra methods go unused is fine.
+
+  Let me now run the full CI check suite locally to verify everything works:
+
+⏺ devrun(Run TUI tests)
+  ⎿  Done (5 tool uses · 17.5k tokens · 1m 20s)
+  (ctrl+o to expand)
+
+⏺ devrun(Run ty type checks)
+  ⎿  Done (1 tool use · 14.2k tokens · 3s)
+  (ctrl+o to expand)
+
+⏺ Type checks pass. The TUI test failure in test_summaries_update_markdown_in_place looks like it might be from the service= parameter missing in test_check_runs_screen.py. Let
+   me check:
+
+⏺ Read(tests/tui/screens/test_check_runs_screen.py)
+  ⎿  Read 21 lines
+
+⏺ Read(tests/tui/screens/test_check_runs_screen.py)
+  ⎿  Read 40 lines
+
+⏺ Good, this test already has the fix I made. Let me re-run just this failing test:
+
+⏺ devrun(Re-run failing test)
+  ⎿  Done (2 tool uses · 17.5k tokens · 7s)
+  (ctrl+o to expand)
+
+⏺ Let me check the check_runs_screen to see if it uses self._provider or self._service for methods now on PlanService:
+
+⏺ Read(src/erk/tui/screens/check_runs_screen.py)
+  ⎿  Read 60 lines
+
+⏺ Read(src/erk/tui/screens/check_runs_screen.py)
+  ⎿  Read 80 lines
+
+⏺ I see — CheckRunsScreen takes service: PlanService, not provider: PlanDataProvider. The test creates CheckRunsScreen indirectly through ErkDashApp's key press h. Let me check
+   how the h key creates the screen:
+
+⏺ Search(pattern: "CheckRunsScreen", path: "src/erk/tui")
+  ⎿  Found 2 files (ctrl+o to expand)
+
+⏺ Bash(grep -n 'CheckRunsScreen' /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/tui/actions/navigation.py)
+  ⎿  9:from erk.tui.screens.check_runs_screen import CheckRunsScreen
+     188:            CheckRunsScreen(
+
+⏺ Read(src/erk/tui/actions/navigation.py)
+  ⎿  Read 15 lines
+
+⏺ Good — it uses self._service. Now let me look at the test more carefully. The test presses h to open CheckRunsScreen. The CheckRunsScreen calls
+  self._service.fetch_check_runs() and self._service.fetch_ci_summaries(). But the test passes FakePlanDataProvider which has set_check_runs and set_ci_summaries — but the
+  ErkDashApp would use self._service (which is FakePlanService() with no check runs configured).
+
+  The issue is that the test sets up check runs on the provider but the screen reads from service. Let me verify:
+
+⏺ Read(tests/tui/screens/test_check_runs_screen.py)
+  ⎿  Read 35 lines
+
+⏺ The test sets check runs and summaries on provider (the old fat fake) but now the CheckRunsScreen reads from service. I need to set them on the service instead:
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/tui/screens/test_check_runs_screen.py)
+  ⎿  Added 4 lines, removed 3 lines
+      174              )
+      175          ]
+      176      )
+      177 -    provider.set_check_runs(
+      177 +    service = FakePlanService()
+      178 +    service.set_check_runs(
+      179          42,
+      180          [
+      181              PRCheckRun(
+     ...
+      186              ),
+      187          ],
+      188      )
+      188 -    provider.set_ci_summaries(42, {"lint": "- Unused import in foo.py"})
+      189 +    service.set_ci_summaries(42, {"lint": "- Unused import in foo.py"})
+      190
+      191      filters = PlanFilters.default()
+      192      app = ErkDashApp(
+      192 -        provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+      193 +        provider=provider, service=service, filters=filters, refresh_interval=0
+      194      )
+      195
+      196      async with app.run_test() as pilot:
+
+⏺ Now let me re-run that test and the full TUI test suite:
+
+⏺ devrun(Re-run TUI tests)
+  ⎿  Done (4 tool uses · 15.2k tokens · 1m 9s)
+  (ctrl+o to expand)
+
+⏺ All tests pass. Let me also run the dash command tests and ty to confirm everything:
+
+⏺ devrun(Run dash tests and ty)
+  ⎿  Done (2 tool uses · 14.4k tokens · 5s)
+  (ctrl+o to expand)
+
+⏺ All green. Let me commit and push.
+
+⏺ Bash(git add src/erk/tui/data/real_provider.py src/erk/tui/screens/objective_nodes_screen.py src/erk/tui/actions/navigation.py tests/tui/app/test_actions.py
+      tests/tui/screens/test_check_runs_screen.py &amp;&amp; git commit -m "$(cat &lt;&lt;'EOF'
+      Fix CI failures: missing linked_pr_state arg and PlanService plumbing
+
+      - Pass linked_pr_state to compute_lifecycle_display in real_provider.py
+      - Add service parameter to ObjectiveNodesScreen for browser/clipboard/repo_root
+      - Update navigation.py call site to pass service to ObjectiveNodesScreen
+      - Fix test_actions.py and test_check_runs_screen.py to pass service to ErkDashApp
+      - Move check_runs/ci_summaries setup from provider to service in test
+
+      Co-Authored-By: Claude Opus 4.6 &lt;noreply@anthropic.com&gt;
+      EOF
+      )")
+  ⎿  [plnd/split-plan-data-provider-03-06-0149 f68d815c1] Fix CI failures: missing linked_pr_state arg and PlanService plumbing
+      5 files changed, 40 insertions(+), 19 deletions(-)
+
+⏺ Bash(gt submit --no-interactive)
+  ⎿  Running in non-interactive mode. Inline prompts to fill PR fields will be skipped and new PRs will be created in draft mode.
+
+     🥞 Validating that this Graphite stack is ready to submit...
+
+     ✏️ Preparing to submit PRs for the following branches...
+     ▸ plnd/split-plan-data-provider-03-06-0149 (Update code)
+
+     🚀 Pushing branches to remote...
+
+     📨 Creating/updating PRs...
+     plnd/split-plan-data-provider-03-06-0149: https://app.graphite.com/github/pr/dagster-io/erk/8804 (updated)
+
+⏺ Done. Fixed all 3 CI failures:
+
+  1. compute_lifecycle_display missing linked_pr_state — added the parameter to _compute_lifecycle_display wrapper and passed pr_state through
+  2. ty errors: browser/clipboard/repo_root on PlanDataProvider — ObjectiveNodesScreen now takes a separate service: PlanService parameter for these
+  3. Test failures — updated test files to pass service=FakePlanService() and moved check_runs/ci_summaries setup from provider to service
+
+✻ Baked for 54m 36s
+
+❯ /local:statusline-refresh
+  ⎿  🔄 Status line refreshed
+
+❯ /local:statusline-refresh
+  ⎿  I'll trigger a status line refresh by generating minimal conversation activity.
+
+     🔄 Status line refreshed
+
+❯ /erk:pr-preview-address
+
+⏺ Skill(pr-feedback-classifier)
+  ⎿  Done
+
+⏺ No unresolved review comments or discussion comments on PR #8804. All 8 discussion comments are informational (CI bot reviews, workflow notifications, Graphite stack
+  metadata).
+
+✻ Sautéed for 32s
+
+❯ /erk:pr-preview-address
+
+⏺ Skill(pr-feedback-classifier)
+  ⎿  Initializing…
+  ⎿  Interrupted · What should Claude do instead?
+
+! gt pr
+  ⎿  https://app.graphite.dev/github/pr/dagster-io/erk/8804
+
+❯ confused as to how https://github.com/dagster-io/erk/runs/65990310694 is happen give that the fix-formatting job runs first
+
+⏺ Bash(gh run view 22755453498 --json jobs --jq '.jobs[] | "\(.name) \(.status) \(.conclusion)"' 2&gt;/dev/null || gh api repos/dagster-io/erk/actions/runs/22755453498/jobs --jq
+      '.jobs[] | "\(.name) \(.status) \(.conclusion)"' 2&gt;/dev/null)
+  ⎿  Error: Exit code 1
+     {"message":"Not Found","documentation_url":"https://docs.github.com/rest/actions/workflow-jobs#list-jobs-for-a-workflow-run","status":"404"}
+     {"message":"Not Found","documentation_url":"https://docs.github.com/rest/actions/workflow-jobs#list-jobs-for-a-workflow-run","status":"404"}
+
+⏺ Let me extract the run ID from the check URL you shared:
+
+⏺ Bash(gh api repos/dagster-io/erk/check-runs/65990310694 --jq '{name: .name, status: .status, conclusion: .conclusion, started_at: .started_at, completed_at: .completed_at,
+      run_id: .check_suite.id}' 2&gt;/dev/null)
+  ⎿  {
+       "completed_at": "2026-03-06T06:53:55Z",
+       "conclusion": "failure",
+       "name": "lint",
+       "run_id": 59589140190,
+       "started_at": "2026-03-06T06:53:44Z",
+       "status": "completed"
+     }
+
+⏺ Bash(gh run list --branch plnd/split-plan-data-provider-03-06-0149 --json databaseId,name,conclusion,status,createdAt --jq '.[] | "\(.databaseId) \(.name) \(.conclusion)
+      \(.status) \(.createdAt)"' | head -10)
+  ⎿  22752638097 ci failure completed 2026-03-06T06:52:32Z
+     22752609825 ci cancelled completed 2026-03-06T06:51:27Z
+     22751078117 ci failure completed 2026-03-06T05:52:18Z
+     22749175222 ci failure completed 2026-03-06T04:32:19Z
+     22746651582 ci failure completed 2026-03-06T02:43:07Z
+     22746626167 ci skipped completed 2026-03-06T02:42:03Z
+     22745426147 code-reviews skipped completed 2026-03-06T01:52:53Z
+     22745426143 ci skipped completed 2026-03-06T01:52:53Z
+     22745400045 code-reviews skipped completed 2026-03-06T01:51:53Z
+     22745400032 ci skipped completed 2026-03-06T01:51:53Z
+
+⏺ Bash(gh run view 22752638097 --json jobs --jq '.jobs[] | "\(.name) \(.conclusion) \(.startedAt) \(.completedAt)"')
+  ⎿  check-submission success 2026-03-06T06:52:39Z 2026-03-06T06:52:45Z
+     fix-formatting success 2026-03-06T06:52:47Z 2026-03-06T06:53:41Z
+     ty success 2026-03-06T06:53:44Z 2026-03-06T06:53:56Z
+     integration-tests success 2026-03-06T06:53:44Z 2026-03-06T06:54:18Z
+     format success 2026-03-06T06:53:44Z 2026-03-06T06:53:57Z
+     lint failure 2026-03-06T06:53:44Z 2026-03-06T06:53:55Z
+     docs-check success 2026-03-06T06:53:44Z 2026-03-06T06:54:27Z
+     unit-tests (3.13) success 2026-03-06T06:53:44Z 2026-03-06T06:54:29Z
+     unit-tests (3.11) success 2026-03-06T06:53:44Z 2026-03-06T06:54:35Z
+     unit-tests (3.14) success 2026-03-06T06:53:44Z 2026-03-06T06:54:32Z
+     discover-reviews success 2026-03-06T06:53:44Z 2026-03-06T06:53:57Z
+     erk-mcp-tests success 2026-03-06T06:53:44Z 2026-03-06T06:54:02Z
+     unit-tests (3.12) success 2026-03-06T06:53:44Z 2026-03-06T06:54:34Z
+     review (Tripwires Review, tripwires.md) success 2026-03-06T06:53:59Z 2026-03-06T06:56:01Z
+     review (Dignified Code Simplifier Review, dignified-code-simplifier.md) success 2026-03-06T06:53:59Z 2026-03-06T06:57:34Z
+     review (Dignified Python Review, dignified-python.md) success 2026-03-06T06:53:59Z 2026-03-06T06:55:47Z
+     review (Test Coverage Review, test-coverage.md) success 2026-03-06T06:53:59Z 2026-03-06T06:56:36Z
+     ci-summarize success 2026-03-06T06:54:37Z 2026-03-06T06:55:31Z
+     autofix skipped 2026-03-06T06:54:36Z 2026-03-06T06:54:35Z
+
+⏺ So fix-formatting ran first and succeeded (06:52:47–06:53:41), and then lint ran and failed (06:53:44–06:53:55). The question is: why did lint fail if fix-formatting already
+  ran?
+
+⏺ Bash(gh run view 22752638097 --log-failed | grep -v '^lint.*UNKNOWN STEP.*2026-03-06T06:53:' | grep -E '(error|Error|warning|FAILED|F )' | head -20)
+  ⎿  lint       Run ruff linting        2026-03-06T06:53:53.7228156Z Found 1 error.
+     lint       Run ruff linting        2026-03-06T06:53:53.7255651Z make: *** [Makefile:13: lint] Error 1
+     lint       Run ruff linting        2026-03-06T06:53:53.7271753Z ##[error]Process completed with exit code 2.
+
+⏺ Bash(gh run view 22752638097 --log-failed | grep -E '\.py:' | head -10)
+  ⎿  lint       Run ruff linting        2026-03-06T06:53:53.7218079Z   --&gt; packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py:3:1
+
+⏺ Bash(gh run view 22752638097 --log-failed | grep -B2 -A5 'fake.py:3')
+  ⎿  lint       Run ruff linting        2026-03-06T06:53:53.3990066Z uv run ruff check
+     lint       Run ruff linting        2026-03-06T06:53:53.7217215Z I001 [*] Import block is un-sorted or un-formatted
+     lint       Run ruff linting        2026-03-06T06:53:53.7218079Z   --&gt; packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py:3:1
+     lint       Run ruff linting        2026-03-06T06:53:53.7218794Z    |
+     lint       Run ruff linting        2026-03-06T06:53:53.7219193Z  1 |   """Fake plan data provider for testing TUI components."""
+     lint       Run ruff linting        2026-03-06T06:53:53.7219699Z  2 |
+     lint       Run ruff linting        2026-03-06T06:53:53.7219992Z  3 | / from datetime import UTC, datetime
+     lint       Run ruff linting        2026-03-06T06:53:53.7220436Z  4 | | from pathlib import Path
+
+⏺ The lint failure is an unsorted import in fake.py. The fix-formatting job ran first and should have fixed this — but fix-formatting only pushes a commit if there are
+  formatting changes, and the lint job runs on the original commit, not on the autofix commit.
+
+  This is a CI pipeline design issue: fix-formatting pushes a new commit but the other jobs (lint, ty, etc.) were already started from the same workflow trigger and run against
+   the old commit.
+
+  The fix is simple — just fix the import ordering locally:
+
+⏺ Read(packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py)
+  ⎿  Read 15 lines
+
+⏺ Line 13 (from erk.tui.data.provider_abc) should be sorted before the erk_shared imports. The erk.tui imports are first-party and should be grouped together.
+
+⏺ Update(/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py)
+  ⎿  Added 1 line, removed 1 line
+      3  from datetime import UTC, datetime
+      4  from pathlib import Path
+      5
+      6 +from erk.tui.data.provider_abc import PlanDataProvider
+      7  from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+      8  from erk.tui.sorting.types import BranchActivity
+      9  from erk_shared.gateway.browser.abc import BrowserLauncher
+     ...
+      11  from erk_shared.gateway.clipboard.abc import Clipboard
+      12  from erk_shared.gateway.clipboard.fake import FakeClipboard
+      13  from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+      13 -from erk.tui.data.provider_abc import PlanDataProvider
+      14
+      15
+      16  class FakePlanDataProvider(PlanDataProvider):
+
+⏺ Bash(git add packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py &amp;&amp; git commit -m "$(cat &lt;&lt;'EOF'
+      Fix import sorting in plan_data_provider/fake.py
+
+      Co-Authored-By: Claude Opus 4.6 &lt;noreply@anthropic.com&gt;
+      EOF
+      )")
+  ⎿  [plnd/split-plan-data-provider-03-06-0149 7170a374b] Fix import sorting in plan_data_provider/fake.py
+      1 file changed, 1 insertion(+), 1 deletion(-)
+
+⏺ Bash(gt submit --no-interactive)
+  ⎿  Error: Exit code 1
+     Running in non-interactive mode. Inline prompts to fill PR fields will be skipped and new PRs will be created in draft mode.
+
+     🥞 Validating that this Graphite stack is ready to submit...
+
+     ERROR: Branch plnd/split-plan-data-provider-03-06-0149 has been updated remotely. Use gt get or gt sync to sync with remote before submitting (or use the --force flag to
+     override this check).
+
+     Running in non-interactive mode. Inline prompts to fill PR fields will be skipped and new PRs will be created in draft mode.
+
+     🥞 Validating that this Graphite stack is ready to submit...
+
+     ERROR: Branch plnd/split-plan-data-provider-03-06-0149 has been updated remotely. Use gt get or gt sync to sync with remote before submitting (or use the --force flag to
+     override this check).
+
+⏺ The remote was updated by fix-formatting. Let me reconcile:
+
+⏺ Bash(git fetch origin plnd/split-plan-data-provider-03-06-0149 &amp;&amp; git log --oneline origin/plnd/split-plan-data-provider-03-06-0149 -3)
+  ⎿  From https://github.com/dagster-io/erk
+      * branch                plnd/split-plan-data-provider-03-06-0149 -&gt; FETCH_HEAD
+     58e7e98dc Auto-fix formatting (docs-sync + ruff + Prettier)
+     f68d815c1 Fix CI failures: missing linked_pr_state arg and PlanService plumbing
+     266912e06 Address PR review comments (batch 1/1)
+
+⏺ The remote has an autofix commit 58e7e98dc on top of my f68d815c1. My local has 7170a374b (import fix) on top of f68d815c1. Let me rebase onto the remote:
+
+⏺ Bash(git rebase origin/plnd/split-plan-data-provider-03-06-0149)
+  ⎿  Rebasing (1/1)Successfully rebased and updated refs/heads/plnd/split-plan-data-provider-03-06-0149.
+
+⏺ Bash(git diff HEAD -- packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py | head -20)
+  ⎿  (No output)
+
+⏺ The autofix already fixed the import ordering, so my commit is now empty. Let me check:
+
+⏺ Bash(git log --oneline -5)
+  ⎿  94be12a43 Fix import sorting in plan_data_provider/fake.py
+     58e7e98dc Auto-fix formatting (docs-sync + ruff + Prettier)
+     f68d815c1 Fix CI failures: missing linked_pr_state arg and PlanService plumbing
+     266912e06 Address PR review comments (batch 1/1)
+     4d88c6df8 Add plan: Split PlanDataProvider: Separate Domain Service from TUI Data Assembly
+
+⏺ The rebase applied the commit on top of the autofix. The diff is empty since both fixed the same thing. Let me push:
+
+⏺ Bash(gt submit --no-interactive)
+  ⎿  Error: Exit code 1
+     Running in non-interactive mode. Inline prompts to fill PR fields will be skipped and new PRs will be created in draft mode.
+
+     🥞 Validating that this Graphite stack is ready to submit...
+
+     ERROR: Branch plnd/split-plan-data-provider-03-06-0149 has been updated remotely. Use gt get or gt sync to sync with remote before submitting (or use the --force flag to
+     override this check).
+
+     Running in non-interactive mode. Inline prompts to fill PR fields will be skipped and new PRs will be created in draft mode.
+
+     🥞 Validating that this Graphite stack is ready to submit...
+
+     ERROR: Branch plnd/split-plan-data-provider-03-06-0149 has been updated remotely. Use gt get or gt sync to sync with remote before submitting (or use the --force flag to
+     override this check).
+
+⏺ Bash(git push --force-with-lease)
+  ⎿  remote:
+     remote: GitHub found 9 vulnerabilities on dagster-io/erk's default branch (8 high, 1 low). To find out more, visit:
+     remote:      https://github.com/dagster-io/erk/security/dependabot
+     remote:
+     To https://github.com/dagster-io/erk.git
+        58e7e98dc..94be12a43  plnd/split-plan-data-provider-03-06-0149 -&gt; plnd/split-plan-data-provider-03-06-0149
+
+⏺ Pushed. To answer your question: the fix-formatting job pushes a new commit, but lint and other jobs were already triggered from the same workflow run and execute against the
+   original commit SHA. They don't pick up the autofix commit. The lint failure is a race condition in the CI pipeline — fix-formatting fixed the import ordering in its commit,
+   but lint ran on the pre-fix code concurrently.
+
+  The next CI run (triggered by this push) should pass since the import is now sorted in the committed code.
+
+✻ Cooked for 1m 39s
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── ▪▪▪ ─
+❯ 
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ➜  (git:erk) (wt:erk-slot-03) (br:plnd/split-plan-data-provider-03-06-0149) | (gh:#8804 st:👀 chks:[✅:1 🔄:1] cmts:3/5) │ (O)                                 150733 tokens
+  ⏸ plan mode on (shift+tab to cycle) · PR #8804                                                                                          Context left until auto-compact: 10%
+                                                                                                                                              current: 2.1.70 · latest: 2.1.70
+
+let's fix the race condition mentioned at the bottom</user>
+  <usage input_tokens="3" cache_creation_input_tokens="58757" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 58757}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the CI workflow to understand the current job dependency structure.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="58757" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 58757}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01XV24qiaKmnBeK57b9T7P9B">
+    <param name="query">select:Read</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="58757" cache_read_input_tokens="0" output_tokens="149" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 58757, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01XV24qiaKmnBeK57b9T7P9B">
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XLdmUwaqUuBoSizvPqcVyq">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/ci.yml</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="840" cache_read_input_tokens="58757" output_tokens="73" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 840, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XLdmUwaqUuBoSizvPqcVyq">
+     1→name: ci
+     2→
+     3→on:
+     4→  push:
+     5→    branches: [master]
+     6→  pull_request:
+     7→    types: [opened, synchronize, reopened, ready_for_review]
+     8→  workflow_dispatch:
+     9→
+    10→permissions:
+    11→  contents: write # Needed for autofix to push
+    12→  actions: write # Needed to re-trigger workflow after autofix push
+    13→  statuses: write # Needed for autofix to update commit status
+    14→
+    15→concurrency:
+    16→  group: ci-${{ github.head_ref || github.ref }}
+    17→  cancel-in-progress: true
+    18→
+    19→jobs:
+    20→  check-submission:
+    21→    if: github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    22→    runs-on: ubuntu-latest
+    23→    timeout-minutes: 5
+    24→    outputs:
+    25→      skip: ${{ steps.check.outputs.skip }}
+    26→    steps:
+    27→      - uses: actions/checkout@v4
+    28→      - name: Check for submission folder
+    29→        id: check
+    30→        uses: ./.github/actions/check-impl-context
+
+... [569 lines omitted] ...
+
+    84→            echo "::error::Files need formatting or docs are out of sync"
+    93→            echo "::error::Formatting issues found (cannot auto-fix fork PRs)"
+   196→      (needs.format.result == 'failure' ||
+   197→       needs.lint.result == 'failure' ||
+   198→       needs.fix-formatting.result == 'failure' ||
+   199→       needs.docs-check.result == 'failure' ||
+   200→       needs.ty.result == 'failure')
+   309→      # Inlined from .github/actions/setup-claude-erk to avoid CodeQL warning
+   336→      - name: Collect failure context
+   338→        id: failures
+   349→      - name: Collect actual errors
+   351→        id: errors
+   353→          errors=""
+   355→          if [ "${{ needs.format.result }}" = "failure" ]; then
+   356→            errors+="=== RUFF FORMAT ERRORS ===\n"
+   357→            errors+="$(uv run ruff format --check . 2&gt;&amp;1 || true)\n\n"
+   360→          if [ "${{ needs.lint.result }}" = "failure" ]; then
+   361→            errors+="=== RUFF LINT ERRORS ===\n"
+   362→            errors+="$(uv run ruff check . 2&gt;&amp;1 || true)\n\n"
+   365→          if [ "${{ needs.fix-formatting.result }}" = "failure" ]; then
+   366→            errors+="=== MARKDOWN-FIX ERRORS ===\n"
+   367→            errors+="$(prettier --check '**/*.md' --ignore-path .gitignore 2&gt;&amp;1 || true)\n\n"
+   370→          if [ "${{ needs.docs-check.result }}" = "failure" ]; then
+   371→            errors+="=== DOCS CHECK ERRORS ===\n"
+   372→            errors+="$(make md-check 2&gt;&amp;1 || true)\n"
+   373→            errors+="$(make docs-check 2&gt;&amp;1 || true)\n\n"
+   376→          if [ "${{ needs.ty.result }}" = "failure" ]; then
+   377→            errors+="=== TY TYPE ERRORS ===\n"
+   378→            errors+="$(uv run ty check 2&gt;&amp;1 || true)\n\n"
+   382→          echo -e "$errors" &gt; /tmp/errors.txt
+   393→          echo "Debug: erk version: $(erk --version 2&gt;&amp;1 || echo 'version failed')"
+   403→            --var-file "ERRORS=/tmp/errors.txt" 2&gt;&amp;1); then
+   404→            echo "Error: Failed to get ci-autofix prompt"
+   411→            echo "Error: ci-autofix prompt is empty (command succeeded but no output)"
+   433→  # === CI Failure Summarization (Haiku) ===
+   452→      (needs.format.result == 'failure' ||
+   453→       needs.lint.result == 'failure' ||
+   454→       needs.fix-formatting.result == 'failure' ||
+   455→       needs.docs-check.result == 'failure' ||
+   456→       needs.ty.result == 'failure' ||
+   457→       needs.unit-tests.result == 'failure' ||
+   458→       needs.integration-tests.result == 'failure' ||
+   459→       needs.erk-mcp-tests.result == 'failure')
+   473→      - name: Summarize failures
+   537→            echo "Discovery failed"
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01CPTQsYYTRTsU9gzWa1nkLQ">
+    <param name="query">select:Agent,Grep,Write</param>
+    <param name="max_results">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8757" cache_read_input_tokens="59597" output_tokens="79" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8757, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01CPTQsYYTRTsU9gzWa1nkLQ">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="3523" cache_read_input_tokens="68354" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3523}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I understand the issue. Let me check the CI tripwires and docs first.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3523" cache_read_input_tokens="68354" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3523}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VzChKuJqV676X49QeTJEKE">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/ci/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3523" cache_read_input_tokens="68354" output_tokens="593" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3523, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VzChKuJqV676X49QeTJEKE">
+     1→---
+     2→title: Ci Tripwires
+     3→read_when:
+     4→  - "working on ci code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from ci/*.md frontmatter --&gt;
+    10→
+    11→# Ci Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**Add branches-ignore for ephemeral branch patterns** → Read [GitHub Actions Workflow Gating Patterns](workflow-gating-patterns.md) first. Label-based gating doesn't work on push events — use branches-ignore to prevent workflow queuing
+    16→
+    17→**Creating or modifying .prettierignore** → Read [Makefile Prettier Ignore Path](makefile-prettier-ignore-path.md) first. The Makefile uses `prettier --ignore-path .gitignore`, NOT `.prettierignore`. Adding rules to .prettierignore has no effect. Modify .gitignore to control what Prettier ignores.
+    18→
+    19→**GitHub Actions cannot interpolate Python constants** → Read [GitHub Actions Label Filtering Reference](github-actions-label-filtering.md) first. label strings must be hardcoded in YAML
+    20→
+    21→**GitHub Actions workflow needs to perform operations like gist creation, or session uploads fail in CI** → Read [GitHub CLI PR Comment Patterns](github-cli-comment-patterns.md) first. GitHub Actions GITHUB_TOKEN has restricted scope by default. Check token capabilities or use personal access token (PAT) for elevated permissions like gist creation.
+    22→
+    23→**Include cache keys for downloaded binaries** → Read [Composite Action Patterns](composite-action-patterns.md) first. NEVER skip cache keys for downloaded binaries — cache saves 10-20s per workflow run.
+    24→
+    25→**Label checks in push event workflows** → Read [GitHub Actions Label Queries](github-actions-label-queries.md) first. Job-level label access via github.event.pull_request.labels is ONLY available in pull_request events, NOT push events. For push events, you must use step-level GitHub API queries with gh cli or REST API.
+    26→
+    27→**Renaming a GitHub label used in CI automation** → Read [CI Label Rename Checklist](label-rename-checklist.md) first. Labels are referenced in multiple places: (1) Job-level if: conditions in all workflow files, (2) Step name descriptions and comments, (3) Documentation examples showing the label check. Missing any location will cause CI behavior to diverge from intent. Use the CI Label Rename Checklist to ensure comprehensive updates.
+    28→
+    29→**Use !contains() pattern for label-based gating** → Read [GitHub Actions Workflow Gating Patterns](workflow-gating-patterns.md) first. Negation is critical — contains() without ! skips all push events
+    30→
+
+... [96 lines omitted] ...
+
+    47→**asking devrun agent to fix errors** → Read [CI Iteration Pattern with devrun Agent](ci-iteration.md) first. devrun is READ-ONLY. Never prompt with 'fix errors' or 'make tests pass'. Use pattern: 'Run command and report results', then parent agent fixes based on output.
+    53→**changing the ci-summarize job `needs` array** → Read [CI Failure Summarization](ci-failure-summarization.md) first. The `needs` array must reference actual job names in ci.yml. Broken references silently skip the job. Verify every name exists.
+    71→**editing markdown files in docs/** → Read [Markdown Formatting in CI Workflows](markdown-formatting.md) first. Run `make prettier` via devrun after markdown edits. Multi-line edits trigger Prettier failures. Never manually format - use the command.
+    79→**matching check names from summaries to GitHub check runs** → Read [CI Failure Summarization](ci-failure-summarization.md) first. GitHub prepends 'ci / ' to check names in statusCheckRollup. Use match_summary_to_check() which strips this prefix.
+    81→**parsing ERK-CI-SUMMARY markers without re.DOTALL** → Read [CI Failure Summarization](ci-failure-summarization.md) first. Summary content is multiline. The regex uses re.DOTALL so `.` matches newlines. Without it, multiline summaries won't be captured.
+    91→**removing test jobs from autofix's needs list** → Read [Autofix Job Needs](autofix-job-needs.md) first. Autofix depends on ALL validation jobs including unit-tests and integration-tests. It needs full failure context to attempt intelligent fixes. See the needs array in ci.yml.
+    93→**removing test jobs from autofix's needs list** → Read [CI Job Ordering Strategy](job-ordering-strategy.md) first. Autofix depends on ALL validation jobs including unit-tests and integration-tests. It needs full failure context to attempt fixes. See autofix-job-needs.md.
+   117→**using heredoc (&lt;&lt;) syntax in GitHub Actions YAML** → Read [CI Prompt Patterns](prompt-patterns.md) first. Use `erk exec get-embedded-prompt` instead. Heredocs in YAML `run:` blocks have fragile indentation that causes silent failures.
+  </tool_result>
+  <tool_use name="Read" id="toolu_012iUfquwpmzdJbTJDcTbPG8">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/ci/job-ordering-strategy.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4957" cache_read_input_tokens="71877" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4957, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012iUfquwpmzdJbTJDcTbPG8">
+     1→---
+     2→title: CI Job Ordering Strategy
+     3→read_when:
+     4→  - "modifying CI job dependencies"
+     5→  - "adding new CI jobs"
+     6→  - "understanding fix-formatting gating"
+     7→  - "debugging why CI restarted after a push"
+     8→tripwires:
+     9→  - action: "adding a new CI job without including fix-formatting in its needs list"
+    10→    warning: "All validation jobs must depend on both check-submission and fix-formatting. Without fix-formatting, the job may run against unformatted code and fail unnecessarily."
+    11→  - action: "removing test jobs from autofix's needs list"
+    12→    warning: "Autofix depends on ALL validation jobs including unit-tests and integration-tests. It needs full failure context to attempt fixes. See autofix-job-needs.md."
+    13→---
+    14→
+    15→# CI Job Ordering Strategy
+    16→
+    17→The CI workflow uses a three-tier architecture where a gate job controls entry, an auto-fix job runs formatting corrections, and seven parallel validation jobs run against the cleaned state.
+    18→
+    19→&lt;!-- Source: .github/workflows/ci.yml --&gt;
+    20→
+    21→## Three-Tier Architecture
+    22→
+    23→```
+    24→Tier 1: check-submission (gate)
+    25→    │
+    26→Tier 2: fix-formatting (auto-fix, independent of parallel jobs)
+    27→    │
+    28→Tier 3: ┌──────┬──────┬───────────┬────┬────────────┬─────────────┬──────────────┐
+    29→         format  lint  docs-check  ty  unit-tests  integration  erk-mcp-tests
+    30→```
+
+... [45 lines omitted] ...
+
+    66→**`ci-summarize`** depends on all validation jobs and runs only on failure. It uses a lightweight model to summarize CI failures for developers.
+    68→**`autofix`** depends on all validation jobs: format, lint, fix-formatting, docs-check, ty, unit-tests, integration-tests, and erk-mcp-tests. It runs after all checks complete to have full failure context. Currently disabled via kill-switch (`false &amp;&amp;` guard).
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1334" cache_read_input_tokens="76834" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1334}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I understand the architecture. The doc claims `cancel-in-progress: true` handles this, but in practice there's a race: fix-formatting pushes → new run queued → old run's tier 3 jobs start before cancellation arrives.
+
+Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1334" cache_read_input_tokens="76834" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1334}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_014VVGHk8jBm3AztxyMNEhbn">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1334" cache_read_input_tokens="76834" output_tokens="924" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1334, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_014VVGHk8jBm3AztxyMNEhbn">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01R2CwLNKaTQgT7h7EGrBRFp">
+    <param name="file_path">/Users/schrockn/.claude/plans/idempotent-imagining-raccoon.md</param>
+    <param name="content"># Fix CI race condition: fix-formatting push vs tier 3 jobs
+
+## Context
+
+When `fix-formatt...[truncated 2174 chars]...ch and confirm CI runs correctly (if no formatting changes needed, all jobs run normally)
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1576" cache_read_input_tokens="78168" output_tokens="770" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1576, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01R2CwLNKaTQgT7h7EGrBRFp">
+File created successfully at: /Users/schrockn/.claude/plans/idempotent-imagining-raccoon.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01Go9SzkG3MfXcgiRxo5RSLS">
+    <param name="plan"># Fix CI race condition: fix-formatting push vs tier 3 jobs
+
+## Context
+
+When `fix-formatt...[truncated 2174 chars]...ch and confirm CI runs correctly (if no formatting changes needed, all jobs run normally)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="923" cache_read_input_tokens="79744" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 923, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Go9SzkG3MfXcgiRxo5RSLS">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/idempotent-imagining-raccoon.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix CI race condition: fix-formatting push vs tier 3 jobs
+Current context: (wt:erk) (br:master) (plan:#8751)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 2af1a763-32e6-467a-9077-a8a3c1c3d76d \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Fix CI race condition: fix-formatting push vs tier 3 jobs
+
+## Context
+
+When `fix-formatting` pushes an autofix commit, `cancel-in-progress: true` is supposed to cancel the current run (since the push triggers a new one). In practice, there's a race: tier 3 jobs (lint, format, ty, etc.) start before GitHub Actions processes the cancellation, so they run against the old (unformatted) code and fail.
+
+Evidence from run 22752638097: fix-formatting finished at 06:53:41, lint started at 06:53:44 and failed at 06:53:55 — lint ran against the pre-fix commit before cancellation arrived.
+
+## Approach
+
+Add an output to `fix-formatting` indicating whether it pushed changes. All tier 3 jobs skip when `pushed == 'true'` since a new CI run is incoming with the fixed code.
+
+## Steps
+
+1. **Add `pushed` output to fix-formatting job** — add `outputs:` block and `echo "pushed=true/false" &gt;&gt; $GITHUB_OUTPUT` to the commit step
+2. **Add skip condition to all tier 3 jobs** — append `&amp;&amp; needs.fix-formatting.outputs.pushed != 'true'` to: format, lint, docs-check, ty, unit-tests, integration-tests, erk-mcp-tests, discover-reviews
+3. **Update docs** — update `docs/learned/ci/job-ordering-strategy.md` to document the skip-on-push mechanism
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="797" cache_read_input_tokens="80667" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 797}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01A1DzASq15FNC59MreETHAG">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="797" cache_read_input_tokens="80667" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 797}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01A1DzASq15FNC59MreETHAG">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01KWkVq4JQK4cnCQDJMrPghN">
+    <param name="questions">[{'question': '📋 Fix CI race condition: fix-formatting push vs tier 3 jobs\nCurrent contex...[truncated 403 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1698" cache_read_input_tokens="81464" output_tokens="224" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1698, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KWkVq4JQK4cnCQDJMrPghN">
+User has answered your questions: "📋 Fix CI race condition: fix-formatting push vs tier 3 jobs
+Current context: (wt:erk) (br:master) (plan:#8751)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01XzDLKyDSfKxrv6UtzfiRNo">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="83162" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 315, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01XzDLKyDSfKxrv6UtzfiRNo">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_011jKpM2KYdGq77Be9qz4pg8">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="568" cache_read_input_tokens="83477" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 568, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011jKpM2KYdGq77Be9qz4pg8">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="2af1a763-32e6-467a-9077-a8a3c1c3d76d" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="2af1a763-32e6-467a-9077-a8a3c1c3d76d" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "2af1a763-32e6-467a-9077-a8a3c1c3d76d" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "2af1a763-32e6-467a-9077-a8a3c1c3d76d" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "2af1a763-32e6-467a-9077-a8a3c1c3d76d" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "2af1a763-32e6-467a-9077-a8a3c1c3d76d" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+**Branch slug:** `fix-ci-formatting-race`
+
+**Summary:** Eliminates the race condition where CI tier 3 jobs (lint, format, ty, etc.) fail against pre-fix code when fix-formatting pushes an autofix commit. Adds a `pushed` output to the fix-formatting job so downstream jobs skip when a new CI run is already incoming.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2403" cache_read_input_tokens="84045" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2403}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01YGik8iGjWqrtiJYmuDN6Zr">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2403" cache_read_input_tokens="84045" output_tokens="159" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2403, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01YGik8iGjWqrtiJYmuDN6Zr">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015WcH3iLJKihfBtk1tpGcmv">
+    <param name="command">PLAN_SUMMARY="Eliminates the race condition where CI tier 3 jobs (lint, format, ty, etc.) ...[truncated 224 chars]...467a-9077-a8a3c1c3d76d" --branch-slug="fix-ci-formatting-race" --summary="${PLAN_SUMMARY}"</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3310" cache_read_input_tokens="86448" output_tokens="245" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3310, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015WcH3iLJKihfBtk1tpGcmv">
+{"success": true, "plan_number": 8823, "plan_url": "https://github.com/dagster-io/erk/pull/8823", "title": "[erk-plan] Fix CI race condition: fix-formatting push vs tier 3 jobs", "branch_name": "plnd/fix-ci-formatting-race-03-05-2301", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/2af1a763-32e6-467a-9077-a8a3c1c3d76d/plan_snapshots/000001-634791e5"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_017PN4cESn4yWhYq47EGx8Y1">
+    <param name="command">erk exec push-session --session-file "$(erk exec capture-session-info --session-id 2af1a76...[truncated 85 chars]...467a-9077-a8a3c1c3d76d" --stage planning --source local --plan-id 8823 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="416" cache_read_input_tokens="89758" output_tokens="218" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 416, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017PN4cESn4yWhYq47EGx8Y1">
+
+  </tool_result>
+  <assistant>Plan saved as draft PR #8823: **[erk-plan] Fix CI race condition: fix-formatting push vs tier 3 jobs**
+URL: https://github.com/dagster-io/erk/pull/8823</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="338" cache_read_input_tokens="90174" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 338}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_019iANVdbqKj3M1XcWwFEMbw">
+    <param name="plan"># Fix CI race condition: fix-formatting push vs tier 3 jobs
+
+## Context
+
+When `fix-formatt...[truncated 2174 chars]...ch and confirm CI runs correctly (if no formatting changes needed, all jobs run normally)
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="338" cache_read_input_tokens="90174" output_tokens="92" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 338, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019iANVdbqKj3M1XcWwFEMbw">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8823 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8823:
+  In current wt:    source "$(erk br co --for-plan 8823 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8823 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8823 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8823 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8823:
+  In current wt:  erk br co --for-plan 8823
+  In new wt:      erk br co --new-slot --for-plan 8823
+
+Dispatch plan #8823:
+  CLI command:    erk pr dispatch 8823
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan #8823 saved successfully.
+
+**Implement plan #8823:**
+```
+In current wt:    source "$(erk br co --for-plan 8823 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --for-plan 8823 --script)" &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 8823 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 8823 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout plan #8823:**
+```
+In current wt:  erk br co --for-plan 8823
+In new wt:      erk br co --new-slot --for-plan 8823
+```
+
+**Dispatch plan #8823:**
+```
+CLI command:    erk pr dispatch 8823
+Slash command:  /erk:pr-dispatch
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="572" cache_read_input_tokens="90512" output_tokens="245" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 572, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>
