@@ -27,7 +27,9 @@ def extract_plan_number(display_title: str | None) -> int | None:
     """Extract plan number from display_title format '123:abc456'.
 
     Handles:
-    - New format: "123:abc456" → 123
+    - Legacy format: "123:abc456" → 123 (plan_id at start, no #pr_number)
+    - New plan-implement format: "branch-name (#460):abc456" → None
+      (handled by extract_pr_number instead, since plan_id == pr_number)
     - Old format: "Issue title [abc123]" → None (no colon at start)
     - None or empty → None
     """

@@ -28,6 +28,12 @@ def test_extract_plan_number_with_colon_in_title_returns_none() -> None:
     assert extract_plan_number("Bug fix: memory leak [xyz]") is None
 
 
+def test_extract_plan_number_new_plan_implement_format_returns_none() -> None:
+    """New plan-implement format returns None (extract_pr_number handles it instead)."""
+    assert extract_plan_number("plnd/fix-auth-bug (#460):abc456") is None
+    assert extract_plan_number("plnd/add-feature (#8559):xyz123") is None
+
+
 def test_extract_plan_number_none_or_empty() -> None:
     """Test None or empty string → None."""
     assert extract_plan_number(None) is None
@@ -54,10 +60,16 @@ def test_extract_pr_number_pr_address_format() -> None:
     assert extract_pr_number("pr-address:#456:abc123") == 456
 
 
-def test_extract_pr_number_plan_implement_format() -> None:
-    """Test new plan-implement format: '8559:#460:abc123' → 460."""
+def test_extract_pr_number_plan_implement_old_format() -> None:
+    """Test old plan-implement format: '8559:#460:abc123' → 460."""
     assert extract_pr_number("8559:#460:abc123") == 460
     assert extract_pr_number("142:#460:abc456") == 460
+
+
+def test_extract_pr_number_plan_implement_new_format() -> None:
+    """Test new plan-implement format: 'branch-name (#460):abc456' → 460."""
+    assert extract_pr_number("plnd/fix-auth-bug-01-15-1430 (#460):abc456") == 460
+    assert extract_pr_number("plnd/add-feature (#8559):xyz123") == 8559
 
 
 def test_extract_pr_number_one_shot_format() -> None:

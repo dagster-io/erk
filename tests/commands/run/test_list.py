@@ -127,7 +127,7 @@ def test_list_runs_pr_address_format_shows_pr(tmp_path: Path) -> None:
 def test_list_runs_new_plan_implement_format_shows_pr(
     tmp_path: Path,
 ) -> None:
-    """New plan-implement format with #pr_number shows PR directly."""
+    """New plan-implement format with branch name and #pr_number shows PR directly."""
     workflow_runs = [
         WorkflowRun(
             run_id="555666",
@@ -135,7 +135,7 @@ def test_list_runs_new_plan_implement_format_shows_pr(
             conclusion="success",
             branch="feat-1",
             head_sha="abc123",
-            display_title="142:#460:abc456",
+            display_title="plnd/add-branch-name-to-run-name (#460):abc456",
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -226,7 +226,7 @@ def test_list_runs_all_workflow_types_shown(tmp_path: Path) -> None:
             conclusion="success",
             branch="feat-1",
             head_sha="abc123",
-            display_title="142:#460:abc456",
+            display_title="plnd/add-feature (#460):abc456",
         ),
         WorkflowRun(
             run_id="222222",
@@ -267,7 +267,7 @@ def test_list_runs_multiple_statuses(tmp_path: Path) -> None:
             conclusion="success",
             branch="feat-1",
             head_sha="abc123",
-            display_title="142:#201:abc",
+            display_title="plnd/feat-1 (#201):abc",
         ),
         WorkflowRun(
             run_id="999888",
@@ -275,7 +275,7 @@ def test_list_runs_multiple_statuses(tmp_path: Path) -> None:
             conclusion="failure",
             branch="feat-2",
             head_sha="def456",
-            display_title="143:#202:def",
+            display_title="plnd/feat-2 (#202):def",
         ),
         WorkflowRun(
             run_id="789",
@@ -283,7 +283,7 @@ def test_list_runs_multiple_statuses(tmp_path: Path) -> None:
             conclusion=None,
             branch="feat-3",
             head_sha="ghi789",
-            display_title="144:#203:ghi",
+            display_title="plnd/feat-3 (#203):ghi",
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
@@ -404,7 +404,7 @@ def test_list_runs_shows_workflow_column(tmp_path: Path) -> None:
             conclusion="success",
             branch="feat-1",
             head_sha="abc123",
-            display_title="142:#460:abc456",
+            display_title="plnd/fix-auth-bug (#460):abc456",
         ),
     ]
     ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
