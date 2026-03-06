@@ -252,11 +252,11 @@ def _post_or_update_comment(
         cwd=cwd,
         check=False,
     )
-    if fetch_result.returncode != 0 or not fetch_result.stdout.strip():
+    comment_id_str = fetch_result.stdout.strip()
+    if fetch_result.returncode != 0 or not comment_id_str:
         click.echo("Failed to retrieve comment ID", err=True)
         return None
 
-    comment_id_str = fetch_result.stdout.strip()
     if not comment_id_str.isdigit():
         click.echo(f"Invalid comment ID: {comment_id_str}", err=True)
         return None
