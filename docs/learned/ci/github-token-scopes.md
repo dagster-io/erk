@@ -39,7 +39,7 @@ The automatic `github.token` is intentionally limited to repository operations f
 
 **Fails for:**
 
-- Pushing to branches (session upload via `push-session`)
+- Triggering workflow events when pushing (security feature to prevent loops)
 - Fetching user identity (`gh api user`)
 - Triggering workflows in other repositories
 
@@ -66,14 +66,15 @@ The automatic `github.token` is intentionally limited to repository operations f
 | Create gists                         | `ERK_QUEUE_GH_PAT` | Gists are user-owned resources             |
 | Upload session to gist               | `ERK_QUEUE_GH_PAT` | Gists are user-owned resources             |
 | Get current user (`gh api user`)     | `ERK_QUEUE_GH_PAT` | User identity is user-scoped               |
-| Checkout with PAT                    | `ERK_QUEUE_GH_PAT` | Enables pushing back to repo               |
-| Auto-commit that needs CI re-trigger | `ERK_QUEUE_GH_PAT` | `GITHUB_TOKEN` pushes don't trigger events |
+| Checkout (normal workflows)          | `github.token`     | Standard checkout for most operations      |
+| Checkout (auto-fix CI)               | `ERK_QUEUE_GH_PAT` | Enables push that re-triggers CI checks    |
+| Trigger CI workflows                 | `ERK_QUEUE_GH_PAT` | PAT needed for `gh workflow run` dispatch  |
 
 ## Auto-Commit Re-Triggering Pattern
 
-When CI auto-commits fixes (e.g., the `markdown-fix` job running Prettier), the push must trigger a new CI run to validate the fixed code. Pushes made with `GITHUB_TOKEN` do not trigger workflow events (a GitHub security measure to prevent infinite loops).
+When CI auto-commits fixes (e.g., the `markdown-fix` job running Prettier), the push must trigger a new CI run to validate the fixed code. Pushes made with `github.token` do not trigger workflow events (a GitHub security measure to prevent infinite loops).
 
-**Solution:** Use `ERK_QUEUE_GH_PAT` for checkout so that `git push` triggers a new CI run:
+**Solution:** Use `ERK_QUEUE_GH_PAT` for checkout in `ci.yml` only, so that `git push` triggers a new CI run:
 
 ```yaml
 - uses: actions/checkout@v4
@@ -158,6 +159,21 @@ From `plan-implement.yml`:
     token: ${{ secrets.ERK_QUEUE_GH_PAT }} # Enables git push
     fetch-depth: 0
 ```
+
+## Triggering Workflows from CI
+
+When you need CI to dispatch another workflow, you cannot use a push event because pushes with `github.token` don't trigger events. Instead, use `gh workflow run` with PAT:
+
+```yaml
+- name: Trigger CI workflows
+  env:
+    GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+    BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
+  run: |
+    gh workflow run ci.yml --ref "$BRANCH_NAME"
+```
+
+This uses the GitHub CLI to explicitly dispatch a workflow, which bypasses the push-event limitation. The `gh workflow run` command requires PAT authentication.
 
 ## PAT Configuration
 

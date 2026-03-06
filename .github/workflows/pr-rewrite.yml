@@ -46,7 +46,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          token: ${{ github.token }}
           fetch-depth: 0
 
       - uses: ./.github/actions/erk-remote-setup
@@ -59,7 +59,7 @@ jobs:
         if: inputs.plan_number != ''
         continue-on-error: true
         env:
-          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          GH_TOKEN: ${{ github.token }}
           PLAN_NUMBER: ${{ inputs.plan_number }}
           RUN_ID: ${{ github.run_id }}
           REPO: ${{ github.repository }}
@@ -101,7 +101,7 @@ jobs:
       - name: Rewrite PR
         id: rewrite
         env:
-          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ inputs.pr_number }}
         run: |
           REWRITE_OUTPUT=$(erk pr rewrite 2>&1) || true
@@ -137,7 +137,7 @@ jobs:
         if: always() && inputs.plan_number != ''
         continue-on-error: true
         env:
-          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          GH_TOKEN: ${{ github.token }}
           PLAN_NUMBER: ${{ inputs.plan_number }}
           RUN_ID: ${{ github.run_id }}
           REPO: ${{ github.repository }}
