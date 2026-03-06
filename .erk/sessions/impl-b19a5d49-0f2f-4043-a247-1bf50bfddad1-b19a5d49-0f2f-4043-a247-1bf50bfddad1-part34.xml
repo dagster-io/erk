@@ -1,0 +1,235 @@
+<session>
+  <meta source="agent-a79dc9f" />
+  <meta branch="plnd/split-plan-data-provider-03-06-0149" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>In /home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py, clipboard and repo_root are now accessed via `self._service` (the PlanService), not `self._provider`.
+
+Fix pattern:
+1. Where tests pass `clipboard=clipboard` to `FakePlanDataProvider(...)`, remove it from the provider and add it to `FakePlanService(clipboard=clipboard)`.
+2. Where tests pass `repo_root=tmp_path` to `FakePlanDataProvider(...)`, remove it from the provider and add it to `FakePlanService(repo_root=tmp_path)`.
+3. Update any `service=FakePlanService()` to include the moved parameters.
+4. Also: FakePlanService has `set_plan_content`, `set_objective_content`, `set_review_threads`, `set_check_runs`, `set_ci_summaries` methods. If any test calls `provider.set_plan_content(...)` or similar domain setter methods, these should be changed to `service.set_plan_content(...)`.
+
+Read the file first, find all clipboard=/repo_root= on FakePlanDataProvider constructors AND all domain setter calls (set_plan_content, set_objective_content, set_review_threads, set_check_runs, set_ci_summaries) on provider, and make the necessary edits. Do NOT change any other logic.</user>
+  <assistant>I'll read the test file first to identify all the places where these changes need to be made.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6134" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6134, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01M2qgx9psyxTVD5ydar2r2R">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6134" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6134, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M2qgx9psyxTVD5ydar2r2R">
+     1→"""Tests for PlanDetailScreen modal."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import pytest
+     6→
+     7→from erk.tui.app import ErkDashApp
+     8→from erk.tui.data.types import PlanFilters
+     9→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+    10→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    11→from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+    12→from erk_shared.gateway.plan_service.fake import FakePlanService
+    13→
+    14→
+    15→class TestPlanDetailScreen:
+    16→    """Tests for PlanDetailScreen modal."""
+    17→
+    18→    @pytest.mark.asyncio
+    19→    async def test_space_opens_detail_screen(self) -&gt; None:
+    20→        """Pressing space opens the plan detail modal."""
+    21→        provider = FakePlanDataProvider(
+    22→            plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_title="Test PR")]
+    23→        )
+    24→        filters = PlanFilters.default()
+    25→        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+    26→
+    27→        async with app.run_test() as pilot:
+    28→            await pilot.pause()
+    29→            await pilot.pause()
+    30→
+
+... [413 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll identify all the places that need to be changed:
+
+1. **Lines 173-177**: `FakePlanDataProvider(clipboard=clipboard)` - need to move `clipboard` to `FakePlanService`
+2. **Lines 199-203**: `FakePlanDataProvider(clipboard=clipboard)` - need to move `clipboard` to `FakePlanService`
+3. **Lines 223-235**: `FakePlanDataProvider(clipboard=clipboard)` - need to move `clipboard` to `FakePlanService`
+4. **Lines 255-266**: `FakePlanDataProvider(clipboard=clipboard)` - need to move `clipboard` to `FakePlanService`
+5. **Lines 296-299**: `FakePlanDataProvider(repo_root=tmp_path)` - need to move `repo_root` to `FakePlanService`
+6. **Lines 372-375**: `FakePlanDataProvider(repo_root=tmp_path)` - need to move `repo_root` to `FakePlanService`
+7. **Lines 413-417**: `FakePlanDataProvider(clipboard=clipboard)` - need to move `clipboard` to `FakePlanService`
+
+I don't see any calls to domain setter methods like `provider.set_plan_content(...)` in this file.
+
+Now I'll make all the necessary edits:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="8545" cache_read_input_tokens="16231" cache_creation="{'ephemeral_5m_input_tokens': 8545, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Ej9iRXCnimfc2XEy6yGMhn">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_copy_prepare_shortcut_1(self) -&gt; None:
+       ...[truncated 271 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_copy_prepare_shortcut_1(self) -&gt; None:
+       ...[truncated 257 chars]...ovider, service=FakePlanService(clipboard=clipboard), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="8545" cache_read_input_tokens="16231" cache_creation="{'ephemeral_5m_input_tokens': 8545, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ej9iRXCnimfc2XEy6yGMhn">
+The file /home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01C4WmeR1kNH52cyJRB5J2BT">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_copy_dispatch_shortcut_3(self) -&gt; None:
+      ...[truncated 273 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_copy_dispatch_shortcut_3(self) -&gt; None:
+      ...[truncated 259 chars]...ovider, service=FakePlanService(clipboard=clipboard), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="757" cache_read_input_tokens="24776" cache_creation="{'ephemeral_5m_input_tokens': 757, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C4WmeR1kNH52cyJRB5J2BT">
+The file /home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01HE6pYPL883Rx3SFH2VmYD3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_copy_checkout_shortcut_c_with_local_worktree(s...[truncated 542 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_copy_checkout_shortcut_c_with_local_worktree(s...[truncated 528 chars]...ovider, service=FakePlanService(clipboard=clipboard), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="427" cache_read_input_tokens="25533" cache_creation="{'ephemeral_5m_input_tokens': 427, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HE6pYPL883Rx3SFH2VmYD3">
+The file /home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01KvxquTE69C1Zn1VqdjN2Q3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_copy_pr_checkout_script_shortcut_e(self) -&gt; No...[truncated 457 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_copy_pr_checkout_script_shortcut_e(self) -&gt; No...[truncated 443 chars]...ovider, service=FakePlanService(clipboard=clipboard), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="551" cache_read_input_tokens="25960" cache_creation="{'ephemeral_5m_input_tokens': 551, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KvxquTE69C1Zn1VqdjN2Q3">
+The file /home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01LxLadTixGYkLU43pNNLzha">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_rebase_keybinding_uses_toast_pattern(
+        ...[truncated 332 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_rebase_keybinding_uses_toast_pattern(
+        ...[truncated 318 chars]...rovider, service=FakePlanService(repo_root=tmp_path), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="611" cache_read_input_tokens="26511" cache_creation="{'ephemeral_5m_input_tokens': 611, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LxLadTixGYkLU43pNNLzha">
+The file /home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Jin2yczvaix8Hfgxg6wUQw">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_rewrite_remote_dismisses_and_dispatches(
+     ...[truncated 349 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_rewrite_remote_dismisses_and_dispatches(
+     ...[truncated 335 chars]...rovider, service=FakePlanService(repo_root=tmp_path), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="487" cache_read_input_tokens="27122" cache_creation="{'ephemeral_5m_input_tokens': 487, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Jin2yczvaix8Hfgxg6wUQw">
+The file /home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015aq7AUdVynyFEtopA6DQkb">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_copy_rewrite_remote_copies_command(self) -&gt; No...[truncated 310 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_copy_rewrite_remote_copies_command(self) -&gt; No...[truncated 296 chars]...ovider, service=FakePlanService(clipboard=clipboard), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="492" cache_read_input_tokens="27609" cache_creation="{'ephemeral_5m_input_tokens': 492, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015aq7AUdVynyFEtopA6DQkb">
+The file /home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! I've successfully updated all instances in the file. Let me verify the changes by reading the file one more time to ensure all edits were applied correctly:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="556" cache_read_input_tokens="28101" cache_creation="{'ephemeral_5m_input_tokens': 556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LmgwsQAKb37SnvzF1fQnhn">
+    <param name="command">grep -n "FakePlanDataProvider\|FakePlanService" /home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py</param>
+    <param name="description">Verify all FakePlanDataProvider and FakePlanService instances</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="556" cache_read_input_tokens="28101" cache_creation="{'ephemeral_5m_input_tokens': 556, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LmgwsQAKb37SnvzF1fQnhn">
+11:from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+12:from erk_shared.gateway.plan_service.fake import FakePlanService
+21:        provider = FakePlanDataProvider(
+25:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+43:        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan")])
+45:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+69:        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan")])
+71:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+91:        provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan")])
+93:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+117:        provider = FakePlanDataProvider(plans=[make_plan_row(123, long_title)])
+119:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+137:        provider = FakePlanDataProvider(
+150:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+174:        provider = FakePlanDataProvider(
+178:        app = ErkDashApp(provider=provider, service=FakePlanService(clipboard=clipboard), filters=filters, refresh_interval=0)
+199:        provider = FakePlanDataProvider(
+203:        app = ErkDashApp(provider=provider, service=FakePlanService(clipboard=clipboard), filters=filters, refresh_interval=0)
+222:        provider = FakePlanDataProvider(
+234:        app = ErkDashApp(provider=provider, service=FakePlanService(clipboard=clipboard), filters=filters, refresh_interval=0)
+253:        provider = FakePlanDataProvider(
+264:        app = ErkDashApp(provider=provider, service=FakePlanService(clipboard=clipboard), filters=filters, refresh_interval=0)
+292:        provider = FakePlanDataProvider(
+296:        app = ErkDashApp(provider=provider, service=FakePlanService(repo_root=tmp_path), filters=filters, refresh_interval=0)
+330:        provider = FakePlanDataProvider(
+334:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+367:        provider = FakePlanDataProvider(
+371:        app = ErkDashApp(provider=provider, service=FakePlanService(repo_root=tmp_path), filters=filters, refresh_interval=0)
+408:        provider = FakePlanDataProvider(
+412:        app = ErkDashApp(provider=provider, service=FakePlanService(clipboard=clipboard), filters=filters, refresh_interval=0)
+  </tool_result>
+  <assistant>Excellent! All changes have been applied successfully. Let me create a summary of the changes:
+
+## Summary
+
+I've successfully updated `/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py` to move `clipboard` and `repo_root` parameters from `FakePlanDataProvider` to `FakePlanService`.
+
+### Changes Made
+
+**7 test methods were updated:**
+
+1. **`test_copy_prepare_shortcut_1`** (lines 173-178)
+   - Removed `clipboard=clipboard` from `FakePlanDataProvider`
+   - Added `clipboard=clipboard` to `FakePlanService()`
+
+2. **`test_copy_dispatch_shortcut_3`** (lines 199-203)
+   - Removed `clipboard=clipboard` from `FakePlanDataProvider`
+   - Added `clipboard=clipboard` to `FakePlanService()`
+
+3. **`test_copy_checkout_shortcut_c_with_local_worktree`** (lines 222-234)
+   - Removed `clipboard=clipboard` from `FakePlanDataProvider`
+   - Added `clipboard=clipboard` to `FakePlanService()`
+
+4. **`test_copy_pr_checkout_script_shortcut_e`** (lines 253-264)
+   - Removed `clipboard=clipboard` from `FakePlanDataProvider`
+   - Added `clipboard=clipboard` to `FakePlanService()`
+
+5. **`test_rebase_keybinding_uses_toast_pattern`** (lines 292-296)
+   - Removed `repo_root=tmp_path` from `FakePlanDataProvider`
+   - Added `repo_root=tmp_path` to `FakePlanService()`
+
+6. **`test_rewrite_remote_dismisses_and_dispatches`** (lines 367-371)
+   - Removed `repo_root=tmp_path` from `FakePlanDataProvider`
+   - Added `repo_root=tmp_path` to `FakePlanService()`
+
+7. **`test_copy_rewrite_remote_copies_command`** (lines 408-412)
+   - Removed `clipboard=clipboard` from `FakePlanDataProvider`
+   - Added `clipboard=clipboard` to `FakePlanService()`
+
+### Notes
+
+- No domain setter methods (`set_plan_content`, `set_objective_content`, `set_review_threads`, `set_check_runs`, `set_ci_summaries`) were found being called on `provider` in this file, so no additional changes were needed for those.
+- All other test logic remained unchanged as requested.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="980" cache_read_input_tokens="28657" cache_creation="{'ephemeral_5m_input_tokens': 980, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+</session>

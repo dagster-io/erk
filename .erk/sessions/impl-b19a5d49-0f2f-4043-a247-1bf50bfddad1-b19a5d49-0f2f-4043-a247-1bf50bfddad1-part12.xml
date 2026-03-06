@@ -1,0 +1,233 @@
+<session>
+  <meta source="agent-a042beb" />
+  <meta branch="plnd/split-plan-data-provider-03-06-0149" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>In /home/runner/work/erk/erk/tests/tui/app/test_streaming.py, `repo_root` is now accessed via `self._service.repo_root` (the PlanService), not `self._provider.repo_root`.
+
+Fix pattern:
+1. Where tests pass `repo_root=tmp_path` to `FakePlanDataProvider(...)`, remove it from the provider constructor and add it to `FakePlanService(repo_root=tmp_path)`.
+2. Update `service=FakePlanService()` to `service=FakePlanService(repo_root=tmp_path)`.
+3. The `close_plan` domain operation is also on the service. If tests call `provider.close_plan(...)` change to `service.close_plan(...)`.
+
+IMPORTANT: The test_close_plan_in_process tests reference `provider.close_plan` which is a domain operation that moved to PlanService. These need to use the service instead.
+
+Read the file first, then make the edits. Do NOT change any other logic.</user>
+  <assistant>I'll read the file first to understand the current structure, then make the necessary changes to move `repo_root` from `FakePlanDataProvider` to `FakePlanService` and update `close_plan` calls.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6047" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6047, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Qo9dFLXFHxxkNRiYqdrdZB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_streaming.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6047" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6047, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Qo9dFLXFHxxkNRiYqdrdZB">
+     1→"""Tests for streaming command timeout and close plan in-process."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import pytest
+     6→
+     7→from erk.tui.app import ErkDashApp
+     8→from erk.tui.data.types import PlanFilters
+     9→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+    10→from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+    11→from erk_shared.gateway.plan_service.fake import FakePlanService
+    12→
+    13→
+    14→class TestStreamingCommandTimeout:
+    15→    """Tests for streaming command timeout behavior.
+    16→
+    17→    The streaming command timeout feature kills long-running subprocesses
+    18→    to prevent the TUI from hanging indefinitely.
+    19→    """
+    20→
+    21→    @pytest.mark.asyncio
+    22→    async def test_timeout_fires_and_kills_process(self, tmp_path: Path) -&gt; None:
+    23→        """Timeout kills subprocess and shows error message.
+    24→
+    25→        Uses a short timeout (0.1s) with a sleep command to verify
+    26→        the timeout handler fires and terminates the process.
+    27→        """
+    28→        provider = FakePlanDataProvider(
+    29→            plans=[make_plan_row(123, "Test Plan")],
+    30→            repo_root=tmp_path,
+
+... [249 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll make the necessary edits to fix the `repo_root` access pattern and `close_plan` calls:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="6275" cache_read_input_tokens="16144" cache_creation="{'ephemeral_5m_input_tokens': 6275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012y6CjEWu1xEoLndE6ehTq5">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_streaming.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_timeout_fires_and_kills_process(self, tmp_path...[truncated 393 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_timeout_fires_and_kills_process(self, tmp_path...[truncated 379 chars]...rovider, service=FakePlanService(repo_root=tmp_path), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="6275" cache_read_input_tokens="16144" cache_creation="{'ephemeral_5m_input_tokens': 6275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01L7o6VNnABBXdCHZ4XJMBnH">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_streaming.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_successful_command_cancels_timer(self, tmp_pat...[truncated 262 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_successful_command_cancels_timer(self, tmp_pat...[truncated 248 chars]...rovider, service=FakePlanService(repo_root=tmp_path), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="6275" cache_read_input_tokens="16144" cache_creation="{'ephemeral_5m_input_tokens': 6275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MRCoUs7f7yn1rsmEQzSESE">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_streaming.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_timeout_disabled_when_zero(self, tmp_path: Pat...[truncated 245 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_timeout_disabled_when_zero(self, tmp_path: Pat...[truncated 231 chars]...rovider, service=FakePlanService(repo_root=tmp_path), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="6275" cache_read_input_tokens="16144" cache_creation="{'ephemeral_5m_input_tokens': 6275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Nyhf6snmF7nqnry5YnKTyc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_streaming.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_dismiss_blocked_during_command(self, tmp_path:...[truncated 255 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_dismiss_blocked_during_command(self, tmp_path:...[truncated 241 chars]...rovider, service=FakePlanService(repo_root=tmp_path), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="6275" cache_read_input_tokens="16144" cache_creation="{'ephemeral_5m_input_tokens': 6275, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012y6CjEWu1xEoLndE6ehTq5">
+The file /home/runner/work/erk/erk/tests/tui/app/test_streaming.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01L7o6VNnABBXdCHZ4XJMBnH">
+The file /home/runner/work/erk/erk/tests/tui/app/test_streaming.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01MRCoUs7f7yn1rsmEQzSESE">
+The file /home/runner/work/erk/erk/tests/tui/app/test_streaming.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Nyhf6snmF7nqnry5YnKTyc">
+The file /home/runner/work/erk/erk/tests/tui/app/test_streaming.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to read the file again to see the current state and check if there are any remaining issues with the test_close_plan_in_process tests that need updating:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="1856" cache_read_input_tokens="22419" cache_creation="{'ephemeral_5m_input_tokens': 1856, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Xw5q3GKEnoQ7Tr1L3B3JLo">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_streaming.py</param>
+    <param name="offset">200</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="1856" cache_read_input_tokens="22419" cache_creation="{'ephemeral_5m_input_tokens': 1856, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Xw5q3GKEnoQ7Tr1L3B3JLo">
+   200→            plans=[
+   201→                make_plan_row(
+   202→                    123,
+   203→                    "Test Plan",
+   204→                    plan_url="https://github.com/test/repo/issues/123",
+   205→                )
+   206→            ],
+   207→        )
+   208→        filters = PlanFilters.default()
+   209→        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+   210→
+   211→        async with app.run_test() as pilot:
+   212→            await pilot.pause()
+   213→            await pilot.pause()
+   214→
+   215→            # Open detail screen
+   216→            await pilot.press("space")
+   217→            await pilot.pause()
+   218→            await pilot.pause()
+   219→
+   220→            detail_screen = app.screen_stack[-1]
+   221→            assert isinstance(detail_screen, PlanDetailScreen)
+   222→
+   223→            # Run close plan in-process
+   224→            detail_screen.run_close_plan_in_process(123, "https://github.com/test/repo/issues/123")
+   225→
+   226→            # Output panel should be created
+   227→            assert detail_screen._output_panel is not None
+   228→            assert detail_screen._command_running is True
+   229→
+
+... [46 lines omitted] ...
+  </tool_result>
+  <assistant>I can see that the test_close_plan_in_process tests don't pass `repo_root` to the FakePlanDataProvider at all, which is correct since they don't need it. However, the comment in the task description mentions that `close_plan` is a domain operation that moved to PlanService. Let me check if the tests are actually calling `provider.close_plan` anywhere. Looking at the code, I see:
+
+1. Line 253: `assert len(provider._plans) == 2` - This is just checking the internal state of the provider
+2. Line 268-269: Similar assertions on provider state
+
+These tests are checking the provider's internal state but the actual `close_plan` call is happening inside `run_close_plan_in_process` on line 224 and 264. The tests don't directly call `provider.close_plan(...)` so there's nothing to fix here.
+
+However, I notice that the close plan tests don't use `tmp_path` at all, which means they don't need `repo_root`. But let me verify the entire file one more time to make sure I haven't missed anything:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="1079" cache_read_input_tokens="24275" cache_creation="{'ephemeral_5m_input_tokens': 1079, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01VszH5HPFSc39zrV91x8u22">
+    <param name="pattern">provider\.close_plan</param>
+    <param name="path">/home/runner/work/erk/erk/tests/tui/app/test_streaming.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="1079" cache_read_input_tokens="24275" cache_creation="{'ephemeral_5m_input_tokens': 1079, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VszH5HPFSc39zrV91x8u22">
+No matches found
+  </tool_result>
+  <assistant>Good, there are no direct calls to `provider.close_plan` in the test file. Let me verify the final state of the file by reading it completely to confirm all changes are correct:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="492" cache_read_input_tokens="25354" cache_creation="{'ephemeral_5m_input_tokens': 492, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019ua1tHHv1phbCzNFzX4GLC">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_streaming.py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="492" cache_read_input_tokens="25354" cache_creation="{'ephemeral_5m_input_tokens': 492, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019ua1tHHv1phbCzNFzX4GLC">
+     1→"""Tests for streaming command timeout and close plan in-process."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import pytest
+     6→
+     7→from erk.tui.app import ErkDashApp
+     8→from erk.tui.data.types import PlanFilters
+     9→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+    10→from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+    11→from erk_shared.gateway.plan_service.fake import FakePlanService
+    12→
+    13→
+    14→class TestStreamingCommandTimeout:
+    15→    """Tests for streaming command timeout behavior.
+    16→
+    17→    The streaming command timeout feature kills long-running subprocesses
+    18→    to prevent the TUI from hanging indefinitely.
+    19→    """
+    20→
+    21→    @pytest.mark.asyncio
+    22→    async def test_timeout_fires_and_kills_process(self, tmp_path: Path) -&gt; None:
+    23→        """Timeout kills subprocess and shows error message.
+    24→
+    25→        Uses a short timeout (0.1s) with a sleep command to verify
+    26→        the timeout handler fires and terminates the process.
+    27→        """
+    28→        provider = FakePlanDataProvider(
+    29→            plans=[make_plan_row(123, "Test Plan")],
+    30→        )
+
+... [245 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! I've successfully completed all the required changes. Here's a summary of what was done:
+
+## Summary
+
+I fixed the `repo_root` access pattern in `/home/runner/work/erk/erk/tests/tui/app/test_streaming.py` by moving it from `FakePlanDataProvider` to `FakePlanService`:
+
+### Changes Made:
+
+1. **test_timeout_fires_and_kills_process** (lines 28-32):
+   - Removed `repo_root=tmp_path` from `FakePlanDataProvider(...)`
+   - Added `repo_root=tmp_path` to `FakePlanService(...)`
+
+2. **test_successful_command_cancels_timer** (lines 68-72):
+   - Removed `repo_root=tmp_path` from `FakePlanDataProvider(...)`
+   - Added `repo_root=tmp_path` to `FakePlanService(...)`
+
+3. **test_timeout_disabled_when_zero** (lines 109-113):
+   - Removed `repo_root=tmp_path` from `FakePlanDataProvider(...)`
+   - Added `repo_root=tmp_path` to `FakePlanService(...)`
+
+4. **test_dismiss_blocked_during_command** (lines 152-156):
+   - Removed `repo_root=tmp_path` from `FakePlanDataProvider(...)`
+   - Added `repo_root=tmp_path` to `FakePlanService(...)`
+
+### Note on close_plan tests:
+
+The two `test_close_plan_in_process` tests (lines 197-234 and 237-269) did not require changes because:
+- They don't use `tmp_path` or `repo_root` at all
+- They don't directly call `provider.close_plan(...)` - the close plan operation happens internally within `run_close_plan_in_process`
+- They only check the provider's internal state (`provider._plans`) to verify the plan was removed
+
+All changes follow the specified pattern where `repo_root` is now accessed via `self._service.repo_root` (the PlanService) instead of `self._provider.repo_root`.</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="3487" cache_read_input_tokens="25846" cache_creation="{'ephemeral_5m_input_tokens': 3487, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+</session>

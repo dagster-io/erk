@@ -1,0 +1,208 @@
+<session>
+  <meta source="agent-a5521dc" />
+  <meta branch="plnd/split-plan-data-provider-03-06-0149" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Update the file /home/runner/work/erk/erk/tests/tui/app/test_view_switching.py:
+
+1. Add this import line after the existing FakePlanDataProvider import:
+   `from erk_shared.gateway.plan_service.fake import FakePlanService`
+
+2. For EVERY `ErkDashApp(` constructor call in the file, add `service=FakePlanService()` as a keyword argument. The pattern is:
+   - Old: `ErkDashApp(provider=provider, filters=filters, refresh_interval=0)`
+   - New: `ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)`
+
+Read the file first, then make all needed edits. Be thorough and update EVERY ErkDashApp constructor call in the file.</user>
+  <assistant>I'll read the file first to see all the `ErkDashApp` constructor calls that need to be updated.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16095" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16095, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017WJd5TF1dJKnesjMGSYqzE">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_view_switching.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16095" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16095, 'ephemeral_1h_input_tokens': 0}" output_tokens="105" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017WJd5TF1dJKnesjMGSYqzE">
+     1→"""Tests for view switching functionality."""
+     2→
+     3→import pytest
+     4→
+     5→from erk.tui.app import ErkDashApp
+     6→from erk.tui.data.types import PlanFilters
+     7→from erk.tui.views.types import ViewMode, get_view_config
+     8→from erk.tui.widgets.view_bar import ViewBar
+     9→from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+    10→
+    11→
+    12→class TestViewSwitching:
+    13→    """Tests for view switching (1/2/3 keys)."""
+    14→
+    15→    @pytest.mark.asyncio
+    16→    async def test_app_has_view_bar(self) -&gt; None:
+    17→        """App composes a ViewBar widget."""
+    18→        provider = FakePlanDataProvider()
+    19→        filters = PlanFilters.default()
+    20→        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+    21→
+    22→        async with app.run_test():
+    23→            view_bar = app.query_one(ViewBar)
+    24→            assert view_bar is not None
+    25→
+    26→    @pytest.mark.asyncio
+    27→    async def test_default_view_is_plans(self) -&gt; None:
+    28→        """App starts in Plans view mode."""
+    29→        provider = FakePlanDataProvider()
+    30→        filters = PlanFilters.default()
+
+... [387 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll make the necessary edits. I can see there are 11 `ErkDashApp` constructor calls in this file (lines 20, 31, 47, 78, 102, 126, 150, 169, 193, 224, 250, 287, 339, 372, 399, 407). Let me first add the import, then update each constructor call.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="8590" cache_read_input_tokens="16095" cache_creation="{'ephemeral_5m_input_tokens': 8590, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013pghmTZybYWwDLqd9Hoq91">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_view_switching.py</param>
+    <param name="old_string">from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row</param>
+    <param name="new_string">from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+from erk_shared.gateway.plan_service.fake import FakePlanService</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="8590" cache_read_input_tokens="16095" cache_creation="{'ephemeral_5m_input_tokens': 8590, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013pghmTZybYWwDLqd9Hoq91">
+The file /home/runner/work/erk/erk/tests/tui/app/test_view_switching.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I'll update all the `ErkDashApp` constructor calls. Let me do them one by one to ensure accuracy:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="330" cache_read_input_tokens="24685" cache_creation="{'ephemeral_5m_input_tokens': 330, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Awuw7BNKWsvY8bCbrg1q3n">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_view_switching.py</param>
+    <param name="old_string">        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="330" cache_read_input_tokens="24685" cache_creation="{'ephemeral_5m_input_tokens': 330, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Awuw7BNKWsvY8bCbrg1q3n">
+The file /home/runner/work/erk/erk/tests/tui/app/test_view_switching.py has been updated. All occurrences of '        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)' were successfully replaced with '        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)'.
+  </tool_result>
+  <assistant>Perfect! Now let me verify the changes by reading the file again to make sure all constructor calls have been updated:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="326" cache_read_input_tokens="25015" cache_creation="{'ephemeral_5m_input_tokens': 326, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HZHhd7Qymp1oHUyahBkjx2">
+    <param name="command">grep -n "ErkDashApp(" /home/runner/work/erk/erk/tests/tui/app/test_view_switching.py</param>
+    <param name="description">Verify all ErkDashApp constructor calls have been updated</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="326" cache_read_input_tokens="25015" cache_creation="{'ephemeral_5m_input_tokens': 326, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HZHhd7Qymp1oHUyahBkjx2">
+21:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+32:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+48:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+79:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+103:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+127:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+151:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+170:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+194:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+225:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+251:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+288:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+340:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+373:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+400:    app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+408:    app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+  </tool_result>
+  <assistant>I can see that lines 400 and 408 still need to be updated. These are in the standalone test functions at the end of the file. Let me update those as well:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="784" cache_read_input_tokens="25341" cache_creation="{'ephemeral_5m_input_tokens': 784, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01N6MR2ivo9G9gCR81d6yG3A">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_view_switching.py</param>
+    <param name="old_string">def test_display_name_plans_view() -&gt; None:
+    """PLANS view returns 'Planned PRs'."""
+  ...[truncated 109 chars]...refresh_interval=0)
+    assert app._display_name_for_view(ViewMode.PLANS) == "Planned PRs"</param>
+    <param name="new_string">def test_display_name_plans_view() -&gt; None:
+    """PLANS view returns 'Planned PRs'."""
+  ...[truncated 136 chars]...refresh_interval=0)
+    assert app._display_name_for_view(ViewMode.PLANS) == "Planned PRs"</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="784" cache_read_input_tokens="25341" cache_creation="{'ephemeral_5m_input_tokens': 784, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N6MR2ivo9G9gCR81d6yG3A">
+The file /home/runner/work/erk/erk/tests/tui/app/test_view_switching.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0195snpK1JjDGaovQA6bfbF2">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_view_switching.py</param>
+    <param name="old_string">def test_display_name_non_plans_view() -&gt; None:
+    """Non-PLANS mode returns default disp...[truncated 335 chars]...S).display_name
+    assert app._display_name_for_view(ViewMode.OBJECTIVES) == expected_obj</param>
+    <param name="new_string">def test_display_name_non_plans_view() -&gt; None:
+    """Non-PLANS mode returns default disp...[truncated 362 chars]...S).display_name
+    assert app._display_name_for_view(ViewMode.OBJECTIVES) == expected_obj</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="411" cache_read_input_tokens="26125" cache_creation="{'ephemeral_5m_input_tokens': 411, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0195snpK1JjDGaovQA6bfbF2">
+The file /home/runner/work/erk/erk/tests/tui/app/test_view_switching.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify all changes are complete:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="599" cache_read_input_tokens="26536" cache_creation="{'ephemeral_5m_input_tokens': 599, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NqCGp6wjCUSsS3GvGksZwv">
+    <param name="command">grep -n "ErkDashApp(" /home/runner/work/erk/erk/tests/tui/app/test_view_switching.py</param>
+    <param name="description">Final verification of all ErkDashApp constructor calls</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="599" cache_read_input_tokens="26536" cache_creation="{'ephemeral_5m_input_tokens': 599, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NqCGp6wjCUSsS3GvGksZwv">
+21:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+32:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+48:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+79:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+103:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+127:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+151:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+170:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+194:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+225:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+251:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+288:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+340:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+373:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+400:    app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+408:    app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+  </tool_result>
+  <assistant>Perfect! Let me also verify the import was added correctly:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="679" cache_read_input_tokens="27135" cache_creation="{'ephemeral_5m_input_tokens': 679, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Wqsze4EACR2VEr6RvKJAK2">
+    <param name="command">head -15 /home/runner/work/erk/erk/tests/tui/app/test_view_switching.py</param>
+    <param name="description">Verify the import was added correctly</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="679" cache_read_input_tokens="27135" cache_creation="{'ephemeral_5m_input_tokens': 679, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Wqsze4EACR2VEr6RvKJAK2">
+"""Tests for view switching functionality."""
+
+import pytest
+
+from erk.tui.app import ErkDashApp
+from erk.tui.data.types import PlanFilters
+from erk.tui.views.types import ViewMode, get_view_config
+from erk.tui.widgets.view_bar import ViewBar
+from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+from erk_shared.gateway.plan_service.fake import FakePlanService
+
+
+class TestViewSwitching:
+    """Tests for view switching (1/2/3 keys)."""
+  </tool_result>
+  <assistant>Excellent! All changes have been successfully applied. Let me provide a summary:
+
+## Summary
+
+Successfully updated `/home/runner/work/erk/erk/tests/tui/app/test_view_switching.py`:
+
+### Changes Made:
+
+1. **Added import** (line 10):
+   - Added `from erk_shared.gateway.plan_service.fake import FakePlanService`
+
+2. **Updated all 16 `ErkDashApp` constructor calls** to include `service=FakePlanService()`:
+   - Lines 21, 32, 48, 79, 103, 127, 151, 170, 194, 225, 251, 288, 340, 373 (in async test methods)
+   - Lines 400, 408 (in standalone test functions)
+
+### Pattern Applied:
+```python
+# Before:
+app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+# After:
+app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+```
+
+All `ErkDashApp` instances in the file now properly inject the `FakePlanService` dependency, maintaining consistency with the test architecture's dependency injection pattern.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="384" cache_read_input_tokens="27814" cache_creation="{'ephemeral_5m_input_tokens': 384, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+</session>

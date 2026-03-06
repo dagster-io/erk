@@ -1,0 +1,253 @@
+<session>
+  <meta source="agent-a0bb67f" />
+  <meta branch="plnd/split-plan-data-provider-03-06-0149" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Update the file /home/runner/work/erk/erk/tests/tui/app/test_streaming.py:
+
+1. Add this import line after the existing FakePlanDataProvider import:
+   `from erk_shared.gateway.plan_service.fake import FakePlanService`
+
+2. For EVERY `ErkDashApp(` constructor call in the file, add `service=FakePlanService()` as a keyword argument. The pattern is:
+   - Old: `ErkDashApp(provider=provider, filters=filters, refresh_interval=0)`
+   - New: `ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)`
+
+Read the file first, then make all needed edits. Be thorough and update EVERY ErkDashApp constructor call in the file.</user>
+  <assistant>I'll read the file first to understand its structure, then make all the necessary updates.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16093" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16093, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CuUgzRA1Ne25TjVK5vwEJf">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_streaming.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16093" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16093, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CuUgzRA1Ne25TjVK5vwEJf">
+     1→"""Tests for streaming command timeout and close plan in-process."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import pytest
+     6→
+     7→from erk.tui.app import ErkDashApp
+     8→from erk.tui.data.types import PlanFilters
+     9→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+    10→from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+    11→
+    12→
+    13→class TestStreamingCommandTimeout:
+    14→    """Tests for streaming command timeout behavior.
+    15→
+    16→    The streaming command timeout feature kills long-running subprocesses
+    17→    to prevent the TUI from hanging indefinitely.
+    18→    """
+    19→
+    20→    @pytest.mark.asyncio
+    21→    async def test_timeout_fires_and_kills_process(self, tmp_path: Path) -&gt; None:
+    22→        """Timeout kills subprocess and shows error message.
+    23→
+    24→        Uses a short timeout (0.1s) with a sleep command to verify
+    25→        the timeout handler fires and terminates the process.
+    26→        """
+    27→        provider = FakePlanDataProvider(
+    28→            plans=[make_plan_row(123, "Test Plan")],
+    29→            repo_root=tmp_path,
+    30→        )
+
+... [248 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll make the required edits. I need to:
+1. Add the import for `FakePlanService` after the existing `FakePlanDataProvider` import
+2. Add `service=FakePlanService()` to all `ErkDashApp()` constructor calls
+
+Let me make these edits:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="6172" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 6172, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01U5XomGpFuKYpnHdKeosh2P">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_streaming.py</param>
+    <param name="old_string">from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row</param>
+    <param name="new_string">from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+from erk_shared.gateway.plan_service.fake import FakePlanService</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="6172" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 6172, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01U5XomGpFuKYpnHdKeosh2P">
+The file /home/runner/work/erk/erk/tests/tui/app/test_streaming.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I'll update all `ErkDashApp()` constructor calls. There are 6 instances in the file:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="307" cache_read_input_tokens="22265" cache_creation="{'ephemeral_5m_input_tokens': 307, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01S4KKxziwT8xiREoDD4ajgv">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_streaming.py</param>
+    <param name="old_string">        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filter...[truncated 63 chars]...     await pilot.pause()
+            await pilot.pause()
+
+            # Open detail screen</param>
+    <param name="new_string">        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, servic...[truncated 90 chars]...     await pilot.pause()
+            await pilot.pause()
+
+            # Open detail screen</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="307" cache_read_input_tokens="22265" cache_creation="{'ephemeral_5m_input_tokens': 307, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S4KKxziwT8xiREoDD4ajgv">
+&lt;tool_use_error&gt;Found 5 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:         filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+        async with app.run_test() as pilot:
+            await pilot.pause()
+            await pilot.pause()
+
+            # Open detail screen&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>I need to update each instance individually. Let me start with the first one in `test_timeout_fires_and_kills_process`:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="432" cache_read_input_tokens="22572" cache_creation="{'ephemeral_5m_input_tokens': 432, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_016s9xKnS7WRsw2gfoKSUqCK">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_streaming.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_timeout_fires_and_kills_process(self, tmp_path...[truncated 366 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_timeout_fires_and_kills_process(self, tmp_path...[truncated 393 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="432" cache_read_input_tokens="22572" cache_creation="{'ephemeral_5m_input_tokens': 432, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016s9xKnS7WRsw2gfoKSUqCK">
+The file /home/runner/work/erk/erk/tests/tui/app/test_streaming.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01LrTfTXjKfBPvQHgftgVRNp">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_streaming.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_successful_command_cancels_timer(self, tmp_pat...[truncated 235 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_successful_command_cancels_timer(self, tmp_pat...[truncated 262 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="610" cache_read_input_tokens="23004" cache_creation="{'ephemeral_5m_input_tokens': 610, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LrTfTXjKfBPvQHgftgVRNp">
+The file /home/runner/work/erk/erk/tests/tui/app/test_streaming.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017rcNqCberpeQuxVv3aV8p5">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_streaming.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_timeout_disabled_when_zero(self, tmp_path: Pat...[truncated 218 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_timeout_disabled_when_zero(self, tmp_path: Pat...[truncated 245 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="411" cache_read_input_tokens="23614" cache_creation="{'ephemeral_5m_input_tokens': 411, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017rcNqCberpeQuxVv3aV8p5">
+The file /home/runner/work/erk/erk/tests/tui/app/test_streaming.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014uY7uKXtX2Vx86MjzZfsbC">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_streaming.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_dismiss_blocked_during_command(self, tmp_path:...[truncated 228 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_dismiss_blocked_during_command(self, tmp_path:...[truncated 255 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="409" cache_read_input_tokens="24025" cache_creation="{'ephemeral_5m_input_tokens': 409, 'ephemeral_1h_input_tokens': 0}" output_tokens="361" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014uY7uKXtX2Vx86MjzZfsbC">
+The file /home/runner/work/erk/erk/tests/tui/app/test_streaming.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017ZdVQ54GCu64mK8vm3XrxQ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_streaming.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_close_plan_in_process_creates_output_panel(sel...[truncated 356 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_close_plan_in_process_creates_output_panel(sel...[truncated 383 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="509" cache_read_input_tokens="24434" cache_creation="{'ephemeral_5m_input_tokens': 509, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017ZdVQ54GCu64mK8vm3XrxQ">
+The file /home/runner/work/erk/erk/tests/tui/app/test_streaming.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0121RNdJgMR2EUHSbeFDaD7o">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_streaming.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_close_plan_in_process_removes_plan_from_list(s...[truncated 270 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_close_plan_in_process_removes_plan_from_list(s...[truncated 297 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="458" cache_read_input_tokens="24943" cache_creation="{'ephemeral_5m_input_tokens': 458, 'ephemeral_1h_input_tokens': 0}" output_tokens="385" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0121RNdJgMR2EUHSbeFDaD7o">
+The file /home/runner/work/erk/erk/tests/tui/app/test_streaming.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! Let me verify all the changes were made correctly by reading the file one more time:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="428" cache_read_input_tokens="25401" cache_creation="{'ephemeral_5m_input_tokens': 428, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RWJuJvBiCiB5JvNCPQAmb7">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_streaming.py</param>
+    <param name="offset">0</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="428" cache_read_input_tokens="25401" cache_creation="{'ephemeral_5m_input_tokens': 428, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RWJuJvBiCiB5JvNCPQAmb7">
+     0→"""Tests for streaming command timeout and close plan in-process."""
+     1→
+     2→from pathlib import Path
+     3→
+     4→import pytest
+     5→
+     6→from erk.tui.app import ErkDashApp
+     7→from erk.tui.data.types import PlanFilters
+     8→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+     9→from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+    10→from erk_shared.gateway.plan_service.fake import FakePlanService
+    11→
+    12→
+    13→class TestStreamingCommandTimeout:
+    14→    """Tests for streaming command timeout behavior.
+    15→
+    16→    The streaming command timeout feature kills long-running subprocesses
+    17→    to prevent the TUI from hanging indefinitely.
+    18→    """
+    19→
+    20→    @pytest.mark.asyncio
+    21→    async def test_timeout_fires_and_kills_process(self, tmp_path: Path) -&gt; None:
+    22→        """Timeout kills subprocess and shows error message.
+    23→
+    24→        Uses a short timeout (0.1s) with a sleep command to verify
+    25→        the timeout handler fires and terminates the process.
+    26→        """
+    27→        provider = FakePlanDataProvider(
+    28→            plans=[make_plan_row(123, "Test Plan")],
+    29→            repo_root=tmp_path,
+
+... [25 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01UBbgzaDq37pT6gDxSr5aZZ">
+    <param name="command">grep -n "ErkDashApp(" /home/runner/work/erk/erk/tests/tui/app/test_streaming.py</param>
+    <param name="description">Verify all ErkDashApp calls now include service parameter</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="953" cache_read_input_tokens="25829" cache_creation="{'ephemeral_5m_input_tokens': 953, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UBbgzaDq37pT6gDxSr5aZZ">
+33:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+74:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+116:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+160:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+213:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+250:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+  </tool_result>
+  <assistant>Excellent! All updates have been completed successfully. Let me provide a summary:
+
+## Summary
+
+Successfully updated `/home/runner/work/erk/erk/tests/tui/app/test_streaming.py`:
+
+### 1. Added Import
+- Added `from erk_shared.gateway.plan_service.fake import FakePlanService` on line 10, right after the `FakePlanDataProvider` import
+
+### 2. Updated All ErkDashApp Constructor Calls
+Updated all 6 occurrences of `ErkDashApp()` constructor calls to include `service=FakePlanService()`:
+
+- **Line 33**: `test_timeout_fires_and_kills_process` method
+- **Line 74**: `test_successful_command_cancels_timer` method
+- **Line 116**: `test_timeout_disabled_when_zero` method
+- **Line 160**: `test_dismiss_blocked_during_command` method
+- **Line 213**: `test_close_plan_in_process_creates_output_panel` method
+- **Line 250**: `test_close_plan_in_process_removes_plan_from_list` method
+
+All instances now follow the pattern:
+```python
+app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+```
+
+The file has been thoroughly updated with all required changes.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="329" cache_read_input_tokens="26782" cache_creation="{'ephemeral_5m_input_tokens': 329, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,238 @@
+<session>
+  <meta source="agent-a18b873" />
+  <meta branch="plnd/split-plan-data-provider-03-06-0149" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Update /home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py to test RealPlanService instead of RealPlanDataProvider.
+
+The `fetch_objective_content` method has been moved from `RealPlanDataProvider` to `RealPlanService`.
+
+Changes needed:
+1. Change import from `from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider` to `from erk_shared.gateway.plan_service.real import RealPlanService`
+2. Update the `_make_provider` function to become `_make_service` that returns `RealPlanService`
+3. The `RealPlanService` constructor takes: `ctx` (positional), then keyword args: `location`, `clipboard`, `browser`, `http_client`
+4. Update all test functions to use the service instead of provider
+5. Change `provider.fetch_objective_content(...)` to `service.fetch_objective_content(...)`
+
+Read the file first, understand the full content, then make all edits.</user>
+  <assistant>I'll start by reading the test file to understand its current structure, then make the necessary changes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6052" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6052, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LD1FagjmMW7jmeceXeVsdV">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6052" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6052, 'ephemeral_1h_input_tokens': 0}" output_tokens="102" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LD1FagjmMW7jmeceXeVsdV">
+     1→"""Tests for fetch_objective_content on RealPlanDataProvider."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.core.repo_discovery import RepoContext
+     6→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+     7→from erk_shared.gateway.clipboard.fake import FakeClipboard
+     8→from erk_shared.gateway.git.abc import WorktreeInfo
+     9→from erk_shared.gateway.git.fake import FakeGit
+    10→from erk_shared.gateway.github.metadata.core import format_objective_content_comment
+    11→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    12→from erk_shared.gateway.http.fake import FakeHttpClient
+    13→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+    14→from tests.fakes.context import create_test_context
+    15→
+    16→
+    17→def _make_repo_context(repo_root: Path, tmp_path: Path) -&gt; RepoContext:
+    18→    """Create a RepoContext for testing."""
+    19→    erk_dir = tmp_path / ".erk"
+    20→    repo_dir = erk_dir / "repos" / "test-repo"
+    21→    return RepoContext(
+    22→        root=repo_root,
+    23→        repo_name="test-repo",
+    24→        repo_dir=repo_dir,
+    25→        worktrees_dir=repo_dir / "worktrees",
+    26→        pool_json_path=repo_dir / "pool.json",
+    27→    )
+    28→
+    29→
+    30→def _make_provider(tmp_path: Path, *, http_client: FakeHttpClient) -&gt; RealPlanDataProvider:
+
+... [133 lines omitted] ...
+
+    66→_WARNING = "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;"
+    68→ISSUE_BODY_WITH_COMMENT_ID = f"""{_WARNING}
+    84→ISSUE_BODY_WITH_NULL_COMMENT_ID = f"""{_WARNING}
+  </tool_result>
+  <assistant>Now I'll make the necessary edits to update the test file to use `RealPlanService` instead of `RealPlanDataProvider`:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="5035" cache_read_input_tokens="16149" cache_creation="{'ephemeral_5m_input_tokens': 5035, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01G7iRhYqeEjtruNbWCLhxaw">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py</param>
+    <param name="old_string">"""Tests for fetch_objective_content on RealPlanDataProvider."""</param>
+    <param name="new_string">"""Tests for fetch_objective_content on RealPlanService."""</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="5035" cache_read_input_tokens="16149" cache_creation="{'ephemeral_5m_input_tokens': 5035, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01G7iRhYqeEjtruNbWCLhxaw">
+The file /home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014C4vkFR8pL4G8jXM3iyn2f">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py</param>
+    <param name="old_string">from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider</param>
+    <param name="new_string">from erk_shared.gateway.plan_service.real import RealPlanService</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="229" cache_read_input_tokens="21184" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014C4vkFR8pL4G8jXM3iyn2f">
+The file /home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Mdg5wxir2RxLY7zhAmGDLg">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py</param>
+    <param name="old_string">def _make_provider(tmp_path: Path, *, http_client: FakeHttpClient) -&gt; RealPlanDataProvider...[truncated 746 chars]...Clipboard(),
+        browser=FakeBrowserLauncher(),
+        http_client=http_client,
+    )</param>
+    <param name="new_string">def _make_service(tmp_path: Path, *, http_client: FakeHttpClient) -&gt; RealPlanService:
+    ...[truncated 726 chars]...Clipboard(),
+        browser=FakeBrowserLauncher(),
+        http_client=http_client,
+    )</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="206" cache_read_input_tokens="21413" cache_creation="{'ephemeral_5m_input_tokens': 206, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Mdg5wxir2RxLY7zhAmGDLg">
+The file /home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01UHcyXumefa8unssyJqcS1j">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py</param>
+    <param name="old_string">    provider = _make_provider(tmp_path, http_client=http_client)
+    result = provider.fetch_objective_content(123, ISSUE_BODY_WITH_COMMENT_ID)</param>
+    <param name="new_string">    service = _make_service(tmp_path, http_client=http_client)
+    result = service.fetch_objective_content(123, ISSUE_BODY_WITH_COMMENT_ID)</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="786" cache_read_input_tokens="21619" cache_creation="{'ephemeral_5m_input_tokens': 786, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UHcyXumefa8unssyJqcS1j">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:     provider = _make_provider(tmp_path, http_client=http_client)
+    result = provider.fetch_objective_content(123, ISSUE_BODY_WITH_COMMENT_ID)&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>I need to update each test function individually. Let me continue with each one:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="442" cache_read_input_tokens="22405" cache_creation="{'ephemeral_5m_input_tokens': 442, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01C5MGs4487MuPQGFRoF62gP">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py</param>
+    <param name="old_string">def test_fetch_objective_content_returns_content(tmp_path: Path) -&gt; None:
+    """Happy pat...[truncated 715 chars]...) == 1
+    assert http_client.requests[0].endpoint == "repos/test/repo/issues/comments/42"</param>
+    <param name="new_string">def test_fetch_objective_content_returns_content(tmp_path: Path) -&gt; None:
+    """Happy pat...[truncated 712 chars]...) == 1
+    assert http_client.requests[0].endpoint == "repos/test/repo/issues/comments/42"</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="442" cache_read_input_tokens="22405" cache_creation="{'ephemeral_5m_input_tokens': 442, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C5MGs4487MuPQGFRoF62gP">
+The file /home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FvJyZPh5XL9B43hNo9xms2">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py</param>
+    <param name="old_string">def test_fetch_objective_content_missing_comment_id(tmp_path: Path) -&gt; None:
+    """Issue ...[truncated 219 chars]...y without metadata.")
+
+    assert result is None
+    assert len(http_client.requests) == 0</param>
+    <param name="new_string">def test_fetch_objective_content_missing_comment_id(tmp_path: Path) -&gt; None:
+    """Issue ...[truncated 216 chars]...y without metadata.")
+
+    assert result is None
+    assert len(http_client.requests) == 0</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="733" cache_read_input_tokens="22847" cache_creation="{'ephemeral_5m_input_tokens': 733, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FvJyZPh5XL9B43hNo9xms2">
+The file /home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BWwEqjTksgHmhJzQaCh8wV">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py</param>
+    <param name="old_string">def test_fetch_objective_content_null_comment_id(tmp_path: Path) -&gt; None:
+    """Objective...[truncated 199 chars]...WITH_NULL_COMMENT_ID)
+
+    assert result is None
+    assert len(http_client.requests) == 0</param>
+    <param name="new_string">def test_fetch_objective_content_null_comment_id(tmp_path: Path) -&gt; None:
+    """Objective...[truncated 196 chars]...WITH_NULL_COMMENT_ID)
+
+    assert result is None
+    assert len(http_client.requests) == 0</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="499" cache_read_input_tokens="23580" cache_creation="{'ephemeral_5m_input_tokens': 499, 'ephemeral_1h_input_tokens': 0}" output_tokens="363" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BWwEqjTksgHmhJzQaCh8wV">
+The file /home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JVutRo1WfQFHY3Kv6wPc8s">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py</param>
+    <param name="old_string">def test_fetch_objective_content_empty_comment_body(tmp_path: Path) -&gt; None:
+    """HTTP r...[truncated 245 chars]...ovider.fetch_objective_content(123, ISSUE_BODY_WITH_COMMENT_ID)
+
+    assert result is None</param>
+    <param name="new_string">def test_fetch_objective_content_empty_comment_body(tmp_path: Path) -&gt; None:
+    """HTTP r...[truncated 242 chars]...ervice.fetch_objective_content(123, ISSUE_BODY_WITH_COMMENT_ID)
+
+    assert result is None</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="410" cache_read_input_tokens="24079" cache_creation="{'ephemeral_5m_input_tokens': 410, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JVutRo1WfQFHY3Kv6wPc8s">
+The file /home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify the changes by reading the updated file:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="438" cache_read_input_tokens="24489" cache_creation="{'ephemeral_5m_input_tokens': 438, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ERiDpgPX8eweBpVTJ1ymjN">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="438" cache_read_input_tokens="24489" cache_creation="{'ephemeral_5m_input_tokens': 438, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ERiDpgPX8eweBpVTJ1ymjN">
+     1→"""Tests for fetch_objective_content on RealPlanService."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.core.repo_discovery import RepoContext
+     6→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+     7→from erk_shared.gateway.clipboard.fake import FakeClipboard
+     8→from erk_shared.gateway.git.abc import WorktreeInfo
+     9→from erk_shared.gateway.git.fake import FakeGit
+    10→from erk_shared.gateway.github.metadata.core import format_objective_content_comment
+    11→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    12→from erk_shared.gateway.http.fake import FakeHttpClient
+    13→from erk_shared.gateway.plan_service.real import RealPlanService
+    14→from tests.fakes.context import create_test_context
+    15→
+    16→
+    17→def _make_repo_context(repo_root: Path, tmp_path: Path) -&gt; RepoContext:
+    18→    """Create a RepoContext for testing."""
+    19→    erk_dir = tmp_path / ".erk"
+    20→    repo_dir = erk_dir / "repos" / "test-repo"
+    21→    return RepoContext(
+    22→        root=repo_root,
+    23→        repo_name="test-repo",
+    24→        repo_dir=repo_dir,
+    25→        worktrees_dir=repo_dir / "worktrees",
+    26→        pool_json_path=repo_dir / "pool.json",
+    27→    )
+    28→
+    29→
+    30→def _make_service(tmp_path: Path, *, http_client: FakeHttpClient) -&gt; RealPlanService:
+
+... [133 lines omitted] ...
+
+    66→_WARNING = "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;"
+    68→ISSUE_BODY_WITH_COMMENT_ID = f"""{_WARNING}
+    84→ISSUE_BODY_WITH_NULL_COMMENT_ID = f"""{_WARNING}
+  </tool_result>
+  <assistant>Perfect! All changes have been successfully applied. Let me summarize what was updated:
+
+## Summary
+
+Successfully updated `/home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py` to test `RealPlanService` instead of `RealPlanDataProvider`. 
+
+### Changes made:
+
+1. **Updated module docstring** (line 1): Changed from "Tests for fetch_objective_content on RealPlanDataProvider" to "Tests for fetch_objective_content on RealPlanService"
+
+2. **Updated import** (line 13): Changed from `from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider` to `from erk_shared.gateway.plan_service.real import RealPlanService`
+
+3. **Renamed helper function** (line 30): Changed `_make_provider` to `_make_service` with updated return type `RealPlanService`
+
+4. **Updated constructor call** (lines 57-63): Changed from `RealPlanDataProvider(ctx=ctx, ...)` to `RealPlanService(ctx, ...)` with `ctx` as a positional argument and the rest as keyword arguments
+
+5. **Updated all test functions** (lines 111, 127, 138, 154): Changed all instances of `provider = _make_provider(...)` to `service = _make_service(...)` and `provider.fetch_objective_content(...)` to `service.fetch_objective_content(...)`
+
+The test file now properly tests the `RealPlanService` class instead of the deprecated `RealPlanDataProvider`, reflecting the architectural change where `fetch_objective_content` was moved to the service layer.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="2361" cache_read_input_tokens="24927" cache_creation="{'ephemeral_5m_input_tokens': 2361, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,291 @@
+<session>
+  <meta source="agent-a90023b" />
+  <meta branch="plnd/split-plan-data-provider-03-06-0149" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Update the file /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py:
+
+1. Add this import line after the existing FakePlanDataProvider import:
+   `from erk_shared.gateway.plan_service.fake import FakePlanService`
+
+2. For EVERY `ErkDashApp(` constructor call in the file, add `service=FakePlanService()` as a keyword argument. The pattern is:
+   - Old: `ErkDashApp(provider=provider, filters=filters, refresh_interval=0)`
+   - New: `ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)`
+
+Read the file first, then make all needed edits. Be thorough and update EVERY ErkDashApp constructor call in the file.</user>
+  <assistant>I'll read the file first to see all the ErkDashApp constructor calls, then make the necessary edits.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16095" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16095, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015LsRRCoafStWkM5KEYrtwK">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16095" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16095, 'ephemeral_1h_input_tokens': 0}" output_tokens="105" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015LsRRCoafStWkM5KEYrtwK">
+     1→"""Tests for multi-operation status bar tracking."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import pytest
+     6→
+     7→from erk.tui.app import ErkDashApp
+     8→from erk.tui.data.types import PlanFilters
+     9→from erk.tui.widgets.status_bar import StatusBar
+    10→from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+    11→
+    12→
+    13→class _FakePopen:
+    14→    """Fake subprocess.Popen that yields configurable output lines."""
+    15→
+    16→    def __init__(self, *, lines: tuple[str, ...] = (), return_code: int = 0) -&gt; None:
+    17→        self._return_code = return_code
+    18→        self.stdout: list[str] = [line + "\n" for line in lines]
+    19→
+    20→    def wait(self) -&gt; int:
+    21→        return self._return_code
+    22→
+    23→
+    24→class TestOperationTracking:
+    25→    """Tests for multi-operation status bar tracking.
+    26→
+    27→    Verifies that async operations register via start_operation, stream
+    28→    progress via update_operation, and clean up via finish_operation.
+    29→    """
+    30→
+
+... [285 lines omitted] ...
+
+   135→    async def test_address_remote_finishes_operation_on_failure(
+   138→        """_address_remote_async finishes operation on failure."""
+   149→            return _FakePopen(lines=("dispatch failed",), return_code=1)
+   205→    async def test_land_pr_finishes_operation_on_failure(
+   208→        """_land_pr_async finishes operation on failure."""
+   219→            return _FakePopen(lines=("land failed",), return_code=1)
+  </tool_result>
+  <assistant>Now I'll make the edits. I can see there are 9 `ErkDashApp(` constructor calls in the file (lines 38, 60, 84, 113, 146, 178, 216, 249, and 279). I'll add the import and then update each constructor call.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="7272" cache_read_input_tokens="16095" cache_creation="{'ephemeral_5m_input_tokens': 7272, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01U6ZGixNHXDN1nYYJhWMBoZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+    <param name="old_string">from erk.tui.app import ErkDashApp
+from erk.tui.data.types import PlanFilters
+from erk.tui...[truncated 17 chars]...from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row</param>
+    <param name="new_string">from erk.tui.app import ErkDashApp
+from erk.tui.data.types import PlanFilters
+from erk.tui...[truncated 82 chars]...taProvider, make_plan_row
+from erk_shared.gateway.plan_service.fake import FakePlanService</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="7272" cache_read_input_tokens="16095" cache_creation="{'ephemeral_5m_input_tokens': 7272, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01U6ZGixNHXDN1nYYJhWMBoZ">
+The file /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I'll update each ErkDashApp constructor call. Let me do this systematically:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="403" cache_read_input_tokens="23367" cache_creation="{'ephemeral_5m_input_tokens': 403, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SWFTbtEguws4yzUJrqdMu4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+    <param name="old_string">        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan"...[truncated 24 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan"...[truncated 51 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="403" cache_read_input_tokens="23367" cache_creation="{'ephemeral_5m_input_tokens': 403, 'ephemeral_1h_input_tokens': 0}" output_tokens="272" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SWFTbtEguws4yzUJrqdMu4">
+&lt;tool_use_error&gt;Found 5 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:         provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan")],
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>I need to update each one individually with more context. Let me do them one by one:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="419" cache_read_input_tokens="23770" cache_creation="{'ephemeral_5m_input_tokens': 419, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01CnF76dEysDn8kDG2xEvpmB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_start_operation_sets_status_bar(self) -&gt; None:...[truncated 190 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_start_operation_sets_status_bar(self) -&gt; None:...[truncated 217 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="419" cache_read_input_tokens="23770" cache_creation="{'ephemeral_5m_input_tokens': 419, 'ephemeral_1h_input_tokens': 0}" output_tokens="359" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CnF76dEysDn8kDG2xEvpmB">
+The file /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01FtEw87yqiwej3xXJkPuwuk">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_finish_operation_clears_status_bar(self) -&gt; No...[truncated 194 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_finish_operation_clears_status_bar(self) -&gt; No...[truncated 221 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="510" cache_read_input_tokens="24189" cache_creation="{'ephemeral_5m_input_tokens': 510, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FtEw87yqiwej3xXJkPuwuk">
+The file /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01ToiTx4EAWQmAkysRMEYHM9">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_close_plan_starts_then_finishes_operation(self...[truncated 318 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_close_plan_starts_then_finishes_operation(self...[truncated 345 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="389" cache_read_input_tokens="24699" cache_creation="{'ephemeral_5m_input_tokens': 389, 'ephemeral_1h_input_tokens': 0}" output_tokens="423" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ToiTx4EAWQmAkysRMEYHM9">
+The file /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01AhoJyL6XYVNvpjmf8nDXdi">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_address_remote_finishes_operation_on_success(
+...[truncated 332 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_address_remote_finishes_operation_on_success(
+...[truncated 359 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="469" cache_read_input_tokens="25088" cache_creation="{'ephemeral_5m_input_tokens': 469, 'ephemeral_1h_input_tokens': 0}" output_tokens="433" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AhoJyL6XYVNvpjmf8nDXdi">
+The file /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01UWrmu1hsaeNeudiV3A9zJk">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_address_remote_finishes_operation_on_failure(
+...[truncated 332 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_address_remote_finishes_operation_on_failure(
+...[truncated 359 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="583" cache_read_input_tokens="25557" cache_creation="{'ephemeral_5m_input_tokens': 583, 'ephemeral_1h_input_tokens': 0}" output_tokens="433" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UWrmu1hsaeNeudiV3A9zJk">
+The file /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0185TBgi71zbJxHLmoBCbYzM">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_land_pr_finishes_operation_on_success(
+       ...[truncated 348 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_land_pr_finishes_operation_on_success(
+       ...[truncated 375 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="478" cache_read_input_tokens="26140" cache_creation="{'ephemeral_5m_input_tokens': 478, 'ephemeral_1h_input_tokens': 0}" output_tokens="453" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0185TBgi71zbJxHLmoBCbYzM">
+The file /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0167f3nk9hfgtX4p5WFDJoWk">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_land_pr_finishes_operation_on_failure(
+       ...[truncated 348 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_land_pr_finishes_operation_on_failure(
+       ...[truncated 375 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="498" cache_read_input_tokens="26618" cache_creation="{'ephemeral_5m_input_tokens': 498, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0167f3nk9hfgtX4p5WFDJoWk">
+The file /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01G2Z79khAod9NunA5NzCvE1">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_multi_operation_keeps_running_until_all_finish...[truncated 204 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_multi_operation_keeps_running_until_all_finish...[truncated 231 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="602" cache_read_input_tokens="27116" cache_creation="{'ephemeral_5m_input_tokens': 602, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01G2Z79khAod9NunA5NzCvE1">
+The file /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Lbvka5S254c2BKfvwN6jaM">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_update_operation_updates_progress(self) -&gt; Non...[truncated 192 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_update_operation_updates_progress(self) -&gt; Non...[truncated 219 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="390" cache_read_input_tokens="27718" cache_creation="{'ephemeral_5m_input_tokens': 390, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lbvka5S254c2BKfvwN6jaM">
+The file /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01745pb2bs4smznZ5qZdHUYn">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_update_operation_skips_unknown_op_id(self) -&gt; ...[truncated 190 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_update_operation_skips_unknown_op_id(self) -&gt; ...[truncated 217 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="380" cache_read_input_tokens="28108" cache_creation="{'ephemeral_5m_input_tokens': 380, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01745pb2bs4smznZ5qZdHUYn">
+The file /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! Let me verify all changes by reading the file one more time to confirm all edits were successful:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="504" cache_read_input_tokens="28488" cache_creation="{'ephemeral_5m_input_tokens': 504, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013jHsv3ZKmc3DQ151132FpS">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="504" cache_read_input_tokens="28488" cache_creation="{'ephemeral_5m_input_tokens': 504, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013jHsv3ZKmc3DQ151132FpS">
+     1→"""Tests for multi-operation status bar tracking."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import pytest
+     6→
+     7→from erk.tui.app import ErkDashApp
+     8→from erk.tui.data.types import PlanFilters
+     9→from erk.tui.widgets.status_bar import StatusBar
+    10→from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+    11→from erk_shared.gateway.plan_service.fake import FakePlanService
+    12→
+    13→
+    14→class _FakePopen:
+    15→    """Fake subprocess.Popen that yields configurable output lines."""
+    16→
+    17→    def __init__(self, *, lines: tuple[str, ...] = (), return_code: int = 0) -&gt; None:
+    18→        self._return_code = return_code
+    19→        self.stdout: list[str] = [line + "\n" for line in lines]
+    20→
+    21→    def wait(self) -&gt; int:
+    22→        return self._return_code
+    23→
+    24→
+    25→class TestOperationTracking:
+    26→    """Tests for multi-operation status bar tracking.
+    27→
+    28→    Verifies that async operations register via start_operation, stream
+    29→    progress via update_operation, and clean up via finish_operation.
+    30→    """
+
+... [25 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! All changes have been successfully applied to the file `/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py`:
+
+## Summary of Changes
+
+1. **Added import**: Line 11 now includes `from erk_shared.gateway.plan_service.fake import FakePlanService`
+
+2. **Updated all 9 ErkDashApp constructor calls** to include `service=FakePlanService()`:
+   - Line 39: `test_start_operation_sets_status_bar`
+   - Line 61: `test_finish_operation_clears_status_bar`
+   - Line 85: `test_close_plan_starts_then_finishes_operation`
+   - Line 114: `test_address_remote_finishes_operation_on_success`
+   - Line 147: `test_address_remote_finishes_operation_on_failure`
+   - Line 179: `test_land_pr_finishes_operation_on_success`
+   - Line 217: `test_land_pr_finishes_operation_on_failure`
+   - Line 250: `test_multi_operation_keeps_running_until_all_finish`
+   - Line 280: `test_update_operation_updates_progress`
+   - Line 301: `test_update_operation_skips_unknown_op_id`
+
+All ErkDashApp constructors now follow the new pattern:
+```python
+app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+```</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="869" cache_read_input_tokens="28992" cache_creation="{'ephemeral_5m_input_tokens': 869, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+</session>

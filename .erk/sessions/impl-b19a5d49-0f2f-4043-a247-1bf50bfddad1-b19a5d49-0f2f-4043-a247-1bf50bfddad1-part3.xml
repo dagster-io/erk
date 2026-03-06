@@ -1,0 +1,1107 @@
+<session>
+  <meta branch="plnd/split-plan-data-provider-03-06-0149" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Edit" id="toolu_015ab1kDPzrLYwDc1LvGwFr5">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/operations/workers.py</param>
+    <param name="old_string">            closed_prs = self._provider.close_plan(plan_id, plan_url)</param>
+    <param name="new_string">            closed_prs = self._service.close_plan(plan_id, plan_url)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13403" cache_read_input_tokens="110742" cache_creation="{'ephemeral_5m_input_tokens': 13403, 'ephemeral_1h_input_tokens': 0}" output_tokens="187" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015ab1kDPzrLYwDc1LvGwFr5">
+The file /home/runner/work/erk/erk/src/erk/tui/operations/workers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now navigation.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="231" cache_read_input_tokens="124145" cache_creation="{'ephemeral_5m_input_tokens': 231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01LHuGcqCiZehJhmsmMDtvxv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+    <param name="old_string">        executor = RealCommandExecutor(
+            browser_launch=self._provider.browser....[truncated 448 chars]...er,
+                executor=executor,
+                repo_root=self._provider.repo_root,</param>
+    <param name="new_string">        executor = RealCommandExecutor(
+            browser_launch=self._service.browser.l...[truncated 441 chars]...ser,
+                executor=executor,
+                repo_root=self._service.repo_root,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="231" cache_read_input_tokens="124145" cache_creation="{'ephemeral_5m_input_tokens': 231, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LHuGcqCiZehJhmsmMDtvxv">
+The file /home/runner/work/erk/erk/src/erk/tui/actions/navigation.py has been updated successfully.
+  </tool_result>
+  <assistant>Update `action_view_plan_body` to use `service` instead of `provider`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="862" cache_read_input_tokens="124376" cache_creation="{'ephemeral_5m_input_tokens': 862, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_017q9XmG5MhoAf3d79T3mX58">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+    <param name="old_string">        self.push_screen(
+            PlanBodyScreen(
+                provider=self._provider,
+                plan_id=row.plan_id,</param>
+    <param name="new_string">        self.push_screen(
+            PlanBodyScreen(
+                service=self._service,
+                plan_id=row.plan_id,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="862" cache_read_input_tokens="124376" cache_creation="{'ephemeral_5m_input_tokens': 862, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017q9XmG5MhoAf3d79T3mX58">
+The file /home/runner/work/erk/erk/src/erk/tui/actions/navigation.py has been updated successfully.
+  </tool_result>
+  <assistant>Update `action_view_comments`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="247" cache_read_input_tokens="125238" cache_creation="{'ephemeral_5m_input_tokens': 247, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01YFuu7Uwu9UvWPR4cwbEKHa">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+    <param name="old_string">        self.push_screen(
+            UnresolvedCommentsScreen(
+                provider=self._provider,
+                pr_number=row.pr_number,</param>
+    <param name="new_string">        self.push_screen(
+            UnresolvedCommentsScreen(
+                service=self._service,
+                pr_number=row.pr_number,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="247" cache_read_input_tokens="125238" cache_creation="{'ephemeral_5m_input_tokens': 247, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YFuu7Uwu9UvWPR4cwbEKHa">
+The file /home/runner/work/erk/erk/src/erk/tui/actions/navigation.py has been updated successfully.
+  </tool_result>
+  <assistant>Update `action_view_checks`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="613" cache_read_input_tokens="125485" cache_creation="{'ephemeral_5m_input_tokens': 613, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_011k6JHFzZpHVQmvphEfoLfA">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+    <param name="old_string">        self.push_screen(
+            CheckRunsScreen(
+                provider=self._provider,
+                pr_number=row.pr_number,</param>
+    <param name="new_string">        self.push_screen(
+            CheckRunsScreen(
+                service=self._service,
+                pr_number=row.pr_number,</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="613" cache_read_input_tokens="125485" cache_creation="{'ephemeral_5m_input_tokens': 613, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011k6JHFzZpHVQmvphEfoLfA">
+The file /home/runner/work/erk/erk/src/erk/tui/actions/navigation.py has been updated successfully.
+  </tool_result>
+  <assistant>Update the browser.launch calls in navigation.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="235" cache_read_input_tokens="126098" cache_creation="{'ephemeral_5m_input_tokens': 235, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01AwrbUbCw1GsmgTj6N1HXvu">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+    <param name="old_string">                self._provider.browser.launch(row.plan_url)</param>
+    <param name="new_string">                self._service.browser.launch(row.plan_url)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="235" cache_read_input_tokens="126098" cache_creation="{'ephemeral_5m_input_tokens': 235, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AwrbUbCw1GsmgTj6N1HXvu">
+The file /home/runner/work/erk/erk/src/erk/tui/actions/navigation.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01HDB5A1HE1mAsVxHYEA1aWj">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+    <param name="old_string">                self._provider.browser.launch(row.pr_url)</param>
+    <param name="new_string">                self._service.browser.launch(row.pr_url)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="570" cache_read_input_tokens="126333" cache_creation="{'ephemeral_5m_input_tokens': 570, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HDB5A1HE1mAsVxHYEA1aWj">
+The file /home/runner/work/erk/erk/src/erk/tui/actions/navigation.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01K4V1ZanvGP7nnw2woqLmGK">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+    <param name="old_string">            self._provider.browser.launch(row.run_url)</param>
+    <param name="new_string">            self._service.browser.launch(row.run_url)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="126903" cache_creation="{'ephemeral_5m_input_tokens': 186, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01K4V1ZanvGP7nnw2woqLmGK">
+The file /home/runner/work/erk/erk/src/erk/tui/actions/navigation.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Bw9Bvkm1ipSoYPy5JerZq9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+    <param name="old_string">        success = self._provider.clipboard.copy(cmd)</param>
+    <param name="new_string">        success = self._service.clipboard.copy(cmd)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="127089" cache_creation="{'ephemeral_5m_input_tokens': 186, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Bw9Bvkm1ipSoYPy5JerZq9">
+The file /home/runner/work/erk/erk/src/erk/tui/actions/navigation.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update filter_actions.py - it uses `self._provider.get_branch_stack`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="554" cache_read_input_tokens="127275" cache_creation="{'ephemeral_5m_input_tokens': 554, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01UMXkcutrzj8PZr1xjBk9po">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/filter_actions.py</param>
+    <param name="old_string">        stack = self._provider.get_branch_stack(row.pr_head_branch)</param>
+    <param name="new_string">        stack = self._service.get_branch_stack(row.pr_head_branch)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="554" cache_read_input_tokens="127275" cache_creation="{'ephemeral_5m_input_tokens': 554, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UMXkcutrzj8PZr1xjBk9po">
+The file /home/runner/work/erk/erk/src/erk/tui/actions/filter_actions.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the CLI commands that directly use RealPlanDataProvider. These need to construct BOTH a RealPlanDataProvider and a RealPlanService now, or they may not need both:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="224" cache_read_input_tokens="127829" cache_creation="{'ephemeral_5m_input_tokens': 224, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012TTzK5P2BnN3PQmJZuL21s">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="224" cache_read_input_tokens="127829" cache_creation="{'ephemeral_5m_input_tokens': 224, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012TTzK5P2BnN3PQmJZuL21s">
+     1→"""Command to list plans with filtering."""
+     2→
+     3→from collections.abc import Callable
+     4→from typing import ParamSpec, TypeVar
+     5→
+     6→import click
+     7→from rich.console import Console
+     8→from rich.table import Table
+     9→from rich.text import Text
+    10→
+    11→from erk.cli.core import discover_repo_context
+    12→from erk.core.context import ErkContext
+    13→from erk.core.display_utils import strip_rich_markup
+    14→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    15→from erk.tui.app import ErkDashApp
+    16→from erk.tui.data.types import PlanFilters, PlanRowData
+    17→from erk.tui.sorting.logic import sort_plans
+    18→from erk.tui.sorting.types import SortKey, SortState
+    19→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    20→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    21→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    22→from erk_shared.gateway.clipboard.real import RealClipboard
+    23→from erk_shared.gateway.github.emoji import get_pr_status_emoji
+    24→from erk_shared.gateway.github.types import (
+    25→    GitHubRepoId,
+    26→    GitHubRepoLocation,
+    27→    IssueFilterState,
+    28→    PullRequestInfo,
+    29→)
+    30→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+
+... [512 lines omitted] ...
+
+    83→            ["queued", "in_progress", "success", "failure", "cancelled"], case_sensitive=False
+   259→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+   279→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+   308→    # Display warnings about degraded data quality
+   309→    if timings is not None and timings.warnings:
+   310→        for warning in timings.warnings:
+   311→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   376→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+   398→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+  </tool_result>
+  <assistant>Now update the CLI commands. The `_pr_list_impl` function creates a `RealPlanDataProvider` - it should now create a `RealPlanDataProvider` from the new location. The `_run_interactive_mode` function also needs to create both a `RealPlanDataProvider` and a `RealPlanService` for the app:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7383" cache_read_input_tokens="128053" cache_creation="{'ephemeral_5m_input_tokens': 7383, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01KgAXs6fbMeJM6PsFdPVUNL">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="old_string">from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider</param>
+    <param name="new_string">from erk.tui.data.real_provider import RealPlanDataProvider
+from erk_shared.gateway.plan_service.real import RealPlanService</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7383" cache_read_input_tokens="128053" cache_creation="{'ephemeral_5m_input_tokens': 7383, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KgAXs6fbMeJM6PsFdPVUNL">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `_pr_list_impl` constructor call - it no longer takes `clipboard` and `browser` (those are on PlanService now):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="308" cache_read_input_tokens="135436" cache_creation="{'ephemeral_5m_input_tokens': 308, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Q5amK5Qo1SBTGLiYPXttyE">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="old_string">    provider = RealPlanDataProvider(
+        ctx,
+        location=location,
+        clipb...[truncated 451 chars]...ge,
+    )
+
+    # Fetch data via provider
+    rows, timings = provider.fetch_plans(filters)</param>
+    <param name="new_string">    provider = RealPlanDataProvider(
+        ctx,
+        location=location,
+        http_...[truncated 377 chars]...ge,
+    )
+
+    # Fetch data via provider
+    rows, timings = provider.fetch_plans(filters)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="308" cache_read_input_tokens="135436" cache_creation="{'ephemeral_5m_input_tokens': 308, 'ephemeral_1h_input_tokens': 0}" output_tokens="514" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Q5amK5Qo1SBTGLiYPXttyE">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `_run_interactive_mode` to create both provider and service:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="933" cache_read_input_tokens="135744" cache_creation="{'ephemeral_5m_input_tokens': 933, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01BtzMNpDFUpjtjicrHgmhAn">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+    <param name="old_string">    provider = RealPlanDataProvider(
+        ctx,
+        location=location,
+        clipb...[truncated 879 chars]... initial_sort=initial_sort,
+        cmux_integration=cmux_integration,
+    )
+    app.run()</param>
+    <param name="new_string">    provider = RealPlanDataProvider(
+        ctx,
+        location=location,
+        http_...[truncated 1014 chars]... initial_sort=initial_sort,
+        cmux_integration=cmux_integration,
+    )
+    app.run()</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="933" cache_read_input_tokens="135744" cache_creation="{'ephemeral_5m_input_tokens': 933, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BtzMNpDFUpjtjicrHgmhAn">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update dash_data.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="861" cache_read_input_tokens="136677" cache_creation="{'ephemeral_5m_input_tokens': 861, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01UszfBBT8QLroq76oX75emJ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/dash_data.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="861" cache_read_input_tokens="136677" cache_creation="{'ephemeral_5m_input_tokens': 861, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UszfBBT8QLroq76oX75emJ">
+     1→"""Serialize plan dashboard data to JSON for external consumers.
+     2→
+     3→Usage:
+     4→    erk exec dash-data [--state open|closed] [--label LABEL] [--limit N]
+     5→        [--show-prs/--no-show-prs] [--show-runs/--no-show-runs]
+     6→        [--run-state STATE] [--creator USER]
+     7→
+     8→Output:
+     9→    JSON with {success, plans, count}
+    10→
+    11→Exit Codes:
+    12→    0: Success
+    13→    1: Error (missing repo info, API error)
+    14→"""
+    15→
+    16→import dataclasses
+    17→import json
+    18→from datetime import datetime
+    19→from typing import Any
+    20→
+    21→import click
+    22→
+    23→from erk.cli.core import discover_repo_context
+    24→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    25→from erk.tui.data.types import PlanFilters, PlanRowData
+    26→from erk_shared.context.helpers import require_context
+    27→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    28→from erk_shared.gateway.clipboard.real import RealClipboard
+    29→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, IssueFilterState
+    30→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+
+... [92 lines omitted] ...
+
+    78→            json.dumps({"success": False, "error": "Could not determine repository owner/name"})
+    89→        click.echo(json.dumps({"success": False, "error": "GitHub authentication not available"}))
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Q8T6ix52ihQRAfmwpiU6q3">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/dash_data.py</param>
+    <param name="old_string">from erk_shared.gateway.browser.real import RealBrowserLauncher
+from erk_shared.gateway.cl...[truncated 94 chars]...sueFilterState
+from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider</param>
+    <param name="new_string">from erk.tui.data.real_provider import RealPlanDataProvider
+from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, IssueFilterState</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2147" cache_read_input_tokens="137538" cache_creation="{'ephemeral_5m_input_tokens': 2147, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Q8T6ix52ihQRAfmwpiU6q3">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/dash_data.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016EXNoAR5Qhe5e1ehWjxsjS">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/dash_data.py</param>
+    <param name="old_string">    provider = RealPlanDataProvider(
+        erk_ctx,
+        location=location,
+        clipboard=RealClipboard(),
+        browser=RealBrowserLauncher(),
+        http_client=http_client,
+    )</param>
+    <param name="new_string">    provider = RealPlanDataProvider(
+        erk_ctx,
+        location=location,
+        http_client=http_client,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="139685" cache_creation="{'ephemeral_5m_input_tokens': 311, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016EXNoAR5Qhe5e1ehWjxsjS">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/dash_data.py has been updated successfully.
+  </tool_result>
+  <assistant>Good. Now let me update the old ABC and the old real.py in erk_shared to keep them as backwards-compatible re-exports during transition. Actually wait - the plan says we should keep the old package temporarily. But actually since the plan says "Delete old plan_data_provider package from erk_shared", let me first handle the test imports in bulk. There are 24 test files to update. Let me use a task agent for that.
+
+First, let me check the plan_detail_screen which also references `self._provider`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="262" cache_read_input_tokens="139996" cache_creation="{'ephemeral_5m_input_tokens': 262, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_011QRqFFciaUMFXAXYrExvKo">
+    <param name="pattern">self\._provider\.|_provider\b</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui/screens/plan_detail_screen.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="262" cache_read_input_tokens="139996" cache_creation="{'ephemeral_5m_input_tokens': 262, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011QRqFFciaUMFXAXYrExvKo">
+No matches found
+  </tool_result>
+  <assistant>Good - plan_detail_screen doesn't directly use `_provider`, it uses the `executor` pattern. Now let me also check palette.py for domain calls:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="630" cache_read_input_tokens="140258" cache_creation="{'ephemeral_5m_input_tokens': 630, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_015XhcP5Nwq97cCta4Tcqbxk">
+    <param name="pattern">self\._provider\.</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/tui/actions/palette.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="630" cache_read_input_tokens="140258" cache_creation="{'ephemeral_5m_input_tokens': 630, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015XhcP5Nwq97cCta4Tcqbxk">
+36:                self._provider.browser.launch(url)
+41:                self._provider.browser.launch(row.plan_url)
+46:                self._provider.browser.launch(row.pr_url)
+51:                self._provider.browser.launch(row.run_url)
+68:                self._provider.clipboard.copy(text)
+77:                self._provider.clipboard.copy(text)
+86:                self._provider.clipboard.copy(text)
+95:                self._provider.clipboard.copy(text)
+104:                self._provider.clipboard.copy(text)
+113:                self._provider.clipboard.copy(text)
+122:                self._provider.clipboard.copy(text)
+131:                self._provider.clipboard.copy(text)
+137:                self._provider.clipboard.copy(cmd)
+146:                self._provider.clipboard.copy(text)
+213:            self._provider.clipboard.copy(cmd)
+219:            self._provider.clipboard.copy(cmd)
+224:            self._provider.clipboard.copy(cmd)
+229:                self._provider.browser.launch(row.plan_url)
+252:            self._provider.clipboard.copy(cmd)
+  </tool_result>
+  <assistant>There are many references in palette.py. Let me update them all with replace_all:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="445" cache_read_input_tokens="140888" cache_creation="{'ephemeral_5m_input_tokens': 445, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NiRWishf7qS2QKo7W7HQBA">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/palette.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="445" cache_read_input_tokens="140888" cache_creation="{'ephemeral_5m_input_tokens': 445, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NiRWishf7qS2QKo7W7HQBA">
+     1→"""Command palette action handlers for TUI application."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import time
+     6→from typing import TYPE_CHECKING
+     7→
+     8→from erk.tui.commands.registry import get_copy_text
+     9→from erk.tui.commands.types import CommandContext
+    10→from erk.tui.screens.one_shot_prompt_screen import OneShotPromptScreen
+    11→
+    12→if TYPE_CHECKING:
+    13→    from erk.tui.app import ErkDashApp
+    14→
+    15→
+    16→class PaletteActionsMixin:
+    17→    """Mixin providing command palette execution and one-shot prompt handling.
+    18→
+    19→    Includes execute_palette_command, action_one_shot_prompt,
+    20→    and related helpers.
+    21→    """
+    22→
+    23→    def execute_palette_command(self: ErkDashApp, command_id: str) -&gt; None:
+    24→        """Execute a command from the palette on the selected row.
+    25→
+    26→        Args:
+    27→            command_id: The ID of the command to execute
+    28→        """
+    29→        row = self._get_selected_row()
+    30→        if row is None:
+
+... [245 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_019PbatYkVspRegkA9R3nJ73">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/palette.py</param>
+    <param name="old_string">self._provider.browser</param>
+    <param name="new_string">self._service.browser</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4514" cache_read_input_tokens="141333" cache_creation="{'ephemeral_5m_input_tokens': 4514, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019PbatYkVspRegkA9R3nJ73">
+The file /home/runner/work/erk/erk/src/erk/tui/actions/palette.py has been updated. All occurrences of 'self._provider.browser' were successfully replaced with 'self._service.browser'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01AesBka6faLDLdPkTo7uqRo">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/palette.py</param>
+    <param name="old_string">self._provider.clipboard</param>
+    <param name="new_string">self._service.clipboard</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="145847" cache_creation="{'ephemeral_5m_input_tokens': 212, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AesBka6faLDLdPkTo7uqRo">
+The file /home/runner/work/erk/erk/src/erk/tui/actions/palette.py has been updated. All occurrences of 'self._provider.clipboard' were successfully replaced with 'self._service.clipboard'.
+  </tool_result>
+  <assistant>Now let me handle the old plan_data_provider package. Instead of deleting it outright (which would break many things at once), I'll convert it to a backwards-compatible re-export module during the transition. Actually, the plan says to delete it. But we need to update all test imports first. Let me convert the old package to re-exports so tests can work while I update them:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="146059" cache_creation="{'ephemeral_5m_input_tokens': 212, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_013tYSCduUMUdmKj5vqoUyCm">
+    <param name="todos">[{'content': 'Create PlanService ABC in erk_shared/gateway/plan_service/abc.py', 'status':...[truncated 1371 chars]...nd fix issues', 'status': 'pending', 'activeForm': 'Running CI checks and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="146059" cache_creation="{'ephemeral_5m_input_tokens': 212, 'ephemeral_1h_input_tokens': 0}" output_tokens="605" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013tYSCduUMUdmKj5vqoUyCm">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now, to keep things clean, I'll convert the old package to re-exports so everything compiles, then update test imports in bulk. Let me rewrite the old abc.py, fake.py, and real.py as re-exports:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="647" cache_read_input_tokens="146271" cache_creation="{'ephemeral_5m_input_tokens': 647, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01Pq6QP6m1VbkH53UbJRcgQo">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py</param>
+    <param name="content">"""Re-export PlanDataProvider from its new home for backwards compatibility.
+
+The canonica...[truncated 58 chars]..."
+
+from erk.tui.data.provider_abc import PlanDataProvider
+
+__all__ = ["PlanDataProvider"]
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="647" cache_read_input_tokens="146271" cache_creation="{'ephemeral_5m_input_tokens': 647, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Pq6QP6m1VbkH53UbJRcgQo">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MVZW4mhSYJxK1cqere9v1z">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="279" cache_read_input_tokens="146918" cache_creation="{'ephemeral_5m_input_tokens': 279, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MVZW4mhSYJxK1cqere9v1z">
+     1→"""Data provider ABC for TUI plan table."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→from pathlib import Path
+     5→
+     6→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+     7→from erk.tui.sorting.types import BranchActivity
+     8→from erk_shared.gateway.browser.abc import BrowserLauncher
+     9→from erk_shared.gateway.clipboard.abc import Clipboard
+    10→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+    11→
+    12→
+    13→class PlanDataProvider(ABC):
+    14→    """Abstract base class for plan data providers.
+    15→
+    16→    Defines the interface for fetching plan data for TUI display.
+    17→    """
+    18→
+    19→    @property
+    20→    @abstractmethod
+    21→    def repo_root(self) -&gt; Path:
+    22→        """Get the repository root path.
+    23→
+    24→        Returns:
+    25→            Path to the repository root directory
+    26→        """
+    27→        ...
+    28→
+    29→    @property
+    30→    @abstractmethod
+
+... [186 lines omitted] ...
+
+   197→        """Fetch CI failure summaries for a pull request.
+   208→            summaries are available (job hasn't run, no failures, etc.)
+  </tool_result>
+  <assistant>Now I'll convert this to a re-export. But wait - the old PlanDataProvider class is different from the new one (the old one has ALL methods, the new one has only 4). Tests that import `PlanDataProvider` from the old location expect the full interface. 
+
+This is the transitional challenge. The cleanest approach is: **keep the old modules as thin re-exports** that point to the new locations. Since test files import `FakePlanDataProvider` and `make_plan_row` from `erk_shared.gateway.plan_data_provider.fake`, I'll make those re-export from the new locations.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2458" cache_read_input_tokens="147197" cache_creation="{'ephemeral_5m_input_tokens': 2458, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01UiSeCkc9c5ctbfvTAryUg1">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py</param>
+    <param name="content">"""Re-export PlanDataProvider from its new home for backwards compatibility.
+
+The canonica...[truncated 58 chars]..."
+
+from erk.tui.data.provider_abc import PlanDataProvider
+
+__all__ = ["PlanDataProvider"]
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2458" cache_read_input_tokens="147197" cache_creation="{'ephemeral_5m_input_tokens': 2458, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UiSeCkc9c5ctbfvTAryUg1">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→"""Re-export PlanDataProvider from its new home for backwards compatibility.
+     2→
+     3→The canonical import is now:
+     4→    from erk.tui.data.provider_abc import PlanDataProvider
+     5→"""
+     6→
+     7→from erk.tui.data.provider_abc import PlanDataProvider
+     8→
+     9→__all__ = ["PlanDataProvider"]
+    10→
+  </tool_result>
+  <tool_use name="Read" id="toolu_013tF9XY5hxAZ5au5DuoLfen">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="507" cache_read_input_tokens="149655" cache_creation="{'ephemeral_5m_input_tokens': 507, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013tF9XY5hxAZ5au5DuoLfen">
+     1→"""Fake plan data provider for testing TUI components."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+     7→from erk.tui.sorting.types import BranchActivity
+     8→from erk_shared.gateway.browser.abc import BrowserLauncher
+     9→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    10→from erk_shared.gateway.clipboard.abc import Clipboard
+    11→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    12→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+    13→from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+    14→
+    15→
+    16→class FakePlanDataProvider(PlanDataProvider):
+    17→    """Fake implementation of PlanDataProvider for testing.
+    18→
+    19→    Returns canned data without making any API calls.
+    20→    """
+    21→
+    22→    def __init__(
+    23→        self,
+    24→        *,
+    25→        plans: list[PlanRowData] | None = None,
+    26→        plans_by_labels: dict[tuple[str, ...], list[PlanRowData]] | None = None,
+    27→        clipboard: Clipboard | None = None,
+    28→        browser: BrowserLauncher | None = None,
+    29→        repo_root: Path | None = None,
+    30→        fetch_error: str | None = None,
+
+... [487 lines omitted] ...
+
+    41→            fetch_error: If set, fetch_plans() raises RuntimeError with this message.
+    42→                Use to simulate API failures.
+    50→        self._fetch_error = fetch_error
+    84→            RuntimeError: If fetch_error is set
+    87→        if self._fetch_error is not None:
+    88→            raise RuntimeError(self._fetch_error)
+  </tool_result>
+  <assistant>The old FakePlanDataProvider has many methods (both data and domain). Tests that use this need it to work. Rather than converting this file to a re-export (which would break because the new FakePlanDataProvider doesn't have domain methods), I'll keep the old `fake.py` as-is for now - it'll still inherit from the old `PlanDataProvider` ABC which re-exports the new slimmed ABC. But wait - the old FakePlanDataProvider has methods like `close_plan()`, `dispatch_to_queue()`, etc., which are NOT in the new `PlanDataProvider` ABC. These will become non-abstract extra methods - which is fine, they just won't be required by the ABC.
+
+Actually, looking at this more carefully, the old `FakePlanDataProvider` inherits from the old `PlanDataProvider` ABC. The old ABC now re-exports from the new slimmed ABC which only has 4 methods. So the old `FakePlanDataProvider` would need to implement only those 4 methods, and the extra domain methods would just be regular methods. That's actually fine! The tests that construct `FakePlanDataProvider` and call `.close_plan()` on it will still work - the methods exist, they're just not abstract requirements anymore.
+
+The only issue is tests that pass a `FakePlanDataProvider` to a constructor expecting `PlanDataProvider` *and* then call domain methods on it. But the tests that do this construct `ErkDashApp(provider=provider)` - which now requires both `provider` and `service`. This is where tests will break.
+
+Let me take a pragmatic approach: **keep the old `fake.py` module as-is** (it still has all methods), and **convert the old `abc.py` to re-export**. Tests will still work for now because `FakePlanDataProvider` has all methods as regular (non-abstract) methods. Then I'll run CI and fix the test failures.
+
+The old `abc.py` is already converted to re-export. The old `fake.py` can stay as-is. But I need to update its import of the ABC:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7527" cache_read_input_tokens="150162" cache_creation="{'ephemeral_5m_input_tokens': 7527, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_016p9T9d4asA4CVEgzi9XugW">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+    <param name="old_string">from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider</param>
+    <param name="new_string">from erk.tui.data.provider_abc import PlanDataProvider</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7527" cache_read_input_tokens="150162" cache_creation="{'ephemeral_5m_input_tokens': 7527, 'ephemeral_1h_input_tokens': 0}" output_tokens="656" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016p9T9d4asA4CVEgzi9XugW">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py has been updated successfully.
+  </tool_result>
+  <system subtype="" duration_ms="" />
+  <user>This session is being continued from a previous conversation that ran out of context. The conversation is summarized below:
+Analysis:
+Let me chronologically analyze the conversation:
+
+1. The user triggered `/erk:plan-implement 8804` which is a command to implement plan #8804.
+
+2. I ran `erk exec setup-impl --issue 8804` to set up the implementation environment.
+
+3. I read the plan from `.erk/impl-context/plnd--split-plan-data-provider-03-06-0149/plan.md`.
+
+4. I read all the source files to understand the current state:
+   - `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py` - the original monolithic PlanDataProvider ABC
+   - `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py` - the original RealPlanDataProvider
+   - `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py` - the original FakePlanDataProvider
+   - `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py` - lifecycle display logic
+   - `src/erk/tui/data/types.py` - TUI data types
+   - Various consumer files (screens, actions, workers, app.py, CLI commands)
+
+5. I used a Task agent to find all test files and imports related to plan_data_provider - found 24 test files and 8 production code files importing from it.
+
+6. I loaded the `dignified-python` skill and read core standards + Python 3.10 version file.
+
+7. I signaled GitHub implementation started.
+
+8. Implementation phases completed:
+   - Phase 1: Created PlanService ABC at `packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py`
+   - Phase 2: Created RealPlanService at `packages/erk-shared/src/erk_shared/gateway/plan_service/real.py`
+   - Phase 3: Created FakePlanService at `packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py`
+   - Phase 4: Created slimmed PlanDataProvider ABC at `src/erk/tui/data/provider_abc.py` (only 4 methods)
+   - Phase 5: Created RealPlanDataProvider at `src/erk/tui/data/real_provider.py` (TUI data assembly only)
+   - Phase 6: Created FakePlanDataProvider at `src/erk/tui/data/fake_provider.py` (TUI data only + make_plan_row)
+   - Phase 7: Updated all production consumers:
+     - `src/erk/tui/screens/check_runs_screen.py` - changed `provider: PlanDataProvider` to `service: PlanService`
+     - `src/erk/tui/screens/plan_body_screen.py` - same change
+     - `src/erk/tui/screens/unresolved_comments_screen.py` - same change
+     - `src/erk/tui/app.py` - added `service: PlanService` parameter, changed browser/clipboard refs to `self._service`
+     - `src/erk/tui/operations/workers.py` - changed `self._provider.close_plan` to `self._service.close_plan`
+     - `src/erk/tui/actions/navigation.py` - changed all `self._provider` domain calls to `self._service`
+     - `src/erk/tui/actions/filter_actions.py` - changed `self._provider.get_branch_stack` to `self._service.get_branch_stack`
+     - `src/erk/tui/actions/palette.py` - replaced all `self._provider.browser` and `self._provider.clipboard` with `self._service`
+     - `src/erk/cli/commands/pr/list_cmd.py` - updated imports and constructor calls for both provider and service
+     - `src/erk/cli/commands/exec/scripts/dash_data.py` - updated import to use new RealPlanDataProvider location
+   - Phase 8: Converted old `plan_data_provider/abc.py` to re-export from new location
+   - Phase 9: Updated old `plan_data_provider/fake.py` import to use new PlanDataProvider ABC
+
+9. Key architectural decisions:
+   - PlanService ABC lives in erk_shared (no TUI dependencies)
+   - PlanDataProvider ABC lives in erk.tui.data (TUI-specific types)
+   - App holds both `_provider` (PlanDataProvider for data assembly) and `_service` (PlanService for domain ops)
+   - Screens use `service: PlanService` for domain operations
+   - Old plan_data_provider package kept as backwards-compatible re-exports for transition
+
+10. Current state: I was in the middle of converting the old fake.py to work with the new ABC, and about to update the old real.py to re-export from the new location. Then I need to update all 24 test files and run CI.
+
+The user's only message was the `/erk:plan-implement 8804` command trigger. All other content was the plan instructions and tool results.
+
+Summary:
+1. Primary Request and Intent:
+   The user triggered `/erk:plan-implement 8804` to implement plan #8804: **"Split PlanDataProvider into PlanService + TUI PlanDataProvider"**. The goal is to refactor a monolithic `PlanDataProvider` class in `erk_shared` that mixes domain operations (close_plan, dispatch, fetch content) with TUI display assembly (fetch_plans, fetch_branch_activity) into two clean abstractions:
+   - `PlanService` (in `erk_shared`) - domain operations with no TUI type dependencies
+   - `PlanDataProvider` (in `erk.tui.data`) - TUI data assembly with only 4 methods
+
+2. Key Technical Concepts:
+   - ABC (Abstract Base Class) pattern for gateway interfaces
+   - Separation of domain operations from TUI display assembly
+   - Mixin pattern used by TUI app (NavigationActionsMixin, FilterActionsMixin, etc.)
+   - CommandExecutor pattern for bridging domain operations to TUI screens
+   - Re-export pattern for backwards-compatible module migration
+   - Fake-driven testing pattern with canned data providers
+   - Two-object injection: app now takes both `provider` (PlanDataProvider) and `service` (PlanService)
+
+3. Files and Code Sections:
+
+   **NEW FILES CREATED:**
+
+   - `packages/erk-shared/src/erk_shared/gateway/plan_service/__init__.py`
+     - Package init for the new plan_service module
+   
+   - `packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py`
+     - New PlanService ABC with domain operations: `close_plan`, `dispatch_to_queue`, `fetch_plan_content`, `fetch_objective_content`, `get_branch_stack`, `fetch_check_runs`, `fetch_unresolved_comments`, `fetch_ci_summaries`, plus properties `repo_root`, `clipboard`, `browser`
+   
+   - `packages/erk-shared/src/erk_shared/gateway/plan_service/real.py`
+     - RealPlanService implementation extracting domain methods from the old RealPlanDataProvider
+     - Constructor takes `ctx: ErkContext`, `location: GitHubRepoLocation`, `clipboard: Clipboard`, `browser: BrowserLauncher`, `http_client: HttpClient`
+     - Includes `_parse_owner_repo_from_url()` helper function
+   
+   - `packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py`
+     - FakePlanService with canned data dictionaries and `set_*` methods for test configuration
+   
+   - `src/erk/tui/data/provider_abc.py`
+     - Slimmed PlanDataProvider ABC with only 4 abstract methods: `fetch_plans`, `fetch_plans_by_ids`, `fetch_plans_for_objective`, `fetch_branch_activity`
+   
+   - `src/erk/tui/data/real_provider.py`
+     - RealPlanDataProvider moved from erk_shared, now only handles TUI data assembly
+     - Constructor simplified: takes `ctx`, `location`, `http_client` (no clipboard/browser)
+     - Contains `_build_row_data`, `_build_worktree_mapping`, timing log, all display formatting
+   
+   - `src/erk/tui/data/fake_provider.py`
+     - FakePlanDataProvider with only TUI data methods + `make_plan_row()` test factory function
+     - No domain operations (close_plan, etc.)
+
+   **MODIFIED FILES:**
+
+   - `src/erk/tui/app.py`
+     - Changed import from `erk_shared.gateway.plan_data_provider.abc` to `erk.tui.data.provider_abc` + `erk_shared.gateway.plan_service.abc`
+     - Added `service: PlanService` parameter to `__init__`
+     - Changed all `self._provider.browser`, `self._provider.clipboard` refs to `self._service`
+   
+   - `src/erk/tui/screens/check_runs_screen.py`
+     - Changed `provider: PlanDataProvider` to `service: PlanService` in constructor
+     - Changed `self._provider` to `self._service` throughout
+   
+   - `src/erk/tui/screens/plan_body_screen.py`
+     - Same pattern: `provider` → `service`, `self._provider` → `self._service`
+   
+   - `src/erk/tui/screens/unresolved_comments_screen.py`
+     - Same pattern: `provider` → `service`, `self._provider` → `self._service`
+   
+   - `src/erk/tui/operations/workers.py`
+     - Changed `self._provider.close_plan` to `self._service.close_plan`
+   
+   - `src/erk/tui/actions/navigation.py`
+     - Changed all `self._provider.browser/clipboard/close_plan/dispatch_to_queue/repo_root` to `self._service`
+     - Changed screen constructor calls: `provider=self._provider` → `service=self._service`
+   
+   - `src/erk/tui/actions/filter_actions.py`
+     - Changed `self._provider.get_branch_stack` to `self._service.get_branch_stack`
+   
+   - `src/erk/tui/actions/palette.py`
+     - Replaced all `self._provider.browser` → `self._service.browser` and `self._provider.clipboard` → `self._service.clipboard`
+   
+   - `src/erk/cli/commands/pr/list_cmd.py`
+     - Updated import to `from erk.tui.data.real_provider import RealPlanDataProvider` and `from erk_shared.gateway.plan_service.real import RealPlanService`
+     - `_pr_list_impl`: RealPlanDataProvider constructor no longer takes clipboard/browser
+     - `_run_interactive_mode`: Creates both `provider` and `service`, passes both to `ErkDashApp`
+   
+   - `src/erk/cli/commands/exec/scripts/dash_data.py`
+     - Changed import to `from erk.tui.data.real_provider import RealPlanDataProvider`
+     - Removed clipboard/browser from RealPlanDataProvider constructor
+   
+   - `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py`
+     - **Converted to re-export**: now just imports and re-exports `PlanDataProvider` from `erk.tui.data.provider_abc`
+   
+   - `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py`
+     - Updated ABC import from `erk_shared.gateway.plan_data_provider.abc` to `erk.tui.data.provider_abc`
+     - Body kept as-is (old FakePlanDataProvider with all methods for backwards compat)
+
+4. Errors and fixes:
+   - Got a "File has not been read yet" error when trying to edit `app.py` without reading it first - fixed by reading the file before editing.
+   - No user feedback errors - user only submitted the initial command.
+
+5. Problem Solving:
+   - **Key design challenge**: The old `FakePlanDataProvider` has both data assembly AND domain methods. Tests construct it and pass it to `ErkDashApp`. Since `ErkDashApp.__init__` now requires both `provider` and `service`, all test files that construct `ErkDashApp` will need updating. The old `fake.py` in `erk_shared` is kept with all methods as a transitional measure - tests importing from there still work because the extra domain methods are just regular (non-abstract) methods on the class.
+   - **Transitional strategy**: Old `plan_data_provider/abc.py` converted to re-export so existing test imports don't immediately break. Old `fake.py` kept mostly intact with updated ABC import.
+
+6. All user messages:
+   - The `/erk:plan-implement 8804` command trigger (the entire plan-implement workflow instruction)
+   - No other direct user messages - all interaction has been tool results.
+
+7. Pending Tasks:
+   - **Update old `real.py` in erk_shared**: Either convert to re-export or handle (currently untouched, still has original content)
+   - **Update all 24 test files**: Test imports need updating from `erk_shared.gateway.plan_data_provider.fake` to `erk.tui.data.fake_provider` (or rely on re-exports). Tests constructing `ErkDashApp` need `service=` parameter added.
+   - **Run CI checks and fix issues** (Step 12 of plan)
+   - **Signal GitHub ended** (Step 9)
+   - **Upload session** (Step 10)
+   - **Clean up impl context** (Step 11)
+   - **Submit PR** (Step 13)
+
+8. Current Work:
+   I was in the middle of converting the old `plan_data_provider` package to backwards-compatible re-exports. I had just:
+   1. Converted `abc.py` to a re-export pointing to `erk.tui.data.provider_abc`
+   2. Updated the import in the old `fake.py` to use `erk.tui.data.provider_abc` directly
+   
+   The immediate next work item is handling the old `real.py` in erk_shared (it still has the full original RealPlanDataProvider code - needs to either be deleted or converted to re-export from `erk.tui.data.real_provider`), then updating the 24 test files and running CI.
+
+   The todo list shows:
+   - ✅ Create PlanService ABC
+   - ✅ Create RealPlanService  
+   - ✅ Create FakePlanService
+   - ✅ Move PlanDataProvider ABC to erk.tui
+   - ✅ Move RealPlanDataProvider to erk.tui
+   - ✅ Move FakePlanDataProvider to erk.tui
+   - ✅ Update consumers
+   - ✅ Handle lifecycle.py (kept in erk_shared)
+   - 🔄 Convert old plan_data_provider package to re-exports
+   - ⏳ Update tests: imports, split as needed
+   - ⏳ Run CI checks and fix issues
+
+9. Optional Next Step:
+   The immediate next step is to handle the old `real.py` in `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py` - convert it to a re-export or remove it since `RealPlanDataProvider` is now at `src/erk/tui/data/real_provider.py`. Then update the test files (24 files need import changes, and tests constructing `ErkDashApp` need both `provider=` and `service=` arguments). Finally, run CI via the plan-implement workflow..
+Please continue the conversation from where we left it off without asking the user any further questions. Continue with the last task that you were asked to work on.</user>
+  <assistant>
+
+I'll continue with the implementation. Let me pick up where I left off - converting the old `real.py` to a re-export and then updating the test files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="26521" cache_read_input_tokens="20228" cache_creation="{'ephemeral_5m_input_tokens': 26521, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_015oewkPSAKTzWzueD7LhEZc">
+    <param name="todos">[{'content': 'Create PlanService ABC in erk_shared/gateway/plan_service/abc.py', 'status':...[truncated 1371 chars]...nd fix issues', 'status': 'pending', 'activeForm': 'Running CI checks and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="26521" cache_read_input_tokens="20228" cache_creation="{'ephemeral_5m_input_tokens': 26521, 'ephemeral_1h_input_tokens': 0}" output_tokens="494" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015oewkPSAKTzWzueD7LhEZc">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me first read the current state of the old files to understand what needs to be done:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="603" cache_read_input_tokens="46749" cache_creation="{'ephemeral_5m_input_tokens': 603, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01QWXYJCUTB6wxK3QVp85C6f">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="603" cache_read_input_tokens="46749" cache_creation="{'ephemeral_5m_input_tokens': 603, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01SRuUxJwc77vSzk5uCZxt5P">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="603" cache_read_input_tokens="46749" cache_creation="{'ephemeral_5m_input_tokens': 603, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0173grbGG1gn7xmWxniyDgNz">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="603" cache_read_input_tokens="46749" cache_creation="{'ephemeral_5m_input_tokens': 603, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01AZZpd6LeGvv12eCbo3BLP1">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="603" cache_read_input_tokens="46749" cache_creation="{'ephemeral_5m_input_tokens': 603, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QWXYJCUTB6wxK3QVp85C6f">
+     1→"""Re-export PlanDataProvider from its new home for backwards compatibility.
+     2→
+     3→The canonical import is now:
+     4→    from erk.tui.data.provider_abc import PlanDataProvider
+     5→"""
+     6→
+     7→from erk.tui.data.provider_abc import PlanDataProvider
+     8→
+     9→__all__ = ["PlanDataProvider"]
+    10→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_0173grbGG1gn7xmWxniyDgNz">
+     1→"""Plan data provider interface for TUI plan tables.
+     2→
+     3→Import from submodules:
+     4→- abc: PlanDataProvider
+     5→- real: RealPlanDataProvider
+     6→- fake: FakePlanDataProvider, make_plan_row
+     7→"""
+     8→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01AZZpd6LeGvv12eCbo3BLP1">
+     1→"""Fake plan data provider for testing TUI components."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+     7→from erk.tui.sorting.types import BranchActivity
+     8→from erk_shared.gateway.browser.abc import BrowserLauncher
+     9→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    10→from erk_shared.gateway.clipboard.abc import Clipboard
+    11→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    12→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+    13→from erk.tui.data.provider_abc import PlanDataProvider
+    14→
+    15→
+    16→class FakePlanDataProvider(PlanDataProvider):
+    17→    """Fake implementation of PlanDataProvider for testing.
+    18→
+    19→    Returns canned data without making any API calls.
+    20→    """
+    21→
+    22→    def __init__(
+    23→        self,
+    24→        *,
+    25→        plans: list[PlanRowData] | None = None,
+    26→        plans_by_labels: dict[tuple[str, ...], list[PlanRowData]] | None = None,
+    27→        clipboard: Clipboard | None = None,
+    28→        browser: BrowserLauncher | None = None,
+    29→        repo_root: Path | None = None,
+    30→        fetch_error: str | None = None,
+
+... [487 lines omitted] ...
+
+    41→            fetch_error: If set, fetch_plans() raises RuntimeError with this message.
+    42→                Use to simulate API failures.
+    50→        self._fetch_error = fetch_error
+    84→            RuntimeError: If fetch_error is set
+    87→        if self._fetch_error is not None:
+    88→            raise RuntimeError(self._fetch_error)
+  </tool_result>
+  <tool_result tool="toolu_01SRuUxJwc77vSzk5uCZxt5P">
+     1→"""Real implementation of PlanDataProvider for production use."""
+     2→
+     3→import logging
+     4→import subprocess
+     5→from datetime import datetime
+     6→from pathlib import Path
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk.core.display_utils import (
+    10→    format_relative_time,
+    11→    format_workflow_outcome,
+    12→    format_workflow_run_id,
+    13→    get_workflow_run_state,
+    14→)
+    15→from erk.core.pr_utils import select_display_pr
+    16→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    17→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+    18→from erk.tui.sorting.types import BranchActivity
+    19→from erk_shared.gateway.browser.abc import BrowserLauncher
+    20→from erk_shared.gateway.clipboard.abc import Clipboard
+    21→from erk_shared.gateway.github.ci_summary_parsing import parse_ci_summaries
+    22→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    23→from erk_shared.gateway.github.metadata.core import (
+    24→    extract_objective_from_comment,
+    25→    extract_objective_header_comment_id,
+    26→    extract_objective_slug,
+    27→)
+    28→from erk_shared.gateway.github.metadata.dependency_graph import (
+    29→    _TERMINAL_STATUSES,
+    30→    build_graph,
+
+... [1003 lines omitted] ...
+
+   207→            warnings=plan_data.warnings,
+   515→        """Fetch CI failure summaries for a pull request.
+   549→        Silently ignores all errors (sentinel paths in tests, missing directory,
+   565→        except Exception:
+   566→            logger.debug("Failed to write timing log", exc_info=True)
+   799→            phases, _errors = parse_roadmap(plan.body)
+  </tool_result>
+  <assistant>Now let me also check the new files I already created:</assistant>
+  <usage input_tokens="7267" cache_creation_input_tokens="15125" cache_read_input_tokens="47352" cache_creation="{'ephemeral_5m_input_tokens': 15125, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017fJCggKtCt77mtnoPDx6KR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/provider_abc.py</param>
+  </tool_use>
+  <usage input_tokens="7267" cache_creation_input_tokens="15125" cache_read_input_tokens="47352" cache_creation="{'ephemeral_5m_input_tokens': 15125, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016LYwZGyFDoFi51SozMoibN">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="7267" cache_creation_input_tokens="15125" cache_read_input_tokens="47352" cache_creation="{'ephemeral_5m_input_tokens': 15125, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011rvuEhkQLnRf6dhgyEM8tH">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py</param>
+  </tool_use>
+  <usage input_tokens="7267" cache_creation_input_tokens="15125" cache_read_input_tokens="47352" cache_creation="{'ephemeral_5m_input_tokens': 15125, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MU6a8nU1n168ix6jCkSrsf">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py</param>
+  </tool_use>
+  <usage input_tokens="7267" cache_creation_input_tokens="15125" cache_read_input_tokens="47352" cache_creation="{'ephemeral_5m_input_tokens': 15125, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013VRqcqjDxaLTb3yeCCuzKv">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/real.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="7267" cache_creation_input_tokens="15125" cache_read_input_tokens="47352" cache_creation="{'ephemeral_5m_input_tokens': 15125, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017fJCggKtCt77mtnoPDx6KR">
+     1→"""TUI data provider ABC for plan table display assembly."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→
+     5→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+     6→from erk.tui.sorting.types import BranchActivity
+     7→
+     8→
+     9→class PlanDataProvider(ABC):
+    10→    """Abstract base class for TUI plan data assembly.
+    11→
+    12→    Contains only the methods that produce TUI-specific types
+    13→    (PlanRowData, FetchTimings, BranchActivity). Domain operations
+    14→    (close_plan, dispatch, fetch_content, etc.) live in PlanService.
+    15→    """
+    16→
+    17→    @abstractmethod
+    18→    def fetch_plans(self, filters: PlanFilters) -&gt; tuple[list[PlanRowData], FetchTimings | None]:
+    19→        """Fetch plans matching the given filters.
+    20→
+    21→        Args:
+    22→            filters: Filter options for the query
+    23→
+    24→        Returns:
+    25→            Tuple of (list of PlanRowData for display, optional FetchTimings breakdown)
+    26→        """
+    27→        ...
+    28→
+    29→    @abstractmethod
+    30→    def fetch_plans_by_ids(self, plan_ids: set[int]) -&gt; list[PlanRowData]:
+
+... [39 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_016LYwZGyFDoFi51SozMoibN">
+     1→"""Real implementation of PlanDataProvider for TUI data assembly."""
+     2→
+     3→import logging
+     4→from datetime import datetime
+     5→from pathlib import Path
+     6→
+     7→from erk.core.context import ErkContext
+     8→from erk.core.display_utils import (
+     9→    format_relative_time,
+    10→    format_workflow_outcome,
+    11→    format_workflow_run_id,
+    12→    get_workflow_run_state,
+    13→)
+    14→from erk.core.pr_utils import select_display_pr
+    15→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    16→from erk.tui.data.provider_abc import PlanDataProvider
+    17→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+    18→from erk.tui.sorting.types import BranchActivity
+    19→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    20→from erk_shared.gateway.github.metadata.core import (
+    21→    extract_objective_slug,
+    22→)
+    23→from erk_shared.gateway.github.metadata.dependency_graph import (
+    24→    _TERMINAL_STATUSES,
+    25→    build_graph,
+    26→    build_state_sparkline,
+    27→    compute_graph_summary,
+    28→    find_graph_next_node,
+    29→)
+    30→from erk_shared.gateway.github.metadata.roadmap import (
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011rvuEhkQLnRf6dhgyEM8tH">
+     1→"""Domain service ABC for plan operations (no TUI type dependencies)."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→from pathlib import Path
+     5→
+     6→from erk_shared.gateway.browser.abc import BrowserLauncher
+     7→from erk_shared.gateway.clipboard.abc import Clipboard
+     8→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+     9→
+    10→
+    11→class PlanService(ABC):
+    12→    """Abstract base class for plan domain operations.
+    13→
+    14→    Contains operations that are independent of TUI display concerns:
+    15→    closing plans, dispatching, fetching content, and GitHub PR data.
+    16→    No TUI type imports (PlanRowData, FetchTimings, PlanFilters, BranchActivity).
+    17→    """
+    18→
+    19→    @property
+    20→    @abstractmethod
+    21→    def repo_root(self) -&gt; Path:
+    22→        """Get the repository root path."""
+    23→        ...
+    24→
+    25→    @property
+    26→    @abstractmethod
+    27→    def clipboard(self) -&gt; Clipboard:
+    28→        """Get the clipboard interface for copy operations."""
+    29→        ...
+    30→
+
+... [109 lines omitted] ...
+
+   124→        """Fetch CI failure summaries for a pull request.
+  </tool_result>
+  <tool_result tool="toolu_01MU6a8nU1n168ix6jCkSrsf">
+     1→"""Fake plan service for testing."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk_shared.gateway.browser.abc import BrowserLauncher
+     6→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+     7→from erk_shared.gateway.clipboard.abc import Clipboard
+     8→from erk_shared.gateway.clipboard.fake import FakeClipboard
+     9→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+    10→from erk_shared.gateway.plan_service.abc import PlanService
+    11→
+    12→
+    13→class FakePlanService(PlanService):
+    14→    """Fake implementation of PlanService for testing.
+    15→
+    16→    Returns canned data without making any API calls.
+    17→    """
+    18→
+    19→    def __init__(
+    20→        self,
+    21→        *,
+    22→        clipboard: Clipboard | None = None,
+    23→        browser: BrowserLauncher | None = None,
+    24→        repo_root: Path | None = None,
+    25→    ) -&gt; None:
+    26→        """Initialize with optional canned data.
+    27→
+    28→        Args:
+    29→            clipboard: Clipboard interface, defaults to FakeClipboard()
+    30→            browser: BrowserLauncher interface, defaults to FakeBrowserLauncher()
+
+... [174 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_013VRqcqjDxaLTb3yeCCuzKv">
+     1→"""Real implementation of PlanService for production use."""
+     2→
+     3→import subprocess
+     4→from pathlib import Path
+     5→
+     6→from erk.core.context import ErkContext
+     7→from erk_shared.gateway.browser.abc import BrowserLauncher
+     8→from erk_shared.gateway.clipboard.abc import Clipboard
+     9→from erk_shared.gateway.github.ci_summary_parsing import parse_ci_summaries
+    10→from erk_shared.gateway.github.metadata.core import (
+    11→    extract_objective_from_comment,
+    12→    extract_objective_header_comment_id,
+    13→)
+    14→from erk_shared.gateway.github.types import (
+    15→    GitHubRepoId,
+    16→    GitHubRepoLocation,
+    17→    PRCheckRun,
+    18→    PRNotFound,
+    19→    PRReviewThread,
+    20→)
+    21→from erk_shared.gateway.http.abc import HttpClient
+    22→from erk_shared.gateway.plan_service.abc import PlanService
+    23→
+    24→
+    25→class RealPlanService(PlanService):
+    26→    """Production implementation of domain plan operations.
+    27→
+    28→    Contains operations independent of TUI display: closing plans,
+    29→    dispatching, fetching content, and GitHub PR data.
+    30→    """
+
+... [5 lines omitted] ...
+  </tool_result>
+</session>

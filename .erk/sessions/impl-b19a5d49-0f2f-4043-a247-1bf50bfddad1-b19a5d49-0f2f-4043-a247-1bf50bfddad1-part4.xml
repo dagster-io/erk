@@ -1,0 +1,1072 @@
+<session>
+  <meta branch="plnd/split-plan-data-provider-03-06-0149" />
+  <meta model="claude-opus-4-6" />
+  <assistant>Now I see the situation clearly. The old `real.py` in `erk_shared/gateway/plan_data_provider/` still has the full monolithic class. I need to understand what imports it. Let me also check the new `real_provider.py` and the app.py to verify they're correct, then handle the old `real.py`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="13998" cache_read_input_tokens="62477" cache_creation="{'ephemeral_5m_input_tokens': 13998, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Eg3Y2uZNRCoFE2sDnfeHYQ">
+    <param name="pattern">from erk_shared\.gateway\.plan_data_provider\.real import</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13998" cache_read_input_tokens="62477" cache_creation="{'ephemeral_5m_input_tokens': 13998, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Sqx5BoF7vo7Ry7woNWHzow">
+    <param name="pattern">from erk_shared\.gateway\.plan_data_provider import</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13998" cache_read_input_tokens="62477" cache_creation="{'ephemeral_5m_input_tokens': 13998, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_015Y7aNkN3PxnjzB9hbrqacS">
+    <param name="pattern">plan_data_provider</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13998" cache_read_input_tokens="62477" cache_creation="{'ephemeral_5m_input_tokens': 13998, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015Y7aNkN3PxnjzB9hbrqacS">
+Found 24 files
+tests/unit/plan_store/test_lifecycle_display.py
+tests/unit/cli/commands/exec/scripts/test_dash_data.py
+tests/tui/data/test_fetch_objective_content.py
+tests/tui/data/test_fetch_plan_content.py
+tests/tui/data/test_provider.py
+tests/tui/filtering/test_logic.py
+tests/tui/screens/test_launch_screen.py
+tests/tui/screens/test_objective_plans_fake_provider.py
+tests/tui/test_plan_table.py
+tests/tui/commands/test_execute_command.py
+tests/tui/commands/test_registry.py
+tests/tui/app/test_actions.py
+tests/tui/app/test_app_filtering.py
+tests/tui/app/test_async_operations.py
+tests/tui/app/test_command_palette.py
+tests/tui/app/test_core.py
+tests/tui/app/test_filter_mode.py
+tests/tui/app/test_one_shot_prompt.py
+tests/tui/app/test_operation_tracking.py
+tests/tui/app/test_plan_body_screen.py
+tests/tui/app/test_plan_detail_screen.py
+tests/tui/app/test_streaming.py
+tests/tui/app/test_view_switching.py
+tests/erk_shared/gateway/plan_data_provider/test_real_routing.py
+  </tool_result>
+  <tool_result tool="toolu_01Eg3Y2uZNRCoFE2sDnfeHYQ">
+tests/erk_shared/gateway/plan_data_provider/test_real_routing.py:11:from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+tests/tui/data/test_provider.py:24:from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+tests/tui/data/test_fetch_objective_content.py:13:from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+tests/tui/data/test_fetch_plan_content.py:12:from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+  </tool_result>
+  <tool_result tool="toolu_01Sqx5BoF7vo7Ry7woNWHzow">
+No matches found
+  </tool_result>
+  <assistant>Good. Now I need to understand the scope of the test updates. The old `real.py` is imported from 4 test files. Let me handle this systematically. First, I'll convert the old `real.py` to a re-export, then tackle the test files.
+
+The old `real.py` can't be a simple re-export because the old `RealPlanDataProvider` class was monolithic (both TUI data assembly AND domain operations) while the new one is split. However, the old `real.py` still contains the actual code. Since the new `real_provider.py` in `erk.tui.data` is the canonical location, I need to make the old `real.py` a re-export pointing there. But tests importing from the old location need to still find `RealPlanDataProvider`.
+
+Let me convert the old `real.py` to a re-export:</assistant>
+  <usage input_tokens="410" cache_creation_input_tokens="922" cache_read_input_tokens="76475" cache_creation="{'ephemeral_5m_input_tokens': 922, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01GrWMcXpFyM89LjjUewLhCb">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="content">"""Re-export RealPlanDataProvider from its new home for backwards compatibility.
+
+The cano...[truncated 76 chars]...rk.tui.data.real_provider import RealPlanDataProvider
+
+__all__ = ["RealPlanDataProvider"]
+</param>
+  </tool_use>
+  <usage input_tokens="410" cache_creation_input_tokens="922" cache_read_input_tokens="76475" cache_creation="{'ephemeral_5m_input_tokens': 922, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GrWMcXpFyM89LjjUewLhCb">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>I already read it above. Let me try again:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="847" cache_read_input_tokens="77397" cache_creation="{'ephemeral_5m_input_tokens': 847, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01StxtTtgHgW9YfGjQqbhsaT">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="content">"""Re-export RealPlanDataProvider from its new home for backwards compatibility.
+
+The cano...[truncated 76 chars]...rk.tui.data.real_provider import RealPlanDataProvider
+
+__all__ = ["RealPlanDataProvider"]
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="847" cache_read_input_tokens="77397" cache_creation="{'ephemeral_5m_input_tokens': 847, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01StxtTtgHgW9YfGjQqbhsaT">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NX1UfAufguUnu6sb4bw86k">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="limit">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="617" cache_read_input_tokens="78244" cache_creation="{'ephemeral_5m_input_tokens': 617, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NX1UfAufguUnu6sb4bw86k">
+     1→"""Real implementation of PlanDataProvider for production use."""
+     2→
+     3→import logging
+     4→import subprocess
+     5→from datetime import datetime
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01TU8S2HvzjHRUEmk7UQqG3o">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="content">"""Re-export RealPlanDataProvider from its new home for backwards compatibility.
+
+The cano...[truncated 76 chars]...rk.tui.data.real_provider import RealPlanDataProvider
+
+__all__ = ["RealPlanDataProvider"]
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="78861" cache_creation="{'ephemeral_5m_input_tokens': 238, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TU8S2HvzjHRUEmk7UQqG3o">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→"""Re-export RealPlanDataProvider from its new home for backwards compatibility.
+     2→
+     3→The canonical import is now:
+     4→    from erk.tui.data.real_provider import RealPlanDataProvider
+     5→"""
+     6→
+     7→from erk.tui.data.real_provider import RealPlanDataProvider
+     8→
+     9→__all__ = ["RealPlanDataProvider"]
+    10→
+  </tool_result>
+  <assistant>Now let me also convert the old `fake.py` to a re-export. The old `FakePlanDataProvider` has both TUI data methods AND domain methods (close_plan, dispatch_to_queue, etc.), but the new split has `FakePlanDataProvider` (TUI data only) and `FakePlanService` (domain only). For backwards compatibility with tests, I need the re-export to give them the old combined class.
+
+Wait - looking at the situation more carefully: The old `fake.py` in erk_shared is still the full combined class. Tests import from there. The new `fake_provider.py` in `erk.tui.data` is the slim version. The issue is that tests constructing `ErkDashApp` currently only pass a `provider` and the old `FakePlanDataProvider` serves as both. 
+
+The simplest approach for backward compatibility: keep the old `fake.py` as-is (it still works because it implements the slim `PlanDataProvider` ABC plus has extra methods). Tests that use the old `FakePlanDataProvider` as both a data provider AND a service need to be updated to pass separate objects.
+
+Actually, looking at the old `fake.py` more carefully - it imports from `erk.tui.data.provider_abc import PlanDataProvider` and implements that ABC. It also has domain methods like `close_plan`, `dispatch_to_queue`, etc. But these aren't on the ABC anymore, so they're just extra methods. The old fake IS a valid `PlanDataProvider` AND has service-like methods but ISN'T a `PlanService`.
+
+The key question is: what does `ErkDashApp.__init__` now require? Let me check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="379" cache_read_input_tokens="79099" cache_creation="{'ephemeral_5m_input_tokens': 379, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_016ucrxqWpLPzEKMUtn89zwp">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/app.py</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="379" cache_read_input_tokens="79099" cache_creation="{'ephemeral_5m_input_tokens': 379, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016ucrxqWpLPzEKMUtn89zwp">
+     1→"""Main Textual application for erk dash interactive mode."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import asyncio
+     6→import time
+     7→from collections.abc import Iterator
+     8→from datetime import datetime
+     9→from pathlib import Path
+    10→
+    11→from textual import on
+    12→from textual.app import App, ComposeResult, SystemCommand
+    13→from textual.binding import Binding
+    14→from textual.containers import Container
+    15→from textual.screen import Screen
+    16→from textual.widgets import Header, Input, Label
+    17→
+    18→from erk.tui.actions.filter_actions import FilterActionsMixin
+    19→from erk.tui.actions.navigation import NavigationActionsMixin
+    20→from erk.tui.actions.palette import PaletteActionsMixin
+    21→from erk.tui.commands.provider import MainListCommandProvider
+    22→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+    23→from erk.tui.filtering.logic import filter_plans
+    24→from erk.tui.filtering.types import FilterMode, FilterState
+    25→from erk.tui.operations.logic import build_github_url
+    26→from erk.tui.operations.streaming import StreamingOperationsMixin
+    27→from erk.tui.operations.workers import BackgroundWorkersMixin
+    28→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+    29→from erk.tui.sorting.logic import sort_plans
+    30→from erk.tui.sorting.types import BranchActivity, SortKey, SortState
+
+... [95 lines omitted] ...
+  </tool_result>
+  <assistant>Good - `ErkDashApp.__init__` now requires both `provider: PlanDataProvider` and `service: PlanService`. Now let me see how tests currently construct the app. Let me find all test files that construct `ErkDashApp`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2732" cache_read_input_tokens="79478" cache_creation="{'ephemeral_5m_input_tokens': 2732, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01HLwMMnDUBuBuJWgrRoUqpA">
+    <param name="description">Find all test ErkDashApp construction</param>
+    <param name="prompt">Search all test files for patterns that construct ErkDashApp or FakePlanDataProvider. I ne...[truncated 1561 chars]...ovider=" or "service=" to see how they pass arguments
+
+Show all results organized by file.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2732" cache_read_input_tokens="79478" cache_creation="{'ephemeral_5m_input_tokens': 2732, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HLwMMnDUBuBuJWgrRoUqpA">
+Perfect! Now I have a comprehensive understanding of all the test files. Let me create a summary report of my findings:
+
+## Summary Report: ErkDashApp and FakePlanDataProvider Usage in Tests
+
+Based on my thorough analysis of the 24 test files in `/home/runner/work/erk/erk/tests/`, here are the key findings:
+
+### 1. Files that construct ErkDashApp
+
+All TUI app tests construct ErkDashApp with the same pattern: `provider=`, `filters=`, and `refresh_interval=`:
+
+**Files with ErkDashApp construction (17 files):**
+
+1. `/home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py` - 14 instances
+2. `/home/runner/work/erk/erk/tests/tui/app/test_streaming.py` - 6 instances
+3. `/home/runner/work/erk/erk/tests/tui/app/test_command_palette.py` - 12 instances
+4. `/home/runner/work/erk/erk/tests/tui/app/test_filter_mode.py` - 6 instances
+5. `/home/runner/work/erk/erk/tests/tui/app/test_app_filtering.py` - 16 instances
+6. `/home/runner/work/erk/erk/tests/tui/app/test_core.py` - 10 instances
+7. `/home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py` - 4 instances
+8. `/home/runner/work/erk/erk/tests/tui/app/test_view_switching.py` - 15 instances (including 2 at module level)
+9. `/home/runner/work/erk/erk/tests/tui/app/test_async_operations.py` - 31 instances
+10. `/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py` - 10 instances
+11. `/home/runner/work/erk/erk/tests/tui/app/test_actions.py` - 9 instances
+12. `/home/runner/work/erk/erk/tests/tui/app/test_plan_body_screen.py` - 11 instances
+
+**Construction Pattern:**
+```python
+ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+```
+
+
+... [120 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent. Now I have a clear picture. Let me plan the approach:
+
+1. **All 12 test files that construct `ErkDashApp` with `provider=`** need a `service=` arg too
+2. **The old `FakePlanDataProvider` in erk_shared** has domain methods (close_plan, etc.) that tests use via `set_plan_content`, `set_branch_stack`, etc. These need to go through `FakePlanService` instead.
+3. **Import paths**: All tests import from `erk_shared.gateway.plan_data_provider.fake` - the re-exports handle this.
+
+The cleanest approach: Update the old `fake.py` in erk_shared to re-export both `FakePlanDataProvider` (from `erk.tui.data.fake_provider`) and `make_plan_row`, AND also re-export `FakePlanService` (from `erk_shared.gateway.plan_service.fake`). Then update test files to:
+1. Also import `FakePlanService` 
+2. Add `service=FakePlanService()` to ErkDashApp constructors
+3. Move `set_plan_content`, `set_branch_stack`, etc. calls to the `FakePlanService` instance
+
+But wait - looking at this more carefully, many tests use `set_plan_content` and `set_branch_stack` on the provider. These now need to be on the service. Let me use a batch approach with agents to update all the test files.
+
+First, let me update the old fake.py re-export to also export `FakePlanService`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3388" cache_read_input_tokens="82210" cache_creation="{'ephemeral_5m_input_tokens': 3388, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01JRmuVTzcnxQwqrn1zdPKqr">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3388" cache_read_input_tokens="82210" cache_creation="{'ephemeral_5m_input_tokens': 3388, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JRmuVTzcnxQwqrn1zdPKqr">
+     1→"""Fake plan data provider for testing TUI components."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+     7→from erk.tui.sorting.types import BranchActivity
+     8→from erk_shared.gateway.browser.abc import BrowserLauncher
+     9→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    10→from erk_shared.gateway.clipboard.abc import Clipboard
+    11→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    12→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+    13→from erk.tui.data.provider_abc import PlanDataProvider
+    14→
+    15→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>OK, I realize the cleanest strategy is:
+
+1. Convert the old `fake.py` to re-export from the new location (`erk.tui.data.fake_provider`) for `FakePlanDataProvider` and `make_plan_row`. But the new `FakePlanDataProvider` doesn't have domain methods (close_plan, set_plan_content, etc.) so the old fake.py can't just be a re-export.
+
+Actually - let me reconsider. The plan says keep the old fake.py for backwards compat as a "combined" class. The better approach for now:
+- Keep the old `fake.py` in erk_shared as-is with the full combined class 
+- The new `fake_provider.py` in `erk.tui.data` is the slim version
+- Tests can continue to import from the old location
+- But tests constructing `ErkDashApp` need both `provider=` and `service=`
+
+The simplest path: since the old `FakePlanDataProvider` has BOTH provider and service methods, I can update `ErkDashApp` tests to pass the old `FakePlanDataProvider` as `provider=` AND use a new `FakePlanService` for `service=`. But the service methods on the provider (set_plan_content, etc.) are what tests configure.
+
+Actually, looking at the test patterns:
+- Tests call `provider.set_plan_content()` then push a PlanBodyScreen
+- Tests call `provider.set_branch_stack()` then trigger stack filter
+- Tests use `provider.close_plan()` implicitly via background workers
+
+The key insight: in the split world, `set_plan_content` and `set_branch_stack` need to be on the service since screens now use `self._service.fetch_plan_content()` etc.
+
+So the correct approach for tests is:
+1. Create a `FakePlanService` instance for domain operations
+2. Pass both `provider` and `service` to `ErkDashApp`
+3. Move `set_plan_content`, `set_branch_stack`, etc. calls from provider to service
+
+Let me now check which tests actually call these service-like methods on the provider:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1179" cache_read_input_tokens="85598" cache_creation="{'ephemeral_5m_input_tokens': 1179, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01MsbwiWhRjDHcLNMbu2y7Zr">
+    <param name="pattern">provider\.set_plan_content|provider\.set_branch_stack|provider\.set_objective_content|provider\.set_review_threads|provider\.set_check_runs|provider\.set_ci_summaries</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1179" cache_read_input_tokens="85598" cache_creation="{'ephemeral_5m_input_tokens': 1179, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MsbwiWhRjDHcLNMbu2y7Zr">
+tests/tui/app/test_app_filtering.py:26:        provider.set_branch_stack("branch-a", stack_ac)
+tests/tui/app/test_app_filtering.py:27:        provider.set_branch_stack("branch-c", stack_ac)
+tests/tui/app/test_app_filtering.py:56:        provider.set_branch_stack("branch-a", stack_ac)
+tests/tui/app/test_app_filtering.py:57:        provider.set_branch_stack("branch-c", stack_ac)
+tests/tui/app/test_app_filtering.py:85:        provider.set_branch_stack("branch-b", ["branch-b"])
+tests/tui/app/test_app_filtering.py:158:        provider.set_branch_stack("branch-a", stack_ac)
+tests/tui/app/test_app_filtering.py:159:        provider.set_branch_stack("branch-c", stack_ac)
+tests/tui/app/test_app_filtering.py:192:        provider.set_branch_stack("branch-b", ["branch-b"])
+tests/tui/app/test_plan_body_screen.py:22:        provider.set_plan_content(123, "# Test Plan\n\nThis is the plan content.")
+tests/tui/app/test_plan_body_screen.py:46:        provider.set_plan_content(123, plan_content)
+tests/tui/app/test_plan_body_screen.py:71:        provider.set_plan_content(123, "Plan content")
+tests/tui/app/test_plan_body_screen.py:98:        provider.set_plan_content(123, "Plan content")
+tests/tui/app/test_plan_body_screen.py:123:        provider.set_plan_content(123, "Plan content")
+tests/tui/app/test_plan_body_screen.py:148:        provider.set_plan_content(123, "Plan content")
+tests/tui/app/test_plan_body_screen.py:199:        provider.set_plan_content(456, "Plan content")
+tests/tui/app/test_plan_body_screen.py:223:        provider.set_plan_content(123, plan_content)
+tests/tui/app/test_plan_body_screen.py:253:        provider.set_objective_content(100, objective_content)
+tests/tui/app/test_plan_body_screen.py:286:        provider.set_plan_content(123, "Plan content")
+  </tool_result>
+  <assistant>Now I see the full scope. Let me also check the old `fake.py` to see if it's re-exported from the old fake.py or if it still has the actual implementation. The old `fake.py` has the full combined class - good. 
+
+My strategy now:
+1. Mark the old `fake.py` re-export as complete (it keeps the combined class with all methods)
+2. Update all test files that construct `ErkDashApp` to:
+   - Import `FakePlanService` from `erk_shared.gateway.plan_service.fake`
+   - Add `service=service` to `ErkDashApp()` calls
+   - Move `set_plan_content`, `set_branch_stack`, etc. calls from `provider` to `service`
+
+Let me start batch-updating the test files. I'll use a swarm approach for speed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1316" cache_read_input_tokens="86777" cache_creation="{'ephemeral_5m_input_tokens': 1316, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01W5CzexpVsJMRA44vTmAuB7">
+    <param name="todos">[{'content': 'Create PlanService ABC in erk_shared/gateway/plan_service/abc.py', 'status':...[truncated 1373 chars]...nd fix issues', 'status': 'pending', 'activeForm': 'Running CI checks and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1316" cache_read_input_tokens="86777" cache_creation="{'ephemeral_5m_input_tokens': 1316, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01W5CzexpVsJMRA44vTmAuB7">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me read a few representative test files to understand the exact patterns, then batch-update them:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="764" cache_read_input_tokens="88093" cache_creation="{'ephemeral_5m_input_tokens': 764, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01V47h5QeaKLQAfbvcTmYQwP">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_core.py</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="764" cache_read_input_tokens="88093" cache_creation="{'ephemeral_5m_input_tokens': 764, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MpSTNMyMirQudPJi1AXfV9">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_plan_body_screen.py</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="764" cache_read_input_tokens="88093" cache_creation="{'ephemeral_5m_input_tokens': 764, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01XHj7mdNwgp8pV9nPGUf9rL">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_app_filtering.py</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="764" cache_read_input_tokens="88093" cache_creation="{'ephemeral_5m_input_tokens': 764, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01V47h5QeaKLQAfbvcTmYQwP">
+     1→"""Tests for ErkDashApp core composition, data loading, navigation, and refresh."""
+     2→
+     3→import pytest
+     4→
+     5→from erk.tui.app import ErkDashApp
+     6→from erk.tui.data.types import PlanFilters
+     7→from erk.tui.screens.help_screen import HelpScreen
+     8→from erk.tui.widgets.plan_table import PlanDataTable
+     9→from erk.tui.widgets.status_bar import StatusBar
+    10→from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+    11→
+    12→
+    13→class TestErkDashAppCompose:
+    14→    """Tests for app composition and layout."""
+    15→
+    16→    @pytest.mark.asyncio
+    17→    async def test_app_has_required_widgets(self) -&gt; None:
+    18→        """App composes all required widgets."""
+    19→        provider = FakePlanDataProvider()
+    20→        filters = PlanFilters.default()
+    21→        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+    22→
+    23→        async with app.run_test():
+    24→            # Check for PlanDataTable
+    25→            table = app.query_one(PlanDataTable)
+    26→            assert table is not None
+    27→
+    28→            # Check for StatusBar
+    29→            status_bar = app.query_one(StatusBar)
+    30→            assert status_bar is not None
+
+... [35 lines omitted] ...
+
+    56→    async def test_api_error_shows_notification_and_empty_table(self) -&gt; None:
+    57→        """App shows error notification and empty table when API fails."""
+    59→            fetch_error="Network unreachable",
+  </tool_result>
+  <tool_result tool="toolu_01MpSTNMyMirQudPJi1AXfV9">
+     1→"""Tests for PlanBodyScreen modal."""
+     2→
+     3→import pytest
+     4→from textual.widgets import Markdown
+     5→
+     6→from erk.tui.app import ErkDashApp
+     7→from erk.tui.data.types import PlanFilters
+     8→from erk.tui.screens.plan_body_screen import PlanBodyScreen
+     9→from erk.tui.views.types import ViewMode
+    10→from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+    11→
+    12→
+    13→class TestPlanBodyScreen:
+    14→    """Tests for PlanBodyScreen modal (view plan text with async loading)."""
+    15→
+    16→    @pytest.mark.asyncio
+    17→    async def test_v_key_opens_issue_body_screen(self) -&gt; None:
+    18→        """Pressing 'v' opens the issue body modal."""
+    19→        provider = FakePlanDataProvider(
+    20→            plans=[make_plan_row(123, "Test Plan", plan_body="metadata body")]
+    21→        )
+    22→        provider.set_plan_content(123, "# Test Plan\n\nThis is the plan content.")
+    23→        filters = PlanFilters.default()
+    24→        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+    25→
+    26→        async with app.run_test() as pilot:
+    27→            await pilot.pause()
+    28→            await pilot.pause()
+    29→
+    30→            # Press 'v' to view plan content
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01XHj7mdNwgp8pV9nPGUf9rL">
+     1→"""Tests for stack, objective, and author filter functionality."""
+     2→
+     3→import pytest
+     4→
+     5→from erk.tui.app import ErkDashApp
+     6→from erk.tui.data.types import PlanFilters
+     7→from erk.tui.widgets.status_bar import StatusBar
+     8→from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+     9→
+    10→
+    11→class TestStackFilter:
+    12→    """Tests for 't' stack filter functionality."""
+    13→
+    14→    @pytest.mark.asyncio
+    15→    async def test_t_filters_to_stack_members(self) -&gt; None:
+    16→        """Pressing 't' filters table to rows sharing the same Graphite stack."""
+    17→        provider = FakePlanDataProvider(
+    18→            plans=[
+    19→                make_plan_row(1, "Plan A", pr_head_branch="branch-a"),
+    20→                make_plan_row(2, "Plan B", pr_head_branch="branch-b"),
+    21→                make_plan_row(3, "Plan C", pr_head_branch="branch-c"),
+    22→            ]
+    23→        )
+    24→        # Every branch in a stack maps to the full stack list (mirrors real Graphite)
+    25→        stack_ac = ["branch-a", "branch-c"]
+    26→        provider.set_branch_stack("branch-a", stack_ac)
+    27→        provider.set_branch_stack("branch-c", stack_ac)
+    28→        filters = PlanFilters.default()
+    29→        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+    30→
+
+... [15 lines omitted] ...
+  </tool_result>
+  <assistant>Now I see the pattern clearly. The key changes needed for each test file:
+
+1. Add `from erk_shared.gateway.plan_service.fake import FakePlanService` to imports
+2. Create `service = FakePlanService()` alongside `provider = FakePlanDataProvider(...)`
+3. Change `ErkDashApp(provider=provider, filters=...)` to `ErkDashApp(provider=provider, service=service, filters=...)`
+4. Move `provider.set_plan_content()` → `service.set_plan_content()`
+5. Move `provider.set_branch_stack()` → `service.set_branch_stack()`
+6. Move `provider.set_objective_content()` → `service.set_objective_content()`
+
+Let me launch parallel agents to update all these test files. I'll group them by similarity:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2489" cache_read_input_tokens="88857" cache_creation="{'ephemeral_5m_input_tokens': 2489, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_0165kgPRmLDNmHhvDAWaVnfN">
+    <param name="description">Update test_core.py imports</param>
+    <param name="prompt">Update the file /home/runner/work/erk/erk/tests/tui/app/test_core.py:
+
+1. Add this import ...[truncated 446 chars]...ke all needed edits. Be thorough and update EVERY ErkDashApp constructor call in the file.</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2489" cache_read_input_tokens="88857" cache_creation="{'ephemeral_5m_input_tokens': 2489, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01EjFmgtTMjuuYhvyCdEnQwU">
+    <param name="description">Update test_actions.py imports</param>
+    <param name="prompt">Update the file /home/runner/work/erk/erk/tests/tui/app/test_actions.py:
+
+1. Add this impo...[truncated 449 chars]...ke all needed edits. Be thorough and update EVERY ErkDashApp constructor call in the file.</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2489" cache_read_input_tokens="88857" cache_creation="{'ephemeral_5m_input_tokens': 2489, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_015dFR2E6wZNESEiPGThvjV3">
+    <param name="description">Update test_filter_mode.py imports</param>
+    <param name="prompt">Update the file /home/runner/work/erk/erk/tests/tui/app/test_filter_mode.py:
+
+1. Add this ...[truncated 453 chars]...ke all needed edits. Be thorough and update EVERY ErkDashApp constructor call in the file.</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2489" cache_read_input_tokens="88857" cache_creation="{'ephemeral_5m_input_tokens': 2489, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01N1C2areWdcrZwjf1ByV9Fb">
+    <param name="description">Update test_command_palette.py</param>
+    <param name="prompt">Update the file /home/runner/work/erk/erk/tests/tui/app/test_command_palette.py:
+
+1. Add t...[truncated 457 chars]...ke all needed edits. Be thorough and update EVERY ErkDashApp constructor call in the file.</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2489" cache_read_input_tokens="88857" cache_creation="{'ephemeral_5m_input_tokens': 2489, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_014V6iyCoHZePzPHdeQBpi3j">
+    <param name="description">Update test_one_shot_prompt.py</param>
+    <param name="prompt">Update the file /home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py:
+
+1. Add t...[truncated 457 chars]...ke all needed edits. Be thorough and update EVERY ErkDashApp constructor call in the file.</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2489" cache_read_input_tokens="88857" cache_creation="{'ephemeral_5m_input_tokens': 2489, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01KDVEXZnobKpkdGFLicmAFY">
+    <param name="description">Update test_streaming.py</param>
+    <param name="prompt">Update the file /home/runner/work/erk/erk/tests/tui/app/test_streaming.py:
+
+1. Add this im...[truncated 451 chars]...ke all needed edits. Be thorough and update EVERY ErkDashApp constructor call in the file.</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2489" cache_read_input_tokens="88857" cache_creation="{'ephemeral_5m_input_tokens': 2489, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_019hhBDnSJBijYsERi9z6Ueb">
+    <param name="description">Update test_operation_tracking.py</param>
+    <param name="prompt">Update the file /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py:
+
+1. Ad...[truncated 460 chars]...ke all needed edits. Be thorough and update EVERY ErkDashApp constructor call in the file.</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2489" cache_read_input_tokens="88857" cache_creation="{'ephemeral_5m_input_tokens': 2489, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01SRWNBrSrcnJMhKXRag5eCz">
+    <param name="description">Update test_view_switching.py</param>
+    <param name="prompt">Update the file /home/runner/work/erk/erk/tests/tui/app/test_view_switching.py:
+
+1. Add th...[truncated 456 chars]...ke all needed edits. Be thorough and update EVERY ErkDashApp constructor call in the file.</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2489" cache_read_input_tokens="88857" cache_creation="{'ephemeral_5m_input_tokens': 2489, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_017r4HaiibZLt4BK3NEekgRC">
+    <param name="description">Update test_async_operations.py</param>
+    <param name="prompt">Update the file /home/runner/work/erk/erk/tests/tui/app/test_async_operations.py:
+
+1. Add ...[truncated 458 chars]...ke all needed edits. Be thorough and update EVERY ErkDashApp constructor call in the file.</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2489" cache_read_input_tokens="88857" cache_creation="{'ephemeral_5m_input_tokens': 2489, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0165kgPRmLDNmHhvDAWaVnfN">
+Async agent launched successfully.
+agentId: a2814d9 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01EjFmgtTMjuuYhvyCdEnQwU">
+Async agent launched successfully.
+agentId: a96cd8a (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_015dFR2E6wZNESEiPGThvjV3">
+Async agent launched successfully.
+agentId: a3b7d39 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01N1C2areWdcrZwjf1ByV9Fb">
+Async agent launched successfully.
+agentId: a67c0c6 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_014V6iyCoHZePzPHdeQBpi3j">
+Async agent launched successfully.
+agentId: ac71333 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01KDVEXZnobKpkdGFLicmAFY">
+Async agent launched successfully.
+agentId: a0bb67f (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_019hhBDnSJBijYsERi9z6Ueb">
+Async agent launched successfully.
+agentId: a90023b (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01SRWNBrSrcnJMhKXRag5eCz">
+Async agent launched successfully.
+agentId: a5521dc (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_017r4HaiibZLt4BK3NEekgRC">
+Async agent launched successfully.
+agentId: a1f90ec (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>Now let me handle the more complex test files that need `service` method calls moved. I'll handle `test_plan_body_screen.py`, `test_app_filtering.py`, and `test_plan_detail_screen.py` directly since they need `set_plan_content`/`set_branch_stack` moved to service:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5032" cache_read_input_tokens="91346" cache_creation="{'ephemeral_5m_input_tokens': 5032, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01JtQ4mfZrDZEYRjZBEHxcLM">
+    <param name="description">Update test_plan_body_screen.py</param>
+    <param name="prompt">Update the file /home/runner/work/erk/erk/tests/tui/app/test_plan_body_screen.py:
+
+1. Add ...[truncated 800 chars]...ErkDashApp calls and many set_plan_content/set_objective_content calls that need updating.</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5032" cache_read_input_tokens="91346" cache_creation="{'ephemeral_5m_input_tokens': 5032, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01EXP8UcPuXaivqPdKGb52Ay">
+    <param name="description">Update test_app_filtering.py</param>
+    <param name="prompt">Update the file /home/runner/work/erk/erk/tests/tui/app/test_app_filtering.py:
+
+1. Add thi...[truncated 680 chars]...here are about 16 ErkDashApp calls and multiple set_branch_stack calls that need updating.</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5032" cache_read_input_tokens="91346" cache_creation="{'ephemeral_5m_input_tokens': 5032, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01AbHhRzuMuaWxCnZxWN9rnq">
+    <param name="description">Update test_plan_detail_screen.py</param>
+    <param name="prompt">Update the file /home/runner/work/erk/erk/tests/tui/app/test_plan_detail_screen.py:
+
+1. Ad...[truncated 460 chars]...ke all needed edits. Be thorough and update EVERY ErkDashApp constructor call in the file.</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="run_in_background">True</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5032" cache_read_input_tokens="91346" cache_creation="{'ephemeral_5m_input_tokens': 5032, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JtQ4mfZrDZEYRjZBEHxcLM">
+Async agent launched successfully.
+agentId: ad9f266 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01EXP8UcPuXaivqPdKGb52Ay">
+Async agent launched successfully.
+agentId: aa61a70 (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <tool_result tool="toolu_01AbHhRzuMuaWxCnZxWN9rnq">
+Async agent launched successfully.
+agentId: a8de90c (This is an internal ID for your use, do not mention it to the user. Use this ID to retrieve results with TaskOutput when the agent finishes).
+The agent is currently working in the background. If you have other tasks you you should continue working on them now. Wait to call TaskOutput until either:
+- If you want to check on the agent's progress - call TaskOutput with block=false to get an immediate update on the agent's status
+- If you run out of things to do and the agent is still running - call TaskOutput with block=true to idle and wait for the agent's result (do not use block=true unless you completely run out of things to do as it will waste time).
+  </tool_result>
+  <assistant>While those agents work, let me handle the remaining test files that need updating. Let me check which other test files need changes:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2611" cache_read_input_tokens="96378" cache_creation="{'ephemeral_5m_input_tokens': 2611, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012SEFaamg3mLX3jnEsZdRXv">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/screens/test_objective_plans_fake_provider.py</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2611" cache_read_input_tokens="96378" cache_creation="{'ephemeral_5m_input_tokens': 2611, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01LfPJxuPc4NJDRX2G79xjdZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2611" cache_read_input_tokens="96378" cache_creation="{'ephemeral_5m_input_tokens': 2611, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01AF7vTYQW3zqc8DGywmHjv4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_fetch_plan_content.py</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2611" cache_read_input_tokens="96378" cache_creation="{'ephemeral_5m_input_tokens': 2611, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015HxBxFyPAmdMMoJyYDbdrn">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_provider.py</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2611" cache_read_input_tokens="96378" cache_creation="{'ephemeral_5m_input_tokens': 2611, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01SW7heJBA1QiKbN6dibV8bB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2611" cache_read_input_tokens="96378" cache_creation="{'ephemeral_5m_input_tokens': 2611, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012SEFaamg3mLX3jnEsZdRXv">
+     1→"""Tests for FakePlanDataProvider.fetch_plans_for_objective()."""
+     2→
+     3→from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+     4→
+     5→
+     6→def test_fetch_plans_for_objective_filters_by_objective_issue() -&gt; None:
+     7→    """Only returns plans matching the given objective_issue."""
+     8→    plans = [
+     9→        make_plan_row(100, "Plan A", objective_issue=8088),
+    10→        make_plan_row(101, "Plan B", objective_issue=8036),
+    11→        make_plan_row(102, "Plan C", objective_issue=8088),
+    12→        make_plan_row(103, "Plan D"),  # No objective
+    13→    ]
+    14→    provider = FakePlanDataProvider(plans=plans)
+    15→
+    16→    result = provider.fetch_plans_for_objective(8088)
+    17→
+    18→    assert len(result) == 2
+    19→    assert {r.plan_id for r in result} == {100, 102}
+    20→
+    21→
+    22→def test_fetch_plans_for_objective_returns_empty_when_no_match() -&gt; None:
+    23→    """Returns empty list when no plans match the objective."""
+    24→    plans = [
+    25→        make_plan_row(100, "Plan A", objective_issue=8088),
+    26→        make_plan_row(101, "Plan B", objective_issue=8036),
+    27→    ]
+    28→    provider = FakePlanDataProvider(plans=plans)
+    29→
+    30→    result = provider.fetch_plans_for_objective(9999)
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01LfPJxuPc4NJDRX2G79xjdZ">
+     1→"""Tests for fetch_objective_content on RealPlanDataProvider."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.core.repo_discovery import RepoContext
+     6→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+     7→from erk_shared.gateway.clipboard.fake import FakeClipboard
+     8→from erk_shared.gateway.git.abc import WorktreeInfo
+     9→from erk_shared.gateway.git.fake import FakeGit
+    10→from erk_shared.gateway.github.metadata.core import format_objective_content_comment
+    11→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    12→from erk_shared.gateway.http.fake import FakeHttpClient
+    13→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+    14→from tests.fakes.context import create_test_context
+    15→
+    16→
+    17→def _make_repo_context(repo_root: Path, tmp_path: Path) -&gt; RepoContext:
+    18→    """Create a RepoContext for testing."""
+    19→    erk_dir = tmp_path / ".erk"
+    20→    repo_dir = erk_dir / "repos" / "test-repo"
+    21→    return RepoContext(
+    22→        root=repo_root,
+    23→        repo_name="test-repo",
+    24→        repo_dir=repo_dir,
+    25→        worktrees_dir=repo_dir / "worktrees",
+    26→        pool_json_path=repo_dir / "pool.json",
+    27→    )
+    28→
+    29→
+    30→def _make_provider(tmp_path: Path, *, http_client: FakeHttpClient) -&gt; RealPlanDataProvider:
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01AF7vTYQW3zqc8DGywmHjv4">
+     1→"""Tests for fetch_plan_content on RealPlanDataProvider."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.core.repo_discovery import RepoContext
+     6→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+     7→from erk_shared.gateway.clipboard.fake import FakeClipboard
+     8→from erk_shared.gateway.git.abc import WorktreeInfo
+     9→from erk_shared.gateway.git.fake import FakeGit
+    10→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    11→from erk_shared.gateway.http.fake import FakeHttpClient
+    12→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+    13→from tests.fakes.context import create_test_context
+    14→
+    15→
+    16→def _make_repo_context(repo_root: Path, tmp_path: Path) -&gt; RepoContext:
+    17→    """Create a RepoContext for testing."""
+    18→    erk_dir = tmp_path / ".erk"
+    19→    repo_dir = erk_dir / "repos" / "test-repo"
+    20→    return RepoContext(
+    21→        root=repo_root,
+    22→        repo_name="test-repo",
+    23→        repo_dir=repo_dir,
+    24→        worktrees_dir=repo_dir / "worktrees",
+    25→        pool_json_path=repo_dir / "pool.json",
+    26→    )
+    27→
+    28→
+    29→def _make_provider(tmp_path: Path, *, http_client: FakeHttpClient) -&gt; RealPlanDataProvider:
+    30→    """Create a RealPlanDataProvider with minimal setup for testing."""
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_015HxBxFyPAmdMMoJyYDbdrn">
+     1→"""Tests for plan data provider."""
+     2→
+     3→import json
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→from erk.core.context import GlobalConfig
+     8→from erk.core.repo_discovery import RepoContext
+     9→from erk.tui.data.types import FetchTimings
+    10→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    11→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    12→from erk_shared.gateway.git.abc import WorktreeInfo
+    13→from erk_shared.gateway.git.fake import FakeGit
+    14→from erk_shared.gateway.github.fake import FakeGitHub
+    15→from erk_shared.gateway.github.issues.types import IssueInfo
+    16→from erk_shared.gateway.github.metadata.core import find_metadata_block
+    17→from erk_shared.gateway.github.types import (
+    18→    GitHubRepoId,
+    19→    GitHubRepoLocation,
+    20→    PullRequestInfo,
+    21→)
+    22→from erk_shared.gateway.graphite.fake import FakeGraphite
+    23→from erk_shared.gateway.http.fake import FakeHttpClient
+    24→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+    25→from erk_shared.plan_store.types import Plan, PlanState
+    26→from tests.fakes.context import create_test_context
+    27→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    28→
+    29→
+    30→def _parse_header_fields(body: str) -&gt; dict[str, object]:
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01SW7heJBA1QiKbN6dibV8bB">
+     1→"""Tests for PlanDataProvider routing logic.
+     2→
+     3→Tests verify that fetch_plans() routes queries to the correct service:
+     4→- Queries with "erk-objective" label use objective_list_service
+     5→- All other queries use plan_list_service
+     6→"""
+     7→
+     8→from unittest.mock import MagicMock
+     9→
+    10→from erk.tui.data.types import PlanFilters
+    11→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+    12→
+    13→
+    14→def _make_provider(
+    15→    objective_service: MagicMock | None = None,
+    16→    plan_service: MagicMock | None = None,
+    17→) -&gt; RealPlanDataProvider:
+    18→    """Create a RealPlanDataProvider with mocked services."""
+    19→    mock_ctx = MagicMock()
+    20→    mock_objective_service = objective_service or MagicMock()
+    21→    mock_plan_service = plan_service or MagicMock()
+    22→    mock_ctx.objective_list_service = mock_objective_service
+    23→    mock_ctx.plan_list_service = mock_plan_service
+    24→    mock_objective_service.get_objective_list_data.return_value = MagicMock(plans=[])
+    25→    mock_plan_service.get_plan_list_data.return_value = MagicMock(plans=[])
+    26→
+    27→    return RealPlanDataProvider(
+    28→        mock_ctx,
+    29→        location=MagicMock(),
+    30→        clipboard=MagicMock(),
+
+... [15 lines omitted] ...
+  </tool_result>
+  <assistant>Good. I see the data-layer test files (`test_fetch_objective_content.py`, `test_fetch_plan_content.py`, `test_provider.py`) construct `RealPlanDataProvider` directly and test its methods - these need significant changes since `fetch_plan_content` and `fetch_objective_content` are now on `RealPlanService`, not `RealPlanDataProvider`.
+
+The `test_real_routing.py` file also constructs `RealPlanDataProvider` with `clipboard=` and `browser=` args which no longer exist on the new slim `RealPlanDataProvider`.
+
+Let me also read the full content of these files to understand what changes are needed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4950" cache_read_input_tokens="98989" cache_creation="{'ephemeral_5m_input_tokens': 4950, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01SWRLku6p27kfa2YExYZcDe">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_fetch_plan_content.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4950" cache_read_input_tokens="98989" cache_creation="{'ephemeral_5m_input_tokens': 4950, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MEqQj5AKMYnxcanwFS5jBU">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4950" cache_read_input_tokens="98989" cache_creation="{'ephemeral_5m_input_tokens': 4950, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01MWw3hWfkNCmNjzEHTv7Uca">
+    <param name="file_path">/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4950" cache_read_input_tokens="98989" cache_creation="{'ephemeral_5m_input_tokens': 4950, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SWRLku6p27kfa2YExYZcDe">
+     1→"""Tests for fetch_plan_content on RealPlanDataProvider."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.core.repo_discovery import RepoContext
+     6→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+     7→from erk_shared.gateway.clipboard.fake import FakeClipboard
+     8→from erk_shared.gateway.git.abc import WorktreeInfo
+     9→from erk_shared.gateway.git.fake import FakeGit
+    10→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    11→from erk_shared.gateway.http.fake import FakeHttpClient
+    12→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+    13→from tests.fakes.context import create_test_context
+    14→
+    15→
+    16→def _make_repo_context(repo_root: Path, tmp_path: Path) -&gt; RepoContext:
+    17→    """Create a RepoContext for testing."""
+    18→    erk_dir = tmp_path / ".erk"
+    19→    repo_dir = erk_dir / "repos" / "test-repo"
+    20→    return RepoContext(
+    21→        root=repo_root,
+    22→        repo_name="test-repo",
+    23→        repo_dir=repo_dir,
+    24→        worktrees_dir=repo_dir / "worktrees",
+    25→        pool_json_path=repo_dir / "pool.json",
+    26→    )
+    27→
+    28→
+    29→def _make_provider(tmp_path: Path, *, http_client: FakeHttpClient) -&gt; RealPlanDataProvider:
+    30→    """Create a RealPlanDataProvider with minimal setup for testing."""
+
+... [99 lines omitted] ...
+
+    65→_WARNING = "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;"
+    67→BODY_WITH_PLAN_HEADER_METADATA = f"""{_WARNING}
+  </tool_result>
+  <tool_result tool="toolu_01MEqQj5AKMYnxcanwFS5jBU">
+     1→"""Tests for fetch_objective_content on RealPlanDataProvider."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.core.repo_discovery import RepoContext
+     6→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+     7→from erk_shared.gateway.clipboard.fake import FakeClipboard
+     8→from erk_shared.gateway.git.abc import WorktreeInfo
+     9→from erk_shared.gateway.git.fake import FakeGit
+    10→from erk_shared.gateway.github.metadata.core import format_objective_content_comment
+    11→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    12→from erk_shared.gateway.http.fake import FakeHttpClient
+    13→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+    14→from tests.fakes.context import create_test_context
+    15→
+    16→
+    17→def _make_repo_context(repo_root: Path, tmp_path: Path) -&gt; RepoContext:
+    18→    """Create a RepoContext for testing."""
+    19→    erk_dir = tmp_path / ".erk"
+    20→    repo_dir = erk_dir / "repos" / "test-repo"
+    21→    return RepoContext(
+    22→        root=repo_root,
+    23→        repo_name="test-repo",
+    24→        repo_dir=repo_dir,
+    25→        worktrees_dir=repo_dir / "worktrees",
+    26→        pool_json_path=repo_dir / "pool.json",
+    27→    )
+    28→
+    29→
+    30→def _make_provider(tmp_path: Path, *, http_client: FakeHttpClient) -&gt; RealPlanDataProvider:
+
+... [133 lines omitted] ...
+
+    66→_WARNING = "&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;"
+    68→ISSUE_BODY_WITH_COMMENT_ID = f"""{_WARNING}
+    84→ISSUE_BODY_WITH_NULL_COMMENT_ID = f"""{_WARNING}
+  </tool_result>
+  <tool_result tool="toolu_01MWw3hWfkNCmNjzEHTv7Uca">
+     1→"""Tests for PlanDataProvider routing logic.
+     2→
+     3→Tests verify that fetch_plans() routes queries to the correct service:
+     4→- Queries with "erk-objective" label use objective_list_service
+     5→- All other queries use plan_list_service
+     6→"""
+     7→
+     8→from unittest.mock import MagicMock
+     9→
+    10→from erk.tui.data.types import PlanFilters
+    11→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+    12→
+    13→
+    14→def _make_provider(
+    15→    objective_service: MagicMock | None = None,
+    16→    plan_service: MagicMock | None = None,
+    17→) -&gt; RealPlanDataProvider:
+    18→    """Create a RealPlanDataProvider with mocked services."""
+    19→    mock_ctx = MagicMock()
+    20→    mock_objective_service = objective_service or MagicMock()
+    21→    mock_plan_service = plan_service or MagicMock()
+    22→    mock_ctx.objective_list_service = mock_objective_service
+    23→    mock_ctx.plan_list_service = mock_plan_service
+    24→    mock_objective_service.get_objective_list_data.return_value = MagicMock(plans=[])
+    25→    mock_plan_service.get_plan_list_data.return_value = MagicMock(plans=[])
+    26→
+    27→    return RealPlanDataProvider(
+    28→        mock_ctx,
+    29→        location=MagicMock(),
+    30→        clipboard=MagicMock(),
+
+... [180 lines omitted] ...
+  </tool_result>
+  <assistant>Now I need to handle the data-layer tests. These test `RealPlanDataProvider.fetch_plan_content()` and `RealPlanDataProvider.fetch_objective_content()` - but those methods are now on `RealPlanService`, not `RealPlanDataProvider`. I need to update these test files to test `RealPlanService` instead.
+
+Also, `test_real_routing.py` constructs `RealPlanDataProvider` with `clipboard=` and `browser=` which no longer exist. Let me check what the new `RealPlanDataProvider` constructor looks like:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8161" cache_read_input_tokens="103939" cache_creation="{'ephemeral_5m_input_tokens': 8161, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014KcKC3ikC4d4g2LuAiYi3W">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8161" cache_read_input_tokens="103939" cache_creation="{'ephemeral_5m_input_tokens': 8161, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014KcKC3ikC4d4g2LuAiYi3W">
+     1→"""Real implementation of PlanDataProvider for TUI data assembly."""
+     2→
+     3→import logging
+     4→from datetime import datetime
+     5→from pathlib import Path
+     6→
+     7→from erk.core.context import ErkContext
+     8→from erk.core.display_utils import (
+     9→    format_relative_time,
+    10→    format_workflow_outcome,
+    11→    format_workflow_run_id,
+    12→    get_workflow_run_state,
+    13→)
+    14→from erk.core.pr_utils import select_display_pr
+    15→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    16→from erk.tui.data.provider_abc import PlanDataProvider
+    17→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+    18→from erk.tui.sorting.types import BranchActivity
+    19→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    20→from erk_shared.gateway.github.metadata.core import (
+    21→    extract_objective_slug,
+    22→)
+    23→from erk_shared.gateway.github.metadata.dependency_graph import (
+    24→    _TERMINAL_STATUSES,
+    25→    build_graph,
+    26→    build_state_sparkline,
+    27→    compute_graph_summary,
+    28→    find_graph_next_node,
+    29→)
+    30→from erk_shared.gateway.github.metadata.roadmap import (
+
+... [35 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_011x5Ui4djVoRiu5q2Bo1Vpu">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/real_provider.py</param>
+    <param name="offset">61</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1124" cache_read_input_tokens="112100" cache_creation="{'ephemeral_5m_input_tokens': 1124, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011x5Ui4djVoRiu5q2Bo1Vpu">
+    61→
+    62→
+    63→class RealPlanDataProvider(PlanDataProvider):
+    64→    """Production implementation that assembles TUI display data.
+    65→
+    66→    Transforms PlanListData into PlanRowData for TUI display.
+    67→    Domain operations (close_plan, dispatch, etc.) are on PlanService.
+    68→    """
+    69→
+    70→    def __init__(
+    71→        self,
+    72→        ctx: ErkContext,
+    73→        *,
+    74→        location: GitHubRepoLocation,
+    75→        http_client: HttpClient,
+    76→    ) -&gt; None:
+    77→        """Initialize with context and repository info.
+    78→
+    79→        Args:
+    80→            ctx: ErkContext with all dependencies
+    81→            location: GitHub repository location (local root + repo identity)
+    82→            http_client: HTTP client for direct API calls (faster than subprocess)
+    83→        """
+    84→        self._ctx = ctx
+    85→        self._location = location
+    86→        self._http_client = http_client
+    87→
+    88→    def fetch_plans(self, filters: PlanFilters) -&gt; tuple[list[PlanRowData], FetchTimings | None]:
+    89→        """Fetch plans and transform to TUI row format.
+    90→
+
+... [15 lines omitted] ...
+  </tool_result>
+</session>

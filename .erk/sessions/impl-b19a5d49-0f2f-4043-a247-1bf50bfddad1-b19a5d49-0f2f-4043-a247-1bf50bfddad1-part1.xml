@@ -1,0 +1,1443 @@
+<session>
+  <meta branch="plnd/split-plan-data-provider-03-06-0149" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8804&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8804` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8804.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11254" cache_read_input_tokens="17146" cache_creation="{'ephemeral_5m_input_tokens': 11254, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_019Ty3qjQHiMP8yiyfJkuk5u">
+    <param name="command">erk exec setup-impl --issue 8804</param>
+    <param name="description">Set up implementation for plan #8804</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11254" cache_read_input_tokens="17146" cache_creation="{'ephemeral_5m_input_tokens': 11254, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019Ty3qjQHiMP8yiyfJkuk5u">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--split-plan-data-provider-03-06-0149", "plan_number": 8804, "plan_url": "https://github.com/dagster-io/erk/pull/8804", "branch": "plnd/split-plan-data-provider-03-06-0149", "plan_title": "[erk-plan] Split PlanDataProvider: Separate Domain Service from TUI Data Assembly", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8804, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/split-plan-data-provider-03-06-0149', teleporting from remote...
+  </tool_result>
+  <assistant>Setup successful. Let me read the plan and load relevant context.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="350" cache_read_input_tokens="28400" cache_creation="{'ephemeral_5m_input_tokens': 350, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01QnsJ8kMARjhjzPYVffSBtZ">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--split-plan-data-provider-03-06-0149/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="350" cache_read_input_tokens="28400" cache_creation="{'ephemeral_5m_input_tokens': 350, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QnsJ8kMARjhjzPYVffSBtZ">
+     1→# Split PlanDataProvider: Separate Domain Service from TUI Data Assembly
+     2→
+     3→## Context
+     4→
+     5→`PlanDataProvider` in `erk_shared.gateway.plan_data_provider` is not a gateway — it's a service layer that composes gateways (GitHub, git, clipboard, browser) and bundles domain operations with TUI-specific data assembly. It creates a circular dependency: `erk_shared` imports `PlanRowData`/`FetchTimings`/`PlanFilters` from `erk.tui.data.types`, while `erk.tui` imports `PlanDataProvider` from `erk_shared`. Currently this only works because of import ordering luck, and it caused a real `ImportError` in the previous session.
+     6→
+     7→The user's insight: PlanDataProvider isn't a gateway, and its methods split cleanly into domain operations (close_plan, dispatch) and TUI-coupled data assembly (fetch_plans → PlanRowData). The right fix is to separate these concerns, not just move types around.
+     8→
+     9→## Design
+    10→
+    11→### Split into two interfaces
+    12→
+    13→**1. `PlanService`** — domain operations, stays in `erk_shared`
+    14→- `close_plan(plan_id, plan_url) → list[int]`
+    15→- `dispatch_to_queue(plan_id, plan_url) → None`
+    16→- `fetch_plan_content(plan_id, plan_body) → str | None`
+    17→- `fetch_objective_content(plan_id, plan_body) → str | None`
+    18→- `get_branch_stack(branch) → list[str] | None`
+    19→- `fetch_check_runs(pr_number) → list[PRCheckRun]`
+    20→- `fetch_unresolved_comments(pr_number) → list[PRReviewThread]`
+    21→- `fetch_ci_summaries(pr_number) → dict[str, str]`
+    22→- Properties: `repo_root`, `clipboard`, `browser`
+    23→
+    24→No TUI type dependencies. All signatures use primitives or erk_shared types.
+    25→
+    26→**2. `PlanDataProvider`** — TUI data assembly, moves to `erk.tui.data.provider`
+    27→- `fetch_plans(filters: PlanFilters) → tuple[list[PlanRowData], FetchTimings | None]`
+    28→- `fetch_plans_by_ids(plan_ids: set[int]) → list[PlanRowData]`
+    29→- `fetch_plans_for_objective(objective_issue: int) → list[PlanRowData]`
+    30→- `fetch_branch_activity(rows: list[PlanRowData]) → dict[int, BranchActivity]`
+
+... [115 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the critical source files to understand the current state. I'll read them in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3138" cache_read_input_tokens="28750" cache_creation="{'ephemeral_5m_input_tokens': 3138, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01WUEHF3gf5eQrLqPNuqjSwe">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3138" cache_read_input_tokens="28750" cache_creation="{'ephemeral_5m_input_tokens': 3138, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01WYnLi4zJpqMd4GH3qTYusc">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3138" cache_read_input_tokens="28750" cache_creation="{'ephemeral_5m_input_tokens': 3138, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014jCLkz5C5NLDWrsRTS45Vz">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3138" cache_read_input_tokens="28750" cache_creation="{'ephemeral_5m_input_tokens': 3138, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01C1XV58vouMHU58qe2GFF2k">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/lifecycle.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3138" cache_read_input_tokens="28750" cache_creation="{'ephemeral_5m_input_tokens': 3138, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013BqkVvNNBmzPnwjc2w5eeU">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3138" cache_read_input_tokens="28750" cache_creation="{'ephemeral_5m_input_tokens': 3138, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01ChSk5nCz3zCJjgTknt1HUQ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3138" cache_read_input_tokens="28750" cache_creation="{'ephemeral_5m_input_tokens': 3138, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WUEHF3gf5eQrLqPNuqjSwe">
+     1→"""Data provider ABC for TUI plan table."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→from pathlib import Path
+     5→
+     6→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+     7→from erk.tui.sorting.types import BranchActivity
+     8→from erk_shared.gateway.browser.abc import BrowserLauncher
+     9→from erk_shared.gateway.clipboard.abc import Clipboard
+    10→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+    11→
+    12→
+    13→class PlanDataProvider(ABC):
+    14→    """Abstract base class for plan data providers.
+    15→
+    16→    Defines the interface for fetching plan data for TUI display.
+    17→    """
+    18→
+    19→    @property
+    20→    @abstractmethod
+    21→    def repo_root(self) -&gt; Path:
+    22→        """Get the repository root path.
+    23→
+    24→        Returns:
+    25→            Path to the repository root directory
+    26→        """
+    27→        ...
+    28→
+    29→    @property
+    30→    @abstractmethod
+
+... [186 lines omitted] ...
+
+   197→        """Fetch CI failure summaries for a pull request.
+   208→            summaries are available (job hasn't run, no failures, etc.)
+  </tool_result>
+  <tool_result tool="toolu_014jCLkz5C5NLDWrsRTS45Vz">
+     1→"""Fake plan data provider for testing TUI components."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+     7→from erk.tui.sorting.types import BranchActivity
+     8→from erk_shared.gateway.browser.abc import BrowserLauncher
+     9→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    10→from erk_shared.gateway.clipboard.abc import Clipboard
+    11→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    12→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+    13→from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+    14→
+    15→
+    16→class FakePlanDataProvider(PlanDataProvider):
+    17→    """Fake implementation of PlanDataProvider for testing.
+    18→
+    19→    Returns canned data without making any API calls.
+    20→    """
+    21→
+    22→    def __init__(
+    23→        self,
+    24→        *,
+    25→        plans: list[PlanRowData] | None = None,
+    26→        plans_by_labels: dict[tuple[str, ...], list[PlanRowData]] | None = None,
+    27→        clipboard: Clipboard | None = None,
+    28→        browser: BrowserLauncher | None = None,
+    29→        repo_root: Path | None = None,
+    30→        fetch_error: str | None = None,
+
+... [487 lines omitted] ...
+
+    41→            fetch_error: If set, fetch_plans() raises RuntimeError with this message.
+    42→                Use to simulate API failures.
+    50→        self._fetch_error = fetch_error
+    84→            RuntimeError: If fetch_error is set
+    87→        if self._fetch_error is not None:
+    88→            raise RuntimeError(self._fetch_error)
+  </tool_result>
+  <tool_result tool="toolu_01C1XV58vouMHU58qe2GFF2k">
+     1→"""Lifecycle stage display computation for plans.
+     2→
+     3→Extracted to a standalone module to avoid circular imports when testing.
+     4→The main consumer is RealPlanDataProvider in real.py.
+     5→"""
+     6→
+     7→from erk_shared.gateway.github.metadata.schemas import LIFECYCLE_STAGE
+     8→from erk_shared.plan_store.conversion import header_str
+     9→from erk_shared.plan_store.types import Plan
+    10→
+    11→
+    12→def compute_lifecycle_display(plan: Plan, *, has_workflow_run: bool) -&gt; str:
+    13→    """Compute lifecycle stage display string for a plan.
+    14→
+    15→    Reads lifecycle_stage from plan header fields if present, otherwise
+    16→    infers from is_draft and pr_state in plan metadata. Returns a
+    17→    color-coded Rich markup string for table display.
+    18→
+    19→    When the resolved stage is "planned" and a workflow run exists,
+    20→    upgrades to "impl" since the plan is actively being worked on.
+    21→
+    22→    Args:
+    23→        plan: Plan with header_fields and metadata populated
+    24→        has_workflow_run: Whether the plan has an associated workflow run
+    25→
+    26→    Returns:
+    27→        Display string (may contain Rich markup for color)
+    28→    """
+    29→    # Read from header fields first
+    30→    stage = header_str(plan.header_fields, LIFECYCLE_STAGE)
+
+... [214 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_013BqkVvNNBmzPnwjc2w5eeU">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from datetime import datetime
+     7→
+     8→from erk_shared.gateway.github.types import IssueFilterState
+     9→
+    10→
+    11→@dataclass(frozen=True)
+    12→class PlanRowData:
+    13→    """Row data for displaying a plan in the TUI table.
+    14→
+    15→    Contains pre-formatted display strings and raw data needed for actions.
+    16→    Immutable to ensure table state consistency.
+    17→
+    18→    **Display vs Raw convention:** Many data points have both a raw field (for
+    19→    logic/predicates) and a display field (for table rendering). Raw fields are
+    20→    often nullable (None when absent), while display fields are always strings
+    21→    (dash "-" or empty when absent). Use raw fields in availability predicates
+    22→    (``ctx.row.pr_number is not None``), display fields for rendering.
+    23→
+    24→    Attributes:
+    25→
+    26→        plan_id: GitHub issue number (e.g., 123). Never None.
+    27→        plan_url: Full URL to the GitHub issue. None when unavailable.
+    28→        full_title: Complete untruncated plan title. Empty string possible.
+    29→        plan_body: Raw issue body text (markdown). Empty string possible.
+    30→
+
+... [201 lines omitted] ...
+
+    56→        run_conclusion: Run conclusion ("success", "failure", "cancelled").
+   168→    warnings: tuple[str, ...] = ()
+  </tool_result>
+  <tool_result tool="toolu_01ChSk5nCz3zCJjgTknt1HUQ">
+     1→"""Plan data provider interface for TUI plan tables.
+     2→
+     3→Import from submodules:
+     4→- abc: PlanDataProvider
+     5→- real: RealPlanDataProvider
+     6→- fake: FakePlanDataProvider, make_plan_row
+     7→"""
+     8→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01WYnLi4zJpqMd4GH3qTYusc">
+     1→"""Real implementation of PlanDataProvider for production use."""
+     2→
+     3→import logging
+     4→import subprocess
+     5→from datetime import datetime
+     6→from pathlib import Path
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk.core.display_utils import (
+    10→    format_relative_time,
+    11→    format_workflow_outcome,
+    12→    format_workflow_run_id,
+    13→    get_workflow_run_state,
+    14→)
+    15→from erk.core.pr_utils import select_display_pr
+    16→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    17→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+    18→from erk.tui.sorting.types import BranchActivity
+    19→from erk_shared.gateway.browser.abc import BrowserLauncher
+    20→from erk_shared.gateway.clipboard.abc import Clipboard
+    21→from erk_shared.gateway.github.ci_summary_parsing import parse_ci_summaries
+    22→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    23→from erk_shared.gateway.github.metadata.core import (
+    24→    extract_objective_from_comment,
+    25→    extract_objective_header_comment_id,
+    26→    extract_objective_slug,
+    27→)
+    28→from erk_shared.gateway.github.metadata.dependency_graph import (
+    29→    _TERMINAL_STATUSES,
+    30→    build_graph,
+
+... [1003 lines omitted] ...
+
+   207→            warnings=plan_data.warnings,
+   515→        """Fetch CI failure summaries for a pull request.
+   549→        Silently ignores all errors (sentinel paths in tests, missing directory,
+   565→        except Exception:
+   566→            logger.debug("Failed to write timing log", exc_info=True)
+   799→            phases, _errors = parse_roadmap(plan.body)
+  </tool_result>
+  <assistant>Now let me read the consumer files to understand how PlanDataProvider is currently used. I'll read these in parallel.</assistant>
+  <usage input_tokens="14062" cache_creation_input_tokens="17531" cache_read_input_tokens="31888" cache_creation="{'ephemeral_5m_input_tokens': 17531, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Axd3ASLjY1j97rj1GYynnD">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/sorting/types.py</param>
+  </tool_use>
+  <usage input_tokens="14062" cache_creation_input_tokens="17531" cache_read_input_tokens="31888" cache_creation="{'ephemeral_5m_input_tokens': 17531, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Qn5YRh5YPVcpHzmaiJHHA9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+  </tool_use>
+  <usage input_tokens="14062" cache_creation_input_tokens="17531" cache_read_input_tokens="31888" cache_creation="{'ephemeral_5m_input_tokens': 17531, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017BCxRLUsbZRWTHo11KoXy6">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/operations/workers.py</param>
+  </tool_use>
+  <usage input_tokens="14062" cache_creation_input_tokens="17531" cache_read_input_tokens="31888" cache_creation="{'ephemeral_5m_input_tokens': 17531, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014uoNvdf9TeQQ4fkZeN5NiB">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/plan_body_screen.py</param>
+  </tool_use>
+  <usage input_tokens="14062" cache_creation_input_tokens="17531" cache_read_input_tokens="31888" cache_creation="{'ephemeral_5m_input_tokens': 17531, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01PPMsLA4mD3M4VJPMGirCB6">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/check_runs_screen.py</param>
+  </tool_use>
+  <usage input_tokens="14062" cache_creation_input_tokens="17531" cache_read_input_tokens="31888" cache_creation="{'ephemeral_5m_input_tokens': 17531, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01AKic2CBWHRXCAjQZBQqzP9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/unresolved_comments_screen.py</param>
+  </tool_use>
+  <usage input_tokens="14062" cache_creation_input_tokens="17531" cache_read_input_tokens="31888" cache_creation="{'ephemeral_5m_input_tokens': 17531, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01F1PU6CiDgbU4SqwhxYzyQE">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/filter_actions.py</param>
+  </tool_use>
+  <usage input_tokens="14062" cache_creation_input_tokens="17531" cache_read_input_tokens="31888" cache_creation="{'ephemeral_5m_input_tokens': 17531, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014Dsz26vz4mnLX31voxyDck">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/app.py</param>
+  </tool_use>
+  <usage input_tokens="14062" cache_creation_input_tokens="17531" cache_read_input_tokens="31888" cache_creation="{'ephemeral_5m_input_tokens': 17531, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Axd3ASLjY1j97rj1GYynnD">
+     1→"""Sort state types for TUI dashboard."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from datetime import datetime
+     7→from enum import Enum, auto
+     8→
+     9→
+    10→class SortKey(Enum):
+    11→    """Available sort keys for plan list."""
+    12→
+    13→    PLAN_ID = auto()  # Default: sort by plan ID (descending)
+    14→    BRANCH_ACTIVITY = auto()  # Sort by most recent commit on branch
+    15→
+    16→
+    17→@dataclass(frozen=True)
+    18→class BranchActivity:
+    19→    """Branch activity data for a plan.
+    20→
+    21→    Represents the most recent commit on the branch (not in trunk),
+    22→    indicating how recently the branch was worked on.
+    23→
+    24→    Attributes:
+    25→        last_commit_at: Timestamp of most recent commit on branch, None if no commits
+    26→        last_commit_author: Author of most recent commit, None if no commits
+    27→    """
+    28→
+    29→    last_commit_at: datetime | None
+    30→    last_commit_author: str | None
+
+... [44 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Qn5YRh5YPVcpHzmaiJHHA9">
+     1→"""Navigation action handlers for TUI application."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING
+     6→
+     7→from erk.tui.commands.types import CommandContext
+     8→from erk.tui.data.types import PlanRowData
+     9→from erk.tui.screens.check_runs_screen import CheckRunsScreen
+    10→from erk.tui.screens.help_screen import HelpScreen
+    11→from erk.tui.screens.launch_screen import LaunchScreen
+    12→from erk.tui.screens.plan_body_screen import PlanBodyScreen
+    13→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+    14→from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
+    15→from erk.tui.views.types import ViewMode
+    16→from erk_shared.gateway.command_executor.real import RealCommandExecutor
+    17→
+    18→if TYPE_CHECKING:
+    19→    from erk.tui.app import ErkDashApp
+    20→
+    21→
+    22→class NavigationActionsMixin:
+    23→    """Mixin providing navigation and detail-view action handlers.
+    24→
+    25→    Includes action_exit_app, action_refresh, action_help, action_launch,
+    26→    action_show_detail, action_view_plan_body, action_view_comments,
+    27→    action_view_checks, action_cursor_down, action_cursor_up,
+    28→    action_open_pr, action_open_run, action_show_implement,
+    29→    action_copy_checkout, action_close_plan, and helpers.
+    30→    """
+
+... [289 lines omitted] ...
+
+   268→            self.notify("Cannot close plan: no issue URL", severity="warning")
+  </tool_result>
+  <tool_result tool="toolu_017BCxRLUsbZRWTHo11KoXy6">
+     1→"""Background worker methods for TUI operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import json
+     6→import subprocess
+     7→from typing import TYPE_CHECKING
+     8→
+     9→from textual import work
+    10→
+    11→from erk.tui.operations.logic import extract_learn_plan_number, last_output_line
+    12→
+    13→if TYPE_CHECKING:
+    14→    from erk.tui.app import ErkDashApp
+    15→
+    16→
+    17→class BackgroundWorkersMixin:
+    18→    """Mixin providing all @work(thread=True) background worker methods.
+    19→
+    20→    Methods access self._provider, self._run_streaming_operation,
+    21→    self._start_operation, self._finish_operation, self._update_operation,
+    22→    self.call_from_thread, self.notify, and self.action_refresh
+    23→    which are provided by ErkDashApp at runtime through inheritance.
+    24→    """
+    25→
+    26→    @work(thread=True)
+    27→    def _close_plan_async(self: ErkDashApp, op_id: str, plan_id: int, plan_url: str) -&gt; None:
+    28→        """Close plan in background thread with toast notifications.
+    29→
+    30→        Args:
+
+... [404 lines omitted] ...
+
+    35→        # Error boundary: catch all exceptions from the close operation to display
+    48→        except Exception as e:
+    49→            # Error toast
+    53→                f"Failed to close plan #{plan_id}: {e}",
+    54→                severity="error",
+    82→            error_msg = last_output_line(result)
+    85→                f"Failed to dispatch address for PR #{pr_number}: {error_msg}",
+    86→                severity="error",
+   116→            error_msg = last_output_line(result)
+   119→                f"Failed to dispatch rebase for PR #{pr_number}: {error_msg}",
+   120→                severity="error",
+   155→            error_msg = last_output_line(result)
+   158→                f"Failed to create cmux workspace for PR #{pr_number}: {error_msg}",
+   159→                severity="error",
+   189→        except json.JSONDecodeError:
+   236→            error_msg = last_output_line(result)
+   239→                f"Failed to dispatch rewrite for PR #{pr_number}: {error_msg}",
+   240→                severity="error",
+   270→            error_msg = last_output_line(result)
+   274→                f"Failed to land PR #{pr_number}: {error_msg}",
+   275→                severity="error",
+   308→                error_msg = last_output_line(obj_result)
+   311→                    f"Failed to update objective #{objective_issue}: {error_msg}",
+   312→                    severity="error",
+   330→            error_msg = last_output_line(result)
+   333→                f"Failed to dispatch plan #{plan_id}: {error_msg}",
+   334→                severity="error",
+   350→            error_msg = last_output_line(result)
+   353→                f"Failed to close objective #{plan_id}: {error_msg}",
+   354→                severity="error",
+   369→            error_msg = last_output_line(result)
+   372→                f"Failed to check objective #{plan_id}: {error_msg}",
+   373→                severity="error",
+   391→            error_msg = last_output_line(result)
+   394→                f"Failed to dispatch one-shot plan for objective #{plan_id}: {error_msg}",
+   395→                severity="error",
+   411→            error_msg = last_output_line(result)
+   414→                f"One-shot dispatch failed: {error_msg}",
+   415→                severity="error",
+  </tool_result>
+  <tool_result tool="toolu_014uoNvdf9TeQQ4fkZeN5NiB">
+     1→"""Modal screen displaying the full plan text fetched on-demand."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import Literal
+     6→
+     7→from textual import work
+     8→from textual.app import ComposeResult
+     9→from textual.binding import Binding
+    10→from textual.containers import Container, Vertical
+    11→from textual.events import Key
+    12→from textual.screen import ModalScreen
+    13→from textual.widgets import Label, Markdown
+    14→
+    15→from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+    16→
+    17→
+    18→class PlanBodyScreen(ModalScreen):
+    19→    """Modal screen displaying the full plan text fetched on-demand."""
+    20→
+    21→    BINDINGS = [
+    22→        Binding("escape", "dismiss", "Close"),
+    23→        Binding("q", "dismiss", "Close"),
+    24→        Binding("space", "dismiss", "Close"),
+    25→    ]
+    26→
+    27→    DEFAULT_CSS = """
+    28→    PlanBodyScreen {
+    29→        align: center middle;
+    30→    }
+
+... [170 lines omitted] ...
+
+    87→    #body-error {
+    88→        color: $error;
+   118→        self._error: str | None = None
+   147→        error: str | None = None
+   149→        # Error boundary: catch all exceptions from HTTP operations to display
+   156→        except Exception as e:
+   157→            error = str(e)
+   160→        self.app.call_from_thread(self._on_content_loaded, content, error)
+   162→    def _on_content_loaded(self, content: str | None, error: str | None) -&gt; None:
+   167→            error: Error message if fetch failed, or None
+   171→        self._error = error
+   181→        if error is not None:
+   182→            container.mount(Label(f"Error: {error}", id="body-error"))
+  </tool_result>
+  <tool_result tool="toolu_01PPMsLA4mD3M4VJPMGirCB6">
+     1→"""Modal screen displaying failing CI check runs for a PR."""
+     2→
+     3→from textual import work
+     4→from textual.app import ComposeResult
+     5→from textual.binding import Binding
+     6→from textual.containers import Container, Vertical
+     7→from textual.screen import ModalScreen
+     8→from textual.widgets import Label, Markdown
+     9→
+    10→from erk_shared.gateway.github.ci_summary_parsing import match_summary_to_check
+    11→from erk_shared.gateway.github.types import PRCheckRun
+    12→from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+    13→
+    14→
+    15→def _format_check_line(check: PRCheckRun) -&gt; str:
+    16→    """Format a single check run as a markdown list item.
+    17→
+    18→    Args:
+    19→        check: The check run to format
+    20→
+    21→    Returns:
+    22→        Markdown list item string
+    23→    """
+    24→    conclusion_str = check.conclusion or "in progress"
+    25→    if check.detail_url is not None:
+    26→        return f"- **{check.name}** — {conclusion_str} ([details]({check.detail_url}))"
+    27→    return f"- **{check.name}** — {conclusion_str}"
+    28→
+    29→
+    30→def _format_summary_blockquote(
+
+... [283 lines omitted] ...
+
+   158→    #checks-error {
+   159→        color: $error;
+   223→        error: str | None = None
+   227→        except Exception as e:
+   228→            error = str(e)
+   230→        self.app.call_from_thread(self._on_check_runs_loaded, check_runs, error)
+   232→    def _on_check_runs_loaded(self, check_runs: list[PRCheckRun], error: str | None) -&gt; None:
+   240→            error: Error message if fetch failed, or None
+   247→        if error is not None:
+   248→            container.mount(Label(f"Error: {error}", id="checks-error"))
+   265→        container.mount(Label("Loading failure summaries...", id="checks-summaries-loading"))
+   270→        """Fetch CI failure summaries in background thread."""
+   275→        except Exception:
+   276→            # Summaries are best-effort; silently ignore failures
+  </tool_result>
+  <tool_result tool="toolu_01AKic2CBWHRXCAjQZBQqzP9">
+     1→"""Modal screen displaying unresolved PR review comments."""
+     2→
+     3→from textual import work
+     4→from textual.app import ComposeResult
+     5→from textual.binding import Binding
+     6→from textual.containers import Container, Vertical
+     7→from textual.screen import ModalScreen
+     8→from textual.widgets import Label, Markdown
+     9→
+    10→from erk_shared.gateway.github.types import PRReviewThread
+    11→from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+    12→
+    13→
+    14→def _format_threads(threads: list[PRReviewThread]) -&gt; str:
+    15→    """Format review threads as markdown for display.
+    16→
+    17→    Args:
+    18→        threads: List of unresolved PRReviewThread objects
+    19→
+    20→    Returns:
+    21→        Markdown-formatted string with thread details
+    22→    """
+    23→    if not threads:
+    24→        return "*No unresolved comments*"
+    25→
+    26→    parts: list[str] = []
+    27→    for thread in threads:
+    28→        line_suffix = f":{thread.line}" if thread.line is not None else ""
+    29→        header = f"### `{thread.path}{line_suffix}`"
+    30→
+
+... [181 lines omitted] ...
+
+   119→    #comments-error {
+   120→        color: $error;
+   177→        error: str | None = None
+   179→        # Error boundary: catch all exceptions from API operations to display
+   183→        except Exception as e:
+   184→            error = str(e)
+   186→        self.app.call_from_thread(self._on_comments_loaded, threads, error)
+   188→    def _on_comments_loaded(self, threads: list[PRReviewThread], error: str | None) -&gt; None:
+   193→            error: Error message if fetch failed, or None
+   200→        if error is not None:
+   201→            container.mount(Label(f"Error: {error}", id="comments-error"))
+  </tool_result>
+  <tool_result tool="toolu_01F1PU6CiDgbU4SqwhxYzyQE">
+     1→"""Filter action handlers for TUI application."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING
+     6→
+     7→from erk.tui.filtering.types import FilterState
+     8→from erk.tui.sorting.types import BranchActivity, SortKey
+     9→
+    10→if TYPE_CHECKING:
+    11→    from erk.tui.app import ErkDashApp
+    12→
+    13→
+    14→class FilterActionsMixin:
+    15→    """Mixin providing filter and sort action handlers.
+    16→
+    17→    Includes action_start_filter, action_toggle_stack_filter,
+    18→    action_toggle_objective_filter, action_toggle_sort,
+    19→    and related helpers.
+    20→    """
+    21→
+    22→    def action_start_filter(self: ErkDashApp) -&gt; None:
+    23→        """Activate filter mode and focus the input."""
+    24→        if self._filter_input is None:
+    25→            return
+    26→        self._filter_state = self._filter_state.activate()
+    27→        self._filter_input.disabled = False
+    28→        self._filter_input.add_class("visible")
+    29→        self._filter_input.focus()
+    30→
+
+... [159 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014Dsz26vz4mnLX31voxyDck">
+     1→"""Main Textual application for erk dash interactive mode."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import asyncio
+     6→import time
+     7→from collections.abc import Iterator
+     8→from datetime import datetime
+     9→from pathlib import Path
+    10→
+    11→from textual import on
+    12→from textual.app import App, ComposeResult, SystemCommand
+    13→from textual.binding import Binding
+    14→from textual.containers import Container
+    15→from textual.screen import Screen
+    16→from textual.widgets import Header, Input, Label
+    17→
+    18→from erk.tui.actions.filter_actions import FilterActionsMixin
+    19→from erk.tui.actions.navigation import NavigationActionsMixin
+    20→from erk.tui.actions.palette import PaletteActionsMixin
+    21→from erk.tui.commands.provider import MainListCommandProvider
+    22→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+    23→from erk.tui.filtering.logic import filter_plans
+    24→from erk.tui.filtering.types import FilterMode, FilterState
+    25→from erk.tui.operations.logic import build_github_url
+    26→from erk.tui.operations.streaming import StreamingOperationsMixin
+    27→from erk.tui.operations.workers import BackgroundWorkersMixin
+    28→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+    29→from erk.tui.sorting.logic import sort_plans
+    30→from erk.tui.sorting.types import BranchActivity, SortKey, SortState
+
+... [512 lines omitted] ...
+
+   232→        except Exception as e:
+   233→            # GitHub API failure, network error, etc.
+   234→            self.notify(f"Failed to load plans: {e}", severity="error", timeout=5)
+   360→            if severity in ("information", "warning", "error"):
+   502→                    self.notify("Clipboard unavailable", severity="error", timeout=2)
+  </tool_result>
+  <assistant>Now let me check the remaining consumer files and the existing `__init__` files, plus the CLI consumers.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="44385" cache_read_input_tokens="49419" cache_creation="{'ephemeral_5m_input_tokens': 44385, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01EmGPVwicAc4KLEKnfy1mxY">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="44385" cache_read_input_tokens="49419" cache_creation="{'ephemeral_5m_input_tokens': 44385, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01VvqDwm9rUmfaE6DyVrCSyd">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/dash_data.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="44385" cache_read_input_tokens="49419" cache_creation="{'ephemeral_5m_input_tokens': 44385, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01JXWMfDXyjrvWEovpESd3Mk">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/command_executor/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="44385" cache_read_input_tokens="49419" cache_creation="{'ephemeral_5m_input_tokens': 44385, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EmGPVwicAc4KLEKnfy1mxY">
+     1→"""Command to list plans with filtering."""
+     2→
+     3→from collections.abc import Callable
+     4→from typing import ParamSpec, TypeVar
+     5→
+     6→import click
+     7→from rich.console import Console
+     8→from rich.table import Table
+     9→from rich.text import Text
+    10→
+    11→from erk.cli.core import discover_repo_context
+    12→from erk.core.context import ErkContext
+    13→from erk.core.display_utils import strip_rich_markup
+    14→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    15→from erk.tui.app import ErkDashApp
+    16→from erk.tui.data.types import PlanFilters, PlanRowData
+    17→from erk.tui.sorting.logic import sort_plans
+    18→from erk.tui.sorting.types import SortKey, SortState
+    19→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    20→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    21→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    22→from erk_shared.gateway.clipboard.real import RealClipboard
+    23→from erk_shared.gateway.github.emoji import get_pr_status_emoji
+    24→from erk_shared.gateway.github.types import (
+    25→    GitHubRepoId,
+    26→    GitHubRepoLocation,
+    27→    IssueFilterState,
+    28→    PullRequestInfo,
+    29→)
+    30→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+
+... [512 lines omitted] ...
+
+    83→            ["queued", "in_progress", "success", "failure", "cancelled"], case_sensitive=False
+   259→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+   279→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+   308→    # Display warnings about degraded data quality
+   309→    if timings is not None and timings.warnings:
+   310→        for warning in timings.warnings:
+   311→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   376→        user_output(click.style("Error: ", fg="red") + "Could not determine repository owner/name")
+   398→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+  </tool_result>
+  <tool_result tool="toolu_01VvqDwm9rUmfaE6DyVrCSyd">
+     1→"""Serialize plan dashboard data to JSON for external consumers.
+     2→
+     3→Usage:
+     4→    erk exec dash-data [--state open|closed] [--label LABEL] [--limit N]
+     5→        [--show-prs/--no-show-prs] [--show-runs/--no-show-runs]
+     6→        [--run-state STATE] [--creator USER]
+     7→
+     8→Output:
+     9→    JSON with {success, plans, count}
+    10→
+    11→Exit Codes:
+    12→    0: Success
+    13→    1: Error (missing repo info, API error)
+    14→"""
+    15→
+    16→import dataclasses
+    17→import json
+    18→from datetime import datetime
+    19→from typing import Any
+    20→
+    21→import click
+    22→
+    23→from erk.cli.core import discover_repo_context
+    24→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    25→from erk.tui.data.types import PlanFilters, PlanRowData
+    26→from erk_shared.context.helpers import require_context
+    27→from erk_shared.gateway.browser.real import RealBrowserLauncher
+    28→from erk_shared.gateway.clipboard.real import RealClipboard
+    29→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation, IssueFilterState
+    30→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+
+... [92 lines omitted] ...
+
+    78→            json.dumps({"success": False, "error": "Could not determine repository owner/name"})
+    89→        click.echo(json.dumps({"success": False, "error": "GitHub authentication not available"}))
+  </tool_result>
+  <tool_result tool="toolu_01JXWMfDXyjrvWEovpESd3Mk">
+     1→"""Abstract interface for executing palette commands."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→
+     5→
+     6→class CommandExecutor(ABC):
+     7→    """Abstract interface for executing palette commands.
+     8→
+     9→    This ABC defines the operations that commands can perform.
+    10→    Real and fake implementations handle the actual execution.
+    11→    """
+    12→
+    13→    @abstractmethod
+    14→    def open_url(self, url: str) -&gt; None:
+    15→        """Open URL in browser.
+    16→
+    17→        Args:
+    18→            url: The URL to open
+    19→        """
+    20→        ...
+    21→
+    22→    @abstractmethod
+    23→    def copy_to_clipboard(self, text: str) -&gt; None:
+    24→        """Copy text to clipboard.
+    25→
+    26→        Args:
+    27→            text: The text to copy
+    28→        """
+    29→        ...
+    30→
+
+... [43 lines omitted] ...
+
+    50→            severity: Optional severity level ("information", "warning", "error")
+  </tool_result>
+  <assistant>I now have a thorough understanding of the codebase. Let me also check existing tests and load required skills before starting implementation. Let me create the todo list and load required documentation/skills.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9696" cache_read_input_tokens="93804" cache_creation="{'ephemeral_5m_input_tokens': 9696, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01CuCJUhq1xMYBLwmaKuHNJZ">
+    <param name="todos">[{'content': 'Create PlanService ABC in erk_shared/gateway/plan_service/abc.py', 'status':...[truncated 1369 chars]...nd fix issues', 'status': 'pending', 'activeForm': 'Running CI checks and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9696" cache_read_input_tokens="93804" cache_creation="{'ephemeral_5m_input_tokens': 9696, 'ephemeral_1h_input_tokens': 0}" output_tokens="574" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CuCJUhq1xMYBLwmaKuHNJZ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me also load the skills and check existing tests, plus signal GitHub started.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="603" cache_read_input_tokens="103500" cache_creation="{'ephemeral_5m_input_tokens': 603, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01Aef9ThN4BnZCBVcnrybfm3">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="603" cache_read_input_tokens="103500" cache_creation="{'ephemeral_5m_input_tokens': 603, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Aef9ThN4BnZCBVcnrybfm3">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <tool_use name="Read" id="toolu_01C6sXsfHQijwc1KEV1gHFPf">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="892" cache_read_input_tokens="104103" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_018wwGXyr3kcbEbtAXZihtDK">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/versions/python-3.10.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="892" cache_read_input_tokens="104103" cache_creation="{'ephemeral_5m_input_tokens': 892, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01C6sXsfHQijwc1KEV1gHFPf">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [491 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   103→The key distinction: if removing the assert would cause a runtime error, it's control flow (WRONG). If removing it would only lose type information, it's type narrowing (ACCEPTABLE).
+   115→- `.resolve()` raises `OSError` for non-existent paths
+   116→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   117→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   132→# WRONG: Using exceptions for path validation
+   137→except (OSError, ValueError):
+   177→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   208→**The only acceptable exception:** Resolving genuine name collisions between two different modules that export identically-named symbols.
+   217→# CORRECT (rare exception): Resolving genuine collision
+   469→    log.warning("Non-numeric plan_id")
+   483→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   510→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_018wwGXyr3kcbEbtAXZihtDK">
+     1→---
+     2→---
+     3→
+     4→# Type Annotations - Python 3.10
+     5→
+     6→This document provides complete, canonical type annotation guidance for Python 3.10. This is the baseline for modern Python type syntax.
+     7→
+     8→## Overview
+     9→
+    10→Python 3.10 introduced major improvements to type annotation syntax through PEP 604 (union types via `|`) and PEP 585 (generic types in standard collections). These features eliminated the need for most `typing` module imports and made type annotations more concise and readable.
+    11→
+    12→**What's new in 3.10:**
+    13→
+    14→- Union types with `|` operator (PEP 604)
+    15→- Built-in generic types: `list[T]`, `dict[K, V]`, etc. (PEP 585)
+    16→- No more need for `List`, `Dict`, `Union`, `Optional` from typing
+    17→
+    18→**What you need from typing module:**
+    19→
+    20→- `TypeVar` for generic functions/classes
+    21→- `Protocol` for structural typing (rare - prefer ABC)
+    22→- `TYPE_CHECKING` for conditional imports
+    23→- `Any` (use sparingly)
+    24→
+    25→## Complete Type Annotation Syntax for Python 3.10
+    26→
+    27→### Basic Collection Types
+    28→
+    29→✅ **PREFERRED** - Use built-in generic types:
+    30→
+
+... [493 lines omitted] ...
+
+   303→            raise ValueError("Entity must have id")
+   375→        raise FileNotFoundError(f"Config not found: {path}")
+   385→### API Client with Error Handling
+   394→    """Container for API response with data or error."""
+   396→    def __init__(self, data: T | None = None, error: str | None = None) -&gt; None:
+   398→        self.error = error
+   401→        return self.error is None
+   407→        return ApiResponse(error=self.error)
+   445→All code should pass type checking without errors.
+  </tool_result>
+  <assistant>Good. Now let me signal GitHub started and begin the implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11311" cache_read_input_tokens="104995" cache_creation="{'ephemeral_5m_input_tokens': 11311, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01WHsajHkj9KGp9kv24mXSXR">
+    <param name="command">erk exec impl-signal started --session-id "b19a5d49-0f2f-4043-a247-1bf50bfddad1" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11311" cache_read_input_tokens="104995" cache_creation="{'ephemeral_5m_input_tokens': 11311, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WHsajHkj9KGp9kv24mXSXR">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8804
+}
+  </tool_result>
+  <assistant>Now let me check the existing tests to understand what needs updating.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="116306" cache_creation="{'ephemeral_5m_input_tokens': 542, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01WeTCygPBVNdVM82iQX7A1H">
+    <param name="description">Find all test files for plan_data_provider</param>
+    <param name="prompt">Find all test files related to plan_data_provider and also any imports of PlanDataProvider...[truncated 225 chars]...om erk_shared.gateway.plan_data_provider
+
+Report file paths and the specific import lines.</param>
+    <param name="subagent_type">Explore</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="116306" cache_creation="{'ephemeral_5m_input_tokens': 542, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WeTCygPBVNdVM82iQX7A1H">
+Perfect! Now I have all the information needed. Let me compile a comprehensive report:
+
+## Comprehensive Search Results: PlanDataProvider Test Files and Imports
+
+I've conducted a thorough search of the codebase. Here's the complete inventory:
+
+### TEST FILES RELATED TO plan_data_provider
+
+**Direct test file for plan_data_provider:**
+- `/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py`
+
+**Test files importing from plan_data_provider (24 files):**
+
+1. `/home/runner/work/erk/erk/tests/unit/plan_store/test_lifecycle_display.py`
+   - Import: `from erk_shared.gateway.plan_data_provider.lifecycle import compute_lifecycle_display, compute_status_indicators, format_lifecycle_with_status`
+
+2. `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_dash_data.py`
+   - Import: `from erk_shared.gateway.plan_data_provider.fake import make_plan_row`
+
+3. `/home/runner/work/erk/erk/tests/tui/data/test_provider.py`
+   - Import: `from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider`
+
+4. `/home/runner/work/erk/erk/tests/tui/data/test_fetch_objective_content.py`
+   - Import: `from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider`
+
+5. `/home/runner/work/erk/erk/tests/tui/data/test_fetch_plan_content.py`
+   - Import: `from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider`
+
+6. `/home/runner/work/erk/erk/tests/tui/filtering/test_logic.py`
+   - Import: `from erk_shared.gateway.plan_data_provider.fake import make_plan_row`
+
+... [104 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent. That's a comprehensive inventory. Now I have a clear picture. Let me start implementing. This is a large refactoring, so I'll work through each step systematically.
+
+**Step 1: Create PlanService ABC**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2714" cache_read_input_tokens="116848" cache_creation="{'ephemeral_5m_input_tokens': 2714, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_015T1N84UbBZ78fptn8DY2Mj">
+    <param name="todos">[{'content': 'Create PlanService ABC in erk_shared/gateway/plan_service/abc.py', 'status':...[truncated 1373 chars]...nd fix issues', 'status': 'pending', 'activeForm': 'Running CI checks and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2714" cache_read_input_tokens="116848" cache_creation="{'ephemeral_5m_input_tokens': 2714, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015T1N84UbBZ78fptn8DY2Mj">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01HionfqrDisDgy85Pg5hiWS">
+    <param name="command">mkdir -p /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service</param>
+    <param name="description">Create plan_service package directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="616" cache_read_input_tokens="119562" cache_creation="{'ephemeral_5m_input_tokens': 616, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HionfqrDisDgy85Pg5hiWS">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01FzXroYEdWohPoEdggcAgxZ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/__init__.py</param>
+    <param name="content">"""Plan service interface for domain operations.
+
+Import from submodules:
+- abc: PlanService
+- real: RealPlanService
+- fake: FakePlanService
+"""
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="134" cache_read_input_tokens="120178" cache_creation="{'ephemeral_5m_input_tokens': 134, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01QAX4QmH36YuJufqYhWCXK1">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py</param>
+    <param name="content">"""Domain service ABC for plan operations (no TUI type dependencies)."""
+
+from abc import ...[truncated 3645 chars]...mmary text. Empty dict if no
+            summaries are available.
+        """
+        ...
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="134" cache_read_input_tokens="120178" cache_creation="{'ephemeral_5m_input_tokens': 134, 'ephemeral_1h_input_tokens': 0}" output_tokens="1220" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FzXroYEdWohPoEdggcAgxZ">
+File created successfully at: /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/__init__.py
+  </tool_result>
+  <tool_result tool="toolu_01QAX4QmH36YuJufqYhWCXK1">
+File created successfully at: /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/abc.py
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_016X6iAKTud9aUimrA3M2E5a">
+    <param name="todos">[{'content': 'Create PlanService ABC in erk_shared/gateway/plan_service/abc.py', 'status':...[truncated 1375 chars]...nd fix issues', 'status': 'pending', 'activeForm': 'Running CI checks and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1361" cache_read_input_tokens="120312" cache_creation="{'ephemeral_5m_input_tokens': 1361, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016X6iAKTud9aUimrA3M2E5a">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Step 2: Create RealPlanService** - extracting the domain methods from RealPlanDataProvider.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="564" cache_read_input_tokens="121673" cache_creation="{'ephemeral_5m_input_tokens': 564, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01WPaAroyN8bqeBidPLCsyG9">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/real.py</param>
+    <param name="content">"""Real implementation of PlanService for production use."""
+
+import subprocess
+from pathl...[truncated 7907 chars]...url.split("/")
+    if len(parts) &lt; 5:
+        return None
+    return (parts[3], parts[4])
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="564" cache_read_input_tokens="121673" cache_creation="{'ephemeral_5m_input_tokens': 564, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WPaAroyN8bqeBidPLCsyG9">
+File created successfully at: /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/real.py
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_013AaMRB3hb7TD1nL98S1nVM">
+    <param name="todos">[{'content': 'Create PlanService ABC in erk_shared/gateway/plan_service/abc.py', 'status':...[truncated 1377 chars]...nd fix issues', 'status': 'pending', 'activeForm': 'Running CI checks and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2412" cache_read_input_tokens="122237" cache_creation="{'ephemeral_5m_input_tokens': 2412, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013AaMRB3hb7TD1nL98S1nVM">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Step 3: Create FakePlanService**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="564" cache_read_input_tokens="124649" cache_creation="{'ephemeral_5m_input_tokens': 564, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01GTJbpq7NE1MGqojKaBY8Sm">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py</param>
+    <param name="content">"""Fake plan service for testing."""
+
+from pathlib import Path
+
+from erk_shared.gateway.br...[truncated 6596 chars]... name to summary text
+        """
+        self._ci_summaries_by_pr[pr_number] = summaries
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="564" cache_read_input_tokens="124649" cache_creation="{'ephemeral_5m_input_tokens': 564, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GTJbpq7NE1MGqojKaBY8Sm">
+File created successfully at: /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_service/fake.py
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01LHcbFTGSjfPQTS3arMxYAR">
+    <param name="todos">[{'content': 'Create PlanService ABC in erk_shared/gateway/plan_service/abc.py', 'status':...[truncated 1379 chars]...nd fix issues', 'status': 'pending', 'activeForm': 'Running CI checks and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2037" cache_read_input_tokens="125213" cache_creation="{'ephemeral_5m_input_tokens': 2037, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LHcbFTGSjfPQTS3arMxYAR">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Step 4: Create slimmed PlanDataProvider ABC in erk.tui.data**
+
+Now I need to rewrite the PlanDataProvider ABC to only have the 4 TUI methods. Let me check what exists in tui/data/ first:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="564" cache_read_input_tokens="127250" cache_creation="{'ephemeral_5m_input_tokens': 564, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="global" />
+</session>

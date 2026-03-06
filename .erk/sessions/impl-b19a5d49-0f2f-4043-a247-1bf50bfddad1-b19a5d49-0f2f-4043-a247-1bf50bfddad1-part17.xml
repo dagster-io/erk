@@ -1,0 +1,196 @@
+<session>
+  <meta source="agent-a1f5013" />
+  <meta branch="plnd/split-plan-data-provider-03-06-0149" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>In /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py, `repo_root` is now accessed via `self._service.repo_root` (the PlanService), not `self._provider.repo_root`.
+
+Fix pattern:
+1. Where tests pass `repo_root=tmp_path` to `FakePlanDataProvider(...)`, remove it from the provider constructor and add it to `FakePlanService(repo_root=tmp_path)`.
+2. Update `service=FakePlanService()` to `service=FakePlanService(repo_root=tmp_path)`.
+
+Read the file first, find all instances, and make the edits. Do NOT change any other logic.</user>
+  <assistant>I'll read the file first to find all instances where `repo_root` needs to be moved from `FakePlanDataProvider` to `FakePlanService`.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5970" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 5970, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016LCxSbSSmq73bDf3cYT1DP">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5970" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 5970, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016LCxSbSSmq73bDf3cYT1DP">
+     1→"""Tests for multi-operation status bar tracking."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import pytest
+     6→
+     7→from erk.tui.app import ErkDashApp
+     8→from erk.tui.data.types import PlanFilters
+     9→from erk.tui.widgets.status_bar import StatusBar
+    10→from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+    11→from erk_shared.gateway.plan_service.fake import FakePlanService
+    12→
+    13→
+    14→class _FakePopen:
+    15→    """Fake subprocess.Popen that yields configurable output lines."""
+    16→
+    17→    def __init__(self, *, lines: tuple[str, ...] = (), return_code: int = 0) -&gt; None:
+    18→        self._return_code = return_code
+    19→        self.stdout: list[str] = [line + "\n" for line in lines]
+    20→
+    21→    def wait(self) -&gt; int:
+    22→        return self._return_code
+    23→
+    24→
+    25→class TestOperationTracking:
+    26→    """Tests for multi-operation status bar tracking.
+    27→
+    28→    Verifies that async operations register via start_operation, stream
+    29→    progress via update_operation, and clean up via finish_operation.
+    30→    """
+
+... [286 lines omitted] ...
+
+   136→    async def test_address_remote_finishes_operation_on_failure(
+   139→        """_address_remote_async finishes operation on failure."""
+   150→            return _FakePopen(lines=("dispatch failed",), return_code=1)
+   206→    async def test_land_pr_finishes_operation_on_failure(
+   209→        """_land_pr_async finishes operation on failure."""
+   220→            return _FakePopen(lines=("land failed",), return_code=1)
+  </tool_result>
+  <assistant>Now I'll identify all instances where `repo_root=tmp_path` is passed to `FakePlanDataProvider` and needs to be moved to `FakePlanService`. Looking at the file, I can see:
+
+1. Line 82: `repo_root=tmp_path` in `FakePlanDataProvider`
+2. Line 111: `repo_root=tmp_path` in `FakePlanDataProvider`
+3. Line 144: `repo_root=tmp_path` in `FakePlanDataProvider`
+4. Line 176: `repo_root=tmp_path` in `FakePlanDataProvider`
+5. Line 214: `repo_root=tmp_path` in `FakePlanDataProvider`
+
+And corresponding lines where `FakePlanService()` needs to be updated:
+- Line 85: `service=FakePlanService()` → needs `repo_root=tmp_path`
+- Line 114: `service=FakePlanService()` → needs `repo_root=tmp_path`
+- Line 147: `service=FakePlanService()` → needs `repo_root=tmp_path`
+- Line 179: `service=FakePlanService()` → needs `repo_root=tmp_path`
+- Line 217: `service=FakePlanService()` → needs `repo_root=tmp_path`
+
+Let me make these edits:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="7387" cache_read_input_tokens="16067" cache_creation="{'ephemeral_5m_input_tokens': 7387, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Q9CWcMpzQkyTVd8sYgJZnw">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+    <param name="old_string">        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row...[truncated 165 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+    <param name="new_string">        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row...[truncated 151 chars]...rovider, service=FakePlanService(repo_root=tmp_path), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="7387" cache_read_input_tokens="16067" cache_creation="{'ephemeral_5m_input_tokens': 7387, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q9CWcMpzQkyTVd8sYgJZnw">
+The file /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01HijSPQFFN6uVXYtgUsNBRs">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+    <param name="old_string">        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan"...[truncated 98 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+    <param name="new_string">        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan"...[truncated 84 chars]...rovider, service=FakePlanService(repo_root=tmp_path), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="703" cache_read_input_tokens="23454" cache_creation="{'ephemeral_5m_input_tokens': 703, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HijSPQFFN6uVXYtgUsNBRs">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:         provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan", pr_number=456)],
+            repo_root=tmp_path,
+        )
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>I need to provide more context to uniquely identify each occurrence. Let me do them one at a time:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="460" cache_read_input_tokens="24157" cache_creation="{'ephemeral_5m_input_tokens': 460, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01NJR2QiBDNQg6XSSsKrjb6r">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+    <param name="old_string">    async def test_address_remote_finishes_operation_on_success(
+        self, monkeypatch...[truncated 334 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    async def test_address_remote_finishes_operation_on_success(
+        self, monkeypatch...[truncated 320 chars]...rovider, service=FakePlanService(repo_root=tmp_path), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="460" cache_read_input_tokens="24157" cache_creation="{'ephemeral_5m_input_tokens': 460, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NJR2QiBDNQg6XSSsKrjb6r">
+The file /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CFuh9oECGLvYXZm1aE5ZtK">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+    <param name="old_string">    async def test_address_remote_finishes_operation_on_failure(
+        self, monkeypatch...[truncated 334 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    async def test_address_remote_finishes_operation_on_failure(
+        self, monkeypatch...[truncated 320 chars]...rovider, service=FakePlanService(repo_root=tmp_path), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="595" cache_read_input_tokens="24617" cache_creation="{'ephemeral_5m_input_tokens': 595, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CFuh9oECGLvYXZm1aE5ZtK">
+The file /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PJrjQBXhzi6BENBzx8rJwu">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+    <param name="old_string">    async def test_land_pr_finishes_operation_on_success(
+        self, monkeypatch: pytes...[truncated 350 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    async def test_land_pr_finishes_operation_on_success(
+        self, monkeypatch: pytes...[truncated 336 chars]...rovider, service=FakePlanService(repo_root=tmp_path), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="467" cache_read_input_tokens="25212" cache_creation="{'ephemeral_5m_input_tokens': 467, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PJrjQBXhzi6BENBzx8rJwu">
+The file /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015fHFfmub8jtmKQSMaywEjc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+    <param name="old_string">    async def test_land_pr_finishes_operation_on_failure(
+        self, monkeypatch: pytes...[truncated 350 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    async def test_land_pr_finishes_operation_on_failure(
+        self, monkeypatch: pytes...[truncated 336 chars]...rovider, service=FakePlanService(repo_root=tmp_path), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="487" cache_read_input_tokens="25679" cache_creation="{'ephemeral_5m_input_tokens': 487, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015fHFfmub8jtmKQSMaywEjc">
+The file /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! Let me verify the changes by reading the file again to confirm all instances have been updated correctly:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="591" cache_read_input_tokens="26166" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019owkvUEwVSS6n4nnZmqbBR">
+    <param name="command">grep -n "repo_root" /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py</param>
+    <param name="description">Verify all repo_root references</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="591" cache_read_input_tokens="26166" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019owkvUEwVSS6n4nnZmqbBR">
+84:        app = ErkDashApp(provider=provider, service=FakePlanService(repo_root=tmp_path), filters=filters, refresh_interval=0)
+112:        app = ErkDashApp(provider=provider, service=FakePlanService(repo_root=tmp_path), filters=filters, refresh_interval=0)
+144:        app = ErkDashApp(provider=provider, service=FakePlanService(repo_root=tmp_path), filters=filters, refresh_interval=0)
+175:        app = ErkDashApp(provider=provider, service=FakePlanService(repo_root=tmp_path), filters=filters, refresh_interval=0)
+212:        app = ErkDashApp(provider=provider, service=FakePlanService(repo_root=tmp_path), filters=filters, refresh_interval=0)
+  </tool_result>
+  <assistant>Excellent! All changes have been successfully applied. Let me verify that there are no remaining instances of `repo_root` being passed to `FakePlanDataProvider`:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="351" cache_read_input_tokens="26757" cache_creation="{'ephemeral_5m_input_tokens': 351, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Uc1TmiVUUUw5Nu5wdkbZQ6">
+    <param name="command">grep -A2 "FakePlanDataProvider" /home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py | grep "repo_root"</param>
+    <param name="description">Check for any remaining repo_root in FakePlanDataProvider</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="351" cache_read_input_tokens="26757" cache_creation="{'ephemeral_5m_input_tokens': 351, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Uc1TmiVUUUw5Nu5wdkbZQ6">
+
+  </tool_result>
+  <assistant>Perfect! The grep returned nothing, confirming that no `repo_root` parameters remain in any `FakePlanDataProvider` constructor calls.
+
+## Summary
+
+Successfully updated `/home/runner/work/erk/erk/tests/tui/app/test_operation_tracking.py` to fix the `repo_root` access pattern:
+
+**Changes made (5 test methods):**
+
+1. `test_close_plan_starts_then_finishes_operation` (line 76)
+2. `test_address_remote_finishes_operation_on_success` (line 103)
+3. `test_address_remote_finishes_operation_on_failure` (line 136)
+4. `test_land_pr_finishes_operation_on_success` (line 168)
+5. `test_land_pr_finishes_operation_on_failure` (line 206)
+
+**Pattern applied:**
+- Removed `repo_root=tmp_path` from `FakePlanDataProvider(...)` constructors
+- Added `repo_root=tmp_path` to `FakePlanService(...)` constructors
+
+All instances have been updated to reflect that `repo_root` is now accessed via `self._service.repo_root` (the PlanService) rather than `self._provider.repo_root`. No other logic was changed.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="278" cache_read_input_tokens="27108" cache_creation="{'ephemeral_5m_input_tokens': 278, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,50 @@
+<session>
+  <meta source="agent-a2d641e" />
+  <meta branch="plnd/split-plan-data-provider-03-06-0149" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Run the following command and report results. Do NOT fix anything, just report:
+
+```
+cd /home/runner/work/erk/erk &amp;&amp; uv run pytest tests/tui/ tests/erk_shared/gateway/plan_data_provider/ -x -q 2&gt;&amp;1 | tail -20
+```
+
+Report whether all tests passed, the total count, or list any failures.</user>
+  <assistant>I'll run the command and report the results.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5883" cache_read_input_tokens="6459" cache_creation="{'ephemeral_5m_input_tokens': 5883, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NbfFMVXMW4KfRtZ19tz7oJ">
+    <param name="command">uv run pytest tests/tui/ tests/erk_shared/gateway/plan_data_provider/ -x -q 2&gt;&amp;1 | tail -20</param>
+    <param name="description">Run pytest on tui and plan_data_provider tests, show last 20 lines</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5883" cache_read_input_tokens="6459" cache_creation="{'ephemeral_5m_input_tokens': 5883, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NbfFMVXMW4KfRtZ19tz7oJ">
+        row = provider._build_row_data(
+            plan=plan,
+            plan_id=42,
+            pr_linkages={},
+            workflow_run=None,
+            worktree_by_plan_id={},
+            use_graphite=False,
+        )
+    
+        # Node 1.1 is next (pending depends on it, but 1.1 is in_progress so
+        # find_graph_next_node falls back to it). Its own PR should appear.
+&gt;       assert len(row.objective_head_plans) == 1
+                   ^^^^^^^^^^^^^^^^^^^^^^^^
+E       AttributeError: 'PlanRowData' object has no attribute 'objective_head_plans'. Did you mean: 'objective_deps_plans'?
+
+tests/tui/data/test_provider.py:1721: AttributeError
+=========================== short test summary info ============================
+FAILED tests/tui/data/test_provider.py::TestBlockingDepsPlans::test_next_node_own_pr_collected - AttributeError: 'PlanRowData' object has no attribute 'objective_head_plans'. Did you mean: 'objective_deps_plans'?
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+  </tool_result>
+  <assistant>**Test Results: FAILURE**
+
+1 test failed:
+- **File**: `tests/tui/data/test_provider.py`
+- **Test**: `TestBlockingDepsPlans::test_next_node_own_pr_collected`
+- **Line**: 1721
+- **Error**: `AttributeError: 'PlanRowData' object has no attribute 'objective_head_plans'. Did you mean: 'objective_deps_plans'?`
+
+The test is attempting to access `row.objective_head_plans` but the `PlanRowData` object only has `objective_deps_plans` attribute. This is a breaking change in the data structure that needs to be addressed.</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="452" cache_read_input_tokens="12342" cache_creation="{'ephemeral_5m_input_tokens': 452, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

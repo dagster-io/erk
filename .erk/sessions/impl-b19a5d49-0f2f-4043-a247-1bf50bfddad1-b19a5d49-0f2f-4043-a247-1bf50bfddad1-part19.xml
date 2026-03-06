@@ -1,0 +1,112 @@
+<session>
+  <meta source="agent-a217c98" />
+  <meta branch="plnd/split-plan-data-provider-03-06-0149" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Update /home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py to fix the RealPlanDataProvider constructor call.
+
+The `RealPlanDataProvider` constructor has changed. It no longer accepts `clipboard` or `browser` arguments. The new constructor signature is:
+```python
+RealPlanDataProvider(ctx, *, location, http_client)
+```
+
+Changes needed:
+1. In the `_make_provider` function, remove the `clipboard=MagicMock()` and `browser=MagicMock()` keyword arguments from the `RealPlanDataProvider(...)` constructor call.
+
+The function currently creates:
+```python
+return RealPlanDataProvider(
+    mock_ctx,
+    location=MagicMock(),
+    clipboard=MagicMock(),
+    browser=MagicMock(),
+    http_client=MagicMock(),
+)
+```
+
+It should become:
+```python
+return RealPlanDataProvider(
+    mock_ctx,
+    location=MagicMock(),
+    http_client=MagicMock(),
+)
+```
+
+Read the file first, then make the edit.</user>
+  <assistant>I'll read the file first to see the current state, then make the necessary edit.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6086" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6086, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KN9GouKcSw7n4xXyovfg5R">
+    <param name="file_path">/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6086" cache_read_input_tokens="10097" cache_creation="{'ephemeral_5m_input_tokens': 6086, 'ephemeral_1h_input_tokens': 0}" output_tokens="106" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KN9GouKcSw7n4xXyovfg5R">
+     1→"""Tests for PlanDataProvider routing logic.
+     2→
+     3→Tests verify that fetch_plans() routes queries to the correct service:
+     4→- Queries with "erk-objective" label use objective_list_service
+     5→- All other queries use plan_list_service
+     6→"""
+     7→
+     8→from unittest.mock import MagicMock
+     9→
+    10→from erk.tui.data.types import PlanFilters
+    11→from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+    12→
+    13→
+    14→def _make_provider(
+    15→    objective_service: MagicMock | None = None,
+    16→    plan_service: MagicMock | None = None,
+    17→) -&gt; RealPlanDataProvider:
+    18→    """Create a RealPlanDataProvider with mocked services."""
+    19→    mock_ctx = MagicMock()
+    20→    mock_objective_service = objective_service or MagicMock()
+    21→    mock_plan_service = plan_service or MagicMock()
+    22→    mock_ctx.objective_list_service = mock_objective_service
+    23→    mock_ctx.plan_list_service = mock_plan_service
+    24→    mock_objective_service.get_objective_list_data.return_value = MagicMock(plans=[])
+    25→    mock_plan_service.get_plan_list_data.return_value = MagicMock(plans=[])
+    26→
+    27→    return RealPlanDataProvider(
+    28→        mock_ctx,
+    29→        location=MagicMock(),
+    30→        clipboard=MagicMock(),
+
+... [180 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll make the edit to remove the `clipboard` and `browser` arguments from the `RealPlanDataProvider` constructor call:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="5689" cache_read_input_tokens="16183" cache_creation="{'ephemeral_5m_input_tokens': 5689, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01EhBw8Wwycj8spJFRy8Ccc9">
+    <param name="file_path">/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py</param>
+    <param name="old_string">    return RealPlanDataProvider(
+        mock_ctx,
+        location=MagicMock(),
+        clipboard=MagicMock(),
+        browser=MagicMock(),
+        http_client=MagicMock(),
+    )</param>
+    <param name="new_string">    return RealPlanDataProvider(
+        mock_ctx,
+        location=MagicMock(),
+        http_client=MagicMock(),
+    )</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="5689" cache_read_input_tokens="16183" cache_creation="{'ephemeral_5m_input_tokens': 5689, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EhBw8Wwycj8spJFRy8Ccc9">
+The file /home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! I've successfully updated the file `/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py`.
+
+## Summary
+
+The `_make_provider` function has been updated to match the new `RealPlanDataProvider` constructor signature. The changes made:
+
+- **Removed**: `clipboard=MagicMock()` argument
+- **Removed**: `browser=MagicMock()` argument
+- **Kept**: `mock_ctx`, `location=MagicMock()`, and `http_client=MagicMock()` arguments
+
+The constructor call now correctly matches the new signature:
+```python
+RealPlanDataProvider(ctx, *, location, http_client)
+```</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="308" cache_read_input_tokens="21872" cache_creation="{'ephemeral_5m_input_tokens': 308, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

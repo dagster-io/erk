@@ -1,0 +1,355 @@
+<session>
+  <meta source="agent-a96cd8a" />
+  <meta branch="plnd/split-plan-data-provider-03-06-0149" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Update the file /home/runner/work/erk/erk/tests/tui/app/test_actions.py:
+
+1. Add this import line after the existing FakePlanDataProvider import:
+   `from erk_shared.gateway.plan_service.fake import FakePlanService`
+
+2. For EVERY `ErkDashApp(` constructor call in the file, add `service=FakePlanService()` as a keyword argument. The pattern is:
+   - Old: `ErkDashApp(provider=provider, filters=filters, refresh_interval=0)`
+   - New: `ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)`
+
+Read the file first, then make all needed edits. Be thorough and update EVERY ErkDashApp constructor call in the file.</user>
+  <assistant>I'll read the file first to see all the `ErkDashApp` constructor calls, then make the necessary edits.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16093" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16093, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XWebioErmCEuNph8faCRQg">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_actions.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16093" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16093, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XWebioErmCEuNph8faCRQg">
+     1→"""Tests for view comments and launch actions."""
+     2→
+     3→import pytest
+     4→
+     5→from erk.tui.app import ErkDashApp
+     6→from erk.tui.data.types import PlanFilters
+     7→from erk.tui.screens.launch_screen import LaunchScreen
+     8→from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
+     9→from erk.tui.widgets.status_bar import StatusBar
+    10→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    11→from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+    12→
+    13→
+    14→class TestActionViewComments:
+    15→    """Tests for action_view_comments (c key)."""
+    16→
+    17→    @pytest.mark.asyncio
+    18→    async def test_no_selected_row_does_nothing(self) -&gt; None:
+    19→        """No selected row → early return, no screen pushed."""
+    20→        provider = FakePlanDataProvider(plans=[])
+    21→        filters = PlanFilters.default()
+    22→        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+    23→
+    24→        async with app.run_test() as pilot:
+    25→            await pilot.pause()
+    26→            await pilot.pause()
+    27→
+    28→            initial_stack_len = len(app.screen_stack)
+    29→
+    30→            await pilot.press("c")
+
+... [189 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll make the edits. I can see there are 10 `ErkDashApp` constructor calls in the file. I'll:
+1. Add the import after line 11
+2. Update all 10 `ErkDashApp` constructor calls to include `service=FakePlanService()`</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="5765" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 5765, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011j2tVbpTVmYYsAJzptGoYB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_actions.py</param>
+    <param name="old_string">from erk.tui.widgets.status_bar import StatusBar
+from erk_shared.gateway.clipboard.fake import FakeClipboard
+from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row</param>
+    <param name="new_string">from erk.tui.widgets.status_bar import StatusBar
+from erk_shared.gateway.clipboard.fake im...[truncated 64 chars]...taProvider, make_plan_row
+from erk_shared.gateway.plan_service.fake import FakePlanService</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="5765" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 5765, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01F4cKCKiLGqwo479nHAhrUC">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_actions.py</param>
+    <param name="old_string">        provider = FakePlanDataProvider(plans=[])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">        provider = FakePlanDataProvider(plans=[])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="5765" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 5765, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01HDfW9gwwMzde6xcXBYWBaN">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_actions.py</param>
+    <param name="old_string">        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan"...[truncated 39 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan"...[truncated 66 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="5765" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 5765, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WyUd3qH7WrrucXMDyZGZqz">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_actions.py</param>
+    <param name="old_string">        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan"...[truncated 61 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan"...[truncated 88 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="5765" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 5765, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Uxk4mgZS1M34omMyv9wLfq">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_actions.py</param>
+    <param name="old_string">        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan"...[truncated 61 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">        provider = FakePlanDataProvider(
+            plans=[make_plan_row(123, "Test Plan"...[truncated 88 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="5765" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 5765, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019c1zZzGKr6pRvyV1svgQSC">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_actions.py</param>
+    <param name="old_string">        provider = FakePlanDataProvider(plans=[])
+        filters = PlanFilters.default()
+...[truncated 265 chars]...        await pilot.pause()
+
+            assert len(app.screen_stack) == initial_stack_len</param>
+    <param name="new_string">        provider = FakePlanDataProvider(plans=[])
+        filters = PlanFilters.default()
+...[truncated 292 chars]...        await pilot.pause()
+
+            assert len(app.screen_stack) == initial_stack_len</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="5765" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 5765, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0185RbKmC79PebGxwonKAhFU">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_actions.py</param>
+    <param name="old_string">        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row...[truncated 608 chars]...en(app.screen_stack) &gt; 1
+            assert isinstance(app.screen_stack[-1], LaunchScreen)</param>
+    <param name="new_string">        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row...[truncated 635 chars]...en(app.screen_stack) &gt; 1
+            assert isinstance(app.screen_stack[-1], LaunchScreen)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="5765" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 5765, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0135wpwZVZT36VnrbuadrPeu">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_actions.py</param>
+    <param name="old_string">        clipboard = FakeClipboard()
+        provider = FakePlanDataProvider(
+            p...[truncated 293 chars]...
+            app._on_launch_result(None)
+
+            assert clipboard.last_copied is None</param>
+    <param name="new_string">        clipboard = FakeClipboard()
+        provider = FakePlanDataProvider(
+            p...[truncated 320 chars]...
+            app._on_launch_result(None)
+
+            assert clipboard.last_copied is None</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="5765" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 5765, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01RJzcegT8guRUc29dtmrRQr">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_actions.py</param>
+    <param name="old_string">        clipboard = FakeClipboard()
+        provider = FakePlanDataProvider(
+            p...[truncated 425 chars]...cript)" &amp;&amp; erk implement --dangerous'
+            assert clipboard.last_copied == expected</param>
+    <param name="new_string">        clipboard = FakeClipboard()
+        provider = FakePlanDataProvider(
+            p...[truncated 452 chars]...cript)" &amp;&amp; erk implement --dangerous'
+            assert clipboard.last_copied == expected</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="5765" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 5765, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FHz9Yq4nD7VeRNwrYwEcud">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_actions.py</param>
+    <param name="old_string">        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row...[truncated 752 chars]...await pilot.pause()
+
+            assert not isinstance(app.screen_stack[-1], LaunchScreen)</param>
+    <param name="new_string">        provider = FakePlanDataProvider(
+            plans=[
+                make_plan_row...[truncated 779 chars]...await pilot.pause()
+
+            assert not isinstance(app.screen_stack[-1], LaunchScreen)</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="5765" cache_read_input_tokens="16093" cache_creation="{'ephemeral_5m_input_tokens': 5765, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011j2tVbpTVmYYsAJzptGoYB">
+The file /home/runner/work/erk/erk/tests/tui/app/test_actions.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01F4cKCKiLGqwo479nHAhrUC">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:         provider = FakePlanDataProvider(plans=[])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_result tool="toolu_01HDfW9gwwMzde6xcXBYWBaN">
+The file /home/runner/work/erk/erk/tests/tui/app/test_actions.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01WyUd3qH7WrrucXMDyZGZqz">
+The file /home/runner/work/erk/erk/tests/tui/app/test_actions.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Uxk4mgZS1M34omMyv9wLfq">
+The file /home/runner/work/erk/erk/tests/tui/app/test_actions.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_019c1zZzGKr6pRvyV1svgQSC">
+The file /home/runner/work/erk/erk/tests/tui/app/test_actions.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0185RbKmC79PebGxwonKAhFU">
+The file /home/runner/work/erk/erk/tests/tui/app/test_actions.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0135wpwZVZT36VnrbuadrPeu">
+The file /home/runner/work/erk/erk/tests/tui/app/test_actions.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01RJzcegT8guRUc29dtmrRQr">
+The file /home/runner/work/erk/erk/tests/tui/app/test_actions.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01FHz9Yq4nD7VeRNwrYwEcud">
+The file /home/runner/work/erk/erk/tests/tui/app/test_actions.py has been updated successfully.
+  </tool_result>
+  <assistant>I encountered one edit that failed because there were 2 identical matches. Let me handle those two cases separately with more context:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="4285" cache_read_input_tokens="21858" cache_creation="{'ephemeral_5m_input_tokens': 4285, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01X9Uiri3bLW84XXjHYjB6Au">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_actions.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_no_selected_row_does_nothing(self) -&gt; None:
+  ...[truncated 122 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_no_selected_row_does_nothing(self) -&gt; None:
+  ...[truncated 149 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="4285" cache_read_input_tokens="21858" cache_creation="{'ephemeral_5m_input_tokens': 4285, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SrTtBaN798CtAHMwNjX2wr">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_actions.py</param>
+    <param name="old_string">    @pytest.mark.asyncio
+    async def test_launch_with_no_selected_row_does_nothing(self)...[truncated 134 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">    @pytest.mark.asyncio
+    async def test_launch_with_no_selected_row_does_nothing(self)...[truncated 161 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="4285" cache_read_input_tokens="21858" cache_creation="{'ephemeral_5m_input_tokens': 4285, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01X9Uiri3bLW84XXjHYjB6Au">
+The file /home/runner/work/erk/erk/tests/tui/app/test_actions.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01SrTtBaN798CtAHMwNjX2wr">
+&lt;tool_use_error&gt;String to replace not found in file.
+String:     @pytest.mark.asyncio
+    async def test_launch_with_no_selected_row_does_nothing(self) -&gt; None:
+        """Pressing 'l' with no rows does not push a screen."""
+        provider = FakePlanDataProvider(plans=[])
+        filters = PlanFilters.default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Let me read the file again to see the current state and find the remaining instance:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="948" cache_read_input_tokens="26143" cache_creation="{'ephemeral_5m_input_tokens': 948, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PdChpcdXXQBre16JjB7HgZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_actions.py</param>
+    <param name="offset">96</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="948" cache_read_input_tokens="26143" cache_creation="{'ephemeral_5m_input_tokens': 948, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PdChpcdXXQBre16JjB7HgZ">
+    96→    """Tests for action_launch and _on_launch_result."""
+    97→
+    98→    @pytest.mark.asyncio
+    99→    async def test_launch_with_no_selected_row_does_nothing(self) -&gt; None:
+   100→        """Pressing 'l' with no rows does not push a screen."""
+   101→        provider = FakePlanDataProvider(plans=[])
+   102→        filters = PlanFilters.default()
+   103→        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+   104→
+   105→        async with app.run_test() as pilot:
+   106→            await pilot.pause()
+   107→            await pilot.pause()
+   108→
+   109→            initial_stack_len = len(app.screen_stack)
+   110→
+   111→            await pilot.press("l")
+   112→            await pilot.pause()
+   113→
+   114→            assert len(app.screen_stack) == initial_stack_len
+   115→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! I can see that edit was already applied. Let me verify the entire file is now updated correctly:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="488" cache_read_input_tokens="27091" cache_creation="{'ephemeral_5m_input_tokens': 488, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Ts5yx6FftswWH4UMKGXB6Q">
+    <param name="pattern">ErkDashApp\(</param>
+    <param name="path">/home/runner/work/erk/erk/tests/tui/app/test_actions.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="488" cache_read_input_tokens="27091" cache_creation="{'ephemeral_5m_input_tokens': 488, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ts5yx6FftswWH4UMKGXB6Q">
+23:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+43:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+62:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+81:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+103:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+131:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+153:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+172:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+198:        app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+  </tool_result>
+  <assistant>Excellent! Let me also verify the import was added:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="562" cache_read_input_tokens="27579" cache_creation="{'ephemeral_5m_input_tokens': 562, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JaLcm6TCE4KTzYDRjKdaQs">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_actions.py</param>
+    <param name="offset">1</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="562" cache_read_input_tokens="27579" cache_creation="{'ephemeral_5m_input_tokens': 562, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JaLcm6TCE4KTzYDRjKdaQs">
+     1→"""Tests for view comments and launch actions."""
+     2→
+     3→import pytest
+     4→
+     5→from erk.tui.app import ErkDashApp
+     6→from erk.tui.data.types import PlanFilters
+     7→from erk.tui.screens.launch_screen import LaunchScreen
+     8→from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
+     9→from erk.tui.widgets.status_bar import StatusBar
+    10→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    11→from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+    12→from erk_shared.gateway.plan_service.fake import FakePlanService
+    13→
+    14→
+    15→class TestActionViewComments:
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! All updates have been successfully completed. Here's a summary of the changes made to `/home/runner/work/erk/erk/tests/tui/app/test_actions.py`:
+
+## Changes Summary
+
+### 1. Added Import
+Added the `FakePlanService` import on line 12:
+```python
+from erk_shared.gateway.plan_service.fake import FakePlanService
+```
+
+### 2. Updated All ErkDashApp Constructor Calls
+Updated all 9 `ErkDashApp` constructor calls in the file to include `service=FakePlanService()` as a keyword argument:
+
+- Line 23: `test_no_selected_row_does_nothing` (TestActionViewComments)
+- Line 43: `test_no_pr_linked_shows_status_message`
+- Line 62: `test_zero_unresolved_shows_status_message`
+- Line 81: `test_unresolved_comments_pushes_screen`
+- Line 103: `test_launch_with_no_selected_row_does_nothing` (TestActionLaunch)
+- Line 131: `test_launch_pushes_launch_screen`
+- Line 153: `test_launch_result_none_does_not_execute_command`
+- Line 172: `test_launch_result_executes_command`
+- Line 198: `test_launch_screen_dismisses_on_unmapped_key`
+
+All constructor calls now follow the pattern:
+```python
+app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+```
+
+The file has been successfully updated with all required changes.</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="441" cache_read_input_tokens="28141" cache_creation="{'ephemeral_5m_input_tokens': 441, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

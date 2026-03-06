@@ -1,0 +1,140 @@
+<session>
+  <meta source="agent-ac71333" />
+  <meta branch="plnd/split-plan-data-provider-03-06-0149" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Update the file /home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py:
+
+1. Add this import line after the existing FakePlanDataProvider import:
+   `from erk_shared.gateway.plan_service.fake import FakePlanService`
+
+2. For EVERY `ErkDashApp(` constructor call in the file, add `service=FakePlanService()` as a keyword argument. The pattern is:
+   - Old: `ErkDashApp(provider=provider, filters=filters, refresh_interval=0)`
+   - New: `ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)`
+
+Read the file first, then make all needed edits. Be thorough and update EVERY ErkDashApp constructor call in the file.</user>
+  <assistant>I'll read the file first to see all the `ErkDashApp` constructor calls, then make the necessary updates.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16097" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16097, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012qf6jTny9mKVAM2gTX5wWQ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16097" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16097, 'ephemeral_1h_input_tokens': 0}" output_tokens="108" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012qf6jTny9mKVAM2gTX5wWQ">
+     1→"""Tests for the one-shot prompt action in ErkDashApp."""
+     2→
+     3→import pytest
+     4→
+     5→from erk.tui.app import ErkDashApp
+     6→from erk.tui.data.types import PlanFilters
+     7→from erk.tui.screens.one_shot_prompt_screen import OneShotPromptScreen
+     8→from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+     9→
+    10→
+    11→class TestActionOneShotPrompt:
+    12→    """Tests for action_one_shot_prompt (x key)."""
+    13→
+    14→    @pytest.mark.asyncio
+    15→    async def test_x_pushes_prompt_screen(self) -&gt; None:
+    16→        """Pressing 'x' pushes OneShotPromptScreen even with no rows."""
+    17→        provider = FakePlanDataProvider(plans=[])
+    18→        filters = PlanFilters.default()
+    19→        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+    20→
+    21→        async with app.run_test() as pilot:
+    22→            await pilot.pause()
+    23→            await pilot.pause()
+    24→
+    25→            await pilot.press("x")
+    26→            await pilot.pause()
+    27→            await pilot.pause()
+    28→
+    29→            assert len(app.screen_stack) &gt; 1
+    30→            assert isinstance(app.screen_stack[-1], OneShotPromptScreen)
+
+... [64 lines omitted] ...
+  </tool_result>
+  <assistant>Now I'll make the edits. I can see there are 4 `ErkDashApp` constructor calls in the file (lines 19, 37, 54, and 76). I'll:
+
+1. Add the import for `FakePlanService`
+2. Update all 4 constructor calls to include `service=FakePlanService()`</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="4151" cache_read_input_tokens="16097" cache_creation="{'ephemeral_5m_input_tokens': 4151, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014EmoAaMQJDPRJXdvSDxyNB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py</param>
+    <param name="old_string">from erk.tui.app import ErkDashApp
+from erk.tui.data.types import PlanFilters
+from erk.tui...[truncated 39 chars]...from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row</param>
+    <param name="new_string">from erk.tui.app import ErkDashApp
+from erk.tui.data.types import PlanFilters
+from erk.tui...[truncated 104 chars]...taProvider, make_plan_row
+from erk_shared.gateway.plan_service.fake import FakePlanService</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="4151" cache_read_input_tokens="16097" cache_creation="{'ephemeral_5m_input_tokens': 4151, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014EmoAaMQJDPRJXdvSDxyNB">
+The file /home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NJZfuEBzWkabEKdCeqdb5p">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py</param>
+    <param name="old_string">        """Pressing 'x' pushes OneShotPromptScreen even with no rows."""
+        provider ...[truncated 43 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">        """Pressing 'x' pushes OneShotPromptScreen even with no rows."""
+        provider ...[truncated 70 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="434" cache_read_input_tokens="20248" cache_creation="{'ephemeral_5m_input_tokens': 434, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NJZfuEBzWkabEKdCeqdb5p">
+The file /home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01UBQ4HrMQm1CpafPbgpowSp">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py</param>
+    <param name="old_string">        """Pressing 'x' pushes OneShotPromptScreen when rows exist (global action)."""
+   ...[truncated 88 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">        """Pressing 'x' pushes OneShotPromptScreen when rows exist (global action)."""
+   ...[truncated 115 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="311" cache_read_input_tokens="20682" cache_creation="{'ephemeral_5m_input_tokens': 311, 'ephemeral_1h_input_tokens': 0}" output_tokens="293" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UBQ4HrMQm1CpafPbgpowSp">
+The file /home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01B5kro3FFcKVLwP2KMdDCX9">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py</param>
+    <param name="old_string">        """Pressing Escape in OneShotPromptScreen dismisses without starting an operation....[truncated 64 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">        """Pressing Escape in OneShotPromptScreen dismisses without starting an operation....[truncated 91 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="341" cache_read_input_tokens="20993" cache_creation="{'ephemeral_5m_input_tokens': 341, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B5kro3FFcKVLwP2KMdDCX9">
+The file /home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014pwC49G6TXDWVgkPQDHLtU">
+    <param name="file_path">/home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py</param>
+    <param name="old_string">        """_on_one_shot_prompt_result with None does not start an operation."""
+        pr...[truncated 50 chars]...default()
+        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)</param>
+    <param name="new_string">        """_on_one_shot_prompt_result with None does not start an operation."""
+        pr...[truncated 77 chars]...DashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="413" cache_read_input_tokens="21334" cache_creation="{'ephemeral_5m_input_tokens': 413, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014pwC49G6TXDWVgkPQDHLtU">
+The file /home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! I've successfully updated the file `/home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py` with all the requested changes:
+
+## Changes Made:
+
+1. **Added import** (line 9):
+   - Added `from erk_shared.gateway.plan_service.fake import FakePlanService`
+
+2. **Updated all 4 `ErkDashApp` constructor calls** to include `service=FakePlanService()`:
+   - Line 20: `test_x_pushes_prompt_screen`
+   - Line 38: `test_x_works_with_rows_present`
+   - Line 55: `test_escape_dismisses_without_dispatch`
+   - Line 77: `test_none_result_does_not_dispatch`
+
+Each constructor call now follows the pattern:
+```python
+app = ErkDashApp(provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0)
+```
+
+All instances have been updated consistently throughout the file.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="309" cache_read_input_tokens="21747" cache_creation="{'ephemeral_5m_input_tokens': 309, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
