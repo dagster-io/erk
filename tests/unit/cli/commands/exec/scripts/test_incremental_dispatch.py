@@ -7,6 +7,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.incremental_dispatch import incremental_dispatch
 from erk_shared.context.context import ErkContext
+from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails
@@ -141,3 +142,50 @@ def test_incremental_dispatch_display_format(tmp_path: Path) -> None:
 
     assert result.exit_code == 0, f"Failed: {result.output}"
     assert "Workflow" in result.output
+
+
+def test_incremental_dispatch_checked_out_branch(tmp_path: Path) -> None:
+    """Test dispatch when branch is checked out in a worktree uses update_local_ref."""
+    plan_file = tmp_path / "plan.md"
+    plan_file.write_text("# Checked Out Plan\n\n- Step 1", encoding="utf-8")
+
+    worktree_path = tmp_path / "worktree"
+    pr = _make_pr(42, branch="feature/checked-out")
+    remote_sha = "remote123"
+    fake_git = FakeGit(
+        current_branches={tmp_path: "main"},
+        trunk_branches={tmp_path: "main"},
+        branch_heads={
+            "main": "abc123",
+            "origin/main": "abc123",
+            "origin/feature/checked-out": remote_sha,
+        },
+        worktrees={
+            tmp_path: [
+                WorktreeInfo(path=tmp_path, branch="main", is_root=True),
+                WorktreeInfo(path=worktree_path, branch="feature/checked-out"),
+            ]
+        },
+        existing_paths={worktree_path},
+    )
+    fake_github = FakeGitHub(pr_details={42: pr})
+
+    runner = CliRunner()
+    result = runner.invoke(
+        incremental_dispatch,
+        ["--plan-file", str(plan_file), "--pr", "42", "--format", "json"],
+        obj=ErkContext.for_test(git=fake_git, github=fake_github, repo_root=tmp_path),
+    )
+
+    assert result.exit_code == 0, f"Failed: {result.output}"
+    output = json.loads(result.output.strip().split("\n")[-1])
+    assert output["success"] is True
+
+    # Verify update_local_ref was called instead of create_branch
+    updated_refs = fake_git.branch.updated_refs
+    assert len(updated_refs) == 1
+    assert updated_refs[0] == (tmp_path, "feature/checked-out", remote_sha)
+
+    # Verify create_branch was NOT called for the feature branch
+    created = fake_git.branch.created_branches
+    assert all(b[1] != "feature/checked-out" for b in created)
