@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix: `update_local_ref` corrupts index when branch is checked out"
+}
