@@ -1,362 +1,131 @@
 <session>
-  <meta source="agent-ab6abcc" />
+  <meta source="agent-aafe67b" />
   <meta branch="plnd/consolidate-learn-docs-03-06-2252" />
   <meta model="claude-haiku-4-5-20251001" />
-  <user>Read these files and report their structure with line numbers:
-1. `/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py` - PR prepare command
-2. `/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py` - especially around lines 289-309 for Graphite retracking
-3. `/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_cmd.py` - Reconcile command
-4. `/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py` - Reconcile pipeline
+  <user>Read the file `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py` and provide:
+1. The overall structure and purpose
+2. Key functions and their line numbers
+3. The commit message format (around line 131)
+4. The two-part plan embedding strategy
+5. The worktree interaction/index sync logic (around lines 134-144)
+6. The workflow dispatch details (dispatch_type, plan_backend)
 
-Report the key structures, line numbers, and patterns for each file.</user>
-  <assistant>I'll read these files to analyze their structure, focusing on the key patterns and line numbers you've specified.</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="18890" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18890, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_013Wg27XaEMPoyNEB1NY2sCc">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py</param>
+Report all details with accurate line numbers.</user>
+  <assistant>I'll read the file and provide you with all the requested details.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18828" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18828, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013qf1FJVbmCEUxKucrxAmnQ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
   </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="18890" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18890, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_016i1tPVvji9tUPW6fvnVFVq">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
-  </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="18890" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18890, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_017ML1aGmbqEzJ1tA87TLgN6">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_cmd.py</param>
-  </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="18890" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18890, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_014UFN6GfQ1QL7uavnhjrsF8">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py</param>
-  </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="18890" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18890, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_013Wg27XaEMPoyNEB1NY2sCc">
-     1→"""Prepare impl-context for the current worktree's PR.
+  <usage input_tokens="3" cache_creation_input_tokens="18828" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18828, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013qf1FJVbmCEUxKucrxAmnQ">
+     1→"""Dispatch a local plan against an existing PR for remote implementation.
      2→
-     3→Sets up .erk/impl-context/ folder from the PR associated with the current
-     4→branch, making the worktree ready for plan implementation.
+     3→Usage:
+     4→    erk exec incremental-dispatch --plan-file &lt;path&gt; --pr &lt;number&gt; [OPTIONS]
      5→
-     6→Usage:
-     7→    erk pr prepare           # Auto-detect plan number from current branch's PR
-     8→    erk pr prepare 1234      # Explicit plan number
+     6→Commits the plan as impl-context to the PR's branch and triggers the
+     7→plan-implement workflow. Unlike regular dispatch, this does not require
+     8→the erk-plan label — just an OPEN PR.
      9→"""
     10→
-    11→import click
-    12→
-    13→from erk.cli.commands.exec.scripts.setup_impl_from_pr import create_impl_context_from_pr
-    14→from erk.cli.ensure import Ensure
-    15→from erk.core.context import ErkContext
-    16→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
-    17→from erk_shared.gateway.github.types import PRNotFound
-    18→from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
-    19→from erk_shared.output.output import user_output
-    20→
-    21→
-    22→@click.command("prepare")
-    23→@click.argument("plan_number", type=int, required=False, default=None)
-    24→@click.pass_context
-    25→def pr_prepare(ctx: click.Context, plan_number: int | None) -&gt; None:
-    26→    """Set up impl-context for the current worktree's PR.
-    27→
-    28→    Prepares the current worktree for plan implementation by creating
-    29→    the .erk/impl-context/ folder with plan content from the PR.
-    30→
-
-... [60 lines omitted] ...
-
-    48→        erk_ctx.console.error("Not in a git repository")
-    54→        erk_ctx.console.error("Cannot prepare from detached HEAD state")
-    61→            erk_ctx.console.error(
-  </tool_result>
-  <tool_result tool="toolu_016i1tPVvji9tUPW6fvnVFVq">
-     1→"""Checkout a pull request or plan into a worktree.
-     2→
-     3→This command fetches PR code (or finds plan branches) and creates a worktree
-     4→for local review/testing.
-     5→
-     6→Routing:
-     7→- Plain number (123) or PR URL → PR checkout
-     8→- P-prefixed (P123) or issue URL → plan checkout (find branches/PRs for plan)
-     9→"""
-    10→
-    11→import click
-    12→from rich.console import Console
-    13→from rich.table import Table
-    14→
-    15→from erk.cli.activation import (
-    16→    activation_config_activate_only,
-    17→    ensure_worktree_activate_script,
-    18→    print_activation_instructions,
-    19→)
-    20→from erk.cli.alias import alias
-    21→from erk.cli.commands.checkout_helpers import (
-    22→    ensure_branch_has_worktree,
-    23→    navigate_and_display_checkout,
-    24→)
-    25→from erk.cli.ensure import Ensure
-    26→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
-    27→from erk.core.context import ErkContext
-    28→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
-    29→from erk_shared.gateway.github.parsing import (
-    30→    parse_plan_number_from_url,
-
-... [462 lines omitted] ...
-
-    81→        click.style("Error: ", fg="red")
-   161→        ctx.console.error("Not in a git repository")
-   197→        ctx.console.error(
-   205→        ctx.console.info(f"Warning: PR #{pr_number} is {pr.state}")
-   288→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
-   417→        ctx.console.error(
-  </tool_result>
-  <tool_result tool="toolu_017ML1aGmbqEzJ1tA87TLgN6">
-     1→"""Reconcile locally-tracked branches that were merged remotely.
-     2→
-     3→Detects branches whose PRs were merged outside `erk land` (e.g., via GitHub
-     4→web UI, mobile, or API) and runs the same post-merge lifecycle: learn PR
-     5→creation, objective updates, and branch/worktree cleanup.
-     6→"""
-     7→
-     8→import click
-     9→from rich.console import Console
-    10→from rich.table import Table
-    11→
-    12→from erk.cli.commands.reconcile_pipeline import (
-    13→    ReconcileBranchInfo,
-    14→    ReconcileResult,
-    15→    detect_merged_branches,
-    16→    process_merged_branch,
-    17→)
-    18→from erk.cli.core import discover_repo_context
-    19→from erk.core.context import ErkContext
-    20→from erk_shared.output.output import user_output
-    21→
-    22→
-    23→@click.command("reconcile")
-    24→@click.option("--force", is_flag=True, help="Skip confirmation prompts")
-    25→@click.option("--dry-run", is_flag=True, help="Preview without making changes")
-    26→@click.option("--skip-learn", is_flag=True, help="Skip creating learn plans")
-    27→@click.pass_obj
-    28→def reconcile(ctx: ErkContext, *, force: bool, dry_run: bool, skip_learn: bool) -&gt; None:
-    29→    """Reconcile branches merged outside erk land.
-    30→
-
-... [148 lines omitted] ...
-
-    51→        raise click.ClickException("Could not determine main repository root.")
-   103→        except RuntimeError:
-   104→            user_output(click.style("Warning: ", fg="yellow") + "Failed to pull trunk")
-   144→    successes = sum(1 for r in results if r.error is None)
-   145→    failures = len(results) - successes
-   148→        if result.error is None:
-   162→        if result.error is not None:
-   163→            parts.append(f"- {result.error}")
-   167→    if failures == 0:
-   171→            click.style(f"{successes} succeeded, {failures} failed.", fg="yellow", bold=True)
-  </tool_result>
-  <tool_result tool="toolu_014UFN6GfQ1QL7uavnhjrsF8">
-     1→"""Detection and processing pipeline for reconciling merged branches.
-     2→
-     3→Detects branches whose remote tracking refs have been pruned (gone=True)
-     4→and whose PRs are in MERGED state. For each, runs post-merge lifecycle
-     5→operations: learn PR creation, objective update, and branch/worktree cleanup.
-     6→"""
-     7→
-     8→from __future__ import annotations
-     9→
-    10→import logging
-    11→from dataclasses import dataclass
+    11→import json
     12→from pathlib import Path
     13→
     14→import click
     15→
-    16→from erk.cli.commands.land_cmd import _ensure_branch_not_checked_out
-    17→from erk.cli.commands.land_learn import _create_learn_pr_for_merged_branch
-    18→from erk.cli.commands.objective_helpers import (
-    19→    get_objective_for_branch,
-    20→    run_objective_update_after_land,
-    21→)
-    22→from erk.cli.commands.slot.common import find_branch_assignment
-    23→from erk.cli.commands.slot.unassign_cmd import execute_unassign
-    24→from erk.cli.commands.wt.delete_cmd import _prune_worktrees_safe
-    25→from erk.core.context import ErkContext
-    26→from erk.core.worktree_pool import load_pool_state
-    27→from erk_shared.context.types import RepoContext
-    28→from erk_shared.gateway.github.types import PRNotFound
-    29→from erk_shared.output.output import user_output
-    30→
+    16→from erk.cli.commands.pr.dispatch_cmd import load_workflow_config
+    17→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+    18→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    19→from erk.cli.constants import DISPATCH_WORKFLOW_NAME
+    20→from erk_shared.context.helpers import (
+    21→    require_branch_manager,
+    22→    require_context,
+    23→    require_git,
+    24→    require_github,
+    25→    require_repo_root,
+    26→    require_time,
+    27→)
+    28→from erk_shared.context.types import NoRepoSentinel
+    29→from erk_shared.gateway.git.remote_ops.types import PushError
+    30→from erk_shared.gateway.github.parsing import (
 
-... [223 lines omitted] ...
+... [189 lines omitted] ...
 
-    54→    error: str | None  # None = success
-   137→    Each step is fail-open: errors on one step don't prevent the next.
-   154→    error: str | None = None
-   162→            error=None,
-   176→        except Exception as exc:
-   178→                click.style("Warning: ", fg="yellow") + f"Learn PR failed for {info.branch}: {exc}"
-   193→        except Exception as exc:
-   195→                click.style("Warning: ", fg="yellow")
-   196→                + f"Objective update failed for {info.branch}: {exc}"
-   203→    except Exception as exc:
-   204→        error = f"Cleanup failed for {info.branch}: {exc}"
-   205→        user_output(click.style("Warning: ", fg="yellow") + error)
-   212→        error=error,
+    83→        _output_error(output_format, f"PR #{pr_number} not found")
+    87→        _output_error(output_format, f"PR #{pr_number} is {pr_result.state}, must be OPEN")
+    98→        _output_error(output_format, "Not in a git repository")
+   147→    if isinstance(push_result, PushError):
+   148→        _output_error(output_format, f"Push failed: {push_result.message}")
+   208→def _output_error(output_format: str, message: str) -&gt; None:
+   209→    """Output error in the requested format."""
+   211→        click.echo(json.dumps({"success": False, "error": message}))
+   213→        user_output(click.style("Error: ", fg="red") + message)
   </tool_result>
-  <assistant>Now let me provide a structured analysis of these four files:
+  <assistant>Now I'll provide you with a comprehensive analysis of the file:
 
-## File Structure Analysis
+## Overall Structure and Purpose
 
-### 1. **prepare_cmd.py** (PR Prepare Command)
+The file `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py` is an exec CLI command that dispatches a local plan against an existing PR for remote implementation. Unlike regular dispatch, it does not require the erk-plan label—just an OPEN PR. It commits the plan as impl-context to the PR's branch and triggers the plan-implement workflow.
 
-**Purpose**: Sets up `.erk/impl-context/` folder from the PR associated with the current branch, making the worktree ready for plan implementation.
+## Key Functions and Line Numbers
 
-**Key Structure**:
-- **Lines 22-25**: Command definition with optional `plan_number` argument
-- **Lines 44-50**: Context validation (gh auth, repo check)
-- **Lines 52-55**: Branch validation (detached HEAD check)
-- **Lines 57-67**: Plan number resolution:
-  - Auto-detects from current branch's PR if not provided
-  - Returns `PRNotFound` error if no PR exists
-- **Lines 69-75**: Idempotent check:
-  - Resolves impl-context path
-  - Reads existing plan ref
-  - Compares plan IDs and early returns if match
-- **Lines 77-84**: Calls `create_impl_context_from_pr()` and reports success
+| Function | Line Numbers | Purpose |
+|----------|--------------|---------|
+| `incremental_dispatch()` | 62-205 | Main CLI command handler |
+| `_output_error()` | 208-213 | Helper to output errors in requested format |
 
-**Design Pattern**: LBYL (Look Before You Leap) - validates all preconditions before action, idempotent behavior.
+## Commit Message Format (Line 128)
 
----
-
-### 2. **checkout_cmd.py** (PR/Plan Checkout Command)
-
-**Purpose**: Checkout a pull request or plan into a worktree for local review/testing.
-
-**Key Structure**:
-
-**Parsing/Routing (Lines 37-88)**:
-- `_PrRef` class (lines 37-41): Plain PR reference
-- `_PlanRef` class (lines 44-48): Plan reference (P-prefix)
-- `_parse_checkout_reference()` (lines 51-87): Routes to PR or plan
-
-**Fetching Helper (Lines 90-124)**:
-- `_fetch_and_update_branch()`: Three strategies
-  - Remote exists, no local: create tracking branch
-  - Both exist: force-update local to remote
-  - No remote: fetch via PR ref
-
-**Main Command (Lines 126-175)**:
-- Lines 127-132: Command options (`--no-slot`, `--force`, `--sync`)
-- Lines 157-163: Repo validation
-- Lines 165-174: Dispatch to PR or plan checkout
-
-**PR Checkout (Lines 182-343)**:
-- **Lines 194-201**: Fetch PR details, check for closed/merged
-- **Lines 207-213**: Branch name strategy (handle cross-repo PRs)
-- **Lines 215-245**: Early exit if branch already exists in worktree
-- **Lines 247-254**: Fetch strategy based on PR type
-- **Lines 256-259**: Create worktree
-- **Lines 261-290**: Rebase handling for stacked PRs (lines 263-290):
-  - Detects if PR has non-trunk base
-  - Fetches and ensures base branch exists locally
-  - Detects stale parent branches and updates them
-  - Performs rebase, handles conflicts gracefully
-- **Lines 292-309**: Graphite integration (CRITICAL SECTION):
-  - Line 295-299: Determine if should track with Graphite
-  - Lines 300-309: Branch tracking/retracking logic
-    - **Lines 301-306**: If already tracked, RETRACK to update cached SHA
-    - **Lines 307-309**: If not tracked, track with base branch
-- **Lines 312-326**: Navigate and display checkout result
-- **Lines 328-342**: Print activation instructions
-
-**Plan Checkout (Lines 350-465)**:
-- **Lines 368-381**: Get open PRs referencing plan issue
-- **Lines 383-395**: Single PR case - checkout
-- **Lines 397-399**: Multiple PRs - display table and exit
-- **Lines 402-464**: `_checkout_plan_pr()` - Fetch and checkout PR for plan
-  - Similar flow to PR checkout but without Graphite tracking
-
-**Display Helper (Lines 467-487)**:
-- Displays table of multiple PRs with state and draft status
-
-**Critical Pattern - Graphite Retracking (Lines 289-309)**:
-```
-should_track_with_graphite = (
-    is_graphite_managed() AND
-    NOT already_existed AND
-    NOT cross_repo
-)
-if already_tracked:
-    retrack_branch()        # Update cached SHA
-else:
-    track_branch()          # New tracking
+The commit message is constructed on line 128 as:
+```python
+message=f"Incremental dispatch for PR #{pr_number}\n\n{plan_content}",
 ```
 
----
+This creates a two-part commit message:
+1. **First line (subject)**: `Incremental dispatch for PR #{pr_number}`
+2. **Second part (body)**: The full `plan_content` (plan markdown) embedded directly
 
-### 3. **reconcile_cmd.py** (Reconcile Command)
+This is the **two-part plan embedding strategy** - the plan itself is embedded in the git commit message body.
 
-**Purpose**: Reconciles branches merged outside `erk land` (e.g., via GitHub web UI) and runs post-merge lifecycle operations.
+## Worktree Interaction/Index Sync Logic (Lines 135-141)
 
-**Key Structure**:
-- **Lines 23-28**: Command definition with `--force`, `--dry-run`, `--skip-learn` flags
-- **Lines 49-52**: Repo context discovery and validation
-- **Lines 54-60**: Detect merged branches, early exit if empty
-- **Lines 62-63**: Display candidates table
-- **Lines 65-73**: Confirmation prompt (unless `--force` or `--dry-run`)
-- **Lines 75-77**: Dry-run early exit
-- **Lines 79-93**: Process each candidate branch
-- **Lines 95-104**: Pull trunk if on trunk branch
-- **Lines 106-107**: Display summary results
+The logic handles the case where the branch is already checked out in a worktree:
 
-**Display Helpers**:
-- **Lines 110-136**: `_display_candidates()` - Rich table showing branch, PR, title, plan, objective, worktree
-- **Lines 139-173**: `_display_results()` - Summary table showing success/failure, actions taken, errors
+```python
+# If branch is checked out, write files to disk and stage so git status is clean
+if checked_out_path is not None:
+    for rel_path, content in files.items():
+        abs_path = checked_out_path / rel_path
+        abs_path.parent.mkdir(parents=True, exist_ok=True)
+        abs_path.write_text(content, encoding="utf-8")
+    git.commit.stage_files(checked_out_path, list(files.keys()), force=True)
+```
 
-**Design Pattern**: Safe defaults - requires confirmation, supports dry-run preview, fail-open on individual steps.
+This process:
+1. **Detects if branch is checked out**: Line 105-106 checks `git.worktree.is_branch_checked_out()`
+2. **Writes impl-context files to disk**: Lines 137-140 materialize the files (created by `build_impl_context_files()`)
+3. **Stages files to git index**: Line 141 calls `git.commit.stage_files()` with `force=True` to ensure the working tree matches the plumbing commit
 
----
+This ensures git status is clean after the plumbing commit advanced the branch.
 
-### 4. **reconcile_pipeline.py** (Reconcile Pipeline)
+## Workflow Dispatch Details (Lines 162-172)
 
-**Purpose**: Detection and processing pipeline for reconciling merged branches.
+The workflow dispatch uses two key parameters in the inputs dictionary:
 
-**Data Classes (Lines 34-54)**:
-- `ReconcileBranchInfo` (frozen): Branch, PR#, title, worktree path, plan ID, objective#
-- `ReconcileResult` (frozen): Branch, learn_created, objective_updated, cleaned_up, error
+| Parameter | Line | Value | Purpose |
+|-----------|------|-------|---------|
+| `dispatch_type` | 170 | `"incremental"` | Indicates this is an incremental dispatch (vs. full dispatch) |
+| `plan_backend` | 169 | `"planned_pr"` | Specifies the plan backend type for the remote implementation workflow |
 
-**Detection Function (Lines 57-122)**:
-- **Lines 80-81**: Fetch with prune
-- **Lines 83-85**: Get all branch sync info, filter for `gone=True`
-- **Lines 90-92**: Exclude trunk branch
-- **Lines 97-104**: For each candidate, check PR state via GitHub (must be MERGED)
-- **Lines 106-109**: Resolve plan ID, objective number, worktree path metadata
-- **Lines 111-120**: Build ReconcileBranchInfo for merged branches
+Additional dispatch inputs (lines 162-172):
+- `plan_id`: PR number (line 163)
+- `submitted_by`: GitHub username (line 164)
+- `plan_title`: PR title (line 165)
+- `branch_name`: Target branch (line 166)
+- `pr_number`: PR number as string (line 167)
+- `base_branch`: Detected trunk branch (line 168)
+- Plus additional config from `load_workflow_config()` (line 171)
 
-**Processing Function (Lines 125-213)**:
-- **Lines 151-163**: Return empty result if dry-run
-- **Lines 165-175**: Step 1 - Learn PR creation (fail-open with exception handling)
-- **Lines 181-197**: Step 2 - Objective update (fail-open with exception handling)
-- **Lines 199-205**: Step 3 - Cleanup (fail-open with exception handling)
-- **Lines 207-213**: Return ReconcileResult
-
-**Cleanup Helper (Lines 216-247)**:
-- **Lines 224-227**: Early exit if branch doesn't exist
-- **Lines 229-235**: Unassign slot from worktree pool
-- **Lines 237-238**: Ensure branch not checked out anywhere
-- **Lines 240-241**: Delete branch (force)
-- **Lines 243-247**: Remove worktree if linked (not root) and prune remaining worktrees
-
-**Design Pattern**: Fail-open architecture - each step can fail independently without blocking subsequent steps, individual exceptions logged as warnings.
-
----
-
-## Key Patterns Across Files
-
-| Pattern | Files | Details |
-|---------|-------|---------|
-| **LBYL Validation** | All | Check preconditions before mutations |
-| **Idempotent Operations** | prepare_cmd, reconcile_cmd | Safe to re-run without side effects |
-| **Graphite Integration** | checkout_cmd | Retrack after rebase to update cached SHA |
-| **Fail-Open Architecture** | reconcile_pipeline | Individual step failures don't block subsequent steps |
-| **Frozen Dataclasses** | reconcile_pipeline | Immutable data carriers |
-| **Rich Tables** | checkout_cmd, reconcile_cmd | Terminal-based UI with consistent formatting |
-| **Branch Metadata Resolution** | reconcile_pipeline | Plan ID, objective#, worktree path lookup |</assistant>
-  <usage input_tokens="7" cache_creation_input_tokens="14144" cache_read_input_tokens="18890" cache_creation="{'ephemeral_5m_input_tokens': 14144, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+The workflow is triggered on line 175 using `github.trigger_workflow()` with `DISPATCH_WORKFLOW_NAME` and the ref resolved from dispatch options.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="3912" cache_read_input_tokens="18828" cache_creation="{'ephemeral_5m_input_tokens': 3912, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
 </session>

@@ -1,0 +1,114 @@
+<session>
+  <meta source="agent-af4fb99" />
+  <meta branch="plnd/consolidate-learn-docs-03-06-2252" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Read the file at `.claude/skills/dignified-python/dignified-python-core.md` in `/home/runner/work/erk/erk/` and find the section about import aliases. Report what it says about well-known library aliases (like `import pandas as pd`). I need to know the current rule to ensure docs stay aligned.</user>
+  <assistant>I'll read that file and find the section about import aliases for you.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18782" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18782, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YbGbDs3YLpJ2xY9SBXQgPW">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18782" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18782, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YbGbDs3YLpJ2xY9SBXQgPW">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [502 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   118→- `.resolve()` raises `OSError` for non-existent paths
+   119→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   120→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   135→# WRONG: Using exceptions for path validation
+   140→except (OSError, ValueError):
+   180→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   211→**Acceptable exceptions:**
+   480→    log.warning("Non-numeric plan_id")
+   494→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   521→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <assistant>I found the section on import aliases. Here's what the rule says:
+
+## Import Aliases Rule
+
+**Location:** Lines 205-233 in `/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md`
+
+### The Rule:
+
+**Imports must use canonical names. The `as` keyword for aliasing is prohibited by default.**
+
+### Rationale:
+- Import aliases obscure the canonical name
+- Make grep-based discovery harder
+- Invite cargo-culting
+- When reading code, aliases force scrolling up to find the real import
+- When searching for usage, aliases fragment results across different names
+
+### Acceptable Exceptions:
+
+1. **Name collisions**: Resolving genuine name collisions between two different modules that export identically-named symbols
+
+2. **Well-known library aliases**: Community-standard top-level import aliases for major libraries (e.g., `import pandas as pd`, `import numpy as np`, `import dagster as dg`, `import matplotlib.pyplot as plt`). These are universally recognized conventions.
+
+**Important note:** The rule still prohibits gratuitous renaming of internal/project imports.
+
+### Examples from the Doc:
+
+```python
+# WRONG: Gratuitous aliasing of internal imports
+from erk.helpers import require_issues as require_github_issues
+
+# CORRECT: Use canonical name
+from erk.helpers import require_issues
+
+# CORRECT: Well-known library aliases
+import pandas as pd
+import numpy as np
+import dagster as dg
+
+# CORRECT: Resolving genuine collision
+from datetime import datetime as dt
+from pandas import datetime as pd_datetime
+```
+
+This is the current rule in the codebase. The key point is that well-known library aliases are explicitly permitted exceptions, so your documentation should align with this standard.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="6150" cache_read_input_tokens="18782" cache_creation="{'ephemeral_5m_input_tokens': 6150, 'ephemeral_1h_input_tokens': 0}" output_tokens="418" service_tier="standard" inference_geo="not_available" />
+</session>

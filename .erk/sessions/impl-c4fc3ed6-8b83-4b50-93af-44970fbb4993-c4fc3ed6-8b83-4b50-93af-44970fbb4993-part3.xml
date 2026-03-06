@@ -1,507 +1,73 @@
 <session>
-  <meta source="agent-a7de189" />
+  <meta source="agent-a0927c4" />
   <meta branch="plnd/consolidate-learn-docs-03-06-2252" />
   <meta model="claude-haiku-4-5-20251001" />
-  <user>Read these files and report their structure with line numbers:
-1. `/home/runner/work/erk/erk/src/erk/core/commit_message_generator.py` - especially lines 144-149 for the background thread and polling
-2. `/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py` - especially lines 345-423 for `run_commit_message_generation()`
-
-Also search for the three production call sites that call `run_commit_message_generation` and verify they pass `time=ctx.time`.
-
-Report the key structures, line numbers, and patterns.</user>
-  <assistant>I'll read those two files and search for the call sites. Let me start with the specified files and then find the production calls.</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="18853" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18853, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01Mps6V56WMbPYo13F48xjgb">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/commit_message_generator.py</param>
+  <user>Run `make fast-ci` in `/home/runner/work/erk/erk/` and report the results. This is a documentation-only change so we mainly care about formatting/lint issues.</user>
+  <assistant>I'll run `make fast-ci` to check for formatting and lint issues on the documentation changes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="12311" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 12311, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RNnZYWW1bVeG8okFCUvNzu">
+    <param name="command">make fast-ci</param>
+    <param name="description">Run fast CI checks (formatting, lint, types)</param>
   </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="18853" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18853, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_0197kdNTRt5LjaNJoA2WgACq">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py</param>
-  </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="18853" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18853, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Grep" id="toolu_011Vg6qjJqxNqKV15LnanYtp">
-    <param name="pattern">run_commit_message_generation\(</param>
-    <param name="type">py</param>
-  </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="18853" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18853, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01Mps6V56WMbPYo13F48xjgb">
-     1→"""Commit message generation via Anthropic API.
-     2→
-     3→This module provides commit message generation for PR submissions,
-     4→using direct Anthropic API calls to analyze diffs and generate descriptive messages.
-     5→
-     6→The commit message prompt is loaded from the shared prompt file at:
-     7→packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md
-     8→"""
-     9→
-    10→from __future__ import annotations
-    11→
-    12→import logging
-    13→import threading
-    14→from collections.abc import Generator
-    15→from dataclasses import dataclass
-    16→from pathlib import Path
-    17→from typing import TYPE_CHECKING
-    18→
-    19→from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey
-    20→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
-    21→from erk_shared.gateway.gt.prompts import get_commit_message_prompt
-    22→from erk_shared.gateway.time.abc import Time
-    23→
-    24→if TYPE_CHECKING:
-    25→    from erk.core.plan_context_provider import PlanContext
-    26→
-    27→logger = logging.getLogger(__name__)
-    28→
-    29→_PROGRESS_INTERVAL_SECONDS = 2.0
-    30→
+  <usage input_tokens="3" cache_creation_input_tokens="12311" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 12311, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RNnZYWW1bVeG8okFCUvNzu">
+Exit code 2
+   Building erk-dev @ file:///home/runner/work/erk/erk/packages/erk-dev
+Downloading libcst (2.2MiB)
+Downloading ruff (10.7MiB)
+Downloading mkdocs (3.7MiB)
+Downloading aiohttp (1.7MiB)
+Downloading babel (9.7MiB)
+Downloading ty (10.3MiB)
+Downloading mkdocs-material (8.9MiB)
+ Downloaded aiohttp
+ Downloaded mkdocs
+      Built erk-dev @ file:///home/runner/work/erk/erk/packages/erk-dev
+ Downloaded ty
+ Downloaded ruff
+ Downloaded libcst
+ Downloaded babel
+ Downloaded mkdocs-material
+Installed 58 packages in 193ms
+[[33mwarn[39m] docs/learned/architecture/health-check-runner-gateway.md
+[[33mwarn[39m] docs/learned/integrations/github-review-decision.md
+[[33mwarn[39m] docs/learned/planning/incremental-dispatch.md
+[[33mwarn[39m] docs/learned/testing/alias-verification-pattern.md
+[[33mwarn[39m] docs/learned/testing/test-file-organization.md
+[[33mwarn[39m] docs/learned/tui/status-indicators.md
+[[33mwarn[39m] Code style issues found in 6 files. Run Prettier with --write to fix.
+✓ AGENTS.md standard: PASSED
 
-... [286 lines omitted] ...
+All CLAUDE.md and AGENTS.md files properly paired.
 
-    61→        error_message: Error description if generation failed
-    67→    error_message: str | None
-   104→                    error_message=f"Diff file not found: {request.diff_file}",
-   117→                    error_message="Diff file is empty",
-   137→        result_holder: list[LlmResponse | NoApiKey | LlmCallFailed] = []
-   160→                    error_message="LLM call completed without result",
-   167→        if isinstance(result, (NoApiKey, LlmCallFailed)):
-   173→                    error_message=result.message,
-   187→                error_message=None,
+CLAUDE.md files checked: 19
+
+... [125 lines omitted] ...
+
+make: *** [Makefile:97: fast-ci] Error 1
   </tool_result>
-  <tool_result tool="toolu_0197kdNTRt5LjaNJoA2WgACq">
-     1→"""Shared utilities for PR commands.
-     2→
-     3→This module contains common functionality used by multiple PR commands
-     4→(rewrite, submit) to avoid code duplication.
-     5→"""
-     6→
-     7→from __future__ import annotations
-     8→
-     9→import queue
-    10→import threading
-    11→from dataclasses import dataclass
-    12→from pathlib import Path
-    13→
-    14→import click
-    15→
-    16→from erk.core.commit_message_generator import (
-    17→    CommitMessageGenerator,
-    18→    CommitMessageRequest,
-    19→    CommitMessageResult,
-    20→)
-    21→from erk.core.context import ErkContext
-    22→from erk.core.plan_context_provider import PlanContext
-    23→from erk_shared.gateway.github.metadata.core import find_metadata_block, render_metadata_block
-    24→from erk_shared.gateway.github.metadata.schemas import (
-    25→    CREATED_AT,
-    26→    CREATED_BY,
-    27→    LIFECYCLE_STAGE,
-    28→    SCHEMA_VERSION,
-    29→)
-    30→from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
+  <assistant>The `make fast-ci` command found **prettier formatting issues** in 6 documentation files. Here's the summary:
 
-... [399 lines omitted] ...
+**Failed: Prettier code style issues**
 
-    58→        click.ClickException: If in detached HEAD state
-    62→        raise click.ClickException("Not on a branch (detached HEAD state)")
-   101→        Path to diff file, or None if extraction failed
-   158→    Silently returns on any failure — lifecycle updates must never block submission.
-   170→    except RuntimeError as e:
-   172→            msg = f"   Warning: failed to update lifecycle stage: {e}"
-   236→        except OSError:
-   319→    elif event.style == "warning":
-   321→    elif event.style == "error":
-   328→    """Verify Claude CLI is available, raising ClickException if not.
-   334→        click.ClickException: If Claude CLI is not available
-   337→        raise click.ClickException(
-   374→        CommitMessageResult with the generated title/body or error info
-   420→            error_message="Commit message generation did not complete",
-  </tool_result>
-  <tool_result tool="toolu_011Vg6qjJqxNqKV15LnanYtp">
-Found 4 files
-src/erk/cli/commands/pr/rewrite_cmd.py
-src/erk/cli/commands/pr/shared.py
-src/erk/cli/commands/pr/submit_pipeline.py
-src/erk/cli/commands/exec/scripts/update_pr_description.py
-  </tool_result>
-  <assistant>Now let me read those three production call sites to verify they pass `time=ctx.time`:</assistant>
-  <usage input_tokens="7" cache_creation_input_tokens="8948" cache_read_input_tokens="18853" cache_creation="{'ephemeral_5m_input_tokens': 8948, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01T9CyyJjrjYmMJvvknj2ECc">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py</param>
-  </tool_use>
-  <usage input_tokens="7" cache_creation_input_tokens="8948" cache_read_input_tokens="18853" cache_creation="{'ephemeral_5m_input_tokens': 8948, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_013Xai47ydWXQ5qH3khcbVgp">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
-  </tool_use>
-  <usage input_tokens="7" cache_creation_input_tokens="8948" cache_read_input_tokens="18853" cache_creation="{'ephemeral_5m_input_tokens': 8948, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_01Rk8vSBZUxgBXyY1UKAsHbt">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_pr_description.py</param>
-  </tool_use>
-  <usage input_tokens="7" cache_creation_input_tokens="8948" cache_read_input_tokens="18853" cache_creation="{'ephemeral_5m_input_tokens': 8948, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_01T9CyyJjrjYmMJvvknj2ECc">
-     1→"""Squash, regenerate AI commit message, push, and update remote PR.
-     2→
-     3→Replaces the old multi-step workflow (gt squash → erk pr summarize → push)
-     4→with a single command that handles the full cycle: squash commits, generate
-     5→an AI-powered commit message, amend the local commit, force-push, and update
-     6→the remote PR title/body.
-     7→"""
-     8→
-     9→from pathlib import Path
-    10→
-    11→import click
-    12→
-    13→from erk.cli.commands.pr.shared import (
-    14→    assemble_pr_body,
-    15→    cleanup_diff_file,
-    16→    discover_branch_context,
-    17→    echo_plan_context_status,
-    18→    maybe_advance_lifecycle_to_impl,
-    19→    render_progress,
-    20→    require_claude_available,
-    21→    run_commit_message_generation,
-    22→    run_diff_extraction,
-    23→)
-    24→from erk.core.command_log import get_or_generate_session_id
-    25→from erk.core.commit_message_generator import CommitMessageGenerator
-    26→from erk.core.context import ErkContext
-    27→from erk.core.plan_context_provider import PlanContextProvider
-    28→from erk_shared.gateway.branch_manager.types import SubmitBranchError
-    29→from erk_shared.gateway.github.label_ops import add_labels_resilient
-    30→from erk_shared.gateway.github.types import BodyText, PRNotFound
+6 files need formatting with prettier --write:
 
-... [202 lines omitted] ...
+1. `docs/learned/architecture/health-check-runner-gateway.md`
+2. `docs/learned/integrations/github-review-decision.md`
+3. `docs/learned/planning/incremental-dispatch.md`
+4. `docs/learned/testing/alias-verification-pattern.md`
+5. `docs/learned/testing/test-file-organization.md`
+6. `docs/learned/tui/status-indicators.md`
 
-    34→from erk_shared.gateway.gt.types import SquashError
-    82→        raise click.ClickException(
-    95→    if isinstance(squash_result, SquashError):
-    96→        raise click.ClickException(f"Squash failed: {squash_result.message}")
-   109→        raise click.ClickException("Failed to extract diff for AI analysis")
-   139→        raise click.ClickException(f"Failed to generate message: {msg_result.error_message}")
-   161→    if isinstance(submit_result, SubmitBranchError):
-   162→        raise click.ClickException(f"Push failed: {submit_result.message}")
-   216→) -&gt; SquashError | None:
-   217→    """Run squash phase. Returns SquashError on failure, None on success."""
-   224→            if isinstance(result, SquashError):
-  </tool_result>
-  <tool_result tool="toolu_01Rk8vSBZUxgBXyY1UKAsHbt">
-     1→"""Update PR title and body using AI-generated description.
-     2→
-     3→This exec command generates an AI-powered PR title and body from the full diff
-     4→between the current branch and its parent, then updates the PR on GitHub.
-     5→
-     6→Unlike `erk pr submit`, this does NOT amend the local commit or push changes.
-     7→It only updates the PR's title and body, preserving existing header and footer
-     8→metadata.
-     9→
-    10→Usage:
-    11→    erk exec update-pr-description
-    12→    erk exec update-pr-description --session-id "abc123"
-    13→
-    14→Exit Codes:
-    15→    0: Success
-    16→    1: Error (no PR, Claude unavailable, diff extraction failure)
-    17→"""
-    18→
-    19→import uuid
-    20→from pathlib import Path
-    21→
-    22→import click
-    23→
-    24→from erk.cli.commands.pr.shared import (
-    25→    assemble_pr_body,
-    26→    cleanup_diff_file,
-    27→    discover_branch_context,
-    28→    echo_plan_context_status,
-    29→    require_claude_available,
-    30→    run_commit_message_generation,
+**Passed checks:**
+- Ruff linting: All checks passed
+- Ruff formatting: 1653 files already formatted
+- Type checking (ty): All checks passed
+- Unit tests (erk): 5678 passed
+- Unit tests (erk-dev): 136 passed
+- Unit tests (erk-statusline): 115 passed
+- Unit tests (erk-mcp): 24 passed
 
-... [142 lines omitted] ...
-
-    74→        raise click.ClickException(
-    98→        raise click.ClickException("Failed to extract diff for AI analysis")
-   134→        raise click.ClickException(f"Failed to generate message: {msg_result.error_message}")
-  </tool_result>
-  <tool_result tool="toolu_013Xai47ydWXQ5qH3khcbVgp">
-     1→"""Linear pipeline for PR submission.
-     2→
-     3→Replaces the dual-path branching orchestration with a sequence of plain
-     4→functions transforming a frozen SubmitState dataclass.
-     5→
-     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
-     7→"""
-     8→
-     9→import concurrent.futures
-    10→import dataclasses
-    11→import sys
-    12→import uuid
-    13→from collections.abc import Callable
-    14→from dataclasses import dataclass
-    15→from functools import cache
-    16→from pathlib import Path
-    17→
-    18→import click
-    19→
-    20→from erk.cli.commands.pr.shared import (
-    21→    assemble_pr_body,
-    22→    echo_plan_context_status,
-    23→    maybe_advance_lifecycle_to_impl,
-    24→    recover_plan_header,
-    25→    run_commit_message_generation,
-    26→)
-    27→from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
-    28→from erk.cli.ensure import UserFacingCliError
-    29→from erk.core.commit_message_generator import CommitMessageGenerator
-    30→from erk.core.context import ErkContext
-
-... [1055 lines omitted] ...
-
-    32→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
-   118→class SubmitError:
-   119→    """Error result from a pipeline step."""
-   122→    error_type: str
-   131→SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
-   134→def prepare_state(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   147→        return SubmitError(
-   149→            error_type="no_branch",
-   163→        except ValueError as e:
-   164→            return SubmitError(
-   166→                error_type="issue_linkage_mismatch",
-   209→def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   229→def commit_wip(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   239→def capture_existing_pr_body(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   251→def push_and_create_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   268→def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   275→    # but the first submit attempt failed before pushing.
-   289→            return SubmitError(
-   291→                error_type="remote_diverged",
-   321→    except RuntimeError as e:
-   322→        error_str = str(e)
-   323→        if "restack" in error_str.lower():
-   324→            return SubmitError(
-   326→                error_type="graphite_restack_required",
-   335→        return SubmitError(
-   337→            error_type="graphite_submit_failed",
-   338→            message=f"Graphite submit failed: {e}",
-   350→        return SubmitError(
-   352→            error_type="pr_not_found",
-   381→def _core_submit_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   389→        return SubmitError(
-   391→            error_type="github_auth_failed",
-   401→        return SubmitError(
-   403→            error_type="no_commits",
-   421→        if isinstance(pull_result, PullRebaseError):
-   422→            return SubmitError(
-   424→                error_type="rebase_failed",
-   426→                    f"Failed to rebase '{state.branch_name}' on origin.\n"
-   427→                    f"Error: {pull_result.message}\n\n"
-   437→        return SubmitError(
-   439→            error_type="branch_diverged",
-   458→    if isinstance(push_result, PushError):
-   460→            return SubmitError(
-   462→                error_type="branch_diverged",
-   471→        raise UserFacingCliError(push_result.message)
-   481→                return SubmitError(
-   483→                    error_type="parent_branch_no_pr",
-   555→def extract_diff(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   561→        return SubmitError(
-   563→            error_type="no_base_branch",
-   591→def fetch_plan_context(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   611→) -&gt; SubmitState | SubmitError:
-   624→    if isinstance(diff_result, SubmitError):
-   626→    if isinstance(plan_result, SubmitError):
-   638→def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   645→        return SubmitError(
-   647→            error_type="no_diff_file",
-   648→            message="Failed to extract diff for AI analysis",
-   669→        return SubmitError(
-   671→            error_type="ai_generation_failed",
-   672→            message=f"Failed to generate message: {msg_result.error_message}",
-   685→def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   727→    except RuntimeError as e:
-   728→        error_msg = str(e).lower()
-   729→        if "nothing to submit" in error_msg or "no changes" in error_msg:
-   733→        return SubmitError(
-   735→            error_type="graphite_enhance_failed",
-   736→            message=f"Graphite enhancement failed: {e}",
-   753→def finalize_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   760→        return SubmitError(
-   762→            error_type="no_pr_number",
-   835→        except OSError as e:
-   837→                click.echo(click.style(f"   Failed to clean up diff file: {e}", dim=True))
-   865→def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   891→                f"   Warning: Objective #{objective_id} not found, skipping node linking",
-   929→            except ValueError:
-   983→def run_push_and_create_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-   988→        except Exception as e:
-   990→            return SubmitError(
-   992→                error_type="unhandled_exception",
-   993→                message=f"Unexpected error in {step_name}: {e}",
-   997→        if isinstance(result, SubmitError):
-  1019→def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
-  1020→    """Run the submit pipeline, returning final state or first error."""
-  1024→        except Exception as e:
-  1026→            return SubmitError(
-  1028→                error_type="unhandled_exception",
-  1029→                message=f"Unexpected error in {step_name}: {e}",
-  1033→        if isinstance(result, SubmitError):
-  </tool_result>
-  <assistant>Perfect! Now I have all the information. Let me compile a comprehensive report.
-
-## Report: Background Thread and Time Parameter Usage
-
-### 1. CommitMessageGenerator Background Thread Pattern
-**File:** `/home/runner/work/erk/erk/src/erk/core/commit_message_generator.py`
-
-**Lines 144-152 - Background Thread with Polling:**
-```python
-144→        thread = threading.Thread(target=_run_call, daemon=True)
-145→        start_time = self._time.monotonic()
-146→        thread.start()
-147→
-148→        while thread.is_alive():
-149→            thread.join(timeout=_PROGRESS_INTERVAL_SECONDS)
-150→            if thread.is_alive():
-151→                elapsed = int(self._time.monotonic() - start_time)
-152→                yield ProgressEvent(f"Still waiting... ({elapsed}s)")
-```
-
-**Key Structures:**
-- **_PROGRESS_INTERVAL_SECONDS**: 2.0 seconds (line 29)
-- **Thread function `_run_call`** (lines 139-142): Appends LLM result to `result_holder` list
-- **Time tracking**: Uses `self._time.monotonic()` for elapsed timing
-- **Thread state check**: `thread.is_alive()` with timeout polling
-- **Progress yields**: Every 2 seconds if thread still running
-
----
-
-### 2. run_commit_message_generation() Function
-**File:** `/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py`
-
-**Lines 345-423 - Commit Message Generation with Queue:**
-
-**Function Signature (lines 345-356):**
-```python
-345→def run_commit_message_generation(
-346→    *,
-347→    generator: CommitMessageGenerator,
-348→    diff_file: Path,
-349→    repo_root: Path,
-350→    current_branch: str,
-351→    parent_branch: str,
-352→    commit_messages: list[str] | None,
-353→    plan_context: PlanContext | None,
-354→    debug: bool,
-355→    time: Time,  # ← CRITICAL: Time parameter required
-356→) -&gt; CommitMessageResult:
-```
-
-**Thread &amp; Queue Pattern (lines 376-411):**
-```python
-376→    event_queue: queue.Queue[ProgressEvent | CompletionEvent[CommitMessageResult] | None] = (
-377→        queue.Queue()
-378→    )
-379→
-380→    def _produce() -&gt; None:
-381→        for event in generator.generate(...):
-382→            event_queue.put(event)
-383→        event_queue.put(None)  # Sentinel
-384→
-385→    thread = threading.Thread(target=_produce, daemon=True)
-386→    start = time.monotonic()  # ← Uses injected 'time' parameter
-387→    thread.start()
-388→
-389→    result: CommitMessageResult | None = None
-390→    while True:
-391→        try:
-392→            event = event_queue.get(timeout=_PROGRESS_TIMEOUT_SECONDS)
-393→        except queue.Empty:
-394→            elapsed = int(time.monotonic() - start)  # ← Uses injected 'time'
-394→            render_progress(ProgressEvent(f"Still waiting... ({elapsed}s)"))
-405→            continue
-...
-423→    return result
-```
-
-**Key Structures:**
-- **_PROGRESS_TIMEOUT_SECONDS**: 5.0 seconds (line 342)
-- **Queue-based event collection**: Daemon thread produces, main waits on queue
-- **Sentinel pattern**: `event_queue.put(None)` signals completion (line 392)
-- **Timeout polling**: `event_queue.get(timeout=5.0)` waits for next event
-- **Time tracking**: `time.monotonic()` from injected parameter
-
----
-
-### 3. Production Call Sites (Verified)
-
-All three call sites pass `time=ctx.time`:
-
-#### Call Site 1: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py`
-**Lines 125-136:**
-```python
-125→    msg_gen = CommitMessageGenerator(ctx.llm_caller, time=ctx.time)
-126→    msg_result = run_commit_message_generation(
-127→        generator=msg_gen,
-128→        diff_file=diff_file,
-129→        repo_root=discovery.repo_root,
-130→        current_branch=discovery.current_branch,
-131→        parent_branch=discovery.parent_branch,
-132→        commit_messages=None,
-133→        plan_context=plan_context,
-134→        debug=debug,
-135→        time=ctx.time,  # ✓ PASSES TIME
-136→    )
-```
-
-#### Call Site 2: `/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py`
-**Lines 655-666 in `generate_description()` function:**
-```python
-655→    msg_gen = CommitMessageGenerator(ctx.llm_caller, time=ctx.time)
-656→    msg_result = run_commit_message_generation(
-657→        generator=msg_gen,
-658→        diff_file=state.diff_file,
-659→        repo_root=state.repo_root,
-660→        current_branch=state.branch_name,
-661→        parent_branch=state.parent_branch,
-662→        commit_messages=commit_messages,
-663→        plan_context=state.plan_context,
-664→        debug=state.debug,
-665→        time=ctx.time,  # ✓ PASSES TIME
-666→    )
-```
-
-#### Call Site 3: `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_pr_description.py`
-**Lines 120-131:**
-```python
-120→    msg_gen = CommitMessageGenerator(ctx.llm_caller, time=ctx.time)
-121→    msg_result = run_commit_message_generation(
-122→        generator=msg_gen,
-123→        diff_file=diff_file,
-124→        repo_root=discovery.repo_root,
-125→        current_branch=discovery.current_branch,
-126→        parent_branch=discovery.parent_branch,
-127→        commit_messages=commit_messages,
-128→        plan_context=plan_context,
-129→        debug=debug,
-130→        time=ctx.time,  # ✓ PASSES TIME
-131→    )
-```
-
----
-
-### Summary
-
-**Dual Threading Pattern Comparison:**
-
-| Component | `CommitMessageGenerator.generate()` | `run_commit_message_generation()` |
-|-----------|-------------------------------------|-----------------------------------|
-| **Thread type** | Direct LLM call in thread | Event generator in thread |
-| **Sync mechanism** | `thread.join(timeout=2.0)` | `queue.get(timeout=5.0)` |
-| **Result holder** | List `result_holder[0]` | Queue + loop until None |
-| **Time parameter** | Constructor: `time=ctx.time` | Function arg: `time: Time` |
-| **Polling interval** | 2 seconds | 5 seconds (timeout only) |
-| **Lines** | 144-152 | 385-411 |
-
-**All Three Calls Verified:** Every production call to `run_commit_message_generation()` passes `time=ctx.time`, ensuring time abstraction is properly injected for testability.</assistant>
-  <usage input_tokens="2260" cache_creation_input_tokens="18866" cache_read_input_tokens="27801" cache_creation="{'ephemeral_5m_input_tokens': 18866, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+The lint and type checks are clean, but these 6 markdown files need Prettier formatting fixes before the CI will pass.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1496" cache_read_input_tokens="12311" cache_creation="{'ephemeral_5m_input_tokens': 1496, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
 </session>

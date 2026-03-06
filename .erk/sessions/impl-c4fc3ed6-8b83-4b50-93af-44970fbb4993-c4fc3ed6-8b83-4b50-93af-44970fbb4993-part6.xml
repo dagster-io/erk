@@ -1,131 +1,160 @@
 <session>
-  <meta source="agent-aafe67b" />
+  <meta source="agent-a93d200" />
   <meta branch="plnd/consolidate-learn-docs-03-06-2252" />
   <meta model="claude-haiku-4-5-20251001" />
-  <user>Read the file `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py` and provide:
-1. The overall structure and purpose
-2. Key functions and their line numbers
-3. The commit message format (around line 131)
-4. The two-part plan embedding strategy
-5. The worktree interaction/index sync logic (around lines 134-144)
-6. The workflow dispatch details (dispatch_type, plan_backend)
+  <user>Verify that these source files referenced in the new documentation exist in `/home/runner/work/erk/erk/`:
 
-Report all details with accurate line numbers.</user>
-  <assistant>I'll read the file and provide you with all the requested details.</assistant>
-  <usage input_tokens="3" cache_creation_input_tokens="18828" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18828, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
-  <tool_use name="Read" id="toolu_013qf1FJVbmCEUxKucrxAmnQ">
-    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+1. `src/erk/cli/commands/exec/scripts/incremental_dispatch.py`
+2. `src/erk/core/health_checks/runner.py`
+3. `tests/fakes/health_check_runner.py`
+4. `src/erk/cli/commands/doctor.py`
+5. `src/erk/core/health_checks/managed_artifacts.py`
+6. `src/erk/cli/commands/pr/prepare_cmd.py`
+7. `src/erk/cli/commands/pr/checkout_cmd.py`
+8. `src/erk/cli/commands/reconcile_cmd.py`
+9. `src/erk/cli/commands/reconcile_pipeline.py`
+10. `src/erk/core/commit_message_generator.py`
+11. `src/erk/cli/commands/pr/shared.py`
+12. `src/erk/cli/commands/pr/submit_pipeline.py`
+13. `src/erk/cli/commands/pr/rewrite_cmd.py`
+14. `src/erk/cli/commands/exec/scripts/update_pr_description.py`
+
+Report which exist and which don't.</user>
+  <assistant>I'll verify the existence of these source files by checking each one.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014K8iTEBZoS7X64TV5Kms1i">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py 2&gt;&amp;1</param>
+    <param name="description">Check if incremental_dispatch.py exists</param>
   </tool_use>
-  <usage input_tokens="3" cache_creation_input_tokens="18828" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18828, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
-  <tool_result tool="toolu_013qf1FJVbmCEUxKucrxAmnQ">
-     1→"""Dispatch a local plan against an existing PR for remote implementation.
-     2→
-     3→Usage:
-     4→    erk exec incremental-dispatch --plan-file &lt;path&gt; --pr &lt;number&gt; [OPTIONS]
-     5→
-     6→Commits the plan as impl-context to the PR's branch and triggers the
-     7→plan-implement workflow. Unlike regular dispatch, this does not require
-     8→the erk-plan label — just an OPEN PR.
-     9→"""
-    10→
-    11→import json
-    12→from pathlib import Path
-    13→
-    14→import click
-    15→
-    16→from erk.cli.commands.pr.dispatch_cmd import load_workflow_config
-    17→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
-    18→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
-    19→from erk.cli.constants import DISPATCH_WORKFLOW_NAME
-    20→from erk_shared.context.helpers import (
-    21→    require_branch_manager,
-    22→    require_context,
-    23→    require_git,
-    24→    require_github,
-    25→    require_repo_root,
-    26→    require_time,
-    27→)
-    28→from erk_shared.context.types import NoRepoSentinel
-    29→from erk_shared.gateway.git.remote_ops.types import PushError
-    30→from erk_shared.gateway.github.parsing import (
-
-... [189 lines omitted] ...
-
-    83→        _output_error(output_format, f"PR #{pr_number} not found")
-    87→        _output_error(output_format, f"PR #{pr_number} is {pr_result.state}, must be OPEN")
-    98→        _output_error(output_format, "Not in a git repository")
-   147→    if isinstance(push_result, PushError):
-   148→        _output_error(output_format, f"Push failed: {push_result.message}")
-   208→def _output_error(output_format: str, message: str) -&gt; None:
-   209→    """Output error in the requested format."""
-   211→        click.echo(json.dumps({"success": False, "error": message}))
-   213→        user_output(click.style("Error: ", fg="red") + message)
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015Trm9ufc7gMWiD5EhewAWb">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/core/health_checks/runner.py 2&gt;&amp;1</param>
+    <param name="description">Check if health_checks/runner.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VC5BNYqze3feHbNHpSJJpZ">
+    <param name="command">ls -la /home/runner/work/erk/erk/tests/fakes/health_check_runner.py 2&gt;&amp;1</param>
+    <param name="description">Check if health_check_runner.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019pHsgDtUpbtoupcJ6cPH3M">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/doctor.py 2&gt;&amp;1</param>
+    <param name="description">Check if doctor.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01H8HszZmxjpAi8B1pXSut4d">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/core/health_checks/managed_artifacts.py 2&gt;&amp;1</param>
+    <param name="description">Check if managed_artifacts.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PSLz41huKxYsrBGin4N3Qk">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py 2&gt;&amp;1</param>
+    <param name="description">Check if prepare_cmd.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RKQ3MpN98r41hub3iFvEvJ">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py 2&gt;&amp;1</param>
+    <param name="description">Check if checkout_cmd.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CcSVJDta97tZ9LbbXEnQnQ">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/reconcile_cmd.py 2&gt;&amp;1</param>
+    <param name="description">Check if reconcile_cmd.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0169vY9fF8djXkapjLe4PD5m">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py 2&gt;&amp;1</param>
+    <param name="description">Check if reconcile_pipeline.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SsEWP1v8dx92Lu5QJASFY6">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/core/commit_message_generator.py 2&gt;&amp;1</param>
+    <param name="description">Check if commit_message_generator.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01U9npPJKkGqtzyyuKea2G6p">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py 2&gt;&amp;1</param>
+    <param name="description">Check if pr/shared.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011q3MtVFXuosgBP2i3R1rBc">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py 2&gt;&amp;1</param>
+    <param name="description">Check if submit_pipeline.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0156y84qQ3CVXru89aHn3KcA">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py 2&gt;&amp;1</param>
+    <param name="description">Check if rewrite_cmd.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KCQhFMwsdg1aPGGxCBQxcg">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_pr_description.py 2&gt;&amp;1</param>
+    <param name="description">Check if update_pr_description.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015Trm9ufc7gMWiD5EhewAWb">
+-rw-r--r-- 1 runner runner 924 Mar  6 22:55 /home/runner/work/erk/erk/src/erk/core/health_checks/runner.py
   </tool_result>
-  <assistant>Now I'll provide you with a comprehensive analysis of the file:
+  <tool_result tool="toolu_014K8iTEBZoS7X64TV5Kms1i">
+-rw-r--r-- 1 runner runner 7352 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py
+  </tool_result>
+  <tool_result tool="toolu_01VC5BNYqze3feHbNHpSJJpZ">
+-rw-r--r-- 1 runner runner 624 Mar  6 22:55 /home/runner/work/erk/erk/tests/fakes/health_check_runner.py
+  </tool_result>
+  <tool_result tool="toolu_01H8HszZmxjpAi8B1pXSut4d">
+-rw-r--r-- 1 runner runner 13391 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/core/health_checks/managed_artifacts.py
+  </tool_result>
+  <tool_result tool="toolu_01SsEWP1v8dx92Lu5QJASFY6">
+-rw-r--r-- 1 runner runner 9631 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/core/commit_message_generator.py
+  </tool_result>
+  <tool_result tool="toolu_0169vY9fF8djXkapjLe4PD5m">
+-rw-r--r-- 1 runner runner 7998 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py
+  </tool_result>
+  <tool_result tool="toolu_019pHsgDtUpbtoupcJ6cPH3M">
+-rw-r--r-- 1 runner runner 10540 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/cli/commands/doctor.py
+  </tool_result>
+  <tool_result tool="toolu_01PSLz41huKxYsrBGin4N3Qk">
+-rw-r--r-- 1 runner runner 3126 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py
+  </tool_result>
+  <tool_result tool="toolu_01RKQ3MpN98r41hub3iFvEvJ">
+-rw-r--r-- 1 runner runner 17836 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py
+  </tool_result>
+  <tool_result tool="toolu_01CcSVJDta97tZ9LbbXEnQnQ">
+-rw-r--r-- 1 runner runner 5844 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/cli/commands/reconcile_cmd.py
+  </tool_result>
+  <tool_result tool="toolu_01U9npPJKkGqtzyyuKea2G6p">
+-rw-r--r-- 1 runner runner 13873 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py
+  </tool_result>
+  <tool_result tool="toolu_011q3MtVFXuosgBP2i3R1rBc">
+-rw-r--r-- 1 runner runner 38173 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py
+  </tool_result>
+  <tool_result tool="toolu_0156y84qQ3CVXru89aHn3KcA">
+-rw-r--r-- 1 runner runner 7605 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py
+  </tool_result>
+  <tool_result tool="toolu_01KCQhFMwsdg1aPGGxCBQxcg">
+-rw-r--r-- 1 runner runner 5411 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_pr_description.py
+  </tool_result>
+  <assistant>Perfect! All 14 source files exist in the repository. Here's the verification report:
 
-## Overall Structure and Purpose
+## File Existence Report
 
-The file `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py` is an exec CLI command that dispatches a local plan against an existing PR for remote implementation. Unlike regular dispatch, it does not require the erk-plan label—just an OPEN PR. It commits the plan as impl-context to the PR's branch and triggers the plan-implement workflow.
+All referenced files **exist** and are present in the codebase:
 
-## Key Functions and Line Numbers
+1. ✓ `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py` (7,352 bytes)
+2. ✓ `/home/runner/work/erk/erk/src/erk/core/health_checks/runner.py` (924 bytes)
+3. ✓ `/home/runner/work/erk/erk/tests/fakes/health_check_runner.py` (624 bytes)
+4. ✓ `/home/runner/work/erk/erk/src/erk/cli/commands/doctor.py` (10,540 bytes)
+5. ✓ `/home/runner/work/erk/erk/src/erk/core/health_checks/managed_artifacts.py` (13,391 bytes)
+6. ✓ `/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py` (3,126 bytes)
+7. ✓ `/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py` (17,836 bytes)
+8. ✓ `/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_cmd.py` (5,844 bytes)
+9. ✓ `/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py` (7,998 bytes)
+10. ✓ `/home/runner/work/erk/erk/src/erk/core/commit_message_generator.py` (9,631 bytes)
+11. ✓ `/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py` (13,873 bytes)
+12. ✓ `/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py` (38,173 bytes)
+13. ✓ `/home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py` (7,605 bytes)
+14. ✓ `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_pr_description.py` (5,411 bytes)
 
-| Function | Line Numbers | Purpose |
-|----------|--------------|---------|
-| `incremental_dispatch()` | 62-205 | Main CLI command handler |
-| `_output_error()` | 208-213 | Helper to output errors in requested format |
-
-## Commit Message Format (Line 128)
-
-The commit message is constructed on line 128 as:
-```python
-message=f"Incremental dispatch for PR #{pr_number}\n\n{plan_content}",
-```
-
-This creates a two-part commit message:
-1. **First line (subject)**: `Incremental dispatch for PR #{pr_number}`
-2. **Second part (body)**: The full `plan_content` (plan markdown) embedded directly
-
-This is the **two-part plan embedding strategy** - the plan itself is embedded in the git commit message body.
-
-## Worktree Interaction/Index Sync Logic (Lines 135-141)
-
-The logic handles the case where the branch is already checked out in a worktree:
-
-```python
-# If branch is checked out, write files to disk and stage so git status is clean
-if checked_out_path is not None:
-    for rel_path, content in files.items():
-        abs_path = checked_out_path / rel_path
-        abs_path.parent.mkdir(parents=True, exist_ok=True)
-        abs_path.write_text(content, encoding="utf-8")
-    git.commit.stage_files(checked_out_path, list(files.keys()), force=True)
-```
-
-This process:
-1. **Detects if branch is checked out**: Line 105-106 checks `git.worktree.is_branch_checked_out()`
-2. **Writes impl-context files to disk**: Lines 137-140 materialize the files (created by `build_impl_context_files()`)
-3. **Stages files to git index**: Line 141 calls `git.commit.stage_files()` with `force=True` to ensure the working tree matches the plumbing commit
-
-This ensures git status is clean after the plumbing commit advanced the branch.
-
-## Workflow Dispatch Details (Lines 162-172)
-
-The workflow dispatch uses two key parameters in the inputs dictionary:
-
-| Parameter | Line | Value | Purpose |
-|-----------|------|-------|---------|
-| `dispatch_type` | 170 | `"incremental"` | Indicates this is an incremental dispatch (vs. full dispatch) |
-| `plan_backend` | 169 | `"planned_pr"` | Specifies the plan backend type for the remote implementation workflow |
-
-Additional dispatch inputs (lines 162-172):
-- `plan_id`: PR number (line 163)
-- `submitted_by`: GitHub username (line 164)
-- `plan_title`: PR title (line 165)
-- `branch_name`: Target branch (line 166)
-- `pr_number`: PR number as string (line 167)
-- `base_branch`: Detected trunk branch (line 168)
-- Plus additional config from `load_workflow_config()` (line 171)
-
-The workflow is triggered on line 175 using `github.trigger_workflow()` with `DISPATCH_WORKFLOW_NAME` and the ref resolved from dispatch options.</assistant>
-  <usage input_tokens="5" cache_creation_input_tokens="3912" cache_read_input_tokens="18828" cache_creation="{'ephemeral_5m_input_tokens': 3912, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+**Summary:** All 14 files referenced in the documentation exist in the repository. The documentation references are valid.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2580" cache_read_input_tokens="19026" cache_creation="{'ephemeral_5m_input_tokens': 2580, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
 </session>
