@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Restore progress feedback during PR description generation with background thread polling"
+}

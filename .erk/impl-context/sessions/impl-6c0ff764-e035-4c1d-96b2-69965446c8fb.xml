@@ -1,0 +1,1455 @@
+<session>
+  <meta branch="plnd/add-progress-feedback-03-06-0449" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="6c0ff764-e035-4c1d-96b2-69965446c8fb" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="6c0ff764-e035-4c1d-96b2-69965446c8fb" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="6c0ff764-e035-4c1d-96b2-69965446c8fb" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="6c0ff764-e035-4c1d-96b2-69965446c8fb" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="16359" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16359}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="16359" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16359}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_019EQdUESHLq5PL1SErwgamZ">
+    <param name="query">select:Bash,Read,Glob,Grep,Write,Edit,Agent,Skill,TaskCreate,TaskGet,TaskList,TaskOutput,TaskStop,TaskUpdate</param>
+    <param name="max_results">15</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="16359" cache_read_input_tokens="0" output_tokens="177" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 16359, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_019EQdUESHLq5PL1SErwgamZ">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="11421" cache_read_input_tokens="16359" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11421}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Vg3wEmNswJ2WojtmzTUyii">
+    <param name="command">erk exec setup-impl</param>
+    <param name="description">Set up implementation from current branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11421" cache_read_input_tokens="16359" output_tokens="159" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11421, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Vg3wEmNswJ2WojtmzTUyii">
+Found existing impl dir for plan #8829, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/.erk/impl-context/plnd--add-progress-feedback-03-06-0449", "plan_number": 8829, "plan_url": "https://github.com/dagster-io/erk/pull/8829", "branch": "plnd/add-progress-feedback-03-06-0449", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8829, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <assistant>Implementation environment ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="27780" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 334}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01U6tQ47JzTnXAKRLSZY8JDF">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/.erk/impl-context/plnd--add-progress-feedback-03-06-0449/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="27780" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 334, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01U6tQ47JzTnXAKRLSZY8JDF">
+     1→# Add Progress Feedback to PR Description Generation
+     2→
+     3→## Context
+     4→
+     5→When `erk pr submit` was migrated from invoking Claude CLI subprocess to using direct Anthropic API calls (commit `dccd1b32e`), the progress feedback during the API call was lost. The old implementation used a background thread with periodic "Still waiting... ({elapsed}s)" messages every 3 seconds while the Claude CLI subprocess ran (15+ seconds). The new implementation makes a synchronous `LlmCaller.call()` that blocks for 2-5 seconds with no intermediate feedback.
+     6→
+     7→The user wants the progress feedback restored so they can see that the system is actively working during the API call.
+     8→
+     9→## Current State
+    10→
+    11→The `CommitMessageGenerator.generate()` method (in `src/erk/core/commit_message_generator.py`) yields these progress events:
+    12→
+    13→1. `"Reading diff file..."` (info style)
+    14→2. `"Diff loaded ({size} chars)"` (success style)
+    15→3. `"Analyzing changes with Claude..."` (info style)
+    16→4. **&lt;-- API call blocks here with no feedback --&gt;**
+    17→5. `"PR description generated"` (success style)
+    18→
+    19→The gap between events 3 and 5 is where the user sees no output. The API call typically takes 2-5 seconds but could take longer under load.
+    20→
+    21→## Changes
+    22→
+    23→### File: `src/erk/core/commit_message_generator.py`
+    24→
+    25→**What to change:** Restore the background thread + polling pattern so that progress events can be yielded while the API call is in flight.
+    26→
+    27→**Detailed implementation:**
+    28→
+    29→1. Add imports: `import threading` and the Time ABC (`from erk_shared.gateway.time.abc import Time`)
+    30→2. Add a module-level constant: `_PROGRESS_INTERVAL_SECONDS = 5.0` (5 seconds, slightly longer than the old 3s since API calls are faster)
+
+... [147 lines omitted] ...
+
+    43→   result_holder: list[LlmResponse | NoApiKey | LlmCallFailed] = []
+    44→   error_holder: list[Exception] = []
+    51→       except Exception as exc:
+    52→           error_holder.append(exc)
+    64→   if error_holder:
+    70→               error_message=f"LLM call failed: {error_holder[0]}",
+    81→               error_message="LLM call completed without result",
+   147→- `result_holder` and `error_holder` lists (thread-safe append)
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3193" cache_read_input_tokens="28114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3193}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the key files to understand the current state.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3193" cache_read_input_tokens="28114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3193}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011BC1NYjpa9LNSpiLGDAAP3">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/core/commit_message_generator.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3193" cache_read_input_tokens="28114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3193}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011BC1NYjpa9LNSpiLGDAAP3">
+     1→"""Commit message generation via Anthropic API.
+     2→
+     3→This module provides commit message generation for PR submissions,
+     4→using direct Anthropic API calls to analyze diffs and generate descriptive messages.
+     5→
+     6→The commit message prompt is loaded from the shared prompt file at:
+     7→packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md
+     8→"""
+     9→
+    10→from __future__ import annotations
+    11→
+    12→import logging
+    13→from collections.abc import Generator
+    14→from dataclasses import dataclass
+    15→from pathlib import Path
+    16→from typing import TYPE_CHECKING
+    17→
+    18→from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, NoApiKey
+    19→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+    20→from erk_shared.gateway.gt.prompts import get_commit_message_prompt
+    21→
+    22→if TYPE_CHECKING:
+    23→    from erk.core.plan_context_provider import PlanContext
+    24→
+    25→logger = logging.getLogger(__name__)
+    26→
+    27→
+    28→@dataclass(frozen=True)
+    29→class CommitMessageRequest:
+    30→    """Request for generating a commit message.
+
+... [248 lines omitted] ...
+
+    57→        error_message: Error description if generation failed
+    63→    error_message: str | None
+    99→                    error_message=f"Diff file not found: {request.diff_file}",
+   112→                    error_message="Diff file is empty",
+   134→        if isinstance(result, (NoApiKey, LlmCallFailed)):
+   140→                    error_message=result.message,
+   154→                error_message=None,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VU1ZL2wpDzanZEJhWobV7z">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/tests/core/test_commit_message_generator.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3193" cache_read_input_tokens="28114" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3193}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VU1ZL2wpDzanZEJhWobV7z">
+     1→"""Tests for CommitMessageGenerator."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.core.commit_message_generator import (
+     6→    CommitMessageGenerator,
+     7→    CommitMessageRequest,
+     8→    CommitMessageResult,
+     9→)
+    10→from erk.core.plan_context_provider import PlanContext
+    11→from erk_shared.core.fakes import FakeLlmCaller
+    12→from erk_shared.core.llm_caller import LlmCallFailed, LlmResponse
+    13→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+    14→
+    15→
+    16→def _consume_generator(
+    17→    generator: CommitMessageGenerator, request: CommitMessageRequest
+    18→) -&gt; tuple[CommitMessageResult, list[ProgressEvent]]:
+    19→    """Consume generator and return result with collected progress events."""
+    20→    progress_events: list[ProgressEvent] = []
+    21→    result: CommitMessageResult | None = None
+    22→
+    23→    for event in generator.generate(request):
+    24→        if isinstance(event, ProgressEvent):
+    25→            progress_events.append(event)
+    26→        elif isinstance(event, CompletionEvent):
+    27→            result = event.result
+    28→
+    29→    if result is None:
+    30→        raise AssertionError("Generator did not yield CompletionEvent")
+
+... [461 lines omitted] ...
+
+    61→    assert result.error_message is None
+   131→    assert result.error_message is not None
+   132→    assert "not found" in result.error_message.lower()
+   157→    assert result.error_message is not None
+   158→    assert "empty" in result.error_message.lower()
+   165→    """Test that generation fails when LLM call returns an error."""
+   170→        response=LlmCallFailed(message="API call failed"),
+   187→    assert result.error_message is not None
+   188→    assert "failed" in result.error_message.lower()
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01L24JeC5Z8y1VDoefaMno9b">
+    <param name="pattern">CommitMessageGenerator\(</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/cli/commands</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3193" cache_read_input_tokens="28114" output_tokens="345" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3193, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01L24JeC5Z8y1VDoefaMno9b">
+src/erk/cli/commands/pr/rewrite_cmd.py:125:    msg_gen = CommitMessageGenerator(ctx.llm_caller)
+src/erk/cli/commands/pr/submit_pipeline.py:655:    msg_gen = CommitMessageGenerator(ctx.llm_caller)
+src/erk/cli/commands/exec/scripts/update_pr_description.py:120:    msg_gen = CommitMessageGenerator(ctx.llm_caller)
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="14553" cache_read_input_tokens="31307" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14553}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I have a clear picture of all the changes needed. Let me create task entries and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="14553" cache_read_input_tokens="31307" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14553}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01S4Sdpcho1na3KiGQLUSn2P">
+    <param name="subject">Update CommitMessageGenerator with threading + Time dependency</param>
+    <param name="description">Add threading, Time ABC import, _PROGRESS_INTERVAL_SECONDS constant, update __init__ to accept time: Time, and implement background thread + polling pattern in generate()</param>
+    <param name="activeForm">Updating CommitMessageGenerator</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14553" cache_read_input_tokens="31307" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14553}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01S4Sdpcho1na3KiGQLUSn2P">
+Task #1 created successfully: Update CommitMessageGenerator with threading + Time dependency
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01MNvLdCJwXGtzo98C7GCaUa">
+    <param name="subject">Update 3 production construction sites to pass time=ctx.time</param>
+    <param name="description">Update submit_pipeline.py:655, rewrite_cmd.py:125, update_pr_description.py:120</param>
+    <param name="activeForm">Updating construction sites</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14553" cache_read_input_tokens="31307" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14553}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MNvLdCJwXGtzo98C7GCaUa">
+Task #2 created successfully: Update 3 production construction sites to pass time=ctx.time
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_013PQvcHJvs8CvHbXRRdXogV">
+    <param name="subject">Update tests and add progress feedback test</param>
+    <param name="description">Update all 14 test constructions to pass time=FakeTime(), add new test for slow API call progress events</param>
+    <param name="activeForm">Updating tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14553" cache_read_input_tokens="31307" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 14553}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013PQvcHJvs8CvHbXRRdXogV">
+Task #3 created successfully: Update tests and add progress feedback test
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01Nq45azxXczskU39d5LPmcc">
+    <param name="subject">Run CI checks</param>
+    <param name="description">Run pytest, ty, ruff to verify all changes</param>
+    <param name="activeForm">Running CI checks</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="14553" cache_read_input_tokens="31307" output_tokens="507" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 14553, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Nq45azxXczskU39d5LPmcc">
+Task #4 created successfully: Run CI checks
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019RLxq5kAQTzG13k2Vg6p4F">
+    <param name="command">erk exec impl-signal started --session-id="6c0ff764-e035-4c1d-96b2-69965446c8fb" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="677" cache_read_input_tokens="45860" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 677, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019RLxq5kAQTzG13k2Vg6p4F">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8829
+}
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01HqFWJzpNvVQjugdtqWvwbF">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="46537" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 153, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HqFWJzpNvVQjugdtqWvwbF">
+Updated task #1 status
+  </tool_result>
+  <assistant>Phase 1: Updating CommitMessageGenerator with threading + Time dependency.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="46690" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 90}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01GsmN1usgm6EuduN5dCUbmN">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/core/commit_message_generator.py</param>
+    <param name="old_string">from __future__ import annotations
+
+import logging
+from collections.abc import Generator
+f...[truncated 195 chars]...onEvent, ProgressEvent
+from erk_shared.gateway.gt.prompts import get_commit_message_prompt</param>
+    <param name="new_string">from __future__ import annotations
+
+import logging
+import threading
+from collections.abc i...[truncated 257 chars]...y.gt.prompts import get_commit_message_prompt
+from erk_shared.gateway.time.abc import Time</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="46690" output_tokens="383" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 90, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GsmN1usgm6EuduN5dCUbmN">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/core/commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01H7VNdbqojNco6vggj7oere">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/core/commit_message_generator.py</param>
+    <param name="old_string">logger = logging.getLogger(__name__)</param>
+    <param name="new_string">logger = logging.getLogger(__name__)
+
+_PROGRESS_INTERVAL_SECONDS = 5.0</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="461" cache_read_input_tokens="46780" output_tokens="162" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 461, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H7VNdbqojNco6vggj7oere">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/core/commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014THQnwuuCaU54SCz9g2cuv">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/core/commit_message_generator.py</param>
+    <param name="old_string">    def __init__(self, llm_caller: LlmCaller) -&gt; None:
+        self._llm_caller = llm_caller</param>
+    <param name="new_string">    def __init__(self, llm_caller: LlmCaller, *, time: Time) -&gt; None:
+        self._llm_caller = llm_caller
+        self._time = time</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="240" cache_read_input_tokens="47241" output_tokens="229" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 240, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014THQnwuuCaU54SCz9g2cuv">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/core/commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <assistant>Now replace the synchronous LLM call with the threaded version:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="288" cache_read_input_tokens="47481" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 288}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01R5prFPWHWtuNK9rFbX77c7">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/core/commit_message_generator.py</param>
+    <param name="old_string">        result = self._llm_caller.call(user_prompt, system_prompt=system_prompt, max_token...[truncated 325 chars]...  # Parse output into title and body
+        title, body = self._parse_output(result.text)</param>
+    <param name="new_string">        result_holder: list[LlmResponse | NoApiKey | LlmCallFailed] = []
+        error_hol...[truncated 1705 chars]...  # Parse output into title and body
+        title, body = self._parse_output(result.text)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="288" cache_read_input_tokens="47481" output_tokens="766" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 288, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01R5prFPWHWtuNK9rFbX77c7">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/core/commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to add the `LlmResponse` import since we reference it in the type annotation for `result_holder`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="825" cache_read_input_tokens="47769" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 825}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01YQCWc67FMRtT7KsDHGLWf8">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/core/commit_message_generator.py</param>
+    <param name="old_string">from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, NoApiKey</param>
+    <param name="new_string">from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="825" cache_read_input_tokens="47769" output_tokens="239" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 825, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YQCWc67FMRtT7KsDHGLWf8">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/core/commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01HkLe9F6VvqkN2qZBBtNi7n">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="48594" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 298}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HkLe9F6VvqkN2qZBBtNi7n">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_014kx1AN7B9ttEh76LnQ9Mbh">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="48594" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 298}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014kx1AN7B9ttEh76LnQ9Mbh">
+Updated task #2 status
+  </tool_result>
+  <assistant>Phase 2: Updating the 3 production construction sites.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="48892" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CZq3EpvdWqqyPxADV6AGZX">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">650</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="48892" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CZq3EpvdWqqyPxADV6AGZX">
+   650→        )
+   651→
+   652→    # Get commit messages for AI context
+   653→    commit_messages = ctx.git.commit.get_commit_messages_since(state.cwd, state.parent_branch)
+   654→
+   655→    msg_gen = CommitMessageGenerator(ctx.llm_caller)
+   656→    msg_result = run_commit_message_generation(
+   657→        generator=msg_gen,
+   658→        diff_file=state.diff_file,
+   659→        repo_root=state.repo_root,
+   660→        current_branch=state.branch_name,
+   661→        parent_branch=state.parent_branch,
+   662→        commit_messages=commit_messages,
+   663→        plan_context=state.plan_context,
+   664→        debug=state.debug,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CXb8S5ozyXhuCjgY95bXud">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/cli/commands/pr/rewrite_cmd.py</param>
+    <param name="offset">120</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="48892" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CXb8S5ozyXhuCjgY95bXud">
+   120→        branch_name=discovery.current_branch,
+   121→    )
+   122→
+   123→    echo_plan_context_status(plan_context)
+   124→
+   125→    msg_gen = CommitMessageGenerator(ctx.llm_caller)
+   126→    msg_result = run_commit_message_generation(
+   127→        generator=msg_gen,
+   128→        diff_file=diff_file,
+   129→        repo_root=discovery.repo_root,
+   130→        current_branch=discovery.current_branch,
+   131→        parent_branch=discovery.parent_branch,
+   132→        commit_messages=None,
+   133→        plan_context=plan_context,
+   134→        debug=debug,
+  </tool_result>
+  <tool_use name="Read" id="toolu_014r3xzd1ykZaSZJWx5XLVNN">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/cli/commands/exec/scripts/update_pr_description.py</param>
+    <param name="offset">115</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="48892" output_tokens="373" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014r3xzd1ykZaSZJWx5XLVNN">
+   115→    # Phase 4: AI generation
+   116→    click.echo(click.style("Phase 4: Generating PR description", bold=True))
+   117→
+   118→    commit_messages = ctx.git.commit.get_commit_messages_since(cwd, discovery.parent_branch)
+   119→
+   120→    msg_gen = CommitMessageGenerator(ctx.llm_caller)
+   121→    msg_result = run_commit_message_generation(
+   122→        generator=msg_gen,
+   123→        diff_file=diff_file,
+   124→        repo_root=discovery.repo_root,
+   125→        current_branch=discovery.current_branch,
+   126→        parent_branch=discovery.parent_branch,
+   127→        commit_messages=commit_messages,
+   128→        plan_context=plan_context,
+   129→        debug=debug,
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016CwXHBP4zbzyQXCNEMny3Z">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">    msg_gen = CommitMessageGenerator(ctx.llm_caller)</param>
+    <param name="new_string">    msg_gen = CommitMessageGenerator(ctx.llm_caller, time=ctx.time)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1850" cache_read_input_tokens="49090" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1850}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016CwXHBP4zbzyQXCNEMny3Z">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EdWf8a7RQkvDfjgb8aAE3i">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/cli/commands/pr/rewrite_cmd.py</param>
+    <param name="old_string">    msg_gen = CommitMessageGenerator(ctx.llm_caller)</param>
+    <param name="new_string">    msg_gen = CommitMessageGenerator(ctx.llm_caller, time=ctx.time)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1850" cache_read_input_tokens="49090" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1850}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EdWf8a7RQkvDfjgb8aAE3i">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/cli/commands/pr/rewrite_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QVWxtCT7sg7aa6UYPYgS51">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/cli/commands/exec/scripts/update_pr_description.py</param>
+    <param name="old_string">    msg_gen = CommitMessageGenerator(ctx.llm_caller)</param>
+    <param name="new_string">    msg_gen = CommitMessageGenerator(ctx.llm_caller, time=ctx.time)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1850" cache_read_input_tokens="49090" output_tokens="535" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1850, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QVWxtCT7sg7aa6UYPYgS51">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/cli/commands/exec/scripts/update_pr_description.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_014fJfhWdNjqDofJvtcrPsSH">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="769" cache_read_input_tokens="50940" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 769}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014fJfhWdNjqDofJvtcrPsSH">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01WTkPEWjVHpsyJWK8Ma7rU5">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="769" cache_read_input_tokens="50940" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 769, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WTkPEWjVHpsyJWK8Ma7rU5">
+Updated task #3 status
+  </tool_result>
+  <assistant>Phase 3: Updating tests. First, update all 14 existing `CommitMessageGenerator(caller)` calls to pass `time=FakeTime()`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="51709" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_019NrWRhik8ZUyRa8kbbUHA4">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/tests/core/test_commit_message_generator.py</param>
+    <param name="old_string">from erk_shared.core.fakes import FakeLlmCaller
+from erk_shared.core.llm_caller import LlmCallFailed, LlmResponse
+from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent</param>
+    <param name="new_string">from erk_shared.core.fakes import FakeLlmCaller
+from erk_shared.core.llm_caller import Llm...[truncated 35 chars]...ts import CompletionEvent, ProgressEvent
+from erk_shared.gateway.time.fake import FakeTime</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="51709" output_tokens="328" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019NrWRhik8ZUyRa8kbbUHA4">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/tests/core/test_commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <assistant>Now replace all `CommitMessageGenerator(caller)` with `CommitMessageGenerator(caller, time=FakeTime())`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="386" cache_read_input_tokens="51907" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 386}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01D5fXnNUyoMU35RNJLRgWcV">
+    <param name="replace_all">True</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/tests/core/test_commit_message_generator.py</param>
+    <param name="old_string">    generator = CommitMessageGenerator(caller)</param>
+    <param name="new_string">    generator = CommitMessageGenerator(caller, time=FakeTime())</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="386" cache_read_input_tokens="51907" output_tokens="201" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 386, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01D5fXnNUyoMU35RNJLRgWcV">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/tests/core/test_commit_message_generator.py has been updated. All occurrences of '    generator = CommitMessageGenerator(caller)' were successfully replaced with '    generator = CommitMessageGenerator(caller, time=FakeTime())'.
+  </tool_result>
+  <assistant>Now let me check FakeTime and FakeLlmCaller to understand how to write the slow API call test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="52293" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 298}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012Je3SyQgmDofKXkALgfUcq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-shared/src/erk_shared/gateway/time/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="52293" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 298}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012Je3SyQgmDofKXkALgfUcq">
+     1→"""Fake Time implementation for testing.
+     2→
+     3→FakeTime is an in-memory implementation that tracks sleep() calls without
+     4→actually sleeping, returns a configurable current time, and provides
+     5→deterministic monotonic clock values from a configured sequence.
+     6→"""
+     7→
+     8→from collections.abc import Sequence
+     9→from datetime import datetime
+    10→
+    11→from erk_shared.gateway.time.abc import Time
+    12→
+    13→# Default fixed time for deterministic tests: 2024-01-15 14:30:00
+    14→DEFAULT_FAKE_TIME = datetime(2024, 1, 15, 14, 30, 0)
+    15→
+    16→
+    17→class FakeTime(Time):
+    18→    """In-memory fake implementation that tracks calls without sleeping.
+    19→
+    20→    This class has NO public setup methods. All state is provided via constructor
+    21→    or captured during execution.
+    22→    """
+    23→
+    24→    def __init__(
+    25→        self,
+    26→        current_time: datetime | None = None,
+    27→        monotonic_values: Sequence[float] | None = None,
+    28→    ) -&gt; None:
+    29→        """Create FakeTime with empty call tracking and optional fixed time.
+    30→
+
+... [56 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01E4RE74L9SMQDh5MVnkonBM">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-shared/src/erk_shared/core/fakes.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="52293" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 298}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01E4RE74L9SMQDh5MVnkonBM">
+     1→"""Fake implementations for erk-specific ABCs.
+     2→
+     3→These fakes are used in tests and in contexts (like erk-kits) that
+     4→don't need the real erk implementations.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from collections.abc import Iterator
+    10→from dataclasses import dataclass, field
+    11→from pathlib import Path
+    12→from typing import TYPE_CHECKING, NamedTuple
+    13→
+    14→from erk_shared.context.types import PermissionMode
+    15→from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey
+    16→from erk_shared.core.objective_list_service import ObjectiveListService
+    17→from erk_shared.core.plan_list_service import PlanListData, PlanListService
+    18→from erk_shared.core.prompt_executor import (
+    19→    ExecutorEvent,
+    20→    PromptExecutor,
+    21→    PromptResult,
+    22→)
+    23→from erk_shared.core.script_writer import ScriptResult, ScriptWriter
+    24→from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry, RegisteredCodespace
+    25→from erk_shared.gateway.github.types import GitHubRepoLocation, IssueFilterState
+    26→from erk_shared.plan_store.types import PlanState
+    27→
+    28→if TYPE_CHECKING:
+    29→    from erk_shared.gateway.http.abc import HttpClient
+    30→
+
+... [346 lines omitted] ...
+
+   156→        return PromptResult(success=True, output="", error=None)
+   250→            raise ValueError(f"No codespace with name '{name}' exists")
+   255→            raise ValueError(f"Codespace with name '{codespace.name}' already exists")
+   260→            raise ValueError(f"No codespace with name '{name}' exists")
+   312→            warnings=self._data.warnings,
+   334→        response: LlmResponse | NoApiKey | LlmCallFailed,
+   335→        responses: list[LlmResponse | NoApiKey | LlmCallFailed] | None = None,
+   344→    ) -&gt; LlmResponse | NoApiKey | LlmCallFailed:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01SKWCjDZ6rkfK3nc3ydRxCJ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-shared/src/erk_shared/core/llm_caller.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="52293" output_tokens="293" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 298, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SKWCjDZ6rkfK3nc3ydRxCJ">
+     1→"""LLM caller ABC and discriminated union result types.
+     2→
+     3→Defines the interface for lightweight LLM calls (e.g., slug generation)
+     4→and the non-ideal state types returned when calls fail.
+     5→"""
+     6→
+     7→from abc import ABC, abstractmethod
+     8→from dataclasses import dataclass
+     9→
+    10→
+    11→@dataclass(frozen=True)
+    12→class LlmResponse:
+    13→    text: str
+    14→
+    15→
+    16→@dataclass(frozen=True)
+    17→class NoApiKey:
+    18→    message: str
+    19→
+    20→    @property
+    21→    def error_type(self) -&gt; str:
+    22→        return "no-api-key"
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class LlmCallFailed:
+    27→    message: str
+    28→
+    29→    @property
+    30→    def error_type(self) -&gt; str:
+
+... [11 lines omitted] ...
+
+    31→        return "llm-call-failed"
+    38→    ) -&gt; LlmResponse | NoApiKey | LlmCallFailed:
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6212" cache_read_input_tokens="52591" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6212}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now add the new test for slow API calls. I need to test that "Still waiting" progress events are emitted:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6212" cache_read_input_tokens="52591" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6212}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PpJCTGZr9iW8ge9nh9to4j">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/tests/core/test_commit_message_generator.py</param>
+    <param name="offset">480</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6212" cache_read_input_tokens="52591" output_tokens="4480" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6212, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PpJCTGZr9iW8ge9nh9to4j">
+   480→    )
+   481→
+   482→    result, _ = _consume_generator(generator, request)
+   483→
+   484→    assert result.success is True
+   485→    assert len(caller.calls) == 1
+   486→    prompt = caller.calls[0].prompt
+   487→    # Both should be present
+   488→    assert "Implementation Plan (Plan #789)" in prompt
+   489→    assert "Refactor API" in prompt
+   490→    assert "Developer's Commit Messages" in prompt
+   491→    assert "WIP: Started refactoring" in prompt
+   492→
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NfHoxttY71GB1VhUSvRkqp">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/tests/core/test_commit_message_generator.py</param>
+    <param name="old_string">"""Tests for CommitMessageGenerator."""
+
+from pathlib import Path
+
+from erk.core.commit_me...[truncated 286 chars]...ts import CompletionEvent, ProgressEvent
+from erk_shared.gateway.time.fake import FakeTime</param>
+    <param name="new_string">"""Tests for CommitMessageGenerator."""
+
+import time as real_time
+from pathlib import Path...[truncated 347 chars]...ts import CompletionEvent, ProgressEvent
+from erk_shared.gateway.time.fake import FakeTime</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4763" cache_read_input_tokens="58803" output_tokens="463" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4763, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NfHoxttY71GB1VhUSvRkqp">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/tests/core/test_commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add the new test at the end of the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="521" cache_read_input_tokens="63566" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 521}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KhdtwAF5Db78iSFKdKzJQz">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/tests/core/test_commit_message_generator.py</param>
+    <param name="offset">488</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="521" cache_read_input_tokens="63566" output_tokens="139" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 521, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KhdtwAF5Db78iSFKdKzJQz">
+   488→    assert len(caller.calls) == 1
+   489→    prompt = caller.calls[0].prompt
+   490→    # Both should be present
+   491→    assert "Implementation Plan (Plan #789)" in prompt
+   492→    assert "Refactor API" in prompt
+   493→    assert "Developer's Commit Messages" in prompt
+   494→    assert "WIP: Started refactoring" in prompt
+   495→
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CdUjdSc6HNZ411NmEUtSXC">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/tests/core/test_commit_message_generator.py</param>
+    <param name="old_string">    assert "Developer's Commit Messages" in prompt
+    assert "WIP: Started refactoring" in prompt</param>
+    <param name="new_string">    assert "Developer's Commit Messages" in prompt
+    assert "WIP: Started refactoring" i...[truncated 1627 chars]...
+    assert result.title == "Add feature"
+    assert result.body == "Slow but successful."</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="255" cache_read_input_tokens="64087" output_tokens="746" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 255, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CdUjdSc6HNZ411NmEUtSXC">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/tests/core/test_commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_012fdpHBzeVd3NYKVvKXXrNz">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="804" cache_read_input_tokens="64342" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 804}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012fdpHBzeVd3NYKVvKXXrNz">
+Updated task #3 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_017aqc7s7q6DZTSQsfLsRMjx">
+    <param name="taskId">4</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="804" cache_read_input_tokens="64342" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 804, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017aqc7s7q6DZTSQsfLsRMjx">
+Updated task #4 status
+  </tool_result>
+  <assistant>Phase 4: Running CI checks.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="65146" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01DSLTYzAy5vtxiRrZF9GmwL">
+    <param name="description">Run commit message generator tests</param>
+    <param name="prompt">Run `uv run pytest tests/core/test_commit_message_generator.py -v` and report results. Do NOT modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="65146" output_tokens="133" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DSLTYzAy5vtxiRrZF9GmwL">
+pytest passed: 15 tests passed in 0.60s
+
+All tests in `tests/core/test_commit_message_generator.py` passed successfully.
+agentId: a02fea1c1bc5fe181 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13647
+tool_uses: 1
+duration_ms: 4142&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 15 tests passed (14 existing + 1 new). Now let me run type checking and linting.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="65344" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 238}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01QBoW4eYxa2komhYcFBToq6">
+    <param name="description">Run ty type check on changed files</param>
+    <param name="prompt">Run `uv run ty check src/erk/core/commit_message_generator.py src/erk/cli/commands/pr/subm...[truncated 92 chars]... tests/core/test_commit_message_generator.py` and report results. Do NOT modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="65344" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 238}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01VLGUGQgR8tQzJvkG6ftBZa">
+    <param name="description">Run ruff check on changed files</param>
+    <param name="prompt">Run `uv run ruff check src/erk/core/commit_message_generator.py src/erk/cli/commands/pr/su...[truncated 94 chars]... tests/core/test_commit_message_generator.py` and report results. Do NOT modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="238" cache_read_input_tokens="65344" output_tokens="395" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 238, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QBoW4eYxa2komhYcFBToq6">
+ty passed: All checks passed!
+agentId: a8df2e3554550d82c (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13460
+tool_uses: 1
+duration_ms: 2461&lt;/usage&gt;
+  </tool_result>
+  <tool_result tool="toolu_01VLGUGQgR8tQzJvkG6ftBZa">
+ruff failed: 1 issue found
+
+File:line - Error
+- tests/core/test_commit_message_generator.py:3 - I001: Import block is un-sorted or un-formatted
+
+This is a fixable linting error related to import sorting. The imports in the test file need to be reorganized. The error is reported twice in the output but there is only 1 unique issue.
+agentId: a923015e3075de05d (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14201
+tool_uses: 1
+duration_ms: 3747&lt;/usage&gt;
+  </tool_result>
+  <assistant>Import sorting issue. Let me fix it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="674" cache_read_input_tokens="65582" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 674}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Fv3VfV7V352sMqSUv1czrr">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/tests/core/test_commit_message_generator.py</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="674" cache_read_input_tokens="65582" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 674, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Fv3VfV7V352sMqSUv1czrr">
+     1→"""Tests for CommitMessageGenerator."""
+     2→
+     3→import time as real_time
+     4→from pathlib import Path
+     5→
+     6→import pytest
+     7→
+     8→from erk.core.commit_message_generator import (
+     9→    CommitMessageGenerator,
+    10→    CommitMessageRequest,
+    11→    CommitMessageResult,
+    12→)
+    13→from erk.core.plan_context_provider import PlanContext
+    14→from erk_shared.core.fakes import FakeLlmCaller
+    15→from erk_shared.core.llm_caller import LlmCallFailed, LlmCaller, LlmResponse, NoApiKey
+    16→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+    17→from erk_shared.gateway.time.fake import FakeTime
+    18→
+    19→
+    20→def _consume_generator(
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="371" cache_read_input_tokens="66256" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 371}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01YNKM9NqPuehCeXvb2ZL8GF">
+    <param name="description">Fix ruff import sorting</param>
+    <param name="prompt">Run `uv run ruff check --fix tests/core/test_commit_message_generator.py` and report results. Do NOT modify any files beyond what ruff itself fixes.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="371" cache_read_input_tokens="66256" output_tokens="432" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 371, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YNKM9NqPuehCeXvb2ZL8GF">
+ruff check passed: Fixed 1 error in tests/core/test_commit_message_generator.py
+
+The tool found 1 fixable error and automatically corrected it. No remaining violations.
+agentId: acb6035a3b58b2a4f (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13403
+tool_uses: 1
+duration_ms: 2468&lt;/usage&gt;
+  </tool_result>
+  <assistant>Let me verify the fix and run the tests one more time to make sure everything still passes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="539" cache_read_input_tokens="66627" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 539}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Fvc5f2z3NmneAiqmvLjsxV">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/tests/core/test_commit_message_generator.py</param>
+    <param name="limit">18</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="539" cache_read_input_tokens="66627" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 539, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Fvc5f2z3NmneAiqmvLjsxV">
+     1→"""Tests for CommitMessageGenerator."""
+     2→
+     3→import time as real_time
+     4→from pathlib import Path
+     5→
+     6→import pytest
+     7→
+     8→from erk.core.commit_message_generator import (
+     9→    CommitMessageGenerator,
+    10→    CommitMessageRequest,
+    11→    CommitMessageResult,
+    12→)
+    13→from erk.core.plan_context_provider import PlanContext
+    14→from erk_shared.core.fakes import FakeLlmCaller
+    15→from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey
+    16→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+    17→from erk_shared.gateway.time.fake import FakeTime
+    18→
+  </tool_result>
+  <assistant>Ruff reordered `LlmCaller` alphabetically. Let me run the full test suite one more time to confirm:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="547" cache_read_input_tokens="67166" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 547}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_017iV93Ji2HNrGkT3u2hGJUP">
+    <param name="description">Final test run confirmation</param>
+    <param name="prompt">Run `uv run pytest tests/core/test_commit_message_generator.py -v` and report results. Do NOT modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="547" cache_read_input_tokens="67166" output_tokens="153" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 547, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017iV93Ji2HNrGkT3u2hGJUP">
+pytest passed: All 15 tests in `tests/core/test_commit_message_generator.py` passed in 0.59s
+agentId: ac4342fcccde27b24 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13550
+tool_uses: 1
+duration_ms: 3113&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 15 tests pass, type checking passes, linting passes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="250" cache_read_input_tokens="67713" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 250}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01G3AM9RdbyR68ofAq44WE4N">
+    <param name="taskId">4</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="250" cache_read_input_tokens="67713" output_tokens="86" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 250, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01G3AM9RdbyR68ofAq44WE4N">
+Updated task #4 status
+  </tool_result>
+  <assistant>Now signal completion and clean up:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="104" cache_read_input_tokens="67963" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 104}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015u5dH1SKHMzFRg5wBcwkiK">
+    <param name="command">erk exec impl-signal ended --session-id="6c0ff764-e035-4c1d-96b2-69965446c8fb" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="104" cache_read_input_tokens="67963" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 104}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01LXk2HeqHfNs7cJpgXjawck">
+    <param name="command">erk exec upload-impl-session --session-id="6c0ff764-e035-4c1d-96b2-69965446c8fb" 2&gt;/dev/null || true</param>
+    <param name="description">Upload impl session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="104" cache_read_input_tokens="67963" output_tokens="225" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 104, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015u5dH1SKHMzFRg5wBcwkiK">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8829
+}
+  </tool_result>
+  <tool_result tool="toolu_01LXk2HeqHfNs7cJpgXjawck">
+{"uploaded": true, "plan_id": 8829}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015C6rdhF4P9T196k1gRALYL">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="325" cache_read_input_tokens="68067" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 325, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015C6rdhF4P9T196k1gRALYL">
+{"cleaned": true}
+  </tool_result>
+  <assistant>Now let me check if there's a post-plan-implement CI hook:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="97" cache_read_input_tokens="68392" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 97}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_016yVNZHxv4cSh6owQh9Astj">
+    <param name="pattern">.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="97" cache_read_input_tokens="68392" output_tokens="85" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 97, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016yVNZHxv4cSh6owQh9Astj">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/.erk/prompt-hooks/post-plan-implement-ci.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GQ27Sds4cfym37PwnTb9He">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="139" cache_read_input_tokens="68489" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 139, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GQ27Sds4cfym37PwnTb9He">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01LkgdKrc8vSvkoy3biNG37X">
+    <param name="skill">ci-iteration</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="68628" output_tokens="54" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 163, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LkgdKrc8vSvkoy3biNG37X">
+Launching skill: ci-iteration
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/.claude/skills/ci-iteration
+
+# CI Iteration
+
+## Overview
+
+Run the specified CI target and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
+
+## Sub-Agent Policy
+
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  &lt;- MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+**FORBIDDEN**:
+
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
+- Giving sub-agents prompts like "fix issues" or "iterate until passing"
+
+**REQUIRED**:
+
+- Sub-agents run ONE command and report results
+- Parent agent decides what to fix based on reports
+
+## Core Workflow
+
+### 1. Initial Run
+
+Use the devrun agent to run the specified make target from the repository root:
+
+```
+Task tool with:
+- subagent_type: devrun
+- description: "Run [make target] from repo root"
+- prompt: "Change to repository root and execute: [make target]"
+```
+
+### 2. Parse Failures
+
+Analyze the output to identify which check(s) failed:
+
+- **Ruff lint failures**: "ruff check" errors
+- **Format failures**: "ruff format --check" or files needing reformatting
+- **Prettier failures**: Markdown files needing formatting
+- **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
+- **ty failures**: Type errors with file paths and line numbers
+- **Test failures**: pytest failures with test names and assertion errors
+
+### 3. Apply Targeted Fixes
+
+Based on failure type, apply appropriate fixes:
+
+| Failure Type | Fix Command                                 |
+| ------------ | ------------------------------------------- |
+| Ruff lint    | `make fix` via devrun                       |
+| Ruff format  | `make format` via devrun                    |
+| Prettier     | `make prettier` via devrun                  |
+| Sync-Kit     | `erk sync` directly                         |
+| MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
+| ty           | Edit files to fix type annotations          |
+| Tests        | Read and edit source/test files             |
+
+### 4. Verify and Repeat
+
+After applying fixes, run the make target again via devrun. Continue the cycle: run -&gt; identify failures -&gt; fix -&gt; verify.
+
+## Iteration Control
+
+**Safety Limits:**
+
+- **Maximum iterations**: 10 attempts
+- **Stuck detection**: If the same error appears 3 times in a row, stop
+- **Progress tracking**: Use TodoWrite to show iteration progress
+
+## Progress Reporting
+
+Use TodoWrite to track progress:
+
+```
+Iteration 1: Fixing lint errors
+Iteration 2: Fixing format errors
+Iteration 3: Fixing type errors in src/erk/cli/commands/switch.py
+Iteration 4: All checks passed
+```
+
+## When to Stop
+
+**SUCCESS**: Stop when the make target exits with code 0 (all checks passed)
+
+**STUCK**: Stop and report to user if:
+
+1. You've completed 10 iterations without success
+2. The same error persists after 3 fix attempts
+3. You encounter an error you cannot automatically fix
+
+## Reporting Formats
+
+### Success Format
+
+```markdown
+## Finalization Status: SUCCESS
+
+All CI checks passed after N iteration(s):
+
+(check) **Lint (ruff check)**: PASSED
+
+(check) **Format (ruff format --check)**: PASSED
+
+(check) **Prettier**: PASSED
+
+(check) **AGENTS.md Standard (md-check)**: PASSED
+
+(check) **ty**: PASSED
+
+(check) **Tests**: PASSED
+
+(check) **Sync-Kit (erk check)**: PASSED
+
+The code is ready for commit/PR.
+```
+
+**IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
+
+### Stuck Format
+
+```markdown
+## Finalization Status: STUCK
+
+I was unable to resolve the following issue after N attempts:
+
+**Check**: [lint/format/prettier/md-check/ty/test]
+
+**Error**:
+[Exact error message]
+
+**File**: [file path if applicable]
+
+**Attempted Fixes**:
+
+1. [What you tried first]
+2. [What you tried second]
+3. [What you tried third]
+
+**Next Steps**:
+[Suggest what needs to be done manually]
+```
+
+## Guidelines
+
+1. **Be systematic**: Fix one type of error at a time
+2. **Run full CI**: Always run the full make target, not individual checks
+3. **Use devrun agent**: Always use the Task tool with devrun agent for ALL make commands
+4. **Run from repo root**: Always ensure make commands execute from repository root
+5. **Track progress**: Use TodoWrite for every iteration
+6. **Don't guess**: Read files before making changes
+7. **Follow standards**: Adhere to AGENTS.md coding standards
+8. **Fail gracefully**: Report clearly when stuck
+9. **Be efficient**: Use targeted fixes (don't reformat everything for one lint error)
+
+## Example Flow
+
+```
+Iteration 1:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 5 lint errors, 2 files need formatting
+- Fix: Use Task tool with devrun agent to run make fix, then make format from repo root
+- Result: 3 lint errors remain
+
+Iteration 2:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 3 lint errors (imports)
+- Fix: Edit files to fix import issues
+- Result: All lint/format pass, 2 type errors
+
+Iteration 3:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 2 ty errors in switch.py:45 and switch.py:67
+- Fix: Add type annotations
+- Result: All checks pass
+
+SUCCESS
+```
+
+## Important Reminders
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>
+
+Running CI via `make fast-ci`:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1699" cache_read_input_tokens="68791" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1699}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_016esa36UrXy26TbaoE4hYP5">
+    <param name="description">Run make fast-ci from repo root</param>
+    <param name="prompt">Change to repository root /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04 and run: make fast-ci
+
+Report all results. Do NOT modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1699" cache_read_input_tokens="68791" output_tokens="155" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1699, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016esa36UrXy26TbaoE4hYP5">
+**make fast-ci PASSED**
+
+All checks and tests passed successfully:
+
+- **Lint**: All checks passed
+- **Format Check**: 1638 files already formatted
+- **Prettier Check**: All matched files use Prettier code style
+- **Markdown Check**: All CLAUDE.md and AGENTS.md files properly paired (19 files checked, 0 violations)
+- **Exec Reference Check**: .claude/skills/erk-exec/reference.md is up to date
+- **ty**: All checks passed
+- **Unit Tests (erk)**: 5648 passed in 11.27s
+- **Tests (erk-dev)**: 136 passed in 2.39s
+- **Tests (erk-statusline)**: 115 passed in 0.63s
+- **Tests (erk-mcp)**: 24 passed
+
+All CI checks passed with no issues.
+agentId: a3028af42db687373 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14537
+tool_uses: 1
+duration_ms: 27867&lt;/usage&gt;
+  </tool_result>
+  <assistant>All CI checks passed. Now submitting the PR.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="542" cache_read_input_tokens="70490" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 542}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VKYZUnL3rMJrraMjVCkDqj">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk pr submit</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="542" cache_read_input_tokens="70490" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 542, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VKYZUnL3rMJrraMjVCkDqj">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Graphite Submit
+   Auto-forcing: plan implementation branch
+   Running gt submit...
+Running in non-interactive mode. Inline prompts to fill PR fields will be skipped.
+
+🥞 Validating that this Graphite stack is ready to submit...
+
+✏️ Preparing to submit PRs for the following branches...
+▸ plnd/add-progress-feedback-03-06-0449 (Update code)
+
+🚀 Pushing branches to remote...
+
+📨 Creating/updating PRs...
+plnd/add-progress-feedback-03-06-0449: https://app.graphite.com/github/pr/dagster-io/erk/8829 (updated)
+   Graphite submit completed
+
+   Getting PR info...
+   PR #8829 ready
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #8829
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+
+... [15 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FfnCjvsYZs5QwpPBAhzCiY">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="595" cache_read_input_tokens="71032" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 595}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Wgvzd4rvMH1W43yRGVhSiR">
+    <param name="command">erk pr check --stage=impl</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="595" cache_read_input_tokens="71032" output_tokens="149" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 595, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FfnCjvsYZs5QwpPBAhzCiY">
+{
+  "success": false,
+  "event": "submitted",
+  "error_type": "no-plan-reference",
+  "message": "No plan reference found"
+}
+  </tool_result>
+  <tool_result tool="toolu_01Wgvzd4rvMH1W43yRGVhSiR">
+Checking PR #8829 for branch plnd/add-progress-feedback-03-06-0449...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>Plan execution complete.
+
+**Summary of changes:**
+
+- **`src/erk/core/commit_message_generator.py`**: Added `threading` import, `Time` ABC dependency, `_PROGRESS_INTERVAL_SECONDS = 5.0` constant, and replaced the synchronous `LlmCaller.call()` with a background thread + polling pattern that yields `"Still waiting... ({elapsed}s)"` progress events during slow API calls.
+
+- **3 production construction sites** (`submit_pipeline.py`, `rewrite_cmd.py`, `update_pr_description.py`): Updated to pass `time=ctx.time`.
+
+- **`tests/core/test_commit_message_generator.py`**: Updated all 14 existing test constructions to pass `time=FakeTime()`, added new `test_generate_yields_waiting_progress_for_slow_api_call` test using a `SlowFakeLlmCaller` that verifies progress events are emitted.
+
+PR: https://github.com/dagster-io/erk/pull/8829</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="309" cache_read_input_tokens="71627" output_tokens="252" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 309, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
