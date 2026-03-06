@@ -1020,14 +1020,14 @@ class TestRewriteRemoteAsync:
             ]
 
 
-class TestCmuxSyncAsync:
-    """Tests for _cmux_sync_async subprocess behavior."""
+class TestCmuxCheckoutAsync:
+    """Tests for _cmux_checkout_async subprocess behavior."""
 
     @pytest.mark.asyncio
-    async def test_cmux_sync_runs_correct_command(
+    async def test_cmux_checkout_runs_correct_command(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """_cmux_sync_async should run cmux-sync-workspace with correct args."""
+        """_cmux_checkout_async should run cmux-checkout-workspace with correct args."""
         import subprocess
 
         provider = FakePlanDataProvider(
@@ -1054,14 +1054,14 @@ class TestCmuxSyncAsync:
             await pilot.pause()
             await pilot.pause()
 
-            app._cmux_sync_async("test-op", 456, "test-branch")
+            app._cmux_checkout_async("test-op", 456, "test-branch")
             await pilot.pause(0.3)
 
             assert len(captured_popen_calls) == 1
             assert captured_popen_calls[0] == [
                 "erk",
                 "exec",
-                "cmux-sync-workspace",
+                "cmux-checkout-workspace",
                 "--pr",
                 "456",
                 "--branch",
@@ -1069,10 +1069,10 @@ class TestCmuxSyncAsync:
             ]
 
     @pytest.mark.asyncio
-    async def test_cmux_sync_triggers_refresh_on_success(
+    async def test_cmux_checkout_triggers_refresh_on_success(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """_cmux_sync_async should trigger refresh after success."""
+        """_cmux_checkout_async should trigger refresh after success."""
         import subprocess
 
         provider = FakePlanDataProvider(
@@ -1097,16 +1097,16 @@ class TestCmuxSyncAsync:
 
             count_before = provider.fetch_count
 
-            app._cmux_sync_async("test-op", 456, "test-branch")
+            app._cmux_checkout_async("test-op", 456, "test-branch")
             await pilot.pause(0.3)
 
             assert provider.fetch_count > count_before
 
     @pytest.mark.asyncio
-    async def test_cmux_sync_shows_error_on_failure(
+    async def test_cmux_checkout_shows_error_on_failure(
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
-        """_cmux_sync_async should NOT refresh on failure."""
+        """_cmux_checkout_async should NOT refresh on failure."""
         import subprocess
 
         provider = FakePlanDataProvider(
@@ -1117,7 +1117,7 @@ class TestCmuxSyncAsync:
         app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
 
         def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
-            return _FakePopen(lines=("sync failed",), return_code=1)
+            return _FakePopen(lines=("checkout failed",), return_code=1)
 
         monkeypatch.setattr(subprocess, "Popen", fake_popen)
 
@@ -1127,7 +1127,7 @@ class TestCmuxSyncAsync:
 
             count_before = provider.fetch_count
 
-            app._cmux_sync_async("test-op", 456, "test-branch")
+            app._cmux_checkout_async("test-op", 456, "test-branch")
             await pilot.pause(0.3)
 
             assert provider.fetch_count == count_before

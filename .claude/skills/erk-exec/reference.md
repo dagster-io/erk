@@ -30,7 +30,7 @@ Quick reference for all `erk exec` subcommands.
 | `cleanup-impl-context`            | Clean up .erk/impl-context/ staging directory.                              |
 | `close-pr`                        | Close a plan with a comment.                                                |
 | `close-prs`                       | Batch close multiple plan PRs with comments from JSON stdin.                |
-| `cmux-sync-workspace`             | Create a cmux workspace with PR checkout and sync.                          |
+| `cmux-checkout-workspace`         | Create a cmux workspace with PR checkout and sync.                          |
 | `create-impl-context-from-plan`   | Create .erk/impl-context/ folder from plan content.                         |
 | `create-pr-from-session`          | Extract plan from Claude session and create GitHub draft PR.                |
 | `dash-data`                       | Serialize plan dashboard data to JSON.                                      |
@@ -265,11 +265,11 @@ Batch close multiple plan PRs with comments from JSON stdin.
 
 **Usage:** `erk exec close-prs`
 
-### cmux-sync-workspace
+### cmux-checkout-workspace
 
 Create a cmux workspace with PR checkout and sync.
 
-**Usage:** `erk exec cmux-sync-workspace`
+**Usage:** `erk exec cmux-checkout-workspace`
 
 **Options:**
 

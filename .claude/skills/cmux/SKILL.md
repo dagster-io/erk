@@ -193,13 +193,13 @@ erk config get cmux_integration
 erk config set cmux_integration true
 ```
 
-### `erk exec cmux-sync-workspace`
+### `erk exec cmux-checkout-workspace`
 
 Creates a cmux workspace that checks out a PR and syncs with trunk:
 
 ```bash
-erk exec cmux-sync-workspace --pr 8152
-erk exec cmux-sync-workspace --pr 8152 --branch "my-branch"
+erk exec cmux-checkout-workspace --pr 8152
+erk exec cmux-checkout-workspace --pr 8152 --branch "my-branch"
 ```
 
 What it does:
@@ -213,8 +213,8 @@ What it does:
 
 When `cmux_integration` is enabled, the erk dash TUI command palette exposes:
 
-- **cmux sync** (action) -- Creates a cmux workspace for the selected plan's PR
-- **copy cmux sync** (copy) -- Copies the cmux sync command to clipboard
+- **cmux checkout** (action) -- Creates a cmux workspace for the selected plan's PR
+- **copy cmux checkout** (copy) -- Copies the cmux checkout command to clipboard
 
 Both require a plan with `pr_number` and `pr_head_branch`.
 

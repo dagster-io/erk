@@ -348,40 +348,40 @@ def test_display_name_copy_teleport_new_slot_shows_pr() -> None:
     assert get_display_name(cmd, ctx) == "erk pr teleport 456 --new-slot"
 
 
-def test_display_name_copy_cmux_sync() -> None:
-    """copy_cmux_sync generates erk exec command."""
+def test_display_name_copy_cmux_checkout() -> None:
+    """copy_cmux_checkout generates erk exec command."""
     row = make_plan_row(5831, "Test Plan", pr_number=456, pr_head_branch="feature-branch")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
-    cmd = next(c for c in get_all_commands() if c.id == "copy_cmux_sync")
+    cmd = next(c for c in get_all_commands() if c.id == "copy_cmux_checkout")
     result = get_display_name(cmd, ctx)
-    assert result == "erk exec cmux-sync-workspace --pr 456"
+    assert result == "erk exec cmux-checkout-workspace --pr 456"
 
 
-def test_display_name_cmux_sync_action() -> None:
-    """cmux_sync ACTION command uses same display name as copy_cmux_sync."""
+def test_display_name_cmux_checkout_action() -> None:
+    """cmux_checkout ACTION command uses same display name as copy_cmux_checkout."""
     row = make_plan_row(5831, "Test Plan", pr_number=456, pr_head_branch="feature-branch")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
-    action_cmd = next(c for c in get_all_commands() if c.id == "cmux_sync")
-    copy_cmd = next(c for c in get_all_commands() if c.id == "copy_cmux_sync")
+    action_cmd = next(c for c in get_all_commands() if c.id == "cmux_checkout")
+    copy_cmd = next(c for c in get_all_commands() if c.id == "copy_cmux_checkout")
     assert get_display_name(action_cmd, ctx) == get_display_name(copy_cmd, ctx)
 
 
-def test_copy_cmux_sync_unavailable_without_branch() -> None:
-    """cmux_sync and copy_cmux_sync are unavailable when no head branch exists."""
+def test_copy_cmux_checkout_unavailable_without_branch() -> None:
+    """cmux_checkout and copy_cmux_checkout are unavailable when no head branch exists."""
     row = make_plan_row(5831, "Test Plan", pr_number=456)
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
     cmd_ids = [cmd.id for cmd in get_available_commands(ctx)]
-    assert "cmux_sync" not in cmd_ids
-    assert "copy_cmux_sync" not in cmd_ids
+    assert "cmux_checkout" not in cmd_ids
+    assert "copy_cmux_checkout" not in cmd_ids
 
 
-def test_copy_cmux_sync_unavailable_without_cmux_integration() -> None:
-    """cmux_sync and copy_cmux_sync are unavailable when cmux_integration is disabled."""
+def test_copy_cmux_checkout_unavailable_without_cmux_integration() -> None:
+    """cmux_checkout and copy_cmux_checkout are unavailable when cmux_integration is disabled."""
     row = make_plan_row(5831, "Test Plan", pr_number=456, pr_head_branch="feature-branch")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS)
     cmd_ids = [cmd.id for cmd in get_available_commands(ctx)]
-    assert "cmux_sync" not in cmd_ids
-    assert "copy_cmux_sync" not in cmd_ids
+    assert "cmux_checkout" not in cmd_ids
+    assert "copy_cmux_checkout" not in cmd_ids
 
 
 def test_display_name_copy_dispatch_shows_issue() -> None:
@@ -626,7 +626,7 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
         "rebase_remote",
         "address_remote",
         "rewrite_remote",
-        "cmux_sync",
+        "cmux_checkout",
         "open_issue",
         "open_pr",
         "open_run",
@@ -635,7 +635,7 @@ def test_plan_commands_hidden_in_objectives_view() -> None:
         "copy_pr_checkout_plain",
         "copy_teleport",
         "copy_teleport_new_slot",
-        "copy_cmux_sync",
+        "copy_cmux_checkout",
         "copy_dispatch",
         "copy_replan",
         "copy_land",
@@ -894,12 +894,12 @@ def test_get_copy_text_returns_none_for_wrong_view_mode() -> None:
     assert result is None
 
 
-def test_get_copy_text_copy_cmux_sync() -> None:
-    """get_copy_text for copy_cmux_sync generates erk exec command."""
+def test_get_copy_text_copy_cmux_checkout() -> None:
+    """get_copy_text for copy_cmux_checkout generates erk exec command."""
     row = make_plan_row(123, "Test", pr_number=456, pr_head_branch="my-branch")
     ctx = CommandContext(row=row, view_mode=ViewMode.PLANS, cmux_integration=True)
-    result = get_copy_text("copy_cmux_sync", ctx)
-    assert result == "erk exec cmux-sync-workspace --pr 456"
+    result = get_copy_text("copy_cmux_checkout", ctx)
+    assert result == "erk exec cmux-checkout-workspace --pr 456"
 
 
 # === Launch Key Safety Tests ===
