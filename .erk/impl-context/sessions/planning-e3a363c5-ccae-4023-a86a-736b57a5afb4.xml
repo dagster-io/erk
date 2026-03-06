@@ -1,0 +1,913 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>✻ Crunched for 36s
+
+❯ /erk:objective-list
+  ⎿  Here are all open objectives in the repository, formatted as a markdown table:
+
+     ┌───────┬───────────────────────────────────────────────────────────────┬──────────────┐
+     │   #   │                             Title                             │   Created    │
+     ├───────┼───────────────────────────────────────────────────────────────┼──────────────┤
+     │ #8762 │ Objective: Knowledge Promotion Pipeline                       │ Mar 5, 2026  │
+     ├───────┼───────────────────────────────────────────────────────────────┼──────────────┤
+     │ #8760 │ Objective: Agent-DX for Erk Exec Commands                     │ Mar 5, 2026  │
+     ├───────┼───────────────────────────────────────────────────────────────┼──────────────┤
+     │ #8655 │ Objective: Skill Architecture — Capture, Promote, Gate        │ Mar 3, 2026  │
+     ├───────┼───────────────────────────────────────────────────────────────┼──────────────┤
+     │ #8470 │ Objective: One-Shot Modification of Existing PRs              │ Feb 28, 2026 │
+     ├───────┼───────────────────────────────────────────────────────────────┼──────────────┤
+     │ #8384 │ Objective: Rewrite user-facing docs with composability-first  │ Feb 27, 2026 │
+     ├───────┼───────────────────────────────────────────────────────────────┼──────────────┤
+     │ #8381 │ Objective: Standardize Plan-as-PR Terminology Across Codebase │ Feb 27, 2026 │
+     ├───────┼───────────────────────────────────────────────────────────────┼──────────────┤
+     │ #8149 │ Objective: Markdown-Driven Manual CLI Test Scenarios          │ Feb 25, 2026 │
+     ├───────┼───────────────────────────────────────────────────────────────┼──────────────┤
+     │ #8088 │ Objective: Standardized --json Output Across CLI              │ Feb 24, 2026 │
+     ├───────┼───────────────────────────────────────────────────────────────┼──────────────┤
+     │ #8036 │ Objective: Ship Demo-Ready Agent-Mode erk-slack-bot           │ Feb 24, 2026 │
+     ├───────┼───────────────────────────────────────────────────────────────┼──────────────┤
+     │ #7813 │ Objective: Eliminate Unnecessary Git Checkouts via Plumbing   │ Feb 22, 2026 │
+     ├───────┼───────────────────────────────────────────────────────────────┼──────────────┤
+     │ #7160 │ Objective: Ensure-Based CLI Error Handling                    │ Feb 16, 2026 │
+     ├───────┼───────────────────────────────────────────────────────────────┼──────────────┤
+     │ #7159 │ Objective: Codex CLI Adoption Experience                      │ Feb 16, 2026 │
+     └───────┴───────────────────────────────────────────────────────────────┴──────────────┘
+
+     Summary
+
+     There are 12 open objectives, with the most recent created on March 5, 2026.
+
+     Suggested Next Steps
+
+     To work with these objectives:
+
+     - View details: /local:objective-view &lt;number&gt; — See dependency graph, sub-nodes, and progress
+     - Create a plan: /erk:objective-plan &lt;number&gt; — Plan the next node in an objective
+     - Check status: erk objective check &lt;number&gt; — Validate objective metadata
+
+     The newest objectives (#8762 and #8760) may be good candidates for planning if they don't yet have dependent work.
+
+─────────────────────
+
+i would like info display in the cladue command to mirro what is in erk dash (in the image)</user>
+  <usage input_tokens="3" cache_creation_input_tokens="17359" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17359}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the codebase to understand both the current objective-list command and the TUI dashboard's objectives view.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="17359" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17359}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01Ky22PVAcRRa4HBWJTMZJjo">
+    <param name="query">select:Agent,Read,Glob,Grep</param>
+    <param name="max_results">5</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17359" cache_read_input_tokens="0" output_tokens="253" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 17359, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ky22PVAcRRa4HBWJTMZJjo">
+
+  </tool_result>
+  <tool_use name="Agent" id="toolu_015RZtv25iM6HZairt2Cu6uY">
+    <param name="description">Explore objective-list and TUI</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 633 chars]...ctive-list`).
+
+Be thorough - I need the actual file paths and the data model/columns used.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4429" cache_read_input_tokens="17359" output_tokens="306" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4429, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015RZtv25iM6HZairt2Cu6uY">
+Perfect! Now I have all the information I need. Let me compile a comprehensive summary for the user.
+
+## Summary
+
+I've thoroughly explored the codebase and found the key components you need. Here's what I discovered:
+
+---
+
+### 1. The `/erk:objective-list` Skill
+
+**Location:** `/Users/schrockn/code/erk/.claude/commands/erk/objective-list.md`
+
+This is a simple agent-driven skill that:
+- Fetches open objectives using `gh issue list --label "erk-objective" --state open --json number,title,createdAt --limit 50`
+- Displays results in a basic markdown table with 3 columns: `#`, `title`, `created`
+- Suggests follow-up commands (`/local:objective-view`, `/erk:objective-plan`)
+
+**Note:** This CLI command shows minimal data and is NOT the source of the rich TUI data.
+
+---
+
+### 2. The `erk dash` TUI Objectives Tab - Rendering Code
+
+**Location:** `/Users/schrockn/code/erk/src/erk/tui/widgets/plan_table.py`
+
+The objectives view displays **9 columns** with the exact names you mentioned:
+
+| Column | Key | Width | Source Field |
+|--------|-----|-------|--------------|
+| issue | plan | 6 | `plan_id` |
+
+... [165 lines omitted] ...
+
+phases, _errors = parse_roadmap(plan.body)
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2709" cache_read_input_tokens="21788" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2709}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the current skill file and the CLI command to understand what needs to change.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2709" cache_read_input_tokens="21788" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2709}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01L2HcXNHqNELK7oWvn1PJg1">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/objective-list.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2709" cache_read_input_tokens="21788" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2709}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L2HcXNHqNELK7oWvn1PJg1">
+     1→---
+     2→description: List open objectives
+     3→context: fork
+     4→agent: general-purpose
+     5→model: haiku
+     6→---
+     7→
+     8→# /erk:objective-list
+     9→
+    10→List all open objectives in the current repository.
+    11→
+    12→## Agent Instructions
+    13→
+    14→### Step 1: Fetch Open Objectives
+    15→
+    16→Run:
+    17→
+    18→```bash
+    19→gh issue list --label "erk-objective" --state open --json number,title,createdAt --limit 50
+    20→```
+    21→
+    22→### Step 2: Display Results
+    23→
+    24→Format output as a markdown table:
+    25→
+    26→| #    | Title                 | Created |
+    27→| ---- | --------------------- | ------- |
+    28→| #123 | Objective: Feature X  | 3d ago  |
+    29→| #456 | Objective: Refactor Y | 1w ago  |
+    30→
+
+... [9 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01AVxb9LpfRML5etevqyqYPA">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/objective/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2709" cache_read_input_tokens="21788" output_tokens="200" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2709, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AVxb9LpfRML5etevqyqYPA">
+     1→"""List open objectives."""
+     2→
+     3→import click
+     4→from rich.console import Console
+     5→from rich.table import Table
+     6→
+     7→from erk.cli.alias import alias
+     8→from erk.cli.core import discover_repo_context
+     9→from erk.cli.ensure import Ensure
+    10→from erk.core.context import ErkContext
+    11→from erk.core.display_utils import format_relative_time
+    12→from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
+    13→from erk_shared.output.output import user_output
+    14→
+    15→
+    16→@alias("ls")
+    17→@click.command("list")
+    18→@click.pass_obj
+    19→def list_objectives(ctx: ErkContext) -&gt; None:
+    20→    """List open objectives (GitHub issues with erk-objective label)."""
+    21→    repo = discover_repo_context(ctx, ctx.cwd)
+    22→
+    23→    repo_info = Ensure.not_none(ctx.repo_info, "Not in a GitHub repository")
+    24→    location = GitHubRepoLocation(
+    25→        root=repo.root,
+    26→        repo_id=GitHubRepoId(owner=repo_info.owner, repo=repo_info.name),
+    27→    )
+    28→
+    29→    # Fetch objectives via dedicated service
+    30→    http_client = ctx.http_client
+
+... [34 lines omitted] ...
+
+    32→        user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1563" cache_read_input_tokens="24497" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1563}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at how the TUI builds the rich objective data - specifically `_build_row_data()` and the relevant helper functions.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1563" cache_read_input_tokens="24497" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1563}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017bJZuExpdVYCMTU8BvhhF3">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="offset">780</param>
+    <param name="limit">170</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1563" cache_read_input_tokens="24497" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1563}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017bJZuExpdVYCMTU8BvhhF3">
+   780→        # Compute slug display
+   781→        objective_slug_display = "-"
+   782→        if plan.body:
+   783→            slug = extract_objective_slug(plan.body)
+   784→            if slug is not None:
+   785→                objective_slug_display = slug[:25]
+   786→            elif plan.title:
+   787→                stripped = plan.title.removeprefix("Objective: ")
+   788→                objective_slug_display = stripped[:25]
+   789→
+   790→        # Parse roadmap for objective-specific fields
+   791→        objective_done_nodes = 0
+   792→        objective_total_nodes = 0
+   793→        objective_progress_display = "-"
+   794→        objective_state_display = "-"
+   795→        objective_deps_display = "-"
+   796→        objective_next_node_display = "-"
+   797→        objective_deps_plans: list[tuple[str, str]] = []
+   798→        if plan.body:
+   799→            phases, _errors = parse_roadmap(plan.body)
+   800→            if phases:
+   801→                graph = build_graph(phases)
+   802→                summary = compute_graph_summary(graph)
+   803→                objective_done_nodes = summary["done"]
+   804→                objective_total_nodes = summary["total_nodes"]
+   805→                objective_progress_display = f"{objective_done_nodes}/{objective_total_nodes}"
+   806→                objective_state_display = build_state_sparkline(graph.nodes)
+   807→                next_node = find_graph_next_node(graph, phases)
+   808→                if next_node is not None:
+   809→                    objective_next_node_display = next_node["id"]
+
+... [140 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_0147wK5uTquEuKMMfV3WyAhF">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/widgets/plan_table.py</param>
+    <param name="offset">160</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1563" cache_read_input_tokens="24497" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1563}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0147wK5uTquEuKMMfV3WyAhF">
+   160→        if self._view_mode == ViewMode.OBJECTIVES:
+   161→            self.add_column("slug", key="slug", width=25)
+   162→            col_index += 1
+   163→            self.add_column("prog", key="progress", width=5)
+   164→            col_index += 1
+   165→            self.add_column("state", key="state", width=20)
+   166→            col_index += 1
+   167→            self.add_column("deps-state", key="deps_state", width=12)
+   168→            col_index += 1
+   169→            self._deps_column_index = col_index
+   170→            self.add_column("deps", key="deps", width=18)
+   171→            col_index += 1
+   172→            self.add_column("next", key="next", width=6)
+   173→            col_index += 1
+   174→            self.add_column("updated", key="updated", width=7)
+   175→            col_index += 1
+   176→            self.add_column("created by", key="author", width=12)
+   177→            col_index += 1
+   178→            return
+   179→
+   180→        self._stage_column_index = col_index
+   181→        self.add_column("stage", key="stage", width=8)
+   182→        col_index += 1
+   183→        self.add_column("sts", key="sts", width=7)
+   184→        col_index += 1
+   185→        self.add_column("created", key="created", width=7)
+   186→        col_index += 1
+   187→        self.add_column("obj", key="objective", width=5)
+   188→        self._objective_column_index = col_index
+   189→        col_index += 1
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DNmwyVojjX3U3qtoXPths5">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/widgets/plan_table.py</param>
+    <param name="offset">283</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1563" cache_read_input_tokens="24497" output_tokens="391" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1563, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DNmwyVojjX3U3qtoXPths5">
+   283→        # Objectives view: plan, slug, progress, state, deps-state, deps, next, updated, author
+   284→        if self._view_mode == ViewMode.OBJECTIVES:
+   285→            # Build linkified deps cell (show up to 3, truncate with ... if more)
+   286→            if row.objective_deps_plans:
+   287→                limit = 3 if len(row.objective_deps_plans) &lt;= 3 else 2
+   288→                show = row.objective_deps_plans[:limit]
+   289→                parts = [f"[link={url}]{display}[/link]" for display, url in show]
+   290→                if len(row.objective_deps_plans) &gt; 3:
+   291→                    parts.append("\u2026")
+   292→                deps_cell = " ".join(parts)
+   293→            else:
+   294→                deps_cell = "-"
+   295→
+   296→            return (
+   297→                plan_cell,
+   298→                row.objective_slug_display,
+   299→                row.objective_progress_display,
+   300→                Text(row.objective_state_display),
+   301→                row.objective_deps_display,
+   302→                deps_cell,
+   303→                row.objective_next_node_display,
+   304→                row.updated_display,
+   305→                row.author,
+   306→            )
+   307→
+   308→        # Format worktree
+   309→        if row.exists_locally:
+   310→            wt_cell = row.worktree_name
+   311→        else:
+   312→            wt_cell = "-"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="5926" cache_read_input_tokens="26060" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5926}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me find the imports for the roadmap parsing functions used by the data provider.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5926" cache_read_input_tokens="26060" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5926}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018a6SvojqHqmpGnZW3wuvij">
+    <param name="pattern">from.*import.*(parse_roadmap|build_graph|compute_graph_summary|build_state_sparkline|find_graph_next_node|extract_objective_slug)</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5926" cache_read_input_tokens="26060" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5926}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018a6SvojqHqmpGnZW3wuvij">
+No matches found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Npshdk3DcgV4ThzTffA1BG">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="offset">1</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5926" cache_read_input_tokens="26060" output_tokens="1197" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5926, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Npshdk3DcgV4ThzTffA1BG">
+     1→"""Real implementation of PlanDataProvider for production use."""
+     2→
+     3→import logging
+     4→import subprocess
+     5→from datetime import datetime
+     6→from pathlib import Path
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk.core.display_utils import (
+    10→    format_relative_time,
+    11→    format_workflow_outcome,
+    12→    format_workflow_run_id,
+    13→    get_workflow_run_state,
+    14→)
+    15→from erk.core.pr_utils import select_display_pr
+    16→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    17→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+    18→from erk.tui.sorting.types import BranchActivity
+    19→from erk_shared.gateway.browser.abc import BrowserLauncher
+    20→from erk_shared.gateway.clipboard.abc import Clipboard
+    21→from erk_shared.gateway.github.ci_summary_parsing import parse_ci_summaries
+    22→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    23→from erk_shared.gateway.github.metadata.core import (
+    24→    extract_objective_from_comment,
+    25→    extract_objective_header_comment_id,
+    26→    extract_objective_slug,
+    27→)
+    28→from erk_shared.gateway.github.metadata.dependency_graph import (
+    29→    _TERMINAL_STATUSES,
+    30→    build_graph,
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I now have the full picture. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2029" cache_read_input_tokens="31986" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2029}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01NbeDTYvfXENmheHbbZjbXs">
+    <param name="query">select:Write,ExitPlanMode</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2029" cache_read_input_tokens="31986" output_tokens="96" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2029, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NbeDTYvfXENmheHbbZjbXs">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01PmBxhakY8si278P29jeUBP">
+    <param name="file_path">/Users/schrockn/.claude/plans/squishy-brewing-dragonfly.md</param>
+    <param name="content"># Plan: Enrich `erk objective list` CLI to match TUI dashboard
+
+## Context
+
+The `/erk:obje...[truncated 2347 chars]...laude Code and verify it shows the same rich data
+3. Run fast-ci to ensure no regressions
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1023" cache_read_input_tokens="34015" output_tokens="840" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1023, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PmBxhakY8si278P29jeUBP">
+File created successfully at: /Users/schrockn/.claude/plans/squishy-brewing-dragonfly.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01KWaekL3TQyC8dY3jfqHnCs">
+    <param name="plan"># Plan: Enrich `erk objective list` CLI to match TUI dashboard
+
+## Context
+
+The `/erk:obje...[truncated 2347 chars]...laude Code and verify it shows the same rich data
+3. Run fast-ci to ensure no regressions
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="35932" cache_read_input_tokens="0" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 35932, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KWaekL3TQyC8dY3jfqHnCs">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/squishy-brewing-dragonfly.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Enrich `erk objective list` CLI to match TUI dashboard
+Current context: (wt:erk) (br:master) (plan:#8751)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id e3a363c5-ccae-4023-a86a-736b57a5afb4 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01BfT9TF63ZEjE8SHgu2ey3m">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="696" cache_read_input_tokens="35932" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 696, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BfT9TF63ZEjE8SHgu2ey3m">
+
+  </tool_result>
+  <assistant>
+
+Here's the plan:
+
+## Plan: Enrich `erk objective list` CLI to match TUI dashboard
+
+### Context
+
+The `/erk:objective-list` Claude Code command shows a minimal 3-column table (issue, title, created) using raw `gh issue list`. The `erk dash` TUI objectives tab shows 9 rich columns (issue, slug, prog, state, deps-state, deps, next, updated, created by) by parsing roadmaps and computing dependency graphs. The goal is to make the CLI output match the TUI.
+
+### Step 1: Enhance `erk objective list` CLI command
+
+**File:** `src/erk/cli/commands/objective/list_cmd.py`
+
+Add roadmap parsing and graph computation using the same functions as `RealPlanDataProvider._build_row_data()`. Update the Rich table to show 9 columns: issue, slug, prog, state, deps-state, deps, next, updated, created by.
+
+### Step 2: Update the Claude Code skill
+
+**File:** `.claude/commands/erk/objective-list.md`
+
+Replace the `gh issue list` approach with simply running `erk objective list` and displaying output directly.
+
+### Verification
+
+1. Run `erk objective list` and compare to `erk dash` objectives tab
+2. Run `/erk:objective-list` in Claude Code and verify rich data
+3. Run fast-ci</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1428" cache_read_input_tokens="36628" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1428}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_017XiVWpqwAkomKcJaxrWHBJ">
+    <param name="questions">[{'question': 'What would you like to do with this plan?', 'header': 'br:master', 'options...[truncated 321 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1428" cache_read_input_tokens="36628" output_tokens="507" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1428, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017XiVWpqwAkomKcJaxrWHBJ">
+User has answered your questions: "What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01CZVjr8ZxhRZpWNFEcSsdpQ">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3673" cache_read_input_tokens="35038" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3673, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CZVjr8ZxhRZpWNFEcSsdpQ">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_0179Sj8NiyDk1thBoGdUTUdZ">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="562" cache_read_input_tokens="38711" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 562, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0179Sj8NiyDk1thBoGdUTUdZ">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="e3a363c5-ccae-4023-a86a-736b57a5afb4" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="e3a363c5-ccae-4023-a86a-736b57a5afb4" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "e3a363c5-ccae-4023-a86a-736b57a5afb4" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "e3a363c5-ccae-4023-a86a-736b57a5afb4" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "e3a363c5-ccae-4023-a86a-736b57a5afb4" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "e3a363c5-ccae-4023-a86a-736b57a5afb4" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2289" cache_read_input_tokens="39273" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2289}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01D2WKd9iEEPAZnj4X9zgWGf">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2289" cache_read_input_tokens="39273" output_tokens="239" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2289, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01D2WKd9iEEPAZnj4X9zgWGf">
+
+  </tool_result>
+  <assistant>
+
+Running the plan save command now.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3480" cache_read_input_tokens="41562" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3480}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018XKc5tjAX2NZBq3bKC2LjR">
+    <param name="command">erk exec plan-save --format json --session-id="e3a363c5-ccae-4023-a86a-736b57a5afb4" --bra...[truncated 210 chars]...eated by). Also simplifies the Claude Code skill to delegate to the enriched CLI command."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3480" cache_read_input_tokens="41562" output_tokens="230" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3480, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018XKc5tjAX2NZBq3bKC2LjR">
+{"success": true, "plan_number": 8777, "plan_url": "https://github.com/dagster-io/erk/pull/8777", "title": "[erk-plan] Plan: Enrich `erk objective list` CLI to match TUI dashboard", "branch_name": "plnd/enrich-objective-list-cli-03-05-1107", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/e3a363c5-ccae-4023-a86a-736b57a5afb4/plan_snapshots/000001-d888113d"}
+  </tool_result>
+  <assistant>Plan saved. Now pushing the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="417" cache_read_input_tokens="45042" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 417}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01NkcoG71tUH4PVTCzvnNXVQ">
+    <param name="command">erk exec upload-impl-session --session-id "e3a363c5-ccae-4023-a86a-736b57a5afb4" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="417" cache_read_input_tokens="45042" output_tokens="150" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 417, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NkcoG71tUH4PVTCzvnNXVQ">
+{"uploaded": true, "plan_id": 8751}
+  </tool_result>
+  <assistant>Plan **"Enrich `erk objective list` CLI to match TUI dashboard"** saved as draft PR **#8777**.
+URL: https://github.com/dagster-io/erk/pull/8777</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="175" cache_read_input_tokens="45459" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 175}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01QZ5SaidLthqsp3CHVEqaSY">
+    <param name="plan"># Plan: Enrich `erk objective list` CLI to match TUI dashboard
+
+## Context
+
+The `/erk:obje...[truncated 2347 chars]...laude Code and verify it shows the same rich data
+3. Run fast-ci to ensure no regressions
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="175" cache_read_input_tokens="45459" output_tokens="89" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 175, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QZ5SaidLthqsp3CHVEqaSY">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8777 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8777:
+  In current wt:    source "$(erk br co --for-plan 8777 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8777 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8777 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8777 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8777:
+  In current wt:  erk br co --for-plan 8777
+  In new wt:      erk br co --new-slot --for-plan 8777
+
+Dispatch plan #8777:
+  CLI command:    erk pr dispatch 8777
+  Slash command:  /erk:pr-dispatch 8777
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan #8777 saved successfully.
+
+**Next steps for plan #8777:**
+
+Implement plan #8777:
+  In current wt:    `source "$(erk br co --for-plan 8777 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --for-plan 8777 --script)" &amp;&amp; erk implement -d`
+  In new wt:        `source "$(erk br co --new-slot --for-plan 8777 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --new-slot --for-plan 8777 --script)" &amp;&amp; erk implement -d`
+
+Checkout plan #8777:
+  In current wt:  `erk br co --for-plan 8777`
+  In new wt:      `erk br co --new-slot --for-plan 8777`
+
+Dispatch plan #8777:
+  CLI command:    `erk pr dispatch 8777`
+  Slash command:  `/erk:pr-dispatch 8777`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1673" cache_read_input_tokens="45634" output_tokens="264" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1673, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "e3a363c5-ccae-4023-a86a-736b57a5afb4" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>The most recent plan is **#8777**. Dispatching it for remote implementation.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="940" cache_read_input_tokens="47307" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 940}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01527kfHKKgdqCpZsWiRZDAk">
+    <param name="command">erk pr dispatch 8777</param>
+    <param name="description">Dispatch plan #8777 for remote AI implementation</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="940" cache_read_input_tokens="47307" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 940, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01527kfHKKgdqCpZsWiRZDAk">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8777...
+
+✓ All 1 plan(s) validated
+
+  #8777: [erk-plan] Plan: Enrich `erk objective list` CLI to match TUI dashboard
+
+Dispatching PR #8777...
+
+Fetching plan content...
+Syncing branch: plnd/enrich-objective-list-cli-03-05-1107
+Committing plan to branch...
+✓ Branch pushed to remote
+
+Dispatching workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+  Waiting for workflow run... (attempt 3/11)
+✓ Workflow dispatched.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012cELzYx2pU37XC7Genqh2e">
+    <param name="command">erk exec marker delete --session-id "e3a363c5-ccae-4023-a86a-736b57a5afb4" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker to allow new plans</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="490" cache_read_input_tokens="48247" output_tokens="117" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 490, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012cELzYx2pU37XC7Genqh2e">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Plan #8777 dispatched successfully for remote implementation.
+
+- **Plan:** https://github.com/dagster-io/erk/pull/8777
+- **Workflow:** https://github.com/dagster-io/erk/actions/runs/22732428489</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="148" cache_read_input_tokens="48737" output_tokens="66" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 148, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
