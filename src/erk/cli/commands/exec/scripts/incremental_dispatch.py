@@ -9,6 +9,7 @@ the erk-plan label — just an OPEN PR.
 """
 
 import json
+import logging
 from pathlib import Path
 
 import click
@@ -34,6 +35,8 @@ from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.impl_context import build_impl_context_files
 from erk_shared.output.output import user_output
 from erk_shared.subprocess_utils import run_subprocess_with_context
+
+logger = logging.getLogger(__name__)
 
 
 @click.command(name="incremental-dispatch")
@@ -138,7 +141,7 @@ def incremental_dispatch(
                 cwd=checked_out_path,
             )
         except Exception:
-            pass  # Best-effort: stale index is cosmetic, not a correctness issue
+            logger.warning("Failed to sync index after plumbing commit", exc_info=True)
 
     # Push
     push_result = git.remote.push_to_remote(

@@ -257,7 +257,7 @@ def _dispatch_planned_pr_plan(
                 cwd=checked_out_path,
             )
         except Exception:
-            pass  # Best-effort: stale index is cosmetic, not a correctness issue
+            logger.warning("Failed to sync index after plumbing commit", exc_info=True)
 
     push_result = ctx.git.remote.push_to_remote(
         repo.root, "origin", branch_name, set_upstream=False, force=False
