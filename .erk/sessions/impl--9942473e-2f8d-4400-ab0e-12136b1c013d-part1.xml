@@ -1,0 +1,710 @@
+<session>
+  <meta branch="plnd/remove-pr-cache-polling-03-05-1701" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8794&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8794` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8794.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28396" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28396, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01RnmS8US92xEET73HxC9uik">
+    <param name="command">erk exec setup-impl --issue 8794</param>
+    <param name="description">Set up implementation for plan #8794</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28396" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28396, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RnmS8US92xEET73HxC9uik">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--remove-pr-cache-polling-03-05-1701", "plan_number": 8794, "plan_url": "https://github.com/dagster-io/erk/pull/8794", "branch": "plnd/remove-pr-cache-polling-03-05-1701", "plan_title": "[erk-plan] Remove PR Cache Polling from Submit Critical Path", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8794, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/remove-pr-cache-polling-03-05-1701', teleporting from remote...
+  </tool_result>
+  <assistant>Good, setup is complete. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="344" cache_read_input_tokens="28396" cache_creation="{'ephemeral_5m_input_tokens': 344, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01LG7kNiwg5frXVPm8xETWEE">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--remove-pr-cache-polling-03-05-1701/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="344" cache_read_input_tokens="28396" cache_creation="{'ephemeral_5m_input_tokens': 344, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LG7kNiwg5frXVPm8xETWEE">
+     1→# Remove PR Cache Polling from Submit Critical Path
+     2→
+     3→## Context
+     4→
+     5→After `erk pr submit` completes, the submit command currently blocks for up to 10 seconds polling `.git/.graphite_pr_info` (a local file) waiting for Graphite to update it. This was added so the status line could immediately show PR info — but it belongs in the status line, not in the submit path. The submit command should complete as fast as possible.
+     6→
+     7→## Files to Modify
+     8→
+     9→- `src/erk/cli/commands/pr/submit_cmd.py` — remove `_wait_for_pr_in_cache`, `ENABLE_PR_CACHE_POLLING`, `PR_CACHE_POLL_MAX_WAIT_SECONDS`, `PR_CACHE_POLL_INTERVAL_SECONDS`, and the polling call after `run_submit_pipeline`
+    10→- `src/erk/cli/commands/exec/scripts/push_and_create_pr.py` — remove `_wait_for_pr_in_cache` function and its call at line 83
+    11→- `tests/commands/pr/test_submit_pr_cache_polling.py` — delete this file entirely (tests for the removed behavior)
+    12→
+    13→## Changes
+    14→
+    15→### `submit_cmd.py`
+    16→- Remove the 4 module-level constants (`ENABLE_PR_CACHE_POLLING`, `PR_CACHE_POLL_MAX_WAIT_SECONDS`, `PR_CACHE_POLL_INTERVAL_SECONDS`)
+    17→- Remove the `_wait_for_pr_in_cache` function (lines 38–65)
+    18→- Remove the polling block after `run_submit_pipeline` (lines 190–198)
+    19→- Remove `user_output` import if no longer used
+    20→
+    21→### `push_and_create_pr.py`
+    22→- Remove `_PR_CACHE_POLL_MAX_WAIT_SECONDS`, `_PR_CACHE_POLL_INTERVAL_SECONDS` constants
+    23→- Remove `_wait_for_pr_in_cache` function (lines 103–115)
+    24→- Remove the call at line 83 (`_wait_for_pr_in_cache(erk_ctx, result.repo_root, result.branch_name)`)
+    25→
+    26→### `tests/commands/pr/test_submit_pr_cache_polling.py`
+    27→- Delete the file — it only tests the removed polling behavior
+    28→
+    29→## Verification
+    30→
+
+... [9 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the files that need to be modified in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="877" cache_read_input_tokens="28740" cache_creation="{'ephemeral_5m_input_tokens': 877, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01YCM8xz58rENDS8t667mwht">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="877" cache_read_input_tokens="28740" cache_creation="{'ephemeral_5m_input_tokens': 877, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Mqx8ggURyoyfe9FcqZDF2b">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_and_create_pr.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="877" cache_read_input_tokens="28740" cache_creation="{'ephemeral_5m_input_tokens': 877, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01AZithrNpq6fKAxFGUeXhvQ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit_pr_cache_polling.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="877" cache_read_input_tokens="28740" cache_creation="{'ephemeral_5m_input_tokens': 877, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01YCM8xz58rENDS8t667mwht">
+     1→"""Submit current branch as a pull request.
+     2→
+     3→Runs a linear pipeline of functions transforming a frozen SubmitState:
+     4→1. Prepare state (resolve repo, branch, parent, issue)
+     5→2. Commit WIP changes
+     6→3. Push and create/find PR (Graphite-first or core path)
+     7→4. Extract diff for AI
+     8→5. Fetch plan context
+     9→6. Generate AI PR description
+    10→7. Enhance with Graphite (if applicable)
+    11→8. Finalize PR metadata
+    12→"""
+    13→
+    14→import sys
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.pr.shared import require_claude_available
+    20→from erk.cli.commands.pr.submit_pipeline import (
+    21→    SubmitError,
+    22→    SubmitState,
+    23→    make_initial_state,
+    24→    run_submit_pipeline,
+    25→)
+    26→from erk.core.context import ErkContext
+    27→from erk_shared.output.output import user_output
+    28→
+    29→# Set to False to disable polling for PR in Graphite cache after submission.
+    30→# This feature ensures the status line can immediately display the PR number.
+
+... [176 lines omitted] ...
+
+   187→    if isinstance(result, SubmitError):
+   188→        raise click.ClickException(result.message)
+  </tool_result>
+  <tool_result tool="toolu_01Mqx8ggURyoyfe9FcqZDF2b">
+     1→"""Push branch and create/find PR, outputting JSON.
+     2→
+     3→Runs the first three steps of the submit pipeline (prepare_state,
+     4→commit_wip, push_and_create_pr) with quiet=True so no progress output
+     5→pollutes stdout. On success, outputs structured JSON with branch, PR,
+     6→and Graphite info for agent consumption.
+     7→
+     8→Usage:
+     9→    erk exec push-and-create-pr
+    10→    erk exec push-and-create-pr --force
+    11→    erk exec push-and-create-pr --no-graphite
+    12→
+    13→Exit Codes:
+    14→    0: Success (JSON output on stdout)
+    15→    1: Error (JSON error output on stdout)
+    16→"""
+    17→
+    18→import json
+    19→import sys
+    20→from pathlib import Path
+    21→
+    22→import click
+    23→
+    24→from erk.cli.commands.pr.submit_pipeline import (
+    25→    SubmitError,
+    26→    SubmitState,
+    27→    make_initial_state,
+    28→    run_push_and_create_pipeline,
+    29→)
+    30→from erk.core.context import ErkContext
+
+... [91 lines omitted] ...
+
+    67→    if isinstance(result, SubmitError):
+    68→        error_output = {
+    70→            "error": {
+    72→                "error_type": result.error_type,
+    76→        click.echo(json.dumps(error_output, indent=2))
+  </tool_result>
+  <tool_result tool="toolu_01AZithrNpq6fKAxFGUeXhvQ">
+     1→"""Tests for PR cache polling in erk pr submit command.
+     2→
+     3→These tests verify that after PR submission with Graphite, the command
+     4→waits for the PR to appear in Graphite's cache before exiting. This ensures
+     5→the status line can immediately display the PR number.
+     6→"""
+     7→
+     8→from datetime import datetime, timedelta
+     9→from pathlib import Path
+    10→
+    11→from erk.cli.commands.pr.submit_cmd import (
+    12→    PR_CACHE_POLL_INTERVAL_SECONDS,
+    13→    PR_CACHE_POLL_MAX_WAIT_SECONDS,
+    14→    _wait_for_pr_in_cache,
+    15→)
+    16→from erk.core.context import context_for_test
+    17→from erk_shared.gateway.git.abc import Git
+    18→from erk_shared.gateway.git.fake import FakeGit
+    19→from erk_shared.gateway.github.types import PullRequestInfo
+    20→from erk_shared.gateway.graphite.fake import FakeGraphite
+    21→from erk_shared.gateway.time.abc import Time
+    22→
+    23→
+    24→class ProgressingFakeTime(Time):
+    25→    """FakeTime that advances on each now() call for testing polling loops.
+    26→
+    27→    Each call to now() returns a time that is `increment` seconds later than
+    28→    the previous call. This allows testing timeout logic without sleeping.
+    29→    """
+    30→
+
+... [313 lines omitted] ...
+  </tool_result>
+  <assistant>I've read all three files. Let me set up the todo list and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8710" cache_read_input_tokens="29617" cache_creation="{'ephemeral_5m_input_tokens': 8710, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01GLbrXLJXF2qCz26VLkhTWS">
+    <param name="todos">[{'content': 'Remove polling constants, function, and call from submit_cmd.py', 'status': ...[truncated 356 chars]...nt': 'Run CI verification', 'status': 'pending', 'activeForm': 'Running CI verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8710" cache_read_input_tokens="29617" cache_creation="{'ephemeral_5m_input_tokens': 8710, 'ephemeral_1h_input_tokens': 0}" output_tokens="231" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GLbrXLJXF2qCz26VLkhTWS">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DbxVmYySzGC3HcNsTbNa15">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="38327" cache_creation="{'ephemeral_5m_input_tokens': 267, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DbxVmYySzGC3HcNsTbNa15">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <assistant>Now let me implement the changes. Starting with `submit_cmd.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="38594" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01UJG4dmMQiX2xD2XKH1goFy">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_cmd.py</param>
+    <param name="old_string">from erk.cli.commands.pr.shared import require_claude_available
+from erk.cli.commands.pr.s...[truncated 1232 chars]... in prs:
+            return True
+        ctx.time.sleep(poll_interval)
+    return False
+
+
+</param>
+    <param name="new_string">from erk.cli.commands.pr.shared import require_claude_available
+from erk.cli.commands.pr.s...[truncated 41 chars]... make_initial_state,
+    run_submit_pipeline,
+)
+from erk.core.context import ErkContext
+
+
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="38594" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UJG4dmMQiX2xD2XKH1goFy">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Y8t5YMkn6huyrzeBuPm9RT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_cmd.py</param>
+    <param name="old_string">    # Wait for PR to appear in Graphite cache for immediate status line display
+    if ENA...[truncated 214 chars]...       poll_interval=PR_CACHE_POLL_INTERVAL_SECONDS,
+        )
+
+    _print_summary(result)</param>
+    <param name="new_string">    _print_summary(result)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="701" cache_read_input_tokens="38765" cache_creation="{'ephemeral_5m_input_tokens': 701, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Y8t5YMkn6huyrzeBuPm9RT">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now check if `user_output` is still used anywhere in the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="300" cache_read_input_tokens="39466" cache_creation="{'ephemeral_5m_input_tokens': 300, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_016iQquDXk2ikJ4pSRV8ShFB">
+    <param name="pattern">user_output</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="300" cache_read_input_tokens="39466" cache_creation="{'ephemeral_5m_input_tokens': 300, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016iQquDXk2ikJ4pSRV8ShFB">
+No matches found
+  </tool_result>
+  <assistant>Good, `user_output` is no longer used. Let me also verify `SubmitState` is still used (it's referenced in `_print_summary`):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="339" cache_read_input_tokens="39766" cache_creation="{'ephemeral_5m_input_tokens': 339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Ah52pVc79wCZEmauoE9X4M">
+    <param name="pattern">SubmitState</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="339" cache_read_input_tokens="39766" cache_creation="{'ephemeral_5m_input_tokens': 339, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ah52pVc79wCZEmauoE9X4M">
+3:Runs a linear pipeline of functions transforming a frozen SubmitState:
+22:    SubmitState,
+42:def _print_summary(result: SubmitState) -&gt; None:
+  </tool_result>
+  <assistant>Good, `SubmitState` is still used. Now let me also check if `ErkContext` is still needed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="214" cache_read_input_tokens="40105" cache_creation="{'ephemeral_5m_input_tokens': 214, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01XXS5b29Esaj7HViVavXZqg">
+    <param name="pattern">ErkContext</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="214" cache_read_input_tokens="40105" cache_creation="{'ephemeral_5m_input_tokens': 214, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XXS5b29Esaj7HViVavXZqg">
+26:from erk.core.context import ErkContext
+92:    ctx: ErkContext,
+  </tool_result>
+  <assistant>`ErkContext` is still used by `pr_submit`. First file is done. Now move to the second file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="370" cache_read_input_tokens="40319" cache_creation="{'ephemeral_5m_input_tokens': 370, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_013D5oAYTeK3QZGdkmZ9NDK1">
+    <param name="todos">[{'content': 'Remove polling constants, function, and call from submit_cmd.py', 'status': ...[truncated 358 chars]...nt': 'Run CI verification', 'status': 'pending', 'activeForm': 'Running CI verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="370" cache_read_input_tokens="40319" cache_creation="{'ephemeral_5m_input_tokens': 370, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013D5oAYTeK3QZGdkmZ9NDK1">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PAaQi5dQLasAu9GotiR9XX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_and_create_pr.py</param>
+    <param name="old_string">    # Wait for PR to appear in Graphite cache for status line
+    if result.graphite_url is not None:
+        _wait_for_pr_in_cache(erk_ctx, result.repo_root, result.branch_name)
+
+    output</param>
+    <param name="new_string">    output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="275" cache_read_input_tokens="40689" cache_creation="{'ephemeral_5m_input_tokens': 275, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PAaQi5dQLasAu9GotiR9XX">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_and_create_pr.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01ReZqn2gvyUBaniKraLxnrX">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_and_create_pr.py</param>
+    <param name="old_string">
+_PR_CACHE_POLL_MAX_WAIT_SECONDS = 10.0
+_PR_CACHE_POLL_INTERVAL_SECONDS = 0.5
+
+
+def _wait_...[truncated 349 chars]...      return True
+        ctx.time.sleep(_PR_CACHE_POLL_INTERVAL_SECONDS)
+    return False</param>
+    <param name="new_string"></param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="239" cache_read_input_tokens="40964" cache_creation="{'ephemeral_5m_input_tokens': 239, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ReZqn2gvyUBaniKraLxnrX">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_and_create_pr.py has been updated successfully.
+  </tool_result>
+  <assistant>Now check if `ErkContext` and `Path` are still used in that file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="384" cache_read_input_tokens="41203" cache_creation="{'ephemeral_5m_input_tokens': 384, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01E5UPRq8KXWLjY2vjzrxkar">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_and_create_pr.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="384" cache_read_input_tokens="41203" cache_creation="{'ephemeral_5m_input_tokens': 384, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01E5UPRq8KXWLjY2vjzrxkar">
+     1→"""Push branch and create/find PR, outputting JSON.
+     2→
+     3→Runs the first three steps of the submit pipeline (prepare_state,
+     4→commit_wip, push_and_create_pr) with quiet=True so no progress output
+     5→pollutes stdout. On success, outputs structured JSON with branch, PR,
+     6→and Graphite info for agent consumption.
+     7→
+     8→Usage:
+     9→    erk exec push-and-create-pr
+    10→    erk exec push-and-create-pr --force
+    11→    erk exec push-and-create-pr --no-graphite
+    12→
+    13→Exit Codes:
+    14→    0: Success (JSON output on stdout)
+    15→    1: Error (JSON error output on stdout)
+    16→"""
+    17→
+    18→import json
+    19→import sys
+    20→from pathlib import Path
+    21→
+    22→import click
+    23→
+    24→from erk.cli.commands.pr.submit_pipeline import (
+    25→    SubmitError,
+    26→    SubmitState,
+    27→    make_initial_state,
+    28→    run_push_and_create_pipeline,
+    29→)
+    30→from erk.core.context import ErkContext
+
+... [69 lines omitted] ...
+
+    67→    if isinstance(result, SubmitError):
+    68→        error_output = {
+    70→            "error": {
+    72→                "error_type": result.error_type,
+    76→        click.echo(json.dumps(error_output, indent=2))
+  </tool_result>
+  <assistant>`ErkContext` is no longer used in this file (it was only used by `_wait_for_pr_in_cache`). Let me remove it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1282" cache_read_input_tokens="41587" cache_creation="{'ephemeral_5m_input_tokens': 1282, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Voqhz3ZwAEeYt78jnfqcGZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_and_create_pr.py</param>
+    <param name="old_string">from erk.core.context import ErkContext
+from erk_shared.context.helpers import require_context</param>
+    <param name="new_string">from erk_shared.context.helpers import require_context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1282" cache_read_input_tokens="41587" cache_creation="{'ephemeral_5m_input_tokens': 1282, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Voqhz3ZwAEeYt78jnfqcGZ">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_and_create_pr.py has been updated successfully.
+  </tool_result>
+  <assistant>Now delete the test file and update todos:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="441" cache_read_input_tokens="42869" cache_creation="{'ephemeral_5m_input_tokens': 441, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Pr9qyJcrWRpvWDFvdGfCQX">
+    <param name="todos">[{'content': 'Remove polling constants, function, and call from submit_cmd.py', 'status': ...[truncated 360 chars]...nt': 'Run CI verification', 'status': 'pending', 'activeForm': 'Running CI verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="441" cache_read_input_tokens="42869" cache_creation="{'ephemeral_5m_input_tokens': 441, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Pr9qyJcrWRpvWDFvdGfCQX">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011yBVCsAUEM5wRAai9XkAjV">
+    <param name="command">rm /home/runner/work/erk/erk/tests/commands/pr/test_submit_pr_cache_polling.py</param>
+    <param name="description">Delete polling test file</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="258" cache_read_input_tokens="43310" cache_creation="{'ephemeral_5m_input_tokens': 258, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011yBVCsAUEM5wRAai9XkAjV">
+
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_019Ew9NbG1sgSWdfXW8kpaQa">
+    <param name="todos">[{'content': 'Remove polling constants, function, and call from submit_cmd.py', 'status': ...[truncated 362 chars]... 'Run CI verification', 'status': 'in_progress', 'activeForm': 'Running CI verification'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="128" cache_read_input_tokens="43568" cache_creation="{'ephemeral_5m_input_tokens': 128, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019Ew9NbG1sgSWdfXW8kpaQa">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me run the PR tests to verify:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="248" cache_read_input_tokens="43696" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01XKXK5STZZ6LfNiAcMxBkxa">
+    <param name="description">Run PR tests for verification</param>
+    <param name="prompt">Run `pytest tests/commands/pr/ -x` and report the results. Just run and report - do not modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="248" cache_read_input_tokens="43696" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XKXK5STZZ6LfNiAcMxBkxa">
+pytest passed: 233 tests passed in 3.52s
+
+All tests in `tests/commands/pr/` are passing successfully. No failures or errors detected.
+agentId: ac9c4f5 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All 233 tests pass. Let me also run a broader check to make sure nothing else depends on the removed symbols:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="202" cache_read_input_tokens="43944" cache_creation="{'ephemeral_5m_input_tokens': 202, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Cqs84CbyN6fjR9pWQWULmf">
+    <param name="pattern">_wait_for_pr_in_cache|PR_CACHE_POLL|ENABLE_PR_CACHE_POLLING</param>
+    <param name="path">/home/runner/work/erk/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="202" cache_read_input_tokens="43944" cache_creation="{'ephemeral_5m_input_tokens': 202, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01XzQdpup3fLZLQhUxDamKHJ">
+    <param name="pattern">_wait_for_pr_in_cache|PR_CACHE_POLL|ENABLE_PR_CACHE_POLLING</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="202" cache_read_input_tokens="43944" cache_creation="{'ephemeral_5m_input_tokens': 202, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Cqs84CbyN6fjR9pWQWULmf">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01XzQdpup3fLZLQhUxDamKHJ">
+No files found
+  </tool_result>
+  <assistant>No remaining references to the removed code anywhere. Let me also run a quick type check:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="342" cache_read_input_tokens="44146" cache_creation="{'ephemeral_5m_input_tokens': 342, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01N42sb1MyvBDRXd1x2oYZbb">
+    <param name="description">Run ty type checker</param>
+    <param name="prompt">Run `ty check src/erk/cli/commands/pr/submit_cmd.py src/erk/cli/commands/exec/scripts/push_and_create_pr.py` and report results. Just run and report - do not modify any files.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="342" cache_read_input_tokens="44146" cache_creation="{'ephemeral_5m_input_tokens': 342, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01N42sb1MyvBDRXd1x2oYZbb">
+ty passed: All checks passed on both files
+- /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_cmd.py
+- /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/push_and_create_pr.py
+agentId: a2e5e6b (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All checks pass. Let me mark CI as done and proceed with the remaining plan steps.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="472" cache_read_input_tokens="44488" cache_creation="{'ephemeral_5m_input_tokens': 472, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01V4jTgqSgAbvrLQ4K7hBev8">
+    <param name="todos">[{'content': 'Remove polling constants, function, and call from submit_cmd.py', 'status': ...[truncated 509 chars]...ntext, submit PR', 'status': 'in_progress', 'activeForm': 'Finalizing and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="472" cache_read_input_tokens="44488" cache_creation="{'ephemeral_5m_input_tokens': 472, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01V4jTgqSgAbvrLQ4K7hBev8">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019iVQ97cQaMaYAxkFDu8eHE">
+    <param name="command">erk exec impl-signal ended --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="306" cache_read_input_tokens="44960" cache_creation="{'ephemeral_5m_input_tokens': 306, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01RLku9APxVa97qsH947nHjB">
+    <param name="command">erk exec upload-impl-session --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="306" cache_read_input_tokens="44960" cache_creation="{'ephemeral_5m_input_tokens': 306, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019iVQ97cQaMaYAxkFDu8eHE">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8794
+}
+  </tool_result>
+</session>
