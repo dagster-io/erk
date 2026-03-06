@@ -32,9 +32,15 @@ Submodules:
     legacy_slot_naming        - check_legacy_slot_naming
 """
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from erk.artifacts.paths import ErkPackageInfo
 from erk.artifacts.state import load_installed_capabilities
-from erk.core.context import ErkContext
+
+if TYPE_CHECKING:
+    from erk.core.context import ErkContext
 from erk.core.health_checks.anthropic_api_secret import check_anthropic_api_secret
 from erk.core.health_checks.claude_cli import check_claude_cli
 from erk.core.health_checks.claude_erk_permission import check_claude_erk_permission

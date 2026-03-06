@@ -88,7 +88,7 @@ from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
 
 if TYPE_CHECKING:
-    from erk.core.health_checks.runner import HealthCheckRunner
+    from erk_shared.core.health_check_runner import HealthCheckRunner
 
 
 def create_prompt_executor(
@@ -671,6 +671,9 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     package_info = ErkPackageInfo.from_project_dir(cwd)
 
     # 13. Create health check runner
+    # Inline import: importing erk.core.health_checks.runner triggers the
+    # health_checks package __init__.py which imports individual check modules
+    # that depend on erk.core.context — causing a circular import at module level.
     from erk.core.health_checks.runner import RealHealthCheckRunner
 
     health_check_runner = RealHealthCheckRunner()
