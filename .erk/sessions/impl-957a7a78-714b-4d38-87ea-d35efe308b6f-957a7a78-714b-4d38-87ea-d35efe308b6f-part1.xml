@@ -456,4 +456,158 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
   "plan_number": 8875
 }
   </tool_result>
+  <tool_result tool="toolu_016z9rk2S9YWAzxAUYFAwcba">
+{"uploaded": true, "plan_id": 8875}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01VrSFD7cd8Nkt21ChQw96Ek">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="524" cache_read_input_tokens="39514" cache_creation="{'ephemeral_5m_input_tokens': 524, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VrSFD7cd8Nkt21ChQw96Ek">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01UKSC7W7YTRtwvzhHMkJBEq">
+    <param name="command">git add .claude/skills/refac-mock-to-fake/SKILL.md &amp;&amp; git status</param>
+    <param name="description">Stage new skill file and check status</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="106" cache_read_input_tokens="40038" cache_creation="{'ephemeral_5m_input_tokens': 106, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UKSC7W7YTRtwvzhHMkJBEq">
+On branch plnd/add-mock-to-fake-skill-03-06-1526
+Your branch is up to date with 'origin/plnd/add-mock-to-fake-skill-03-06-1526'.
+
+Changes to be committed:
+  (use "git restore --staged &lt;file&gt;..." to unstage)
+	new file:   .claude/skills/refac-mock-to-fake/SKILL.md
+  </tool_result>
+  <assistant>Good. Now let me submit via `erk pr submit`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="209" cache_read_input_tokens="40144" cache_creation="{'ephemeral_5m_input_tokens': 209, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_017tvaEYhPpd8qprFuom5xk9">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="209" cache_read_input_tokens="40144" cache_creation="{'ephemeral_5m_input_tokens': 209, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017tvaEYhPpd8qprFuom5xk9">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #8875 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #8875
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (15,574 chars)
+   Analyzing changes with Claude...
+   Still waiting... (2s)
+   Still waiting... (4s)
+   Still waiting... (6s)
+   Still waiting... (8s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01EknDbQ3VJvLgkMhz6UvSGx">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="588" cache_read_input_tokens="40353" cache_creation="{'ephemeral_5m_input_tokens': 588, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01FbqthLTrpJfYWEkQLFA5Vf">
+    <param name="command">erk pr check --stage=impl</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="588" cache_read_input_tokens="40353" cache_creation="{'ephemeral_5m_input_tokens': 588, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EknDbQ3VJvLgkMhz6UvSGx">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8875
+}
+  </tool_result>
+  <tool_result tool="toolu_01FbqthLTrpJfYWEkQLFA5Vf">
+Exit code 1
+Checking PR #8875 for branch plnd/add-mock-to-fake-skill-03-06-1526...
+
+[FAIL] .erk/impl-context/ still present (should be removed before submission)
+[PASS] Plan reference found (#8875)
+[PASS] PR body contains checkout footer
+
+1 check failed
+  </tool_result>
+  <assistant>The impl-context directory needs to be removed. Let me clean it up:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="319" cache_read_input_tokens="40941" cache_creation="{'ephemeral_5m_input_tokens': 319, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_0148cFMX3xxz8f8zyHPkmpJ3">
+    <param name="command">ls -la /home/runner/work/erk/erk/.erk/impl-context/</param>
+    <param name="description">Check impl-context contents</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="319" cache_read_input_tokens="40941" cache_creation="{'ephemeral_5m_input_tokens': 319, 'ephemeral_1h_input_tokens': 0}" output_tokens="112" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0148cFMX3xxz8f8zyHPkmpJ3">
+total 32
+drwxr-xr-x 3 runner runner 4096 Mar  6 23:29 .
+drwxr-xr-x 6 runner runner 4096 Mar  6 23:28 ..
+-rw-r--r-- 1 runner runner 8983 Mar  6 23:28 plan.md
+drwxr-xr-x 2 runner runner 4096 Mar  6 23:29 plnd--add-mock-to-fake-skill-03-06-1526
+-rw-r--r-- 1 runner runner  263 Mar  6 23:28 ref.json
+-rw-r--r-- 1 runner runner  105 Mar  6 23:29 run-info.json
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PxiKcuxdoeXhKAoM6D5HZJ">
+    <param name="command">git ls-files .erk/impl-context/</param>
+    <param name="description">Check if impl-context is tracked by git</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="474" cache_read_input_tokens="41260" cache_creation="{'ephemeral_5m_input_tokens': 474, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PxiKcuxdoeXhKAoM6D5HZJ">
+
+  </tool_result>
+  <assistant>The impl-context files aren't tracked by git, so the check is looking at the directory's existence. Let me remove it and re-push:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="114" cache_read_input_tokens="41734" cache_creation="{'ephemeral_5m_input_tokens': 114, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_013v5vNmKtnsxvjeHnYUe9p6">
+    <param name="command">rm -rf /home/runner/work/erk/erk/.erk/impl-context/ &amp;&amp; erk pr check --stage=impl</param>
+    <param name="description">Remove impl-context and re-check</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="114" cache_read_input_tokens="41734" cache_creation="{'ephemeral_5m_input_tokens': 114, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013v5vNmKtnsxvjeHnYUe9p6">
+Checking PR #8875 for branch plnd/add-mock-to-fake-skill-03-06-1526...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>All checks pass. Let me mark everything complete.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="371" cache_read_input_tokens="41848" cache_creation="{'ephemeral_5m_input_tokens': 371, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01PgdvRFuZFfRFQuwazqNcH4">
+    <param name="todos">[{'content': 'Create skill directory and SKILL.md file', 'status': 'completed', 'activeFor...[truncated 162 chars]...nd submit PR', 'status': 'completed', 'activeForm': 'Signaling GitHub and submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="371" cache_read_input_tokens="41848" cache_creation="{'ephemeral_5m_input_tokens': 371, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PgdvRFuZFfRFQuwazqNcH4">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan execution complete.
+
+**Summary**: Created the `refac-mock-to-fake` skill at `.claude/skills/refac-mock-to-fake/SKILL.md`. The skill encodes a 6-phase workflow for converting `unittest.mock.patch`-based tests into erk's gateway-based fake pattern:
+
+1. **Audit mock usage** - catalog patch targets
+2. **Gateway discovery** - find the right abstraction level (critical: look for higher-level gateways covering multiple mocks)
+3. **Plan injection** - identify source code changes needed
+4. **Make injectable / create fakes** - add constructor parameters, replace system calls
+5. **Rewrite tests** - replace patches with pre-canned fakes
+6. **Verify** - run tests + linting
+
+PR: https://github.com/dagster-io/erk/pull/8875</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="200" cache_read_input_tokens="42219" cache_creation="{'ephemeral_5m_input_tokens': 200, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>
