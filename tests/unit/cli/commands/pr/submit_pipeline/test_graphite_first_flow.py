@@ -61,6 +61,8 @@ def _make_state(
         title=title,
         body=body,
         existing_pr_body="",
+        graphite_is_authed=True,
+        graphite_branch_tracked=True,
     )
 
 

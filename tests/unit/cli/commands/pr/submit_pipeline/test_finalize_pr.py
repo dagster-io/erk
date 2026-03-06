@@ -77,6 +77,8 @@ def _make_state(
         title=title,
         body=body,
         existing_pr_body=existing_pr_body,
+        graphite_is_authed=None,
+        graphite_branch_tracked=None,
     )
 
 

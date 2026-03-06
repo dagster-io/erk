@@ -48,6 +48,8 @@ def _make_state(
         title=None,
         body=None,
         existing_pr_body=existing_pr_body,
+        graphite_is_authed=None,
+        graphite_branch_tracked=None,
     )
 
 

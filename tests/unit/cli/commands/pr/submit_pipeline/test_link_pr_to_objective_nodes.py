@@ -77,6 +77,8 @@ def _make_state(
         title="My PR Title",
         body="My PR body",
         existing_pr_body="",
+        graphite_is_authed=None,
+        graphite_branch_tracked=None,
     )
 
 
