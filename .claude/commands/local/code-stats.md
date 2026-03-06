@@ -3,7 +3,7 @@ description: Analyze merged PRs by category with net lines of code statistics
 argument-hint: [since]
 context: fork
 agent: general-purpose
-model: haiku
+model: sonnet
 ---
 
 # /local:code-stats
@@ -13,38 +13,40 @@ Analyzes merged PRs and categorizes them by type (user-facing features, bug fixe
 ## Usage
 
 ```bash
-/local:code-stats                    # Default: since 2025-12-08
+/local:code-stats                    # Default: last 30 days
 /local:code-stats 2025-12-01         # Since specific date
-/local:code-stats "last 48 hours"    # Since 48 hours ago
-/local:code-stats "last 2 weeks"     # Since 2 weeks ago
+/local:code-stats 01-15-2026         # Any date format works
+/local:code-stats "last 2 weeks"     # Relative expressions
+/local:code-stats "since January"    # Natural language
+/local:code-stats "this year"        # Calendar expressions
+/local:code-stats "last quarter"     # Business date ranges
 ```
 
-### Supported date formats
+## User Input
 
-- **ISO date**: `2025-12-01`
-- **ISO datetime**: `2025-12-01T14:30:00`
-- **Relative**: `last N hour(s)`, `last N day(s)`, `last N week(s)`
+```
+$ARGUMENTS
+```
 
 ## Implementation
 
-1. **Interpret the user's input** (`$ARGUMENTS`) and convert it to an ISO datetime string:
-   - "4 hours ago" / "since 4 hours ago" → subtract 4 hours from now
-   - "yesterday" → yesterday's date at 00:00:00
-   - "last week" → 7 days ago
-   - "last 2 weeks" → 14 days ago
-   - "2025-12-01" → use as-is
-   - Empty/no argument → default to `2025-12-08`
+1. **Read the User Input block above.** If it is empty or blank, use a default of 30 days before today. Otherwise, interpret it as a date expression and convert it to `YYYY-MM-DD` format. Examples:
+   - `since jan 1 2026` → `2026-01-01` (strip "since", parse the date)
+   - `01-01-2026` → `2026-01-01`
+   - `last 2 weeks` → calculate 14 days before today
+   - `since January` → `2026-01-01` (current year)
+   - `this year` → `2026-01-01`
+   - `last quarter` → first day of previous quarter
+   - `yesterday` → yesterday's date
+   - `2025-12-01` → `2025-12-01`
 
-2. **Run the Python script** with the ISO datetime:
+2. **Run the Python script** with the resolved `YYYY-MM-DD` date:
 
 ```bash
-python3 scripts/code_stats.py <ISO_DATETIME>
+python3 scripts/code_stats.py <YYYY-MM-DD>
 ```
 
-The Python script expects a single argument in one of these formats:
-
-- ISO date: `2025-12-28`
-- ISO datetime: `2025-12-28T14:30:00`
+The script expects a single argument in `YYYY-MM-DD` format.
 
 ## Output
 
