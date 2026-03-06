@@ -1,0 +1,663 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;local:changelog-update&lt;/command-message&gt;
+&lt;command-name&gt;/local:changelog-update&lt;/command-name&gt;</user>
+  <user># /local:changelog-update
+
+Brings the CHANGELOG.md Unreleased section up-to-date with commits merged to master.
+
+&gt; **Note:** Run this regularly during development. At release time, use `/local:changelog-release`.
+
+## Usage
+
+```bash
+/local:changelog-update
+```
+
+## What It Does
+
+1. Reads the "As of" marker in the Unreleased section (adds one if missing)
+2. Finds commits on master since that marker
+3. Categorizes commits and presents proposal for user review
+4. Updates changelog only after user approval
+5. Always updates the "As of" marker to current HEAD (even if no new entries)
+
+---
+
+## Agent Instructions
+
+### Phase 1: Launch Categorization Agent
+
+Launch a subagent to fetch commits, read the CHANGELOG, and categorize:
+
+```
+Task(
+  subagent_type: "general-purpose",
+  description: "Categorize changelog commits",
+  prompt: |
+    Load and follow the agent instructions in `.claude/agents/changelog/commit-categorizer.md`
+)
+```
+
+### Phase 2: Parse Result
+
+Parse the agent's output by examining the `STATUS` line:
+
+- **`STATUS: ERROR`** - Display the `ERROR_MESSAGE` and stop.
+- **`STATUS: NO_COMMITS`** - Update the "As of" line in CHANGELOG.md to the `HEAD_COMMIT` value. Report "CHANGELOG.md is already up-to-date. Updated marker to {HEAD_COMMIT}." and stop.
+- **`STATUS: OK`** - Extract the proposal text after `---PROPOSAL---` and proceed to Phase 3.
+
+### Phase 3: Present Proposal for Review
+
+**CRITICAL: Do NOT edit the changelog yet. Present the proposal and wait for user approval.**
+
+Display the proposal text from the agent verbatim. The proposal includes categorized entries, filtered commits, low-confidence flags, and asks the user to approve or adjust.
+
+Wait for the user to:
+
+1. Approve as-is
+2. Request adjustments to categorizations
+3. Request rephrased descriptions
+4. Include or exclude specific commits
+
+### Phase 4: Update CHANGELOG.md (After Approval)
+
+Only proceed after the user confirms or provides adjustments.
+
+Update the Unreleased section:
+
+1. **Update "As of" line** to current HEAD commit hash
+2. **Add new entries** under appropriate category headers
+3. **Preserve existing entries** - do not remove or modify them
+4. **Create category headers** only if they have new entries
+
+Category order (if present):
+
+1. Major Changes
+2. Added
+3. Changed
+4. Fixed
+5. Removed
+
+If a category header already exists, append new entries below existing ones.
+
+### Phase 5: Report
+
+After successful update:
+
+```
+Updated CHANGELOG.md:
+- Processed {n} commits
+- Added {m} entries to: {categories}
+- Now as of {commit}
+```
+
+### Entry Format
+
+Format each entry as:
+
+```markdown
+- Brief user-facing description (commit_hash)
+```
+
+Guidelines:
+
+- Focus on **user benefit**, not implementation details
+- Start with a verb (Add, Fix, Improve, Remove, Move, Migrate)
+- Be concise but clear (1 sentence)
+- Include the short commit hash in parentheses
+- Add notes for entries that may cause user-visible issues (e.g., "note: this may cause hard failures, please report if encountered")
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="16046" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16046}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01FT6rx2yd86S6PPKtTRMrBs">
+    <param name="query">select:Agent,Read</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="16046" cache_read_input_tokens="0" output_tokens="118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 16046, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FT6rx2yd86S6PPKtTRMrBs">
+
+  </tool_result>
+  <assistant>Launching the categorization agent now.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3048" cache_read_input_tokens="16046" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3048}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01DmXbtCjeVMrdjnr7HsJ8ue">
+    <param name="description">Categorize changelog commits</param>
+    <param name="subagent_type">commit-categorizer</param>
+    <param name="prompt">Load and follow the agent instructions in `.claude/agents/changelog/commit-categorizer.md`</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3048" cache_read_input_tokens="16046" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3048, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DmXbtCjeVMrdjnr7HsJ8ue">
+Now I have all the information needed. Let me produce the categorization output.
+
+STATUS: OK
+HEAD_COMMIT: 2e0bb588e
+SINCE_COMMIT: 9f313ef63
+TOTAL_COMMITS: 14
+
+---PROPOSAL---
+
+Found 14 commits since last sync (9f313ef63).
+
+**Proposed Entries:**
+
+**Added (5):**
+1. `d38e74395` - Add `erk pr teleport` command for pulling remote PR branches into local worktrees, renaming the former "sync" terminology to "teleport" for clarity
+   - Reasoning: New user-facing CLI command with terminology rename across TUI and CLI surfaces
+
+2. `f30f74be8` - Add author filter toggle to TUI dashboard for filtering plans and PRs by author
+   - Reasoning: New user-facing TUI feature with keybinding
+
+3. `1702fdf30` - Scaffold Astro/Starlight v2 documentation site
+   - Reasoning: New documentation site infrastructure (docs-v2/)
+
+4. `88472044b` - Promote `erk release-notes` to top-level command (previously nested under `erk info`)
+   - Reasoning: User-facing CLI command restructuring
+
+5. `78f3043a2` - Add skill-creator skill for building, evaluating, and packaging Claude Code skills
+   - Reasoning: New bundled skill/capability for users
+
+**Changed (3):**
+
+... [45 lines omitted] ...
+
+2. `d29fd053e` - Fix StatusBar crash from Textual MarkupError when displaying subprocess error output containing special characters
+  </tool_result>
+  <assistant>Here's the proposed changelog update (14 commits since `9f313ef63`):
+
+**Added (5):**
+1. `d38e74395` - Add `erk pr teleport` command for pulling remote PR branches into local worktrees, renaming the former "sync" terminology to "teleport"
+2. `f30f74be8` - Add author filter toggle to TUI dashboard for filtering plans and PRs by author
+3. `1702fdf30` - Scaffold Astro/Starlight v2 documentation site
+4. `88472044b` - Promote `erk release-notes` to top-level command (previously under `erk info`)
+5. `78f3043a2` - Add skill-creator skill for building, evaluating, and packaging Claude Code skills
+
+**Changed (3):**
+1. `2e0bb588e` - Optimize `erk pr submit` pipeline by caching Graphite auth checks and eliminating redundant API calls
+2. `1dc0214cb` - Remove plan number argument from `/erk:pr-dispatch`, simplifying dispatch to auto-detect the current plan
+3. `bf47168c3` - Remove ability to set `ERK_MCP_PORT` environment variable due to port conflict issues
+
+**Fixed (2):**
+1. `f6b4e9211` - Fix `erk pr dispatch` failing when the target branch is checked out in the current worktree
+2. `d29fd053e` - Fix StatusBar crash from Textual MarkupError when displaying subprocess error output with special characters
+
+**Filtered Out (4):** pr-incremental-dispatch slash command, objective-plan refactor, release merge commit, docs consolidation
+
+**Low-Confidence Flags:**
+- `1f0003c46` (`/erk:pr-incremental-dispatch`) — filtered as internal tooling, but it's a new user-facing slash command. Should it be **Added**?
+- `bf47168c3` (`ERK_MCP_PORT` removal) — listed as Changed, could be **Removed**
+- `1702fdf30` (docs-v2 scaffold) — listed as Added, could be filtered as docs-only
+
+Please review and let me know if you'd like any adjustments, or approve as-is.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1273" cache_read_input_tokens="19094" output_tokens="534" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1273, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>- 1f0003c46 (/erk:pr-incremental-dispatch) — filtered as internal tooling, but it's a new user-facing slash command. Should it be Added? Yes
+
+filter 5. 78f3043a2 - Add skill-creator skill for building, evaluating, and packaging Claude Code skills</user>
+  <assistant>
+
+Got it. Let me update the changelog now.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="819" cache_read_input_tokens="20367" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 819}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Fh6rEmQHKZsvGB1q4Dr5tQ">
+    <param name="file_path">/Users/schrockn/code/erk/CHANGELOG.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="819" cache_read_input_tokens="20367" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 819, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Fh6rEmQHKZsvGB1q4Dr5tQ">
+&lt;persisted-output&gt;
+Output too large (92.9KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn-code-erk/d2a5a805-eeb8-4c18-832a-942ca27a5aad/tool-results/toolu_01Fh6rEmQHKZsvGB1q4Dr5tQ.txt
+
+Preview (first 2KB):
+     1→# Changelog
+     2→
+     3→All notable changes to erk will be documented in this file.
+     4→
+     5→The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+     6→and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+     7→
+     8→## [Unreleased]
+     9→
+    10→## [0.9.5] - 2026-03-04 15:53 PT
+    11→
+    12→### Major Changes
+    13→
+    14→- Support stacked branches on the same worktree: implement plans on the current branch without creating a new worktree, with restructured exit-plan-mode menu and hierarchical next-steps output. Includes fixes for stale parent branch tracking, slot reuse, and branch tracking after plan-save.
+    15→
+    16→### Added
+    17→
+    18→- Support creating objectives without a roadmap: `erk objective create` and `erk objective check` now work for standalone objectives not tied to any roadmap.
+    19→
+    20→### Changed
+    21→
+    22→- Generalize `--dangerous` flag configuration across rebase, reconcile-with-remote, and address commands: all three now share a single config key (`require_dangerous_flag_for_implicitly_dangerous_operations`) with consistent error messaging
+    23→- Remove upstack child branch existence check in `erk land --up`: landing no longer fails when an upstack child branch has been deleted remotely
+    24→- Show progress feedback during PR description generation: `erk pr submit` and `erk pr rewrite` now display "Still waiting..." messages at 3-second intervals while Claude generates the PR description, replacing silence during long API call windows.
+    25→- Auto-activate worktree environment on stack-in-place checkout: When using `erk br co` from an assigned slot, the activation script now runs automatically instead of printing copy-paste instructions.
+    26→- Improve branch checkout messaging for plan flows: The message when checking out a plan branch changes from "Using existing branch" to "Checking out plan branch".
+
+... [2 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="835" cache_read_input_tokens="21186" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 835}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'm currently in plan mode, so I can't edit the CHANGELOG yet. Let me exit plan mode so I can apply the updates.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="835" cache_read_input_tokens="21186" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 835}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01RwJriq6w27keTWEF5FNavw">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="835" cache_read_input_tokens="21186" output_tokens="291" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 835, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RwJriq6w27keTWEF5FNavw">
+
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_017YG1HAGL3SNAbjkX9VzNPc">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="943" cache_read_input_tokens="22021" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 943, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017YG1HAGL3SNAbjkX9VzNPc">
+
+  </tool_result>
+  <assistant>Let me write the plan file (required by plan mode) and then exit so I can make the actual edit.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="368" cache_read_input_tokens="22964" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 368}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01TGnAjSZHFeB6bbNe1riAdc">
+    <param name="file_path">/Users/schrockn/.claude/plans/foamy-strolling-dove.md</param>
+    <param name="content"># Changelog Update Plan
+
+Update CHANGELOG.md Unreleased section with 10 categorized entries from 14 commits since 9f313ef63.
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="368" cache_read_input_tokens="22964" output_tokens="151" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 368, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TGnAjSZHFeB6bbNe1riAdc">
+File created successfully at: /Users/schrockn/.claude/plans/foamy-strolling-dove.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01UAPg2wzgzQCnSqCSkMCtAx">
+    <param name="plan"># Changelog Update Plan
+
+Update CHANGELOG.md Unreleased section with 10 categorized entries from 14 commits since 9f313ef63.
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="640" cache_read_input_tokens="23332" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 640, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UAPg2wzgzQCnSqCSkMCtAx">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/foamy-strolling-dove.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Changelog Update Plan
+Current context: (wt:erk) (br:master) (plan:#8751)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id d2a5a805-eeb8-4c18-832a-942ca27a5aad \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_014wfG5JAPZrCb6athHN71Cg">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="679" cache_read_input_tokens="23972" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 679, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014wfG5JAPZrCb6athHN71Cg">
+
+  </tool_result>
+  <assistant>This is a simple changelog edit on master — not a feature that needs a plan PR. Let me implement directly.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1327" cache_read_input_tokens="24651" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1327}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_0158NKcLiJKu8u4jwKBEHvGr">
+    <param name="questions">[{'question': 'This is a changelog update on master. What would you like to do?', 'header'...[truncated 183 chars]...d planned PR', 'description': 'Save as draft PR on a new branch'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1327" cache_read_input_tokens="24651" output_tokens="177" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1327, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0158NKcLiJKu8u4jwKBEHvGr">
+User has answered your questions: "This is a changelog update on master. What would you like to do?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="230" cache_read_input_tokens="25978" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 230}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_0169AV69RyRWkWaua2s8KvtN">
+    <param name="query">select:Skill,Bash</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="230" cache_read_input_tokens="25978" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 230, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0169AV69RyRWkWaua2s8KvtN">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01UeocWoh4Eh5whW1t8KmMCd">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3832" cache_read_input_tokens="26208" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3832, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UeocWoh4Eh5whW1t8KmMCd">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="d2a5a805-eeb8-4c18-832a-942ca27a5aad" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="d2a5a805-eeb8-4c18-832a-942ca27a5aad" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "d2a5a805-eeb8-4c18-832a-942ca27a5aad" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "d2a5a805-eeb8-4c18-832a-942ca27a5aad" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "d2a5a805-eeb8-4c18-832a-942ca27a5aad" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "d2a5a805-eeb8-4c18-832a-942ca27a5aad" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2292" cache_read_input_tokens="30040" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2292}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read the plan file to get the title.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2292" cache_read_input_tokens="30040" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2292}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GqkPddLzH2JMp5PkNm6oya">
+    <param name="file_path">/Users/schrockn/.claude/plans/foamy-strolling-dove.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2292" cache_read_input_tokens="30040" output_tokens="132" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2292, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GqkPddLzH2JMp5PkNm6oya">
+     1→# Changelog Update Plan
+     2→
+     3→Update CHANGELOG.md Unreleased section with 10 categorized entries from 14 commits since 9f313ef63.
+     4→
+  </tool_result>
+  <assistant>Branch slug: `update-changelog-unreleased`
+
+Plan summary: "Updates the CHANGELOG.md Unreleased section with 10 new entries categorized across Added, Changed, and Fixed from 14 commits merged since the last sync marker."</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="194" cache_read_input_tokens="32332" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 194}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SSRYL2qqVRAijide4vdZox">
+    <param name="command">erk exec plan-save --format json --session-id="d2a5a805-eeb8-4c18-832a-942ca27a5aad" --bra...[truncated 100 chars]...rized across Added, Changed, and Fixed from 14 commits merged since the last sync marker."</param>
+    <param name="description">Save plan as draft PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="194" cache_read_input_tokens="32332" output_tokens="243" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 194, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SSRYL2qqVRAijide4vdZox">
+{"success": true, "plan_number": 8791, "plan_url": "https://github.com/dagster-io/erk/pull/8791", "title": "[erk-plan] Changelog Update Plan", "branch_name": "plnd/update-changelog-unrelease-03-05-1646", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/d2a5a805-eeb8-4c18-832a-942ca27a5aad/plan_snapshots/000001-7020e1b3"}
+  </tool_result>
+  <assistant>Plan saved. Now pushing the planning session and then exiting plan mode.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="623" cache_read_input_tokens="32526" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 623}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KRXEs71yXBQzHX1Ceh5WNY">
+    <param name="command">erk exec upload-impl-session --session-id "d2a5a805-eeb8-4c18-832a-942ca27a5aad" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="623" cache_read_input_tokens="32526" output_tokens="156" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 623, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KRXEs71yXBQzHX1Ceh5WNY">
+{"uploaded": true, "plan_id": 8751}
+  </tool_result>
+  <assistant>Plan **"Changelog Update Plan"** saved as draft PR **#8791**
+URL: https://github.com/dagster-io/erk/pull/8791</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="181" cache_read_input_tokens="33149" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 181}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_0194GaTiXnQPDwixp6AB25qM">
+    <param name="plan"># Changelog Update Plan
+
+Update CHANGELOG.md Unreleased section with 10 categorized entries from 14 commits since 9f313ef63.
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="181" cache_read_input_tokens="33149" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 181, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0194GaTiXnQPDwixp6AB25qM">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8791 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8791:
+  In current wt:    source "$(erk br co --for-plan 8791 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8791 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8791 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8791 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8791:
+  In current wt:  erk br co --for-plan 8791
+  In new wt:      erk br co --new-slot --for-plan 8791
+
+Dispatch plan #8791:
+  CLI command:    erk pr dispatch 8791
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Implement plan #8791:
+  In current wt:    `source "$(erk br co --for-plan 8791 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --for-plan 8791 --script)" &amp;&amp; erk implement -d`
+  In new wt:        `source "$(erk br co --new-slot --for-plan 8791 --script)" &amp;&amp; erk implement`
+    (dangerously):  `source "$(erk br co --new-slot --for-plan 8791 --script)" &amp;&amp; erk implement -d`
+
+Checkout plan #8791:
+  In current wt:  `erk br co --for-plan 8791`
+  In new wt:      `erk br co --new-slot --for-plan 8791`
+
+Dispatch plan #8791:
+  CLI command:    `erk pr dispatch 8791`
+  Slash command:  `/erk:pr-dispatch`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="460" cache_read_input_tokens="33330" output_tokens="242" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 460, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>
