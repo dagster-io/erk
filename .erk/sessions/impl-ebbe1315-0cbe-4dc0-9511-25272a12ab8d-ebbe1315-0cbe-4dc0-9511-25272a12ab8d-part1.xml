@@ -1,0 +1,1260 @@
+<session>
+  <meta branch="plnd/consolidate-checkout-prepa-03-06-0452" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8830&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8830` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8830.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28397" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28397, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01QitBYifHrcqSsGNoYsyXDv">
+    <param name="command">erk exec setup-impl --issue 8830</param>
+    <param name="description">Set up implementation for plan #8830</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28397" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28397, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QitBYifHrcqSsGNoYsyXDv">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--consolidate-checkout-prepa-03-06-0452", "plan_number": 8830, "plan_url": "https://github.com/dagster-io/erk/pull/8830", "branch": "plnd/consolidate-checkout-prepa-03-06-0452", "plan_title": "Fix Graphite divergence in pr checkout + add pr prepare command + extract shared impl-context creation", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8830, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/consolidate-checkout-prepa-03-06-0452', teleporting from remote...
+  </tool_result>
+  <assistant>Good, setup is complete. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="351" cache_read_input_tokens="28397" cache_creation="{'ephemeral_5m_input_tokens': 351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0152X7PFEuWW5nbBhCBTJEZT">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--consolidate-checkout-prepa-03-06-0452/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="351" cache_read_input_tokens="28397" cache_creation="{'ephemeral_5m_input_tokens': 351, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0152X7PFEuWW5nbBhCBTJEZT">
+     1→# Consolidate DRY violations in checkout/impl-context code paths
+     2→
+     3→## Context
+     4→
+     5→PR #8830 extracted `create_impl_context_from_pr()` and added `erk pr prepare`, but left significant code duplication across the checkout and impl-context setup paths. This plan addresses 4 DRY violations to remove ~60 lines of duplicated logic.
+     6→
+     7→## Changes
+     8→
+     9→### 1. Extract `sync_parent_and_rebase()` into `checkout_helpers.py`
+    10→
+    11→The "fetch parent branch, update stale local ref, rebase onto parent" sequence is duplicated verbatim between:
+    12→- `pr/checkout_cmd.py:261-290` (inline in `_checkout_pr`)
+    13→- `branch/checkout_cmd.py:372-398` (inside `_rebase_and_track_for_plan`)
+    14→
+    15→**New function in `src/erk/cli/commands/checkout_helpers.py`:**
+    16→
+    17→```python
+    18→def sync_parent_and_rebase(
+    19→    ctx: ErkContext,
+    20→    *,
+    21→    repo_root: Path,
+    22→    worktree_path: Path,
+    23→    parent_branch: str,
+    24→) -&gt; None:
+    25→```
+    26→
+    27→Encapsulates: list local branches → fetch parent → create tracking or update local ref → rebase onto parent → abort + warn on conflict. Uses `user_output` consistently.
+    28→
+    29→**Does NOT include** Graphite tracking — that differs between callers (conditional track/retrack in PR checkout vs unconditional `track_branch` in branch checkout) and stays at call sites.
+    30→
+
+... [99 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me read the source files I need to modify. I'll read them in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2310" cache_read_input_tokens="28748" cache_creation="{'ephemeral_5m_input_tokens': 2310, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011yh7zYRJihM6MghPbWsYa9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2310" cache_read_input_tokens="28748" cache_creation="{'ephemeral_5m_input_tokens': 2310, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01NyRPRVk9RnsK9gAGXcdmc9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2310" cache_read_input_tokens="28748" cache_creation="{'ephemeral_5m_input_tokens': 2310, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01KLGBEf9HjZygVTV76o9Rp1">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2310" cache_read_input_tokens="28748" cache_creation="{'ephemeral_5m_input_tokens': 2310, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01K3pCnvXgVgQm1kbxqKygzb">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2310" cache_read_input_tokens="28748" cache_creation="{'ephemeral_5m_input_tokens': 2310, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01JG57CdHnRsGREKesSXXAsr">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_folder.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2310" cache_read_input_tokens="28748" cache_creation="{'ephemeral_5m_input_tokens': 2310, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01DgUE4auxFQMRQdeReLbckS">
+    <param name="pattern">src/erk/cli/commands/checkout_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2310" cache_read_input_tokens="28748" cache_creation="{'ephemeral_5m_input_tokens': 2310, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011yh7zYRJihM6MghPbWsYa9">
+     1→"""Checkout a pull request or plan into a worktree.
+     2→
+     3→This command fetches PR code (or finds plan branches) and creates a worktree
+     4→for local review/testing.
+     5→
+     6→Routing:
+     7→- Plain number (123) or PR URL → PR checkout
+     8→- P-prefixed (P123) or issue URL → plan checkout (find branches/PRs for plan)
+     9→"""
+    10→
+    11→import click
+    12→from rich.console import Console
+    13→from rich.table import Table
+    14→
+    15→from erk.cli.activation import (
+    16→    activation_config_activate_only,
+    17→    ensure_worktree_activate_script,
+    18→    print_activation_instructions,
+    19→)
+    20→from erk.cli.alias import alias
+    21→from erk.cli.commands.checkout_helpers import (
+    22→    ensure_branch_has_worktree,
+    23→    navigate_and_display_checkout,
+    24→)
+    25→from erk.cli.ensure import Ensure
+    26→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+    27→from erk.core.context import ErkContext
+    28→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    29→from erk_shared.gateway.github.parsing import (
+    30→    parse_plan_number_from_url,
+
+... [462 lines omitted] ...
+
+    81→        click.style("Error: ", fg="red")
+   161→        ctx.console.error("Not in a git repository")
+   197→        ctx.console.error(
+   205→        ctx.console.info(f"Warning: PR #{pr_number} is {pr.state}")
+   288→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+   417→        ctx.console.error(
+  </tool_result>
+  <tool_result tool="toolu_01KLGBEf9HjZygVTV76o9Rp1">
+     1→"""Prepare impl-context for the current worktree's PR.
+     2→
+     3→Sets up .erk/impl-context/ folder from the PR associated with the current
+     4→branch, making the worktree ready for plan implementation.
+     5→
+     6→Usage:
+     7→    erk pr prepare           # Auto-detect plan number from current branch's PR
+     8→    erk pr prepare 1234      # Explicit plan number
+     9→"""
+    10→
+    11→import click
+    12→
+    13→from erk.cli.commands.exec.scripts.setup_impl_from_pr import create_impl_context_from_pr
+    14→from erk.cli.ensure import Ensure
+    15→from erk.core.context import ErkContext
+    16→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    17→from erk_shared.gateway.github.types import PRNotFound
+    18→from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
+    19→from erk_shared.output.output import user_output
+    20→
+    21→
+    22→@click.command("prepare")
+    23→@click.argument("plan_number", type=int, required=False, default=None)
+    24→@click.pass_context
+    25→def pr_prepare(ctx: click.Context, plan_number: int | None) -&gt; None:
+    26→    """Set up impl-context for the current worktree's PR.
+    27→
+    28→    Prepares the current worktree for plan implementation by creating
+    29→    the .erk/impl-context/ folder with plan content from the PR.
+    30→
+
+... [60 lines omitted] ...
+
+    48→        erk_ctx.console.error("Not in a git repository")
+    54→        erk_ctx.console.error("Cannot prepare from detached HEAD state")
+    62→                click.style("Error: ", fg="red") + f"No PR found for branch '{branch}'\n\n"
+  </tool_result>
+  <tool_result tool="toolu_01K3pCnvXgVgQm1kbxqKygzb">
+     1→"""Set up .erk/impl-context/ folder from GitHub PR in current worktree.
+     2→
+     3→This exec command fetches a plan from a GitHub PR, creates a feature branch,
+     4→checks it out, and creates the .erk/impl-context/ folder structure for implementation.
+     5→
+     6→Usage:
+     7→    erk exec setup-impl-from-pr &lt;plan-number&gt; [--session-id &lt;id&gt;]
+     8→
+     9→Output:
+    10→    Structured JSON output with success status and folder details
+    11→
+    12→Exit Codes:
+    13→    0: Success (.erk/impl-context/ folder created, branch checked out)
+    14→    1: Error (PR not found, plan fetch failed, git operations failed)
+    15→
+    16→Examples:
+    17→    $ erk exec setup-impl-from-pr 1028
+    18→    {"success": true, "impl_path": "/path/to/.erk/impl-context",
+    19→     "plan_number": 1028, "branch": "P1028-..."}
+    20→"""
+    21→
+    22→import json
+    23→from pathlib import Path
+    24→
+    25→import click
+    26→
+    27→from erk_shared.context.helpers import (
+    28→    require_branch_manager,
+    29→    require_cwd,
+    30→    require_git,
+
+... [324 lines omitted] ...
+
+    36→from erk_shared.gateway.git.remote_ops.types import PullRebaseError
+    59→        raise click.ClickException(msg)
+   104→        if isinstance(pull_result, PullRebaseError):
+   105→            error_output = {
+   107→                "error": "pull_rebase_failed",
+   109→                    f"Failed to teleport branch '{branch_name}' from remote: {pull_result.message}"
+   112→            click.echo(json.dumps(error_output), err=True)
+   146→        error_output = {
+   148→            "error": "plan_not_found",
+   151→        click.echo(json.dumps(error_output), err=True)
+   270→        error_output = {
+   272→            "error": "plan_not_found",
+   275→        click.echo(json.dumps(error_output), err=True)
+  </tool_result>
+  <tool_result tool="toolu_01JG57CdHnRsGREKesSXXAsr">
+     1→"""Implementation folder utilities for erk and erk-kits.
+     2→
+     3→This module provides shared utilities for managing branch-scoped impl directories
+     4→under .erk/impl-context/&lt;branch&gt;/:
+     5→- plan.md: Immutable implementation plan
+     6→- plan-ref.json: Provider-agnostic plan reference
+     7→
+     8→These utilities are used by both erk (for local operations) and erk-kits
+     9→(for kit CLI commands).
+    10→"""
+    11→
+    12→from __future__ import annotations
+    13→
+    14→import json
+    15→import shutil
+    16→from dataclasses import dataclass
+    17→from datetime import UTC, datetime
+    18→from pathlib import Path
+    19→from typing import Literal
+    20→
+    21→from erk_shared.gateway.github.metadata.core import (
+    22→    create_worktree_creation_block,
+    23→    render_erk_issue_event,
+    24→)
+    25→from erk_shared.gateway.github.metadata.schemas import CREATED_BY, LAST_DISPATCHED_RUN_ID
+    26→from erk_shared.gateway.github.metadata.types import BlockKeys
+    27→
+    28→IMPL_DIR_RELATIVE = ".erk/impl-context"
+    29→"""Relative path for branch-scoped implementation directories."""
+    30→
+
+... [552 lines omitted] ...
+
+   104→                   If False, raise FileExistsError when folder already exists.
+   110→        FileExistsError: If impl directory already exists and overwrite is False
+   118→            raise FileExistsError(f"Implementation folder already exists at {impl_folder}")
+   253→        FileNotFoundError: If impl_dir doesn't exist
+   257→        raise FileNotFoundError(msg)
+   278→    except json.JSONDecodeError:
+   373→    # Gracefully handle JSON parsing errors (third-party API exception handling)
+   376→    except json.JSONDecodeError:
+   471→        RuntimeError: If gh CLI fails or issue not found
+   518→    # Gracefully handle JSON parsing errors (third-party API exception handling)
+   521→    except json.JSONDecodeError:
+   556→        FileNotFoundError: If impl_dir doesn't exist
+   557→        ValueError: If last_event is not "started" or "ended"
+   561→        raise FileNotFoundError(msg)
+   565→        raise ValueError(msg)
+  </tool_result>
+  <tool_result tool="toolu_01NyRPRVk9RnsK9gAGXcdmc9">
+     1→"""Checkout command - find and switch to a worktree by branch name."""
+     2→
+     3→import contextlib
+     4→import sys
+     5→from pathlib import Path
+     6→
+     7→import click
+     8→
+     9→from erk.cli.activation import (
+    10→    activation_config_activate_only,
+    11→    ensure_worktree_activate_script,
+    12→    print_activation_instructions,
+    13→    render_activation_script,
+    14→)
+    15→from erk.cli.alias import alias
+    16→from erk.cli.commands.checkout_helpers import (
+    17→    display_sync_status,
+    18→    navigate_to_worktree,
+    19→    script_error_handler,
+    20→)
+    21→from erk.cli.commands.completions import complete_branch_names
+    22→from erk.cli.commands.slot.common import (
+    23→    allocate_slot_for_branch,
+    24→    update_slot_assignment_tip,
+    25→)
+    26→from erk.cli.commands.wt.create_cmd import ensure_worktree_for_branch
+    27→from erk.cli.core import discover_repo_context
+    28→from erk.cli.github_parsing import parse_issue_identifier
+    29→from erk.cli.graphite import find_worktrees_containing_branch
+    30→from erk.cli.help_formatter import CommandWithHiddenOptions, script_option
+
+... [801 lines omitted] ...
+
+    39→    IssueValidationFailed,
+   396→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+   451→    handler = script_error_handler(ctx) if script else contextlib.nullcontext()
+   474→    """Implementation body for branch_checkout — separated for error wrapping."""
+   478→            "Error: Cannot specify both BRANCH and --for-plan.\n"
+   484→        user_output("Error: Must provide BRANCH argument or --for-plan option.")
+   488→        user_output("Error: --new-slot and --no-slot cannot be used together.")
+   506→            raise click.ClickException(f"Plan #{plan_number} not found")
+   510→        if isinstance(plan_result, IssueValidationFailed):
+   511→            user_output(f"Error: {plan_result.message}")
+   517→        for warning in setup.warnings:
+   518→            user_output(click.style("Warning: ", fg="yellow") + warning)
+   527→            user_output("Error: Could not detect trunk branch.")
+   578→                        f'Error: Cannot create worktree for trunk branch "{trunk_branch}".\n'
+   601→                                f"Error: Branch '{branch}' does not exist.\n"
+   729→            raise click.ClickException(
+   769→            raise click.ClickException(
+   813→                f"Error: Internal state mismatch. Branch '{branch}' was allocated "
+  </tool_result>
+  <tool_result tool="toolu_01DgUE4auxFQMRQdeReLbckS">
+/home/runner/work/erk/erk/src/erk/cli/commands/checkout_helpers.py
+  </tool_result>
+  <assistant>Let me also read the existing checkout_helpers.py file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="31980" cache_read_input_tokens="31058" cache_creation="{'ephemeral_5m_input_tokens': 31980, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017QQhzdiJfvWcsB8BfkZYFs">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/checkout_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="31980" cache_read_input_tokens="31058" cache_creation="{'ephemeral_5m_input_tokens': 31980, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017QQhzdiJfvWcsB8BfkZYFs">
+     1→"""Checkout navigation helpers - shared across checkout commands.
+     2→
+     3→This module is separate from navigation_helpers.py to avoid circular imports.
+     4→navigation_helpers imports from wt.create_cmd, which triggers wt/__init__.py,
+     5→which imports wt.checkout_cmd. By having checkout-specific helpers here,
+     6→we break that cycle.
+     7→"""
+     8→
+     9→import contextlib
+    10→import logging
+    11→import sys
+    12→from collections.abc import Generator, Sequence
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.activation import (
+    18→    ensure_worktree_activate_script,
+    19→    render_activation_script,
+    20→    render_error_script,
+    21→)
+    22→from erk.cli.commands.slot.common import allocate_slot_for_branch
+    23→from erk.cli.core import worktree_path_for
+    24→from erk.core.context import ErkContext
+    25→from erk.core.repo_discovery import RepoContext
+    26→from erk_shared.output.output import user_output
+    27→
+    28→logger = logging.getLogger(__name__)
+    29→
+    30→
+
+... [304 lines omitted] ...
+
+    31→def _write_error_script_and_exit(ctx: ErkContext) -&gt; None:
+    32→    """Write a minimal error script and output its path, then exit 1.
+    34→    Used by ``script_error_handler`` to ensure ``source "$(erk br co --script)"``
+    35→    always receives a valid file path — even on failure — so the shell never
+    39→        render_error_script(),
+    41→        comment="checkout error",
+    48→def script_error_handler(ctx: ErkContext) -&gt; Generator[None]:
+    49→    """Catch errors in --script mode and emit an error script instead of empty stdout.
+    51→    Wraps the checkout body so that any error path produces a valid script
+    54→    ``source: no such file or directory:`` error.
+    56→    Exception handling:
+    58→    - ``SystemExit(non-zero)``: Error already printed via ``user_output()``;
+    59→      write error script and exit 1.
+    60→    - ``click.ClickException``: Format the error ourselves (Click's handler
+    61→      won't run since we catch first), write error script, exit 1.
+    62→    - ``RuntimeError``: Print to stderr, write error script, exit 1.
+    69→        _write_error_script_and_exit(ctx)
+    70→    except click.ClickException as exc:
+    71→        user_output(f"Error: {exc.format_message()}")
+    72→        _write_error_script_and_exit(ctx)
+    73→    except RuntimeError as exc:
+    74→        user_output(f"Error: {exc}")
+    75→        _write_error_script_and_exit(ctx)
+   116→    - Diverged: Warning with instructions
+   129→    # get_ahead_behind raises RuntimeError on subprocess failure (e.g., network issues).
+   132→    except RuntimeError:
+   133→        logger.debug("Failed to get ahead/behind for %s on %s", branch, worktree_path)
+   143→        # Diverged - most important case, needs warning
+   144→        warning = click.style("⚠ Local has diverged from origin:", fg="yellow")
+   146→        user_output(f"  {warning} {styled_sync}")
+  </tool_result>
+  <assistant>Now I have a thorough understanding of the codebase. Let me create the todo list and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4527" cache_read_input_tokens="63038" cache_creation="{'ephemeral_5m_input_tokens': 4527, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01N4TeJZ5HwtL5jXgZangGA2">
+    <param name="todos">[{'content': 'Extract sync_parent_and_rebase() into checkout_helpers.py', 'status': 'pendi...[truncated 1099 chars]...sts and type checks', 'status': 'pending', 'activeForm': 'Running tests and type checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4527" cache_read_input_tokens="63038" cache_creation="{'ephemeral_5m_input_tokens': 4527, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01N4TeJZ5HwtL5jXgZangGA2">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FujDnrvsA8iCDMc7jHvR6V">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="526" cache_read_input_tokens="67565" cache_creation="{'ephemeral_5m_input_tokens': 526, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FujDnrvsA8iCDMc7jHvR6V">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <assistant>Now let me load the required skills and start implementing:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="68091" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_019nxGNEUxGzN8aVujTKAnXL">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="171" cache_read_input_tokens="68091" cache_creation="{'ephemeral_5m_input_tokens': 171, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019nxGNEUxGzN8aVujTKAnXL">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <assistant>I'll now read the core dignified-python standards and detect the Python version:</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="887" cache_read_input_tokens="68262" cache_creation="{'ephemeral_5m_input_tokens': 887, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01QK922u8EEjaTbXz5XDrnUr">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="887" cache_read_input_tokens="68262" cache_creation="{'ephemeral_5m_input_tokens': 887, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_012bkSEDG6phD7TRNq85EKNP">
+    <param name="command">grep -m1 'requires-python' /home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="description">Detect Python version requirement</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="887" cache_read_input_tokens="68262" cache_creation="{'ephemeral_5m_input_tokens': 887, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QK922u8EEjaTbXz5XDrnUr">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [502 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   118→- `.resolve()` raises `OSError` for non-existent paths
+   119→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   120→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   135→# WRONG: Using exceptions for path validation
+   140→except (OSError, ValueError):
+   180→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   211→**Acceptable exceptions:**
+   480→    log.warning("Non-numeric plan_id")
+   494→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   521→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_012bkSEDG6phD7TRNq85EKNP">
+requires-python = "&gt;=3.11"
+  </tool_result>
+  <assistant>Python 3.11+. Now let me start implementing. Phase 1: Extract `sync_parent_and_rebase()`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6555" cache_read_input_tokens="69149" cache_creation="{'ephemeral_5m_input_tokens': 6555, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_016BxyGZT5sRdCHs1TRsy2ww">
+    <param name="todos">[{'content': 'Extract sync_parent_and_rebase() into checkout_helpers.py', 'status': 'in_pr...[truncated 1103 chars]...sts and type checks', 'status': 'pending', 'activeForm': 'Running tests and type checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6555" cache_read_input_tokens="69149" cache_creation="{'ephemeral_5m_input_tokens': 6555, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016BxyGZT5sRdCHs1TRsy2ww">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now I'll add `sync_parent_and_rebase()` to `checkout_helpers.py`. Looking at the duplicated code in both files, the shared logic is: list local branches → fetch parent → create tracking or update local ref → rebase onto parent → abort + warn on conflict.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="534" cache_read_input_tokens="75704" cache_creation="{'ephemeral_5m_input_tokens': 534, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01TqF7XrXNVjDp557KbMxQVo">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/checkout_helpers.py</param>
+    <param name="old_string">def navigate_and_display_checkout(</param>
+    <param name="new_string">def sync_parent_and_rebase(
+    ctx: ErkContext,
+    *,
+    repo_root: Path,
+    worktree_...[truncated 1882 chars]...path} &amp;&amp; git rebase origin/{parent_branch}"
+        )
+
+
+def navigate_and_display_checkout(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="534" cache_read_input_tokens="75704" cache_creation="{'ephemeral_5m_input_tokens': 534, 'ephemeral_1h_input_tokens': 0}" output_tokens="812" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TqF7XrXNVjDp557KbMxQVo">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/checkout_helpers.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_017G8hjWorGwaKmchd3Ti5uB">
+    <param name="todos">[{'content': 'Extract sync_parent_and_rebase() into checkout_helpers.py', 'status': 'compl...[truncated 1105 chars]...sts and type checks', 'status': 'pending', 'activeForm': 'Running tests and type checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="857" cache_read_input_tokens="76238" cache_creation="{'ephemeral_5m_input_tokens': 857, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017G8hjWorGwaKmchd3Ti5uB">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now update `pr/checkout_cmd.py` to use `sync_parent_and_rebase()`. The duplicated code is at lines 261-290:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="504" cache_read_input_tokens="77095" cache_creation="{'ephemeral_5m_input_tokens': 504, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01S9KUUjsRMCXu8iWKmrNziT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="old_string">from erk.cli.commands.checkout_helpers import (
+    ensure_branch_has_worktree,
+    navigate_and_display_checkout,
+)</param>
+    <param name="new_string">from erk.cli.commands.checkout_helpers import (
+    ensure_branch_has_worktree,
+    navigate_and_display_checkout,
+    sync_parent_and_rebase,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="504" cache_read_input_tokens="77095" cache_creation="{'ephemeral_5m_input_tokens': 504, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01S9KUUjsRMCXu8iWKmrNziT">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now replace the duplicated code block (lines 261-290) with the helper call:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="284" cache_read_input_tokens="77599" cache_creation="{'ephemeral_5m_input_tokens': 284, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01TB5CWjRK263vDc2D89cSHk">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="old_string">    # For stacked PRs (base is not trunk), rebase onto base branch
+    # This ensures git ...[truncated 1596 chars]...          f"Run: cd {worktree_path} &amp;&amp; git rebase origin/{pr.base_ref_name}"
+            )</param>
+    <param name="new_string">    # For stacked PRs (base is not trunk), rebase onto base branch
+    # This ensures git ...[truncated 267 chars]...repo_root=repo.root, worktree_path=worktree_path, parent_branch=pr.base_ref_name
+        )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="284" cache_read_input_tokens="77599" cache_creation="{'ephemeral_5m_input_tokens': 284, 'ephemeral_1h_input_tokens': 0}" output_tokens="825" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TB5CWjRK263vDc2D89cSHk">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01XEVRWEUYwCKPcpBjTCfLFS">
+    <param name="todos">[{'content': 'Extract sync_parent_and_rebase() into checkout_helpers.py', 'status': 'compl...[truncated 1107 chars]...sts and type checks', 'status': 'pending', 'activeForm': 'Running tests and type checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="872" cache_read_input_tokens="77883" cache_creation="{'ephemeral_5m_input_tokens': 872, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XEVRWEUYwCKPcpBjTCfLFS">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now update `branch/checkout_cmd.py` to use `sync_parent_and_rebase()`. The duplicated code is in `_rebase_and_track_for_plan` (lines 372-398). I need to replace the body with a call to the helper, keeping the `track_branch` call at the end:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="504" cache_read_input_tokens="78755" cache_creation="{'ephemeral_5m_input_tokens': 504, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Cepe2gug52wsRrsTCkBTBt">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">from erk.cli.commands.checkout_helpers import (
+    display_sync_status,
+    navigate_to_worktree,
+    script_error_handler,
+)</param>
+    <param name="new_string">from erk.cli.commands.checkout_helpers import (
+    display_sync_status,
+    navigate_to_worktree,
+    script_error_handler,
+    sync_parent_and_rebase,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="504" cache_read_input_tokens="78755" cache_creation="{'ephemeral_5m_input_tokens': 504, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Cepe2gug52wsRrsTCkBTBt">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now replace the body of `_rebase_and_track_for_plan`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="79259" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01SsiYTffQhCfQtx5V2HMyk6">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">    # For stacked plans (parent is not trunk), rebase onto parent first
+    if parent_bran...[truncated 1447 chars]...nch}"
+            )
+
+    ctx.branch_manager.track_branch(repo_root, branch, parent_branch)</param>
+    <param name="new_string">    if parent_branch != trunk:
+        sync_parent_and_rebase(
+            ctx, repo_root=...[truncated 38 chars]...nt_branch
+        )
+
+    ctx.branch_manager.track_branch(repo_root, branch, parent_branch)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="331" cache_read_input_tokens="79259" cache_creation="{'ephemeral_5m_input_tokens': 331, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SsiYTffQhCfQtx5V2HMyk6">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01A17NpAgmfYo8ayHDSWyzD1">
+    <param name="todos">[{'content': 'Extract sync_parent_and_rebase() into checkout_helpers.py', 'status': 'compl...[truncated 1109 chars]...sts and type checks', 'status': 'pending', 'activeForm': 'Running tests and type checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="721" cache_read_input_tokens="79590" cache_creation="{'ephemeral_5m_input_tokens': 721, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01A17NpAgmfYo8ayHDSWyzD1">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now add `find_existing_plan_ref()` to `impl_folder.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="504" cache_read_input_tokens="80311" cache_creation="{'ephemeral_5m_input_tokens': 504, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_017GorPt3VBFuZwwkG68FPbt">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_folder.py</param>
+    <param name="old_string">def create_impl_folder(</param>
+    <param name="new_string">def find_existing_plan_ref(
+    base_path: Path,
+    *,
+    branch_name: str,
+    plan_id:...[truncated 855 chars]...plan_id != plan_id:
+        return None
+
+    return existing_ref
+
+
+def create_impl_folder(</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="504" cache_read_input_tokens="80311" cache_creation="{'ephemeral_5m_input_tokens': 504, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017GorPt3VBFuZwwkG68FPbt">
+The file /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/impl_folder.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_014eBWV36p9psF8KMAvSVTWy">
+    <param name="todos">[{'content': 'Extract sync_parent_and_rebase() into checkout_helpers.py', 'status': 'compl...[truncated 1111 chars]...sts and type checks', 'status': 'pending', 'activeForm': 'Running tests and type checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="505" cache_read_input_tokens="80815" cache_creation="{'ephemeral_5m_input_tokens': 505, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014eBWV36p9psF8KMAvSVTWy">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now update `pr/prepare_cmd.py` to use `find_existing_plan_ref()`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="504" cache_read_input_tokens="81320" cache_creation="{'ephemeral_5m_input_tokens': 504, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Ax2HHAhmjM4LbA8Y2CqoTW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py</param>
+    <param name="old_string">from erk_shared.gateway.github.types import PRNotFound
+from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
+from erk_shared.output.output import user_output</param>
+    <param name="new_string">from erk_shared.gateway.github.types import PRNotFound
+from erk_shared.impl_folder import find_existing_plan_ref
+from erk_shared.output.output import user_output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="504" cache_read_input_tokens="81320" cache_creation="{'ephemeral_5m_input_tokens': 504, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ax2HHAhmjM4LbA8Y2CqoTW">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now replace the idempotent check block (lines 69-75):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="81824" cache_creation="{'ephemeral_5m_input_tokens': 286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01RcWKwovzG5dkWJmR7d5L4V">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py</param>
+    <param name="old_string">    # Idempotent: check if impl-context already exists for this plan
+    impl_dir = resolv...[truncated 190 chars]...    user_output(f"Impl-context already set up for plan #{plan_number}")
+            return</param>
+    <param name="new_string">    # Idempotent: check if impl-context already exists for this plan
+    existing_ref = fi...[truncated 93 chars]...        user_output(f"Impl-context already set up for plan #{plan_number}")
+        return</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="286" cache_read_input_tokens="81824" cache_creation="{'ephemeral_5m_input_tokens': 286, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RcWKwovzG5dkWJmR7d5L4V">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01G2un2KFgCWPXwZXtsFsvxh">
+    <param name="todos">[{'content': 'Extract sync_parent_and_rebase() into checkout_helpers.py', 'status': 'compl...[truncated 1113 chars]...sts and type checks', 'status': 'pending', 'activeForm': 'Running tests and type checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="391" cache_read_input_tokens="82110" cache_creation="{'ephemeral_5m_input_tokens': 391, 'ephemeral_1h_input_tokens': 0}" output_tokens="462" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01G2un2KFgCWPXwZXtsFsvxh">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now update `setup_impl_from_pr.py` to use `find_existing_plan_ref()`. The duplicated code is at lines 243-261 in `_setup_planned_pr_plan`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="504" cache_read_input_tokens="82501" cache_creation="{'ephemeral_5m_input_tokens': 504, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_016k4d1SxpS3vv3jUgP57mU3">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py</param>
+    <param name="old_string">from erk_shared.impl_folder import (
+    create_impl_folder,
+    get_impl_dir,
+    read_plan_ref,
+    resolve_impl_dir,
+    save_plan_ref,
+)</param>
+    <param name="new_string">from erk_shared.impl_folder import (
+    create_impl_folder,
+    find_existing_plan_ref,
+    get_impl_dir,
+    save_plan_ref,
+)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="504" cache_read_input_tokens="82501" cache_creation="{'ephemeral_5m_input_tokens': 504, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016k4d1SxpS3vv3jUgP57mU3">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py has been updated successfully.
+  </tool_result>
+  <assistant>Now replace the duplicated check in `_setup_planned_pr_plan` (lines 239-261):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="83005" cache_creation="{'ephemeral_5m_input_tokens': 323, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Q5TDgbx6NRXYZVDsdsp77c">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py</param>
+    <param name="old_string">    # Early exit: if .erk/impl-context/ is already set up for this issue
+    # (e.g., CI p...[truncated 864 chars]...ranch,
+                "plan_title": "",
+                "no_impl": no_impl,
+            }</param>
+    <param name="new_string">    # Early exit: if .erk/impl-context/ is already set up for this issue
+    # (e.g., CI p...[truncated 756 chars]...": current_branch,
+            "plan_title": "",
+            "no_impl": no_impl,
+        }</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="323" cache_read_input_tokens="83005" cache_creation="{'ephemeral_5m_input_tokens': 323, 'ephemeral_1h_input_tokens': 0}" output_tokens="717" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Q5TDgbx6NRXYZVDsdsp77c">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01EzC87gaR8U1F2VNz8UQQSY">
+    <param name="todos">[{'content': 'Extract sync_parent_and_rebase() into checkout_helpers.py', 'status': 'compl...[truncated 1115 chars]...sts and type checks', 'status': 'pending', 'activeForm': 'Running tests and type checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="770" cache_read_input_tokens="83328" cache_creation="{'ephemeral_5m_input_tokens': 770, 'ephemeral_1h_input_tokens': 0}" output_tokens="462" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EzC87gaR8U1F2VNz8UQQSY">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now extract `_apply_plan_setup()` in `branch/checkout_cmd.py`. The `_rebase_and_track_for_plan` → `_setup_impl_for_plan` call pair is repeated 3 times. Let me re-read the current state of the file to see the exact code after my earlier edits:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="504" cache_read_input_tokens="84098" cache_creation="{'ephemeral_5m_input_tokens': 504, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01WLZfbVdo1X4e8eb8B8WWvZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">340</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="504" cache_read_input_tokens="84098" cache_creation="{'ephemeral_5m_input_tokens': 504, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WLZfbVdo1X4e8eb8B8WWvZ">
+   340→        )
+   341→        result.output_for_shell_integration()
+   342→        sys.exit(0)
+   343→
+   344→    user_output(f"Created .erk/impl-context/ folder from plan #{setup.plan_number}")
+   345→
+   346→
+   347→def _rebase_and_track_for_plan(
+   348→    ctx: ErkContext,
+   349→    *,
+   350→    repo_root: Path,
+   351→    worktree_path: Path,
+   352→    branch: str,
+   353→    parent_branch: str,
+   354→    trunk: str,
+   355→) -&gt; None:
+   356→    """Rebase onto parent branch (if stacked) and track with Graphite.
+   357→
+   358→    For stacked plans where parent_branch != trunk, the parent may have advanced
+   359→    since the plan was saved. Rebasing ensures git history includes the parent's
+   360→    tip, which gt track requires for proper stacking.
+   361→
+   362→    Mirrors the pattern from pr/checkout_cmd.py for stacked PRs.
+   363→
+   364→    Args:
+   365→        ctx: Erk context
+   366→        repo_root: Repository root path
+   367→        worktree_path: Path to the worktree (used as cwd for rebase)
+   368→        branch: The plan branch name
+   369→        parent_branch: The parent branch to rebase onto and track with
+
+... [75 lines omitted] ...
+
+   428→    handler = script_error_handler(ctx) if script else contextlib.nullcontext()
+  </tool_result>
+  <tool_use name="Read" id="toolu_015mH8rm9N826YAAyYo7Qgru">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">600</param>
+    <param name="limit">230</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1556" cache_read_input_tokens="84602" cache_creation="{'ephemeral_5m_input_tokens': 1556, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015mH8rm9N826YAAyYo7Qgru">
+   600→                    )
+   601→                    user_output(
+   602→                        click.style(
+   603→                            f"✓ Stacked {branch} in {slot_result.slot_name} (in place)", fg="green"
+   604→                        )
+   605→                    )
+   606→
+   607→                    # Checkout the branch before _setup_impl_for_plan, which may
+   608→                    # sys.exit(0) in script mode and skip _perform_checkout.
+   609→                    ctx.branch_manager.checkout_branch(slot_result.worktree_path, branch)
+   610→
+   611→                    # Build a synthetic WorktreeInfo for the existing worktree.
+   612→                    # Branch is already checked out above.
+   613→                    target_wt = WorktreeInfo(
+   614→                        path=slot_result.worktree_path,
+   615→                        branch=branch,
+   616→                    )
+   617→
+   618→                    if setup is not None:
+   619→                        _rebase_and_track_for_plan(
+   620→                            ctx,
+   621→                            repo_root=repo.root,
+   622→                            worktree_path=target_wt.path,
+   623→                            branch=branch,
+   624→                            parent_branch=parent_branch,
+   625→                            trunk=trunk,
+   626→                        )
+   627→                        _setup_impl_for_plan(
+   628→                            ctx,
+   629→                            setup=setup,
+
+... [179 lines omitted] ...
+
+   706→            raise click.ClickException(
+   746→            raise click.ClickException(
+   790→                f"Error: Internal state mismatch. Branch '{branch}' was allocated "
+  </tool_result>
+  <assistant>I can see the 3 repetitions of the `_rebase_and_track_for_plan` → `_setup_impl_for_plan` pair:
+
+1. Lines 618-633 (stack-in-place case)
+2. Lines 653-667 (non-slot worktree case)
+3. Lines 715-730 (single matching worktree case)
+
+And a 4th occurrence in the multiple-worktree case at lines 759-774.
+
+Let me add `_apply_plan_setup()` and then replace all 4 call sites. First, add the function right after `_rebase_and_track_for_plan`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2860" cache_read_input_tokens="86158" cache_creation="{'ephemeral_5m_input_tokens': 2860, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_017E3P1im9923cZtdj5FKHP1">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">@alias("co")
+@click.command("checkout", cls=CommandWithHiddenOptions)</param>
+    <param name="new_string">def _apply_plan_setup(
+    ctx: ErkContext,
+    *,
+    setup: IssueBranchSetup,
+    repo_r...[truncated 1044 chars]...ript=script,
+    )
+
+
+@alias("co")
+@click.command("checkout", cls=CommandWithHiddenOptions)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2860" cache_read_input_tokens="86158" cache_creation="{'ephemeral_5m_input_tokens': 2860, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017E3P1im9923cZtdj5FKHP1">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now replace all 4 call sites. Call site 1 (stack-in-place):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="724" cache_read_input_tokens="89018" cache_creation="{'ephemeral_5m_input_tokens': 724, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01CFYEJ4t6uyNtiJcws2qveg">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">                    if setup is not None:
+                        _rebase_and_track_for_pl...[truncated 1066 chars]...     )
+                    return
+                elif setup is not None and not new_slot:</param>
+    <param name="new_string">                    if setup is not None:
+                        _apply_plan_setup(
+     ...[truncated 846 chars]...     )
+                    return
+                elif setup is not None and not new_slot:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="724" cache_read_input_tokens="89018" cache_creation="{'ephemeral_5m_input_tokens': 724, 'ephemeral_1h_input_tokens': 0}" output_tokens="636" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CFYEJ4t6uyNtiJcws2qveg">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Call site 2 (non-slot worktree):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="978" cache_read_input_tokens="89742" cache_creation="{'ephemeral_5m_input_tokens': 978, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Bfr5MEjyAYQKiJyVSCBNw6">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">                    # --for-plan from a non-slot worktree: checkout in current worktree
+  ...[truncated 794 chars]...             )
+
+                    worktrees = ctx.git.worktree.list_worktrees(repo.root)</param>
+    <param name="new_string">                    # --for-plan from a non-slot worktree: checkout in current worktree
+  ...[truncated 594 chars]...             )
+
+                    worktrees = ctx.git.worktree.list_worktrees(repo.root)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="978" cache_read_input_tokens="89742" cache_creation="{'ephemeral_5m_input_tokens': 978, 'ephemeral_1h_input_tokens': 0}" output_tokens="568" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Bfr5MEjyAYQKiJyVSCBNw6">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Call site 3 (single matching worktree):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="615" cache_read_input_tokens="90720" cache_creation="{'ephemeral_5m_input_tokens': 615, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01TxPCL1Dk1UoWxA7P8LdeLv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">        # Set up impl folder if --for-plan was used
+        if setup is not None:
+        ...[truncated 737 chars]...pt_activation=False,
+        )
+
+    else:
+        # Multiple worktrees contain this branch</param>
+    <param name="new_string">        # Set up impl folder if --for-plan was used
+        if setup is not None:
+        ...[truncated 571 chars]...pt_activation=False,
+        )
+
+    else:
+        # Multiple worktrees contain this branch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="615" cache_read_input_tokens="90720" cache_creation="{'ephemeral_5m_input_tokens': 615, 'ephemeral_1h_input_tokens': 0}" output_tokens="567" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TxPCL1Dk1UoWxA7P8LdeLv">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Call site 4 (multiple worktrees, directly checked out):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="909" cache_read_input_tokens="91335" cache_creation="{'ephemeral_5m_input_tokens': 909, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01VZCpoqpLFj1dt4tA8smLKV">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="old_string">            # Set up impl folder if --for-plan was used
+            if setup is not None:
+...[truncated 830 chars]... force_script_activation=False,
+            )
+        elif len(directly_checked_out) == 0:</param>
+    <param name="new_string">            # Set up impl folder if --for-plan was used
+            if setup is not None:
+...[truncated 644 chars]... force_script_activation=False,
+            )
+        elif len(directly_checked_out) == 0:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="909" cache_read_input_tokens="91335" cache_creation="{'ephemeral_5m_input_tokens': 909, 'ephemeral_1h_input_tokens': 0}" output_tokens="589" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VZCpoqpLFj1dt4tA8smLKV">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/branch/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01MjUCwD3wHNYGtQRh5QzFDB">
+    <param name="todos">[{'content': 'Extract sync_parent_and_rebase() into checkout_helpers.py', 'status': 'compl...[truncated 1117 chars]...and type checks', 'status': 'in_progress', 'activeForm': 'Running tests and type checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="636" cache_read_input_tokens="92244" cache_creation="{'ephemeral_5m_input_tokens': 636, 'ephemeral_1h_input_tokens': 0}" output_tokens="462" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MjUCwD3wHNYGtQRh5QzFDB">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+</session>
