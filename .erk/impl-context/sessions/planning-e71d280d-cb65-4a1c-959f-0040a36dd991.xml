@@ -1,0 +1,740 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>https://github.com/dagster-io/internal/pull/21408
+
+ automated pushes look like there are being authored by me. even though they are not. what is happening here</user>
+  <usage input_tokens="3" cache_creation_input_tokens="11213" cache_read_input_tokens="4857" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 11213}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01XhPTAXxhKrPSrQVAsv15vU">
+    <param name="query">select:Agent</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="11213" cache_read_input_tokens="4857" output_tokens="159" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 11213, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01XhPTAXxhKrPSrQVAsv15vU">
+
+  </tool_result>
+  <tool_use name="Agent" id="toolu_0126Y9joYK8D37vvAYo3MYpk">
+    <param name="description">Explore git push attribution</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+
+I need to und...[truncated 697 chars]...enshot
+
+Be thorough - check both the CLI commands and any underlying gateway/utility code.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2363" cache_read_input_tokens="16070" output_tokens="297" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2363, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0126Y9joYK8D37vvAYo3MYpk">
+Perfect! Now I have a complete picture. Let me compile my findings into a comprehensive report.
+
+## Summary: Git Push Attribution in Erk Automated/Dispatched Workflows
+
+Based on my thorough exploration of the erk codebase, here's how erk handles git pushes, credentials, and commit authorship in automated workflows:
+
+### 1. Git Author/Committer Configuration
+
+**Initial Setup (erk-remote-setup action):**
+- Location: `/Users/schrockn/code/erk/.github/actions/erk-remote-setup/action.yml` (lines 56-60)
+- Default identity set globally: `git config user.name "github-actions[bot]"` and `git config user.email "github-actions[bot]@users.noreply.github.com"`
+
+**Override Per Commit:**
+- In the plan-implement workflow (`/Users/schrockn/code/erk/.github/workflows/plan-implement.yml`), the git identity is **overridden multiple times** per session:
+  - Line 163-164: Set to `$SUBMITTED_BY` (the person who initiated the plan) with email `$SUBMITTED_BY@users.noreply.github.com`
+  - Line 215-216: Same override before removing plan staging dirs
+  - Line 369-370: Same override before PR submission
+  - Line 409-410: Same override before cleaning up plan staging dirs
+  - Line 444-445: Same override before triggering CI workflows
+
+**Attribution Pattern:**
+- Each commit gets attributed to the **person who submitted the plan**, not to an AI or generic bot account
+- The email format `{username}@users.noreply.github.com` is GitHub's standard for forwarding commits to user accounts
+
+### 2. Git Push Mechanics
+
+**Direct Push (Remote Workflows):**
+- No special credentials are set in the gateway code
+- Uses GitHub token (`secrets.ERK_QUEUE_GH_PAT` or `github.token`) passed via environment variables
+- Git push authentication handled by GitHub CLI's configured credentials
+
+... [84 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2009" cache_read_input_tokens="18433" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2009}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I understand the issue. There are **two separate attribution problems** causing this:
+
+## What's Happening
+
+### 1. Commit Author Attribution
+In `.github/workflows/plan-implement.yml`, before every commit the workflow runs:
+```yaml
+git config user.name "$SUBMITTED_BY"
+git config user.email "$SUBMITTED_BY@users.noreply.github.com"
+```
+Since you submitted the plan, `$SUBMITTED_BY` = `schrockn`, so every commit is **authored by you**.
+
+### 2. Push Event Attribution  
+The workflow uses `secrets.ERK_QUEUE_GH_PAT` — if this is **your personal access token**, GitHub attributes the push event to your account regardless of commit author. This is why GitHub shows "schrockn force-pushed" and "schrockn pushed a commit".
+
+GitHub attributes push events to the **token owner**, not the commit author. So even if the commits were authored by `github-actions[bot]`, the push would still show as you if it's your PAT.
+
+## The Fix
+
+The commit author override is intentional (so you know who requested the work), but the **push attribution** showing as you is a side effect of using your PAT. Options:
+
+1. **Use a GitHub App token** instead of a PAT — pushes would show as the app, not you
+2. **Use a bot/service account PAT** — pushes would show as that account
+3. **Use `github.token`** for push operations — pushes would show as `github-actions[bot]`
+
+Want me to create a plan to fix this? The simplest change would be switching the push operations to use `github.token` instead of `ERK_QUEUE_GH_PAT`, though that may have scope limitations depending on the repo setup.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2009" cache_read_input_tokens="18433" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2009}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01JBmE7eqhjTvMVnvu1DLrvV">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2009" cache_read_input_tokens="18433" output_tokens="672" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2009, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01JBmE7eqhjTvMVnvu1DLrvV">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_018Hnz4UGFBb3CvKfA1EQPfb">
+    <param name="questions">[{'question': 'Do you want me to create a plan to fix the push attribution, or was this ju...[truncated 214 chars]... a change to stop automated pushes from being attributed to you'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1927" cache_read_input_tokens="20442" output_tokens="157" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1927, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018Hnz4UGFBb3CvKfA1EQPfb">
+User has answered your questions: "Do you want me to create a plan to fix the push attribution, or was this just a diagnostic question?"="do #3 fix. also audit for other uses of ERK_QUEUE_GH_PAT that could/should be github.token" user notes: do #3 fix. also audit for other uses of ERK_QUEUE_GH_PAT that could/should be github.token. You can now continue with the user's answers in mind.
+  </tool_result>
+  <user>[Request interrupted by user]</user>
+  <user>yes plan fix. number 3. also audit for other uses of the PAT that should be github.token</user>
+  <tool_use name="Agent" id="toolu_01EVzgvyiTUPxerpifwY45wo">
+    <param name="description">Audit ERK_QUEUE_GH_PAT usage</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+
+Search the en...[truncated 555 chars]...lows.
+
+Be very thorough - check all .yml files in .github/workflows/ and .github/actions/.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="564" cache_read_input_tokens="22369" output_tokens="314" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 564, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EVzgvyiTUPxerpifwY45wo">
+Perfect! Now let me create a comprehensive analysis. Let me compile all the findings:
+
+## Comprehensive ERK_QUEUE_GH_PAT Token Usage Report
+
+Based on my thorough search of the erk codebase, here is a complete inventory of all `ERK_QUEUE_GH_PAT` token uses, along with analysis of whether they can be replaced with `github.token` (GITHUB_TOKEN):
+
+### Summary Statistics
+- **Total files containing ERK_QUEUE_GH_PAT**: 18
+- **Total occurrences**: 25+ direct usages
+- **Workflows affected**: 6 main workflows
+
+---
+
+## Critical Findings: Which Uses CAN be Replaced
+
+### 1. **ci.yml - Line 66: Auto-fix formatting checkout**
+- **File**: `.github/workflows/ci.yml:66`
+- **Current usage**: `token: ${{ secrets.ERK_QUEUE_GH_PAT }}`
+- **Purpose**: Checkout with PAT to enable `git push` to trigger CI re-runs
+- **Can be replaced?**: **POTENTIALLY** - BUT with caveats
+- **Analysis**: This uses PAT specifically because pushes with `GITHUB_TOKEN` do NOT trigger workflow events (GitHub security feature). Auto-commit that needs validation REQUIRES a token that triggers events. This is documented in `/docs/learned/ci/github-token-scopes.md` lines 70-83.
+
+### 2. **plan-implement.yml - Line 114: Checkout**
+- **File**: `.github/workflows/plan-implement.yml:114`
+- **Current usage**: `token: ${{ secrets.ERK_QUEUE_GH_PAT }}`
+- **Purpose**: Checkout with PAT to enable git operations
+- **Can be replaced?**: **NO** - Required for push operations that occur later in workflow
+
+### 3. **plan-implement.yml - Line 273: Push session**
+- **File**: `.github/workflows/plan-implement.yml:273`
+
+... [185 lines omitted] ...
+
+  - **Exception**: Line 113 is git push - needs PAT
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3896" cache_read_input_tokens="22933" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3896}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good audit. Let me now read the key workflow files to verify the specific lines before writing the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3896" cache_read_input_tokens="22933" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3896}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01XQkubXgVMLqAWy4R7ez7Hv">
+    <param name="query">select:Read</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3896" cache_read_input_tokens="22933" output_tokens="1055" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3896, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01XQkubXgVMLqAWy4R7ez7Hv">
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_016Gu4xmAqmLrkwX7w85zBFf">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/ci/github-token-scopes.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1735" cache_read_input_tokens="26829" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1735}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016Gu4xmAqmLrkwX7w85zBFf">
+     1→---
+     2→title: "GitHub Token Scopes in CI"
+     3→last_audited: "2026-02-17 16:00 PT"
+     4→audit_result: clean
+     5→read_when:
+     6→  - "deciding which token to use in GitHub Actions workflows"
+     7→  - "encountering permission errors with github.token"
+     8→  - "understanding why user API calls or git push fail in CI"
+     9→---
+    10→
+    11→# GitHub Token Scopes in CI
+    12→
+    13→GitHub provides two types of tokens for CI workflows, each with different permission scopes.
+    14→
+    15→## The Key Distinction
+    16→
+    17→| Scope Type       | Token              | Operations                                            |
+    18→| ---------------- | ------------------ | ----------------------------------------------------- |
+    19→| Repository-scope | `github.token`     | Issues, PRs, comments, workflow status, repo contents |
+    20→| User-scope       | `ERK_QUEUE_GH_PAT` | Git push, user identity, cross-workflow triggers      |
+    21→
+    22→The automatic `github.token` is intentionally limited to repository operations for security. Operations that create user-owned resources require a PAT.
+    23→
+    24→## Token Details
+    25→
+    26→### `github.token` (Automatic)
+    27→
+    28→- Ephemeral: created fresh for each workflow run
+    29→- Scoped to the repository only
+    30→- Cannot perform user-level operations
+
+... [144 lines omitted] ...
+
+   110→## Error Symptoms
+  </tool_result>
+  <tool_use name="Read" id="toolu_01ETkqFmacqY86iMecVBmmDk">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/plan-implement.yml</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1735" cache_read_input_tokens="26829" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1735, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ETkqFmacqY86iMecVBmmDk">
+     1→name: plan-implement
+     2→run-name: "${{ inputs.plan_id }}:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      plan_id:
+     8→        description: "Plan identifier to implement"
+     9→        required: true
+    10→        type: string
+    11→      submitted_by:
+    12→        description: "GitHub username of the person who submitted the issue"
+    13→        required: true
+    14→        type: string
+    15→      distinct_id:
+    16→        description: "Unique identifier for run discovery (base36)"
+    17→        required: true
+    18→        type: string
+    19→      plan_title:
+    20→        description: "Plan title for workflow run display"
+    21→        required: true
+    22→        type: string
+    23→      branch_name:
+    24→        description: "Branch name for implementation (created by submit command)"
+    25→        required: true
+    26→        type: string
+    27→      pr_number:
+    28→        description: "PR number for implementation (created by submit command)"
+    29→        required: true
+    30→        type: string
+
+... [432 lines omitted] ...
+
+   108→            echo "::error title=Missing Secret::ERK_QUEUE_GH_PAT secret is not configured or has expired. Add a PAT with 'repo' scope at: Settings → Secrets and variables → Actions"
+   217→          if git ls-files --error-unmatch .erk/impl-context/ &gt;/dev/null 2&gt;&amp;1; then
+   287→        continue-on-error: true
+   359→        continue-on-error: true
+   379→      - name: Handle merge conflicts if push failed
+   381→        if: steps.submit.outcome == 'failure'
+   411→          if git ls-files --error-unmatch .erk/impl-context/ &gt;/dev/null 2&gt;&amp;1; then
+   421→        continue-on-error: true
+   457→      - name: Fail workflow if implementation failed
+   460→          echo "Implementation failed with exit code: ${{ steps.implement.outputs.exit_code }}"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="9416" cache_read_input_tokens="28564" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9416}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a complete picture. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9416" cache_read_input_tokens="28564" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9416}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01De4RWShjFMrfQznxXdQHTD">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9416" cache_read_input_tokens="28564" output_tokens="2605" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9416, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01De4RWShjFMrfQznxXdQHTD">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_014763gTbhv6i6NfZr79Gj3Y">
+    <param name="file_path">/Users/schrockn/.claude/plans/delegated-doodling-engelbart.md</param>
+    <param name="content"># Fix: Automated pushes attributed to user instead of bot
+
+## Context
+
+Automated CI workfl...[truncated 4450 chars]...need PAT)
+4. Verify all pure API operations (plan header updates, comments) still succeed
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2858" cache_read_input_tokens="37980" output_tokens="1512" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2858, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014763gTbhv6i6NfZr79Gj3Y">
+File created successfully at: /Users/schrockn/.claude/plans/delegated-doodling-engelbart.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01Rg53nJZhEoGHiQcWT8PCxZ">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1554" cache_read_input_tokens="40838" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1554, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01Rg53nJZhEoGHiQcWT8PCxZ">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01TpEFEzXvkWmi8a6DvZN3aN">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'read workflow files and check ci.yml triggers'}]</param>
+    <param name="plan"># Fix: Automated pushes attributed to user instead of bot
+
+## Context
+
+Automated CI workfl...[truncated 4450 chars]...need PAT)
+4. Verify all pure API operations (plan header updates, comments) still succeed
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="42392" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TpEFEzXvkWmi8a6DvZN3aN">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/delegated-doodling-engelbart.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: Automated pushes attributed to user instead of bot
+Current context: (wt:erk) (br:master) (plan:#8751)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id e71d280d-cb65-4a1c-959f-0040a36dd991 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_018n9DeQtET6TxKYG644u64R">
+    <param name="file_path">/Users/schrockn/.claude/plans/delegated-doodling-engelbart.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="831" cache_read_input_tokens="43130" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 831, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018n9DeQtET6TxKYG644u64R">
+     1→# Fix: Automated pushes attributed to user instead of bot
+     2→
+     3→## Context
+     4→
+     5→Automated CI workflows (plan-implement, pr-address, etc.) push commits that GitHub attributes to the user who dispatched the plan. This happens because:
+     6→
+     7→1. **Checkout uses `ERK_QUEUE_GH_PAT`** (a personal access token) — GitHub attributes push events to the token owner
+     8→2. **`git config user.name "$SUBMITTED_BY"`** — commits are authored as the submitter
+     9→
+    10→The user wants pushes to show as `github-actions[bot]`, not as themselves.
+    11→
+    12→## Root Cause
+    13→
+    14→`actions/checkout` with a PAT configures the git credential helper for ALL subsequent `git push` commands in that job. GitHub attributes the push event to the PAT owner regardless of `git config user.name`.
+    15→
+    16→## Approach
+    17→
+    18→Switch `actions/checkout` to use `github.token` in all workflows. This makes pushes show as `github-actions[bot]`. Handle the one case that requires PAT (CI trigger) differently.
+    19→
+    20→**Key constraint:** Pushes with `github.token` do NOT trigger workflow events (GitHub security feature). The "Trigger CI workflows" step in plan-implement.yml relies on this. Fix by using `gh workflow run` with the PAT instead of empty-commit-push.
+    21→
+    22→## Changes
+    23→
+    24→### 1. plan-implement.yml
+    25→
+    26→**Checkout (line 114):** `token: ${{ secrets.ERK_QUEUE_GH_PAT }}` -&gt; `token: ${{ github.token }}`
+    27→
+    28→**Remove `$SUBMITTED_BY` git config overrides** (lines 163-164, 215-216, 369-370, 409-410, 444-445): Replace with `github-actions[bot]` identity:
+    29→```yaml
+    30→git config user.name "github-actions[bot]"
+
+... [80 lines omitted] ...
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01MzFLESsE9waYgpTo4CtRwY">
+    <param name="questions">[{'question': 'What would you like to do with this plan?', 'header': 'br:master', 'options...[truncated 283 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1873" cache_read_input_tokens="43961" output_tokens="175" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1873, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MzFLESsE9waYgpTo4CtRwY">
+User has answered your questions: "What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_016HzhU7xp9rgeWxtmRunB5V">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="223" cache_read_input_tokens="45834" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 223, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_016HzhU7xp9rgeWxtmRunB5V">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_012pyXHKGTxfUAjsY7gvgcsm">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="568" cache_read_input_tokens="46057" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 568, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012pyXHKGTxfUAjsY7gvgcsm">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="e71d280d-cb65-4a1c-959f-0040a36dd991" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="e71d280d-cb65-4a1c-959f-0040a36dd991" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "e71d280d-cb65-4a1c-959f-0040a36dd991" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "e71d280d-cb65-4a1c-959f-0040a36dd991" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "e71d280d-cb65-4a1c-959f-0040a36dd991" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "e71d280d-cb65-4a1c-959f-0040a36dd991" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2280" cache_read_input_tokens="46625" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2280}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Branch slug:** `fix-push-attribution`
+
+**Summary:** Switches CI workflow checkouts from ERK_QUEUE_GH_PAT to github.token so automated pushes show as github-actions[bot] instead of the dispatching user. Also audits and replaces PAT with github.token for pure API operations across all workflows.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2280" cache_read_input_tokens="46625" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2280}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01GYJd5fpT1Y8QzKSCocoTnv">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2280" cache_read_input_tokens="46625" output_tokens="243" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2280, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01GYJd5fpT1Y8QzKSCocoTnv">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01VEC3rFvTjH3d5CU281Ms7o">
+    <param name="command">erk exec plan-save --format json --session-id="e71d280d-cb65-4a1c-959f-0040a36dd991" --bra...[truncated 176 chars]...o audits and replaces PAT with github.token for pure API operations across all workflows."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3595" cache_read_input_tokens="48905" output_tokens="225" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3595, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VEC3rFvTjH3d5CU281Ms7o">
+{"success": true, "plan_number": 8810, "plan_url": "https://github.com/dagster-io/erk/pull/8810", "title": "[erk-plan] Fix: Automated pushes attributed to user instead of bot", "branch_name": "plnd/fix-push-attribution-03-05-1936", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/e71d280d-cb65-4a1c-959f-0040a36dd991/plan_snapshots/000001-6d5825e6"}
+  </tool_result>
+  <assistant>Plan saved as draft PR **#8810**: https://github.com/dagster-io/erk/pull/8810
+
+Now pushing the planning session for learning.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="389" cache_read_input_tokens="52500" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 389}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013SZ4mnwrAQMgJkUMvRccaj">
+    <param name="command">erk exec capture-session-info --path "/Users/schrockn/code/erk" 2&gt;/dev/null</param>
+    <param name="description">Capture session file path for push-session</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="389" cache_read_input_tokens="52500" output_tokens="161" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 389, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013SZ4mnwrAQMgJkUMvRccaj">
+SESSION_ID=e71d280d-cb65-4a1c-959f-0040a36dd991
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/e71d280d-cb65-4a1c-959f-0040a36dd991.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01TArXe6cbSvwmdAdBTtbEaF">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 58 chars]...4a1c-959f-0040a36dd991" --stage planning --source local --plan-id 8810 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="52889" output_tokens="204" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 254, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TArXe6cbSvwmdAdBTtbEaF">
+{"uploaded": true, "plan_id": 8810, "session_branch": "async-learn/8810", "session_id": "e71d280d-cb65-4a1c-959f-0040a36dd991", "stage": "planning", "files": ["planning-e71d280d-cb65-4a1c-959f-0040a36dd991-e71d280d-cb65-4a1c-959f-0040a36dd991.xml"]}
+  </tool_result>
+  <assistant>Plan saved and session pushed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="335" cache_read_input_tokens="53143" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 335}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01WY6drp7uDYxsyXHjJ3iuHp">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run erk commands'}]</param>
+    <param name="plan"># Fix: Automated pushes attributed to user instead of bot
+
+## Context
+
+Automated CI workfl...[truncated 4450 chars]...need PAT)
+4. Verify all pure API operations (plan header updates, comments) still succeed
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="335" cache_read_input_tokens="53143" output_tokens="82" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 335, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WY6drp7uDYxsyXHjJ3iuHp">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8810 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8810:
+  In current wt:    source "$(erk br co --for-plan 8810 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8810 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8810 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8810 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8810:
+  In current wt:  erk br co --for-plan 8810
+  In new wt:      erk br co --new-slot --for-plan 8810
+
+Dispatch plan #8810:
+  CLI command:    erk pr dispatch 8810
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan **#8810** saved successfully.
+
+**Implement plan #8810:**
+```
+In current wt:    source "$(erk br co --for-plan 8810 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --for-plan 8810 --script)" &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 8810 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 8810 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout plan #8810:**
+```
+In current wt:  erk br co --for-plan 8810
+In new wt:      erk br co --new-slot --for-plan 8810
+```
+
+**Dispatch plan #8810:**
+```
+CLI command:    erk pr dispatch 8810
+Slash command:  /erk:pr-dispatch
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1663" cache_read_input_tokens="53478" output_tokens="246" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1663, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/model&lt;/command-name&gt;
+            &lt;command-message&gt;model&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Set model to [1mhaiku (claude-haiku-4-5-20251001)[22m&lt;/local-command-stdout&gt;</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>
