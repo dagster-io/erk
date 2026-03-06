@@ -1,0 +1,1169 @@
+<session>
+  <meta branch="plnd/consolidate-code-reviews-r-03-05-1952" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8814&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8814` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8814.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="11251" cache_read_input_tokens="17146" cache_creation="{'ephemeral_5m_input_tokens': 11251, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01TciXnsT9VRD8JUVTxge7gv">
+    <param name="command">erk exec setup-impl --issue 8814</param>
+    <param name="description">Set up implementation for plan #8814</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="11251" cache_read_input_tokens="17146" cache_creation="{'ephemeral_5m_input_tokens': 11251, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TciXnsT9VRD8JUVTxge7gv">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--consolidate-code-reviews-r-03-05-1952", "plan_number": 8814, "plan_url": "https://github.com/dagster-io/erk/pull/8814", "branch": "plnd/consolidate-code-reviews-r-03-05-1952", "plan_title": "[erk-plan] Consolidate code-reviews workflow into reusable workflow", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8814, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/consolidate-code-reviews-r-03-05-1952', teleporting from remote...
+  </tool_result>
+  <assistant>Good, implementation environment is set up. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="350" cache_read_input_tokens="28397" cache_creation="{'ephemeral_5m_input_tokens': 350, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012BrefcJr6uVHwVQEwJnDKf">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--consolidate-code-reviews-r-03-05-1952/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="350" cache_read_input_tokens="28397" cache_creation="{'ephemeral_5m_input_tokens': 350, 'ephemeral_1h_input_tokens': 0}" output_tokens="109" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012BrefcJr6uVHwVQEwJnDKf">
+     1→# Consolidate code-reviews workflow into reusable workflow
+     2→
+     3→## Context
+     4→
+     5→Commit `4bccacb3c` deleted `.github/workflows/code-reviews.yml` and moved those jobs into `ci.yml` to get a `needs: [fix-formatting]` dependency. It also removed `code-reviews.yml` from `pyproject.toml` force-include.
+     6→
+     7→However, `CodeReviewsSystemCapability` still tries to install `code-reviews.yml` into external repos (e.g. `internal`). The stale `.venv` wheel still has the old template, but:
+     8→1. The template is no longer in the erk source tree (so next wheel build won't include it)
+     9→2. The template's `uv tool install --from . --with ./packages/erk-shared erk` fails in non-erk repos where `--from .` resolves to the host package name (e.g. `internal`), not `erk`
+    10→
+    11→Fix: make `code-reviews.yml` a reusable workflow (`workflow_call`) with a thin trigger file for external repos. Erk's `ci.yml` calls the reusable workflow with `needs: [fix-formatting]` for proper ordering.
+    12→
+    13→## Plan
+    14→
+    15→### 1. Create `.github/workflows/code-reviews.yml` as a reusable workflow
+    16→
+    17→Based on git history (commit `2bbcbfc67`), but converted to `on: workflow_call` and with fixed erk install steps.
+    18→
+    19→Key changes from the original:
+    20→- Trigger: `on: workflow_call` (not `pull_request`)
+    21→- Top-level `permissions: contents: read, pull-requests: write`
+    22→- Both install steps use the conditional pattern:
+    23→  ```yaml
+    24→  - name: Install erk
+    25→    run: |
+    26→      if [ -d "./packages/erk-shared" ]; then
+    27→        uv tool install --from . --with ./packages/erk-shared erk
+    28→      else
+    29→        uv sync --group dev
+    30→        echo "$GITHUB_WORKSPACE/.venv/bin" &gt;&gt; $GITHUB_PATH
+
+... [84 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me understand the current state of the relevant files. Let me read them in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1871" cache_read_input_tokens="28747" cache_creation="{'ephemeral_5m_input_tokens': 1871, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0135nqRxD9orv3xUYVf7Xewr">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/ci.yml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1871" cache_read_input_tokens="28747" cache_creation="{'ephemeral_5m_input_tokens': 1871, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01DGNkKXxs5estwCK5PUaRB1">
+    <param name="file_path">/home/runner/work/erk/erk/pyproject.toml</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1871" cache_read_input_tokens="28747" cache_creation="{'ephemeral_5m_input_tokens': 1871, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011g5n9BkXqUWafCK3Ff9hf8">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/code_reviews_system.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1871" cache_read_input_tokens="28747" cache_creation="{'ephemeral_5m_input_tokens': 1871, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01FooBftbDXK7j6A2bHxK31X">
+    <param name="command">git show 2bbcbfc67:.github/workflows/code-reviews.yml 2&gt;/dev/null || echo "COMMIT_NOT_FOUND"</param>
+    <param name="description">Get original code-reviews.yml from git history</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1871" cache_read_input_tokens="28747" cache_creation="{'ephemeral_5m_input_tokens': 1871, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0135nqRxD9orv3xUYVf7Xewr">
+     1→name: ci
+     2→
+     3→on:
+     4→  push:
+     5→    branches: [master]
+     6→  pull_request:
+     7→    types: [opened, synchronize, reopened, ready_for_review]
+     8→  workflow_dispatch:
+     9→
+    10→permissions:
+    11→  contents: write # Needed for autofix to push
+    12→  actions: write # Needed to re-trigger workflow after autofix push
+    13→  statuses: write # Needed for autofix to update commit status
+    14→
+    15→concurrency:
+    16→  group: ci-${{ github.head_ref || github.ref }}
+    17→  cancel-in-progress: true
+    18→
+    19→jobs:
+    20→  check-submission:
+    21→    if: github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    22→    runs-on: ubuntu-latest
+    23→    timeout-minutes: 5
+    24→    outputs:
+    25→      skip: ${{ steps.check.outputs.skip }}
+    26→    steps:
+    27→      - uses: actions/checkout@v4
+    28→      - name: Check for submission folder
+    29→        id: check
+    30→        uses: ./.github/actions/check-impl-context
+
+... [574 lines omitted] ...
+
+    84→            echo "::error::Files need formatting or docs are out of sync"
+    93→            echo "::error::Formatting issues found (cannot auto-fix fork PRs)"
+   196→      (needs.format.result == 'failure' ||
+   197→       needs.lint.result == 'failure' ||
+   198→       needs.fix-formatting.result == 'failure' ||
+   199→       needs.docs-check.result == 'failure' ||
+   200→       needs.ty.result == 'failure')
+   309→      # Inlined from .github/actions/setup-claude-erk to avoid CodeQL warning
+   336→      - name: Collect failure context
+   338→        id: failures
+   349→      - name: Collect actual errors
+   351→        id: errors
+   353→          errors=""
+   355→          if [ "${{ needs.format.result }}" = "failure" ]; then
+   356→            errors+="=== RUFF FORMAT ERRORS ===\n"
+   357→            errors+="$(uv run ruff format --check . 2&gt;&amp;1 || true)\n\n"
+   360→          if [ "${{ needs.lint.result }}" = "failure" ]; then
+   361→            errors+="=== RUFF LINT ERRORS ===\n"
+   362→            errors+="$(uv run ruff check . 2&gt;&amp;1 || true)\n\n"
+   365→          if [ "${{ needs.fix-formatting.result }}" = "failure" ]; then
+   366→            errors+="=== MARKDOWN-FIX ERRORS ===\n"
+   367→            errors+="$(prettier --check '**/*.md' --ignore-path .gitignore 2&gt;&amp;1 || true)\n\n"
+   370→          if [ "${{ needs.docs-check.result }}" = "failure" ]; then
+   371→            errors+="=== DOCS CHECK ERRORS ===\n"
+   372→            errors+="$(make md-check 2&gt;&amp;1 || true)\n"
+   373→            errors+="$(make docs-check 2&gt;&amp;1 || true)\n\n"
+   376→          if [ "${{ needs.ty.result }}" = "failure" ]; then
+   377→            errors+="=== TY TYPE ERRORS ===\n"
+   378→            errors+="$(uv run ty check 2&gt;&amp;1 || true)\n\n"
+   382→          echo -e "$errors" &gt; /tmp/errors.txt
+   393→          echo "Debug: erk version: $(erk --version 2&gt;&amp;1 || echo 'version failed')"
+   403→            --var-file "ERRORS=/tmp/errors.txt" 2&gt;&amp;1); then
+   404→            echo "Error: Failed to get ci-autofix prompt"
+   411→            echo "Error: ci-autofix prompt is empty (command succeeded but no output)"
+   433→  # === CI Failure Summarization (Haiku) ===
+   452→      (needs.format.result == 'failure' ||
+   453→       needs.lint.result == 'failure' ||
+   454→       needs.fix-formatting.result == 'failure' ||
+   455→       needs.docs-check.result == 'failure' ||
+   456→       needs.ty.result == 'failure' ||
+   457→       needs.unit-tests.result == 'failure' ||
+   458→       needs.integration-tests.result == 'failure' ||
+   459→       needs.erk-mcp-tests.result == 'failure')
+   473→      - name: Summarize failures
+   537→            echo "Discovery failed"
+  </tool_result>
+  <tool_result tool="toolu_01DGNkKXxs5estwCK5PUaRB1">
+     1→[tool.uv.workspace]
+     2→members = ["packages/*"]
+     3→
+     4→[tool.uv.sources]
+     5→erk-dev = { workspace = true }
+     6→erk-shared = { workspace = true }
+     7→erk-statusline = { workspace = true }
+     8→
+     9→[project]
+    10→name = "erk"
+    11→version = "0.9.6"
+    12→description = "Add your description here"
+    13→readme = "README.md"
+    14→authors = [
+    15→    { name = "Dagster Labs", email = "hello@dagsterlabs.com" }
+    16→]
+    17→requires-python = "&gt;=3.11"
+    18→dependencies = [
+    19→    "anthropic&gt;=0.40.0",
+    20→    "click&gt;=8.1.7",
+    21→    "erk-shared",
+    22→    "erk-statusline",
+    23→    "packaging&gt;=21.0",
+    24→    "pathspec&gt;=0.12.0",
+    25→    "pydantic&gt;=2.0",
+    26→    "pyyaml&gt;=6.0",
+    27→    "python-frontmatter&gt;=1.0.0",
+    28→    "rich&gt;=13.0",
+    29→    "tomlkit&gt;=0.12.0",
+    30→    "tomli&gt;=2.0",
+
+... [109 lines omitted] ...
+
+   105→    "E",   # pycodestyle errors
+   131→filterwarnings = [
+   132→    "ignore:codecs.open\\(\\) is deprecated:DeprecationWarning:frontmatter",
+  </tool_result>
+  <tool_result tool="toolu_011g5n9BkXqUWafCK3Ff9hf8">
+     1→"""CodeReviewsSystemCapability - unified code review workflow infrastructure.
+     2→
+     3→This capability installs the GitHub Actions workflow infrastructure that enables
+     4→convention-based code reviews. Individual review definitions are installed
+     5→separately via review-* capabilities.
+     6→
+     7→Installs:
+     8→- .github/workflows/code-reviews.yml (unified workflow)
+     9→- .github/actions/setup-claude-code/ (Claude Code binary installer)
+    10→- .github/actions/setup-claude-erk/ (erk tool installer)
+    11→- Creates empty .erk/reviews/ directory
+    12→"""
+    13→
+    14→import shutil
+    15→from dataclasses import dataclass
+    16→from functools import cache
+    17→from pathlib import Path
+    18→from typing import Literal
+    19→
+    20→from erk.artifacts.paths import get_bundled_github_dir
+    21→from erk.artifacts.state import add_installed_capability, remove_installed_capability
+    22→from erk.core.capabilities.base import (
+    23→    Capability,
+    24→    CapabilityArtifact,
+    25→    CapabilityResult,
+    26→    CapabilityScope,
+    27→    ManagedArtifact,
+    28→)
+    29→from erk_shared.context.types import AgentBackend
+    30→
+
+... [215 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01FooBftbDXK7j6A2bHxK31X">
+# Convention-based code reviews
+# Add a new review by dropping a markdown file in .erk/reviews/
+name: code-reviews
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+jobs:
+  discover:
+    if: vars.CLAUDE_ENABLED != 'false' &amp;&amp; github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.discover.outputs.matrix }}
+      has_reviews: ${{ steps.discover.outputs.has_reviews }}
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Check local review marker
+        id: check_local_review
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          MARKER="&lt;!-- erk:local-review-passed:${HEAD_SHA} --&gt;"
+          PR_BODY=$(gh pr view ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} --json body -q .body)
+
+... [97 lines omitted] ...
+
+            echo "Discovery failed"
+  </tool_result>
+  <assistant>I now have a clear picture of the current state. Let me create the todo list and start implementing.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="15840" cache_read_input_tokens="30618" cache_creation="{'ephemeral_5m_input_tokens': 15840, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01M8nu6asLL4aYDTZNi68HFW">
+    <param name="todos">[{'content': 'Create .github/workflows/code-reviews.yml as reusable workflow (workflow_cal...[truncated 908 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="15840" cache_read_input_tokens="30618" cache_creation="{'ephemeral_5m_input_tokens': 15840, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01M8nu6asLL4aYDTZNi68HFW">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01GDHYzNpdJzyz7of4cY5WZG">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="411" cache_read_input_tokens="46458" cache_creation="{'ephemeral_5m_input_tokens': 411, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GDHYzNpdJzyz7of4cY5WZG">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01Pomn2UCE3Q8okzJhQNpwr6">
+    <param name="todos">[{'content': 'Create .github/workflows/code-reviews.yml as reusable workflow (workflow_cal...[truncated 811 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="172" cache_read_input_tokens="46869" cache_creation="{'ephemeral_5m_input_tokens': 172, 'ephemeral_1h_input_tokens': 0}" output_tokens="323" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Pomn2UCE3Q8okzJhQNpwr6">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me create the reusable `code-reviews.yml` workflow. Based on the git history at commit `2bbcbfc67`, the original had `on: pull_request`. I need to convert it to `on: workflow_call` with the conditional erk install pattern from the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="47041" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01LvbxnMoAZRDka2uDJmaKZQ">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/code-reviews.yml</param>
+    <param name="content"># Convention-based code reviews (reusable workflow)
+# Called by ci.yml (erk repo) or code-...[truncated 4306 chars]...r-number ${{ github.event.pull_request.number }} \
+            --reviews-dir .erk/reviews
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="47041" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LvbxnMoAZRDka2uDJmaKZQ">
+File created successfully at: /home/runner/work/erk/erk/.github/workflows/code-reviews.yml
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01VJeA4woYqSLj6bKYtiXJHF">
+    <param name="todos">[{'content': 'Create .github/workflows/code-reviews.yml as reusable workflow (workflow_cal...[truncated 813 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1537" cache_read_input_tokens="47406" cache_creation="{'ephemeral_5m_input_tokens': 1537, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VJeA4woYqSLj6bKYtiXJHF">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Write" id="toolu_01AzcibHtGsveq8azNZqG5ZW">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/code-reviews-trigger.yml</param>
+    <param name="content"># Thin trigger for external repos - calls the reusable code-reviews workflow
+name: code-re...[truncated 57 chars]...jobs:
+  code-reviews:
+    uses: ./.github/workflows/code-reviews.yml
+    secrets: inherit
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="48943" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AzcibHtGsveq8azNZqG5ZW">
+File created successfully at: /home/runner/work/erk/erk/.github/workflows/code-reviews-trigger.yml
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01FvLwHRQu51gg1sD8uMQ4Lx">
+    <param name="todos">[{'content': 'Create .github/workflows/code-reviews.yml as reusable workflow (workflow_cal...[truncated 815 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="211" cache_read_input_tokens="49308" cache_creation="{'ephemeral_5m_input_tokens': 211, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FvLwHRQu51gg1sD8uMQ4Lx">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now I need to replace the inline `discover-reviews` and `review` jobs in `ci.yml` (lines 479-598) with a single `uses:` call to the reusable workflow.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="49519" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01LK36EMA7NDCTYBgP8HagMD">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/ci.yml</param>
+    <param name="old_string">  # === Code Reviews (downstream of fix-formatting) ===
+  discover-reviews:
+    needs: [ch...[truncated 4015 chars]...pr-number ${{ github.event.pull_request.number }} \
+            --reviews-dir .erk/reviews</param>
+    <param name="new_string">  # === Code Reviews (reusable workflow, downstream of fix-formatting) ===
+  code-reviews:...[truncated 236 chars]...utputs.skip == 'false'
+    uses: ./.github/workflows/code-reviews.yml
+    secrets: inherit</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="49519" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="1534" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LK36EMA7NDCTYBgP8HagMD">
+The file /home/runner/work/erk/erk/.github/workflows/ci.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01UzcUZnR3vGu9X7PKV4yNXT">
+    <param name="todos">[{'content': 'Create .github/workflows/code-reviews.yml as reusable workflow (workflow_cal...[truncated 817 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1572" cache_read_input_tokens="49884" cache_creation="{'ephemeral_5m_input_tokens': 1572, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UzcUZnR3vGu9X7PKV4yNXT">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now update `pyproject.toml` to add the force-include entries for both workflow files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="51456" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01Ds474U2n9NXzSMVk1q9NRq">
+    <param name="file_path">/home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="old_string">".github/workflows/pr-rebase.yml" = "erk/data/github/workflows/pr-rebase.yml"</param>
+    <param name="new_string">".github/workflows/pr-rebase.yml" = "erk/data/github/workflows/pr-rebase.yml"
+# Convention...[truncated 93 chars]...workflows/code-reviews-trigger.yml" = "erk/data/github/workflows/code-reviews-trigger.yml"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="51456" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="257" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ds474U2n9NXzSMVk1q9NRq">
+The file /home/runner/work/erk/erk/pyproject.toml has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_012XKPuNLr7gkjPCoHFqNKq3">
+    <param name="todos">[{'content': 'Create .github/workflows/code-reviews.yml as reusable workflow (workflow_cal...[truncated 819 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="293" cache_read_input_tokens="51821" cache_creation="{'ephemeral_5m_input_tokens': 293, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012XKPuNLr7gkjPCoHFqNKq3">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now update `CodeReviewsSystemCapability` to add the trigger file. I need to add it to `_get_installable_items()`, `artifacts`, and `managed_artifacts`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="52114" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_019wGDCD9nw54CPvt9YDAvXU">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/code_reviews_system.py</param>
+    <param name="old_string">        InstallableItem(
+            source_path="workflows/code-reviews.yml",
+           ...[truncated 26 chars]...ml",
+            item_type="file",
+            display_name="code-reviews.yml",
+        ),</param>
+    <param name="new_string">        InstallableItem(
+            source_path="workflows/code-reviews.yml",
+           ...[truncated 277 chars]...         item_type="file",
+            display_name="code-reviews-trigger.yml",
+        ),</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="52114" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019wGDCD9nw54CPvt9YDAvXU">
+The file /home/runner/work/erk/erk/src/erk/capabilities/code_reviews_system.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `artifacts` property:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="390" cache_read_input_tokens="52479" cache_creation="{'ephemeral_5m_input_tokens': 390, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_015c17dBg7acH4R3TUUMLjtf">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/code_reviews_system.py</param>
+    <param name="old_string">            CapabilityArtifact(
+                path=".github/workflows/code-reviews.yml",...[truncated 34 chars]...            CapabilityArtifact(
+                path=".github/actions/setup-claude-code/",</param>
+    <param name="new_string">            CapabilityArtifact(
+                path=".github/workflows/code-reviews.yml",...[truncated 186 chars]...            CapabilityArtifact(
+                path=".github/actions/setup-claude-code/",</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="390" cache_read_input_tokens="52479" cache_creation="{'ephemeral_5m_input_tokens': 390, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015c17dBg7acH4R3TUUMLjtf">
+The file /home/runner/work/erk/erk/src/erk/capabilities/code_reviews_system.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the `managed_artifacts` property:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="52869" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_017WzBvTAhe5d1tXsoyxhAcg">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/code_reviews_system.py</param>
+    <param name="old_string">            ManagedArtifact(name="code-reviews", artifact_type="workflow"),
+            ManagedArtifact(name="setup-claude-code", artifact_type="action"),</param>
+    <param name="new_string">            ManagedArtifact(name="code-reviews", artifact_type="workflow"),
+            Ma...[truncated 38 chars]...workflow"),
+            ManagedArtifact(name="setup-claude-code", artifact_type="action"),</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="52869" cache_creation="{'ephemeral_5m_input_tokens': 334, 'ephemeral_1h_input_tokens': 0}" output_tokens="240" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017WzBvTAhe5d1tXsoyxhAcg">
+The file /home/runner/work/erk/erk/src/erk/capabilities/code_reviews_system.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update the docstrings to reflect the trigger file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="536" cache_read_input_tokens="53203" cache_creation="{'ephemeral_5m_input_tokens': 536, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01VXVKEK5d5DaHvPCsWPgcAE">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/code_reviews_system.py</param>
+    <param name="old_string">"""CodeReviewsSystemCapability - unified code review workflow infrastructure.
+
+This capabi...[truncated 308 chars]...actions/setup-claude-erk/ (erk tool installer)
+- Creates empty .erk/reviews/ directory
+"""</param>
+    <param name="new_string">"""CodeReviewsSystemCapability - unified code review workflow infrastructure.
+
+This capabi...[truncated 388 chars]...actions/setup-claude-erk/ (erk tool installer)
+- Creates empty .erk/reviews/ directory
+"""</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="536" cache_read_input_tokens="53203" cache_creation="{'ephemeral_5m_input_tokens': 536, 'ephemeral_1h_input_tokens': 0}" output_tokens="391" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VXVKEK5d5DaHvPCsWPgcAE">
+The file /home/runner/work/erk/erk/src/erk/capabilities/code_reviews_system.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_017YBWB9BavmNsVnS8tTzKfZ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/capabilities/code_reviews_system.py</param>
+    <param name="old_string">    """GitHub Actions infrastructure for convention-based code reviews.
+
+    Installs:
+   ...[truncated 131 chars]...setup-claude-erk/ (erk tool installer)
+    - Creates empty .erk/reviews/ directory
+    """</param>
+    <param name="new_string">    """GitHub Actions infrastructure for convention-based code reviews.
+
+    Installs:
+   ...[truncated 215 chars]...setup-claude-erk/ (erk tool installer)
+    - Creates empty .erk/reviews/ directory
+    """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="436" cache_read_input_tokens="53739" cache_creation="{'ephemeral_5m_input_tokens': 436, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017YBWB9BavmNsVnS8tTzKfZ">
+The file /home/runner/work/erk/erk/src/erk/capabilities/code_reviews_system.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_016VP6F7xakAqWTBWbp9RE8b">
+    <param name="todos">[{'content': 'Create .github/workflows/code-reviews.yml as reusable workflow (workflow_cal...[truncated 821 chars]...ification'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="617" cache_read_input_tokens="54175" cache_creation="{'ephemeral_5m_input_tokens': 617, 'ephemeral_1h_input_tokens': 0}" output_tokens="323" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016VP6F7xakAqWTBWbp9RE8b">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me verify the changes look correct by reading the modified files, and then check for any tests related to the capability.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="54792" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01UCfX9kiU4S6GLAz4y8F8Q3">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/ci.yml</param>
+    <param name="offset">475</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="54792" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01C9nprVvcra7DCL7PWbHkD5">
+    <param name="pattern">code_reviews_system|CodeReviewsSystem</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="365" cache_read_input_tokens="54792" cache_creation="{'ephemeral_5m_input_tokens': 365, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UCfX9kiU4S6GLAz4y8F8Q3">
+   475→          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+   476→          GH_TOKEN: ${{ github.token }}
+   477→        run: erk exec ci-generate-summaries --run-id "${{ github.run_id }}"
+   478→
+   479→  # === Code Reviews (reusable workflow, downstream of fix-formatting) ===
+   480→  code-reviews:
+   481→    needs: [check-submission, fix-formatting]
+   482→    if: &gt;-
+   483→      vars.CLAUDE_ENABLED != 'false' &amp;&amp;
+   484→      github.event.pull_request.draft != true &amp;&amp;
+   485→      !contains(github.event.pull_request.labels.*.name, 'erk-plan-review') &amp;&amp;
+   486→      needs.check-submission.outputs.skip == 'false'
+   487→    uses: ./.github/workflows/code-reviews.yml
+   488→    secrets: inherit
+   489→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01C9nprVvcra7DCL7PWbHkD5">
+Found 2 files
+tests/unit/core/capabilities/test_code_reviews_system.py
+tests/unit/core/capabilities/test_review_capability.py
+  </tool_result>
+  <assistant>There are tests for the capability. Let me read the test file to see if it needs updating.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="630" cache_read_input_tokens="55157" cache_creation="{'ephemeral_5m_input_tokens': 630, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01E3wJxF6zvvkT5pP9DCTmx3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/capabilities/test_code_reviews_system.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="630" cache_read_input_tokens="55157" cache_creation="{'ephemeral_5m_input_tokens': 630, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01E3wJxF6zvvkT5pP9DCTmx3">
+     1→"""Tests for CodeReviewsSystemCapability.
+     2→
+     3→Tests the unified code reviews workflow infrastructure installation.
+     4→"""
+     5→
+     6→from pathlib import Path
+     7→
+     8→from erk.capabilities.code_reviews_system import CodeReviewsSystemCapability
+     9→
+    10→
+    11→def test_name_is_code_reviews_system() -&gt; None:
+    12→    """Test capability name."""
+    13→    capability = CodeReviewsSystemCapability()
+    14→    assert capability.name == "code-reviews-system"
+    15→
+    16→
+    17→def test_description_mentions_code_reviews() -&gt; None:
+    18→    """Test description is informative."""
+    19→    capability = CodeReviewsSystemCapability()
+    20→    assert "code review" in capability.description.lower()
+    21→
+    22→
+    23→def test_scope_is_project() -&gt; None:
+    24→    """Test capability is project-scoped."""
+    25→    capability = CodeReviewsSystemCapability()
+    26→    assert capability.scope == "project"
+    27→
+    28→
+    29→def test_is_installed_returns_false_when_no_repo_root() -&gt; None:
+    30→    """Test is_installed returns False when repo_root is None."""
+
+... [117 lines omitted] ...
+  </tool_result>
+  <assistant>The tests at lines 121-141 check `artifacts` and `managed_artifacts`. I need to update them to also check for the trigger file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2175" cache_read_input_tokens="55787" cache_creation="{'ephemeral_5m_input_tokens': 2175, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01DCtsGHcW3Uq3RETX9baMZg">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/capabilities/test_code_reviews_system.py</param>
+    <param name="old_string">def test_artifacts_lists_all_items() -&gt; None:
+    """Test artifacts includes workflow, act...[truncated 683 chars]..."setup-claude-code", "action") in names
+    assert ("setup-claude-erk", "action") in names</param>
+    <param name="new_string">def test_artifacts_lists_all_items() -&gt; None:
+    """Test artifacts includes workflows, ac...[truncated 807 chars]..."setup-claude-code", "action") in names
+    assert ("setup-claude-erk", "action") in names</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2175" cache_read_input_tokens="55787" cache_creation="{'ephemeral_5m_input_tokens': 2175, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DCtsGHcW3Uq3RETX9baMZg">
+The file /home/runner/work/erk/erk/tests/unit/core/capabilities/test_code_reviews_system.py has been updated successfully.
+  </tool_result>
+  <assistant>I should also update the uninstall test to include the trigger file, since uninstall should now also remove it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="955" cache_read_input_tokens="57962" cache_creation="{'ephemeral_5m_input_tokens': 955, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01KMJjjGBjjF7jssRwURHWqX">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/core/capabilities/test_code_reviews_system.py</param>
+    <param name="old_string">def test_uninstall_removes_workflow(tmp_path: Path) -&gt; None:
+    """Test uninstall removes...[truncated 367 chars]...True
+    assert "code-reviews.yml" in result.message
+    assert not workflow_file.exists()</param>
+    <param name="new_string">def test_uninstall_removes_workflows(tmp_path: Path) -&gt; None:
+    """Test uninstall remove...[truncated 536 chars]... result.message
+    assert not workflow_file.exists()
+    assert not trigger_file.exists()</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="955" cache_read_input_tokens="57962" cache_creation="{'ephemeral_5m_input_tokens': 955, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KMJjjGBjjF7jssRwURHWqX">
+The file /home/runner/work/erk/erk/tests/unit/core/capabilities/test_code_reviews_system.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me also check if there's a `post-plan-implement-ci.md` hook and run CI. Let me check for the hook first and then run the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="575" cache_read_input_tokens="58917" cache_creation="{'ephemeral_5m_input_tokens': 575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01JHmZNJWqo9r26f9aXxoPTL">
+    <param name="pattern">.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="575" cache_read_input_tokens="58917" cache_creation="{'ephemeral_5m_input_tokens': 575, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JHmZNJWqo9r26f9aXxoPTL">
+/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RhAJfJK2k8jARsqLjetCyf">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="397" cache_read_input_tokens="59492" cache_creation="{'ephemeral_5m_input_tokens': 397, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RhAJfJK2k8jARsqLjetCyf">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_012KF2TS8xeFVYoSEBbTrbso">
+    <param name="skill">ci-iteration</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="229" cache_read_input_tokens="59889" cache_creation="{'ephemeral_5m_input_tokens': 229, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012KF2TS8xeFVYoSEBbTrbso">
+Launching skill: ci-iteration
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/ci-iteration
+
+# CI Iteration
+
+## Overview
+
+Run the specified CI target and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
+
+## Sub-Agent Policy
+
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  &lt;- MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+**FORBIDDEN**:
+
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
+- Giving sub-agents prompts like "fix issues" or "iterate until passing"
+
+**REQUIRED**:
+
+- Sub-agents run ONE command and report results
+- Parent agent decides what to fix based on reports
+
+## Core Workflow
+
+### 1. Initial Run
+
+Use the devrun agent to run the specified make target from the repository root:
+
+```
+Task tool with:
+- subagent_type: devrun
+- description: "Run [make target] from repo root"
+- prompt: "Change to repository root and execute: [make target]"
+```
+
+### 2. Parse Failures
+
+Analyze the output to identify which check(s) failed:
+
+- **Ruff lint failures**: "ruff check" errors
+- **Format failures**: "ruff format --check" or files needing reformatting
+- **Prettier failures**: Markdown files needing formatting
+- **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
+- **ty failures**: Type errors with file paths and line numbers
+- **Test failures**: pytest failures with test names and assertion errors
+
+### 3. Apply Targeted Fixes
+
+Based on failure type, apply appropriate fixes:
+
+| Failure Type | Fix Command                                 |
+| ------------ | ------------------------------------------- |
+| Ruff lint    | `make fix` via devrun                       |
+| Ruff format  | `make format` via devrun                    |
+| Prettier     | `make prettier` via devrun                  |
+| Sync-Kit     | `erk sync` directly                         |
+| MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
+| ty           | Edit files to fix type annotations          |
+| Tests        | Read and edit source/test files             |
+
+### 4. Verify and Repeat
+
+After applying fixes, run the make target again via devrun. Continue the cycle: run -&gt; identify failures -&gt; fix -&gt; verify.
+
+## Iteration Control
+
+**Safety Limits:**
+
+- **Maximum iterations**: 10 attempts
+- **Stuck detection**: If the same error appears 3 times in a row, stop
+- **Progress tracking**: Use TodoWrite to show iteration progress
+
+## Progress Reporting
+
+Use TodoWrite to track progress:
+
+```
+Iteration 1: Fixing lint errors
+Iteration 2: Fixing format errors
+Iteration 3: Fixing type errors in src/erk/cli/commands/switch.py
+Iteration 4: All checks passed
+```
+
+## When to Stop
+
+**SUCCESS**: Stop when the make target exits with code 0 (all checks passed)
+
+**STUCK**: Stop and report to user if:
+
+1. You've completed 10 iterations without success
+2. The same error persists after 3 fix attempts
+3. You encounter an error you cannot automatically fix
+
+## Reporting Formats
+
+### Success Format
+
+```markdown
+## Finalization Status: SUCCESS
+
+All CI checks passed after N iteration(s):
+
+(check) **Lint (ruff check)**: PASSED
+
+(check) **Format (ruff format --check)**: PASSED
+
+(check) **Prettier**: PASSED
+
+(check) **AGENTS.md Standard (md-check)**: PASSED
+
+(check) **ty**: PASSED
+
+(check) **Tests**: PASSED
+
+(check) **Sync-Kit (erk check)**: PASSED
+
+The code is ready for commit/PR.
+```
+
+**IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
+
+### Stuck Format
+
+```markdown
+## Finalization Status: STUCK
+
+I was unable to resolve the following issue after N attempts:
+
+**Check**: [lint/format/prettier/md-check/ty/test]
+
+**Error**:
+[Exact error message]
+
+**File**: [file path if applicable]
+
+**Attempted Fixes**:
+
+1. [What you tried first]
+2. [What you tried second]
+3. [What you tried third]
+
+**Next Steps**:
+[Suggest what needs to be done manually]
+```
+
+## Guidelines
+
+1. **Be systematic**: Fix one type of error at a time
+2. **Run full CI**: Always run the full make target, not individual checks
+3. **Use devrun agent**: Always use the Task tool with devrun agent for ALL make commands
+4. **Run from repo root**: Always ensure make commands execute from repository root
+5. **Track progress**: Use TodoWrite for every iteration
+6. **Don't guess**: Read files before making changes
+7. **Follow standards**: Adhere to AGENTS.md coding standards
+8. **Fail gracefully**: Report clearly when stuck
+9. **Be efficient**: Use targeted fixes (don't reformat everything for one lint error)
+
+## Example Flow
+
+```
+Iteration 1:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 5 lint errors, 2 files need formatting
+- Fix: Use Task tool with devrun agent to run make fix, then make format from repo root
+- Result: 3 lint errors remain
+
+Iteration 2:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 3 lint errors (imports)
+- Fix: Edit files to fix import issues
+- Result: All lint/format pass, 2 type errors
+
+Iteration 3:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 2 ty errors in switch.py:45 and switch.py:67
+- Fix: Add type annotations
+- Result: All checks pass
+
+SUCCESS
+```
+
+## Important Reminders
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <assistant>
+
+Let me run `make fast-ci` via the devrun agent.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="1685" cache_read_input_tokens="60118" cache_creation="{'ephemeral_5m_input_tokens': 1685, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01Jq6n2xG3yZaiU2egg8yKRz">
+    <param name="description">Run make fast-ci</param>
+    <param name="prompt">Run `make fast-ci` from the repository root /home/runner/work/erk/erk and report results. Do NOT fix anything, just report what passes and what fails.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1685" cache_read_input_tokens="60118" cache_creation="{'ephemeral_5m_input_tokens': 1685, 'ephemeral_1h_input_tokens': 0}" output_tokens="149" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Jq6n2xG3yZaiU2egg8yKRz">
+## make fast-ci Results
+
+**Status: FAILED**
+
+### Summary
+The fast-ci target ran multiple checks with mostly successful results, but **one test failure** caused the overall failure:
+
+### Detailed Results
+
+**Passed:**
+- Linting (ruff): PASSED
+- Format Check: PASSED (1614 files already formatted)
+- Markdown Check: PASSED
+- Exec Reference Check: PASSED
+- Type checking (ty): PASSED
+- Unit Tests (erk-dev): PASSED (136 passed)
+- Unit Tests (erk-statusline): PASSED (115 passed)
+- Unit Tests (erk-mcp): PASSED (24 tests)
+
+**Prettier Warning (non-blocking):**
+- Code style issues found in 2 files:
+  - `docs/learned/integrations/github-review-decision.md`
+  - `docs/learned/tui/status-indicators.md`
+
+**Failed:**
+- Unit Tests (erk): **1 FAILED, 5644 PASSED**
+
+### Test Failure Details
+
+**File:** `/home/runner/work/erk/erk/tests/unit/workflows/test_workflow_names.py`
+
+... [10 lines omitted] ...
+
+**Error:** Workflow name/filename mismatch:
+  </tool_result>
+  <assistant>
+
+One test failure: the workflow name in `code-reviews-trigger.yml` must match the filename. Let me fix it.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="812" cache_read_input_tokens="61803" cache_creation="{'ephemeral_5m_input_tokens': 812, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01T2E6pmURmnUKKFrLKsv4sn">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/code-reviews-trigger.yml</param>
+    <param name="old_string">name: code-reviews</param>
+    <param name="new_string">name: code-reviews-trigger</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="812" cache_read_input_tokens="61803" cache_creation="{'ephemeral_5m_input_tokens': 812, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01T2E6pmURmnUKKFrLKsv4sn">
+The file /home/runner/work/erk/erk/.github/workflows/code-reviews-trigger.yml has been updated successfully.
+  </tool_result>
+  <assistant>Also need to fix the prettier issues on those 2 docs files. Let me run prettier and then re-run fast-ci.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="62615" cache_creation="{'ephemeral_5m_input_tokens': 198, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01EyAskmoCS6eCNKDPBcWFvg">
+    <param name="description">Run make prettier then fast-ci</param>
+    <param name="prompt">Run `make prettier` from the repository root /home/runner/work/erk/erk first, then run `make fast-ci` and report the results. Do NOT fix anything, just report what passes and what fails.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="62615" cache_creation="{'ephemeral_5m_input_tokens': 198, 'ephemeral_1h_input_tokens': 0}" output_tokens="172" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EyAskmoCS6eCNKDPBcWFvg">
+## Results
+
+### make prettier: **PASSED**
+
+All markdown files are already formatted correctly with Prettier. No changes needed.
+
+### make fast-ci: **PASSED**
+
+All components of the fast CI suite passed:
+
+- **Lint**: All checks passed
+- **Format Check**: 1614 files already formatted
+- **Prettier Check**: All matched files use Prettier code style
+- **Markdown Check**: OK
+- **Exec Reference Check**: OK (.claude/skills/erk-exec/reference.md is up to date)
+- **Type checking (ty)**: All checks passed
+- **Unit Tests (erk)**: 5645 passed in 12.23s
+- **Tests (erk-dev)**: 136 passed in 4.21s
+- **Tests (erk-statusline)**: 115 passed in 0.76s
+- **Tests (erk-mcp)**: 24 passed (with AGENTS.md validation)
+- **CLAUDE.md validation**: PASSED - All files properly paired (19 files checked, 0 violations)
+
+The repository is in good state with all checks passing.
+agentId: aad5a7a (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All CI checks pass. Now let me clean up impl context and submit the PR.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="718" cache_read_input_tokens="62813" cache_creation="{'ephemeral_5m_input_tokens': 718, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01CFaaNr5jgMeQn7r91pSX2e">
+    <param name="todos">[{'content': 'Create .github/workflows/code-reviews.yml as reusable workflow (workflow_cal...[truncated 823 chars]...ation'}, {'content': 'Submit PR', 'status': 'in_progress', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="718" cache_read_input_tokens="62813" cache_creation="{'ephemeral_5m_input_tokens': 718, 'ephemeral_1h_input_tokens': 0}" output_tokens="341" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CFaaNr5jgMeQn7r91pSX2e">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Syn21RMWLw1F8obago5cqW">
+    <param name="command">erk exec impl-signal ended --session-id "unknown" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="385" cache_read_input_tokens="63531" cache_creation="{'ephemeral_5m_input_tokens': 385, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01RC7i4V5n2tVp34YLPz8525">
+    <param name="command">erk exec upload-impl-session --session-id "unknown" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="385" cache_read_input_tokens="63531" cache_creation="{'ephemeral_5m_input_tokens': 385, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Syn21RMWLw1F8obago5cqW">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8814
+}
+  </tool_result>
+</session>

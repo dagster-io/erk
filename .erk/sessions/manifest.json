@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "plan_id": 8814,
+  "sessions": [
+    {
+      "session_id": "unknown",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-06T04:03:31.411576+00:00",
+      "files": [
+        "impl-unknown-3f7de2c5-e2bb-4b73-9e39-b5ba52cf77bc-part1.xml",
+        "impl-unknown-3f7de2c5-e2bb-4b73-9e39-b5ba52cf77bc-part2.xml",
+        "impl-unknown-3f7de2c5-e2bb-4b73-9e39-b5ba52cf77bc-part3.xml"
+      ]
+    }
+  ]
+}
