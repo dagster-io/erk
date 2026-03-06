@@ -1,0 +1,1071 @@
+<session>
+  <meta branch="plnd/fix-doctor-warning-allowli-03-06-1023" />
+  <meta model="claude-opus-4-6" />
+  <user>whats a systematic fix to the circular dep in src/erk/core/context.py added in this PR 
+
+
+    # 13. Create health check runner (inline import: circular dependency with health_checks)
+
+    from erk.core.health_checks.runner import RealHealthCheckRunner
+
+Resolved by Nick Schrock
+on
+line 674
+
+Reopen
+
+
+
+
+    health_check_runner = RealHealthCheckRunner()</user>
+  <usage input_tokens="3" cache_creation_input_tokens="15355" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15355}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01PiMwAriSP9KwNnV6vSfjFm">
+    <param name="query">select:Agent,Read</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15355" cache_read_input_tokens="0" output_tokens="142" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15355, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01PiMwAriSP9KwNnV6vSfjFm">
+
+  </tool_result>
+  <assistant>
+
+Let me explore the circular dependency structure first.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3010" cache_read_input_tokens="15355" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3010}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01Qqx4ejt97eJ75xgubgU5jd">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore circular dep in context.py</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic. Read relevant ...[truncated 905 chars]...ndled in the codebase (e.g., gateway ABCs)
+
+Be thorough - trace every import in the chain.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3010" cache_read_input_tokens="15355" output_tokens="407" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3010, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Qqx4ejt97eJ75xgubgU5jd">
+Perfect! Now I have all the information I need. Let me create a comprehensive analysis document.
+
+## Circular Dependency Analysis Report
+
+Based on my thorough investigation of the codebase, I've traced the complete circular dependency chain and identified several key findings.
+
+### The Circular Dependency Chain
+
+**Full path of the cycle:**
+
+```
+src/erk/core/context.py (line 21-28)
+  ↓ imports real implementations
+src/erk/core/codex_prompt_executor.py
+src/erk/core/prompt_executor.py
+src/erk/core/completion.py
+src/erk/core/script_writer.py
+src/erk/core/services/objective_list_service.py
+src/erk/core/services/plan_list_service.py
+src/erk/core/shell.py
+  ↓
+src/erk/core/health_checks/__init__.py (line 37)
+  ↓ imports at module load time
+from erk.core.context import ErkContext
+  ↓ IMPORT CONFLICT HERE
+src/erk/core/health_checks/runner.py (line 16, TYPE_CHECKING guard)
+  ↓ receives ErkContext from __init__.py
+  ↓
+CYCLE COMPLETES → context.py can't import health_checks.runner at top level
+```
+
+... [125 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="21076" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21076}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good analysis. Let me verify a few key files to confirm the dependency chain and existing patterns.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="21076" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21076}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JWXSPDdYUUoi3swic73Bzn">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/core/health_checks/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21076" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21076}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JWXSPDdYUUoi3swic73Bzn">
+     1→"""Health check implementations for erk doctor command.
+     2→
+     3→This module provides diagnostic checks for erk setup, including
+     4→CLI availability, repository configuration, and Claude settings.
+     5→
+     6→Submodules:
+     7→    models                    - CheckResult dataclass
+     8→    erk_version               - check_erk_version
+     9→    required_tool_version     - check_required_tool_version
+    10→    claude_cli                - check_claude_cli
+    11→    graphite_cli              - check_graphite_cli
+    12→    github_cli                - check_github_cli
+    13→    github_auth               - check_github_auth
+    14→    workflow_permissions       - check_workflow_permissions
+    15→    erk_queue_pat_secret      - check_erk_queue_pat_secret
+    16→    anthropic_api_secret      - check_anthropic_api_secret
+    17→    uv_version                - check_uv_version
+    18→    hooks_disabled            - check_hooks_disabled
+    19→    statusline_configured     - check_statusline_configured
+    20→    gitignore_entries         - check_gitignore_entries
+    21→    post_plan_implement_ci_hook - check_post_plan_implement_ci_hook
+    22→    post_init_hook            - check_post_init_hook
+    23→    legacy_prompt_hooks       - check_legacy_prompt_hooks
+    24→    claude_erk_permission     - check_claude_erk_permission
+    25→    plans_repo_labels         - check_plans_repo_labels
+    26→    repository                - check_repository
+    27→    claude_settings           - check_claude_settings
+    28→    user_prompt_hook          - check_user_prompt_hook
+    29→    exit_plan_hook            - check_exit_plan_hook
+    30→    hook_health               - check_hook_health
+
+... [126 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01C7FFmyoXosnHapYjZY2ZgY">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/core/health_checks/runner.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21076" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 21076}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01C7FFmyoXosnHapYjZY2ZgY">
+     1→"""Health check runner abstraction for dependency injection.
+     2→
+     3→Provides an ABC for running health checks, enabling tests to inject
+     4→fake results without monkeypatching.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from typing import TYPE_CHECKING
+    11→
+    12→from erk.core.health_checks import run_all_checks
+    13→from erk.core.health_checks.models import CheckResult
+    14→
+    15→if TYPE_CHECKING:
+    16→    from erk_shared.context.context import ErkContext
+    17→
+    18→
+    19→class HealthCheckRunner(ABC):
+    20→    """Abstract interface for running health checks."""
+    21→
+    22→    @abstractmethod
+    23→    def run_all(self, ctx: ErkContext, *, check_hooks: bool) -&gt; list[CheckResult]: ...
+    24→
+    25→
+    26→class RealHealthCheckRunner(HealthCheckRunner):
+    27→    """Production implementation that delegates to run_all_checks."""
+    28→
+    29→    def run_all(self, ctx: ErkContext, *, check_hooks: bool) -&gt; list[CheckResult]:
+    30→        return run_all_checks(ctx, check_hooks=check_hooks)
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_019i3n4bGm4QEbenqpM9dDzZ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-shared/src/erk_shared/context/context.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21076" cache_read_input_tokens="0" output_tokens="310" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 21076, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019i3n4bGm4QEbenqpM9dDzZ">
+     1→"""Unified context for erk and erk-kits operations.
+     2→
+     3→This module provides ErkContext - the unified context that holds all dependencies
+     4→for erk and erk-kits operations.
+     5→
+     6→The ABCs for erk-specific services (PromptExecutor, ConfigStore, ScriptWriter,
+     7→PlanListService) are defined in erk_shared.core, enabling
+     8→proper type hints without circular imports. Real implementations remain in erk.
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→from dataclasses import dataclass
+    14→from pathlib import Path
+    15→from typing import TYPE_CHECKING
+    16→
+    17→from erk_shared.context.types import (
+    18→    GlobalConfig,
+    19→    LoadedConfig,
+    20→    NoRepoSentinel,
+    21→    RepoContext,
+    22→)
+    23→
+    24→if TYPE_CHECKING:
+    25→    from erk.artifacts.paths import ErkPackageInfo
+    26→    from erk.core.health_checks.runner import HealthCheckRunner
+    27→    from erk_shared.core.objective_list_service import ObjectiveListService
+    28→
+    29→from erk_shared.core.llm_caller import LlmCaller
+    30→from erk_shared.core.plan_list_service import PlanListService
+
+... [237 lines omitted] ...
+
+   135→            RuntimeError: If not in a git repository
+   138→            raise RuntimeError("Not in a git repository")
+   198→            raise RuntimeError("graphite_branch_ops must be set when Graphite is enabled")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="7182" cache_read_input_tokens="21076" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7182}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01F7xZGyh5zPWjUssL1UzQzL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/core/context.py</param>
+    <param name="offset">660</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7182" cache_read_input_tokens="21076" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7182}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F7xZGyh5zPWjUssL1UzQzL">
+   660→    real_claude_installation: ClaudeInstallation = RealClaudeInstallation()
+   661→    real_agent_launcher: AgentLauncher = RealAgentLauncher()
+   662→    real_agent_docs: AgentDocs = RealAgentDocs()
+   663→    if dry_run:
+   664→        real_agent_docs = DryRunAgentDocs(real_agent_docs)
+   665→    prompt_executor = create_prompt_executor(
+   666→        global_config=global_config,
+   667→        console=console,
+   668→    )
+   669→
+   670→    # 12. Create package info
+   671→    package_info = ErkPackageInfo.from_project_dir(cwd)
+   672→
+   673→    # 13. Create health check runner (inline import: circular dependency with health_checks)
+   674→    from erk.core.health_checks.runner import RealHealthCheckRunner
+   675→
+   676→    health_check_runner = RealHealthCheckRunner()
+   677→
+   678→    # 14. Create context with all values
+   679→    return ErkContext(
+   680→        git=git,
+   681→        github=github,
+   682→        github_admin=RealGitHubAdmin(),
+   683→        plan_store=plan_store,
+   684→        graphite=graphite,
+   685→        graphite_branch_ops=graphite_branch_ops,
+   686→        console=console,
+   687→        shell=RealShell(),
+   688→        codespace=RealCodespace(),
+   689→        agent_launcher=real_agent_launcher,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HZKZvfFysqB2k1aaPjveiy">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/core/context.py</param>
+    <param name="offset">1</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7182" cache_read_input_tokens="21076" output_tokens="270" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7182, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HZKZvfFysqB2k1aaPjveiy">
+     1→"""Application context with dependency injection.
+     2→
+     3→This module provides factory functions for erk CLI context creation.
+     4→The unified ErkContext dataclass is defined in erk_shared.context and
+     5→re-exported here for backwards compatibility.
+     6→"""
+     7→
+     8→from __future__ import annotations
+     9→
+    10→import shutil
+    11→from collections.abc import MutableMapping
+    12→from pathlib import Path
+    13→from typing import TYPE_CHECKING, Any, cast
+    14→
+    15→import click
+    16→import tomlkit
+    17→
+    18→# Re-export types from erk_shared.context and erk.artifacts.paths
+    19→from erk.artifacts.paths import ErkPackageInfo as ErkPackageInfo
+    20→from erk.cli.config import load_config, load_local_config, merge_configs_with_local
+    21→from erk.core.codex_prompt_executor import CodexPromptExecutor
+    22→from erk.core.completion import RealCompletion
+    23→from erk.core.prompt_executor import ClaudePromptExecutor
+    24→from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
+    25→from erk.core.script_writer import RealScriptWriter
+    26→from erk.core.services.objective_list_service import RealObjectiveListService
+    27→from erk.core.services.plan_list_service import PlannedPRPlanListService
+    28→from erk.core.shell import RealShell
+    29→
+    30→# Re-export ErkContext from erk_shared for isinstance() compatibility
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have the full picture. Let me look at how other service ABCs are structured in erk_shared.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1388" cache_read_input_tokens="28258" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1388}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01RtDy5FkgVjDgo5vuYnkWHE">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages/erk-shared/src/erk_shared/core/script_writer.py</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1388" cache_read_input_tokens="28258" output_tokens="142" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1388, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RtDy5FkgVjDgo5vuYnkWHE">
+     1→"""Shell activation script writing abstraction - ABC and types.
+     2→
+     3→This module provides ScriptResult and the abstract ScriptWriter interface.
+     4→The real implementation (RealScriptWriter) remains in erk.core.script_writer.
+     5→
+     6→ScriptResult is a self-documenting return type for commands that generate shell
+     7→activation scripts. The key insight is that ScriptResult knows how to output
+     8→itself correctly to the right stream (stdout vs stderr), preventing an entire
+     9→class of shell integration bugs.
+    10→"""
+    11→
+    12→from abc import ABC, abstractmethod
+    13→from dataclasses import dataclass
+    14→from pathlib import Path
+    15→
+    16→
+    17→@dataclass(frozen=True)
+    18→class ScriptResult:
+    19→    """Result of writing an activation script.
+    20→
+  </tool_result>
+  <assistant>Clear pattern. The ABC lives in `erk_shared/core/`, the real implementation stays in `erk/core/`. Now let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="482" cache_read_input_tokens="29646" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 482}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01TGgueEpfdM9LGcLUGHEmXH">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="482" cache_read_input_tokens="29646" output_tokens="110" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 482, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01TGgueEpfdM9LGcLUGHEmXH">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01ANQ1SLiMZFy2EQj3Aent4q">
+    <param name="file_path">/Users/schrockn/.claude/plans/functional-zooming-yao.md</param>
+    <param name="content"># Fix HealthCheckRunner Circular Dependency
+
+## Context
+
+`src/erk/core/context.py` has an ...[truncated 5242 chars]...emaining inline imports for health checks in context.py
+- Verify `ty` type checker passes
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="505" cache_read_input_tokens="30128" output_tokens="1777" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 505, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ANQ1SLiMZFy2EQj3Aent4q">
+File created successfully at: /Users/schrockn/.claude/plans/functional-zooming-yao.md
+  </tool_result>
+  <assistant>Let me verify one thing — whether `CheckResult` has any circular dep issues that would complicate moving the ABC.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1815" cache_read_input_tokens="30633" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1815}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GpYaGqpvNHmJSbDT5TPJdy">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/core/health_checks/models.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1815" cache_read_input_tokens="30633" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1815}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GpYaGqpvNHmJSbDT5TPJdy">
+     1→"""Shared data model for health check results."""
+     2→
+     3→from dataclasses import dataclass
+     4→
+     5→
+     6→@dataclass(frozen=True)
+     7→class CheckResult:
+     8→    """Result of a single health check.
+     9→
+    10→    Attributes:
+    11→        name: Name of the check
+    12→        passed: Whether the check passed
+    13→        message: Human-readable message describing the result
+    14→        details: Optional additional details (e.g., version info)
+    15→        verbose_details: Extended details shown only in verbose mode
+    16→        warning: If True and passed=True, displays warning instead of success
+    17→        info: If True and passed=True, displays info (informational, not success)
+    18→        remediation: Optional command/action to fix a failing check
+    19→    """
+    20→
+    21→    name: str
+    22→    passed: bool
+    23→    message: str
+    24→    details: str | None = None
+    25→    verbose_details: str | None = None
+    26→    warning: bool = False
+    27→    info: bool = False
+    28→    remediation: str | None = None
+    29→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YTAHnZq6bBL1aD1BVKRRUt">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/tests/fakes/health_check_runner.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1815" cache_read_input_tokens="30633" output_tokens="192" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1815, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YTAHnZq6bBL1aD1BVKRRUt">
+     1→"""Fake health check runner for testing."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING
+     6→
+     7→from erk.core.health_checks.models import CheckResult
+     8→from erk.core.health_checks.runner import HealthCheckRunner
+     9→
+    10→if TYPE_CHECKING:
+    11→    from erk_shared.context.context import ErkContext
+    12→
+    13→
+    14→class FakeHealthCheckRunner(HealthCheckRunner):
+    15→    """Test fake that returns pre-configured check results."""
+    16→
+    17→    def __init__(self, *, results: list[CheckResult]) -&gt; None:
+    18→        self._results = results
+    19→
+    20→    def run_all(self, ctx: ErkContext, *, check_hooks: bool) -&gt; list[CheckResult]:
+    21→        return self._results
+    22→
+  </tool_result>
+  <assistant>Good. `CheckResult` in `models.py` is a standalone dataclass with no circular deps. The fake imports the ABC from `runner.py`. Now let me also check if `CheckResult` should move to `erk_shared` or stay — and whether `models.py` is imported by anything in `erk_shared`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3588" cache_read_input_tokens="32448" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3588}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01Ru84G3w74hpBrLca4yq2rF">
+    <param name="query">select:Grep</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3588" cache_read_input_tokens="32448" output_tokens="149" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3588, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01Ru84G3w74hpBrLca4yq2rF">
+
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01JmqZSfZuYbVophyxG3nj7E">
+    <param name="pattern">from erk.core.health_checks.runner import</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1238" cache_read_input_tokens="36036" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1238}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JmqZSfZuYbVophyxG3nj7E">
+src/erk/core/context.py:91:    from erk.core.health_checks.runner import HealthCheckRunner
+src/erk/core/context.py:674:    from erk.core.health_checks.runner import RealHealthCheckRunner
+tests/fakes/health_check_runner.py:8:from erk.core.health_checks.runner import HealthCheckRunner
+packages/erk-shared/src/erk_shared/context/context.py:26:    from erk.core.health_checks.runner import HealthCheckRunner
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01CkT1vbBmt4dKhFVZGNzpKv">
+    <param name="pattern">from erk.core.health_checks.models import</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/packages</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1238" cache_read_input_tokens="36036" output_tokens="238" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1238, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CkT1vbBmt4dKhFVZGNzpKv">
+No files found
+  </tool_result>
+  <assistant>Good — `CheckResult` is not imported in `erk_shared`, so no need to move it. Let me also check line 91 of context.py to understand that other import.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="548" cache_read_input_tokens="37274" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 548}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SEqh5Ti9s24bj9MwT6TFBD">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/src/erk/core/context.py</param>
+    <param name="offset">85</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="548" cache_read_input_tokens="37274" output_tokens="165" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 548, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SEqh5Ti9s24bj9MwT6TFBD">
+    85→from erk_shared.gateway.time.real import RealTime
+    86→from erk_shared.output.output import user_output
+    87→from erk_shared.plan_store.backend import PlanBackend
+    88→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    89→
+    90→if TYPE_CHECKING:
+    91→    from erk.core.health_checks.runner import HealthCheckRunner
+    92→
+    93→
+    94→def create_prompt_executor(
+    95→    *,
+    96→    global_config: GlobalConfig | None,
+    97→    console: Console,
+    98→) -&gt; PromptExecutor:
+    99→    """Select prompt executor based on global configuration.
+  </tool_result>
+  <assistant>Now I have the complete picture. Let me finalize the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="366" cache_read_input_tokens="37822" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 366}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01VuyU1R6PDPq6pr5EsEufRt">
+    <param name="file_path">/Users/schrockn/.claude/plans/functional-zooming-yao.md</param>
+    <param name="content"># Fix HealthCheckRunner Circular Dependency
+
+## Context
+
+`src/erk/core/context.py` line 67...[truncated 3280 chars]...m the import chain `context.py` → `runner.py` → `__init__.py` no longer cycles at runtime
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="366" cache_read_input_tokens="37822" output_tokens="1189" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 366, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VuyU1R6PDPq6pr5EsEufRt">
+The file /Users/schrockn/.claude/plans/functional-zooming-yao.md has been updated successfully.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01LJW7ELNmPmS1vd9df6B7uK">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1325" cache_read_input_tokens="38188" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1325, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01LJW7ELNmPmS1vd9df6B7uK">
+
+  </tool_result>
+  <assistant>
+
+The plan has two parts:
+
+1. **Guard the import** in `health_checks/__init__.py` — add `from __future__ import annotations` and put the `ErkContext` import behind `TYPE_CHECKING`. This breaks the runtime cycle.
+
+2. **Move the ABC to `erk_shared/core/`** — matches how every other service ABC is structured (ScriptWriter, PromptExecutor, etc.). Then update the 4 files that import `HealthCheckRunner` to use the new path, and promote the inline import in `context.py` to a top-level import.
+
+6 files touched, 1 new file created.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="39513" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 738}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_012eK8HrqjkExwSmpPxdpAKK">
+    <param name="plan"># Fix HealthCheckRunner Circular Dependency
+
+## Context
+
+`src/erk/core/context.py` line 67...[truncated 3280 chars]...m the import chain `context.py` → `runner.py` → `__init__.py` no longer cycles at runtime
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="39513" output_tokens="188" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012eK8HrqjkExwSmpPxdpAKK">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/functional-zooming-yao.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix HealthCheckRunner Circular Dependency
+Current context: (wt:erk-slot-04) (br:plnd/fix-doctor-warning-allowli-03-06-1023) (pr:#8847)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/fix-"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id fd943c69-0f50-4df5-92a7-00618bf24c21 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/functional-zooming-yao.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Fix HealthCheckRunner Circular Dependency
+
+## Context
+
+`src/erk/core/context.py` line 674 has an inline import to work around a circular dependency:
+
+```python
+# 13. Create health check runner (inline import: circular dependency with health_checks)
+from erk.core.health_checks.runner import RealHealthCheckRunner
+```
+
+**The cycle:** `context.py` imports many `erk.core.*` modules at top level. If it also imported `runner.py` at top level, `runner.py` imports `run_all_checks` from `health_checks/__init__.py` (line 12), which imports `ErkContext` from `erk.core.context` (line 37) — completing the cycle before `context.py` finishes loading.
+
+## Two-part fix
+
+### Part 1: Guard `ErkContext` import in `health_checks/__init__.py`
+
+The `__init__.py` imports `ErkContext` unconditionally (line 37) but only uses it as a type annotation for `run_all_checks()`. Fix:
+
+**File: `src/erk/core/health_checks/__init__.py`**
+- Add `from __future__ import annotations` at top (makes annotations strings at runtime)
+- Move `from erk.core.context import ErkContext` behind `if TYPE_CHECKING:` guard
+- This breaks the runtime cycle: importing `health_checks` no longer triggers importing `context`
+
+### Part 2: Move ABC to `erk_shared` (matches codebase pattern)
+
+Every other service ABC (ScriptWriter, PromptExecutor, PlanListService, LlmCaller) lives in `erk_shared/core/` while the real impl stays in `erk/core/`. HealthCheckRunner should follow suit.
+
+**File: `packages/erk-shared/src/erk_shared/core/health_check_runner.py`** (new)
+- Move `HealthCheckRunner` ABC here
+- Import `CheckResult` from `erk.core.health_checks.models` behind `TYPE_CHECKING` (it's only used in annotations)
+- Use `TYPE_CHECKING` guard for `ErkContext` (same pattern as other ABCs)
+
+**File: `src/erk/core/health_checks/runner.py`**
+- Remove `HealthCheckRunner` ABC class definition
+- Import ABC from `erk_shared.core.health_check_runner`
+- `RealHealthCheckRunner` stays here
+
+**File: `packages/erk-shared/src/erk_shared/context/context.py`** (line 26)
+- Change `from erk.core.health_checks.runner import HealthCheckRunner` → `from erk_shared.core.health_check_runner import HealthCheckRunner`
+
+**File: `src/erk/core/context.py`**
+- Line 91: Change TYPE_CHECKING import to `from erk_shared.core.health_check_runner import HealthCheckRunner`
+- Line 674: Move `from erk.core.health_checks.runner import RealHealthCheckRunner` to top-level imports, remove inline import comment
+
+**File: `tests/fakes/health_check_runner.py`** (line 8)
+- Change `from erk.core.health_checks.runner import HealthCheckRunner` → `from erk_shared.core.health_check_runner import HealthCheckRunner`
+
+## Verification
+
+- Run `make fast-ci` (unit tests, ty, ruff, prettier)
+- Confirm no inline import remains in context.py for health checks
+- Confirm the import chain `context.py` → `runner.py` → `__init__.py` no longer cycles at runtime
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="819" cache_read_input_tokens="40251" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 819}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01NanCAqtMiKUpQxviZ8FWbV">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="819" cache_read_input_tokens="40251" output_tokens="971" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 819, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01NanCAqtMiKUpQxviZ8FWbV">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01DN8giCBPWtLiG9xxnQkpr6">
+    <param name="questions">[{'question': '📋 Fix HealthCheckRunner Circular Dependency\nCurrent context: (wt:erk-slot-...[truncated 425 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3424" cache_read_input_tokens="41070" output_tokens="241" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3424, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DN8giCBPWtLiG9xxnQkpr6">
+User has answered your questions: "📋 Fix HealthCheckRunner Circular Dependency
+Current context: (wt:erk-slot-04) (br:plnd/fix-doctor-warning-allowli-03-06-1023) (pr:#8847)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_017SRdLdGEBBgughQy9PsCMF">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="462" cache_read_input_tokens="44494" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 462, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_017SRdLdGEBBgughQy9PsCMF">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01NnXptHd78ksbqP9i7BqigX">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="568" cache_read_input_tokens="44956" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 568, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NnXptHd78ksbqP9i7BqigX">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="fd943c69-0f50-4df5-92a7-00618bf24c21" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="fd943c69-0f50-4df5-92a7-00618bf24c21" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "fd943c69-0f50-4df5-92a7-00618bf24c21" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "fd943c69-0f50-4df5-92a7-00618bf24c21" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "fd943c69-0f50-4df5-92a7-00618bf24c21" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "fd943c69-0f50-4df5-92a7-00618bf24c21" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2280" cache_read_input_tokens="45524" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2280}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>**Step 1:** No flags passed — all flags empty.
+
+**Step 2:** Branch slug from title "Fix HealthCheckRunner Circular Dependency": `fix-healthcheck-circular-dep`
+
+**Step 3:** Summary: "Breaks the circular dependency between context.py and health_checks by guarding the ErkContext import in health_checks/__init__.py with TYPE_CHECKING and moving the HealthCheckRunner ABC to erk_shared/core/ to match the existing service ABC pattern."
+
+**Step 4:** Running save command.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2280" cache_read_input_tokens="45524" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2280}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01KxVDbmRFfqbyYzzP5SgWRo">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2280" cache_read_input_tokens="45524" output_tokens="296" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2280, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01KxVDbmRFfqbyYzzP5SgWRo">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01ThuozEeiwX7u3N9szEJuJh">
+    <param name="command">erk exec plan-save --format json --session-id="fd943c69-0f50-4df5-92a7-00618bf24c21" --bra...[truncated 191 chars]... the HealthCheckRunner ABC to erk_shared/core/ to match the existing service ABC pattern."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3535" cache_read_input_tokens="47804" output_tokens="240" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3535, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ThuozEeiwX7u3N9szEJuJh">
+{"success": true, "plan_number": 8852, "plan_url": "https://github.com/dagster-io/erk/pull/8852", "title": "[erk-plan] Fix HealthCheckRunner Circular Dependency", "branch_name": "plnd/fix-healthcheck-circular-d-03-06-1303", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-04/.erk/scratch/sessions/fd943c69-0f50-4df5-92a7-00618bf24c21/plan_snapshots/000001-22387e0c"}
+  </tool_result>
+  <assistant>Plan saved. Now pushing the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="51339" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 402}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019m7Vt6ETDW5Bh1MUVKpN43">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="51339" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 402, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019m7Vt6ETDW5Bh1MUVKpN43">
+SESSION_ID=fd943c69-0f50-4df5-92a7-00618bf24c21
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn--erk-repos-erk-worktrees-erk-slot-04/fd943c69-0f50-4df5-92a7-00618bf24c21.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FRLRaSjFVc3A5FVZCBCxTX">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn--er...[truncated 86 chars]...4df5-92a7-00618bf24c21" --stage planning --source local --plan-id 8852 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="222" cache_read_input_tokens="51741" output_tokens="218" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 222, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FRLRaSjFVc3A5FVZCBCxTX">
+{"uploaded": true, "plan_id": 8852, "session_branch": "async-learn/8852", "session_id": "fd943c69-0f50-4df5-92a7-00618bf24c21", "stage": "planning", "files": ["planning-fd943c69-0f50-4df5-92a7-00618bf24c21-fd943c69-0f50-4df5-92a7-00618bf24c21.xml"]}
+  </tool_result>
+  <assistant>Plan "Fix HealthCheckRunner Circular Dependency" saved as draft PR #8852
+URL: https://github.com/dagster-io/erk/pull/8852</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="349" cache_read_input_tokens="51963" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 349}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01417QfNoyjSHNvhaDGk7X1s">
+    <param name="plan"># Fix HealthCheckRunner Circular Dependency
+
+## Context
+
+`src/erk/core/context.py` line 67...[truncated 3280 chars]...m the import chain `context.py` → `runner.py` → `__init__.py` no longer cycles at runtime
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="349" cache_read_input_tokens="51963" output_tokens="79" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 349, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01417QfNoyjSHNvhaDGk7X1s">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8852 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8852:
+  In current wt:    source "$(erk br co --for-plan 8852 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8852 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8852 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8852 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8852:
+  In current wt:  erk br co --for-plan 8852
+  In new wt:      erk br co --new-slot --for-plan 8852
+
+Dispatch plan #8852:
+  CLI command:    erk pr dispatch 8852
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan #8852 saved. Here are your next steps:
+
+**Implement plan #8852:**
+```
+In current wt:    source "$(erk br co --for-plan 8852 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --for-plan 8852 --script)" &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 8852 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 8852 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout plan #8852:**
+```
+In current wt:  erk br co --for-plan 8852
+In new wt:      erk br co --new-slot --for-plan 8852
+```
+
+**Dispatch plan #8852:**
+```
+CLI command:    erk pr dispatch 8852
+Slash command:  /erk:pr-dispatch
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="667" cache_read_input_tokens="52312" output_tokens="250" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 667, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "fd943c69-0f50-4df5-92a7-00618bf24c21" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>
+
+The most recent plan is #8852. Dispatching it now.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="48917" cache_read_input_tokens="4861" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 48917}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01L8uH28w5nznTt5iAChgV61">
+    <param name="command">erk pr dispatch 8852</param>
+    <param name="description">Dispatch plan #8852 for remote AI implementation</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="48917" cache_read_input_tokens="4861" output_tokens="120" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 48917, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01L8uH28w5nznTt5iAChgV61">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8852...
+
+✓ All 1 plan(s) validated
+
+  #8852: [erk-plan] Fix HealthCheckRunner Circular Dependency
+
+Dispatching PR #8852...
+
+Fetching plan content...
+Syncing branch: plnd/fix-healthcheck-circular-d-03-06-1303
+Committing plan to branch...
+✓ Branch pushed to remote
+
+Dispatching workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+  Waiting for workflow run... (attempt 3/11)
+✓ Workflow dispatched.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WwsP8TSPjU1vN16SyW3YL8">
+    <param name="command">erk exec marker delete --session-id "fd943c69-0f50-4df5-92a7-00618bf24c21" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker for this session</param>
+    <param name="timeout">5000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="472" cache_read_input_tokens="53778" output_tokens="132" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 472, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WwsP8TSPjU1vN16SyW3YL8">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Plan #8852 dispatched for remote implementation.
+
+- **Plan**: https://github.com/dagster-io/erk/pull/8852
+- **Workflow**: https://github.com/dagster-io/erk/actions/runs/22782022828</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="54250" output_tokens="65" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 163, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
