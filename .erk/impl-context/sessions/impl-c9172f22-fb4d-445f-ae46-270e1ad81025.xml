@@ -1,0 +1,2026 @@
+<session>
+  <meta branch="plnd/rebase-gt-restack-tui-03-05-1937" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="c9172f22-fb4d-445f-ae46-270e1ad81025" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="c9172f22-fb4d-445f-ae46-270e1ad81025" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="c9172f22-fb4d-445f-ae46-270e1ad81025" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="c9172f22-fb4d-445f-ae46-270e1ad81025" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="16369" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16369}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Setting up implementation from the current branch.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="16369" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16369}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_013UyaTYuCEsU9vYz4DfJkMo">
+    <param name="query">select:Bash,Read,Skill,Write,Edit,Glob,Grep</param>
+    <param name="max_results">7</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="16369" cache_read_input_tokens="0" output_tokens="171" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 16369, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_013UyaTYuCEsU9vYz4DfJkMo">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01116yhGQvz1ThWcPAMXQrdD">
+    <param name="command">erk exec setup-impl</param>
+    <param name="description">Auto-detect and set up implementation from current branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6415" cache_read_input_tokens="16369" output_tokens="131" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6415, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01116yhGQvz1ThWcPAMXQrdD">
+Found existing impl dir for plan #8811, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/.erk/impl-context/plnd--rebase-gt-restack-tui-03-05-1937", "plan_number": 8811, "plan_url": "https://github.com/dagster-io/erk/pull/8811", "branch": "plnd/rebase-gt-restack-tui-03-05-1937", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8811, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MFGZ77xMG2DFypwpLjuFY9">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/.erk/impl-context/plnd--rebase-gt-restack-tui-03-05-1937/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="22784" output_tokens="110" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 317, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MFGZ77xMG2DFypwpLjuFY9">
+     1→# Plan: Change `erk pr rebase` to use `gt restack` / `git rebase` with Claude TUI fallback
+     2→
+     3→## Context
+     4→
+     5→Currently `erk pr rebase` invokes Claude as a subprocess (`--print` mode with `stream_rebase()`) to handle rebasing non-interactively. The user wants a two-phase approach instead:
+     6→
+     7→1. **Phase 1 — Attempt the rebase mechanically** via `gt restack` (Graphite on) or `git rebase &lt;target&gt;` (Graphite off)
+     8→2. **Phase 2 — If conflicts arise**, launch Claude TUI interactively with `/erk:rebase` so the user can collaborate on resolution in real-time
+     9→
+    10→Key decisions from user:
+    11→- Graphite ON + branch not tracked = **error** (not a fallback to git rebase)
+    12→- Graphite OFF = take a `--target` argument for `git rebase &lt;target&gt;`
+    13→- On success (no conflicts) = print success and exit (no auto-push)
+    14→- On conflict = leave rebase paused, launch Claude TUI
+    15→
+    16→## File to Modify
+    17→
+    18→### `src/erk/cli/commands/pr/rebase_cmd.py`
+    19→
+    20→**New flow:**
+    21→
+    22→```python
+    23→@click.command("rebase")
+    24→@click.option("-d", "--dangerous", is_flag=True, ...)
+    25→@click.option("--target", default=None, help="Target branch for git rebase (non-Graphite only)")
+    26→@click.pass_obj
+    27→def rebase(ctx: ErkContext, *, dangerous: bool, target: str | None) -&gt; None:
+    28→    Ensure.dangerous_flag(ctx, dangerous=dangerous)
+    29→    cwd = ctx.cwd
+    30→    executor = ctx.prompt_executor
+
+... [93 lines omitted] ...
+
+    52→            raise click.ClickException(f"gt restack failed:\n{result.stderr}")
+    96→**Code to remove:** The `stream_rebase` call and its `requires_interactive` / `error_message` result handling
+   118→3. **Graphite ON, branch not tracked**: error message telling user to `gt track`
+   120→5. **Graphite OFF, no target, no in-progress rebase**: error asking for `--target`
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2253" cache_read_input_tokens="23101" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2253}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me read the current implementation and check for related docs.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2253" cache_read_input_tokens="23101" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2253}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019HMihPe8cjQeokcxKnLEvD">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/commands/pr/rebase_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2253" cache_read_input_tokens="23101" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2253}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019HMihPe8cjQeokcxKnLEvD">
+     1→"""Rebase PR onto base branch with AI-powered conflict resolution.
+     2→
+     3→This command rebases the current branch locally using Claude CLI.
+     4→For remote rebase via GitHub Actions, use `erk launch pr-rebase`.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→from erk.cli.ensure import Ensure
+    10→from erk.cli.output import stream_rebase
+    11→from erk.core.context import ErkContext
+    12→
+    13→
+    14→@click.command("rebase")
+    15→@click.option(
+    16→    "-d",
+    17→    "--dangerous",
+    18→    is_flag=True,
+    19→    help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
+    20→)
+    21→@click.pass_obj
+    22→def rebase(ctx: ErkContext, *, dangerous: bool) -&gt; None:
+    23→    """Rebase PR onto base branch with AI-powered conflict resolution.
+    24→
+    25→    Rebases the current branch and resolves any merge conflicts using Claude.
+    26→    Does not require or interact with Graphite stacks.
+    27→
+    28→    Also works when a rebase is already in progress with unresolved conflicts.
+    29→    If you started a rebase manually and hit conflicts you can't resolve, run
+    30→    this command to have Claude pick up where you left off.
+
+... [51 lines omitted] ...
+
+    76→        raise click.ClickException("Semantic conflict requires interactive resolution")
+    78→        raise click.ClickException(result.error_message or "Rebase failed")
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GgwhSRV8fnPZ4oBpxbBhip">
+    <param name="pattern">rebase|graphite</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned</param>
+    <param name="glob">*.md</param>
+    <param name="-i">True</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="head_limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2253" cache_read_input_tokens="23101" output_tokens="307" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2253, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GgwhSRV8fnPZ4oBpxbBhip">
+Found 10 files limit: 10, offset: 0
+docs/learned/tui/tui-command-registration.md
+docs/learned/planning/tripwires.md
+docs/learned/planning/planned-pr-lifecycle.md
+docs/learned/planning/pr-submission-patterns.md
+docs/learned/planning/stacked-plan-branch-rebase.md
+docs/learned/planning/planned-pr-backend.md
+docs/learned/planning/planned-pr-branch-teleport.md
+docs/learned/planning/index.md
+docs/learned/workflows/commit-messages.md
+docs/learned/workflows/git-sync-state-preservation.md
+  </tool_result>
+  <assistant>Let me check the imports and gateway methods I need.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1429" cache_read_input_tokens="25354" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1429}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01UGjwQyEv5GNMEhi1ToJqWG">
+    <param name="pattern">class GraphiteDisabled</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1429" cache_read_input_tokens="25354" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1429}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UGjwQyEv5GNMEhi1ToJqWG">
+docs/learned/architecture/gateway-hierarchy.md:106:class GraphiteDisabled(Graphite):
+packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py:18:class GraphiteDisabledReason(Enum):
+packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py:25:class GraphiteDisabledError(Exception):
+packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py:48:class GraphiteDisabled(Graphite):
+  </tool_result>
+  <tool_use name="Grep" id="toolu_016Ns2jUiUuj8Nu2k7CG2aMC">
+    <param name="pattern">class DryRunGraphite</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1429" cache_read_input_tokens="25354" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1429}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016Ns2jUiUuj8Nu2k7CG2aMC">
+packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/dry_run.py:8:class DryRunGraphiteBranchOps(GraphiteBranchOps):
+packages/erk-shared/src/erk_shared/gateway/graphite/dry_run.py:11:class DryRunGraphite(Graphite):
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01LN1jsRLK916XKXXxzpDius">
+    <param name="pattern">execute_interactive</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/prompt_executor.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1429" cache_read_input_tokens="25354" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1429}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LN1jsRLK916XKXXxzpDius">
+460-
+461-        return result
+462-
+463:    def execute_interactive(
+464-        self,
+465-        *,
+466-        worktree_path: Path,
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01ExxZUi8s56RUPe9aMQBerf">
+    <param name="pattern">def rebase_onto</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1429" cache_read_input_tokens="25354" output_tokens="351" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1429, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ExxZUi8s56RUPe9aMQBerf">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/printing.py-22-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/printing.py-23-    # ============================================================================
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/printing.py-24-    # Mutation Operations (print before delegating)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/printing.py-25-    # ============================================================================
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/printing.py-26-
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/printing.py:27:    def rebase_onto(self, cwd: Path, target_ref: str) -&gt; RebaseResult:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/printing.py-28-        """Rebase onto target ref with printed output."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/printing.py-29-        self._emit(self._format_command(f"git rebase {target_ref}"))
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/printing.py-30-        return self._wrapped.rebase_onto(cwd, target_ref)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/printing.py-31-
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/printing.py-32-    def rebase_continue(self, cwd: Path) -&gt; None:
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/abc.py-24-    # ============================================================================
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/abc.py-25-    # Mutation Operations
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/abc.py-26-    # ============================================================================
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/abc.py-27-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/abc.py-28-    @abstractmethod
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/abc.py:29:    def rebase_onto(self, cwd: Path, target_ref: str) -&gt; RebaseResult:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/abc.py-30-        """Rebase the current branch onto a target ref.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/abc.py-31-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/abc.py-32-        Runs `git rebase &lt;target_ref&gt;` to replay current branch commits on top
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/abc.py-33-        of the target ref.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/abc.py-34-
+--
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/real.py-21-            get_conflicted_files: Function to get list of conflicted files
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/real.py-22-        """
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/real.py-23-        self._get_git_common_dir = get_git_common_dir
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/real.py-24-        self._get_conflicted_files = get_conflicted_files
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/real.py-25-
+packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/real.py:26:    def rebase_onto(self, cwd: Path, target_ref: str) -&gt; RebaseResult:
+
+... [53 lines omitted] ...
+  </tool_result>
+  <assistant>Now let me check the `execute_interactive` signature and the `_is_graphite_enabled` pattern.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5585" cache_read_input_tokens="26783" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5585}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012M4mmTLLZPPB4v6kitepNx">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/prompt_executor.py</param>
+    <param name="offset">463</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5585" cache_read_input_tokens="26783" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5585}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012M4mmTLLZPPB4v6kitepNx">
+   463→    def execute_interactive(
+   464→        self,
+   465→        *,
+   466→        worktree_path: Path,
+   467→        dangerous: bool,
+   468→        command: str,
+   469→        target_subpath: Path | None,
+   470→        model: str | None = None,
+   471→        permission_mode: PermissionMode,
+   472→    ) -&gt; None:
+   473→        """Execute Claude CLI in interactive mode by replacing current process.
+   474→
+   475→        Implementation details:
+   476→        - Verifies Claude CLI is available
+   477→        - Changes to worktree directory (and to subpath if provided)
+   478→        - Builds command arguments with the specified command
+   479→        - Replaces current process using os.execvp
+   480→
+   481→        Note:
+   482→            This function never returns - the process is replaced by Claude CLI.
+   483→
+   484→            The target_subpath is trusted to exist because it was computed from
+   485→            the source worktree's directory structure. Since the new worktree
+   486→            shares git history with the source, the path should exist.
+   487→        """
+   488→        # Verify Claude is available
+   489→        if not self.is_available():
+   490→            raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
+   491→
+   492→        # Change to worktree directory (optionally to subpath)
+
+... [10 lines omitted] ...
+
+   495→        # FileNotFoundError which is the appropriate error.
+  </tool_result>
+  <tool_use name="Grep" id="toolu_013L1zm7fVbGu9KHot1tHjKC">
+    <param name="pattern">_is_graphite_enabled|GraphiteDisabled|DryRunGraphite</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5585" cache_read_input_tokens="26783" output_tokens="286" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5585, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013L1zm7fVbGu9KHot1tHjKC">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/ensure.py-22-import click
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/ensure.py-23-
+src/erk/cli/ensure.py:24:from erk_shared.gateway.graphite.disabled import GraphiteDisabled, GraphiteDisabledError
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/ensure.py-25-from erk_shared.output.output import user_output
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/ensure.py-26-
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/ensure.py-426-        """Ensure Graphite integration is available (enabled and installed).
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/ensure.py-427-
+src/erk/cli/ensure.py:428:        Checks if ctx.graphite is a GraphiteDisabled sentinel, and if so,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/ensure.py-429-        outputs a helpful error message based on why Graphite is unavailable
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/ensure.py-430-        (config disabled vs not installed).
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/ensure.py-443-            &gt;&gt;&gt; ctx.branch_manager.get_parent_branch(repo.root, branch)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/ensure.py-444-        """
+src/erk/cli/ensure.py:445:        if isinstance(ctx.graphite, GraphiteDisabled):
+src/erk/cli/ensure.py:446:            error = GraphiteDisabledError(ctx.graphite.reason)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/ensure.py-447-            raise UserFacingCliError(str(error))
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/ensure.py-448-
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/ensure.py-554-        """
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/ensure.py-555-        # Skip check if Graphite is disabled
+src/erk/cli/ensure.py:556:        if isinstance(ctx.graphite, GraphiteDisabled):
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/ensure.py-557-            return
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/ensure.py-558-
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/help_formatter.py-9-from erk.cli.alias import get_aliases
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/help_formatter.py-10-from erk_shared.gateway.erk_installation.real import RealErkInstallation
+src/erk/cli/help_formatter.py:11:from erk_shared.gateway.graphite.disabled import GraphiteDisabled
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/help_formatter.py-12-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/help_formatter.py-13-F = TypeVar("F", bound=Callable[..., object])
+
+... [70 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4726" cache_read_input_tokens="32368" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4726}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the subprocess wrapper requirement and the `is_branch_tracked` method.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4726" cache_read_input_tokens="32368" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4726}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XRLXx9U4VngzxQyJVN3W64">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/docs/learned/architecture/subprocess-wrappers.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4726" cache_read_input_tokens="32368" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4726}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XRLXx9U4VngzxQyJVN3W64">
+     1→---
+     2→title: Subprocess Wrappers
+     3→last_audited: "2026-02-16 00:00 PT"
+     4→audit_result: edited
+     5→read_when:
+     6→  - "using subprocess wrappers"
+     7→  - "executing shell commands"
+     8→  - "understanding subprocess patterns"
+     9→tripwires:
+    10→  - action: "using bare subprocess.run with check=True"
+    11→    warning: "Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations."
+    12→    pattern: "subprocess\\.run\\("
+    13→  - action: "adding a Claude subprocess call with --print mode"
+    14→    warning: "Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section."
+    15→  - action: "using sed -i in scripts that run on both macOS and Linux"
+    16→    warning: "macOS sed requires `sed -i ''` (empty string argument) while Linux sed uses `sed -i` (no argument). Scripts that use sed -i without handling this difference will fail silently on one platform."
+    17→    score: 4
+    18→---
+    19→
+    20→# Subprocess Execution Wrappers
+    21→
+    22→**NEVER use bare `subprocess.run(..., check=True)`. ALWAYS use wrapper functions.**
+    23→
+    24→This guide explains the two-layer pattern for subprocess execution in erk: gateway layer and CLI layer wrappers.
+    25→
+    26→## Scope
+    27→
+    28→**These rules apply to production erk code** in `src/erk/` and `packages/erk-shared/`.
+    29→
+    30→**Exception: erk-dev** (`packages/erk-dev/`) is developer tooling and is exempt from these rules. Direct `subprocess.run` is acceptable in erk-dev commands since they don't need the testability/dry-run benefits of wrapper functions.
+
+... [343 lines omitted] ...
+
+    34→Erk uses a two-layer design for subprocess execution to provide consistent error handling across different boundaries:
+    36→- **Gateway layer**: `run_subprocess_with_context()` - Raises RuntimeError for business logic
+    37→- **CLI layer**: `run_with_error_reporting()` - Prints user-friendly message and raises SystemExit
+    47→**Behavior**: Raises `RuntimeError` with rich context on failure
+    49→**Usage**: Pass `cmd` (the command list), `operation_context` (human-readable description), and `cwd` (working directory). On failure, raises `RuntimeError` with the operation context, command, exit code, and stderr.
+    57→- **Rich error messages**: Includes operation context, command, exit code, stderr
+    58→- **Exception chaining**: Preserves original CalledProcessError for debugging
+    61→### run_with_error_reporting (CLI Layer)
+    63→**When to use**: In CLI command handlers where you want to immediately exit on failure with a user-friendly message.
+    65→**Import**: `from erk.cli.subprocess_utils import run_with_error_reporting`
+    67→**Behavior**: Prints error message to stderr and raises `SystemExit` on failure
+    72→from erk.cli.subprocess_utils import run_with_error_reporting
+    74→# ✅ CORRECT: User-friendly error messages + SystemExit
+    75→run_with_error_reporting(
+    84→- **User-friendly**: Error messages are clear and actionable
+    86→- **No exception handling needed**: Wrapper handles everything
+    90→- **Rich error messages**: Both wrappers include operation context, command, exit code, and stderr
+    91→- **Exception chaining**: Preserves original CalledProcessError for debugging
+    92→- **Consistent patterns**: Two clear boundaries with appropriate error handling
+    93→- **Debugging support**: Full context available in error messages and logs
+   110→Not all subprocess calls should use `run_with_error_reporting()`. Use explicit exception handling when:
+   112→1. **The operation is optional** - Failure should not stop the main workflow
+   114→3. **Warning vs Error** - You want to show a warning and continue, not exit
+   119→# Pattern: check=True with explicit CalledProcessError handling
+   123→except subprocess.CalledProcessError as e:
+   124→    # Show warning, continue execution
+   125→    user_output(click.style("⚠ ", fg="yellow") + f"Optional operation failed: {e}")
+   126→except FileNotFoundError:
+   135→| CLI command that must succeed  | `run_with_error_reporting()`    | SystemExit on failure is correct |
+   136→| Optional background operation  | Explicit exception handling     | Main operation should continue   |
+   137→| Gateway real.py implementation | `run_subprocess_with_context()` | Consistent error wrapping        |
+   141→For GitHub API commands that may fail due to transient network errors, use `execute_gh_command_with_retry()`:
+   151→- Automatic retry on transient errors (network timeouts, connection failures)
+   157→## Error Accumulation Pattern
+   183→# Use accumulated stderr in error msg
+   190→- Stderr is accumulated as list, joined only when needed for error message
+   259→| **Error handling**        | Returns `None` on any failure          | Raises exception or returns error type |
+   262→| **Caller responsibility** | Check for `None`, decide how to handle | Catch exception or check error type    |
+   270→See `_get_pr_for_plan_direct()` in `src/erk/cli/commands/exec/scripts/trigger_async_learn.py`. Returns `dict[str, object] | None` — `None` on any failure (missing issue, metadata, branch, or PR).
+   274→- **No exceptions** - Never raises, always returns `None` on failure
+   275→- **No error messages** - Caller decides what to log
+   276→- **Uniform failure** - All failure modes return `None` consistently
+   286→Use when the operation is **critical** and failure should be explicit:
+   288→See `get_pr_for_plan()` in `src/erk/cli/commands/exec/scripts/get_pr_for_plan.py` for the full implementation. It is a Click command that raises `SystemExit(1)` with JSON error output on any failure, and attempts branch_name recovery via pattern matching.
+   292→- **Explicit errors** - Each failure mode has specific error message
+   294→- **Clear contract** - Caller knows exceptions mean critical failure
+   298→- User-facing commands where failure needs explanation
+   300→- CLI commands that should exit with error message
+   331→The same PR lookup in `get_pr_for_plan.py` is **strict** because it's a user-facing command where the user explicitly asked for the PR and expects either the answer or a clear error message.
+   367→- **CLI layer**: Use `run_with_error_reporting()` for command handlers
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01A9gZU75CgEPBAo3wCwjvEM">
+    <param name="pattern">def is_branch_tracked</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4726" cache_read_input_tokens="32368" output_tokens="292" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4726, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A9gZU75CgEPBAo3wCwjvEM">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-46-
+packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-47-    def get_parent_branch(self, git_ops: Git, repo_root: Path, branch: str) -&gt; str | None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-48-        """Get parent branch (read-only, no printing)."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-49-        return self._wrapped.get_parent_branch(git_ops, repo_root, branch)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-50-
+packages/erk-shared/src/erk_shared/gateway/graphite/printing.py:51:    def is_branch_tracked(self, repo_root: Path, branch: str) -&gt; bool:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-52-        """Check if branch is tracked (read-only, no printing)."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-53-        return self._wrapped.is_branch_tracked(repo_root, branch)
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-54-
+packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-55-    def check_auth_status(self) -&gt; tuple[bool, str | None, str | None]:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/printing.py-56-        """Check auth status (read-only, no printing)."""
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py-245-            current = parent
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py-246-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py-247-        return None
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py-248-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py-249-    @abstractmethod
+packages/erk-shared/src/erk_shared/gateway/graphite/abc.py:250:    def is_branch_tracked(self, repo_root: Path, branch: str) -&gt; bool:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py-251-        """Check if a branch is tracked by Graphite.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py-252-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py-253-        Uses `gt branch info` to get authoritative tracking status from the gt CLI.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py-254-        This is a LBYL check to verify tracking status before operations that
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py-255-        require a tracked branch (like gt delete).
+--
+packages/erk-shared/src/erk_shared/gateway/graphite/fake.py-271-        Note: This list is populated when mutations happen through
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/fake.py-272-        FakeGraphiteBranchOps created via create_linked_branch_ops().
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/fake.py-273-        """
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/fake.py-274-        return self._submit_branch_calls
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/fake.py-275-
+packages/erk-shared/src/erk_shared/gateway/graphite/fake.py:276:    def is_branch_tracked(self, repo_root: Path, branch: str) -&gt; bool:
+
+... [47 lines omitted] ...
+
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/real.py-281-        means the branch is tracked, non-zero means untracked or error.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py-93-        """Raise error - submit_stack is a mutating operation."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py-94-        raise GraphiteDisabledError(self.reason)
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="9847" cache_read_input_tokens="37094" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9847}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good. I have all the context I need. Let me also quickly check `RebaseResult` and the existing test file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9847" cache_read_input_tokens="37094" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9847}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Sft2M4UV82ZNAx4XnpNjb3">
+    <param name="pattern">class RebaseResult</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9847" cache_read_input_tokens="37094" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9847}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Sft2M4UV82ZNAx4XnpNjb3">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/output.py-262-        filtered_messages=filtered_messages,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/output.py-263-    )
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/output.py-264-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/output.py-265-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/output.py-266-@dataclass(frozen=True)
+src/erk/cli/output.py:267:class RebaseResult:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/output.py-268-    """Result from rebase streaming execution."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/output.py-269-
+src/erk/cli/output.py-270-    success: bool
+src/erk/cli/output.py-271-    error_message: str | None = None
+src/erk/cli/output.py-272-    requires_interactive: bool = False
+--
+packages/erk-shared/src/erk_shared/gateway/git/abc.py-62-    ahead: int
+packages/erk-shared/src/erk_shared/gateway/git/abc.py-63-    behind: int
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/abc.py-64-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/abc.py-65-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/abc.py-66-@dataclass(frozen=True)
+packages/erk-shared/src/erk_shared/gateway/git/abc.py:67:class RebaseResult:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/abc.py-68-    """Result of a git rebase operation.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/abc.py-69-
+packages/erk-shared/src/erk_shared/gateway/git/abc.py-70-    Attributes:
+packages/erk-shared/src/erk_shared/gateway/git/abc.py-71-        success: True if rebase completed without conflicts
+packages/erk-shared/src/erk_shared/gateway/git/abc.py-72-        conflict_files: Tuple of file paths with conflicts (empty if success=True)
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01EzrxTtQc777CNTexHRzZ9Y">
+    <param name="pattern">tests/unit/cli/commands/pr/test_rebase*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9847" cache_read_input_tokens="37094" output_tokens="397" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9847, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EzrxTtQc777CNTexHRzZ9Y">
+No files found
+  </tool_result>
+  <assistant>No existing test file for rebase. Now I need to check what `Graphite.restack` looks like — the plan calls `subprocess.run(["gt", "restack", ...])` directly. Let me check if there's a gateway method for restack.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1331" cache_read_input_tokens="46941" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1331}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PhPQigGdhC2fU8b4TLANyk">
+    <param name="pattern">restack</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1331" cache_read_input_tokens="46941" output_tokens="184" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1331, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PhPQigGdhC2fU8b4TLANyk">
+Found 13 files
+packages/erk-shared/src/erk_shared/gateway/gt/types.py
+packages/erk-shared/src/erk_shared/gateway/gt/operations/land_pr.py
+packages/erk-shared/src/erk_shared/gateway/graphite/fake.py
+packages/erk-shared/src/erk_shared/gateway/graphite/parsing.py
+packages/erk-shared/src/erk_shared/gateway/graphite/printing.py
+packages/erk-shared/src/erk_shared/gateway/graphite/real.py
+packages/erk-shared/src/erk_shared/gateway/graphite/types.py
+packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/abc.py
+packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/real.py
+packages/erk-shared/src/erk_shared/gateway/graphite/disabled.py
+packages/erk-shared/src/erk_shared/gateway/graphite/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/graphite/abc.py
+packages/erk-shared/src/erk_shared/gateway/branch_manager/graphite.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_012Lr1L2UxjZV2wG2kweTmH8">
+    <param name="pattern">def restack</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="624" cache_read_input_tokens="48272" output_tokens="140" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 624, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012Lr1L2UxjZV2wG2kweTmH8">
+No matches found
+  </tool_result>
+  <assistant>No gateway method for restack — the plan's approach of using `subprocess.run` directly with `check=False` is correct (LBYL pattern). Now let me check the `execute_interactive` to understand permission_mode type.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="155" cache_read_input_tokens="48896" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 155}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RstdUhtACTzYLcbEgM7q79">
+    <param name="pattern">PermissionMode</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/prompt_executor.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="155" cache_read_input_tokens="48896" output_tokens="199" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 155, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RstdUhtACTzYLcbEgM7q79">
+19-
+20-if TYPE_CHECKING:
+21:    from erk_shared.context.types import PermissionMode
+22-
+23-from erk_shared.context.types import permission_mode_to_claude
+--
+108-        debug: bool = False,
+109-        model: str | None = None,
+110:        permission_mode: PermissionMode,
+111-        allow_dangerous: bool = False,
+112-    ) -&gt; Iterator[ExecutorEvent]:
+--
+469-        target_subpath: Path | None,
+470-        model: str | None = None,
+471:        permission_mode: PermissionMode,
+472-    ) -&gt; None:
+473-        """Execute Claude CLI in interactive mode by replacing current process.
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01PFGQvSCSwTtJaLiGP4cgyy">
+    <param name="pattern">PermissionMode</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/context/types.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="387" cache_read_input_tokens="49051" output_tokens="154" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 387, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PFGQvSCSwTtJaLiGP4cgyy">
+7-- LoadedConfig: Repository-level configuration
+8-- InteractiveAgentConfig: Configuration for interactive agent launches (Claude or Codex)
+9-- AgentBackend: Type for agent backend selection
+10:- PermissionMode: Generic permission mode for both Claude and Codex
+11-"""
+12-
+13-from __future__ import annotations
+--
+27-# - "acceptEdits": Accept edits without prompts (--permission-mode acceptEdits)
+28-# - "plan": Plan mode for exploration and planning (--permission-mode plan)
+29-# - "bypassPermissions": Bypass all permissions (--permission-mode bypassPermissions)
+30:ClaudePermissionMode = Literal["default", "acceptEdits", "plan", "bypassPermissions"]
+31-
+32-# Generic permission mode that maps to both Claude and Codex
+33-# - "safe": Default mode with permission prompts (Claude "default", Codex "--sandbox read-only")
+34-# - "edits": Accept edits without prompts (Claude "acceptEdits", Codex "--full-auto")
+35-# - "plan": Plan mode for exploration (Claude "plan", Codex "--sandbox read-only")
+36-# - "dangerous": Bypass all permissions (Claude skip permissions, Codex "--yolo")
+37:PermissionMode = Literal["safe", "edits", "plan", "dangerous"]
+38-
+39-
+40-@cache
+41:def permission_mode_to_claude(permission_mode: PermissionMode) -&gt; ClaudePermissionMode:
+42-    """Map generic permission mode to Claude-specific permission mode."""
+43:    lookup: dict[PermissionMode, ClaudePermissionMode] = {
+44-        "safe": "default",
+45-        "edits": "acceptEdits",
+46-        "plan": "plan",
+--
+52-
+
+... [62 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have everything I need. Let me implement the changes to `rebase_cmd.py`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1344" cache_read_input_tokens="49438" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1344}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_018CtqFDPzNfLYeEenY8i3dk">
+    <param name="query">select:TaskCreate,TaskUpdate</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1344" cache_read_input_tokens="49438" output_tokens="100" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1344, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_018CtqFDPzNfLYeEenY8i3dk">
+
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_011s7RoJBoDqMR2oqv885STA">
+    <param name="subject">Rewrite rebase_cmd.py with two-phase approach</param>
+    <param name="description">Replace stream_rebase with gt restack / git rebase + Claude TUI fallback</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1910" cache_read_input_tokens="50782" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1910}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011s7RoJBoDqMR2oqv885STA">
+Task #1 created successfully: Rewrite rebase_cmd.py with two-phase approach
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01P9b1pgPLdd947KEL7bmrkf">
+    <param name="subject">Run tests and CI</param>
+    <param name="description">Run existing tests and CI checks</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1910" cache_read_input_tokens="50782" output_tokens="161" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1910, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01P9b1pgPLdd947KEL7bmrkf">
+Task #2 created successfully: Run tests and CI
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01Y6guYTSYo6Ndm3uJ1irv1S">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="256" cache_read_input_tokens="52692" output_tokens="72" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 256, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Y6guYTSYo6Ndm3uJ1irv1S">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01G3xGw4GCup3odX7Da4WVdd">
+    <param name="command">erk exec impl-signal started --session-id="c9172f22-fb4d-445f-ae46-270e1ad81025" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="90" cache_read_input_tokens="52948" output_tokens="113" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 90, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01G3xGw4GCup3odX7Da4WVdd">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8811
+}
+  </tool_result>
+  <assistant>Now let me implement the changes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="151" cache_read_input_tokens="53038" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 151}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01A8eT1mRHEtnsycEedt4Sn1">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/commands/pr/rebase_cmd.py</param>
+    <param name="content">"""Rebase PR onto base branch with mechanical rebase and Claude TUI fallback.
+
+Phase 1: At...[truncated 4406 chars]...       permission_mode="edits",
+    )
+    # Never returns — process replaced by os.execvp
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="151" cache_read_input_tokens="53038" output_tokens="1435" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 151, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01A8eT1mRHEtnsycEedt4Sn1">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/commands/pr/rebase_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01WxcV1W2kigpaRH1nqD7zsN">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1497" cache_read_input_tokens="53189" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1497}" output_tokens="26" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WxcV1W2kigpaRH1nqD7zsN">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_014iz56UKqwXRWihgpJ62Y7b">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1497" cache_read_input_tokens="53189" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1497, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014iz56UKqwXRWihgpJ62Y7b">
+Updated task #2 status
+  </tool_result>
+  <assistant>Now let me run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="54686" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 198}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01N2wv2wmWS1rPKiPpDgUeLR">
+    <param name="query">select:TaskOutput</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="54686" output_tokens="82" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01N2wv2wmWS1rPKiPpDgUeLR">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_0173HvWBAEkspUoXi3QEDLPA">
+    <param name="skill">local:fast-ci</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="377" cache_read_input_tokens="54884" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 377, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0173HvWBAEkspUoXi3QEDLPA">
+Launching skill: local:fast-ci
+  </tool_result>
+  <user>You are an implementation finalizer for rapid development feedback. Your task is to run `make fast-ci` and iteratively fix any issues until all CI checks pass successfully.
+
+## Your Mission
+
+Run the fast CI pipeline (`make fast-ci`) from the repository root and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**Fast CI vs All CI**: The `fast-ci` target runs unit tests only, providing rapid feedback for development iteration. Use `/all-ci` when you need comprehensive validation including integration tests.
+
+## CI Pipeline (make fast-ci)
+
+The `make fast-ci` target runs these checks in order:
+
+1. **lint** - Ruff linting checks
+2. **format-check** - Ruff code formatting checks
+3. **prettier-check** - Markdown formatting checks
+4. **md-check** - AGENTS.md standard compliance validation
+5. **docs-validate** - Agent documentation frontmatter validation
+6. **ty** - Type checking
+7. **test** - Pytest unit tests only (fast feedback loop)
+8. **exec-reference-check** - Exec subcommand reference documentation validation
+
+## Iteration Process
+
+Load the `ci-iteration` skill for the iterative fix workflow.
+
+## Fail-Fast Workflow
+
+This command uses a two-phase approach to fail fast on linting and type checking issues:
+
+1. **Phase 1 (Fail-Fast)**: Run `make lint ty` together. If EITHER fails, stop immediately to fix issues before proceeding to remaining checks.
+2. **Phase 2 (Remaining Checks)**: Only after phase 1 passes, run remaining checks via `make fast-ci`.
+
+This ensures that common issues (linting/formatting and type errors) are caught and fixed first, providing rapid feedback without waiting for slower test runs.
+
+## Begin Now
+
+Start by using the Task tool with the devrun agent to run the fail-fast phase (`make lint ty`) from the repository root. If that passes, proceed with `make fast-ci` to run the complete fast CI pipeline. Track your progress with TodoWrite and report your final status clearly.
+
+**Remember**:
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <tool_use name="Skill" id="toolu_019J1tRsp6gdThVKorYEA8jA">
+    <param name="skill">ci-iteration</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="639" cache_read_input_tokens="55261" output_tokens="55" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 639, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019J1tRsp6gdThVKorYEA8jA">
+Launching skill: ci-iteration
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/.claude/skills/ci-iteration
+
+# CI Iteration
+
+## Overview
+
+Run the specified CI target and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
+
+## Sub-Agent Policy
+
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  &lt;- MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+**FORBIDDEN**:
+
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
+- Giving sub-agents prompts like "fix issues" or "iterate until passing"
+
+**REQUIRED**:
+
+- Sub-agents run ONE command and report results
+- Parent agent decides what to fix based on reports
+
+## Core Workflow
+
+### 1. Initial Run
+
+Use the devrun agent to run the specified make target from the repository root:
+
+```
+Task tool with:
+- subagent_type: devrun
+- description: "Run [make target] from repo root"
+- prompt: "Change to repository root and execute: [make target]"
+```
+
+### 2. Parse Failures
+
+Analyze the output to identify which check(s) failed:
+
+- **Ruff lint failures**: "ruff check" errors
+- **Format failures**: "ruff format --check" or files needing reformatting
+- **Prettier failures**: Markdown files needing formatting
+- **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
+- **ty failures**: Type errors with file paths and line numbers
+- **Test failures**: pytest failures with test names and assertion errors
+
+### 3. Apply Targeted Fixes
+
+Based on failure type, apply appropriate fixes:
+
+| Failure Type | Fix Command                                 |
+| ------------ | ------------------------------------------- |
+| Ruff lint    | `make fix` via devrun                       |
+| Ruff format  | `make format` via devrun                    |
+| Prettier     | `make prettier` via devrun                  |
+| Sync-Kit     | `erk sync` directly                         |
+| MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
+| ty           | Edit files to fix type annotations          |
+| Tests        | Read and edit source/test files             |
+
+### 4. Verify and Repeat
+
+After applying fixes, run the make target again via devrun. Continue the cycle: run -&gt; identify failures -&gt; fix -&gt; verify.
+
+## Iteration Control
+
+**Safety Limits:**
+
+- **Maximum iterations**: 10 attempts
+- **Stuck detection**: If the same error appears 3 times in a row, stop
+- **Progress tracking**: Use TodoWrite to show iteration progress
+
+## Progress Reporting
+
+Use TodoWrite to track progress:
+
+```
+Iteration 1: Fixing lint errors
+Iteration 2: Fixing format errors
+Iteration 3: Fixing type errors in src/erk/cli/commands/switch.py
+Iteration 4: All checks passed
+```
+
+## When to Stop
+
+**SUCCESS**: Stop when the make target exits with code 0 (all checks passed)
+
+**STUCK**: Stop and report to user if:
+
+1. You've completed 10 iterations without success
+2. The same error persists after 3 fix attempts
+3. You encounter an error you cannot automatically fix
+
+## Reporting Formats
+
+### Success Format
+
+```markdown
+## Finalization Status: SUCCESS
+
+All CI checks passed after N iteration(s):
+
+(check) **Lint (ruff check)**: PASSED
+
+(check) **Format (ruff format --check)**: PASSED
+
+(check) **Prettier**: PASSED
+
+(check) **AGENTS.md Standard (md-check)**: PASSED
+
+(check) **ty**: PASSED
+
+(check) **Tests**: PASSED
+
+(check) **Sync-Kit (erk check)**: PASSED
+
+The code is ready for commit/PR.
+```
+
+**IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
+
+### Stuck Format
+
+```markdown
+## Finalization Status: STUCK
+
+I was unable to resolve the following issue after N attempts:
+
+**Check**: [lint/format/prettier/md-check/ty/test]
+
+**Error**:
+[Exact error message]
+
+**File**: [file path if applicable]
+
+**Attempted Fixes**:
+
+1. [What you tried first]
+2. [What you tried second]
+3. [What you tried third]
+
+**Next Steps**:
+[Suggest what needs to be done manually]
+```
+
+## Guidelines
+
+1. **Be systematic**: Fix one type of error at a time
+2. **Run full CI**: Always run the full make target, not individual checks
+3. **Use devrun agent**: Always use the Task tool with devrun agent for ALL make commands
+4. **Run from repo root**: Always ensure make commands execute from repository root
+5. **Track progress**: Use TodoWrite for every iteration
+6. **Don't guess**: Read files before making changes
+7. **Follow standards**: Adhere to AGENTS.md coding standards
+8. **Fail gracefully**: Report clearly when stuck
+9. **Be efficient**: Use targeted fixes (don't reformat everything for one lint error)
+
+## Example Flow
+
+```
+Iteration 1:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 5 lint errors, 2 files need formatting
+- Fix: Use Task tool with devrun agent to run make fix, then make format from repo root
+- Result: 3 lint errors remain
+
+Iteration 2:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 3 lint errors (imports)
+- Fix: Edit files to fix import issues
+- Result: All lint/format pass, 2 type errors
+
+Iteration 3:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 2 ty errors in switch.py:45 and switch.py:67
+- Fix: Add type annotations
+- Result: All checks pass
+
+SUCCESS
+```
+
+## Important Reminders
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <tool_use name="ToolSearch" id="toolu_01VuRHcka6N78hnzcib8CAGA">
+    <param name="query">select:Agent</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1701" cache_read_input_tokens="55900" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1701, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01VuRHcka6N78hnzcib8CAGA">
+
+  </tool_result>
+  <assistant>
+
+Running fail-fast phase first (lint + ty).</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2280" cache_read_input_tokens="57601" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2280}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_019dKLfuEK9d8y5UQMZRkb6d">
+    <param name="description">Run make lint ty</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Change to /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06 and run: make lint ty
+
+Report the full output including any errors.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2280" cache_read_input_tokens="57601" output_tokens="148" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2280, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019dKLfuEK9d8y5UQMZRkb6d">
+## Results
+
+**ruff check:** passed
+
+**ty check:** failed with 1 diagnostic
+
+**Error Details:**
+
+File: `src/erk/cli/commands/pr/rebase_cmd.py:112:61`
+
+```python
+rebase_result = ctx.git.rebase.rebase_onto(cwd, target)
+                                                  ^^^^^^
+```
+
+The `target` variable has type `str | None`, but the `rebase_onto` method expects `target_ref: str` (non-optional).
+
+The method signature is defined at:
+`packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/abc.py:29`
+
+**Rule:** `invalid-argument-type` (enabled by default)
+agentId: a14373db9e158adfb (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14237
+tool_uses: 1
+duration_ms: 4432&lt;/usage&gt;
+  </tool_result>
+  <assistant>The `target` is `str | None` but by line 112 we've already checked `target is not None` via `Ensure.invariant`. However, ty doesn't understand that. I need to narrow the type.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="59881" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 394}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AcyD1C3Zm3iCj4vCCbBU8B">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/commands/pr/rebase_cmd.py</param>
+    <param name="old_string">            Ensure.invariant(
+                target is not None,
+                "Specify...[truncated 112 chars]...et}...", fg="yellow"))
+            rebase_result = ctx.git.rebase.rebase_onto(cwd, target)</param>
+    <param name="new_string">            if target is None:
+                Ensure.invariant(
+                    False...[truncated 212 chars]...et}...", fg="yellow"))
+            rebase_result = ctx.git.rebase.rebase_onto(cwd, target)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="59881" output_tokens="376" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 394, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AcyD1C3Zm3iCj4vCCbBU8B">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/commands/pr/rebase_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Hmm, that's ugly. Let me check how `Ensure.invariant` works — maybe there's a `NoReturn` annotation or a better pattern.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="457" cache_read_input_tokens="60275" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 457}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01JTxNiAh92oaQsYrDT7kd9M">
+    <param name="pattern">def invariant</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/ensure.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="457" cache_read_input_tokens="60275" output_tokens="180" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 457, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JTxNiAh92oaQsYrDT7kd9M">
+49-
+50-    def show(self, file: Any = None) -&gt; None:
+51-        """Display styled error message to stderr."""
+52-        user_output(click.style("Error: ", fg="red") + self.format_message())
+53-
+54-
+55-class Ensure:
+56-    """Helper class for asserting invariants with consistent error handling."""
+57-
+58-    @staticmethod
+59:    def invariant(condition: bool, error_message: str) -&gt; None:
+60-        """Ensure condition is true, otherwise output styled error and exit.
+61-
+62-        Args:
+63-            condition: Boolean condition to check
+64-            error_message: Error message to display if condition is false.
+65-                          "Error: " prefix will be added automatically in red.
+66-
+67-        Raises:
+68-            UserFacingCliError: If condition is false
+69-        """
+  </tool_result>
+  <assistant>The signature is `invariant(condition: bool, ...)` — ty can't narrow from that. Let me use a cleaner pattern: just do a direct check and raise.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="563" cache_read_input_tokens="60732" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 563}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Q6tfzcf5urU6DvwpViLeH2">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/commands/pr/rebase_cmd.py</param>
+    <param name="old_string">            if target is None:
+                Ensure.invariant(
+                    False...[truncated 65 chars]...led)",
+                )
+                return  # unreachable, but satisfies type checker</param>
+    <param name="new_string">            if target is None:
+                raise click.ClickException(
+                    "Specify --target &lt;branch&gt; for git rebase (Graphite is not enabled)"
+                )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="563" cache_read_input_tokens="60732" output_tokens="271" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 563, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Q6tfzcf5urU6DvwpViLeH2">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/cli/commands/pr/rebase_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now run full fast-ci.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="61295" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 352}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01XUi1q15UbSLWDcKAmNHTFG">
+    <param name="description">Run make fast-ci</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Change to /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06 and run: make fast-ci
+
+Report the full output including any errors. Focus on which checks passed and which failed.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="61295" output_tokens="154" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 352, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XUi1q15UbSLWDcKAmNHTFG">
+## Summary
+
+**make fast-ci failed with 5 test failures**
+
+### Passing Checks:
+- **Lint**: All checks passed
+- **Format Check**: 1614 files already formatted
+- **Prettier Check**: All matched files use Prettier code style
+- **Markdown Check**: AGENTS.md and CLAUDE.md files properly paired (0 violations)
+- **Exec Reference Check**: .claude/skills/erk-exec/reference.md is up to date
+- **ty**: All checks passed
+- **Unit Tests (erk-dev)**: 136 passed
+- **Unit Tests (erk-statusline)**: 115 passed
+- **Unit Tests (erk-mcp)**: 24 passed
+
+### Failing Tests (5 failures in erk):
+All failures are in `tests/commands/pr/test_rebase.py`:
+
+1. **test_pr_rebase_success** (line 133)
+   - Exit code expected: 0, got: 1
+   - Error: "Specify --target &lt;branch&gt; for git rebase (Graphite is not enabled)"
+
+2. **test_pr_rebase_skip_dangerous_with_config** (line 151)
+   - Expected "Semantic conflict detected" in output
+   - Got: "Error: Specify --target &lt;branch&gt; for git rebase (Graphite is not enabled)"
+
+3. **test_pr_rebase_aborts_on_semantic_conflict** (line 150)
+   - Expected "Semantic conflict detected" in output
+   - Got: "Error: Specify --target &lt;branch&gt; for git rebase (Graphite is not enabled)"
+
+
+... [15 lines omitted] ...
+
+4. **test_pr_rebase_fails_on_command_error** (line 178)
+   - Expected "failed" in output
+   - Got: "Error: Specify --target &lt;branch&gt; for git rebase (Graphite is not enabled)"
+   - Got: "Error: Specify --target &lt;branch&gt; for git rebase (Graphite is not enabled)"
+**Total Unit Tests**: 5,640 passed, 5 failed (99.9% pass rate)
+The failures all relate to the `pr rebase` command expecting a `--target` branch when Graphite is not enabled, which is not being properly mocked in the test setup.
+  </tool_result>
+  <assistant>All tests fail because the test suite uses non-Graphite context. Let me read the existing test file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="797" cache_read_input_tokens="61647" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 797}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WPzk5Fo2whM1TLFDiA4Hpo">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/commands/pr/test_rebase.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="797" cache_read_input_tokens="61647" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 797, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WPzk5Fo2whM1TLFDiA4Hpo">
+     1→"""Tests for erk pr rebase command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.commands.pr import pr_group
+     6→from erk_shared.context.types import GlobalConfig
+     7→from erk_shared.gateway.git.fake import FakeGit
+     8→from tests.fakes.prompt_executor import FakePromptExecutor
+     9→from tests.test_utils.context_builders import build_workspace_test_context
+    10→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    11→
+    12→
+    13→def test_pr_rebase_success() -&gt; None:
+    14→    """Test successful rebase."""
+    15→    runner = CliRunner()
+    16→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    17→        git = FakeGit(
+    18→            git_common_dirs={env.cwd: env.git_dir},
+    19→            local_branches={env.cwd: ["main", "feature-branch"]},
+    20→            default_branches={env.cwd: "main"},
+    21→            trunk_branches={env.cwd: "main"},
+    22→            current_branches={env.cwd: "feature-branch"},
+    23→        )
+    24→
+    25→        executor = FakePromptExecutor(available=True)
+    26→
+    27→        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+    28→
+    29→        result = runner.invoke(pr_group, ["rebase", "--dangerous"], obj=ctx)
+    30→
+
+... [177 lines omitted] ...
+
+    61→        # Verify error message includes config hint
+   101→    """Test error when Claude is not installed."""
+   155→def test_pr_rebase_fails_on_command_error() -&gt; None:
+   177→        # Error message from FakePromptExecutor
+   178→        assert "failed" in result.output.lower()
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="7939" cache_read_input_tokens="62444" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7939}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how `FakePromptExecutor` handles `execute_interactive` and `build_workspace_test_context`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7939" cache_read_input_tokens="62444" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7939}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016ZuptjLbvL3VCfUUwdnnQM">
+    <param name="pattern">execute_interactive</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/fakes/prompt_executor.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7939" cache_read_input_tokens="62444" output_tokens="515" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7939, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016ZuptjLbvL3VCfUUwdnnQM">
+51-        &gt;&gt;&gt; assert len(executor.executed_commands) == 1
+52-
+53-        # Test with executor not available
+54-        &gt;&gt;&gt; executor = FakePromptExecutor(available=False)
+55-        &gt;&gt;&gt; assert not executor.is_available()
+56-
+57-        # Test command failure
+58-        &gt;&gt;&gt; executor = FakePromptExecutor(command_should_fail=True)
+59-        &gt;&gt;&gt; try:
+60-        ...     executor.execute_command("/bad-command", Path("/repo"), False)
+61-        ... except RuntimeError:
+62-        ...     print("Command failed as expected")
+63-
+64-        # Test interactive execution
+65-        &gt;&gt;&gt; executor = FakePromptExecutor(available=True)
+66:        &gt;&gt;&gt; executor.execute_interactive(Path("/repo"), dangerous=False)
+67-        &gt;&gt;&gt; assert len(executor.interactive_calls) == 1
+68-    """
+69-
+70-    def __init__(
+71-        self,
+72-        *,
+73-        available: bool = True,
+74-        command_should_fail: bool = False,
+75-        simulated_pr_url: str | None = None,
+76-        simulated_pr_number: int | None = None,
+77-        simulated_pr_title: str | None = None,
+78-        simulated_plan_number: int | None = None,
+79-        simulated_tool_events: list[str] | None = None,
+80-        simulated_no_output: bool = False,
+
+... [65 lines omitted] ...
+
+272-                error_message=f"Claude command {command} failed (simulated failure)",
+283-            error_message=None,
+  </tool_result>
+  <assistant>Good — `FakePromptExecutor` records `execute_interactive` calls and returns normally. Now let me check `build_workspace_test_context` to understand how to set up Graphite.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1550" cache_read_input_tokens="70383" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1550}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LLsPnq6DVF3Y7Qf68ndDum">
+    <param name="pattern">def build_workspace_test_context</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests</param>
+    <param name="output_mode">content</param>
+    <param name="-C">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1550" cache_read_input_tokens="70383" output_tokens="185" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1550, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LLsPnq6DVF3Y7Qf68ndDum">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-1-"""Shared context builders for test scenarios.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-2-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-3-This module provides reusable context builder functions to eliminate duplication
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-4-across test files. These builders encapsulate common patterns for setting up
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-5-ErkContext with appropriate fake implementations.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-6-"""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-7-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-8-from erk.core.context import ErkContext
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-9-from erk_shared.core.fakes import FakePlanListService
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-10-from erk_shared.core.plan_list_service import PlanListData
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-11-from erk_shared.gateway.git.dry_run import DryRunGit
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-12-from erk_shared.gateway.git.fake import FakeGit
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-13-from erk_shared.gateway.github.fake import FakeGitHub
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-14-from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-15-from erk_shared.plan_store.types import Plan
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-16-from tests.fakes.shell import FakeShell
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-17-from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-18-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-19-
+tests/test_utils/context_builders.py:20:def build_workspace_test_context(
+tests/test_utils/context_builders.py-21-    env: ErkInMemEnv | ErkIsolatedFsEnv,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-22-    *,
+tests/test_utils/context_builders.py-23-    dry_run: bool = False,
+tests/test_utils/context_builders.py-24-    use_graphite: bool = False,
+tests/test_utils/context_builders.py-25-    current_branch: str | None = None,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-26-    **kwargs,
+tests/test_utils/context_builders.py-27-) -&gt; ErkContext:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-28-    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-29-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/context_builders.py-30-    This builder provides a standard context configuration for workspace manipulation
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>Now I need to understand how the tests should be rewritten. The new command has two distinct paths: Graphite-enabled (gt restack) and Graphite-disabled (git rebase --target). The old tests tested `stream_rebase` which no longer exists. Let me rewrite the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2543" cache_read_input_tokens="71933" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2543}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Nq9MEFZmwHEPHCALF32XSp">
+    <param name="pattern">def build_context</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/env_helpers.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2543" cache_read_input_tokens="71933" output_tokens="213" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2543, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Nq9MEFZmwHEPHCALF32XSp">
+360-
+361-        # Build stacks from branches (auto-compute from parent/child)
+362-        stacks = {}
+363-        for branch_name in branches:
+364-            if not branches[branch_name].is_trunk:
+365-                stacks[branch_name] = self._build_stack_path(branches, branch_name)
+366-
+367-        git = FakeGit(
+368-            worktrees={self.root_worktree: worktrees_list},
+369-            current_branches=current_branches_map,
+370-            git_common_dirs=git_common_dirs_map,
+371-        )
+372-
+373-        graphite = FakeGraphite(
+374-            branches=branches,
+375-            stacks=stacks,
+376-        )
+377-
+378-        return git, graphite
+379-
+380:    def build_context(
+381-        self,
+382-        *,
+383-        current_branch: str | None = None,
+384-        trunk_branch: str = "main",
+385-        use_graphite: bool = False,
+386-        git: Git | None = None,
+387-        graphite: FakeGraphite | None = None,
+388-        github: FakeGitHub | None = None,
+389-        shell: FakeShell | None = None,
+
+... [53 lines omitted] ...
+  </tool_result>
+  <assistant>Let me check what `kwargs` can accept — specifically `prompt_executor`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1188" cache_read_input_tokens="74476" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1188}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XhZJSZaSVirGftPfKCvoiW">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/env_helpers.py</param>
+    <param name="offset">825</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1188" cache_read_input_tokens="74476" output_tokens="141" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1188, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XhZJSZaSVirGftPfKCvoiW">
+   825→    def build_context(
+   826→        self,
+   827→        *,
+   828→        current_branch: str | None = None,
+   829→        trunk_branch: str = "main",
+   830→        use_graphite: bool = False,
+   831→        git: Git | None = None,
+   832→        graphite: FakeGraphite | None = None,
+   833→        github: FakeGitHub | None = None,
+   834→        shell: FakeShell | None = None,
+   835→        repo: RepoContext | None = None,
+   836→        existing_paths: set[Path] | None = None,
+   837→        file_contents: dict[Path, str] | None = None,
+   838→        dry_run: bool = False,
+   839→        confirm_responses: list[bool] | None = None,
+   840→        console: FakeConsole | None = None,
+   841→        **kwargs,
+   842→    ) -&gt; ErkContext:
+   843→        """Build ErkContext with smart defaults for test scenarios.
+   844→
+   845→        This helper eliminates boilerplate by providing default ops and config
+   846→        for tests that don't need custom setup. Custom values can be provided
+   847→        via keyword arguments.
+   848→
+   849→        Args:
+   850→            current_branch: If provided, auto-configures FakeGit.current_branches
+   851→            trunk_branch: Default branch name (default: "main")
+   852→            use_graphite: Enable Graphite integration (default: False)
+   853→            git: Custom FakeGit instance (overrides smart defaults)
+   854→            graphite: Custom FakeGraphite instance
+
+... [70 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WHk1wfstno7VFAkQNRvuYx">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/env_helpers.py</param>
+    <param name="offset">925</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1521" cache_read_input_tokens="75664" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1521, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WHk1wfstno7VFAkQNRvuYx">
+   925→            worktree_paths = {
+   926→                wt.path for worktrees in unwrapped_ops._worktrees.values() for wt in worktrees
+   927→            }
+   928→            # Determine which cwd to use (custom or default)
+   929→            effective_cwd = kwargs.get("cwd", self.cwd)
+   930→
+   931→            core_paths = {
+   932→                self.cwd,
+   933→                effective_cwd,
+   934→                self.git_dir,
+   935→                self.erk_root,
+   936→                repo.root,
+   937→                repo.repo_dir,
+   938→            }
+   939→            all_existing = core_paths | worktree_paths | (existing_paths or set())
+   940→
+   941→            # Mutate existing ops instance instead of recreating
+   942→            # This preserves mutation tracking for test assertions
+   943→            unwrapped_ops._existing_paths.update(all_existing)
+   944→            if file_contents:
+   945→                unwrapped_ops._file_contents.update(file_contents)
+   946→
+   947→        # Wrap with DryRunGit for dry-run mode (only if not already wrapped)
+   948→        if dry_run:
+   949→            from erk_shared.gateway.git.dry_run import DryRunGit
+   950→
+   951→            if not isinstance(git, DryRunGit):
+   952→                git = DryRunGit(git)
+   953→
+   954→        # Smart integration defaults
+
+... [30 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NrC3TNuXVHiDhpr49TGACb">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/test_utils/env_helpers.py</param>
+    <param name="offset">985</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="920" cache_read_input_tokens="77185" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 920, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NrC3TNuXVHiDhpr49TGACb">
+   985→            )
+   986→
+   987→        # Build and return context
+   988→        # Default cwd and script_writer to env values unless overridden in kwargs
+   989→        if "cwd" not in kwargs:
+   990→            kwargs["cwd"] = self.cwd
+   991→        if "script_writer" not in kwargs:
+   992→            kwargs["script_writer"] = self.script_writer
+   993→
+   994→        # Filter out erk_root - it's already set in global_config above
+   995→        # Tests shouldn't override it via kwargs
+   996→        if "erk_root" in kwargs:
+   997→            kwargs.pop("erk_root")
+   998→
+   999→        # Filter out trunk_branch - it's now a computed property based on git
+  1000→        if "trunk_branch" in kwargs:
+  1001→            kwargs.pop("trunk_branch")
+  1002→
+  1003→        # Use provided console or create one with confirm responses
+  1004→        if console is None:
+  1005→            console = FakeConsole(
+  1006→                is_interactive=True,
+  1007→                is_stdout_tty=None,
+  1008→                is_stderr_tty=None,
+  1009→                confirm_responses=confirm_responses,
+  1010→            )
+  1011→
+  1012→        return context_for_test(
+  1013→            git=git,
+  1014→            graphite=graphite,
+
+... [20 lines omitted] ...
+  </tool_result>
+  <assistant>Now I understand the test infrastructure. I need to check `context_for_test` to see if it accepts `prompt_executor`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="752" cache_read_input_tokens="78105" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 752}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RW3xC5AFFD6aaHukHkwuMo">
+    <param name="pattern">def context_for_test</param>
+    <param name="output_mode">content</param>
+    <param name="-C">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="752" cache_read_input_tokens="78105" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 752, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RW3xC5AFFD6aaHukHkwuMo">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-167-        github_admin=FakeGitHubAdmin(),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-168-        plan_store=PlannedPRBackend(fake_github, fake_issues, time=fake_time),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-169-        graphite=fake_graphite,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-170-        graphite_branch_ops=fake_graphite_branch_ops,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-171-        console=fake_console,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-172-        shell=FakeShell(),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-173-        codespace=fake_codespace,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-174-        agent_launcher=FakeAgentLauncher(),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-175-        agent_docs=FakeAgentDocs(files={}, has_docs_dir=True),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-176-        completion=FakeCompletion(),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-177-        time=fake_time,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-178-        erk_installation=FakeErkInstallation(),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-179-        script_writer=FakeScriptWriter(),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-180-        plan_list_service=FakePlanListService(),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-181-        objective_list_service=FakeObjectiveListService(data=None),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-182-        codespace_registry=FakeCodespaceRegistry(),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-183-        claude_installation=FakeClaudeInstallation.for_test(),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-184-        prompt_executor=FakePromptExecutor(),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-185-        llm_caller=FakeLlmCaller(response=LlmResponse(text="test-slug")),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-186-        cwd=cwd,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-187-        global_config=None,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-188-        local_config=LoadedConfig.test(),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-189-        repo=NoRepoSentinel(),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-190-        repo_info=None,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-191-        http_client=FakeHttpClient(),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-192-        dry_run=dry_run,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-193-        debug=False,
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-194-    )
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-195-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/src/erk/core/context.py-196-
+
+... [93 lines omitted] ...
+  </tool_result>
+  <assistant>Good — `context_for_test` accepts `prompt_executor`. And `build_context` passes `**kwargs` through, so `prompt_executor=...` can be passed via `env.build_context(prompt_executor=executor)`.
+
+Now I need to understand the new behavior to write proper tests. The old tests tested `stream_rebase` (non-interactive subprocess), but the new code:
+1. Non-Graphite path: calls `git.rebase.rebase_onto()` then on failure calls `execute_interactive()`
+2. Graphite path: calls `subprocess.run(["gt", "restack", ...])` then on failure calls `execute_interactive()`
+
+The tests need to cover both paths. Let me check the `FakeGit.rebase` fake to understand how to configure rebase results.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5756" cache_read_input_tokens="78857" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5756}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01N2WoLdzYppR7erW3PaadNC">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/fake.py</param>
+    <param name="offset">40</param>
+    <param name="limit">55</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5756" cache_read_input_tokens="78857" output_tokens="328" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5756, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N2WoLdzYppR7erW3PaadNC">
+    40→        rebase_continue_clears_rebase: bool | None = None,
+    41→        rebase_abort_raises: Exception | None = None,
+    42→    ) -&gt; None:
+    43→        """Create FakeGitRebaseOps with pre-configured state.
+    44→
+    45→        Args:
+    46→            rebase_in_progress: Initial state for is_rebase_in_progress().
+    47→                Can be a bool or a callable(cwd) -&gt; bool for dynamic behavior.
+    48→            rebase_onto_result: Result to return from rebase_onto()
+    49→            rebase_continue_raises: Exception to raise when rebase_continue() is called
+    50→            rebase_continue_clears_rebase: If True, rebase_continue() clears rebase state
+    51→            rebase_abort_raises: Exception to raise when rebase_abort() is called
+    52→        """
+    53→        # Handle rebase_in_progress as bool or callable
+    54→        if rebase_in_progress is None:
+    55→            self._rebase_in_progress: bool | None = False
+    56→            self._rebase_in_progress_callable: Callable[[Path], bool] | None = None
+    57→        elif callable(rebase_in_progress):
+    58→            self._rebase_in_progress = None
+    59→            self._rebase_in_progress_callable = rebase_in_progress
+    60→        else:
+    61→            self._rebase_in_progress = rebase_in_progress
+    62→            self._rebase_in_progress_callable = None
+    63→
+    64→        self._rebase_onto_result = rebase_onto_result
+    65→        self._rebase_continue_raises = rebase_continue_raises
+    66→        self._rebase_continue_clears_rebase = (
+    67→            rebase_continue_clears_rebase if rebase_continue_clears_rebase is not None else False
+    68→        )
+    69→        self._rebase_abort_raises = rebase_abort_raises
+
+... [25 lines omitted] ...
+
+    90→        Tracks call for test assertions. Raises configured exception if set.
+  </tool_result>
+  <assistant>Now let me check how FakeGit handles rebase ops construction — do I pass `rebase_ops` into FakeGit?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1382" cache_read_input_tokens="84613" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1382}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01N9rc2uDyDV6zU2azn1aLGf">
+    <param name="pattern">rebase_ops|FakeGitRebaseOps</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1382" cache_read_input_tokens="84613" output_tokens="215" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1382, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N9rc2uDyDV6zU2azn1aLGf">
+30-)
+31-from erk_shared.gateway.git.config_ops.abc import GitConfigOps
+32-from erk_shared.gateway.git.config_ops.fake import ConfigSetRecord, FakeGitConfigOps
+33:from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+34:from erk_shared.gateway.git.rebase_ops.fake import FakeGitRebaseOps
+35-from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+36-from erk_shared.gateway.git.remote_ops.fake import FakeGitRemoteOps
+37-from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+--
+432-        )
+433-
+434-        # Rebase operations subgateway - linked to FakeGit's state
+435:        self._rebase_gateway = FakeGitRebaseOps(
+436-            rebase_in_progress=rebase_in_progress,
+437-            rebase_onto_result=rebase_onto_result,
+438-            rebase_continue_raises=rebase_continue_raises,
+
+[Showing results with pagination = limit: 30, offset: 0]
+  </tool_result>
+  <assistant>Good — `FakeGit` constructor accepts `rebase_in_progress` and `rebase_onto_result` and forwards them to `FakeGitRebaseOps`. Now let me check FakeGit's `__init__` signature for those params.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="537" cache_read_input_tokens="85995" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 537}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0141i5AUZytBM9tsuYvx3hWh">
+    <param name="pattern">rebase_in_progress|rebase_onto_result</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="head_limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="537" cache_read_input_tokens="85995" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 537}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0141i5AUZytBM9tsuYvx3hWh">
+152:        rebase_in_progress: bool | Callable[[Path], bool] = False,
+163:        rebase_onto_result: RebaseResult | None = None,
+213:            rebase_in_progress: Whether a rebase is currently in progress.
+226:            rebase_onto_result: Result to return from rebase_onto(). Defaults to success.
+270:        self._rebase_in_progress = rebase_in_progress
+280:        self._rebase_onto_result = rebase_onto_result
+436:            rebase_in_progress=rebase_in_progress,
+437:            rebase_onto_result=rebase_onto_result,
+
+[Showing results with pagination = limit: 15, offset: 0]
+  </tool_result>
+  <assistant>Now I have everything I need. Let me rewrite the tests to match the new behavior.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="418" cache_read_input_tokens="86532" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 418}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01AZMh28jE6vuHbtXENXJjBU">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/commands/pr/test_rebase.py</param>
+    <param name="content">"""Tests for erk pr rebase command."""
+
+from click.testing import CliRunner
+
+from erk.cli....[truncated 7104 chars]...laude.com/download" in result.output
+
+        assert len(executor.interactive_calls) == 0
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="418" cache_read_input_tokens="86532" output_tokens="2292" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 418, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AZMh28jE6vuHbtXENXJjBU">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/commands/pr/test_rebase.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01QjWfLtuv1RxtMCiFxeMMJf">
+    <param name="description">Run make fast-ci</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Change to /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06 and run: make fast-ci
+
+Report the full output focusing on which checks passed and which failed.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2349" cache_read_input_tokens="86950" output_tokens="142" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2349, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QjWfLtuv1RxtMCiFxeMMJf">
+## fast-ci Results
+
+**FAILED** - The make fast-ci target exited with error code 1. Most checks passed, but one test file needs formatting.
+
+### Checks Passed:
+- ✓ Lint - All checks passed
+- ✓ Prettier Check - All matched files use Prettier code style
+- ✓ Markdown Check - AGENTS.md standard passed, no violations
+- ✓ Exec Reference Check - reference.md is up to date
+- ✓ Type checking (ty) - All checks passed
+- ✓ Unit Tests (erk) - 5645 passed in 15.37s
+- ✓ Tests (erk-dev) - 136 passed in 4.53s
+- ✓ Tests (erk-statusline) - 115 passed in 1.36s
+- ✓ Tests (erk-mcp) - 24 passed
+
+### Check Failed:
+- ✗ **Format Check** - 1 file would be reformatted:
+  - `tests/commands/pr/test_rebase.py`
+
+The fast-ci pipeline failed because the file `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06/tests/commands/pr/test_rebase.py` needs formatting. All logic tests passed successfully.
+agentId: a9c4145e5a8bdf2a1 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14994
+tool_uses: 1
+duration_ms: 37895&lt;/usage&gt;
+  </tool_result>
+  <assistant>Just a formatting issue. Let me fix it.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="89846" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 89846}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01TgvGkYkm14GCM9NquuwuAJ">
+    <param name="description">Run make format</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Change to /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06 and run: make format
+
+Report the output.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="89846" cache_read_input_tokens="0" output_tokens="140" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 89846, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TgvGkYkm14GCM9NquuwuAJ">
+The Makefile does not have a `format` target. The available formatting targets are:
+- `prettier` - writes markdown formatting
+- `prettier-check` - checks markdown formatting
+- `format-check` - checks Python formatting with ruff
+- `fix` - applies all formatting fixes (ruff + prettier)
+
+Did you mean `make format-check` or `make fix`? Let me know which one you'd like me to run.
+agentId: a16a5cb04c3570638 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 16757
+tool_uses: 3
+duration_ms: 5821&lt;/usage&gt;
+  </tool_result>
+  <tool_use name="Agent" id="toolu_0114RcqNenwy9gMiD7cda1cZ">
+    <param name="description">Run make fix</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Change to /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06 and run: make fix
+
+Report the output.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="305" cache_read_input_tokens="89846" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 305, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0114RcqNenwy9gMiD7cda1cZ">
+## Summary
+
+**make fix passed**: All code formatting and linting fixes were successfully applied.
+
+Key results:
+- **ruff check --fix --unsafe-fixes**: All checks passed
+- **ruff format**: 1 file reformatted, 1613 files left unchanged
+- **prettier --write**: All markdown files checked (hundreds of files, all unchanged)
+
+The output shows that `make fix` ran three formatting/linting tools:
+1. Ruff linting with automatic fixes
+2. Ruff code formatting
+3. Prettier markdown formatting
+
+All tools completed successfully with minimal changes needed (only 1 Python file required formatting).
+agentId: a235627b39280c3d9 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 17209
+tool_uses: 4
+duration_ms: 14784&lt;/usage&gt;
+  </tool_result>
+  <assistant>Now let me verify everything passes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="891" cache_read_input_tokens="90151" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 891}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01UMygx24FXNrKu8533h2Kxr">
+    <param name="description">Run make fast-ci</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Change to /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-06 and run: make fast-ci
+
+Report which checks passed and which failed.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="891" cache_read_input_tokens="90151" output_tokens="145" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 891, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UMygx24FXNrKu8533h2Kxr">
+## Summary
+
+All fast-ci checks **passed**:
+
+**Checks Passed:**
+- **Lint** - All checks passed
+- **Format Check** - 1614 files already formatted
+- **Prettier Check** - All matched files use Prettier code style
+- **Markdown Check** - AGENTS.md standard passed, 19 CLAUDE.md files checked with 0 violations
+- **Exec Reference Check** - .claude/skills/erk-exec/reference.md is up to date
+- **ty** - All checks passed
+- **Unit Tests (erk)** - 5645 passed in 7.79s
+- **Tests (erk-dev)** - 136 passed in 2.70s
+- **Tests (erk-statusline)** - 115 passed in 0.79s
+- **Tests (erk-mcp)** - 24 passed (in 100%)
+
+No failures were detected.
+agentId: ab706d019b3f440d0 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14551
+tool_uses: 1
+duration_ms: 22503&lt;/usage&gt;
+  </tool_result>
+  <assistant>All checks pass.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="433" cache_read_input_tokens="91042" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 433}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01FBGSscGQyuQaKSjTxd61sj">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="433" cache_read_input_tokens="91042" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 433, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FBGSscGQyuQaKSjTxd61sj">
+Updated task #2 status
+  </tool_result>
+  <assistant>## Finalization Status: SUCCESS
+
+All CI checks passed:
+
+- **Lint (ruff check)**: PASSED
+
+- **Format (ruff format --check)**: PASSED
+
+- **Prettier**: PASSED
+
+- **AGENTS.md Standard (md-check)**: PASSED
+
+- **ty**: PASSED
+
+- **Tests**: PASSED (5645 + 136 + 115 + 24 = 5920 tests)
+
+- **Exec Reference Check**: PASSED
+
+Now let me complete the implementation lifecycle steps.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="93" cache_read_input_tokens="91475" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 93}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01DWn9zrkBZuzwpX5TCPrxrU">
+    <param name="command">erk exec impl-signal ended --session-id="c9172f22-fb4d-445f-ae46-270e1ad81025" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="93" cache_read_input_tokens="91475" output_tokens="235" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 93, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DWn9zrkBZuzwpX5TCPrxrU">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8811
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01895JVLWt3nC5bfN8uiAvep">
+    <param name="command">erk exec upload-impl-session --session-id="c9172f22-fb4d-445f-ae46-270e1ad81025" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="273" cache_read_input_tokens="91568" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 273, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01895JVLWt3nC5bfN8uiAvep">
+{"uploaded": true, "plan_id": 8811}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01SesetmPLtGmge3Fk1UyUaA">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="141" cache_read_input_tokens="91841" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 141, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SesetmPLtGmge3Fk1UyUaA">
+{"cleaned": true}
+  </tool_result>
+  <assistant>Now submit the PR.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="97" cache_read_input_tokens="91982" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 97}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014bXTFi6TeuPzuYuyqMmFu2">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="97" cache_read_input_tokens="91982" output_tokens="100" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 97, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014bXTFi6TeuPzuYuyqMmFu2">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013n6cH9jUuKn7GhbjnHtLhZ">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="126" cache_read_input_tokens="92079" output_tokens="85" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 126, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013n6cH9jUuKn7GhbjnHtLhZ">
+{
+  "success": false,
+  "event": "submitted",
+  "error_type": "no-plan-reference",
+  "message": "No plan reference found"
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01G5TTaEcCWVTRcwKbYwJRo7">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="138" cache_read_input_tokens="92205" output_tokens="89" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 138, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01G5TTaEcCWVTRcwKbYwJRo7">
+
+  </tool_result>
+  <assistant>Implementation complete. Here's a summary:
+
+## Changes Made
+
+**`src/erk/cli/commands/pr/rebase_cmd.py`** — Rewrote the rebase command with a two-phase approach:
+
+1. **Phase 1 (mechanical rebase):**
+   - Graphite enabled: runs `gt restack --no-interactive`, prints success on clean restack
+   - Graphite disabled: runs `git rebase &lt;target&gt;` via gateway, prints success on clean rebase
+   - Graphite enabled but branch not tracked: errors with "gt track" hint
+   - Graphite disabled without `--target`: errors asking for target
+
+2. **Phase 2 (conflict fallback):** If conflicts arise (or rebase already in progress), launches Claude TUI interactively with `/erk:rebase` via `execute_interactive()`
+
+**`tests/commands/pr/test_rebase.py`** — Rewrote tests to match new behavior:
+- `test_pr_rebase_non_graphite_success` — clean git rebase succeeds
+- `test_pr_rebase_non_graphite_conflict_launches_tui` — conflicts launch Claude TUI
+- `test_pr_rebase_non_graphite_no_target_error` — missing `--target` errors
+- `test_pr_rebase_in_progress_launches_tui` — existing rebase goes straight to TUI
+- `test_pr_rebase_requires_dangerous_flag` — dangerous flag enforcement
+- `test_pr_rebase_skip_dangerous_with_config` — config override for dangerous flag
+- `test_pr_rebase_claude_not_available` — Claude CLI missing error</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="115" cache_read_input_tokens="92343" output_tokens="400" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 115, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
