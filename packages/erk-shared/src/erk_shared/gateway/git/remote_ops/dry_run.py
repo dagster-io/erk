@@ -85,8 +85,12 @@ class DryRunGitRemoteOps(GitRemoteOps):
     # ============================================================================
 
     def get_remote_ref(self, repo_root: Path, remote: str, ref: str) -> str | None:
-        """Get remote ref (read-only, delegates to wrapped)."""
+        """Get remote ref SHA (read-only, delegates to wrapped)."""
         return self._wrapped.get_remote_ref(repo_root, remote, ref)
+
+    def get_local_tracking_ref_sha(self, repo_root: Path, remote: str, branch: str) -> str | None:
+        """Get local tracking ref SHA (read-only, delegates to wrapped)."""
+        return self._wrapped.get_local_tracking_ref_sha(repo_root, remote, branch)
 
     def get_remote_url(self, repo_root: Path, remote: str) -> str:
         """Get remote URL (read-only, delegates to wrapped)."""

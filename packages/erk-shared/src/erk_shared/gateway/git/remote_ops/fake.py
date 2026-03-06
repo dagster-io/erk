@@ -27,6 +27,8 @@ class FakeGitRemoteOps(GitRemoteOps):
     Constructor Injection:
     ---------------------
     - remote_urls: Mapping of (repo_root, remote_name) -> remote URL
+    - remote_refs: Mapping of (repo_root, remote, ref) -> SHA string
+    - local_tracking_refs: Mapping of (repo_root, remote, branch) -> SHA string
     - pull_branch_raises: Exception to raise when pull_branch() is called
     - push_to_remote_error: PushError to return when push_to_remote() is called
     - pull_rebase_error: PullRebaseError to return when pull_rebase() is called
@@ -45,7 +47,8 @@ class FakeGitRemoteOps(GitRemoteOps):
         self,
         *,
         remote_urls: dict[tuple[Path, str], str] | None = None,
-        remote_refs: dict[tuple[str, str], str] | None = None,
+        remote_refs: dict[tuple[Path, str, str], str] | None = None,
+        local_tracking_refs: dict[tuple[Path, str, str], str] | None = None,
         fetch_branch_raises: Exception | None = None,
         pull_branch_raises: Exception | None = None,
         push_to_remote_error: PushError | None = None,
@@ -56,7 +59,8 @@ class FakeGitRemoteOps(GitRemoteOps):
 
         Args:
             remote_urls: Mapping of (repo_root, remote_name) -> remote URL
-            remote_refs: Mapping of (remote, ref) -> commit SHA for get_remote_ref()
+            remote_refs: Mapping of (repo_root, remote, ref) -> SHA string for get_remote_ref()
+            local_tracking_refs: Mapping of (repo_root, remote, branch) -> SHA string
             fetch_branch_raises: Exception to raise when fetch_branch() is called
             pull_branch_raises: Exception to raise when pull_branch() is called
             push_to_remote_error: PushError to return when push_to_remote() is called
@@ -65,6 +69,7 @@ class FakeGitRemoteOps(GitRemoteOps):
         # Use `is None` check to preserve empty dict reference from FakeGit
         self._remote_urls = remote_urls if remote_urls is not None else {}
         self._remote_refs = remote_refs if remote_refs is not None else {}
+        self._local_tracking_refs = local_tracking_refs if local_tracking_refs is not None else {}
         self._fetch_branch_raises = fetch_branch_raises
         self._pull_branch_raises = pull_branch_raises
         self._push_to_remote_error = push_to_remote_error
@@ -143,7 +148,11 @@ class FakeGitRemoteOps(GitRemoteOps):
 
     def get_remote_ref(self, repo_root: Path, remote: str, ref: str) -> str | None:
         """Return pre-configured remote ref SHA, or None."""
-        return self._remote_refs.get((remote, ref))
+        return self._remote_refs.get((repo_root, remote, ref))
+
+    def get_local_tracking_ref_sha(self, repo_root: Path, remote: str, branch: str) -> str | None:
+        """Return pre-configured local tracking ref SHA, or None."""
+        return self._local_tracking_refs.get((repo_root, remote, branch))
 
     def get_remote_url(self, repo_root: Path, remote: str) -> str:
         """Get the URL for a git remote.
