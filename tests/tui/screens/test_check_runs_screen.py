@@ -1,7 +1,13 @@
-"""Tests for _format_check_runs() in check_runs_screen."""
+"""Tests for check_runs_screen formatting and async behavior."""
 
-from erk.tui.screens.check_runs_screen import _format_check_runs
+import pytest
+from textual.widgets import Markdown
+
+from erk.tui.app import ErkDashApp
+from erk.tui.data.types import PlanFilters
+from erk.tui.screens.check_runs_screen import CheckRunsScreen, _format_check_runs
 from erk_shared.gateway.github.types import PRCheckRun
+from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
 
 
 def _make_check_run(
@@ -144,3 +150,66 @@ def test_summary_with_multiple_checks_only_matching() -> None:
     # lint check line + summary line + test check line = 3 lines
     assert len(lines) == 3
     assert "  > - Formatting error" in lines[1]
+
+
+# ============================================================================
+# Async screen tests — two-phase loading lifecycle
+# ============================================================================
+
+
+@pytest.mark.asyncio
+async def test_summaries_update_markdown_in_place() -> None:
+    """Summaries update existing Markdown widget in-place (no remove/mount race)."""
+    provider = FakePlanDataProvider(
+        plans=[
+            make_plan_row(
+                100,
+                "Test Plan",
+                pr_number=42,
+                pr_url="https://github.com/test/repo/pull/42",
+                checks_passing=False,
+                checks_counts=(3, 4),
+            )
+        ]
+    )
+    provider.set_check_runs(
+        42,
+        [
+            PRCheckRun(
+                name="CI / lint",
+                status="completed",
+                conclusion="failure",
+                detail_url=None,
+            ),
+        ],
+    )
+    provider.set_ci_summaries(42, {"lint": "- Unused import in foo.py"})
+
+    filters = PlanFilters.default()
+    app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        await pilot.pause()
+
+        # Open CheckRunsScreen via the view-checks action (bound to 'h')
+        await pilot.press("h")
+        await pilot.pause()
+        await pilot.pause()
+
+        screen = app.screen_stack[-1]
+        assert isinstance(screen, CheckRunsScreen)
+
+        # Wait for both Phase 1 (check runs) and Phase 2 (summaries) to complete
+        await pilot.pause(0.5)
+
+        # The #checks-content Markdown widget should exist (updated in-place, not removed)
+        markdown = screen.query_one("#checks-content", Markdown)
+
+        # Check runs should be stored on the screen
+        assert len(screen._check_runs) == 1
+        assert screen._check_runs[0].name == "CI / lint"
+
+        # The summaries-loading indicator should be gone
+        loading_widgets = screen.query("#checks-summaries-loading")
+        assert len(loading_widgets) == 0
