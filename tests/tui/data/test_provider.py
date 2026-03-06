@@ -22,6 +22,7 @@ from erk_shared.gateway.github.types import (
 from erk_shared.gateway.graphite.fake import FakeGraphite
 from erk_shared.gateway.http.fake import FakeHttpClient
 from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+from erk_shared.gateway.plan_service.real import RealPlanService
 from erk_shared.plan_store.types import Plan, PlanState
 from tests.fakes.context import create_test_context
 from tests.test_utils.plan_helpers import format_plan_header_body_for_test
@@ -91,8 +92,6 @@ class TestBuildWorktreeMapping:
         provider = RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -141,8 +140,6 @@ class TestBuildWorktreeMapping:
         provider = RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -186,8 +183,6 @@ class TestBuildWorktreeMapping:
         provider = RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -229,8 +224,6 @@ class TestBuildWorktreeMapping:
         provider = RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -296,8 +289,6 @@ class TestBuildWorktreeMapping:
         provider = RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -365,8 +356,6 @@ class TestBuildWorktreeMapping:
         provider = RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -436,8 +425,6 @@ class TestBuildWorktreeMapping:
         provider = RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -486,8 +473,6 @@ class TestBuildWorktreeMapping:
         provider = RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -538,15 +523,15 @@ class TestClosePlan:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
-            ctx=ctx,
+        service = RealPlanService(
+            ctx,
             location=location,
             clipboard=FakeClipboard(),
             browser=FakeBrowserLauncher(),
             http_client=http_client,
         )
 
-        closed_prs = provider.close_plan(123, "https://github.com/test/repo/issues/123")
+        closed_prs = service.close_plan(123, "https://github.com/test/repo/issues/123")
 
         # Verify HTTP client was used to close the issue
         assert len(http_client.requests) == 1
@@ -614,15 +599,15 @@ class TestClosePlan:
             root=repo_root,
             repo_id=GitHubRepoId(owner="test", repo="repo"),
         )
-        provider = RealPlanDataProvider(
-            ctx=ctx,
+        service = RealPlanService(
+            ctx,
             location=location,
             clipboard=FakeClipboard(),
             browser=FakeBrowserLauncher(),
             http_client=http_client,
         )
 
-        closed_prs = provider.close_plan(123, "https://github.com/test/repo/issues/123")
+        closed_prs = service.close_plan(123, "https://github.com/test/repo/issues/123")
 
         # Verify HTTP client was used to close PR first, then issue
         assert len(http_client.requests) == 2
@@ -630,48 +615,18 @@ class TestClosePlan:
         assert http_client.requests[1].endpoint == "repos/test/repo/issues/123"
         assert closed_prs == [456]
 
-    def test_parse_owner_repo_from_url(self, tmp_path: Path) -> None:
+    def test_parse_owner_repo_from_url(self) -> None:
         """_parse_owner_repo_from_url should extract owner/repo from URL."""
-        repo_root = tmp_path / "repo"
-        repo_root.mkdir()
-        erk_dir = repo_root / ".erk"
-        erk_dir.mkdir()
+        from erk_shared.gateway.plan_service.real import _parse_owner_repo_from_url
 
-        git = FakeGit(
-            worktrees={
-                repo_root: [
-                    WorktreeInfo(path=repo_root, branch="main", is_root=True),
-                ]
-            },
-            git_common_dirs={repo_root: repo_root / ".git"},
-        )
-
-        ctx = create_test_context(
-            git=git,
-            cwd=repo_root,
-            repo=_make_repo_context(repo_root, tmp_path),
-        )
-
-        location = GitHubRepoLocation(
-            root=repo_root,
-            repo_id=GitHubRepoId(owner="test", repo="repo"),
-        )
-        provider = RealPlanDataProvider(
-            ctx=ctx,
-            location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
-            http_client=FakeHttpClient(),
-        )
-
-        result = provider._parse_owner_repo_from_url("https://github.com/owner/repo/issues/123")
+        result = _parse_owner_repo_from_url("https://github.com/owner/repo/issues/123")
         assert result == ("owner", "repo")
 
-        result = provider._parse_owner_repo_from_url("https://github.com/anthropic/erk/pulls/456")
+        result = _parse_owner_repo_from_url("https://github.com/anthropic/erk/pulls/456")
         assert result == ("anthropic", "erk")
 
         # Invalid URL returns None
-        result = provider._parse_owner_repo_from_url("invalid")
+        result = _parse_owner_repo_from_url("invalid")
         assert result is None
 
 
@@ -714,8 +669,6 @@ class TestCommentCountsDisplay:
         provider = RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -794,8 +747,6 @@ class TestCommentCountsDisplay:
         provider = RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -874,8 +825,6 @@ class TestCommentCountsDisplay:
         provider = RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -968,8 +917,6 @@ class TestStackedPrDetection:
         provider = RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -1050,8 +997,6 @@ class TestLearnStatusDisplay:
         provider = RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -1116,8 +1061,6 @@ class TestLearnStatusDisplay:
         provider = RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -1182,8 +1125,6 @@ class TestLearnStatusDisplay:
         provider = RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -1248,8 +1189,6 @@ class TestLearnStatusDisplay:
         provider = RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -1318,8 +1257,6 @@ class TestLearnStatusDisplay:
         provider = RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -1388,8 +1325,6 @@ class TestLearnStatusDisplay:
         provider = RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -1460,8 +1395,6 @@ class TestLearnStatusDisplay:
         provider = RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -1554,8 +1487,6 @@ class TestBlockingDepsPlans:
         return RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -1745,7 +1676,7 @@ class TestBlockingDepsPlans:
         assert "#200" in displays
 
     def test_next_node_own_pr_collected(self, tmp_path: Path) -> None:
-        """Node's own PR appears in objective_head_plans when not terminal."""
+        """Node's own PR appears in objective_deps_plans when not terminal."""
         provider = self._make_provider(tmp_path)
 
         # Node 1.1 is in_progress with its own PR, no deps
@@ -1787,8 +1718,8 @@ class TestBlockingDepsPlans:
 
         # Node 1.1 is next (pending depends on it, but 1.1 is in_progress so
         # find_graph_next_node falls back to it). Its own PR should appear.
-        assert len(row.objective_head_plans) == 1
-        display, url = row.objective_head_plans[0]
+        assert len(row.objective_deps_plans) == 1
+        display, url = row.objective_deps_plans[0]
         assert display == "#300"
         assert url == "https://github.com/test/repo/pull/300"
 
@@ -1836,7 +1767,7 @@ class TestBlockingDepsPlans:
         )
 
         # #400 should appear only once (from blocking dep), not duplicated
-        displays = [d for d, _url in row.objective_head_plans]
+        displays = [d for d, _url in row.objective_deps_plans]
         assert displays.count("#400") == 1
 
 
@@ -1880,8 +1811,6 @@ class TestFetchPlansByIds:
         return RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 
@@ -1995,8 +1924,6 @@ class TestAppendTimingLog:
         return RealPlanDataProvider(
             ctx=ctx,
             location=location,
-            clipboard=FakeClipboard(),
-            browser=FakeBrowserLauncher(),
             http_client=FakeHttpClient(),
         )
 

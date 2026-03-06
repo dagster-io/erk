@@ -1,22 +1,18 @@
 """Fake plan data provider for testing TUI components."""
 
 from datetime import UTC, datetime
-from pathlib import Path
 
 from erk.tui.data.provider_abc import PlanDataProvider
 from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
 from erk.tui.sorting.types import BranchActivity
-from erk_shared.gateway.browser.abc import BrowserLauncher
-from erk_shared.gateway.browser.fake import FakeBrowserLauncher
-from erk_shared.gateway.clipboard.abc import Clipboard
-from erk_shared.gateway.clipboard.fake import FakeClipboard
-from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
 
 
 class FakePlanDataProvider(PlanDataProvider):
     """Fake implementation of PlanDataProvider for testing.
 
     Returns canned data without making any API calls.
+    Only handles TUI data assembly methods (fetch_plans, etc.).
+    Domain operations (close_plan, dispatch, etc.) are on FakePlanService.
     """
 
     def __init__(
@@ -24,9 +20,6 @@ class FakePlanDataProvider(PlanDataProvider):
         *,
         plans: list[PlanRowData] | None = None,
         plans_by_labels: dict[tuple[str, ...], list[PlanRowData]] | None = None,
-        clipboard: Clipboard | None = None,
-        browser: BrowserLauncher | None = None,
-        repo_root: Path | None = None,
         fetch_error: str | None = None,
     ) -> None:
         """Initialize with optional canned plan data.
@@ -35,40 +28,13 @@ class FakePlanDataProvider(PlanDataProvider):
             plans: List of PlanRowData to return, or None for empty list
             plans_by_labels: Per-label-set responses for testing view switching.
                 When set, fetch_plans() checks this first using the filter labels.
-            clipboard: Clipboard interface, defaults to FakeClipboard()
-            browser: BrowserLauncher interface, defaults to FakeBrowserLauncher()
-            repo_root: Repository root path, defaults to Path("/fake/repo")
             fetch_error: If set, fetch_plans() raises RuntimeError with this message.
                 Use to simulate API failures.
         """
         self._plans = plans or []
         self._plans_by_labels = plans_by_labels
         self._fetch_count = 0
-        self._clipboard = clipboard if clipboard is not None else FakeClipboard()
-        self._browser = browser if browser is not None else FakeBrowserLauncher()
-        self._repo_root = repo_root if repo_root is not None else Path("/fake/repo")
         self._fetch_error = fetch_error
-        self._plan_content_by_plan_id: dict[int, str] = {}
-        self._objective_content_by_plan_id: dict[int, str] = {}
-        self._review_threads_by_pr: dict[int, list[PRReviewThread]] = {}
-        self._check_runs_by_pr: dict[int, list[PRCheckRun]] = {}
-        self._ci_summaries_by_pr: dict[int, dict[str, str]] = {}
-        self._stacks_by_branch: dict[str, list[str]] = {}
-
-    @property
-    def repo_root(self) -> Path:
-        """Get the repository root path."""
-        return self._repo_root
-
-    @property
-    def clipboard(self) -> Clipboard:
-        """Get the clipboard interface for copy operations."""
-        return self._clipboard
-
-    @property
-    def browser(self) -> BrowserLauncher:
-        """Get the browser launcher interface for opening URLs."""
-        return self._browser
 
     def fetch_plans(self, filters: PlanFilters) -> tuple[list[PlanRowData], FetchTimings | None]:
         """Return canned plan data.
@@ -103,37 +69,8 @@ class FakePlanDataProvider(PlanDataProvider):
         """
         self._plans = plans
 
-    def close_plan(self, plan_id: int, plan_url: str) -> list[int]:
-        """Fake close plan implementation.
-
-        Removes the plan from the internal list and tracks the closure.
-
-        Args:
-            plan_id: The plan ID to close
-            plan_url: The plan URL (unused in fake)
-
-        Returns:
-            Empty list (no PRs closed in fake)
-        """
-        self._plans = [p for p in self._plans if p.plan_id != plan_id]
-        return []
-
-    def dispatch_to_queue(self, plan_id: int, plan_url: str) -> None:
-        """Fake dispatch to queue implementation.
-
-        Tracks the dispatch without actually dispatching.
-
-        Args:
-            plan_id: The plan ID to dispatch
-            plan_url: The plan URL (unused in fake)
-        """
-        # Just track the call - actual dispatch is complex and not needed for UI tests
-        pass
-
     def fetch_branch_activity(self, rows: list[PlanRowData]) -> dict[int, BranchActivity]:
         """Fake branch activity implementation.
-
-        Returns empty activity for all plans.
 
         Args:
             rows: List of plan rows (unused in fake)
@@ -143,56 +80,8 @@ class FakePlanDataProvider(PlanDataProvider):
         """
         return {}
 
-    def fetch_plan_content(self, plan_id: int, plan_body: str) -> str | None:
-        """Fake plan content fetch implementation.
-
-        Returns the plan_content if configured, otherwise None.
-
-        Args:
-            plan_id: The GitHub issue number
-            plan_body: The issue body (unused in fake)
-
-        Returns:
-            The configured plan content for this plan, or None
-        """
-        return self._plan_content_by_plan_id.get(plan_id)
-
-    def set_plan_content(self, plan_id: int, content: str) -> None:
-        """Set the plan content to return for a specific plan.
-
-        Args:
-            plan_id: The GitHub issue number
-            content: The plan content to return
-        """
-        self._plan_content_by_plan_id[plan_id] = content
-
-    def fetch_objective_content(self, plan_id: int, plan_body: str) -> str | None:
-        """Fake objective content fetch implementation.
-
-        Returns the objective_content if configured, otherwise None.
-
-        Args:
-            plan_id: The GitHub issue number
-            plan_body: The issue body (unused in fake)
-
-        Returns:
-            The configured objective content for this plan, or None
-        """
-        return self._objective_content_by_plan_id.get(plan_id)
-
-    def set_objective_content(self, plan_id: int, content: str) -> None:
-        """Set the objective content to return for a specific plan.
-
-        Args:
-            plan_id: The GitHub issue number
-            content: The objective content to return
-        """
-        self._objective_content_by_plan_id[plan_id] = content
-
     def fetch_plans_by_ids(self, plan_ids: set[int]) -> list[PlanRowData]:
         """Fake plans-by-ids fetch implementation.
-
-        Filters the stored plans list by plan_id.
 
         Args:
             plan_ids: Set of plan issue numbers to fetch
@@ -208,8 +97,6 @@ class FakePlanDataProvider(PlanDataProvider):
     def fetch_plans_for_objective(self, objective_issue: int) -> list[PlanRowData]:
         """Fake plans-for-objective fetch implementation.
 
-        Filters the stored plans list by objective_issue field.
-
         Args:
             objective_issue: The objective issue number to filter by
 
@@ -217,94 +104,6 @@ class FakePlanDataProvider(PlanDataProvider):
             List of PlanRowData matching the given objective_issue
         """
         return [p for p in self._plans if p.objective_issue == objective_issue]
-
-    def get_branch_stack(self, branch: str) -> list[str] | None:
-        """Fake branch stack lookup.
-
-        Returns the configured stack for a branch, or None.
-
-        Args:
-            branch: The branch name to look up
-
-        Returns:
-            Configured list of branch names, or None
-        """
-        return self._stacks_by_branch.get(branch)
-
-    def set_branch_stack(self, branch: str, stack: list[str]) -> None:
-        """Configure the stack to return for a branch.
-
-        Args:
-            branch: The branch name
-            stack: List of branch names in the stack
-        """
-        self._stacks_by_branch[branch] = stack
-
-    def fetch_check_runs(self, pr_number: int) -> list[PRCheckRun]:
-        """Fake check runs fetch implementation.
-
-        Returns configured check runs for a PR, or empty list.
-
-        Args:
-            pr_number: The PR number to fetch check runs for
-
-        Returns:
-            Configured list of PRCheckRun for this PR, or empty list
-        """
-        return self._check_runs_by_pr.get(pr_number, [])
-
-    def set_check_runs(self, pr_number: int, check_runs: list[PRCheckRun]) -> None:
-        """Set the check runs to return for a specific PR.
-
-        Args:
-            pr_number: The PR number
-            check_runs: List of PRCheckRun to return
-        """
-        self._check_runs_by_pr[pr_number] = check_runs
-
-    def fetch_unresolved_comments(self, pr_number: int) -> list[PRReviewThread]:
-        """Fake unresolved comments fetch implementation.
-
-        Returns configured review threads for a PR, or empty list.
-
-        Args:
-            pr_number: The PR number to fetch threads for
-
-        Returns:
-            Configured list of PRReviewThread for this PR, or empty list
-        """
-        return self._review_threads_by_pr.get(pr_number, [])
-
-    def set_review_threads(self, pr_number: int, threads: list[PRReviewThread]) -> None:
-        """Set the review threads to return for a specific PR.
-
-        Args:
-            pr_number: The PR number
-            threads: List of PRReviewThread to return
-        """
-        self._review_threads_by_pr[pr_number] = threads
-
-    def fetch_ci_summaries(self, pr_number: int) -> dict[str, str]:
-        """Fake CI summaries fetch implementation.
-
-        Returns configured summaries for a PR, or empty dict.
-
-        Args:
-            pr_number: The PR number to fetch summaries for
-
-        Returns:
-            Configured mapping of check name to summary text, or empty dict
-        """
-        return self._ci_summaries_by_pr.get(pr_number, {})
-
-    def set_ci_summaries(self, pr_number: int, summaries: dict[str, str]) -> None:
-        """Set the CI summaries to return for a specific PR.
-
-        Args:
-            pr_number: The PR number
-            summaries: Mapping of check name to summary text
-        """
-        self._ci_summaries_by_pr[pr_number] = summaries
 
 
 def make_plan_row(
@@ -372,6 +171,8 @@ def make_plan_row(
         run_status: Workflow run status
         run_conclusion: Workflow run conclusion
         comment_counts: Tuple of (resolved, total) comment counts (None shows "-")
+        checks_passing: Whether checks are passing
+        checks_counts: Tuple of (passing, total) check counts
         learn_status: Learn workflow status ("pending", "completed_with_plan", etc.)
         learn_plan_issue: Issue number of generated learn plan
         learn_plan_issue_closed: Whether the learn plan issue is closed (True/False/None)
@@ -382,11 +183,17 @@ def make_plan_row(
         objective_total_nodes: Total nodes in objective roadmap
         objective_progress_display: Progress display (e.g., "3/7" or "-")
         objective_slug_display: Slug or stripped title fallback (max 25 chars)
-        objective_state_display: Sparkline string (e.g., "✓✓✓▶▶○○○○")
+        objective_state_display: Sparkline string (e.g., "done done done wip wip todo")
         objective_deps_display: Dependency status of next node (e.g., "ready", "in progress")
+        objective_deps_plans: Blocking dep PR references
+        objective_next_node_display: Next node ID display
         updated_at: Last update datetime (defaults to same as created_at)
         updated_display: Formatted relative time for last update
         created_at: Creation datetime (defaults to 2025-01-01T00:00:00Z)
+        author: Author username
+        is_learn_plan: Whether this is a learn plan
+        lifecycle_display: Lifecycle stage display string
+        status_display: Status indicators display string
 
     Returns:
         PlanRowData populated with test data
@@ -422,7 +229,7 @@ def make_plan_row(
     if pr_number is not None:
         computed_pr_display = f"#{pr_number}"
 
-    # Allow override of pr_display for testing indicators like 🔗
+    # Allow override of pr_display for testing indicators like link emoji
     final_pr_display = pr_display if pr_display is not None else computed_pr_display
 
     # Compute comment counts display based on pr_number presence

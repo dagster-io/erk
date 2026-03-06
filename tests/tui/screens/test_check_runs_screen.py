@@ -9,6 +9,7 @@ from erk.tui.formatting.ci_checks import format_check_runs
 from erk.tui.screens.check_runs_screen import CheckRunsScreen
 from erk_shared.gateway.github.types import PRCheckRun
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+from erk_shared.gateway.plan_service.fake import FakePlanService
 
 
 def _make_check_run(
@@ -173,7 +174,8 @@ async def test_summaries_update_markdown_in_place() -> None:
             )
         ]
     )
-    provider.set_check_runs(
+    service = FakePlanService()
+    service.set_check_runs(
         42,
         [
             PRCheckRun(
@@ -184,10 +186,10 @@ async def test_summaries_update_markdown_in_place() -> None:
             ),
         ],
     )
-    provider.set_ci_summaries(42, {"lint": "- Unused import in foo.py"})
+    service.set_ci_summaries(42, {"lint": "- Unused import in foo.py"})
 
     filters = PlanFilters.default()
-    app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+    app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
     async with app.run_test() as pilot:
         await pilot.pause()

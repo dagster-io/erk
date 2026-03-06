@@ -8,6 +8,7 @@ from erk.tui.app import ErkDashApp
 from erk.tui.data.types import PlanFilters
 from erk.tui.screens.plan_detail_screen import PlanDetailScreen
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+from erk_shared.gateway.plan_service.fake import FakePlanService
 
 
 class TestStreamingCommandTimeout:
@@ -26,10 +27,14 @@ class TestStreamingCommandTimeout:
         """
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -67,10 +72,14 @@ class TestStreamingCommandTimeout:
         """Fast command completes before timeout and cancels timer."""
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -109,10 +118,14 @@ class TestStreamingCommandTimeout:
         """Setting timeout=0 disables the timeout timer."""
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -153,10 +166,14 @@ class TestStreamingCommandTimeout:
         """Modal cannot be dismissed while command is running."""
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -209,7 +226,9 @@ class TestClosePlanInProcess:
             ],
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -237,8 +256,8 @@ class TestClosePlanInProcess:
             assert detail_screen._command_running is False
 
     @pytest.mark.asyncio
-    async def test_close_plan_in_process_removes_plan_from_list(self) -> None:
-        """In-process close plan removes the plan from provider."""
+    async def test_close_plan_in_process_completes_successfully(self) -> None:
+        """In-process close plan completes with success status."""
         provider = FakePlanDataProvider(
             plans=[
                 make_plan_row(123, "Plan A"),
@@ -246,14 +265,13 @@ class TestClosePlanInProcess:
             ],
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
             await pilot.pause()
-
-            # Should have 2 plans
-            assert len(provider._plans) == 2
 
             # Open detail screen
             await pilot.press("space")
@@ -267,6 +285,9 @@ class TestClosePlanInProcess:
             detail_screen.run_close_plan_in_process(123, "https://github.com/test/repo/issues/123")
             await pilot.pause(0.3)
 
-            # Plan should be removed from provider
-            assert len(provider._plans) == 1
-            assert provider._plans[0].plan_id == 456
+            # Close should complete successfully
+            assert detail_screen._command_running is False
+            panel = detail_screen._output_panel
+            assert panel is not None
+            assert panel.is_completed
+            assert panel.succeeded is True

@@ -19,6 +19,7 @@ from erk.tui.actions.filter_actions import FilterActionsMixin
 from erk.tui.actions.navigation import NavigationActionsMixin
 from erk.tui.actions.palette import PaletteActionsMixin
 from erk.tui.commands.provider import MainListCommandProvider
+from erk.tui.data.provider_abc import PlanDataProvider
 from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
 from erk.tui.filtering.logic import filter_plans
 from erk.tui.filtering.types import FilterMode, FilterState
@@ -37,7 +38,7 @@ from erk.tui.views.types import (
 from erk.tui.widgets.plan_table import PlanDataTable
 from erk.tui.widgets.status_bar import StatusBar
 from erk.tui.widgets.view_bar import ViewBar
-from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+from erk_shared.gateway.plan_service.abc import PlanService
 
 
 class ErkDashApp(
@@ -105,6 +106,7 @@ class ErkDashApp(
         self,
         *,
         provider: PlanDataProvider,
+        service: PlanService,
         filters: PlanFilters,
         refresh_interval: float = 15.0,
         initial_sort: SortState | None = None,
@@ -113,7 +115,8 @@ class ErkDashApp(
         """Initialize the dashboard app.
 
         Args:
-            provider: Data provider for fetching plan data
+            provider: Data provider for fetching plan display data
+            service: Plan service for domain operations (close, dispatch, content)
             filters: Filter options for the plan list
             refresh_interval: Seconds between auto-refresh (0 to disable)
             initial_sort: Initial sort state (defaults to by plan number)
@@ -121,6 +124,7 @@ class ErkDashApp(
         """
         super().__init__()
         self._provider = provider
+        self._service = service
         self._plan_filters = filters
         self._refresh_interval = refresh_interval
         self._cmux_integration = cmux_integration
@@ -476,7 +480,7 @@ class ErkDashApp(
         if event.row_index < len(self._rows):
             row = self._rows[event.row_index]
             if row.plan_url:
-                self._provider.browser.launch(row.plan_url)
+                self._service.browser.launch(row.plan_url)
                 if self._status_bar is not None:
                     self._status_bar.set_message(f"Opened plan #{row.plan_id}")
 
@@ -486,7 +490,7 @@ class ErkDashApp(
         if event.row_index < len(self._rows):
             row = self._rows[event.row_index]
             if row.pr_url:
-                self._provider.browser.launch(row.pr_url)
+                self._service.browser.launch(row.pr_url)
                 if self._status_bar is not None:
                     self._status_bar.set_message(f"Opened PR #{row.pr_number}")
 
@@ -496,7 +500,7 @@ class ErkDashApp(
         if event.row_index < len(self._rows):
             row = self._rows[event.row_index]
             if row.worktree_name:
-                success = self._provider.clipboard.copy(row.worktree_name)
+                success = self._service.clipboard.copy(row.worktree_name)
                 if success:
                     self.notify(f"Copied: {row.worktree_name}", timeout=2)
                 else:
@@ -508,7 +512,7 @@ class ErkDashApp(
         if event.row_index < len(self._rows):
             row = self._rows[event.row_index]
             if row.run_url:
-                self._provider.browser.launch(row.run_url)
+                self._service.browser.launch(row.run_url)
                 if self._status_bar is not None:
                     run_id = row.run_url.rsplit("/", 1)[-1]
                     self._status_bar.set_message(f"Opened run {run_id}")
@@ -520,7 +524,7 @@ class ErkDashApp(
             row = self._rows[event.row_index]
             if row.objective_deps_plans:
                 display, url = row.objective_deps_plans[0]
-                self._provider.browser.launch(url)
+                self._service.browser.launch(url)
                 if self._status_bar is not None:
                     self._status_bar.set_message(f"Opened plan {display}")
 
@@ -530,7 +534,7 @@ class ErkDashApp(
         if event.row_index < len(self._rows):
             row = self._rows[event.row_index]
             if row.objective_issue is not None and row.plan_url:
-                self._provider.browser.launch(
+                self._service.browser.launch(
                     build_github_url(row.plan_url, "issues", row.objective_issue)
                 )
                 if self._status_bar is not None:

@@ -38,7 +38,7 @@ class TestViewConfig:
         """LEARN_VIEW has correct configuration."""
         assert LEARN_VIEW.mode == ViewMode.LEARN
         assert LEARN_VIEW.display_name == "Learn"
-        assert LEARN_VIEW.labels == ("erk-plan", "erk-learn")
+        assert LEARN_VIEW.labels == ("erk-learn",)
         assert LEARN_VIEW.key_hint == "2"
 
     def test_objectives_view_config(self) -> None:

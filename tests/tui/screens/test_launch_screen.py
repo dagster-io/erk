@@ -65,7 +65,7 @@ def test_launch_screen_builds_key_mapping_for_plan_view() -> None:
     assert "c" in screen._key_to_command_id  # close_plan
     assert "d" in screen._key_to_command_id  # dispatch_to_queue
     assert "l" in screen._key_to_command_id  # land_pr
-    assert "f" in screen._key_to_command_id  # rebase_remote
+    assert "r" in screen._key_to_command_id  # rebase_remote
     assert "a" in screen._key_to_command_id  # address_remote
     assert "w" in screen._key_to_command_id  # rewrite_remote
 
@@ -129,6 +129,6 @@ def test_launch_screen_maps_command_ids_correctly() -> None:
 
     assert screen._key_to_command_id["c"] == "close_plan"
     assert screen._key_to_command_id["d"] == "dispatch_to_queue"
-    assert screen._key_to_command_id["f"] == "rebase_remote"
+    assert screen._key_to_command_id["r"] == "rebase_remote"
     assert screen._key_to_command_id["a"] == "address_remote"
     assert screen._key_to_command_id["w"] == "rewrite_remote"

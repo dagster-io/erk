@@ -6,6 +6,7 @@ from erk.tui.app import ErkDashApp
 from erk.tui.data.types import PlanFilters
 from erk.tui.screens.one_shot_prompt_screen import OneShotPromptScreen
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+from erk_shared.gateway.plan_service.fake import FakePlanService
 
 
 class TestActionOneShotPrompt:
@@ -16,7 +17,9 @@ class TestActionOneShotPrompt:
         """Pressing 'x' pushes OneShotPromptScreen even with no rows."""
         provider = FakePlanDataProvider(plans=[])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -34,7 +37,9 @@ class TestActionOneShotPrompt:
         """Pressing 'x' pushes OneShotPromptScreen when rows exist (global action)."""
         provider = FakePlanDataProvider(plans=[make_plan_row(123, "Test Plan")])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -51,7 +56,9 @@ class TestActionOneShotPrompt:
         """Pressing Escape in OneShotPromptScreen dismisses without starting an operation."""
         provider = FakePlanDataProvider(plans=[])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -73,7 +80,9 @@ class TestActionOneShotPrompt:
         """_on_one_shot_prompt_result with None does not start an operation."""
         provider = FakePlanDataProvider(plans=[])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider, service=FakePlanService(), filters=filters, refresh_interval=0
+        )
 
         async with app.run_test() as pilot:
             await pilot.pause()

@@ -12,7 +12,7 @@ from textual.events import Key
 from textual.screen import ModalScreen
 from textual.widgets import Label, Markdown
 
-from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+from erk_shared.gateway.plan_service.abc import PlanService
 
 
 class PlanBodyScreen(ModalScreen):
@@ -93,23 +93,23 @@ class PlanBodyScreen(ModalScreen):
     def __init__(
         self,
         *,
-        provider: PlanDataProvider,
+        service: PlanService,
         plan_id: int,
         plan_body: str,
         full_title: str,
         content_type: Literal["Plan", "Objective"],
     ) -> None:
-        """Initialize with plan metadata and provider for async loading.
+        """Initialize with plan metadata and service for async loading.
 
         Args:
-            provider: Data provider for fetching plan/objective content
+            service: Plan service for fetching plan/objective content
             plan_id: The plan identifier
             plan_body: The plan body (contains metadata with comment ID)
             full_title: The full plan/objective title for display
             content_type: Display label - "Plan" or "Objective"
         """
         super().__init__()
-        self._provider = provider
+        self._service = service
         self._plan_id = plan_id
         self._plan_body = plan_body
         self._full_title = full_title
@@ -150,9 +150,9 @@ class PlanBodyScreen(ModalScreen):
         # them in the UI rather than crashing the TUI.
         try:
             if self._content_type == "Objective":
-                content = self._provider.fetch_objective_content(self._plan_id, self._plan_body)
+                content = self._service.fetch_objective_content(self._plan_id, self._plan_body)
             else:
-                content = self._provider.fetch_plan_content(self._plan_id, self._plan_body)
+                content = self._service.fetch_plan_content(self._plan_id, self._plan_body)
         except Exception as e:
             error = str(e)
 

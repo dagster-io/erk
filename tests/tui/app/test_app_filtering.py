@@ -6,6 +6,7 @@ from erk.tui.app import ErkDashApp
 from erk.tui.data.types import PlanFilters
 from erk.tui.widgets.status_bar import StatusBar
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+from erk_shared.gateway.plan_service.fake import FakePlanService
 
 
 class TestStackFilter:
@@ -21,12 +22,13 @@ class TestStackFilter:
                 make_plan_row(3, "Plan C", pr_head_branch="branch-c"),
             ]
         )
+        service = FakePlanService()
         # Every branch in a stack maps to the full stack list (mirrors real Graphite)
         stack_ac = ["branch-a", "branch-c"]
-        provider.set_branch_stack("branch-a", stack_ac)
-        provider.set_branch_stack("branch-c", stack_ac)
+        service.set_branch_stack("branch-a", stack_ac)
+        service.set_branch_stack("branch-c", stack_ac)
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -52,11 +54,12 @@ class TestStackFilter:
                 make_plan_row(3, "Plan C", pr_head_branch="branch-c"),
             ]
         )
+        service = FakePlanService()
         stack_ac = ["branch-a", "branch-c"]
-        provider.set_branch_stack("branch-a", stack_ac)
-        provider.set_branch_stack("branch-c", stack_ac)
+        service.set_branch_stack("branch-a", stack_ac)
+        service.set_branch_stack("branch-c", stack_ac)
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -81,10 +84,11 @@ class TestStackFilter:
                 make_plan_row(2, "Plan B", pr_head_branch="branch-b"),
             ]
         )
+        service = FakePlanService()
         # Row 0 (selected) is branch-b due to descending sort
-        provider.set_branch_stack("branch-b", ["branch-b"])
+        service.set_branch_stack("branch-b", ["branch-b"])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -108,8 +112,9 @@ class TestStackFilter:
         provider = FakePlanDataProvider(
             plans=[make_plan_row(1, "Plan A")]  # No pr_head_branch
         )
+        service = FakePlanService()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -129,8 +134,9 @@ class TestStackFilter:
             plans=[make_plan_row(1, "Plan A", pr_head_branch="solo-branch")]
             # No stack configured for solo-branch -> get_branch_stack returns None
         )
+        service = FakePlanService()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -153,12 +159,13 @@ class TestStackFilter:
                 make_plan_row(3, "Add feature gamma", pr_head_branch="branch-c"),
             ]
         )
+        service = FakePlanService()
         # branch-a and branch-c share a stack (register both directions)
         stack_ac = ["branch-a", "branch-c"]
-        provider.set_branch_stack("branch-a", stack_ac)
-        provider.set_branch_stack("branch-c", stack_ac)
+        service.set_branch_stack("branch-a", stack_ac)
+        service.set_branch_stack("branch-c", stack_ac)
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -188,10 +195,11 @@ class TestStackFilter:
                 make_plan_row(2, "Plan B", pr_head_branch="branch-b"),
             ]
         )
+        service = FakePlanService()
         # Row 0 (selected) is branch-b due to descending sort
-        provider.set_branch_stack("branch-b", ["branch-b"])
+        service.set_branch_stack("branch-b", ["branch-b"])
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -223,8 +231,9 @@ class TestObjectiveFilter:
                 make_plan_row(3, "Plan C", objective_issue=42),
             ]
         )
+        service = FakePlanService()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -250,8 +259,9 @@ class TestObjectiveFilter:
                 make_plan_row(3, "Plan C", objective_issue=42),
             ]
         )
+        service = FakePlanService()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -273,8 +283,9 @@ class TestObjectiveFilter:
         provider = FakePlanDataProvider(
             plans=[make_plan_row(1, "Plan A")]  # No objective_issue
         )
+        service = FakePlanService()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -296,8 +307,9 @@ class TestObjectiveFilter:
                 make_plan_row(2, "Plan B", objective_issue=99),
             ]
         )
+        service = FakePlanService()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -324,8 +336,9 @@ class TestObjectiveFilter:
                 make_plan_row(2, "Plan B", objective_issue=99),
             ]
         )
+        service = FakePlanService()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -353,8 +366,9 @@ class TestObjectiveFilter:
                 make_plan_row(3, "Add feature gamma", objective_issue=42),
             ]
         )
+        service = FakePlanService()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -383,8 +397,9 @@ class TestAuthorFilter:
     async def test_a_toggles_show_all_users_on(self) -> None:
         """Pressing 'a' sets _show_all_users to True and triggers refresh."""
         provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
+        service = FakePlanService()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -404,8 +419,9 @@ class TestAuthorFilter:
     async def test_a_toggles_show_all_users_off(self) -> None:
         """Pressing 'a' twice returns to my-plans mode."""
         provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
+        service = FakePlanService()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -425,8 +441,9 @@ class TestAuthorFilter:
     async def test_a_clears_data_cache(self) -> None:
         """Pressing 'a' clears the data cache to force re-fetch."""
         provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
+        service = FakePlanService()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -446,6 +463,7 @@ class TestAuthorFilter:
     async def test_a_updates_status_bar_author_filter(self) -> None:
         """Pressing 'a' updates the status bar author filter indicator."""
         provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
+        service = FakePlanService()
         filters = PlanFilters(
             labels=("erk-plan",),
             state="open",
@@ -456,7 +474,7 @@ class TestAuthorFilter:
             exclude_labels=(),
             creator="testuser",
         )
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -480,8 +498,9 @@ class TestAuthorFilter:
     async def test_escape_clears_all_users_filter(self) -> None:
         """Escape clears the all-users filter before other filters."""
         provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
+        service = FakePlanService()
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -502,6 +521,7 @@ class TestAuthorFilter:
     async def test_original_creator_preserved(self) -> None:
         """The original creator value is preserved across toggles."""
         provider = FakePlanDataProvider(plans=[make_plan_row(1, "Plan A")])
+        service = FakePlanService()
         filters = PlanFilters(
             labels=("erk-plan",),
             state="open",
@@ -512,7 +532,7 @@ class TestAuthorFilter:
             exclude_labels=(),
             creator="myuser",
         )
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
         async with app.run_test() as pilot:
             await pilot.pause()

@@ -8,7 +8,7 @@ from textual.screen import ModalScreen
 from textual.widgets import Label, Markdown
 
 from erk_shared.gateway.github.types import PRReviewThread
-from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+from erk_shared.gateway.plan_service.abc import PlanService
 
 
 def _format_threads(threads: list[PRReviewThread]) -> str:
@@ -125,23 +125,23 @@ class UnresolvedCommentsScreen(ModalScreen):
     def __init__(
         self,
         *,
-        provider: PlanDataProvider,
+        service: PlanService,
         pr_number: int,
         full_title: str,
         resolved_count: int,
         total_count: int,
     ) -> None:
-        """Initialize with PR metadata and provider for async loading.
+        """Initialize with PR metadata and service for async loading.
 
         Args:
-            provider: Data provider for fetching review threads
+            service: Plan service for fetching review threads
             pr_number: The PR number to fetch comments for
             full_title: The full plan title for display
             resolved_count: Number of resolved comment threads
             total_count: Total number of comment threads
         """
         super().__init__()
-        self._provider = provider
+        self._service = service
         self._pr_number = pr_number
         self._full_title = full_title
         self._resolved_count = resolved_count
@@ -179,7 +179,7 @@ class UnresolvedCommentsScreen(ModalScreen):
         # Error boundary: catch all exceptions from API operations to display
         # them in the UI rather than crashing the TUI.
         try:
-            threads = self._provider.fetch_unresolved_comments(self._pr_number)
+            threads = self._service.fetch_unresolved_comments(self._pr_number)
         except Exception as e:
             error = str(e)
 

@@ -9,6 +9,7 @@ from erk.tui.data.types import PlanFilters
 from erk.tui.operations.logic import extract_learn_plan_number
 from erk.tui.operations.types import OperationResult
 from erk_shared.gateway.plan_data_provider.fake import FakePlanDataProvider, make_plan_row
+from erk_shared.gateway.plan_service.fake import FakePlanService
 
 
 class _FakePopen:
@@ -37,10 +38,14 @@ class TestAddressRemoteAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456)],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
             return _FakePopen(lines=("Updated dispatch metadata",), return_code=0)
@@ -67,10 +72,14 @@ class TestAddressRemoteAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456)],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
             return _FakePopen(lines=("dispatch failed",), return_code=1)
@@ -101,10 +110,14 @@ class TestRebaseRemoteAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456)],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         captured_args: list[str] = []
 
@@ -139,10 +152,14 @@ class TestRebaseRemoteAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456)],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
             return _FakePopen(lines=("Updated dispatch metadata",), return_code=0)
@@ -169,10 +186,14 @@ class TestRebaseRemoteAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456)],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
             return _FakePopen(lines=("dispatch failed",), return_code=1)
@@ -203,10 +224,14 @@ class TestLandPrAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         captured_calls: list[list[str]] = []
 
@@ -249,10 +274,14 @@ class TestLandPrAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
             return _FakePopen(return_code=0)
@@ -285,10 +314,14 @@ class TestLandPrAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
             return _FakePopen(lines=("land failed",), return_code=1)
@@ -329,10 +362,14 @@ class TestLandPrAsync:
                     objective_issue=789,
                 )
             ],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         captured_calls: list[list[str]] = []
 
@@ -375,10 +412,14 @@ class TestLandPrAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         captured_calls: list[list[str]] = []
 
@@ -414,10 +455,14 @@ class TestLandPrAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         captured_calls: list[list[str]] = []
 
@@ -461,10 +506,14 @@ class TestLandPrAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
             return _FakePopen(
@@ -542,10 +591,14 @@ class TestDispatchToQueueAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         captured_calls: list[list[str]] = []
 
@@ -573,10 +626,14 @@ class TestDispatchToQueueAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
             return _FakePopen(lines=("Dispatched",), return_code=0)
@@ -603,10 +660,14 @@ class TestDispatchToQueueAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
             return _FakePopen(lines=("submit failed",), return_code=1)
@@ -637,10 +698,14 @@ class TestCloseObjectiveAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         captured_calls: list[list[str]] = []
 
@@ -668,10 +733,14 @@ class TestCloseObjectiveAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
             return _FakePopen(lines=("Closed",), return_code=0)
@@ -702,10 +771,14 @@ class TestCheckObjectiveAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         captured_calls: list[list[str]] = []
 
@@ -733,10 +806,14 @@ class TestCheckObjectiveAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
             return _FakePopen(lines=("Checked",), return_code=0)
@@ -768,10 +845,14 @@ class TestOneShotPlanAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         captured_args: list[str] = []
 
@@ -800,10 +881,14 @@ class TestOneShotPlanAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
             return _FakePopen(return_code=0)
@@ -834,10 +919,14 @@ class TestOneShotDispatchAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         captured_args: list[str] = []
 
@@ -866,10 +955,14 @@ class TestOneShotDispatchAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
             return _FakePopen(return_code=0)
@@ -896,10 +989,14 @@ class TestOneShotDispatchAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
             return _FakePopen(lines=("dispatch failed",), return_code=1)
@@ -930,10 +1027,14 @@ class TestRewriteRemoteAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456)],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
             return _FakePopen(lines=("Updated dispatch metadata",), return_code=0)
@@ -960,10 +1061,14 @@ class TestRewriteRemoteAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456)],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
             return _FakePopen(lines=("dispatch failed",), return_code=1)
@@ -990,10 +1095,14 @@ class TestRewriteRemoteAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456)],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         captured_args: list[str] = []
 
@@ -1032,10 +1141,14 @@ class TestCmuxCheckoutAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         captured_popen_calls: list[list[str]] = []
 
@@ -1077,10 +1190,14 @@ class TestCmuxCheckoutAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
             return _FakePopen(return_code=0)
@@ -1111,10 +1228,14 @@ class TestCmuxCheckoutAsync:
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         def fake_popen(*args: object, **kwargs: object) -> _FakePopen:
             return _FakePopen(lines=("checkout failed",), return_code=1)
@@ -1142,14 +1263,19 @@ class TestCmuxFocusWorkspace:
     ) -> None:
         """Should call select-workspace when a matching workspace is found."""
         import json
+        import shutil
         import subprocess
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         captured_run_calls: list[list[str]] = []
 
@@ -1162,6 +1288,7 @@ class TestCmuxFocusWorkspace:
             return subprocess.CompletedProcess(args=cmd, returncode=0, stdout="", stderr="")
 
         monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(shutil, "which", lambda cmd: "/usr/bin/cmux")
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -1184,14 +1311,19 @@ class TestCmuxFocusWorkspace:
     ) -> None:
         """Should only call list-workspaces when no workspace title matches."""
         import json
+        import shutil
         import subprocess
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan", pr_number=456, pr_head_branch="test-branch")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         captured_run_calls: list[list[str]] = []
 
@@ -1202,6 +1334,7 @@ class TestCmuxFocusWorkspace:
             return subprocess.CompletedProcess(args=cmd, returncode=0, stdout=data, stderr="")
 
         monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(shutil, "which", lambda cmd: "/usr/bin/cmux")
 
         async with app.run_test() as pilot:
             await pilot.pause()
@@ -1217,25 +1350,31 @@ class TestCmuxFocusWorkspace:
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
         """CalledProcessError should not propagate."""
+        import shutil
         import subprocess
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
-            raise subprocess.CalledProcessError(1, "cmux")
+            return subprocess.CompletedProcess(args=[], returncode=1, stdout="", stderr="error")
 
         monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(shutil, "which", lambda cmd: "/usr/bin/cmux")
 
         async with app.run_test() as pilot:
             await pilot.pause()
             await pilot.pause()
 
-            # Should not raise
+            # Non-zero returncode should cause early return, not crash
             app._cmux_focus_workspace("test-branch")
 
     @pytest.mark.asyncio
@@ -1243,14 +1382,19 @@ class TestCmuxFocusWorkspace:
         self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
     ) -> None:
         """Invalid JSON stdout should not propagate."""
+        import shutil
         import subprocess
 
         provider = FakePlanDataProvider(
             plans=[make_plan_row(123, "Test Plan")],
-            repo_root=tmp_path,
         )
         filters = PlanFilters.default()
-        app = ErkDashApp(provider=provider, filters=filters, refresh_interval=0)
+        app = ErkDashApp(
+            provider=provider,
+            service=FakePlanService(repo_root=tmp_path),
+            filters=filters,
+            refresh_interval=0,
+        )
 
         def fake_run(*args: object, **kwargs: object) -> subprocess.CompletedProcess[str]:
             return subprocess.CompletedProcess(
@@ -1258,6 +1402,7 @@ class TestCmuxFocusWorkspace:
             )
 
         monkeypatch.setattr(subprocess, "run", fake_run)
+        monkeypatch.setattr(shutil, "which", lambda cmd: "/usr/bin/cmux")
 
         async with app.run_test() as pilot:
             await pilot.pause()

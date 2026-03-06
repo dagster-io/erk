@@ -47,7 +47,7 @@ class FilterActionsMixin:
                 self._status_bar.set_message("No branch for stack filter")
             return
 
-        stack = self._provider.get_branch_stack(row.pr_head_branch)
+        stack = self._service.get_branch_stack(row.pr_head_branch)
         if stack is None:
             if self._status_bar is not None:
                 self._status_bar.set_message("Not in a Graphite stack")

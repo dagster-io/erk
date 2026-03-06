@@ -105,21 +105,21 @@ class NavigationActionsMixin:
 
         # Create executor with injected dependencies
         executor = RealCommandExecutor(
-            browser_launch=self._provider.browser.launch,
-            clipboard_copy=self._provider.clipboard.copy,
-            close_plan_fn=self._provider.close_plan,
+            browser_launch=self._service.browser.launch,
+            clipboard_copy=self._service.clipboard.copy,
+            close_plan_fn=self._service.close_plan,
             notify_fn=self._notify_with_severity,
             refresh_fn=self.action_refresh,
-            dispatch_to_queue_fn=self._provider.dispatch_to_queue,
+            dispatch_to_queue_fn=self._service.dispatch_to_queue,
         )
 
         self.push_screen(
             PlanDetailScreen(
                 row=row,
-                clipboard=self._provider.clipboard,
-                browser=self._provider.browser,
+                clipboard=self._service.clipboard,
+                browser=self._service.browser,
                 executor=executor,
-                repo_root=self._provider.repo_root,
+                repo_root=self._service.repo_root,
                 view_mode=self._view_mode,
                 cmux_integration=self._cmux_integration,
             )
@@ -134,7 +134,7 @@ class NavigationActionsMixin:
         # Push screen that will fetch content on-demand
         self.push_screen(
             PlanBodyScreen(
-                provider=self._provider,
+                service=self._service,
                 plan_id=row.plan_id,
                 plan_body=row.plan_body,
                 full_title=row.full_title,
@@ -158,7 +158,7 @@ class NavigationActionsMixin:
             return
         self.push_screen(
             UnresolvedCommentsScreen(
-                provider=self._provider,
+                service=self._service,
                 pr_number=row.pr_number,
                 full_title=row.full_title,
                 resolved_count=row.resolved_comment_count,
@@ -186,7 +186,7 @@ class NavigationActionsMixin:
         passing_count, total_count = row.checks_counts if row.checks_counts is not None else (0, 0)
         self.push_screen(
             CheckRunsScreen(
-                provider=self._provider,
+                service=self._service,
                 pr_number=row.pr_number,
                 full_title=row.full_title,
                 passing_count=passing_count,
@@ -208,6 +208,7 @@ class NavigationActionsMixin:
         self.push_screen(
             ObjectiveNodesScreen(
                 provider=self._provider,
+                service=self._service,
                 plan_id=row.plan_id,
                 plan_body=row.plan_body,
                 full_title=row.full_title,
@@ -232,7 +233,7 @@ class NavigationActionsMixin:
 
         if self._view_mode == ViewMode.OBJECTIVES:
             if row.plan_url:
-                self._provider.browser.launch(row.plan_url)
+                self._service.browser.launch(row.plan_url)
                 if self._status_bar is not None:
                     self._status_bar.set_message(f"Opened objective #{row.plan_id}")
             else:
@@ -240,7 +241,7 @@ class NavigationActionsMixin:
                     self._status_bar.set_message("No URL for this objective")
         else:
             if row.pr_url:
-                self._provider.browser.launch(row.pr_url)
+                self._service.browser.launch(row.pr_url)
                 if self._status_bar is not None:
                     self._status_bar.set_message(f"Opened PR #{row.pr_number}")
             else:
@@ -254,7 +255,7 @@ class NavigationActionsMixin:
             return
 
         if row.run_url is not None:
-            self._provider.browser.launch(row.run_url)
+            self._service.browser.launch(row.run_url)
             if self._status_bar is not None:
                 run_id = row.run_url.rsplit("/", 1)[-1]
                 self._status_bar.set_message(f"Opened run {run_id}")
@@ -318,7 +319,7 @@ class NavigationActionsMixin:
             return
 
         # Copy to clipboard
-        success = self._provider.clipboard.copy(cmd)
+        success = self._service.clipboard.copy(cmd)
 
         # Show status message
         if self._status_bar is not None:

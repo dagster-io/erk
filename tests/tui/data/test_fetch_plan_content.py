@@ -1,4 +1,4 @@
-"""Tests for fetch_plan_content on RealPlanDataProvider."""
+"""Tests for fetch_plan_content on RealPlanService."""
 
 from pathlib import Path
 
@@ -9,7 +9,7 @@ from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.types import GitHubRepoId, GitHubRepoLocation
 from erk_shared.gateway.http.fake import FakeHttpClient
-from erk_shared.gateway.plan_data_provider.real import RealPlanDataProvider
+from erk_shared.gateway.plan_service.real import RealPlanService
 from tests.fakes.context import create_test_context
 
 
@@ -26,8 +26,8 @@ def _make_repo_context(repo_root: Path, tmp_path: Path) -> RepoContext:
     )
 
 
-def _make_provider(tmp_path: Path, *, http_client: FakeHttpClient) -> RealPlanDataProvider:
-    """Create a RealPlanDataProvider with minimal setup for testing."""
+def _make_service(tmp_path: Path, *, http_client: FakeHttpClient) -> RealPlanService:
+    """Create a RealPlanService with minimal setup for testing."""
     repo_root = tmp_path / "repo"
     repo_root.mkdir()
     erk_dir = repo_root / ".erk"
@@ -53,8 +53,8 @@ def _make_provider(tmp_path: Path, *, http_client: FakeHttpClient) -> RealPlanDa
         repo_id=GitHubRepoId(owner="test", repo="repo"),
     )
 
-    return RealPlanDataProvider(
-        ctx=ctx,
+    return RealPlanService(
+        ctx,
         location=location,
         clipboard=FakeClipboard(),
         browser=FakeBrowserLauncher(),
@@ -85,10 +85,10 @@ plan_comment_id: null
 def test_fetch_plan_content_returns_body_directly(tmp_path: Path) -> None:
     """Plan content without metadata block is returned directly."""
     http_client = FakeHttpClient()
-    provider = _make_provider(tmp_path, http_client=http_client)
+    service = _make_service(tmp_path, http_client=http_client)
 
     plan_content = "# Draft PR Plan\n\nThis is the plan content."
-    result = provider.fetch_plan_content(42, plan_content)
+    result = service.fetch_plan_content(42, plan_content)
 
     assert result == plan_content
     assert len(http_client.requests) == 0
@@ -97,9 +97,9 @@ def test_fetch_plan_content_returns_body_directly(tmp_path: Path) -> None:
 def test_fetch_plan_content_empty_body_returns_none(tmp_path: Path) -> None:
     """Empty plan body returns None."""
     http_client = FakeHttpClient()
-    provider = _make_provider(tmp_path, http_client=http_client)
+    service = _make_service(tmp_path, http_client=http_client)
 
-    result = provider.fetch_plan_content(42, "   ")
+    result = service.fetch_plan_content(42, "   ")
 
     assert result is None
     assert len(http_client.requests) == 0
@@ -115,9 +115,9 @@ def test_fetch_plan_content_with_embedded_metadata_returns_content(
     the fix returns the body directly.
     """
     http_client = FakeHttpClient()
-    provider = _make_provider(tmp_path, http_client=http_client)
+    service = _make_service(tmp_path, http_client=http_client)
 
-    result = provider.fetch_plan_content(123, BODY_WITH_PLAN_HEADER_METADATA)
+    result = service.fetch_plan_content(123, BODY_WITH_PLAN_HEADER_METADATA)
 
     assert result == BODY_WITH_PLAN_HEADER_METADATA
     assert len(http_client.requests) == 0
