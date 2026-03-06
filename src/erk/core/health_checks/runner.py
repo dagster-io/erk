@@ -9,6 +9,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
+from erk.core.health_checks import run_all_checks
 from erk.core.health_checks.models import CheckResult
 
 if TYPE_CHECKING:
@@ -26,6 +27,4 @@ class RealHealthCheckRunner(HealthCheckRunner):
     """Production implementation that delegates to run_all_checks."""
 
     def run_all(self, ctx: ErkContext, *, check_hooks: bool) -> list[CheckResult]:
-        from erk.core.health_checks import run_all_checks
-
         return run_all_checks(ctx, check_hooks=check_hooks)
