@@ -43,6 +43,9 @@ from erk.cli.commands.exec.scripts.download_remote_session import (
 )
 from erk.cli.commands.exec.scripts.exit_plan_mode_hook import exit_plan_mode_hook
 from erk.cli.commands.exec.scripts.extract_latest_plan import extract_latest_plan
+from erk.cli.commands.exec.scripts.incremental_dispatch import (
+    incremental_dispatch,
+)
 from erk.cli.commands.exec.scripts.fetch_sessions import fetch_sessions
 from erk.cli.commands.exec.scripts.generate_pr_address_summary import (
     generate_pr_address_summary,
@@ -220,6 +223,7 @@ exec_group.add_command(get_pr_commits, name="get-pr-commits")
 exec_group.add_command(get_pr_discussion_comments, name="get-pr-discussion-comments")
 exec_group.add_command(get_pr_feedback, name="get-pr-feedback")
 exec_group.add_command(get_pr_review_comments, name="get-pr-review-comments")
+exec_group.add_command(incremental_dispatch, name="incremental-dispatch")
 exec_group.add_command(impl_init, name="impl-init")
 exec_group.add_command(impl_signal, name="impl-signal")
 exec_group.add_command(impl_verify, name="impl-verify")
