@@ -1,6 +1,9 @@
 """Tests for CommitMessageGenerator."""
 
+import time as real_time
 from pathlib import Path
+
+import pytest
 
 from erk.core.commit_message_generator import (
     CommitMessageGenerator,
@@ -9,8 +12,9 @@ from erk.core.commit_message_generator import (
 )
 from erk.core.plan_context_provider import PlanContext
 from erk_shared.core.fakes import FakeLlmCaller
-from erk_shared.core.llm_caller import LlmCallFailed, LlmResponse
+from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+from erk_shared.gateway.time.fake import FakeTime
 
 
 def _consume_generator(
@@ -41,7 +45,7 @@ def test_generate_success(tmp_path: Path) -> None:
     caller = FakeLlmCaller(
         response=LlmResponse(text="Add new feature\n\nThis adds a new feature to the codebase."),
     )
-    generator = CommitMessageGenerator(caller)
+    generator = CommitMessageGenerator(caller, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -91,7 +95,7 @@ def test_generate_with_multiline_body(tmp_path: Path) -> None:
             )
         ),
     )
-    generator = CommitMessageGenerator(caller)
+    generator = CommitMessageGenerator(caller, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -113,7 +117,7 @@ def test_generate_with_multiline_body(tmp_path: Path) -> None:
 def test_generate_fails_when_diff_file_not_found(tmp_path: Path) -> None:
     """Test that generation fails when diff file doesn't exist."""
     caller = FakeLlmCaller(response=LlmResponse(text="unused"))
-    generator = CommitMessageGenerator(caller)
+    generator = CommitMessageGenerator(caller, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=tmp_path / "nonexistent.diff",
         repo_root=tmp_path,
@@ -141,7 +145,7 @@ def test_generate_fails_when_diff_file_empty(tmp_path: Path) -> None:
     diff_file.write_text("", encoding="utf-8")
 
     caller = FakeLlmCaller(response=LlmResponse(text="unused"))
-    generator = CommitMessageGenerator(caller)
+    generator = CommitMessageGenerator(caller, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -169,7 +173,7 @@ def test_generate_fails_when_llm_call_fails(tmp_path: Path) -> None:
     caller = FakeLlmCaller(
         response=LlmCallFailed(message="API call failed"),
     )
-    generator = CommitMessageGenerator(caller)
+    generator = CommitMessageGenerator(caller, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -196,7 +200,7 @@ def test_generate_handles_title_only_output(tmp_path: Path) -> None:
     caller = FakeLlmCaller(
         response=LlmResponse(text="Fix typo in README"),
     )
-    generator = CommitMessageGenerator(caller)
+    generator = CommitMessageGenerator(caller, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -230,7 +234,7 @@ def test_generate_strips_code_fence_wrapper(tmp_path: Path) -> None:
             )
         ),
     )
-    generator = CommitMessageGenerator(caller)
+    generator = CommitMessageGenerator(caller, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -260,7 +264,7 @@ def test_generate_strips_code_fence_with_language_tag(tmp_path: Path) -> None:
             text="```markdown\nAdd new feature\n\n## Summary\n\nThis adds a new feature.\n```"
         ),
     )
-    generator = CommitMessageGenerator(caller)
+    generator = CommitMessageGenerator(caller, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -288,7 +292,7 @@ def test_generate_includes_commit_messages_in_prompt(tmp_path: Path) -> None:
     caller = FakeLlmCaller(
         response=LlmResponse(text="Add feature based on commit context\n\nUsed commit messages."),
     )
-    generator = CommitMessageGenerator(caller)
+    generator = CommitMessageGenerator(caller, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -322,7 +326,7 @@ def test_generate_works_without_commit_messages(tmp_path: Path) -> None:
     caller = FakeLlmCaller(
         response=LlmResponse(text="Simple title\n\nSimple body."),
     )
-    generator = CommitMessageGenerator(caller)
+    generator = CommitMessageGenerator(caller, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -351,7 +355,7 @@ def test_generate_passes_system_prompt_separately(tmp_path: Path) -> None:
     caller = FakeLlmCaller(
         response=LlmResponse(text="Add new feature\n\nThis adds a new feature."),
     )
-    generator = CommitMessageGenerator(caller)
+    generator = CommitMessageGenerator(caller, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -395,7 +399,7 @@ def test_generate_includes_plan_context_in_prompt(tmp_path: Path) -> None:
     caller = FakeLlmCaller(
         response=LlmResponse(text="Fix authentication session expiration\n\nImplemented fix."),
     )
-    generator = CommitMessageGenerator(caller)
+    generator = CommitMessageGenerator(caller, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -431,7 +435,7 @@ def test_generate_includes_plan_context_with_objective_summary(tmp_path: Path) -
     caller = FakeLlmCaller(
         response=LlmResponse(text="Add usage metrics tracking\n\nImplemented metrics."),
     )
-    generator = CommitMessageGenerator(caller)
+    generator = CommitMessageGenerator(caller, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -465,7 +469,7 @@ def test_generate_includes_both_plan_and_commit_messages(tmp_path: Path) -> None
     caller = FakeLlmCaller(
         response=LlmResponse(text="Refactor API for simplicity\n\nSimplified API layer."),
     )
-    generator = CommitMessageGenerator(caller)
+    generator = CommitMessageGenerator(caller, time=FakeTime())
     request = CommitMessageRequest(
         diff_file=diff_file,
         repo_root=tmp_path,
@@ -488,3 +492,48 @@ def test_generate_includes_both_plan_and_commit_messages(tmp_path: Path) -> None
     assert "Refactor API" in prompt
     assert "Developer's Commit Messages" in prompt
     assert "WIP: Started refactoring" in prompt
+
+
+def test_generate_yields_waiting_progress_for_slow_api_call(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Test that 'Still waiting' progress events are emitted during slow API calls."""
+    import erk.core.commit_message_generator as cmg_module
+
+    # Use a short interval so the test runs fast
+    monkeypatch.setattr(cmg_module, "_PROGRESS_INTERVAL_SECONDS", 0.05)
+
+    diff_file = tmp_path / "test.diff"
+    diff_file.write_text("diff --git a/file.py b/file.py\n-old\n+new", encoding="utf-8")
+
+    class SlowFakeLlmCaller(LlmCaller):
+        def call(
+            self, prompt: str, *, system_prompt: str, max_tokens: int
+        ) -> LlmResponse | NoApiKey | LlmCallFailed:
+            real_time.sleep(0.2)
+            return LlmResponse(text="Add feature\n\nSlow but successful.")
+
+    caller = SlowFakeLlmCaller()
+    # Provide enough monotonic values for start + multiple progress ticks
+    fake_time = FakeTime(monotonic_values=[0.0, 5.0, 10.0, 15.0, 20.0])
+    generator = CommitMessageGenerator(caller, time=fake_time)
+    request = CommitMessageRequest(
+        diff_file=diff_file,
+        repo_root=tmp_path,
+        current_branch="feature",
+        parent_branch="main",
+        commit_messages=None,
+        plan_context=None,
+    )
+
+    result, progress_events = _consume_generator(generator, request)
+
+    # Verify "Still waiting" messages were emitted
+    waiting_events = [e for e in progress_events if "Still waiting" in e.message]
+    assert len(waiting_events) >= 1
+    assert "5s" in waiting_events[0].message
+
+    # Verify final result is still correct
+    assert result.success is True
+    assert result.title == "Add feature"
+    assert result.body == "Slow but successful."

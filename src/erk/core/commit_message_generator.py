@@ -10,19 +10,23 @@ packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md
 from __future__ import annotations
 
 import logging
+import threading
 from collections.abc import Generator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, NoApiKey
+from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.gt.prompts import get_commit_message_prompt
+from erk_shared.gateway.time.abc import Time
 
 if TYPE_CHECKING:
     from erk.core.plan_context_provider import PlanContext
 
 logger = logging.getLogger(__name__)
+
+_PROGRESS_INTERVAL_SECONDS = 5.0
 
 
 @dataclass(frozen=True)
@@ -70,8 +74,9 @@ class CommitMessageGenerator:
     a Claude CLI subprocess.
     """
 
-    def __init__(self, llm_caller: LlmCaller) -> None:
+    def __init__(self, llm_caller: LlmCaller, *, time: Time) -> None:
         self._llm_caller = llm_caller
+        self._time = time
 
     def generate(
         self, request: CommitMessageRequest
@@ -129,7 +134,50 @@ class CommitMessageGenerator:
         )
         system_prompt = get_commit_message_prompt(request.repo_root)
 
-        result = self._llm_caller.call(user_prompt, system_prompt=system_prompt, max_tokens=4096)
+        result_holder: list[LlmResponse | NoApiKey | LlmCallFailed] = []
+        error_holder: list[Exception] = []
+
+        def _run_call() -> None:
+            try:
+                result_holder.append(
+                    self._llm_caller.call(user_prompt, system_prompt=system_prompt, max_tokens=4096)
+                )
+            except Exception as exc:
+                error_holder.append(exc)
+
+        thread = threading.Thread(target=_run_call, daemon=True)
+        start_time = self._time.monotonic()
+        thread.start()
+
+        while thread.is_alive():
+            thread.join(timeout=_PROGRESS_INTERVAL_SECONDS)
+            if thread.is_alive():
+                elapsed = int(self._time.monotonic() - start_time)
+                yield ProgressEvent(f"Still waiting... ({elapsed}s)")
+
+        if error_holder:
+            yield CompletionEvent(
+                CommitMessageResult(
+                    success=False,
+                    title=None,
+                    body=None,
+                    error_message=f"LLM call failed: {error_holder[0]}",
+                )
+            )
+            return
+
+        if not result_holder:
+            yield CompletionEvent(
+                CommitMessageResult(
+                    success=False,
+                    title=None,
+                    body=None,
+                    error_message="LLM call completed without result",
+                )
+            )
+            return
+
+        result = result_holder[0]
 
         if isinstance(result, (NoApiKey, LlmCallFailed)):
             yield CompletionEvent(
