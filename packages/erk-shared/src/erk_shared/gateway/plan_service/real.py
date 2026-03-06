@@ -210,15 +210,30 @@ class RealPlanService(PlanService):
             self._location.root, pr_number, include_resolved=False
         )
 
-    def fetch_ci_summaries(self, pr_number: int) -> dict[str, str]:
+    def fetch_ci_summaries(self, pr_number: int, *, comment_id: int | None) -> dict[str, str]:
         """Fetch CI failure summaries for a pull request.
+
+        If comment_id is provided, fetches the comment directly (1 API call).
+        Otherwise falls back to the 4-call path: get PR → find run → find
+        ci-summarize job → fetch logs.
 
         Args:
             pr_number: The PR number to fetch summaries for
+            comment_id: Optional GitHub comment ID containing CI summaries
 
         Returns:
             Mapping of check name to summary text, or empty dict
         """
+        # Fast path: fetch directly from comment
+        if comment_id is not None:
+            body = self._ctx.github.get_pr_comment(self._location.root, comment_id)
+            if body is not None:
+                summaries = parse_ci_summaries(body)
+                if summaries:
+                    return summaries
+            # Fall through to slow path if comment missing or no markers
+
+        # Slow path: get PR → find run → find ci-summarize job → fetch logs
         pr_result = self._ctx.github.get_pr(self._location.root, pr_number)
         if isinstance(pr_result, PRNotFound):
             return {}

@@ -122,6 +122,10 @@ class DryRunGitHub(GitHub):
         """Delegate read operation to wrapped implementation."""
         return self._wrapped.get_ci_summary_logs(repo_root, run_id)
 
+    def get_pr_comment(self, repo_root: Path, comment_id: int) -> str | None:
+        """Delegate read operation to wrapped implementation."""
+        return self._wrapped.get_pr_comment(repo_root, comment_id)
+
     def get_prs_linked_to_issues(
         self,
         location: GitHubRepoLocation,

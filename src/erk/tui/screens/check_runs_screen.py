@@ -101,6 +101,7 @@ class CheckRunsScreen(ModalScreen):
         full_title: str,
         passing_count: int,
         total_count: int,
+        ci_summary_comment_id: int | None,
     ) -> None:
         """Initialize with PR metadata and provider for async loading.
 
@@ -110,6 +111,7 @@ class CheckRunsScreen(ModalScreen):
             full_title: The full plan title for display
             passing_count: Number of passing checks
             total_count: Total number of checks
+            ci_summary_comment_id: Optional GitHub comment ID for fast summary fetch
         """
         super().__init__()
         self._service = service
@@ -117,6 +119,7 @@ class CheckRunsScreen(ModalScreen):
         self._full_title = full_title
         self._passing_count = passing_count
         self._total_count = total_count
+        self._ci_summary_comment_id = ci_summary_comment_id
         self._check_runs: list[PRCheckRun] = []
 
     def compose(self) -> ComposeResult:
@@ -197,8 +200,10 @@ class CheckRunsScreen(ModalScreen):
         summaries: dict[str, str] = {}
 
         try:
-            summaries = self._service.fetch_ci_summaries(self._pr_number)
-        except Exception:
+            summaries = self._service.fetch_ci_summaries(
+                self._pr_number, comment_id=self._ci_summary_comment_id
+            )
+        except (RuntimeError, ValueError, KeyError):
             # Summaries are best-effort; silently ignore failures
             pass
 

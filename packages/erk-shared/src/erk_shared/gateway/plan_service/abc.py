@@ -120,11 +120,16 @@ class PlanService(ABC):
         ...
 
     @abstractmethod
-    def fetch_ci_summaries(self, pr_number: int) -> dict[str, str]:
+    def fetch_ci_summaries(self, pr_number: int, *, comment_id: int | None) -> dict[str, str]:
         """Fetch CI failure summaries for a pull request.
+
+        If comment_id is provided, fetches the comment directly (1 API call).
+        Otherwise falls back to the 4-call path: get PR → find run → find
+        ci-summarize job → fetch logs.
 
         Args:
             pr_number: The PR number to fetch summaries for
+            comment_id: Optional GitHub comment ID containing CI summaries
 
         Returns:
             Mapping of check name to summary text. Empty dict if no

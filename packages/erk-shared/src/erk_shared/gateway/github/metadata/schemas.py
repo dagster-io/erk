@@ -337,6 +337,7 @@ PlanHeaderFieldName = Literal[
     "worktree_name",
     "branch_name",
     "plan_comment_id",
+    "ci_summary_comment_id",
     "last_dispatched_run_id",
     "last_dispatched_node_id",
     "last_dispatched_at",
@@ -376,6 +377,7 @@ CREATED_BY: Literal["created_by"] = "created_by"
 WORKTREE_NAME: Literal["worktree_name"] = "worktree_name"
 BRANCH_NAME: Literal["branch_name"] = "branch_name"
 PLAN_COMMENT_ID: Literal["plan_comment_id"] = "plan_comment_id"
+CI_SUMMARY_COMMENT_ID: Literal["ci_summary_comment_id"] = "ci_summary_comment_id"
 LAST_DISPATCHED_RUN_ID: Literal["last_dispatched_run_id"] = "last_dispatched_run_id"
 LAST_DISPATCHED_NODE_ID: Literal["last_dispatched_node_id"] = "last_dispatched_node_id"
 LAST_DISPATCHED_AT: Literal["last_dispatched_at"] = "last_dispatched_at"
@@ -466,6 +468,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
         worktree_name: Set when worktree is created (nullable)
         branch_name: Git branch name for this plan (nullable)
         plan_comment_id: GitHub comment ID containing the plan content (nullable)
+        ci_summary_comment_id: GitHub comment ID containing CI failure summaries (nullable)
         last_dispatched_run_id: Updated by workflow, enables direct run lookup (nullable)
         last_dispatched_at: Updated by workflow (nullable)
         last_local_impl_at: Updated by local implementation, tracks last event timestamp (nullable)
@@ -504,6 +507,7 @@ class PlanHeaderSchema(MetadataBlockSchema):
             WORKTREE_NAME,
             BRANCH_NAME,
             PLAN_COMMENT_ID,
+            CI_SUMMARY_COMMENT_ID,
             LAST_DISPATCHED_RUN_ID,
             LAST_DISPATCHED_NODE_ID,
             LAST_DISPATCHED_AT,
@@ -569,6 +573,13 @@ class PlanHeaderSchema(MetadataBlockSchema):
                 raise ValueError("plan_comment_id must be an integer or null")
             if data[PLAN_COMMENT_ID] <= 0:
                 raise ValueError("plan_comment_id must be positive when provided")
+
+        # Validate optional ci_summary_comment_id field
+        if CI_SUMMARY_COMMENT_ID in data and data[CI_SUMMARY_COMMENT_ID] is not None:
+            if not isinstance(data[CI_SUMMARY_COMMENT_ID], int):
+                raise ValueError("ci_summary_comment_id must be an integer or null")
+            if data[CI_SUMMARY_COMMENT_ID] <= 0:
+                raise ValueError("ci_summary_comment_id must be positive when provided")
 
         # Validate optional fields if present
         if LAST_DISPATCHED_RUN_ID in data:

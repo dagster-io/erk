@@ -30,6 +30,7 @@ from erk_shared.gateway.github.metadata.roadmap import (
     parse_roadmap,
 )
 from erk_shared.gateway.github.metadata.schemas import (
+    CI_SUMMARY_COMMENT_ID,
     LAST_LOCAL_IMPL_AT,
     LAST_REMOTE_IMPL_AT,
     LEARN_PLAN_ISSUE,
@@ -355,6 +356,9 @@ class RealPlanDataProvider(PlanDataProvider):
 
         objective_issue = header_int(plan.header_fields, OBJECTIVE_ISSUE)
 
+        # Extract ci_summary_comment_id from pre-parsed header fields
+        ci_summary_comment_id = header_int(plan.header_fields, CI_SUMMARY_COMMENT_ID)
+
         learn_plan_issue_closed: bool | None = None
 
         learn_display = _format_learn_display(
@@ -567,6 +571,7 @@ class RealPlanDataProvider(PlanDataProvider):
             checks_display=checks_display,
             checks_passing=pr_checks_passing,
             checks_counts=pr_checks_counts,
+            ci_summary_comment_id=ci_summary_comment_id,
             worktree_name=worktree_name,
             exists_locally=exists_locally,
             local_impl_display=local_impl_display,

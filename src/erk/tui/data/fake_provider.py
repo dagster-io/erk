@@ -267,6 +267,7 @@ def make_plan_row(
         checks_display="-",
         checks_passing=checks_passing,
         checks_counts=checks_counts,
+        ci_summary_comment_id=None,
         worktree_name=worktree_name,
         exists_locally=exists_locally,
         local_impl_display="-",

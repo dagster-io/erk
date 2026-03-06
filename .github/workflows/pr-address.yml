@@ -38,7 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          token: ${{ github.token }}
+          token: ${{ secrets.ERK_QUEUE_GH_PAT }}
           fetch-depth: 0
 
       - uses: ./.github/actions/erk-remote-setup
@@ -51,7 +51,7 @@ jobs:
         if: inputs.plan_number != ''
         continue-on-error: true
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           PLAN_NUMBER: ${{ inputs.plan_number }}
           RUN_ID: ${{ github.run_id }}
           REPO: ${{ github.repository }}
@@ -66,7 +66,7 @@ jobs:
       - name: Checkout PR branch
         env:
           PR_NUMBER: ${{ inputs.pr_number }}
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
         run: |
           gh pr checkout "$PR_NUMBER"
           echo "Checked out PR #$PR_NUMBER"
@@ -110,7 +110,7 @@ jobs:
 
       - name: Push changes
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
         run: |
           if [ -z "$(git log --oneline @{upstream}..HEAD 2>/dev/null)" ]; then
             echo "No changes to push"
@@ -136,7 +136,7 @@ jobs:
         if: always() && steps.session.outputs.session_id && steps.plan_info.outputs.plan_id
         continue-on-error: true
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           PLAN_ID: ${{ steps.plan_info.outputs.plan_id }}
           SESSION_ID: ${{ steps.session.outputs.session_id }}
           SESSION_FILE: ${{ steps.session.outputs.session_file }}
@@ -152,7 +152,7 @@ jobs:
         if: always() && steps.plan_info.outputs.plan_id
         continue-on-error: true
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           PLAN_ID: ${{ steps.plan_info.outputs.plan_id }}
           RUN_ID: ${{ github.run_id }}
           SESSION_ID: ${{ steps.session.outputs.session_id }}

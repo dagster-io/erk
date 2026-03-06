@@ -11,6 +11,7 @@ from pathlib import Path
 
 from erk.cli.commands.exec.scripts.ci_generate_summaries import (
     FailingJob,
+    _build_comment_body,
     _build_summary_prompt,
     _parse_failing_jobs,
     _truncate_logs,
@@ -67,6 +68,34 @@ class TestTruncateLogs:
 
     def test_empty_input(self) -> None:
         assert _truncate_logs("", max_lines=10) == ""
+
+
+class TestBuildCommentBody:
+    """Tests for _build_comment_body."""
+
+    def test_single_summary(self) -> None:
+        result = _build_comment_body([("lint", "- missing semicolons")])
+        assert "## CI Failure Summary" in result
+        assert "### lint" in result
+        assert "- missing semicolons" in result
+        assert "=== ERK-CI-SUMMARY:lint ===" in result
+        assert "=== /ERK-CI-SUMMARY:lint ===" in result
+
+    def test_multiple_summaries(self) -> None:
+        summaries = [
+            ("lint", "- format errors"),
+            ("unit-tests", "- assertion failed in test_foo"),
+        ]
+        result = _build_comment_body(summaries)
+        assert "### lint" in result
+        assert "### unit-tests" in result
+        assert "=== ERK-CI-SUMMARY:lint ===" in result
+        assert "=== ERK-CI-SUMMARY:unit-tests ===" in result
+
+    def test_empty_summaries(self) -> None:
+        result = _build_comment_body([])
+        assert "## CI Failure Summary" in result
+        assert "===" not in result
 
 
 class TestBuildSummaryPrompt:

@@ -76,6 +76,7 @@ class FakeGitHub(GitHub):
             tuple[list[PRDetails], dict[int, list[PullRequestInfo]], int] | None
         ) = None,
         ci_summary_logs: dict[str, str] | None = None,
+        comments_by_id: dict[int, str] | None = None,
         time: Time | None = None,
         add_label_errors: dict[str, str] | None = None,
     ) -> None:
@@ -186,6 +187,7 @@ class FakeGitHub(GitHub):
         self._created_commit_statuses: list[tuple[str, str, str, str, str]] = []
         self._plan_pr_details = plan_pr_details or ([], {}, 0)
         self._ci_summary_logs = ci_summary_logs or {}
+        self._comments_by_id = comments_by_id or {}
         self._add_label_errors = add_label_errors or {}
 
     @property
@@ -424,6 +426,22 @@ class FakeGitHub(GitHub):
         Returns None if no ci-summarize logs are configured for this run_id.
         """
         return self._ci_summary_logs.get(run_id)
+
+    def get_pr_comment(self, repo_root: Path, comment_id: int) -> str | None:
+        """Return pre-configured comment body for comment_id.
+
+        Returns None if no comment is configured for this ID.
+        """
+        return self._comments_by_id.get(comment_id)
+
+    def set_comment(self, comment_id: int, body: str) -> None:
+        """Set the comment body to return for a specific comment ID.
+
+        Args:
+            comment_id: GitHub comment ID
+            body: Comment body text
+        """
+        self._comments_by_id[comment_id] = body
 
     def get_prs_linked_to_issues(
         self,

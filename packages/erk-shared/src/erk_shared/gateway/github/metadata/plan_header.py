@@ -24,6 +24,7 @@ from erk_shared.gateway.github.metadata.core import (
 )
 from erk_shared.gateway.github.metadata.schemas import (
     BRANCH_NAME,
+    CI_SUMMARY_COMMENT_ID,
     CREATED_AT,
     CREATED_BY,
     CREATED_FROM_SESSION,
@@ -1361,6 +1362,54 @@ def update_plan_header_learn_materials_branch(
 
     updated_data = dict(block.data)
     updated_data[LEARN_MATERIALS_BRANCH] = learn_branch
+
+    schema = PlanHeaderSchema()
+    schema.validate(updated_data)
+
+    new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=updated_data)
+    new_block_content = render_metadata_block(new_block)
+
+    return replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)
+
+
+def extract_plan_header_ci_summary_comment_id(issue_body: str) -> int | None:
+    """Extract ci_summary_comment_id from plan-header block.
+
+    Args:
+        issue_body: Issue body containing plan-header block
+
+    Returns:
+        ci_summary_comment_id if found, None if block is missing or field is unset
+    """
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
+    if block is None:
+        return None
+
+    return block.data.get(CI_SUMMARY_COMMENT_ID)
+
+
+def update_plan_header_ci_summary_comment_id(
+    issue_body: str,
+    comment_id: int,
+) -> str:
+    """Update ci_summary_comment_id field in plan-header metadata block.
+
+    Args:
+        issue_body: Current issue body containing plan-header block
+        comment_id: GitHub comment ID containing CI failure summaries
+
+    Returns:
+        Updated issue body with new ci_summary_comment_id field
+
+    Raises:
+        ValueError: If plan-header block not found or invalid
+    """
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
+    if block is None:
+        raise ValueError("plan-header block not found in issue body")
+
+    updated_data = dict(block.data)
+    updated_data[CI_SUMMARY_COMMENT_ID] = comment_id
 
     schema = PlanHeaderSchema()
     schema.validate(updated_data)
