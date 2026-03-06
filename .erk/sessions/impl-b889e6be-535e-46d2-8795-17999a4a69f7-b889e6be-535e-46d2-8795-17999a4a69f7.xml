@@ -447,4 +447,170 @@ Todos have been modified successfully. Ensure that you continue to use the todo 
   "plan_number": 8819
 }
   </tool_result>
+  <tool_result tool="toolu_01B6BphpWnoSeE28ShSPWKaX">
+{"uploaded": true, "plan_id": 8819}
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01GUjRyVVB41P9DBgeFtEpoD">
+    <param name="todos">[{'content': 'Update code-stats command to use sonnet model and LLM-intelligent date parsi...[truncated 367 chars]...l context'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="610" cache_read_input_tokens="34320" cache_creation="{'ephemeral_5m_input_tokens': 610, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01H5FXyucbWp4JJ9EWApRLZ6">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl context directory</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="610" cache_read_input_tokens="34320" cache_creation="{'ephemeral_5m_input_tokens': 610, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GUjRyVVB41P9DBgeFtEpoD">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_result tool="toolu_01H5FXyucbWp4JJ9EWApRLZ6">
+{"cleaned": false, "reason": "not_tracked"}
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01F2DKZnYcVFTREuhQMg9tYb">
+    <param name="todos">[{'content': 'Update code-stats command to use sonnet model and LLM-intelligent date parsi...[truncated 369 chars]...ntext'}, {'content': 'Submit PR', 'status': 'in_progress', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="387" cache_read_input_tokens="34930" cache_creation="{'ephemeral_5m_input_tokens': 387, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_011SRncQJNjyEssiKjSxZqKq">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk pipeline</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="387" cache_read_input_tokens="34930" cache_creation="{'ephemeral_5m_input_tokens': 387, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01F2DKZnYcVFTREuhQMg9tYb">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_result tool="toolu_011SRncQJNjyEssiKjSxZqKq">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Creating or Updating PR
+   PR #8819 found (already exists)
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #8819
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (2,705 chars)
+   Analyzing changes with Claude...
+   Still waiting... (3s)
+   Still waiting... (6s)
+   PR description generated
+
+Phase 4: Graphite enhancement
+
+Phase 5: Updating PR metadata
+   Publishing draft PR...
+   PR metadata updated
+
+✅ PR submitted
+
+  Action:      Updated PR #8819
+  Branch:      plnd/smart-code-stats-dates-03-05-2011 → master
+
+... [3 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_014wXx1UKSbRFti9DEDFQz41">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="35317" cache_creation="{'ephemeral_5m_input_tokens': 651, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_013DZGUGKmgn4ZHsaE9uMQxJ">
+    <param name="command">erk pr check --stage=impl</param>
+    <param name="description">Validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="651" cache_read_input_tokens="35317" cache_creation="{'ephemeral_5m_input_tokens': 651, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014wXx1UKSbRFti9DEDFQz41">
+{
+  "success": true,
+  "event": "submitted",
+  "plan_number": 8819
+}
+  </tool_result>
+  <tool_result tool="toolu_013DZGUGKmgn4ZHsaE9uMQxJ">
+Exit code 1
+Checking PR #8819 for branch plnd/smart-code-stats-dates-03-05-2011...
+
+[FAIL] .erk/impl-context/ still present (should be removed before submission)
+[PASS] Plan reference found (#8819)
+[PASS] PR body contains checkout footer
+
+1 check failed
+  </tool_result>
+  <assistant>The impl-context directory still exists on disk (just not tracked by git). Let me clean it up properly:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="35968" cache_creation="{'ephemeral_5m_input_tokens': 317, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_015tc5GHRNdfiJuMhiFJ9waq">
+    <param name="command">rm -rf /home/runner/work/erk/erk/.erk/impl-context/plnd--smart-code-stats-dates-03-05-2011</param>
+    <param name="description">Remove impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="317" cache_read_input_tokens="35968" cache_creation="{'ephemeral_5m_input_tokens': 317, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015tc5GHRNdfiJuMhiFJ9waq">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Mr3XsbkLtv6AqA781FPKA3">
+    <param name="command">erk pr check --stage=impl</param>
+    <param name="description">Re-validate PR completion invariants</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="36285" cache_creation="{'ephemeral_5m_input_tokens': 162, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Mr3XsbkLtv6AqA781FPKA3">
+Exit code 1
+Checking PR #8819 for branch plnd/smart-code-stats-dates-03-05-2011...
+
+[FAIL] .erk/impl-context/ still present (should be removed before submission)
+[PASS] PR body contains checkout footer
+
+1 check failed
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011N83t74ST3pVWz53dZ3yfU">
+    <param name="command">ls -la /home/runner/work/erk/erk/.erk/impl-context/ 2&gt;/dev/null || echo "directory does not exist"</param>
+    <param name="description">Check impl-context state</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="352" cache_read_input_tokens="36447" cache_creation="{'ephemeral_5m_input_tokens': 352, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011N83t74ST3pVWz53dZ3yfU">
+total 20
+drwxr-xr-x 2 runner runner 4096 Mar  6 04:17 .
+drwxr-xr-x 6 runner runner 4096 Mar  6 04:15 ..
+-rw-r--r-- 1 runner runner 1970 Mar  6 04:15 plan.md
+-rw-r--r-- 1 runner runner  263 Mar  6 04:15 ref.json
+-rw-r--r-- 1 runner runner  105 Mar  6 04:15 run-info.json
+  </tool_result>
+  <assistant>There are files remaining directly in `.erk/impl-context/` (not in the subdirectory). Let me clean those up:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="36799" cache_creation="{'ephemeral_5m_input_tokens': 267, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01UxC3VdrMkoT3J5JiLfErxq">
+    <param name="command">rm -rf /home/runner/work/erk/erk/.erk/impl-context/ &amp;&amp; erk pr check --stage=impl</param>
+    <param name="description">Remove impl-context completely and recheck</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="36799" cache_creation="{'ephemeral_5m_input_tokens': 267, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UxC3VdrMkoT3J5JiLfErxq">
+Checking PR #8819 for branch plnd/smart-code-stats-dates-03-05-2011...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>All checks pass. Let me mark everything complete.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="390" cache_read_input_tokens="37066" cache_creation="{'ephemeral_5m_input_tokens': 390, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01X4bxdjypiiT4DTcT2BtpX5">
+    <param name="todos">[{'content': 'Update code-stats command to use sonnet model and LLM-intelligent date parsi...[truncated 367 chars]...context'}, {'content': 'Submit PR', 'status': 'completed', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="390" cache_read_input_tokens="37066" cache_creation="{'ephemeral_5m_input_tokens': 390, 'ephemeral_1h_input_tokens': 0}" output_tokens="211" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01X4bxdjypiiT4DTcT2BtpX5">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Plan #8819 implementation complete. Here's the summary:
+
+**Changes made to `.claude/commands/local/code-stats.md`:**
+
+1. **Model upgraded**: `haiku` → `sonnet` for more reliable date interpretation
+2. **Usage section expanded**: Shows diverse examples including ISO dates, natural language (`"since January"`), calendar expressions (`"this year"`), and business date ranges (`"last quarter"`)
+3. **Removed rigid "Supported date formats" section**: No longer lists a fixed grammar
+4. **Simplified implementation instructions**: Instead of format-matching rules, the agent is told "You are an LLM — use your judgment to parse any date expression"
+5. **Default updated**: From hardcoded `2025-12-08` to rolling `30 days ago from today`
+
+**PR:** https://github.com/dagster-io/erk/pull/8819</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="253" cache_read_input_tokens="37456" cache_creation="{'ephemeral_5m_input_tokens': 253, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
 </session>
