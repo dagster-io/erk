@@ -1,7 +1,5 @@
 """Unit tests for list_cmd helper functions."""
 
-from datetime import datetime
-
 from erk.cli.commands.objective.list_cmd import (
     _compute_enriched_fields,
     _compute_next_node_fields,
