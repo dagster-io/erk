@@ -1,7 +1,0 @@
-{
-  "issue_number": 5446,
-  "issue_url": "https://github.com/dagster-io/erk/issues/5446",
-  "created_at": "2026-01-21T13:48:56.842724+00:00",
-  "synced_at": "2026-01-21T13:48:56.842724+00:00",
-  "issue_title": "Fix: Prevent gt repo sync from restacking active branches [erk-plan]"
-}
