@@ -14,6 +14,7 @@ from erk_shared.gateway.github.metadata.core import extract_objective_slug
 from erk_shared.gateway.github.metadata.dependency_graph import (
     _TERMINAL_STATUSES,
     DependencyGraph,
+    ObjectiveNode,
     build_graph,
     build_state_sparkline,
     compute_graph_summary,
@@ -38,6 +39,22 @@ def _compute_slug(plan: Plan) -> str:
     return "-"
 
 
+def _collect_blocking_dep_prs(
+    graph: DependencyGraph,
+    target: ObjectiveNode | None,
+) -> list[str]:
+    """Collect PR numbers from blocking (non-terminal) dependencies of a node."""
+    if target is None or not target.depends_on:
+        return []
+    node_map = {n.id: n for n in graph.nodes}
+    prs: list[str] = []
+    for dep_id in target.depends_on:
+        dep = node_map.get(dep_id)
+        if dep is not None and dep.status not in _TERMINAL_STATUSES and dep.pr is not None:
+            prs.append(dep.pr)
+    return prs
+
+
 def _compute_next_node_fields(
     graph: DependencyGraph,
     phases: list[RoadmapPhase],
@@ -60,14 +77,7 @@ def _compute_next_node_fields(
 
     # Collect blocking dep PR numbers
     target = next((n for n in graph.nodes if n.id == next_result["id"]), None)
-    dep_prs: list[str] = []
-    if target is not None and target.depends_on:
-        node_map = {n.id: n for n in graph.nodes}
-        for dep_id in target.depends_on:
-            if dep_id in node_map:
-                dep = node_map[dep_id]
-                if dep.status not in _TERMINAL_STATUSES and dep.pr is not None:
-                    dep_prs.append(dep.pr)
+    dep_prs: list[str] = _collect_blocking_dep_prs(graph, target)
 
     # Also show next node's own PR if active
     if (
