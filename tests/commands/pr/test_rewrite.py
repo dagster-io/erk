@@ -10,6 +10,8 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
+from erk_shared.core.fakes import FakeLlmCaller
+from erk_shared.core.llm_caller import LlmCallFailed, LlmResponse
 from erk_shared.gateway.branch_manager.types import SubmitBranchError
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
@@ -62,7 +64,7 @@ def _make_rewrite_fakes(
     prompt_output: str = "Add awesome feature\n\nThis PR adds an awesome new feature.",
     prompt_error: str | None = None,
     submit_branch_error: SubmitBranchError | None = None,
-) -> tuple[FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor]:
+) -> tuple[FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor, FakeLlmCaller]:
     """Create standard fakes for rewrite command tests."""
     pr_details = _make_pr_details(number=pr_number, branch=branch_name, body=pr_body)
 
@@ -110,14 +112,21 @@ def _make_rewrite_fakes(
         executor_kwargs["simulated_prompt_output"] = prompt_output
     executor = FakePromptExecutor(**executor_kwargs)
 
-    return git, graphite, github, executor
+    if prompt_error is not None:
+        llm_caller = FakeLlmCaller(response=LlmCallFailed(message=prompt_error))
+    else:
+        llm_caller = FakeLlmCaller(response=LlmResponse(text=prompt_output))
+
+    return git, graphite, github, executor, llm_caller
 
 
 def test_pr_rewrite_happy_path() -> None:
     """Test successful rewrite: squash, generate, amend, push, update PR."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git, graphite, github, executor = _make_rewrite_fakes(env, branch_name="feature")
+        git, graphite, github, executor, llm_caller = _make_rewrite_fakes(
+            env, branch_name="feature"
+        )
 
         ctx = build_workspace_test_context(
             env,
@@ -125,6 +134,7 @@ def test_pr_rewrite_happy_path() -> None:
             github=github,
             graphite=graphite,
             prompt_executor=executor,
+            llm_caller=llm_caller,
         )
 
         result = runner.invoke(pr_group, ["rewrite"], obj=ctx)
@@ -151,7 +161,7 @@ def test_pr_rewrite_already_single_commit() -> None:
     """Test rewrite with already-single-commit (squash is idempotent)."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git, graphite, github, executor = _make_rewrite_fakes(
+        git, graphite, github, executor, llm_caller = _make_rewrite_fakes(
             env, branch_name="feature", commits_ahead=1
         )
 
@@ -161,6 +171,7 @@ def test_pr_rewrite_already_single_commit() -> None:
             github=github,
             graphite=graphite,
             prompt_executor=executor,
+            llm_caller=llm_caller,
         )
 
         result = runner.invoke(pr_group, ["rewrite"], obj=ctx)
@@ -225,7 +236,7 @@ def test_pr_rewrite_fails_when_squash_conflicts() -> None:
     """Test that rewrite fails when squash encounters conflicts."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git, graphite, github, executor = _make_rewrite_fakes(
+        git, graphite, github, executor, llm_caller = _make_rewrite_fakes(
             env,
             branch_name="feature",
             squash_raises=RuntimeError("Squash conflict: resolve manually"),
@@ -237,6 +248,7 @@ def test_pr_rewrite_fails_when_squash_conflicts() -> None:
             github=github,
             graphite=graphite,
             prompt_executor=executor,
+            llm_caller=llm_caller,
         )
 
         result = runner.invoke(pr_group, ["rewrite"], obj=ctx)
@@ -249,7 +261,7 @@ def test_pr_rewrite_fails_when_ai_generation_fails() -> None:
     """Test that rewrite fails when commit message generation fails."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git, graphite, github, executor = _make_rewrite_fakes(
+        git, graphite, github, executor, llm_caller = _make_rewrite_fakes(
             env,
             branch_name="feature",
             prompt_error="Claude CLI execution failed",
@@ -261,6 +273,7 @@ def test_pr_rewrite_fails_when_ai_generation_fails() -> None:
             github=github,
             graphite=graphite,
             prompt_executor=executor,
+            llm_caller=llm_caller,
         )
 
         result = runner.invoke(pr_group, ["rewrite"], obj=ctx)
@@ -316,7 +329,7 @@ def test_pr_rewrite_planned_pr_backend_preserves_metadata() -> None:
         plan_content = "# My Plan\n\nImplement the thing."
         pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)
 
-        git, graphite, github, executor = _make_rewrite_fakes(
+        git, graphite, github, executor, llm_caller = _make_rewrite_fakes(
             env,
             branch_name="feature",
             pr_body=pr_body,
@@ -328,6 +341,7 @@ def test_pr_rewrite_planned_pr_backend_preserves_metadata() -> None:
             github=github,
             graphite=graphite,
             prompt_executor=executor,
+            llm_caller=llm_caller,
             plan_store=PlannedPRBackend(github, github.issues, time=FakeTime()),
         )
 
@@ -351,7 +365,9 @@ def test_pr_rewrite_retracks_graphite_branch_after_amend() -> None:
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git, graphite, github, executor = _make_rewrite_fakes(env, branch_name="feature")
+        git, graphite, github, executor, llm_caller = _make_rewrite_fakes(
+            env, branch_name="feature"
+        )
 
         ctx = build_workspace_test_context(
             env,
@@ -359,6 +375,7 @@ def test_pr_rewrite_retracks_graphite_branch_after_amend() -> None:
             github=github,
             graphite=graphite,
             prompt_executor=executor,
+            llm_caller=llm_caller,
             use_graphite=True,
         )
 
@@ -395,7 +412,7 @@ def test_pr_rewrite_skips_lifecycle_when_plan_not_resolved() -> None:
         )
         fake_issues = FakeGitHubIssues(issues={100: plan_issue})
 
-        git, graphite, github, executor = _make_rewrite_fakes(
+        git, graphite, github, executor, llm_caller = _make_rewrite_fakes(
             env,
             branch_name=branch_name,
         )
@@ -406,6 +423,7 @@ def test_pr_rewrite_skips_lifecycle_when_plan_not_resolved() -> None:
             github=github,
             graphite=graphite,
             prompt_executor=executor,
+            llm_caller=llm_caller,
             issues=fake_issues,
         )
 

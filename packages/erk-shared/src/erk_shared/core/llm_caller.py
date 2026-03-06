@@ -33,6 +33,8 @@ class LlmCallFailed:
 
 class LlmCaller(ABC):
     @abstractmethod
-    def call(self, prompt: str, *, system_prompt: str) -> LlmResponse | NoApiKey | LlmCallFailed:
+    def call(
+        self, prompt: str, *, system_prompt: str, max_tokens: int
+    ) -> LlmResponse | NoApiKey | LlmCallFailed:
         """Execute an LLM call."""
         ...

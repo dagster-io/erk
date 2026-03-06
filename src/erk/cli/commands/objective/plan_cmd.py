@@ -57,7 +57,7 @@ def _generate_slug(llm_caller: LlmCaller, description: str) -> str:
     Returns:
         A slug string suitable for branch names
     """
-    result = llm_caller.call(description, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT)
+    result = llm_caller.call(description, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT, max_tokens=50)
     if isinstance(result, (NoApiKey, LlmCallFailed)):
         return sanitize_worktree_name(description)[:25].rstrip("-")
     slug = _postprocess_slug(result.text)

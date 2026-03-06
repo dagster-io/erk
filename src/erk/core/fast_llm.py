@@ -16,7 +16,9 @@ logger = logging.getLogger(__name__)
 
 
 class AnthropicLlmCaller(LlmCaller):
-    def call(self, prompt: str, *, system_prompt: str) -> LlmResponse | NoApiKey | LlmCallFailed:
+    def call(
+        self, prompt: str, *, system_prompt: str, max_tokens: int
+    ) -> LlmResponse | NoApiKey | LlmCallFailed:
         api_key = os.environ.get("ANTHROPIC_API_KEY")
         if api_key is None:
             logger.warning("ANTHROPIC_API_KEY environment variable not set")
@@ -25,7 +27,7 @@ class AnthropicLlmCaller(LlmCaller):
             client = Anthropic(api_key=api_key)
             response = client.messages.create(
                 model="claude-haiku-4-5-20251001",
-                max_tokens=50,
+                max_tokens=max_tokens,
                 system=system_prompt,
                 messages=[{"role": "user", "content": prompt}],
             )

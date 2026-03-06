@@ -205,7 +205,9 @@ def dispatch_one_shot(
             slug = params.slug
             user_output(click.style(f"  \u2713 Slug: {slug} (pre-generated)", dim=True))
         else:
-            result = ctx.llm_caller.call(params.prompt, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT)
+            result = ctx.llm_caller.call(
+                params.prompt, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT, max_tokens=50
+            )
             if isinstance(result, NoApiKey):
                 user_output(click.style("  \u26a0 No API key: ", fg="yellow") + result.message)
                 slug = sanitize_worktree_name(params.prompt)[:25].rstrip("-")
