@@ -1,0 +1,1034 @@
+<session>
+  <meta branch="plnd/consolidate-checkout-prepa-03-06-0452" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Grep" id="toolu_01HkW2ycRT4Xb7xbiF5Tj8mF">
+    <param name="pattern">get_branch_head</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="575" cache_read_input_tokens="95393" cache_creation="{'ephemeral_5m_input_tokens': 575, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HkW2ycRT4Xb7xbiF5Tj8mF">
+304:    def get_branch_head(self, repo_root: Path, branch: str) -&gt; str | None:
+305-        """Get the commit SHA at the head of a branch."""
+306-        return self._branch_heads.get(branch)
+307-
+308-    def get_all_branch_heads(self, repo_root: Path) -&gt; dict[str, str]:
+309-        """Get commit SHAs for all local branches."""
+310-        return dict(self._branch_heads)
+311-
+312-    def detect_trunk_branch(self, repo_root: Path) -&gt; str:
+313-        """Auto-detect the trunk branch name."""
+314-        return self._trunk_branches.get(repo_root, "main")
+  </tool_result>
+  <tool_use name="Grep" id="toolu_015mdnTKaBUuteJa4MsTLDNe">
+    <param name="pattern">branch_heads</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="388" cache_read_input_tokens="95968" cache_creation="{'ephemeral_5m_input_tokens': 388, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015mdnTKaBUuteJa4MsTLDNe">
+122-        trunk_branches: dict[Path, str] | None = None,
+123-        git_common_dirs: dict[Path, Path] | None = None,
+124:        branch_heads: dict[str, str] | None = None,
+125-        commit_messages: dict[str, str] | None = None,
+126-        staged_repos: set[Path] | None = None,
+--
+179-            trunk_branches: Mapping of repo_root -&gt; trunk branch name
+180-            git_common_dirs: Mapping of cwd -&gt; git common directory
+181:            branch_heads: Mapping of branch name -&gt; commit SHA
+182-            commit_messages: Mapping of commit SHA -&gt; commit message
+183-            staged_repos: Set of repo roots that should report staged changes
+--
+241-        self._trunk_branches = trunk_branches or {}
+242-        self._git_common_dirs = git_common_dirs or {}
+243:        self._branch_heads = branch_heads or {}
+244-        self._commit_messages = commit_messages or {}
+245-        self._repos_with_staged_changes: set[Path] = staged_repos or set()
+--
+352-            local_branches=self._local_branches,
+353-            remote_branches=self._remote_branches,
+354:            branch_heads=self._branch_heads,
+355-            trunk_branches=self._trunk_branches,
+356-            ahead_behind=self._ahead_behind,
+  </tool_result>
+  <assistant>Now I'll add the stacked PR checkout test at the end of the test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="712" cache_read_input_tokens="96356" cache_creation="{'ephemeral_5m_input_tokens': 712, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01979XgGjyQZNKsQgfFwXjJC">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_checkout_graphite_linking.py</param>
+    <param name="offset">443</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="712" cache_read_input_tokens="96356" cache_creation="{'ephemeral_5m_input_tokens': 712, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01979XgGjyQZNKsQgfFwXjJC">
+   443→    """Test pr checkout skips Graphite linking when Graphite is disabled.
+   444→
+   445→    When Graphite is disabled (use_graphite=False, the default), the checkout
+   446→    command should not attempt any Graphite operations.
+   447→    """
+   448→    runner = CliRunner()
+   449→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+   450→        env.setup_repo_structure()
+   451→        pr_details = _make_pr_details(
+   452→            number=104,
+   453→            head_ref_name="no-graphite-branch",
+   454→            is_cross_repository=False,
+   455→            state="OPEN",
+   456→        )
+   457→        github = FakeGitHub(pr_details={104: pr_details})
+   458→        git = FakeGit(
+   459→            git_common_dirs={env.cwd: env.git_dir},
+   460→            default_branches={env.cwd: "main"},
+   461→            trunk_branches={env.cwd: "main"},
+   462→            local_branches={env.cwd: ["main", "no-graphite-branch"]},
+   463→            remote_branches={env.cwd: ["origin/main", "origin/no-graphite-branch"]},
+   464→            existing_paths={env.cwd, env.repo.worktrees_dir},
+   465→        )
+   466→        # Note: use_graphite=False is the default
+   467→        ctx = build_workspace_test_context(env, git=git, github=github, use_graphite=False)
+   468→
+   469→        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+   470→            result = runner.invoke(pr_group, ["checkout", "104"], obj=ctx)
+   471→
+   472→        assert result.exit_code == 0, result.output
+
+... [10 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01D4GJ7T37bQFXzfsDMiCA2k">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_checkout_graphite_linking.py</param>
+    <param name="old_string">        assert "Tracking branch with Graphite" not in result.output
+        assert "Submitting to link with Graphite" not in result.output</param>
+    <param name="new_string">        assert "Tracking branch with Graphite" not in result.output
+        assert "Submit...[truncated 2724 chars]...        assert ref_branch == "parent-branch"
+        assert ref_sha == "remote-parent-sha"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="802" cache_read_input_tokens="97068" cache_creation="{'ephemeral_5m_input_tokens': 802, 'ephemeral_1h_input_tokens': 0}" output_tokens="992" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01D4GJ7T37bQFXzfsDMiCA2k">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_checkout_graphite_linking.py has been updated successfully.
+  </tool_result>
+  <assistant>Step 1 is done. Let me now move to Step 2.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1236" cache_read_input_tokens="97870" cache_creation="{'ephemeral_5m_input_tokens': 1236, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_0165A7Bd1zYNU7Exc29zRoRJ">
+    <param name="todos">[{'content': 'Step 1: Fix Graphite divergence in erk pr checkout', 'status': 'completed', ...[truncated 456 chars]...s'}, {'content': 'Run CI checks', 'status': 'pending', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1236" cache_read_input_tokens="97870" cache_creation="{'ephemeral_5m_input_tokens': 1236, 'ephemeral_1h_input_tokens': 0}" output_tokens="245" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0165A7Bd1zYNU7Exc29zRoRJ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>For Step 2, I need to extract the "read plan content and create impl folder" portion of `_setup_planned_pr_plan()` into a standalone function `create_impl_context_from_pr()`. Let me re-read the relevant portion more carefully:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="287" cache_read_input_tokens="99106" cache_creation="{'ephemeral_5m_input_tokens': 287, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015Q2eXKskRx5NthEs6VbXpJ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py</param>
+    <param name="offset">116</param>
+    <param name="limit">142</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="287" cache_read_input_tokens="99106" cache_creation="{'ephemeral_5m_input_tokens': 287, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015Q2eXKskRx5NthEs6VbXpJ">
+   116→def _setup_planned_pr_plan(
+   117→    ctx: click.Context,
+   118→    *,
+   119→    plan_number: int,
+   120→    no_impl: bool,
+   121→) -&gt; dict[str, str | int | bool | None]:
+   122→    """Set up implementation from a planned-PR plan.
+   123→
+   124→    Uses github.get_pr() for branch discovery, then reads plan content
+   125→    from .erk/impl-context/ on the branch (falling back to PR body).
+   126→
+   127→    Args:
+   128→        ctx: Click context
+   129→        plan_number: PR number for the planned-PR plan
+   130→        no_impl: Skip .erk/impl-context/ folder creation
+   131→
+   132→    Returns:
+   133→        Success output dict
+   134→    """
+   135→    cwd = require_cwd(ctx)
+   136→    git = require_git(ctx)
+   137→
+   138→    # Early exit: if .erk/impl-context/ is already set up for this issue
+   139→    # (e.g., CI pre-populated it), skip branch switching. Switching to the
+   140→    # plan branch would abandon the implementation branch, causing work to
+   141→    # land on the wrong branch.
+   142→    current_branch = _get_current_branch(git, cwd)
+   143→    impl_dir = resolve_impl_dir(cwd, branch_name=current_branch)
+   144→    if impl_dir is not None:
+   145→        existing_ref = read_plan_ref(impl_dir)
+
+... [117 lines omitted] ...
+
+   169→        error_output = {
+   171→            "error": "plan_not_found",
+   174→        click.echo(json.dumps(error_output), err=True)
+  </tool_result>
+  <assistant>Now I need to extract the "read plan content and create impl folder" logic (Phase B onward) into a standalone function. The new function should:
+- Fetch PR metadata, read plan content
+- Create `.erk/impl-context/&lt;branch&gt;/` with plan.md and ref.json
+- NOT checkout branches or create worktrees
+
+Let me also check the GitHub gateway to understand the imports needed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2222" cache_read_input_tokens="99393" cache_creation="{'ephemeral_5m_input_tokens': 2222, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01PqyozeoB7JbffVEXZvWNpU">
+    <param name="pattern">class GitHub\(ABC\)</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2222" cache_read_input_tokens="99393" cache_creation="{'ephemeral_5m_input_tokens': 2222, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PqyozeoB7JbffVEXZvWNpU">
+Found 1 file
+packages/erk-shared/src/erk_shared/gateway/github/abc.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01TuoYtDTQRCE8PjSqQazYNn">
+    <param name="pattern">def get_pr\(</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="254" cache_read_input_tokens="101615" cache_creation="{'ephemeral_5m_input_tokens': 254, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TuoYtDTQRCE8PjSqQazYNn">
+373:    def get_pr(self, repo_root: Path, pr_number: int) -&gt; PRDetails | PRNotFound:
+374-        """Get comprehensive PR details in a single API call.
+375-
+376-        This is the preferred method for fetching PR information. It returns
+377-        all commonly-needed fields in one API call, avoiding multiple separate
+378-        calls for title, body, base branch, etc.
+  </tool_result>
+  <assistant>Good. Now let me create the extracted function. The key insight is that the new function `create_impl_context_from_pr` needs to:
+1. Accept the GitHub gateway, plan_number, cwd, branch_name
+2. Fetch PR metadata
+3. Read plan content from committed `.erk/impl-context/` or PR body fallback
+4. Create the `.erk/impl-context/&lt;branch&gt;/` folder
+5. NOT do any branch checkout or worktree creation</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="252" cache_read_input_tokens="101869" cache_creation="{'ephemeral_5m_input_tokens': 252, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01UYmMy9tpAyoKmFHEgYwUrY">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="252" cache_read_input_tokens="101869" cache_creation="{'ephemeral_5m_input_tokens': 252, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UYmMy9tpAyoKmFHEgYwUrY">
+     1→"""Set up .erk/impl-context/ folder from GitHub PR in current worktree.
+     2→
+     3→This exec command fetches a plan from a GitHub PR, creates a feature branch,
+     4→checks it out, and creates the .erk/impl-context/ folder structure for implementation.
+     5→
+     6→Usage:
+     7→    erk exec setup-impl-from-pr &lt;plan-number&gt; [--session-id &lt;id&gt;]
+     8→
+     9→Output:
+    10→    Structured JSON output with success status and folder details
+    11→
+    12→Exit Codes:
+    13→    0: Success (.erk/impl-context/ folder created, branch checked out)
+    14→    1: Error (PR not found, plan fetch failed, git operations failed)
+    15→
+    16→Examples:
+    17→    $ erk exec setup-impl-from-pr 1028
+    18→    {"success": true, "impl_path": "/path/to/.erk/impl-context",
+    19→     "plan_number": 1028, "branch": "P1028-..."}
+    20→"""
+    21→
+    22→import json
+    23→from pathlib import Path
+    24→
+    25→import click
+    26→
+    27→from erk_shared.context.helpers import (
+    28→    require_branch_manager,
+    29→    require_cwd,
+    30→    require_git,
+
+... [270 lines omitted] ...
+
+    36→from erk_shared.gateway.git.remote_ops.types import PullRebaseError
+    59→        raise click.ClickException(msg)
+   104→        if isinstance(pull_result, PullRebaseError):
+   105→            error_output = {
+   107→                "error": "pull_rebase_failed",
+   109→                    f"Failed to teleport branch '{branch_name}' from remote: {pull_result.message}"
+   112→            click.echo(json.dumps(error_output), err=True)
+   169→        error_output = {
+   171→            "error": "plan_not_found",
+   174→        click.echo(json.dumps(error_output), err=True)
+  </tool_result>
+  <assistant>Now I understand the full picture. I need to extract "Phase B" (the plan content reading + impl folder creation) into a standalone function. Let me also check what the GitHub ABC looks like to understand the type properly:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4428" cache_read_input_tokens="102121" cache_creation="{'ephemeral_5m_input_tokens': 4428, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01GreABatWynG6ysWuaoHEvX">
+    <param name="pattern">class GitHub\(ABC\):</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4428" cache_read_input_tokens="102121" cache_creation="{'ephemeral_5m_input_tokens': 4428, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GreABatWynG6ysWuaoHEvX">
+29:class GitHub(ABC):
+  </tool_result>
+  <assistant>Good. Now let me implement the extraction. I'll add `create_impl_context_from_pr` as a new function in `setup_impl_from_pr.py` and have the existing `_setup_planned_pr_plan` call it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="193" cache_read_input_tokens="106549" cache_creation="{'ephemeral_5m_input_tokens': 193, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_011nKDpJs6v4f2r2jho1a6hT">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py</param>
+    <param name="old_string">def _setup_planned_pr_plan(
+    ctx: click.Context,
+    *,
+    plan_number: int,
+    no_im...[truncated 4896 chars]..."branch": branch_name,
+        "plan_title": plan_title,
+        "no_impl": no_impl,
+    }</param>
+    <param name="new_string">def create_impl_context_from_pr(
+    ctx: click.Context,
+    *,
+    plan_number: int,
+    ...[truncated 6331 chars]...wd,
+        branch_name=branch_name,
+    )
+    result["no_impl"] = False
+    return result</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="193" cache_read_input_tokens="106549" cache_creation="{'ephemeral_5m_input_tokens': 193, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011nKDpJs6v4f2r2jho1a6hT">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py has been updated successfully.
+  </tool_result>
+  <assistant>Step 2 is done. Now let me move to Step 3 — creating the `erk pr prepare` command.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3888" cache_read_input_tokens="106742" cache_creation="{'ephemeral_5m_input_tokens': 3888, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01LadvVCMPGNqPGAVYm81ahP">
+    <param name="todos">[{'content': 'Step 1: Fix Graphite divergence in erk pr checkout', 'status': 'completed', ...[truncated 458 chars]...s'}, {'content': 'Run CI checks', 'status': 'pending', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3888" cache_read_input_tokens="106742" cache_creation="{'ephemeral_5m_input_tokens': 3888, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LadvVCMPGNqPGAVYm81ahP">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me look at an existing PR command to understand the pattern used, and also check how `get_pr_for_branch` works:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="110630" cache_creation="{'ephemeral_5m_input_tokens': 298, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01EQQHg4LYn26wi61Eovxak9">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/view_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="110630" cache_creation="{'ephemeral_5m_input_tokens': 298, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_011zrcjxC3nUNi3c3QCjjWzg">
+    <param name="pattern">def get_pr_for_branch</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github</param>
+    <param name="output_mode">content</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="298" cache_read_input_tokens="110630" cache_creation="{'ephemeral_5m_input_tokens': 298, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EQQHg4LYn26wi61Eovxak9">
+     1→"""Command to fetch and display a single plan."""
+     2→
+     3→from datetime import datetime
+     4→
+     5→import click
+     6→
+     7→from erk.cli.core import discover_repo_context
+     8→from erk.cli.github_parsing import parse_issue_identifier
+     9→from erk.core.context import ErkContext
+    10→from erk.core.repo_discovery import ensure_erk_metadata_dir
+    11→from erk_shared.core.typing_utils import narrow_to_literal
+    12→from erk_shared.gateway.github.metadata.schemas import (
+    13→    BRANCH_NAME,
+    14→    CREATED_BY,
+    15→    CREATED_FROM_SESSION,
+    16→    LAST_DISPATCHED_AT,
+    17→    LAST_DISPATCHED_RUN_ID,
+    18→    LAST_LEARN_SESSION,
+    19→    LAST_LOCAL_IMPL_AT,
+    20→    LAST_LOCAL_IMPL_EVENT,
+    21→    LAST_LOCAL_IMPL_SESSION,
+    22→    LAST_LOCAL_IMPL_USER,
+    23→    LAST_REMOTE_IMPL_AT,
+    24→    LEARN_PLAN_ISSUE,
+    25→    LEARN_PLAN_PR,
+    26→    LEARN_RUN_ID,
+    27→    LEARN_STATUS,
+    28→    OBJECTIVE_ISSUE,
+    29→    SCHEMA_VERSION,
+    30→    SOURCE_REPO,
+
+... [310 lines omitted] ...
+
+   246→            user_output(click.style("Error: ", fg="red") + f"Invalid identifier: {identifier}")
+   255→                click.style("Error: ", fg="red")
+   265→                click.style("Error: ", fg="red")
+   273→        user_output(click.style("Error: ", fg="red") + f"Plan #{plan_id} not found")
+  </tool_result>
+  <tool_result tool="toolu_011zrcjxC3nUNi3c3QCjjWzg">
+packages/erk-shared/src/erk_shared/gateway/github/abc.py:390:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-391-        """Get comprehensive PR details for a branch.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-392-
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-393-        Args:
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-394-            repo_root: Repository root directory
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-395-            branch: Branch name to look up
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-396-
+packages/erk-shared/src/erk_shared/gateway/github/abc.py-397-        Returns:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-398-            PRDetails if a PR exists for the branch, PRNotFound otherwise
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-399-        """
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py-400-        ...
+--
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py:191:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-192-        """Delegate read operation to wrapped implementation."""
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-193-        return self._wrapped.get_pr_for_branch(repo_root, branch)
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-194-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-195-    def list_prs(
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-196-        self,
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-197-        repo_root: Path,
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-198-        *,
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-199-        state: PRListState,
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-200-        labels: list[str] | None = None,
+packages/erk-shared/src/erk_shared/gateway/github/dry_run.py-201-        author: str | None = None,
+--
+packages/erk-shared/src/erk_shared/gateway/github/real.py:1338:    def get_pr_for_branch(self, repo_root: Path, branch: str) -&gt; PRDetails | PRNotFound:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py-1339-        """Get comprehensive PR details for a branch via GitHub REST API.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py-1340-
+packages/erk-shared/src/erk_shared/gateway/github/real.py-1341-        Uses gh api to call GET /repos/{owner}/{repo}/pulls?head={owner}:{branch}&amp;state=all
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py-1342-        which returns PRs for the branch in a single request.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py-1343-
+
+... [29 lines omitted] ...
+  </tool_result>
+  <assistant>Good. Now let me look at how FakeGitHub handles `prs_by_branch`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7689" cache_read_input_tokens="110928" cache_creation="{'ephemeral_5m_input_tokens': 7689, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01FV4ey6Kz8aLjXwBdMG18pC">
+    <param name="pattern">prs_by_branch</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-B">1</param>
+    <param name="-A">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7689" cache_read_input_tokens="110928" cache_creation="{'ephemeral_5m_input_tokens': 7689, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FV4ey6Kz8aLjXwBdMG18pC">
+50-        pr_details: dict[int, PRDetails] | None = None,
+51:        prs_by_branch: dict[str, PRDetails] | None = None,
+52-        workflow_runs: list[WorkflowRun] | None = None,
+53-        workflow_runs_by_node_id: dict[str, WorkflowRun] | None = None,
+54-        run_logs: dict[str, str] | None = None,
+--
+88-            pr_details: Mapping of pr_number -&gt; PRDetails for get_pr() and get_pr_for_branch()
+89:            prs_by_branch: Mapping of branch name -&gt; PRDetails (simpler than prs + pr_details)
+90-            workflow_runs: List of WorkflowRun objects to return from list_workflow_runs
+91-            workflow_runs_by_node_id: Mapping of GraphQL node_id -&gt; WorkflowRun for
+92-                                     get_workflow_runs_by_node_ids()
+--
+129-        self._pr_details = pr_details or {}
+130:        self._prs_by_branch = prs_by_branch or {}
+131-        self._workflow_runs = workflow_runs or []
+132-        self._workflow_runs_by_node_id = workflow_runs_by_node_id or {}
+133-        self._run_logs = run_logs or {}
+--
+214-        Updates the PRDetails entry (if one exists) so get_pr() returns
+215:        the latest body. Also updates prs_by_branch if applicable.
+216-
+217-        Raises RuntimeError if pr_update_should_succeed is False.
+218-        """
+--
+226-            self._pr_details[pr_number] = updated
+227:            # Keep prs_by_branch in sync
+228:            if old.head_ref_name in self._prs_by_branch:
+229:                self._prs_by_branch[old.head_ref_name] = updated
+230-
+231-    def merge_pr(
+
+... [48 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have everything I need to create the `prepare_cmd.py`. Let me also check for `Ensure` to know how to validate conditions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1312" cache_read_input_tokens="118617" cache_creation="{'ephemeral_5m_input_tokens': 1312, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01NbjXf9HZXZkgPk7RwKZhNx">
+    <param name="pattern">class Ensure:</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1312" cache_read_input_tokens="118617" cache_creation="{'ephemeral_5m_input_tokens': 1312, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NbjXf9HZXZkgPk7RwKZhNx">
+Found 1 file
+src/erk/cli/ensure.py
+  </tool_result>
+  <assistant>Now let me create the `prepare_cmd.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="369" cache_read_input_tokens="119929" cache_creation="{'ephemeral_5m_input_tokens': 369, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_015f5ZAqT78WtXQesNWmbmkH">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py</param>
+    <param name="content">"""Prepare impl-context for the current worktree's PR.
+
+Sets up .erk/impl-context/ folder ...[truncated 2968 chars]...   user_output(f"Prepared impl-context for plan #{plan_number} at {result['impl_path']}")
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="369" cache_read_input_tokens="119929" cache_creation="{'ephemeral_5m_input_tokens': 369, 'ephemeral_1h_input_tokens': 0}" output_tokens="1054" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015f5ZAqT78WtXQesNWmbmkH">
+File created successfully at: /home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py
+  </tool_result>
+  <assistant>Now register the command in `pr/__init__.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1100" cache_read_input_tokens="120298" cache_creation="{'ephemeral_5m_input_tokens': 1100, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01TrMxs2Vp2R6dSXbyNbnhEd">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/__init__.py</param>
+    <param name="old_string">from erk.cli.commands.pr.list_cmd import pr_list
+from erk.cli.commands.pr.log_cmd import pr_log
+from erk.cli.commands.pr.rebase_cmd import rebase</param>
+    <param name="new_string">from erk.cli.commands.pr.list_cmd import pr_list
+from erk.cli.commands.pr.log_cmd import pr_log
+from erk.cli.commands.pr.prepare_cmd import pr_prepare
+from erk.cli.commands.pr.rebase_cmd import rebase</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1100" cache_read_input_tokens="120298" cache_creation="{'ephemeral_5m_input_tokens': 1100, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TrMxs2Vp2R6dSXbyNbnhEd">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/__init__.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01WETN9SVUcroaQPLpW5MUHs">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/__init__.py</param>
+    <param name="old_string">pr_group.add_command(pr_list, name="list")
+pr_group.add_command(pr_log, name="log")</param>
+    <param name="new_string">pr_group.add_command(pr_list, name="list")
+pr_group.add_command(pr_log, name="log")
+pr_group.add_command(pr_prepare, name="prepare")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="494" cache_read_input_tokens="121398" cache_creation="{'ephemeral_5m_input_tokens': 494, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WETN9SVUcroaQPLpW5MUHs">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/__init__.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me create the test file for `pr prepare`. I need to look at an existing test file for the pattern:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="243" cache_read_input_tokens="121892" cache_creation="{'ephemeral_5m_input_tokens': 243, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01E68dwMC328AEb9mkskZVsL">
+    <param name="pattern">tests/commands/pr/test_*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="243" cache_read_input_tokens="121892" cache_creation="{'ephemeral_5m_input_tokens': 243, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01E68dwMC328AEb9mkskZVsL">
+/home/runner/work/erk/erk/tests/commands/pr/test_log.py
+/home/runner/work/erk/erk/tests/commands/pr/test_create.py
+/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py
+/home/runner/work/erk/erk/tests/commands/pr/test_address.py
+/home/runner/work/erk/erk/tests/commands/pr/test_close.py
+/home/runner/work/erk/erk/tests/commands/pr/test_checkout.py
+/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py
+/home/runner/work/erk/erk/tests/commands/pr/test_duplicate_check.py
+/home/runner/work/erk/erk/tests/commands/pr/test_list.py
+/home/runner/work/erk/erk/tests/commands/pr/test_checkout_plan.py
+/home/runner/work/erk/erk/tests/commands/pr/test_address_remote_cmd.py
+/home/runner/work/erk/erk/tests/commands/pr/test_check.py
+/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py
+/home/runner/work/erk/erk/tests/commands/pr/test_replan.py
+/home/runner/work/erk/erk/tests/commands/pr/test_submit_graphite_disabled.py
+/home/runner/work/erk/erk/tests/commands/pr/test_parse_pr_reference.py
+/home/runner/work/erk/erk/tests/commands/pr/test_rebase_remote.py
+/home/runner/work/erk/erk/tests/commands/pr/test_submit.py
+/home/runner/work/erk/erk/tests/commands/pr/test_rebase.py
+/home/runner/work/erk/erk/tests/commands/pr/test_reconcile_with_remote.py
+/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py
+/home/runner/work/erk/erk/tests/commands/pr/test_view.py
+/home/runner/work/erk/erk/tests/commands/pr/test_checkout_graphite_linking.py
+  </tool_result>
+  <assistant>Let me look at a simpler test example to understand the pattern. The close test is likely simple:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="904" cache_read_input_tokens="122135" cache_creation="{'ephemeral_5m_input_tokens': 904, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01GpRv6epFWvFffBFav5zqGA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_close.py</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="904" cache_read_input_tokens="122135" cache_creation="{'ephemeral_5m_input_tokens': 904, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GpRv6epFWvFffBFav5zqGA">
+     1→"""Tests for plan close command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→from click.testing import CliRunner
+     6→
+     7→from erk.cli.cli import cli
+     8→from erk_shared.gateway.github.fake import FakeGitHub
+     9→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    10→from erk_shared.gateway.github.issues.types import IssueInfo, PRReference
+    11→from erk_shared.gateway.time.fake import FakeTime
+    12→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    13→from erk_shared.plan_store.types import Plan, PlanState
+    14→from tests.fakes.prompt_executor import FakePromptExecutor
+    15→from tests.test_utils.context_builders import build_workspace_test_context
+    16→from tests.test_utils.env_helpers import erk_inmem_env
+    17→from tests.test_utils.plan_helpers import (
+    18→    create_plan_store_with_plans,
+    19→    format_plan_header_body_for_test,
+    20→    issue_info_to_pr_details,
+    21→)
+    22→
+    23→
+    24→def test_close_plan_with_plan_number() -&gt; None:
+    25→    """Test closing a plan with plan number."""
+    26→    # Arrange
+    27→    plan_issue = Plan(
+    28→        plan_identifier="42",
+    29→        title="Test Issue",
+    30→        body="This is a test issue",
+
+... [55 lines omitted] ...
+
+    70→        assert "Error" in result.output
+  </tool_result>
+  <assistant>I see they use `cli` from `erk.cli.cli` and invoke through it. Let me also check how `require_repo_root` and `require_github` work in context to understand the Click context chain:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1360" cache_read_input_tokens="123039" cache_creation="{'ephemeral_5m_input_tokens': 1360, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01XsLBoNm8BpRYcPifTvF3k9">
+    <param name="pattern">def require_github</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1360" cache_read_input_tokens="123039" cache_creation="{'ephemeral_5m_input_tokens': 1360, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XsLBoNm8BpRYcPifTvF3k9">
+189:def require_github(ctx: click.Context) -&gt; GitHub:
+190-    """Get GitHub from context, exiting with error if not initialized.
+191-
+192-    Uses LBYL pattern to check context before accessing.
+193-
+194-    Args:
+195-        ctx: Click context (must have ErkContext in ctx.obj)
+196-
+197-    Returns:
+198-        GitHub instance from context
+199-
+200-    Raises:
+201-        SystemExit: If context not initialized (exits with code 1)
+202-
+203-    Example:
+204-        &gt;&gt;&gt; @click.command()
+  </tool_result>
+  <assistant>The `require_github(ctx)` expects `ctx.obj` to have an `ErkContext`. In the `pr_prepare` command, I'm passing `click.Context` to `create_impl_context_from_pr`, which calls `require_repo_root(ctx)` and `require_github(ctx)`. This works because the Click `ctx` has `obj=ErkContext`. Let me verify the test works correctly by looking at how other commands test with `erk_isolated_fs_env`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="544" cache_read_input_tokens="124399" cache_creation="{'ephemeral_5m_input_tokens': 544, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01LL4cuz9rTs86u9JQ3U9jhE">
+    <param name="pattern">def require_repo_root</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/helpers.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="544" cache_read_input_tokens="124399" cache_creation="{'ephemeral_5m_input_tokens': 544, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LL4cuz9rTs86u9JQ3U9jhE">
+97:def require_repo_root(ctx: click.Context) -&gt; Path:
+98-    """Get repo root from context, exiting with error if not initialized.
+99-
+100-    Uses LBYL pattern to check context before accessing.
+101-
+102-    Args:
+103-        ctx: Click context (must have ErkContext in ctx.obj)
+104-
+105-    Returns:
+106-        Path to repository root
+107-
+  </tool_result>
+  <assistant>These helpers access `ctx.obj` and then pull from the `ErkContext`. The `create_impl_context_from_pr` function gets a `click.Context` with `obj=ErkContext`. When called from a Click command, the `@click.pass_context` gives us the right ctx. When called from the prepare command which has `@click.pass_context`, the ctx flows through properly.
+
+However, I notice a potential issue - in the `pr_prepare` command, I'm using `@click.pass_context` but also calling `create_impl_context_from_pr(ctx, ...)`. The `create_impl_context_from_pr` uses `require_repo_root(ctx)` and `require_github(ctx)` which access `ctx.obj`. Since I access `ctx.obj` as `erk_ctx: ErkContext = ctx.obj` at the start, this should work.
+
+Wait, actually `pr_prepare` is registered as a subcommand of `pr_group`. The Click context chain should ensure `ctx.obj` is the `ErkContext` since it's passed via `obj=ctx` in tests. Let me also look at how the test for `test_checkout_graphite_linking.py` works - they invoke `pr_group` directly with `obj=ctx`.
+
+Now let me create the test file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="373" cache_read_input_tokens="124943" cache_creation="{'ephemeral_5m_input_tokens': 373, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Write" id="toolu_01CSZsJoDU9jFJ51VJP59UNH">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_prepare.py</param>
+    <param name="content">"""Tests for erk pr prepare command."""
+
+from click.testing import CliRunner
+
+from erk.cli...[truncated 5431 chars]... result2.exit_code == 0, result2.output
+        assert "already set up" in result2.output
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="373" cache_read_input_tokens="124943" cache_creation="{'ephemeral_5m_input_tokens': 373, 'ephemeral_1h_input_tokens': 0}" output_tokens="2137" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CSZsJoDU9jFJ51VJP59UNH">
+File created successfully at: /home/runner/work/erk/erk/tests/commands/pr/test_prepare.py
+  </tool_result>
+  <assistant>Now let me move to Step 4 — updating references.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2374" cache_read_input_tokens="125316" cache_creation="{'ephemeral_5m_input_tokens': 2374, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01VcVkq9v2tPz4Lkh55QaDRx">
+    <param name="todos">[{'content': 'Step 1: Fix Graphite divergence in erk pr checkout', 'status': 'completed', ...[truncated 460 chars]...s'}, {'content': 'Run CI checks', 'status': 'pending', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2374" cache_read_input_tokens="125316" cache_creation="{'ephemeral_5m_input_tokens': 2374, 'ephemeral_1h_input_tokens': 0}" output_tokens="242" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VcVkq9v2tPz4Lkh55QaDRx">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me look at the error message at line 371 of checkout_cmd.py (plan checkout error):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="284" cache_read_input_tokens="127690" cache_creation="{'ephemeral_5m_input_tokens': 284, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019QicpidEsp3toFDaWDcWBn">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="offset">365</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="284" cache_read_input_tokens="127690" cache_creation="{'ephemeral_5m_input_tokens': 284, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019QicpidEsp3toFDaWDcWBn">
+   365→    3. If no open PRs -&gt; display helpful message
+   366→    """
+   367→    prs = ctx.issues.get_prs_referencing_issue(repo.root, plan_number)
+   368→
+   369→    # Filter to OPEN PRs only
+   370→    open_prs = [pr for pr in prs if pr.state == "OPEN"]
+   371→
+   372→    if len(open_prs) == 0:
+   373→        user_output(
+   374→            f"No open PR found for plan #{plan_number}\n\n"
+   375→            "This plan has not been implemented yet. To prepare it:\n"
+   376→            f"  erk br co --for-plan {plan_number}"
+   377→        )
+   378→        raise SystemExit(1)
+   379→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>The plan says to add `erk pr prepare` as an alternative in this error message:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="440" cache_read_input_tokens="127974" cache_creation="{'ephemeral_5m_input_tokens': 440, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01ArBmADtbVWSFBt7B25TWGr">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="old_string">    if len(open_prs) == 0:
+        user_output(
+            f"No open PR found for plan #{...[truncated 68 chars]...
+            f"  erk br co --for-plan {plan_number}"
+        )
+        raise SystemExit(1)</param>
+    <param name="new_string">    if len(open_prs) == 0:
+        user_output(
+            f"No open PR found for plan #{...[truncated 179 chars]...ch:\n"
+            f"  erk pr prepare {plan_number}"
+        )
+        raise SystemExit(1)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="440" cache_read_input_tokens="127974" cache_creation="{'ephemeral_5m_input_tokens': 440, 'ephemeral_1h_input_tokens': 0}" output_tokens="338" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ArBmADtbVWSFBt7B25TWGr">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01QAHuKaqPiBzuBa4hcxbjAv">
+    <param name="todos">[{'content': 'Step 1: Fix Graphite divergence in erk pr checkout', 'status': 'completed', ...[truncated 462 chars]... {'content': 'Run CI checks', 'status': 'in_progress', 'activeForm': 'Running CI checks'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="385" cache_read_input_tokens="128414" cache_creation="{'ephemeral_5m_input_tokens': 385, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QAHuKaqPiBzuBa4hcxbjAv">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me run CI checks. Let me start with the specific test files related to this change, then run broader checks:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="270" cache_read_input_tokens="128799" cache_creation="{'ephemeral_5m_input_tokens': 270, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01Tyfut3VC7sFzpUwPiv6cMn">
+    <param name="description">Run prepare tests</param>
+    <param name="prompt">Run pytest on `tests/commands/pr/test_prepare.py` and report results. Do NOT fix any errors - just report them.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="270" cache_read_input_tokens="128799" cache_creation="{'ephemeral_5m_input_tokens': 270, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01KW6wVcrQra2wAzhh65Zrqv">
+    <param name="description">Run graphite linking tests</param>
+    <param name="prompt">Run pytest on `tests/commands/pr/test_checkout_graphite_linking.py` and report results. Do NOT fix any errors - just report them.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="270" cache_read_input_tokens="128799" cache_creation="{'ephemeral_5m_input_tokens': 270, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01LpH2rDKc5mgL3mLK8mYZvF">
+    <param name="description">Run ruff linter on changed files</param>
+    <param name="prompt">Run ruff check on these files and report results:
+- src/erk/cli/commands/pr/checkout_cmd.p...[truncated 161 chars]...s/commands/pr/test_checkout_graphite_linking.py
+
+Do NOT fix any errors - just report them.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="270" cache_read_input_tokens="128799" cache_creation="{'ephemeral_5m_input_tokens': 270, 'ephemeral_1h_input_tokens': 0}" output_tokens="463" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LpH2rDKc5mgL3mLK8mYZvF">
+ruff failed: 1 issue found
+
+**File: /home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py**
+- **Line 11**: I001 - Import block is un-sorted or un-formatted
+  - Issue: Imports need to be reorganized for proper formatting
+  - Fixable with `--fix` option
+
+**Summary:** Found 1 error in total across all specified files.
+agentId: ac272fa (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <tool_result tool="toolu_01KW6wVcrQra2wAzhh65Zrqv">
+pytest passed: 11 tests passed in 1.62s
+
+All tests in `/home/runner/work/erk/erk/tests/commands/pr/test_checkout_graphite_linking.py` executed successfully with no failures or errors.
+agentId: a0bc676 (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <tool_result tool="toolu_01Tyfut3VC7sFzpUwPiv6cMn">
+pytest passed: All 4 tests in test_prepare.py passed successfully in 1.60 seconds.
+
+**Test results summary:**
+- 4 passed
+- 0 failed
+- 0 skipped
+
+The test file `/home/runner/work/erk/erk/tests/commands/pr/test_prepare.py` has all passing tests.
+agentId: a1b4adf (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>All tests pass. One ruff import ordering issue. Let me fix that:</assistant>
+  <usage input_tokens="268" cache_creation_input_tokens="604" cache_read_input_tokens="129069" cache_creation="{'ephemeral_5m_input_tokens': 604, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Fv1BWFeCmsXmXNLiDUEbjg">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="268" cache_creation_input_tokens="604" cache_read_input_tokens="129069" cache_creation="{'ephemeral_5m_input_tokens': 604, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Fv1BWFeCmsXmXNLiDUEbjg">
+     1→"""Prepare impl-context for the current worktree's PR.
+     2→
+     3→Sets up .erk/impl-context/ folder from the PR associated with the current
+     4→branch, making the worktree ready for plan implementation.
+     5→
+     6→Usage:
+     7→    erk pr prepare           # Auto-detect plan number from current branch's PR
+     8→    erk pr prepare 1234      # Explicit plan number
+     9→"""
+    10→
+    11→import click
+    12→
+    13→from erk.cli.ensure import Ensure
+    14→from erk.core.context import ErkContext
+    15→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    16→from erk_shared.gateway.github.types import PRNotFound
+    17→from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
+    18→from erk_shared.output.output import user_output
+    19→
+    20→from erk.cli.commands.exec.scripts.setup_impl_from_pr import create_impl_context_from_pr
+    21→
+    22→
+    23→@click.command("prepare")
+    24→@click.argument("plan_number", type=int, required=False, default=None)
+    25→@click.pass_context
+    26→def pr_prepare(ctx: click.Context, plan_number: int | None) -&gt; None:
+    27→    """Set up impl-context for the current worktree's PR.
+    28→
+    29→    Prepares the current worktree for plan implementation by creating
+    30→    the .erk/impl-context/ folder with plan content from the PR.
+
+... [62 lines omitted] ...
+
+    49→        erk_ctx.console.error("Not in a git repository")
+    55→        erk_ctx.console.error("Cannot prepare from detached HEAD state")
+    63→                click.style("Error: ", fg="red")
+  </tool_result>
+  <assistant>The issue is that the `from erk.cli.commands.exec.scripts...` import is in a separate block instead of being merged with the other `erk.*` imports. Let me fix:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1873" cache_read_input_tokens="129673" cache_creation="{'ephemeral_5m_input_tokens': 1873, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01SUTwt3csp5ic13WCMmSprs">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py</param>
+    <param name="old_string">import click
+
+from erk.cli.ensure import Ensure
+from erk.core.context import ErkContext
+fr...[truncated 212 chars]...
+
+from erk.cli.commands.exec.scripts.setup_impl_from_pr import create_impl_context_from_pr</param>
+    <param name="new_string">import click
+
+from erk.cli.commands.exec.scripts.setup_impl_from_pr import create_impl_con...[truncated 211 chars]...er import read_plan_ref, resolve_impl_dir
+from erk_shared.output.output import user_output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1873" cache_read_input_tokens="129673" cache_creation="{'ephemeral_5m_input_tokens': 1873, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SUTwt3csp5ic13WCMmSprs">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Also I notice there's an unused import `RepoContext` — the `repo` variable is assigned but I only use `repo.root`. Let me check... actually, I do declare `repo: RepoContext = erk_ctx.repo` but only use `repo.root` in the `get_pr_for_branch` call. Let me verify all uses:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="464" cache_read_input_tokens="131546" cache_creation="{'ephemeral_5m_input_tokens': 464, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Wr6JQQZVdgjtusM7ASQxPG">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="464" cache_read_input_tokens="131546" cache_creation="{'ephemeral_5m_input_tokens': 464, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Wr6JQQZVdgjtusM7ASQxPG">
+     1→"""Prepare impl-context for the current worktree's PR.
+     2→
+     3→Sets up .erk/impl-context/ folder from the PR associated with the current
+     4→branch, making the worktree ready for plan implementation.
+     5→
+     6→Usage:
+     7→    erk pr prepare           # Auto-detect plan number from current branch's PR
+     8→    erk pr prepare 1234      # Explicit plan number
+     9→"""
+    10→
+    11→import click
+    12→
+    13→from erk.cli.commands.exec.scripts.setup_impl_from_pr import create_impl_context_from_pr
+    14→from erk.cli.ensure import Ensure
+    15→from erk.core.context import ErkContext
+    16→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    17→from erk_shared.gateway.github.types import PRNotFound
+    18→from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
+    19→from erk_shared.output.output import user_output
+    20→
+    21→
+    22→@click.command("prepare")
+    23→@click.argument("plan_number", type=int, required=False, default=None)
+    24→@click.pass_context
+    25→def pr_prepare(ctx: click.Context, plan_number: int | None) -&gt; None:
+    26→    """Set up impl-context for the current worktree's PR.
+    27→
+    28→    Prepares the current worktree for plan implementation by creating
+    29→    the .erk/impl-context/ folder with plan content from the PR.
+    30→
+
+... [61 lines omitted] ...
+
+    48→        erk_ctx.console.error("Not in a git repository")
+    54→        erk_ctx.console.error("Cannot prepare from detached HEAD state")
+    62→                click.style("Error: ", fg="red")
+  </tool_result>
+  <assistant>I see `repo` is used on line 59 for `repo.root`. The `RepoContext` import is needed for the type annotation on line 50. Let me now run the full ruff + ty checks and all PR checkout tests:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1666" cache_read_input_tokens="132010" cache_creation="{'ephemeral_5m_input_tokens': 1666, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01325vbzSDPd94SYGZ5jeQ6S">
+    <param name="description">Run ruff on prepare_cmd</param>
+    <param name="prompt">Run ruff check on src/erk/cli/commands/pr/prepare_cmd.py and report results. Do NOT fix any errors.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1666" cache_read_input_tokens="132010" cache_creation="{'ephemeral_5m_input_tokens': 1666, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01SEXhvoJaD5nmJpSp6oU3mf">
+    <param name="description">Run ty check on changed files</param>
+    <param name="prompt">Run `ty check` and report results. Only report errors in these files:
+- src/erk/cli/comman...[truncated 71 chars]...init__.py
+- src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py
+Do NOT fix any errors.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1666" cache_read_input_tokens="132010" cache_creation="{'ephemeral_5m_input_tokens': 1666, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_0122J7wppgfFyiz2oqYJurAV">
+    <param name="description">Run all PR checkout tests</param>
+    <param name="prompt">Run pytest on `tests/commands/pr/ -k checkout` and report results. Do NOT fix any errors.</param>
+    <param name="subagent_type">devrun</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1666" cache_read_input_tokens="132010" cache_creation="{'ephemeral_5m_input_tokens': 1666, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01325vbzSDPd94SYGZ5jeQ6S">
+ruff passed: No violations found in /home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py
+agentId: acaf06c (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <tool_result tool="toolu_01SEXhvoJaD5nmJpSp6oU3mf">
+**ty check failed: 1 issue found**
+
+Error in `src/erk/cli/commands/pr/checkout_cmd.py:305:13`:
+- **Rule**: `unresolved-attribute`
+- **Message**: Attribute `retrack_branch` is not defined on `None` in union `GraphiteBranchOps | None`
+- **Code context**: `ctx.graphite_branch_ops.retrack_branch(repo.root, branch_name)`
+
+The type checker detected that `ctx.graphite_branch_ops` could be `None`, but the code is calling `.retrack_branch()` without a null check. The attribute is only defined on `GraphiteBranchOps`, not on the `None` type in the union.
+agentId: a947c5b (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <tool_result tool="toolu_0122J7wppgfFyiz2oqYJurAV">
+pytest failed: 1 issue found
+
+**Summary:** 1 failed, 47 passed, 190 deselected in 1.27s
+
+**Failed Test:**
+
+- **File:** `/home/runner/work/erk/erk/tests/commands/pr/test_checkout.py`
+- **Test:** `test_pr_checkout_stacked_pr_base_already_local`
+- **Line:** 465
+- **Error:** `AssertionError`
+- **Message:** The test expected that when a stacked PR's base branch (`feature-a`) already exists locally, it should NOT be fetched. However, the git mock shows that `('origin', 'feature-a')` was fetched when it should have been skipped. The test assertion fails because the base branch was fetched despite existing locally.
+agentId: a1bf72a (for resuming to continue this agent's work if needed)
+  </tool_result>
+  <assistant>
+
+Two issues to fix:
+
+1. **ty error**: `ctx.graphite_branch_ops` can be `None` — need a guard
+2. **Test failure**: My new `update_local_ref` logic fetches the base branch even when it already exists locally, which breaks `test_pr_checkout_stacked_pr_base_already_local`
+
+Let me look at the failing test first:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1213" cache_read_input_tokens="133676" cache_creation="{'ephemeral_5m_input_tokens': 1213, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_019nv3c5H5u8deu8ogfnFEE4">
+    <param name="pattern">test_pr_checkout_stacked_pr_base_already_local</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_checkout.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">60</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1213" cache_read_input_tokens="133676" cache_creation="{'ephemeral_5m_input_tokens': 1213, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019nv3c5H5u8deu8ogfnFEE4">
+434:def test_pr_checkout_stacked_pr_base_already_local() -&gt; None:
+435-    """Test that stacked PR checkout skips fetch/tracking when base exists locally."""
+436-    runner = CliRunner()
+437-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+438-        env.setup_repo_structure()
+439-        # PR-B is based on PR-A (not trunk), but feature-a already exists locally
+440-        pr_details = _make_pr_details(
+441-            number=778,
+442-            head_ref_name="feature-b",
+443-            is_cross_repository=False,
+444-            state="OPEN",
+445-            base_ref_name="feature-a",  # Stacked PR
+446-        )
+447-        github = FakeGitHub(pr_details={778: pr_details})
+448-        git = FakeGit(
+449-            git_common_dirs={env.cwd: env.git_dir},
+450-            default_branches={env.cwd: "main"},
+451-            trunk_branches={env.cwd: "main"},
+452-            # feature-a already exists locally
+453-            local_branches={env.cwd: ["main", "feature-a", "feature-b"]},
+454-            remote_branches={env.cwd: ["origin/main", "origin/feature-a", "origin/feature-b"]},
+455-            existing_paths={env.cwd, env.repo.worktrees_dir},
+456-        )
+457-        ctx = build_workspace_test_context(env, git=git, github=github)
+458-
+459-        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+460-            result = runner.invoke(pr_group, ["checkout", "778"], obj=ctx)
+461-
+462-        assert result.exit_code == 0
+463-        assert "Created worktree for PR #778" in result.output
+
+... [31 lines omitted] ...
+  </tool_result>
+  <assistant>The test expects that when the base branch already exists locally, we DON'T fetch it. But my new code fetches it unconditionally in the `else` branch (to sync local with remote). The fix is: only fetch + update_local_ref when the SHAs actually differ, which means we need to check the branch heads first WITHOUT fetching. But `get_branch_head` for `origin/feature-a` might not reflect the latest remote state unless we fetch...
+
+Actually, looking at the `branch/checkout_cmd.py` pattern more carefully, the original code from the branch checkout DOES fetch unconditionally even when the parent exists locally (line 384). The difference is that this test was written for the OLD behavior of `pr checkout`, which didn't have the `update_local_ref` logic at all.
+
+The test's expectation "should NOT fetch base branch since it exists locally" was valid before my change. Now that I've added the sync logic, fetching is correct behavior. But I should update the test to match the new behavior rather than breaking the expectation.
+
+Let me re-read the relevant section of my change in `checkout_cmd.py`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="84191" cache_read_input_tokens="20211" cache_creation="{'ephemeral_5m_input_tokens': 84191, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017bHSszFZt2mJhBUtQAkqMf">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="offset">267</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="84191" cache_read_input_tokens="20211" cache_creation="{'ephemeral_5m_input_tokens': 84191, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017bHSszFZt2mJhBUtQAkqMf">
+   267→        if pr.base_ref_name not in local_branches:
+   268→            ctx.console.info(f"Fetching base branch '{pr.base_ref_name}'...")
+   269→            ctx.git.remote.fetch_branch(repo.root, "origin", pr.base_ref_name)
+   270→            ctx.branch_manager.create_tracking_branch(
+   271→                repo.root, pr.base_ref_name, f"origin/{pr.base_ref_name}"
+   272→            )
+   273→        else:
+   274→            # Parent exists locally but may be stale after squash/rebase.
+   275→            # Update to match origin so gt track sees consistent history.
+   276→            ctx.git.remote.fetch_branch(repo.root, "origin", pr.base_ref_name)
+   277→            remote_sha = ctx.git.branch.get_branch_head(
+   278→                repo.root, f"origin/{pr.base_ref_name}"
+   279→            )
+   280→            local_sha = ctx.git.branch.get_branch_head(repo.root, pr.base_ref_name)
+   281→            if remote_sha is not None and remote_sha != local_sha:
+   282→                ctx.git.branch.update_local_ref(repo.root, pr.base_ref_name, remote_sha)
+   283→
+   284→        ctx.console.info("Rebasing onto base branch...")
+   285→        rebase_result = ctx.git.rebase.rebase_onto(worktree_path, f"origin/{pr.base_ref_name}")
+   286→
+   287→        if not rebase_result.success:
+   288→            ctx.git.rebase.rebase_abort(worktree_path)
+   289→            ctx.console.info(
+   290→                f"Warning: Rebase had conflicts. Worktree created but needs manual rebase.\n"
+   291→                f"Run: cd {worktree_path} &amp;&amp; git rebase origin/{pr.base_ref_name}"
+   292→            )
+   293→
+   294→    # Graphite integration: Track or retrack AFTER rebase completes.
+   295→    # Tracking must happen after rebase so Graphite's cached SHA matches
+   296→    # the post-rebase commit, preventing divergence.
+
+... [25 lines omitted] ...
+  </tool_result>
+  <assistant>I need to fix both issues:
+
+1. **Test fix**: Update `test_pr_checkout_stacked_pr_base_already_local` — the new behavior correctly fetches the base branch to check for staleness, so the test assertion needs updating.
+
+2. **ty fix**: Add null guard on `ctx.graphite_branch_ops` on line 305.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1537" cache_read_input_tokens="104402" cache_creation="{'ephemeral_5m_input_tokens': 1537, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_013Afrg3jJNuNeSu2jZzAdJ6">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py</param>
+    <param name="old_string">    if should_track_with_graphite:
+        if ctx.branch_manager.get_parent_branch(repo.ro...[truncated 80 chars]...A
+            ctx.graphite_branch_ops.retrack_branch(repo.root, branch_name)
+        else:</param>
+    <param name="new_string">    if should_track_with_graphite:
+        if (
+            ctx.graphite_branch_ops is not...[truncated 156 chars]...A
+            ctx.graphite_branch_ops.retrack_branch(repo.root, branch_name)
+        else:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1537" cache_read_input_tokens="104402" cache_creation="{'ephemeral_5m_input_tokens': 1537, 'ephemeral_1h_input_tokens': 0}" output_tokens="381" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013Afrg3jJNuNeSu2jZzAdJ6">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py has been updated successfully.
+  </tool_result>
+  <assistant>Now fix the test — the base branch fetch IS expected now (to check for staleness), but tracking branch creation should NOT happen:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="428" cache_read_input_tokens="105939" cache_creation="{'ephemeral_5m_input_tokens': 428, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01PQzW7TKhbFLxBn2Rq5GUif">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_checkout.py</param>
+    <param name="offset">434</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="428" cache_read_input_tokens="105939" cache_creation="{'ephemeral_5m_input_tokens': 428, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+</session>

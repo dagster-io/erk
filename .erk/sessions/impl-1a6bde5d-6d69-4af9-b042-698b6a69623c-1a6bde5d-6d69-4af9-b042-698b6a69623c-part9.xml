@@ -1,0 +1,635 @@
+<session>
+  <meta source="agent-a2cd305" />
+  <meta branch="plnd/consolidate-checkout-prepa-03-06-0452" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+
+Read the FakeGraphite class to understand its API, particularly `retrack_branch_calls` and `track_branch_calls` tracking. Look at:
+1. `packages/erk-shared/src/erk_shared/gateway/graphite/fake.py`
+2. Also read `tests/test_utils/context_builders.py` to understand `build_workspace_test_context`</user>
+  <assistant>I'll help you search for and read these files to understand the FakeGraphite API. Let me start by checking the documentation and then reading the relevant files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6779" cache_read_input_tokens="11953" cache_creation="{'ephemeral_5m_input_tokens': 6779, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01RFw4T47QDZJhF7Yq6wQ9ht">
+    <param name="pattern">FakeGraphite</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6779" cache_read_input_tokens="11953" cache_creation="{'ephemeral_5m_input_tokens': 6779, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01X7UQb7AbPNsbH5BuGpWnQm">
+    <param name="pattern">**/fake.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6779" cache_read_input_tokens="11953" cache_creation="{'ephemeral_5m_input_tokens': 6779, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01K7kWCGS4nf8FkpymMCpHq6">
+    <param name="pattern">**/context_builders.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6779" cache_read_input_tokens="11953" cache_creation="{'ephemeral_5m_input_tokens': 6779, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VQd4n5kvDdAyS9XqcfcLyT">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/index.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6779" cache_read_input_tokens="11953" cache_creation="{'ephemeral_5m_input_tokens': 6779, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VQd4n5kvDdAyS9XqcfcLyT">
+     1→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     2→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     3→
+     4→# Agent Documentation
+     5→
+     6→Before starting work, scan the read-when conditions below.
+     7→If your current task matches, read the linked document **before writing code**.
+     8→
+     9→## Categories
+    10→
+    11→- [architecture/](architecture/) — Explore when working on core patterns (dry-run, gateways, subprocess, shell integration). Add docs here for cross-cutting technical patterns.
+    12→- [capabilities/](capabilities/)
+    13→- [changelog/](changelog/)
+    14→- [checklists/](checklists/)
+    15→- [ci/](ci/)
+    16→- [claude-code/](claude-code/)
+    17→- [cli/](cli/) — Explore when building CLI commands or output formatting. Add docs here for Click patterns and terminal UX.
+    18→- [commands/](commands/) — Explore when creating or optimizing slash commands. Add docs here for command authoring patterns.
+    19→- [config/](config/)
+    20→- [configuration/](configuration/)
+    21→- [documentation/](documentation/) — Explore when structuring or writing documentation. Add docs here for documentation methodology and best practices.
+    22→- [erk/](erk/) — Explore when working with erk-specific workflows (worktrees, PR sync, Graphite). Add docs here for erk user-facing features.
+    23→- [erk-dev/](erk-dev/)
+    24→- [gateway/](gateway/)
+    25→- [hooks/](hooks/) — Explore when creating or debugging hooks. Add docs here for hook development patterns.
+    26→- [integrations/](integrations/)
+    27→- [objectives/](objectives/)
+    28→- [planning/](planning/) — Explore when working with plans, .erk/impl-context/ folders, or agent delegation. Add docs here for planning workflow patterns.
+    29→- [pr-operations/](pr-operations/)
+    30→- [refactoring/](refactoring/)
+
+... [22 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01RFw4T47QDZJhF7Yq6wQ9ht">
+Found 88 files
+tests/unit/status/test_github_pr_collector.py
+tests/unit/status/test_graphite_stack_collector.py
+tests/unit/gateways/gt/fake_ops.py
+tests/unit/gateways/gt/test_quick_submit.py
+tests/unit/fakes/AGENTS.md
+tests/unit/fakes/test_fake_graphite.py
+tests/unit/cli/commands/stack/test_list_cmd.py
+tests/unit/cli/test_ensure.py
+tests/unit/cli/test_graphite_command.py
+tests/unit/cli/commands/slot/test_list_cmd.py
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py
+tests/unit/cli/commands/land/test_cleanup_and_navigate.py
+tests/unit/cli/commands/land/test_dry_run.py
+tests/unit/cli/commands/land/test_no_delete_flag.py
+tests/unit/cli/commands/exec/scripts/test_update_pr_description.py
+tests/unit/cli/commands/exec/scripts/test_set_pr_description.py
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py
+tests/unit/cli/commands/exec/scripts/test_setup_impl.py
+tests/unit/cli/commands/exec/scripts/test_plan_save.py
+tests/unit/cli/commands/exec/scripts/test_land_execute_objective_detection.py
+tests/unit/cli/commands/exec/scripts/test_get_pr_context.py
+tests/unit/branch_manager/test_graphite_branch_manager.py
+tests/unit/cli/commands/branch/test_create_cmd.py
+tests/unit/cli/commands/branch/test_list_cmd.py
+tests/unit/AGENTS.md
+tests/tui/data/test_provider.py
+tests/test_utils/builders.py
+tests/test_utils/env_helpers.py
+
+... [59 lines omitted] ...
+
+tests/commands/land/test_branch_errors.py
+  </tool_result>
+  <tool_result tool="toolu_01X7UQb7AbPNsbH5BuGpWnQm">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_docs/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_launcher/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/browser/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/ci_runner/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/claude_installation/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/clipboard/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/codespace/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/codespace_registry/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/command_executor/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/completion/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/console/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/config_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/status_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/tag_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github_admin/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/gt/fake.py
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01K7kWCGS4nf8FkpymMCpHq6">
+/home/runner/work/erk/erk/tests/test_utils/context_builders.py
+  </tool_result>
+  <assistant>Now let me read the FakeGraphite class and the context builders:</assistant>
+  <usage input_tokens="1083" cache_creation_input_tokens="3161" cache_read_input_tokens="18732" cache_creation="{'ephemeral_5m_input_tokens': 3161, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GgwbChsD4ZuBSz1ABY9x8y">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1083" cache_creation_input_tokens="3161" cache_read_input_tokens="18732" cache_creation="{'ephemeral_5m_input_tokens': 3161, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YXRF9AnFpntJPMULe14riK">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/context_builders.py</param>
+  </tool_use>
+  <usage input_tokens="1083" cache_creation_input_tokens="3161" cache_read_input_tokens="18732" cache_creation="{'ephemeral_5m_input_tokens': 3161, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019FxPsL4QBnWhpS9BWgQhSP">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1083" cache_creation_input_tokens="3161" cache_read_input_tokens="18732" cache_creation="{'ephemeral_5m_input_tokens': 3161, 'ephemeral_1h_input_tokens': 0}" output_tokens="232" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GgwbChsD4ZuBSz1ABY9x8y">
+     1→"""Fake Graphite operations for testing.
+     2→
+     3→FakeGraphite is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from pathlib import Path
+    10→from typing import TYPE_CHECKING
+    11→
+    12→if TYPE_CHECKING:
+    13→    from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
+    14→
+    15→from erk_shared.gateway.git.abc import Git
+    16→from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
+    17→from erk_shared.gateway.graphite.abc import Graphite
+    18→from erk_shared.gateway.graphite.types import BranchMetadata
+    19→
+    20→
+    21→class FakeGraphite(Graphite):
+    22→    """In-memory fake implementation of Graphite operations.
+    23→
+    24→    This class has NO public setup methods. All state is provided via constructor
+    25→    using keyword arguments with sensible defaults (empty dicts).
+    26→    """
+    27→
+    28→    def __init__(
+    29→        self,
+    30→        *,
+
+... [296 lines omitted] ...
+
+    31→        submit_branch_raises: Exception | None = None,
+    32→        track_branch_raises: Exception | None = None,
+    33→        retrack_branch_raises: Exception | None = None,
+    34→        squash_branch_raises: Exception | None = None,
+    35→        submit_stack_raises: Exception | None = None,
+    36→        delete_branch_raises: Exception | None = None,
+    47→            submit_branch_raises: Exception to raise when submit_branch() is called
+    48→            track_branch_raises: Exception to raise when track_branch() is called
+    49→            retrack_branch_raises: Exception to raise when retrack_branch() is called
+    50→            squash_branch_raises: Exception to raise when squash_branch() is called
+    51→            submit_stack_raises: Exception to raise when submit_stack() is called
+    52→            delete_branch_raises: Exception to raise when delete_branch() is called
+  </tool_result>
+  <tool_result tool="toolu_01YXRF9AnFpntJPMULe14riK">
+     1→"""Shared context builders for test scenarios.
+     2→
+     3→This module provides reusable context builder functions to eliminate duplication
+     4→across test files. These builders encapsulate common patterns for setting up
+     5→ErkContext with appropriate fake implementations.
+     6→"""
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.core.fakes import FakePlanListService
+    10→from erk_shared.core.plan_list_service import PlanListData
+    11→from erk_shared.gateway.git.dry_run import DryRunGit
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.github.fake import FakeGitHub
+    14→from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+    15→from erk_shared.plan_store.types import Plan
+    16→from tests.fakes.shell import FakeShell
+    17→from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
+    18→
+    19→
+    20→def build_workspace_test_context(
+    21→    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    22→    *,
+    23→    dry_run: bool = False,
+    24→    use_graphite: bool = False,
+    25→    current_branch: str | None = None,
+    26→    **kwargs,
+    27→) -&gt; ErkContext:
+    28→    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+    29→
+    30→    This builder provides a standard context configuration for workspace manipulation
+
+... [123 lines omitted] ...
+
+   137→    warnings: tuple[str, ...] = (),
+   145→            warnings=warnings,
+  </tool_result>
+  <tool_result tool="toolu_019FxPsL4QBnWhpS9BWgQhSP">
+     1→"""Abstract base class for Graphite operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from abc import ABC, abstractmethod
+     6→from pathlib import Path
+     7→from typing import TYPE_CHECKING
+     8→
+     9→from erk_shared.gateway.git.abc import Git, WorktreeInfo
+    10→from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
+    11→from erk_shared.gateway.graphite.types import BranchMetadata
+    12→
+    13→if TYPE_CHECKING:
+    14→    from erk_shared.gateway.gt.types import (
+    15→        SquashError,
+    16→        SquashSuccess,
+    17→    )
+    18→
+    19→
+    20→class Graphite(ABC):
+    21→    """Abstract interface for Graphite operations.
+    22→
+    23→    All implementations (real and fake) must implement this interface.
+    24→    """
+    25→
+    26→    @abstractmethod
+    27→    def get_graphite_url(self, repo_id: GitHubRepoId, pr_number: int) -&gt; str:
+    28→        """Get Graphite PR URL for a pull request.
+    29→
+    30→        Args:
+
+... [347 lines omitted] ...
+
+   131→            RuntimeError: If gt squash fails
+   159→            RuntimeError: If gt submit fails or times out
+   227→            ValueError: If branch is not tracked by Graphite (indicates caller bug).
+   232→            raise ValueError(f"Branch '{branch}' is not tracked by Graphite")
+   262→            True if branch is tracked by Graphite, False if untracked or gt reports error.
+   300→    ) -&gt; SquashSuccess | SquashError:
+   306→        to squash", this is treated as success rather than an error.
+   308→        This composites the primitive squash_branch() operation with error
+   318→            SquashError if squash failed (conflict or other error)
+   325→            ...     print(f"Error: {result.message}")
+   330→        from erk_shared.gateway.gt.types import SquashError, SquashSuccess
+   340→        except (RuntimeError, subprocess.CalledProcessError) as e:
+   341→            # Build error message from exception
+   342→            # RuntimeError: from run_subprocess_with_context (real implementation)
+   343→            # CalledProcessError: from FakeGraphite (test implementation)
+   344→            if isinstance(e, subprocess.CalledProcessError):
+   345→                error_msg = (
+   350→                error_msg = str(e).lower()
+   354→            if "nothing to squash" in error_msg:
+   361→            if "conflict" in error_msg:
+   362→                return SquashError(
+   364→                    error="squash-conflict",
+   367→            return SquashError(
+   369→                error="squash-failed",
+   370→                message=f"Failed to squash: {e}",
+  </tool_result>
+  <assistant>Now let me read the FakeGraphiteBranchOps to understand the linking mechanism:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="15744" cache_read_input_tokens="21893" cache_creation="{'ephemeral_5m_input_tokens': 15744, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015UHRPwAgoQUMS5PaLXoq7E">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/fake.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="15744" cache_read_input_tokens="21893" cache_creation="{'ephemeral_5m_input_tokens': 15744, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015UHRPwAgoQUMS5PaLXoq7E">
+     1→"""Fake Graphite branch operations for testing."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from pathlib import Path
+     6→
+     7→from erk_shared.gateway.graphite.branch_ops.abc import GraphiteBranchOps
+     8→
+     9→
+    10→class FakeGraphiteBranchOps(GraphiteBranchOps):
+    11→    """In-memory fake implementation of Graphite branch operations.
+    12→
+    13→    State Management:
+    14→    -----------------
+    15→    This fake maintains mutable state to simulate Graphite's stateful behavior.
+    16→    Operations like track_branch modify internal state.
+    17→    State changes are visible to subsequent method calls within the same test.
+    18→
+    19→    Mutation Tracking:
+    20→    -----------------
+    21→    This fake tracks mutations for test assertions via read-only properties:
+    22→    - track_branch_calls: Branches tracked via track_branch()
+    23→    - delete_branch_calls: Branches deleted via delete_branch()
+    24→    - submit_branch_calls: Branches submitted via submit_branch()
+    25→    - retrack_branch_calls: Branches re-tracked via retrack_branch()
+    26→    """
+    27→
+    28→    def __init__(
+    29→        self,
+    30→        *,
+
+... [149 lines omitted] ...
+
+    31→        track_branch_raises: Exception | None = None,
+    32→        delete_branch_raises: Exception | None = None,
+    33→        submit_branch_raises: Exception | None = None,
+    34→        retrack_branch_raises: Exception | None = None,
+    40→            track_branch_raises: Exception to raise when track_branch() is called
+    41→            delete_branch_raises: Exception to raise when delete_branch() is called
+    42→            submit_branch_raises: Exception to raise when submit_branch() is called
+    43→            retrack_branch_raises: Exception to raise when retrack_branch() is called
+    61→        Tracks the call and optionally raises configured exception.
+    72→        Tracks the call and optionally raises configured exception.
+    83→        Tracks the call and optionally raises configured exception.
+    93→        Tracks the call and optionally raises configured exception.
+  </tool_result>
+  <assistant>Perfect! Now let me search for some examples of how these are used in tests:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="2644" cache_read_input_tokens="37637" cache_creation="{'ephemeral_5m_input_tokens': 2644, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VuyYZfy7fN344kUyUCoK87">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/fakes/test_fake_graphite.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2644" cache_read_input_tokens="37637" cache_creation="{'ephemeral_5m_input_tokens': 2644, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VuyYZfy7fN344kUyUCoK87">
+     1→"""Tests for FakeGraphite test infrastructure.
+     2→
+     3→These tests verify that FakeGraphite correctly simulates Graphite operations,
+     4→providing reliable test doubles for CLI tests.
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→
+     9→import pytest
+    10→
+    11→from erk_shared.gateway.git.fake import FakeGit
+    12→from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo
+    13→from erk_shared.gateway.graphite.branch_ops.fake import FakeGraphiteBranchOps
+    14→from erk_shared.gateway.graphite.fake import FakeGraphite
+    15→from erk_shared.gateway.graphite.types import BranchMetadata
+    16→
+    17→
+    18→def test_fake_graphite_ops_initialization() -&gt; None:
+    19→    """Test that FakeGraphite initializes with empty state."""
+    20→    ops = FakeGraphite()
+    21→    git_ops = FakeGit()
+    22→
+    23→    branches = ops.get_all_branches(git_ops, Path("/repo"))
+    24→    assert branches == {}
+    25→
+    26→    prs = ops.get_prs_from_graphite(git_ops, Path("/repo"))
+    27→    assert prs == {}
+    28→
+    29→    stack = ops.get_branch_stack(git_ops, Path("/repo"), "any-branch")
+    30→    assert stack is None
+
+... [362 lines omitted] ...
+
+   381→    """Test that retrack_branch can be configured to raise exceptions."""
+   382→    test_error = RuntimeError("Retrack failed")
+   383→    branch_ops = FakeGraphiteBranchOps(retrack_branch_raises=test_error)
+   385→    with pytest.raises(RuntimeError, match="Retrack failed"):
+  </tool_result>
+  <assistant>Perfect! Now let me create a comprehensive summary report:
+
+## Summary Report: FakeGraphite API and Tracking Mechanism
+
+### File Locations
+
+1. **FakeGraphite Main Implementation**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/fake.py`
+2. **FakeGraphiteBranchOps Implementation**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/fake.py`
+3. **Context Builders**: `/home/runner/work/erk/erk/tests/test_utils/context_builders.py`
+4. **Abstract Base Class**: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/abc.py`
+5. **Test Infrastructure Tests**: `/home/runner/work/erk/erk/tests/unit/fakes/test_fake_graphite.py`
+
+---
+
+### FakeGraphite Class Overview
+
+`FakeGraphite` is an in-memory fake implementation of Graphite operations for testing. It has **NO public setup methods** - all state is provided via constructor using keyword arguments with sensible defaults (empty dicts).
+
+**Constructor Parameters:**
+
+```python
+FakeGraphite(
+    *,
+    submit_branch_raises: Exception | None = None,
+    track_branch_raises: Exception | None = None,
+    retrack_branch_raises: Exception | None = None,
+    squash_branch_raises: Exception | None = None,
+    submit_stack_raises: Exception | None = None,
+    delete_branch_raises: Exception | None = None,
+    pr_info: dict[str, PullRequestInfo] | None = None,
+    branches: dict[str, BranchMetadata] | None = None,
+    stacks: dict[str, list[str]] | None = None,
+    authenticated: bool = True,
+    auth_username: str | None = "test-user",
+    auth_repo_info: str | None = "owner/repo",
+)
+```
+
+---
+
+### Core API Methods
+
+#### Configuration/Query Methods
+
+| Method | Purpose | Returns |
+|--------|---------|---------|
+| `get_prs_from_graphite(git_ops, repo_root)` | Get pre-configured PR info | `dict[str, PullRequestInfo]` |
+| `get_all_branches(git_ops, repo_root)` | Get pre-configured branch metadata | `dict[str, BranchMetadata]` |
+| `get_branch_stack(git_ops, repo_root, branch)` | Get linear stack for a branch (trunk to leaf) | `list[str] \| None` |
+| `get_graphite_url(repo_id, pr_number)` | Construct Graphite PR URL | `str` |
+| `is_branch_tracked(repo_root, branch)` | Check if branch is in configured branches | `bool` |
+| `check_auth_status()` | Return pre-configured auth status | `tuple[bool, str \| None, str \| None]` |
+
+#### Mutation Methods
+
+| Method | Purpose | Tracking |
+|--------|---------|----------|
+| `squash_branch(repo_root, *, quiet)` | Track squash calls | `squash_branch_calls` property |
+| `submit_stack(repo_root, *, publish, restack, quiet, force)` | Track submit stack calls | `submit_stack_calls` property |
+
+#### Test Setup Helpers
+
+| Method | Purpose |
+|--------|---------|
+| `set_branch_parent(branch_name, parent_branch)` | Test helper to set up branch-parent relationships |
+| `create_linked_branch_ops()` | Create FakeGraphiteBranchOps with shared mutation tracking |
+
+---
+
+### Mutation Tracking: retrack_branch_calls and track_branch_calls
+
+These properties track calls made through **linked FakeGraphiteBranchOps**, not direct FakeGraphite calls.
+
+#### How It Works
+
+The tracking mechanism uses **shared mutable state** between FakeGraphite and FakeGraphiteBranchOps:
+
+1. **FakeGraphite owns the lists** internally:
+   ```python
+   self._track_branch_calls: list[tuple[Path, str, str]] = []
+   self._retrack_branch_calls: list[tuple[Path, str]] = []
+   ```
+
+2. **When creating linked FakeGraphiteBranchOps**, FakeGraphite passes references to these lists:
+   ```python
+   def create_linked_branch_ops(self) -&gt; FakeGraphiteBranchOps:
+       ops = FakeGraphiteBranchOps(...)
+       ops.link_mutation_tracking(
+           track_branch_calls=self._track_branch_calls,
+           delete_branch_calls=self._delete_branch_calls,
+           submit_branch_calls=self._submit_branch_calls,
+           retrack_branch_calls=self._retrack_branch_calls,
+       )
+       return ops
+   ```
+
+3. **FakeGraphiteBranchOps appends to these shared lists** when operations occur:
+   ```python
+   def track_branch(self, cwd: Path, branch_name: str, parent_branch: str) -&gt; None:
+       self._track_branch_calls.append((cwd, branch_name, parent_branch))
+   
+   def retrack_branch(self, cwd: Path, branch_name: str) -&gt; None:
+       self._retrack_branch_calls.append((cwd, branch_name))
+   ```
+
+4. **Properties on FakeGraphite expose the shared lists** (returned as copies):
+   ```python
+   @property
+   def track_branch_calls(self) -&gt; list[tuple[Path, str, str]]:
+       return self._track_branch_calls
+   
+   @property
+   def retrack_branch_calls(self) -&gt; list[tuple[Path, str]]:
+       return self._retrack_branch_calls
+   ```
+
+#### Format of Tracked Calls
+
+**track_branch_calls**: `list[tuple[Path, str, str]]`
+- Format: `(cwd, branch_name, parent_branch)`
+- Example: `(Path("/repo"), "feature-1", "main")`
+
+**retrack_branch_calls**: `list[tuple[Path, str]]`
+- Format: `(cwd, branch_name)`
+- Example: `(Path("/repo"), "feature-1")`
+
+---
+
+### FakeGraphiteBranchOps Class
+
+Represents Graphite branch operations (part of the branch manager abstraction).
+
+**Constructor:**
+```python
+FakeGraphiteBranchOps(
+    *,
+    track_branch_raises: Exception | None = None,
+    delete_branch_raises: Exception | None = None,
+    submit_branch_raises: Exception | None = None,
+    retrack_branch_raises: Exception | None = None,
+    tracked_branches: set[str] | None = None,
+)
+```
+
+**Methods:**
+- `track_branch(cwd, branch_name, parent_branch)` - Track a branch (appends to shared list)
+- `retrack_branch(cwd, branch_name)` - Re-track a branch (appends to shared list)
+- `delete_branch(repo_root, branch)` - Delete a branch
+- `submit_branch(repo_root, branch_name, *, quiet)` - Submit a branch
+- `is_branch_tracked(branch)` - Check if branch is tracked
+
+**Linking Methods:**
+- `link_state_from_graphite(tracked_branches)` - Link mutable state from FakeGraphite
+- `link_mutation_tracking(track_branch_calls, delete_branch_calls, submit_branch_calls, retrack_branch_calls)` - Link mutation tracking lists
+
+---
+
+### build_workspace_test_context Helper
+
+Located in `/home/runner/work/erk/erk/tests/test_utils/context_builders.py`
+
+```python
+def build_workspace_test_context(
+    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    *,
+    dry_run: bool = False,
+    use_graphite: bool = False,
+    current_branch: str | None = None,
+    **kwargs,
+) -&gt; ErkContext:
+```
+
+**Purpose**: Build ErkContext for workspace command tests (create, split, consolidate, delete)
+
+**Key Features**:
+- Provides standard context configuration with sensible defaults
+- Supports `use_graphite=True` to enable Graphite integration
+- Allows passing custom `git`, `github`, `graphite`, `shell` instances via kwargs
+- Automatically configures default FakeGit with remote URLs if not provided
+- Returns fully configured ErkContext ready for CliRunner
+
+**Related helper:**
+```python
+def build_graphite_test_context(
+    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    *,
+    dry_run: bool = False,
+    **kwargs,
+) -&gt; ErkContext:
+```
+
+Convenience wrapper that calls `build_workspace_test_context` with `use_graphite=True`.
+
+---
+
+### Usage Example
+
+From test_fake_graphite.py:
+
+```python
+def test_fake_graphite_branch_ops_retrack_branch_tracks_calls() -&gt; None:
+    """Test that retrack_branch tracks calls via retrack_branch_calls property."""
+    ops = FakeGraphite()
+    branch_ops = ops.create_linked_branch_ops()
+
+    branch_ops.retrack_branch(Path("/repo"), "feature-1")
+    branch_ops.retrack_branch(Path("/repo2"), "feature-2")
+
+    assert len(branch_ops.retrack_branch_calls) == 2
+    assert branch_ops.retrack_branch_calls[0] == (Path("/repo"), "feature-1")
+    assert branch_ops.retrack_branch_calls[1] == (Path("/repo2"), "feature-2")
+```
+
+Also accessible through FakeGraphite:
+```python
+ops = FakeGraphite()
+branch_ops = ops.create_linked_branch_ops()
+branch_ops.retrack_branch(Path("/repo"), "feature-1")
+
+# Access through both interfaces
+assert ops.retrack_branch_calls == [(Path("/repo"), "feature-1")]
+assert branch_ops.retrack_branch_calls == [(Path("/repo"), "feature-1")]
+```
+
+---
+
+### Key Design Principles
+
+1. **Constructor-Only Configuration**: All state is provided at construction time, no setup methods
+2. **Shared Mutable State**: FakeGraphite and FakeGraphiteBranchOps share the same mutation tracking lists
+3. **Copy on Read**: Properties return copies of lists to prevent test contamination
+4. **Exception Control**: Each operation can be configured to raise exceptions via constructor
+5. **Test-Friendly Defaults**: `authenticated=True`, `auth_username="test-user"` for convenience
+
+---
+
+### Related Documentation
+
+- **Testing Guide**: `docs/learned/testing/testing.md`
+- **Architecture Patterns**: `docs/learned/architecture/gateway-abc-implementation.md`
+- **Test Organization**: Tests are organized in layers - this is Layer 1 (testing fakes themselves)</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="8248" cache_read_input_tokens="40281" cache_creation="{'ephemeral_5m_input_tokens': 8248, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

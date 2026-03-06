@@ -1,0 +1,64 @@
+<session>
+  <meta source="agent-a1bf72a" />
+  <meta branch="plnd/consolidate-checkout-prepa-03-06-0452" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Run pytest on `tests/commands/pr/ -k checkout` and report results. Do NOT fix any errors.</user>
+  <assistant>I'll run pytest on the specified tests and report the results.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5819" cache_read_input_tokens="6442" cache_creation="{'ephemeral_5m_input_tokens': 5819, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011s1WegTE57ZMQQt4Qt7Rey">
+    <param name="command">uv run pytest tests/commands/pr/ -k checkout -v</param>
+    <param name="description">Run pytest on pr command tests filtering for checkout</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5819" cache_read_input_tokens="6442" cache_creation="{'ephemeral_5m_input_tokens': 5819, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011s1WegTE57ZMQQt4Qt7Rey">
+Exit code 1
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 238 items / 190 deselected / 48 selected
+
+tests/commands/pr/test_checkout.py ............F..........               [ 47%]
+tests/commands/pr/test_checkout_graphite_linking.py ...........          [ 70%]
+tests/commands/pr/test_checkout_plan.py ..............                   [100%]
+
+=================================== FAILURES ===================================
+________________ test_pr_checkout_stacked_pr_base_already_local ________________
+
+    def test_pr_checkout_stacked_pr_base_already_local() -&gt; None:
+        """Test that stacked PR checkout skips fetch/tracking when base exists locally."""
+        runner = CliRunner()
+        with erk_isolated_fs_env(runner, env_overrides=None) as env:
+            env.setup_repo_structure()
+            # PR-B is based on PR-A (not trunk), but feature-a already exists locally
+            pr_details = _make_pr_details(
+                number=778,
+                head_ref_name="feature-b",
+                is_cross_repository=False,
+                state="OPEN",
+                base_ref_name="feature-a",  # Stacked PR
+            )
+            github = FakeGitHub(pr_details={778: pr_details})
+
+... [26 lines omitted] ...
+
+E           AssertionError: assert ('origin', 'feature-a') not in [('origin', 'feature-b'), ('origin', 'feature-a')]
+tests/commands/pr/test_checkout.py:465: AssertionError
+FAILED tests/commands/pr/test_checkout.py::test_pr_checkout_stacked_pr_base_already_local - AssertionError: assert ('origin', 'feature-a') not in [('origin', 'feature-b'), ('origin', 'feature-a')]
+================= 1 failed, 47 passed, 190 deselected in 1.27s =================
+  </tool_result>
+  <assistant>pytest failed: 1 issue found
+
+**Summary:** 1 failed, 47 passed, 190 deselected in 1.27s
+
+**Failed Test:**
+
+- **File:** `/home/runner/work/erk/erk/tests/commands/pr/test_checkout.py`
+- **Test:** `test_pr_checkout_stacked_pr_base_already_local`
+- **Line:** 465
+- **Error:** `AssertionError`
+- **Message:** The test expected that when a stacked PR's base branch (`feature-a`) already exists locally, it should NOT be fetched. However, the git mock shows that `('origin', 'feature-a')` was fetched when it should have been skipped. The test assertion fails because the base branch was fetched despite existing locally.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1141" cache_read_input_tokens="12261" cache_creation="{'ephemeral_5m_input_tokens': 1141, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

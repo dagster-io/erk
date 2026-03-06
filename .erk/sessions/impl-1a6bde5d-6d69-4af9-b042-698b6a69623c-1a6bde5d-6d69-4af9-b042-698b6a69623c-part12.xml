@@ -1,0 +1,845 @@
+<session>
+  <meta source="agent-a862e8f" />
+  <meta branch="plnd/consolidate-checkout-prepa-03-06-0452" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation.
+
+Read the FakeGit class to understand how rebase operations are tracked, particularly:
+1. Look at `packages/erk-shared/src/erk_shared/gateway/git/fake.py` - search for `rebase` related methods and properties
+2. Look at the RebaseResult type definition in the git types
+3. Look at `update_local_ref` in FakeGit if it exists</user>
+  <assistant>I'll help you understand how rebase operations are tracked in the FakeGit class. Let me start by checking the documentation and then explore the relevant code files.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6778" cache_read_input_tokens="11953" cache_creation="{'ephemeral_5m_input_tokens': 6778, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01JR9N7DSQsLUSig8VGbSAbv">
+    <param name="pattern">**/fake.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6778" cache_read_input_tokens="11953" cache_creation="{'ephemeral_5m_input_tokens': 6778, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014Hmoy6d6oWoj9vQPc6MXhL">
+    <param name="pattern">rebase</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6778" cache_read_input_tokens="11953" cache_creation="{'ephemeral_5m_input_tokens': 6778, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014Hmoy6d6oWoj9vQPc6MXhL">
+Found 66 files
+tests/unit/gateways/gt/fake_ops.py
+tests/unit/fakes/test_fake_git_remote_ops.py
+tests/unit/fakes/test_fake_graphite.py
+tests/unit/core/test_capabilities.py
+tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py
+tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py
+tests/unit/cli/commands/exec/scripts/test_rebase_with_conflict_resolution.py
+tests/unit/branch_manager/test_graphite_branch_manager.py
+tests/tui/screens/test_launch_screen.py
+tests/tui/commands/test_execute_command.py
+tests/tui/commands/test_registry.py
+tests/tui/app/test_async_operations.py
+tests/tui/app/test_command_palette.py
+tests/tui/app/test_plan_detail_screen.py
+tests/integration/test_real_git.py
+tests/core/test_health_checks.py
+tests/commands/run/test_shared.py
+tests/commands/pr/test_rebase_remote.py
+tests/commands/pr/test_rebase.py
+tests/commands/pr/test_checkout_graphite_linking.py
+tests/commands/pr/test_checkout.py
+tests/commands/launch/test_launch_cmd.py
+tests/commands/branch/test_checkout_cmd.py
+src/erk/tui/operations/workers.py
+src/erk/tui/screens/plan_detail_screen.py
+src/erk/tui/actions/palette.py
+src/erk/tui/commands/registry.py
+src/erk/core/capabilities/registry.py
+src/erk/cli/output.py
+
+... [37 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01JR9N7DSQsLUSig8VGbSAbv">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_docs/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/agent_launcher/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/branch_manager/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/browser/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/ci_runner/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/claude_installation/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/clipboard/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/codespace/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/codespace_registry/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/command_executor/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/completion/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/console/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/erk_installation/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/analysis_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/config_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/status_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/tag_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/worktree/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/issues/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github_admin/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/branch_ops/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/graphite/fake.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/gt/fake.py
+
+... [6 lines omitted] ...
+  </tool_result>
+  <assistant>Good! I found the key files. Let me now read the main files you mentioned:</assistant>
+  <usage input_tokens="1287" cache_creation_input_tokens="1576" cache_read_input_tokens="18731" cache_creation="{'ephemeral_5m_input_tokens': 1576, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017vCMbEZKwpPJXq6Uar8ftH">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1287" cache_creation_input_tokens="1576" cache_read_input_tokens="18731" cache_creation="{'ephemeral_5m_input_tokens': 1576, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01N7PXKyuC1fNBrSbyJMvD3t">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/fake.py</param>
+  </tool_use>
+  <usage input_tokens="1287" cache_creation_input_tokens="1576" cache_read_input_tokens="18731" cache_creation="{'ephemeral_5m_input_tokens': 1576, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01K8arFG98yiCkn1vDKKgKeu">
+    <param name="pattern">**/gateway/git/**/types.py</param>
+  </tool_use>
+  <usage input_tokens="1287" cache_creation_input_tokens="1576" cache_read_input_tokens="18731" cache_creation="{'ephemeral_5m_input_tokens': 1576, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N7PXKyuC1fNBrSbyJMvD3t">
+     1→"""Fake implementation of Git rebase operations for testing."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from collections.abc import Callable
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.git.abc import RebaseResult
+     9→from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+    10→
+    11→
+    12→class FakeGitRebaseOps(GitRebaseOps):
+    13→    """In-memory fake implementation of Git rebase operations.
+    14→
+    15→    This fake accepts pre-configured state in its constructor and tracks
+    16→    mutations for test assertions.
+    17→
+    18→    Constructor Injection:
+    19→    ---------------------
+    20→    - rebase_in_progress: Initial state for is_rebase_in_progress() (bool or callable)
+    21→    - rebase_onto_result: Result to return from rebase_onto()
+    22→    - rebase_continue_raises: Exception to raise when rebase_continue() is called
+    23→    - rebase_continue_clears_rebase: If True, rebase_continue() clears rebase state
+    24→    - rebase_abort_raises: Exception to raise when rebase_abort() is called
+    25→
+    26→    Mutation Tracking:
+    27→    -----------------
+    28→    This fake tracks mutations for test assertions via read-only properties:
+    29→    - rebase_onto_calls: List of (cwd, target_ref) tuples from rebase_onto()
+    30→    - rebase_continue_calls: List of cwd from rebase_continue()
+
+... [164 lines omitted] ...
+
+    39→        rebase_continue_raises: Exception | None = None,
+    41→        rebase_abort_raises: Exception | None = None,
+    49→            rebase_continue_raises: Exception to raise when rebase_continue() is called
+    51→            rebase_abort_raises: Exception to raise when rebase_abort() is called
+    90→        Tracks call for test assertions. Raises configured exception if set.
+   102→        Tracks call for test assertions. Raises configured exception if set.
+  </tool_result>
+  <tool_result tool="toolu_017vCMbEZKwpPJXq6Uar8ftH">
+     1→"""Fake git operations for testing.
+     2→
+     3→FakeGit is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from collections.abc import Callable
+    10→from pathlib import Path
+    11→from typing import NamedTuple
+    12→
+    13→from erk_shared.gateway.git.abc import (
+    14→    BranchDivergence,
+    15→    BranchSyncInfo,
+    16→    Git,
+    17→    RebaseResult,
+    18→    WorktreeInfo,
+    19→)
+    20→from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+    21→from erk_shared.gateway.git.analysis_ops.fake import FakeGitAnalysisOps
+    22→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    23→from erk_shared.gateway.git.branch_ops.fake import FakeGitBranchOps
+    24→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    25→from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+    26→from erk_shared.gateway.git.commit_ops.fake import (
+    27→    BranchCommitRecord,
+    28→    CommitRecord,
+    29→    FakeGitCommitOps,
+    30→)
+
+... [697 lines omitted] ...
+
+    37→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+   135→        delete_branch_raises: dict[str, Exception] | None = None,
+   138→        tracking_branch_failures: dict[str, str] | None = None,
+   148→        add_all_raises: Exception | None = None,
+   149→        fetch_branch_raises: Exception | None = None,
+   150→        pull_branch_raises: Exception | None = None,
+   153→        rebase_continue_raises: Exception | None = None,
+   160→        push_to_remote_error: PushError | None = None,
+   164→        rebase_abort_raises: Exception | None = None,
+   165→        pull_rebase_error: PullRebaseError | None = None,
+   167→        create_branch_error: BranchAlreadyExists | None = None,
+   168→        add_worktree_error: str | None = None,
+   169→        remove_worktree_error: str | None = None,
+   170→        ahead_behind_raises: RuntimeError | None = None,
+   194→            delete_branch_raises: Mapping of branch name -&gt; exception to raise on delete
+   198→            tracking_branch_failures: Mapping of branch name -&gt; error message to raise
+   209→            add_all_raises: Exception to raise when add_all() is called
+   210→            fetch_branch_raises: Exception to raise when fetch_branch() is called
+   211→            pull_branch_raises: Exception to raise when pull_branch() is called
+   215→            rebase_continue_raises: Exception to raise when rebase_continue() is called
+   222→            push_to_remote_error: PushError to return when push_to_remote() is called
+   227→            rebase_abort_raises: Exception to raise when rebase_abort() is called
+   228→            pull_rebase_error: PullRebaseError to return when pull_rebase() is called
+   232→            create_branch_error: BranchAlreadyExists to return from create_branch()
+   233→            add_worktree_error: Error message to raise as RuntimeError from add_worktree()
+   234→            remove_worktree_error: Error message to raise as RuntimeError from remove_worktree()
+   235→            ahead_behind_raises: If set, get_ahead_behind() raises this error
+   257→        self._tracking_branch_failures = tracking_branch_failures or {}
+   277→        self._push_to_remote_error = push_to_remote_error
+   282→        self._pull_rebase_error = pull_rebase_error
+   284→        self._remove_worktree_error = remove_worktree_error
+   344→            add_worktree_error=add_worktree_error,
+   345→            remove_worktree_error=self._remove_worktree_error,
+   363→            tracking_branch_failures=self._tracking_branch_failures,
+   364→            create_branch_error=create_branch_error,
+   382→            push_to_remote_error=self._push_to_remote_error,
+   383→            pull_rebase_error=self._pull_rebase_error,
+   614→            FileNotFoundError: If path not in file_contents mapping.
+   617→            raise FileNotFoundError(f"No content for {path}")
+  </tool_result>
+  <tool_result tool="toolu_01K8arFG98yiCkn1vDKKgKeu">
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/types.py
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/types.py
+  </tool_result>
+  <assistant>Now let me get the RebaseResult type definition and look at the ABC to understand the interface:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="15767" cache_read_input_tokens="20307" cache_creation="{'ephemeral_5m_input_tokens': 15767, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01L2smdvKPYxe824fAM5DUAK">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="15767" cache_read_input_tokens="20307" cache_creation="{'ephemeral_5m_input_tokens': 15767, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_017VTsFRaL45ZYVBTzk3Hkgw">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="15767" cache_read_input_tokens="20307" cache_creation="{'ephemeral_5m_input_tokens': 15767, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L2smdvKPYxe824fAM5DUAK">
+     1→"""High-level git operations interface.
+     2→
+     3→This module provides a clean abstraction over git subprocess calls, making the
+     4→codebase more testable and maintainable.
+     5→
+     6→Architecture:
+     7→- Git: Abstract base class defining the interface
+     8→- RealGit: Production implementation using subprocess
+     9→- Standalone functions: Convenience wrappers delegating to module singleton
+    10→"""
+    11→
+    12→from __future__ import annotations
+    13→
+    14→from abc import ABC, abstractmethod
+    15→from dataclasses import dataclass
+    16→from pathlib import Path
+    17→from typing import TYPE_CHECKING, NamedTuple
+    18→
+    19→if TYPE_CHECKING:
+    20→    from erk_shared.gateway.git.analysis_ops.abc import GitAnalysisOps
+    21→    from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    22→    from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+    23→    from erk_shared.gateway.git.config_ops.abc import GitConfigOps
+    24→    from erk_shared.gateway.git.rebase_ops.abc import GitRebaseOps
+    25→    from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+    26→    from erk_shared.gateway.git.repo_ops.abc import GitRepoOps
+    27→    from erk_shared.gateway.git.status_ops.abc import GitStatusOps
+    28→    from erk_shared.gateway.git.tag_ops.abc import GitTagOps
+    29→    from erk_shared.gateway.git.worktree.abc import Worktree
+    30→
+
+... [125 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_017VTsFRaL45ZYVBTzk3Hkgw">
+     1→"""Abstract base class for Git rebase operations.
+     2→
+     3→This sub-gateway extracts rebase operations from the main Git gateway,
+     4→including rebase_onto, rebase_continue, rebase_abort, and is_rebase_in_progress.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from pathlib import Path
+    11→from typing import TYPE_CHECKING
+    12→
+    13→if TYPE_CHECKING:
+    14→    from erk_shared.gateway.git.abc import RebaseResult
+    15→
+    16→
+    17→class GitRebaseOps(ABC):
+    18→    """Abstract interface for Git rebase operations.
+    19→
+    20→    This interface contains both mutation and query operations for rebasing.
+    21→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    22→    """
+    23→
+    24→    # ============================================================================
+    25→    # Mutation Operations
+    26→    # ============================================================================
+    27→
+    28→    @abstractmethod
+    29→    def rebase_onto(self, cwd: Path, target_ref: str) -&gt; RebaseResult:
+    30→        """Rebase the current branch onto a target ref.
+
+... [64 lines omitted] ...
+
+    53→            subprocess.CalledProcessError: If continue fails (e.g., unresolved conflicts)
+    68→            subprocess.CalledProcessError: If no rebase is in progress
+  </tool_result>
+  <assistant>Perfect! Now let me check the branch_ops to see if there's an `update_local_ref` method:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3116" cache_read_input_tokens="36074" cache_creation="{'ephemeral_5m_input_tokens': 3116, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019bHEQZ23gHnxEgXq2aFGNV">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3116" cache_read_input_tokens="36074" cache_creation="{'ephemeral_5m_input_tokens': 3116, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012ZCxL15yShuupQyMhK1sFy">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="3116" cache_read_input_tokens="36074" cache_creation="{'ephemeral_5m_input_tokens': 3116, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019bHEQZ23gHnxEgXq2aFGNV">
+     1→"""Fake Git branch operations for testing."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import subprocess
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo, WorktreeInfo
+     9→from erk_shared.gateway.git.branch_ops.abc import GitBranchOps
+    10→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    11→
+    12→
+    13→class FakeGitBranchOps(GitBranchOps):
+    14→    """In-memory fake implementation of Git branch operations.
+    15→
+    16→    State Management:
+    17→    -----------------
+    18→    This fake maintains mutable state to simulate git's stateful behavior.
+    19→    Operations like create_branch, checkout_branch modify internal state.
+    20→    State changes are visible to subsequent method calls within the same test.
+    21→
+    22→    Mutation Tracking:
+    23→    -----------------
+    24→    This fake tracks mutations for test assertions via read-only properties:
+    25→    - created_branches: Branches created via create_branch()
+    26→    - deleted_branches: Branches deleted via delete_branch()
+    27→    - checked_out_branches: Branches checked out via checkout_branch()
+    28→    - detached_checkouts: Refs checked out via checkout_detached()
+    29→    - created_tracking_branches: Tracking branches created via create_tracking_branch()
+    30→    """
+
+... [175 lines omitted] ...
+
+    48→        delete_branch_raises: dict[str, Exception] | None = None,
+    49→        tracking_branch_failures: dict[str, str] | None = None,
+    50→        create_branch_error: BranchAlreadyExists | None = None,
+    51→        ahead_behind_raises: RuntimeError | None = None,
+    68→            delete_branch_raises: Mapping of branch name -&gt; exception to raise on delete
+    69→            tracking_branch_failures: Mapping of branch name -&gt; error message to raise
+    71→            create_branch_error: If set, create_branch returns this error instead of BranchCreated
+    72→            ahead_behind_raises: If set, get_ahead_behind() raises this error
+    95→        self._tracking_branch_failures = (
+    96→            tracking_branch_failures if tracking_branch_failures is not None else {}
+    98→        self._create_branch_error = create_branch_error
+   117→        Returns create_branch_error if configured, otherwise BranchCreated.
+   119→        if self._create_branch_error is not None:
+   120→            return self._create_branch_error
+   127→        If delete_branch_raises contains a CalledProcessError, it is wrapped in
+   128→        RuntimeError to match run_subprocess_with_context behavior.
+   130→        # Check if we should raise an exception for this branch
+   133→            # Wrap CalledProcessError in RuntimeError to match run_subprocess_with_context
+   134→            if isinstance(exc, subprocess.CalledProcessError):
+   135→                raise RuntimeError(f"Failed to delete branch {branch_name}") from exc
+   150→                    msg = f"fatal: '{branch}' is already checked out at '{wt.path}'"
+   151→                    raise RuntimeError(msg)
+   183→        if branch in self._tracking_branch_failures:
+   184→            error_msg = self._tracking_branch_failures[branch]
+   185→            raise subprocess.CalledProcessError(
+   186→                returncode=1, cmd=["git", "branch", "--track", branch, remote_ref], stderr=error_msg
+  </tool_result>
+  <tool_result tool="toolu_012ZCxL15yShuupQyMhK1sFy">
+     1→"""Abstract base class for Git branch operations.
+     2→
+     3→This sub-gateway extracts branch operations from the main Git gateway,
+     4→including both mutation and query operations.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from pathlib import Path
+    11→from typing import TYPE_CHECKING
+    12→
+    13→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists, BranchCreated
+    14→
+    15→if TYPE_CHECKING:
+    16→    from erk_shared.gateway.git.abc import BranchDivergence, BranchSyncInfo
+    17→
+    18→
+    19→class GitBranchOps(ABC):
+    20→    """Abstract interface for Git branch operations.
+    21→
+    22→    This interface contains both mutation and query operations for branches.
+    23→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    24→    """
+    25→
+    26→    @abstractmethod
+    27→    def create_branch(
+    28→        self, cwd: Path, branch_name: str, start_point: str, *, force: bool
+    29→    ) -&gt; BranchCreated | BranchAlreadyExists:
+    30→        """Create a new branch without checking it out.
+
+... [125 lines omitted] ...
+
+    84→            subprocess.CalledProcessError: If git command fails
+  </tool_result>
+  <assistant>Let me search more specifically for `update_local_ref`:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="5612" cache_read_input_tokens="39190" cache_creation="{'ephemeral_5m_input_tokens': 5612, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01SsoQQh8f5Ra86KBVQD9J7A">
+    <param name="pattern">update_local_ref</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5612" cache_read_input_tokens="39190" cache_creation="{'ephemeral_5m_input_tokens': 5612, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HGSF2SHY9noww64iZZXuJV">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py</param>
+    <param name="offset">180</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="5612" cache_read_input_tokens="39190" cache_creation="{'ephemeral_5m_input_tokens': 5612, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HGSF2SHY9noww64iZZXuJV">
+   180→    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -&gt; None:
+   181→        """Create a local tracking branch from a remote branch (fake implementation)."""
+   182→        # Check if this branch should fail
+   183→        if branch in self._tracking_branch_failures:
+   184→            error_msg = self._tracking_branch_failures[branch]
+   185→            raise subprocess.CalledProcessError(
+   186→                returncode=1, cmd=["git", "branch", "--track", branch, remote_ref], stderr=error_msg
+   187→            )
+   188→
+   189→        # Track this mutation
+   190→        self._created_tracking_branches.append((branch, remote_ref))
+   191→
+   192→        # In the fake, we simulate branch creation by adding to local branches
+   193→        if repo_root not in self._local_branches:
+   194→            self._local_branches[repo_root] = []
+   195→        if branch not in self._local_branches[repo_root]:
+   196→            self._local_branches[repo_root].append(branch)
+   197→
+   198→    @property
+   199→    def created_branches(self) -&gt; list[tuple[Path, str, str, bool]]:
+   200→        """Get list of branches created during test.
+   201→
+   202→        Returns list of (cwd, branch_name, start_point, force) tuples.
+   203→        This property is for test assertions only.
+   204→        """
+   205→        return self._created_branches.copy()
+   206→
+   207→    @property
+   208→    def deleted_branches(self) -&gt; list[str]:
+   209→        """Get the list of branches that have been deleted.
+
+... [125 lines omitted] ...
+
+   320→            RuntimeError: If the specified branch doesn't exist
+   324→            error_msg = (
+   325→                f"Error: Configured trunk branch '{name}' does not exist in repository.\n"
+   328→            raise RuntimeError(error_msg)
+  </tool_result>
+  <tool_result tool="toolu_01SsoQQh8f5Ra86KBVQD9J7A">
+Found 13 files
+tests/unit/cli/commands/pr/test_dispatch_helpers.py
+tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py
+tests/integration/test_real_git_branch_ops.py
+tests/commands/pr/test_dispatch.py
+src/erk/cli/commands/pr/dispatch_cmd.py
+src/erk/cli/commands/pr/dispatch_helpers.py
+src/erk/cli/commands/exec/scripts/incremental_dispatch.py
+src/erk/cli/commands/branch/checkout_cmd.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py
+  </tool_result>
+  <assistant>Perfect! Now let me check the ABC to see the full interface for `update_local_ref`:</assistant>
+  <usage input_tokens="2195" cache_creation_input_tokens="673" cache_read_input_tokens="44802" cache_creation="{'ephemeral_5m_input_tokens': 673, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01GFmTmHwQ43EJZQh1iCscTF">
+    <param name="pattern">update_local_ref</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py</param>
+    <param name="output_mode">content</param>
+    <param name="gl">*** -C</param>
+  </tool_use>
+  <usage input_tokens="2195" cache_creation_input_tokens="673" cache_read_input_tokens="44802" cache_creation="{'ephemeral_5m_input_tokens': 673, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GFmTmHwQ43EJZQh1iCscTF">
+&lt;tool_use_error&gt;InputValidationError: Grep failed due to the following issue:
+An unexpected parameter `gl` was provided&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_018MoCAJp2piYRzsju48P35z">
+    <param name="pattern">update_local_ref</param>
+    <param name="path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="2449" cache_read_input_tokens="45475" cache_creation="{'ephemeral_5m_input_tokens': 2449, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018MoCAJp2piYRzsju48P35z">
+277-            ISO 8601 timestamp string, or None if no unique commits
+278-        """
+279-        ...
+280-
+281-    @abstractmethod
+282:    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+283-        """Update a local branch ref to point at a new commit without checkout.
+284-
+285-        Uses git update-ref to move the branch pointer. This is safe to use
+286-        when the branch is NOT currently checked out in any worktree. If the
+287-        branch IS checked out, the working tree will not be updated.
+  </tool_result>
+  <assistant>Perfect! Now let me get the complete definition and see if there's documentation about rebase:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="448" cache_read_input_tokens="47924" cache_creation="{'ephemeral_5m_input_tokens': 448, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016BxcznJZhYeKgQUQ5ov8X3">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py</param>
+    <param name="offset">280</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="448" cache_read_input_tokens="47924" cache_creation="{'ephemeral_5m_input_tokens': 448, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01P92a3GFezsfEE47fbYiA7P">
+    <param name="pattern">**/docs/learned/*rebase*</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="448" cache_read_input_tokens="47924" cache_creation="{'ephemeral_5m_input_tokens': 448, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016BxcznJZhYeKgQUQ5ov8X3">
+   280→
+   281→    @abstractmethod
+   282→    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+   283→        """Update a local branch ref to point at a new commit without checkout.
+   284→
+   285→        Uses git update-ref to move the branch pointer. This is safe to use
+   286→        when the branch is NOT currently checked out in any worktree. If the
+   287→        branch IS checked out, the working tree will not be updated.
+   288→
+   289→        Args:
+   290→            repo_root: Path to the git repository root
+   291→            branch: Local branch name to update
+   292→            target_sha: Commit SHA to point the branch at
+   293→        """
+   294→        ...
+   295→
+   296→    @abstractmethod
+   297→    def get_branch_commits_with_authors(
+   298→        self, repo_root: Path, branch: str, trunk: str, *, limit: int
+   299→    ) -&gt; list[dict[str, str]]:
+   300→        """Get commits on branch not on trunk, with author and timestamp.
+   301→
+   302→        Returns commits unique to the branch (not present on trunk),
+   303→        ordered from newest to oldest.
+   304→
+   305→        Args:
+   306→            repo_root: Path to the repository root
+   307→            branch: Branch name to get commits from
+   308→            trunk: Trunk branch name to compare against
+   309→            limit: Maximum number of commits to retrieve
+
+... [14 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01P92a3GFezsfEE47fbYiA7P">
+No files found
+  </tool_result>
+  <assistant>Excellent! Now let me look at some test files to understand how rebase operations are being tested:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="932" cache_read_input_tokens="48372" cache_creation="{'ephemeral_5m_input_tokens': 932, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019jLJW6JMbYVHJmJYoJBEgJ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_rebase_with_conflict_resolution.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="932" cache_read_input_tokens="48372" cache_creation="{'ephemeral_5m_input_tokens': 932, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VeCVEwT1TwYrovg1Tqj6sV">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_rebase.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="932" cache_read_input_tokens="48372" cache_creation="{'ephemeral_5m_input_tokens': 932, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019jLJW6JMbYVHJmJYoJBEgJ">
+     1→"""Tests for rebase-with-conflict-resolution exec command.
+     2→
+     3→Tests the rebase workflow with conflict resolution using Claude, with
+     4→all dependencies injected via ErkContext for testability.
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→
+     9→from click.testing import CliRunner
+    10→
+    11→from erk.cli.commands.exec.scripts.rebase_with_conflict_resolution import (
+    12→    CONFLICT_RESOLUTION_PROMPT,
+    13→    RebaseError,
+    14→    RebaseSuccess,
+    15→    _build_summary_prompt,
+    16→    _rebase_with_conflict_resolution_impl,
+    17→    rebase_with_conflict_resolution,
+    18→)
+    19→from erk_shared.context.context import ErkContext
+    20→from erk_shared.core.fakes import FakePromptExecutor
+    21→from erk_shared.core.prompt_executor import PromptResult
+    22→from erk_shared.gateway.git.abc import RebaseResult
+    23→from erk_shared.gateway.git.fake import FakeGit
+    24→from erk_shared.gateway.git.remote_ops.types import PushError
+    25→
+    26→
+    27→def test_build_summary_prompt_no_conflicts() -&gt; None:
+    28→    """Test prompt building when no conflicts occurred."""
+    29→    prompt = _build_summary_prompt(
+    30→        branch_name="feature-branch",
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01VeCVEwT1TwYrovg1Tqj6sV">
+     1→"""Tests for erk pr rebase command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.commands.pr import pr_group
+     6→from erk_shared.context.types import GlobalConfig
+     7→from erk_shared.gateway.git.abc import RebaseResult
+     8→from erk_shared.gateway.git.fake import FakeGit
+     9→from tests.fakes.prompt_executor import FakePromptExecutor
+    10→from tests.test_utils.context_builders import build_workspace_test_context
+    11→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    12→
+    13→
+    14→def test_pr_rebase_non_graphite_success() -&gt; None:
+    15→    """Test successful rebase via git rebase (Graphite disabled)."""
+    16→    runner = CliRunner()
+    17→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    18→        git = FakeGit(
+    19→            git_common_dirs={env.cwd: env.git_dir},
+    20→            local_branches={env.cwd: ["main", "feature-branch"]},
+    21→            default_branches={env.cwd: "main"},
+    22→            trunk_branches={env.cwd: "main"},
+    23→            current_branches={env.cwd: "feature-branch"},
+    24→        )
+    25→
+    26→        executor = FakePromptExecutor(available=True)
+    27→
+    28→        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+    29→
+    30→        result = runner.invoke(pr_group, ["rebase", "--dangerous", "--target", "main"], obj=ctx)
+
+... [75 lines omitted] ...
+
+    65→def test_pr_rebase_non_graphite_no_target_error() -&gt; None:
+    66→    """Test error when --target not provided with Graphite disabled."""
+  </tool_result>
+  <assistant>Perfect! Now let me examine one more test file that directly tests rebase operations to understand the complete tracking:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="9604" cache_read_input_tokens="49304" cache_creation="{'ephemeral_5m_input_tokens': 9604, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Cz1m3joK7jSdpEzTgURWbw">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_rebase_with_conflict_resolution.py</param>
+    <param name="offset">100</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="9604" cache_read_input_tokens="49304" cache_creation="{'ephemeral_5m_input_tokens': 9604, 'ephemeral_1h_input_tokens': 0}" output_tokens="146" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Cz1m3joK7jSdpEzTgURWbw">
+   100→        max_attempts=5,
+   101→    )
+   102→
+   103→    assert isinstance(result, RebaseSuccess)
+   104→    assert result.action == "rebased"
+   105→    assert result.commits_behind == 3
+   106→    assert result.conflicts_resolved == ()
+   107→    # Claude should not be invoked when no conflicts
+   108→    assert len(fake_claude.prompt_calls) == 0
+   109→    # Push should have been called
+   110→    assert len(fake_git.pushed_branches) == 1
+   111→    pushed = fake_git.pushed_branches[0]
+   112→    assert pushed.branch == "feature-branch"
+   113→    assert pushed.force is True
+   114→
+   115→
+   116→def test_rebase_with_conflicts_resolved_by_claude(tmp_path: Path) -&gt; None:
+   117→    """Test rebase with conflicts that Claude resolves successfully."""
+   118→    # Create a callable that simulates:
+   119→    # 1. Initial rebase fails with conflicts (is_rebase_in_progress returns True first)
+   120→    # 2. After Claude resolves, rebase is no longer in progress (returns False)
+   121→    call_count = 0
+   122→
+   123→    def dynamic_rebase_in_progress(cwd: Path) -&gt; bool:
+   124→        nonlocal call_count
+   125→        call_count += 1
+   126→        # First call returns True (rebase in progress), subsequent return False
+   127→        return call_count == 1
+   128→
+   129→    fake_git = FakeGit(
+
+... [125 lines omitted] ...
+
+   165→            PromptResult(success=False, output="", error="conflict resolution failed"),
+   180→    assert isinstance(result, RebaseError)
+   181→    assert result.error == "rebase-failed"
+   187→def test_rebase_fetch_failure(tmp_path: Path) -&gt; None:
+   188→    """Test error handling when fetch fails."""
+   189→    fake_git = FakeGit(fetch_branch_raises=RuntimeError("Network error"))
+   202→    assert isinstance(result, RebaseError)
+   203→    assert result.error == "fetch-failed"
+   204→    assert "Network error" in result.message
+   207→def test_rebase_push_failure(tmp_path: Path) -&gt; None:
+   208→    """Test error handling when push fails."""
+   213→        push_to_remote_error=PushError(message="Push rejected"),
+   227→    assert isinstance(result, RebaseError)
+   228→    assert result.error == "push-failed"
+  </tool_result>
+  <assistant>Perfect! Now I have all the information I need. Let me create a comprehensive report of my findings.
+
+## Summary
+
+I've thoroughly explored how the FakeGit class tracks rebase operations in the erk codebase. Here's a complete analysis:
+
+---
+
+## FakeGit Rebase Operations Tracking
+
+### 1. **FakeGitRebaseOps: The Dedicated Rebase Subgateway**
+
+Located at: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/fake.py`
+
+The `FakeGitRebaseOps` class provides an in-memory fake implementation of git rebase operations with:
+
+**Constructor Configuration:**
+- `rebase_in_progress`: Can be a boolean or callable that returns bool for dynamic behavior
+- `rebase_onto_result`: The `RebaseResult` to return from `rebase_onto()` calls
+- `rebase_continue_raises`: Exception to raise when `rebase_continue()` is called
+- `rebase_continue_clears_rebase`: Whether continuing a rebase clears the in-progress state
+- `rebase_abort_raises`: Exception to raise when `rebase_abort()` is called
+
+**Mutation Tracking (Read-Only Properties):**
+- `rebase_onto_calls`: List of `(cwd, target_ref)` tuples tracking all `rebase_onto()` calls
+- `rebase_continue_calls`: List of `cwd` paths from `rebase_continue()` calls
+- `rebase_abort_calls`: List of `cwd` paths from `rebase_abort()` calls
+
+### 2. **RebaseResult Type Definition**
+
+Located at: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py` (lines 66-76)
+
+```python
+@dataclass(frozen=True)
+class RebaseResult:
+    """Result of a git rebase operation.
+
+    Attributes:
+        success: True if rebase completed without conflicts
+        conflict_files: Tuple of file paths with conflicts (empty if success=True)
+    """
+
+    success: bool
+    conflict_files: tuple[str, ...]
+```
+
+This frozen dataclass returns success/failure information plus a tuple of files with conflicts.
+
+### 3. **Integration with FakeGit**
+
+Located at: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/fake.py`
+
+**Initialization (Lines 434-447):**
+FakeGit creates a `FakeGitRebaseOps` instance and links its mutation tracking:
+
+```python
+# Rebase operations subgateway - linked to FakeGit's state
+self._rebase_gateway = FakeGitRebaseOps(
+    rebase_in_progress=rebase_in_progress,
+    rebase_onto_result=rebase_onto_result,
+    rebase_continue_raises=rebase_continue_raises,
+    rebase_continue_clears_rebase=rebase_continue_clears_rebase,
+    rebase_abort_raises=rebase_abort_raises,
+)
+# Link mutation tracking
+self._rebase_gateway.link_mutation_tracking(
+    rebase_onto_calls=self._rebase_onto_calls,
+    rebase_continue_calls=self._rebase_continue_calls,
+    rebase_abort_calls=self._rebase_abort_calls,
+)
+```
+
+**Exposed Properties (Lines 682-705):**
+- `rebase_onto_calls`: Exposes rebase onto operation tracking
+- `rebase_abort_calls`: Exposes rebase abort operation tracking
+- `rebase_continue_calls`: Exposes rebase continue operation tracking
+
+### 4. **Update Local Ref in Branch Operations**
+
+Located at: `/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py` (lines 251-257)
+
+The `update_local_ref()` method is defined in `FakeGitBranchOps`:
+
+```python
+def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+    """Update a local branch ref (fake implementation).
+
+    Tracks the update for test assertions and updates branch_heads state.
+    """
+    self._updated_refs.append((repo_root, branch, target_sha))
+    self._branch_heads[branch] = target_sha
+```
+
+This tracks branch ref updates via:
+- `_updated_refs`: List of `(repo_root, branch, target_sha)` tuples
+- Direct mutation of `_branch_heads` to reflect new commit positions
+
+This is exposed as a read-only property `updated_refs` on FakeGit (lines 599-605).
+
+### 5. **Key Architectural Patterns**
+
+**Mutation Tracking Pattern:**
+1. Internal state stored in private lists (e.g., `self._rebase_onto_calls`)
+2. Mutation tracking linked to FakeGit's master tracking lists via `link_mutation_tracking()`
+3. Read-only properties expose copies of tracking lists for test assertions
+
+**Dynamic Behavior Support:**
+The `rebase_in_progress` parameter accepts either:
+- A boolean for static behavior
+- A callable `(cwd: Path) -&gt; bool` for dynamic behavior (e.g., to simulate state changes during test execution)
+
+**Test Assertion Usage:**
+From `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_rebase_with_conflict_resolution.py`:
+
+```python
+# Verify rebase operations
+assert len(git.rebase_onto_calls) == 1
+assert git.rebase_onto_calls[0] == (cwd, "origin/main")
+
+# Verify push after rebase
+assert len(fake_git.pushed_branches) == 1
+pushed = fake_git.pushed_branches[0]
+assert pushed.branch == "feature-branch"
+```
+
+---
+
+## Key Files Summary
+
+| File | Purpose |
+|------|---------|
+| `/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/fake.py` | FakeGitRebaseOps implementation with mutation tracking |
+| `/packages/erk-shared/src/erk_shared/gateway/git/rebase_ops/abc.py` | GitRebaseOps abstract interface definition |
+| `/packages/erk-shared/src/erk_shared/gateway/git/abc.py` | RebaseResult dataclass definition |
+| `/packages/erk-shared/src/erk_shared/gateway/git/fake.py` | FakeGit integration of rebase operations |
+| `/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py` | FakeGitBranchOps with update_local_ref tracking |
+| `/tests/unit/cli/commands/exec/scripts/test_rebase_with_conflict_resolution.py` | Example test usage patterns |
+| `/tests/commands/pr/test_rebase.py` | CLI rebase command test patterns |</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="2265" cache_read_input_tokens="58908" cache_creation="{'ephemeral_5m_input_tokens': 2265, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
