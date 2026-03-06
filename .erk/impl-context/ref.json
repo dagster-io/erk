@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Fix CI race condition: fix-formatting push vs tier 3 jobs"
-}
