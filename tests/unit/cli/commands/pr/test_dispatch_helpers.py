@@ -142,10 +142,12 @@ def test_trunk_in_root_worktree_uses_pull_not_update_ref(tmp_path: Path) -> None
         trunk_branches={root_path: "master"},
         branch_heads={"master": LOCAL_SHA, "origin/master": REMOTE_SHA},
         merge_bases={("master", "origin/master"): LOCAL_SHA},
-        worktrees={root_path: [
-            WorktreeInfo(path=root_path, branch="master", is_root=True),
-            WorktreeInfo(path=slot_path, branch="feature/work", is_root=False),
-        ]},
+        worktrees={
+            root_path: [
+                WorktreeInfo(path=root_path, branch="master", is_root=True),
+                WorktreeInfo(path=slot_path, branch="feature/work", is_root=False),
+            ]
+        },
     )
     ctx = context_for_test(git=git, cwd=slot_path, repo_root=root_path)
     repo = _repo_context(root_path)
