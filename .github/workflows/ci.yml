@@ -308,7 +308,7 @@ jobs:
             echo "run=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: astral-sh/setup-uv@v5
+      - uses: astral-sh/setup-uv@v7
         if: steps.should-autofix.outputs.run == 'true'
         with:
           python-version: "3.12"
@@ -521,7 +521,7 @@ jobs:
 
       - name: Install uv
         if: steps.check_local_review.outputs.skip != 'true'
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
 
       - name: Install erk
         if: steps.check_local_review.outputs.skip != 'true'
@@ -580,7 +580,7 @@ jobs:
           fetch-depth: 1
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
 
       - name: Install Claude Code
         uses: ./.github/actions/setup-claude-code
