@@ -122,7 +122,7 @@ def _execute_pr_rewrite(ctx: ErkContext, *, debug: bool) -> None:
 
     echo_plan_context_status(plan_context)
 
-    msg_gen = CommitMessageGenerator(ctx.llm_caller, time=ctx.time)
+    msg_gen = CommitMessageGenerator(ctx.llm_caller)
     msg_result = run_commit_message_generation(
         generator=msg_gen,
         diff_file=diff_file,

@@ -6,6 +6,9 @@ This module contains common functionality used by multiple PR commands
 
 from __future__ import annotations
 
+import queue
+import threading
+import time as time_module
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -336,6 +339,9 @@ def require_claude_available(ctx: ErkContext) -> None:
         )
 
 
+_PROGRESS_TIMEOUT_SECONDS = 5.0
+
+
 def run_commit_message_generation(
     *,
     generator: CommitMessageGenerator,
@@ -348,6 +354,10 @@ def run_commit_message_generation(
     debug: bool,
 ) -> CommitMessageResult:
     """Run commit message generation and return result.
+
+    Runs the generator in a background thread and polls for events via a queue.
+    If no event arrives within the timeout, emits a "Still waiting..." message
+    so the user knows the system is alive during slow API calls.
 
     Args:
         generator: CommitMessageGenerator instance
@@ -362,20 +372,42 @@ def run_commit_message_generation(
     Returns:
         CommitMessageResult with the generated title/body or error info
     """
-    result: CommitMessageResult | None = None
+    event_queue: queue.Queue[ProgressEvent | CompletionEvent[CommitMessageResult] | None] = (
+        queue.Queue()
+    )
 
-    for event in generator.generate(
-        CommitMessageRequest(
-            diff_file=diff_file,
-            repo_root=repo_root,
-            current_branch=current_branch,
-            parent_branch=parent_branch,
-            commit_messages=commit_messages,
-            plan_context=plan_context,
-        )
-    ):
+    def _produce() -> None:
+        for event in generator.generate(
+            CommitMessageRequest(
+                diff_file=diff_file,
+                repo_root=repo_root,
+                current_branch=current_branch,
+                parent_branch=parent_branch,
+                commit_messages=commit_messages,
+                plan_context=plan_context,
+            )
+        ):
+            event_queue.put(event)
+        event_queue.put(None)
+
+    thread = threading.Thread(target=_produce, daemon=True)
+    start = time_module.monotonic()
+    thread.start()
+
+    result: CommitMessageResult | None = None
+    while True:
+        try:
+            event = event_queue.get(timeout=_PROGRESS_TIMEOUT_SECONDS)
+        except queue.Empty:
+            elapsed = int(time_module.monotonic() - start)
+            render_progress(ProgressEvent(f"Still waiting... ({elapsed}s)"))
+            continue
+
+        if event is None:
+            break
         if isinstance(event, ProgressEvent):
             render_progress(event)
+            start = time_module.monotonic()
         elif isinstance(event, CompletionEvent):
             result = event.result
 
