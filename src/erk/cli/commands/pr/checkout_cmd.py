@@ -274,9 +274,7 @@ def _checkout_pr(
             # Parent exists locally but may be stale after squash/rebase.
             # Update to match origin so gt track sees consistent history.
             ctx.git.remote.fetch_branch(repo.root, "origin", pr.base_ref_name)
-            remote_sha = ctx.git.branch.get_branch_head(
-                repo.root, f"origin/{pr.base_ref_name}"
-            )
+            remote_sha = ctx.git.branch.get_branch_head(repo.root, f"origin/{pr.base_ref_name}")
             local_sha = ctx.git.branch.get_branch_head(repo.root, pr.base_ref_name)
             if remote_sha is not None and remote_sha != local_sha:
                 ctx.git.branch.update_local_ref(repo.root, pr.base_ref_name, remote_sha)

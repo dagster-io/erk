@@ -59,8 +59,7 @@ def pr_prepare(ctx: click.Context, plan_number: int | None) -> None:
         pr_result = erk_ctx.github.get_pr_for_branch(repo.root, branch)
         if isinstance(pr_result, PRNotFound):
             user_output(
-                click.style("Error: ", fg="red")
-                + f"No PR found for branch '{branch}'\n\n"
+                click.style("Error: ", fg="red") + f"No PR found for branch '{branch}'\n\n"
                 "Specify a plan number explicitly:\n"
                 "  erk pr prepare <plan-number>"
             )
