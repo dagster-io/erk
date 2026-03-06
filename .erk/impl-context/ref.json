@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Improve incremental dispatch commit message"
+  "plan_id": "8853",
+  "url": "https://github.com/dagster-io/erk/pull/8853",
+  "created_at": "2026-03-06T13:12:09.480316",
+  "synced_at": "2026-03-06T13:12:09.480316",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
