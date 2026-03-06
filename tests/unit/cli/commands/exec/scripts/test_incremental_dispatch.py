@@ -174,7 +174,9 @@ def test_incremental_dispatch_checked_out_branch(tmp_path: Path) -> None:
     fake_graphite = FakeGraphite()
 
     runner = CliRunner()
-    ctx = context_for_test(git=fake_git, github=fake_github, graphite=fake_graphite, repo_root=tmp_path)
+    ctx = context_for_test(
+        git=fake_git, github=fake_github, graphite=fake_graphite, repo_root=tmp_path
+    )
     result = runner.invoke(
         incremental_dispatch,
         ["--plan-file", str(plan_file), "--pr", "42", "--format", "json"],
