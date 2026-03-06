@@ -1,0 +1,1140 @@
+<session>
+  <meta branch="plnd/optimize-pr-submit-03-05-1613" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8786&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8786` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll implement plan #8786. Let me start by setting up the implementation environment.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28362" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28362, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01SE4tr5uzSYi2UyQTCXKYGj">
+    <param name="command">erk exec setup-impl --issue 8786</param>
+    <param name="description">Set up implementation for plan #8786</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28362" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28362, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01SE4tr5uzSYi2UyQTCXKYGj">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--optimize-pr-submit-03-05-1613", "plan_number": 8786, "plan_url": "https://github.com/dagster-io/erk/pull/8786", "branch": "plnd/optimize-pr-submit-03-05-1613", "plan_title": "[erk-plan] Improve `erk pr submit` Performance", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8786, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/optimize-pr-submit-03-05-1613', teleporting from remote...
+  </tool_result>
+  <assistant>Implementation environment is ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="342" cache_read_input_tokens="28362" cache_creation="{'ephemeral_5m_input_tokens': 342, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017vEovZGCJASQvLnDKVA3hj">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--optimize-pr-submit-03-05-1613/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="342" cache_read_input_tokens="28362" cache_creation="{'ephemeral_5m_input_tokens': 342, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017vEovZGCJASQvLnDKVA3hj">
+     1→# Improve `erk pr submit` Performance
+     2→
+     3→## Context
+     4→
+     5→`erk pr submit` runs an 11-step linear pipeline that makes many redundant network calls and runs independent steps sequentially. The pipeline accumulates GitHub API calls, Graphite auth checks, and branch lookups that duplicate work already done in earlier steps. This plan addresses the low-hanging fruit for performance improvement.
+     6→
+     7→## Key Files
+     8→
+     9→- `src/erk/cli/commands/pr/submit_pipeline.py` — Main pipeline (all steps)
+    10→- `src/erk/cli/commands/pr/submit_cmd.py` — CLI entry point + PR cache polling
+    11→- `packages/erk-shared/src/erk_shared/gateway/pr/graphite_enhance.py` — Graphite check
+    12→
+    13→## Problem Analysis
+    14→
+    15→### 1. Redundant GitHub API Calls (biggest win)
+    16→
+    17→The pipeline makes up to **7 separate GitHub API calls** for PR info, many redundant:
+    18→
+    19→| Line | Call | Purpose | Redundant? |
+    20→|------|------|---------|------------|
+    21→| 229 | `get_pr_for_branch` | Capture existing PR body | Needed |
+    22→| 332 | `get_pr_for_branch` | Get PR after gt submit | Needed |
+    23→| 458 | `get_pr_for_branch` | Check existing PR (core flow) | Needed |
+    24→| 495 | `get_pr` | Get PR URL after create | **Yes** — URL can be constructed |
+    25→| 523 | `get_pr` | Check for footer (existing PR) | Needed |
+    26→| 770 | `get_pr` | Check draft status | Needed |
+    27→| 823 | `get_pr_for_branch` | Get "final" PR URL | **Yes** — already in state |
+    28→
+    29→**Fix:** Remove line 823 (`get_pr_for_branch` at end of `finalize_pr`) — `state.pr_url` is already set by `push_and_create_pr`. Remove the `get_pr` at line 495 — construct URL from repo info instead.
+    30→
+
+... [60 lines omitted] ...
+  </tool_result>
+  <assistant>Good, I understand the plan. Now let me set up todo entries and load the relevant documentation and source files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1907" cache_read_input_tokens="28704" cache_creation="{'ephemeral_5m_input_tokens': 1907, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_0115ExPgdC9HvVGr98evVPGK">
+    <param name="todos">[{'content': 'Read key source files (submit_pipeline.py, submit_cmd.py, graphite_enhance.p...[truncated 617 chars]...ts and CI'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1907" cache_read_input_tokens="28704" cache_creation="{'ephemeral_5m_input_tokens': 1907, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0115ExPgdC9HvVGr98evVPGK">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01NQMsVVAgRq7WFT4c4oWaLx">
+    <param name="command">erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="30611" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019JXdm4U9GZ8Ck5pQvS8Z1n">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="30611" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017UE17rphgWrXuYneS1bhe1">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="30611" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Bxm4u5hPFfqJxmM8zCJ9Qr">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/pr/graphite_enhance.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="357" cache_read_input_tokens="30611" cache_creation="{'ephemeral_5m_input_tokens': 357, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01NQMsVVAgRq7WFT4c4oWaLx">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_result tool="toolu_017UE17rphgWrXuYneS1bhe1">
+     1→"""Submit current branch as a pull request.
+     2→
+     3→Runs a linear pipeline of functions transforming a frozen SubmitState:
+     4→1. Prepare state (resolve repo, branch, parent, issue)
+     5→2. Commit WIP changes
+     6→3. Push and create/find PR (Graphite-first or core path)
+     7→4. Extract diff for AI
+     8→5. Fetch plan context
+     9→6. Generate AI PR description
+    10→7. Enhance with Graphite (if applicable)
+    11→8. Finalize PR metadata
+    12→"""
+    13→
+    14→import sys
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.pr.shared import require_claude_available
+    20→from erk.cli.commands.pr.submit_pipeline import (
+    21→    SubmitError,
+    22→    SubmitState,
+    23→    make_initial_state,
+    24→    run_submit_pipeline,
+    25→)
+    26→from erk.core.context import ErkContext
+    27→from erk_shared.output.output import user_output
+    28→
+    29→# Set to False to disable polling for PR in Graphite cache after submission.
+    30→# This feature ensures the status line can immediately display the PR number.
+
+... [176 lines omitted] ...
+
+   187→    if isinstance(result, SubmitError):
+   188→        raise click.ClickException(result.message)
+  </tool_result>
+  <tool_result tool="toolu_01Bxm4u5hPFfqJxmM8zCJ9Qr">
+     1→"""Graphite enhancement utilities for PR submission.
+     2→
+     3→Provides a quick check to determine if Graphite enhancement should proceed.
+     4→The actual enhancement logic lives in the submit pipeline.
+     5→"""
+     6→
+     7→from pathlib import Path
+     8→from typing import NamedTuple
+     9→
+    10→from erk_shared.context.context import ErkContext
+    11→
+    12→
+    13→class GraphiteCheckResult(NamedTuple):
+    14→    """Result of checking if Graphite enhancement should proceed.
+    15→
+    16→    Attributes:
+    17→        should_enhance: Whether Graphite enhancement should proceed
+    18→        reason: The reason code - one of:
+    19→            - "tracked": Branch is tracked and Graphite is authenticated
+    20→            - "not_authenticated": Graphite is not authenticated
+    21→            - "not_tracked": Branch is not tracked by Graphite
+    22→            - "no_branch": Not on a branch (detached HEAD)
+    23→    """
+    24→
+    25→    should_enhance: bool
+    26→    reason: str
+    27→
+    28→
+    29→def should_enhance_with_graphite(
+    30→    ctx: ErkContext,
+
+... [40 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_019JXdm4U9GZ8Ck5pQvS8Z1n">
+     1→"""Linear pipeline for PR submission.
+     2→
+     3→Replaces the dual-path branching orchestration with a sequence of plain
+     4→functions transforming a frozen SubmitState dataclass.
+     5→
+     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+     7→"""
+     8→
+     9→import dataclasses
+    10→import sys
+    11→import uuid
+    12→from collections.abc import Callable
+    13→from dataclasses import dataclass
+    14→from functools import cache
+    15→from pathlib import Path
+    16→
+    17→import click
+    18→
+    19→from erk.cli.commands.pr.shared import (
+    20→    assemble_pr_body,
+    21→    echo_plan_context_status,
+    22→    maybe_advance_lifecycle_to_impl,
+    23→    recover_plan_header,
+    24→    run_commit_message_generation,
+    25→)
+    26→from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
+    27→from erk.cli.ensure import UserFacingCliError
+    28→from erk.core.commit_message_generator import CommitMessageGenerator
+    29→from erk.core.context import ErkContext
+    30→from erk.core.plan_context_provider import PlanContext, PlanContextProvider
+
+... [1034 lines omitted] ...
+
+    31→from erk_shared.gateway.git.remote_ops.types import PullRebaseError, PushError
+   116→class SubmitError:
+   117→    """Error result from a pipeline step."""
+   120→    error_type: str
+   129→SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
+   132→def prepare_state(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   145→        return SubmitError(
+   147→            error_type="no_branch",
+   161→        except ValueError as e:
+   162→            return SubmitError(
+   164→                error_type="issue_linkage_mismatch",
+   195→def cleanup_impl_for_submit(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   215→def commit_wip(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   225→def capture_existing_pr_body(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   237→def push_and_create_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   252→def _graphite_first_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   259→    # but the first submit attempt failed before pushing.
+   273→            return SubmitError(
+   275→                error_type="remote_diverged",
+   305→    except RuntimeError as e:
+   306→        error_str = str(e)
+   307→        if "restack" in error_str.lower():
+   308→            return SubmitError(
+   310→                error_type="graphite_restack_required",
+   319→        return SubmitError(
+   321→            error_type="graphite_submit_failed",
+   322→            message=f"Graphite submit failed: {e}",
+   334→        return SubmitError(
+   336→            error_type="pr_not_found",
+   365→def _core_submit_flow(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   373→        return SubmitError(
+   375→            error_type="github_auth_failed",
+   385→        return SubmitError(
+   387→            error_type="no_commits",
+   405→        if isinstance(pull_result, PullRebaseError):
+   406→            return SubmitError(
+   408→                error_type="rebase_failed",
+   410→                    f"Failed to rebase '{state.branch_name}' on origin.\n"
+   411→                    f"Error: {pull_result.message}\n\n"
+   421→        return SubmitError(
+   423→            error_type="branch_diverged",
+   442→    if isinstance(push_result, PushError):
+   444→            return SubmitError(
+   446→                error_type="branch_diverged",
+   455→        raise UserFacingCliError(push_result.message)
+   465→                return SubmitError(
+   467→                    error_type="parent_branch_no_pr",
+   543→def extract_diff(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   550→        return SubmitError(
+   552→            error_type="no_base_branch",
+   582→def fetch_plan_context(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   601→def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   608→        return SubmitError(
+   610→            error_type="no_diff_file",
+   611→            message="Failed to extract diff for AI analysis",
+   631→        return SubmitError(
+   633→            error_type="ai_generation_failed",
+   634→            message=f"Failed to generate message: {msg_result.error_message}",
+   647→def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   691→    except RuntimeError as e:
+   692→        error_msg = str(e).lower()
+   693→        if "nothing to submit" in error_msg or "no changes" in error_msg:
+   697→        return SubmitError(
+   699→            error_type="graphite_enhance_failed",
+   700→            message=f"Graphite enhancement failed: {e}",
+   717→def finalize_pr(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   724→        return SubmitError(
+   726→            error_type="no_pr_number",
+   799→        except OSError as e:
+   801→                click.echo(click.style(f"   Failed to clean up diff file: {e}", dim=True))
+   845→def link_pr_to_objective_nodes(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   871→                f"   Warning: Objective #{objective_id} not found, skipping node linking",
+   909→            except ValueError:
+   963→def run_push_and_create_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   968→        except Exception as e:
+   970→            return SubmitError(
+   972→                error_type="unhandled_exception",
+   973→                message=f"Unexpected error in {step_name}: {e}",
+   977→        if isinstance(result, SubmitError):
+  1000→def run_submit_pipeline(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+  1001→    """Run the submit pipeline, returning final state or first error."""
+  1005→        except Exception as e:
+  1007→            return SubmitError(
+  1009→                error_type="unhandled_exception",
+  1010→                message=f"Unexpected error in {step_name}: {e}",
+  1014→        if isinstance(result, SubmitError):
+  </tool_result>
+  <assistant>Good, I've read all the key files. Now let me load the relevant tripwires and skills before I start coding.</assistant>
+  <usage input_tokens="3487" cache_creation_input_tokens="14787" cache_read_input_tokens="30968" cache_creation="{'ephemeral_5m_input_tokens': 14787, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01E9vzM9eEsozArrG47gSMCc">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="3487" cache_creation_input_tokens="14787" cache_read_input_tokens="30968" cache_creation="{'ephemeral_5m_input_tokens': 14787, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_013iF9TSSe94iecBMtQVyNsH">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/tripwires.md</param>
+  </tool_use>
+  <usage input_tokens="3487" cache_creation_input_tokens="14787" cache_read_input_tokens="30968" cache_creation="{'ephemeral_5m_input_tokens': 14787, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01E9vzM9eEsozArrG47gSMCc">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <tool_result tool="toolu_013iF9TSSe94iecBMtQVyNsH">
+     1→---
+     2→title: Architecture Tripwires
+     3→read_when:
+     4→  - "working on architecture code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from architecture/*.md frontmatter --&gt;
+    10→
+    11→# Architecture Tripwires
+    12→
+    13→Rules triggered by matching actions in code.
+    14→
+    15→**FakePromptExecutor tracks all calls via properties** → Read [Prompt Executor Gateway](prompt-executor-gateway.md) first. use .prompt_calls, .interactive_calls, .passthrough_calls for assertions
+    16→
+    17→**accessing ctx.obj directly without a require\_\*() helper** → Read [Click Context Dependency Injection Pattern](click-context-di-pattern.md) first. Use typed require\_\*() helpers (require_issues, require_git, require_cwd, etc.) instead of direct ctx.obj access. Helpers provide type narrowing and clear error messages.
+    18→
+    19→**accessing plan_ref.plan_id as int without checking** → Read [PlanRef Architecture](plan-ref-architecture.md) first. plan_id is a string. Use LBYL: `plan_ref.plan_id.isdigit()` before `int(plan_ref.plan_id)`. Supports future non-numeric providers like 'PROJ-123'.
+    20→
+    21→**accessing properties on a discriminated union result without isinstance() check** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Always check isinstance(result, ErrorType) before accessing success-variant properties. Without type narrowing, you may access .message on a success type or .data on an error type.
+    22→
+    23→**adding HTML, badges, or GitHub-specific markup to commit messages** → Read [PR Body Formatting Pattern](pr-body-formatting.md) first. Use the two-target pattern: plain text pr_body for commits, enhanced pr_body_for_github for the PR. Never put GitHub-specific HTML into git commit messages.
+    24→
+    25→**adding LBYL guards that only check a subset of required fields** → Read [Erk Architecture Patterns](erk-architecture.md) first. Functions with 'skip silently' contracts must validate ALL preconditions with LBYL guards. Checking one field (e.g., schema_version) is insufficient — use set operations to verify all required fields.
+    26→
+    27→**adding LLM-dependent logic inside a Click @command function in exec/scripts/** → Read [Inference Hoisting Pattern](inference-hoisting.md) first. Inference hoisting violation: exec scripts run as subprocesses; they cannot nest LLM calls within a Claude Code session. Move reasoning to the calling skill.
+    28→
+    29→**adding a Claude subprocess call with --print mode** → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Always include --no-session-persistence flag and use env=build_claude_subprocess_env() parameter. Both are required to prevent session persistence and CLAUDECODE context leakage. See the 'Claude Subprocess Environment' section.
+    30→
+
+... [353 lines omitted] ...
+
+    41→**adding a new field to ErkContext dataclass** → Read [Erk Architecture Patterns](erk-architecture.md) first. Update ALL factory functions. Grep: `grep -r 'ErkContext(' packages/erk-shared/src/ src/erk/core/context.py` to find all construction sites. Missing a factory causes runtime errors or silent None values.
+    61→**adding a validation gate without actionable feedback in the error message** → Read [Agent Back Pressure via Gates](agent-backpressure-gates.md) first. Gates must include the expected pattern, the actual value, and examples so the agent can self-correct. See InvalidObjectiveSlug.message for the pattern.
+    83→**assuming GitHub API failures are transient without repository-specific testing** → Read [GitHub API Diagnostics](github-api-diagnostics.md) first. Test with a control repository first. Some GitHub bugs affect specific repos but not others. Follow the 3-step diagnostic methodology.
+    91→**bypassing PlanListService for direct GitHub API plan queries** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. PlanListService handles HTTP API calls. Direct API calls bypass caching and error handling.
+   103→**calling checkout_branch() in a multi-worktree repository** → Read [Multi-Worktree State Handling](multi-worktree-state.md) first. Verify the target branch is not already checked out in another worktree using `git.worktree.find_worktree_for_branch()`. Git enforces a single-checkout constraint - attempting to checkout a branch held elsewhere causes silent state corruption or unexpected failures.
+   117→**calling execute_gh_command() instead of execute_gh_command_with_retry() for network-sensitive operations** → Read [GitHub API Retry Mechanism](github-api-retry-mechanism.md) first. Use `execute_gh_command_with_retry()` for operations that may fail due to transient network errors. Pass `time_impl` for testability.
+   119→**calling get_X() and handling IssueNotFound sentinel inline** → Read [LBYL Gateway Pattern](lbyl-gateway-pattern.md) first. Check with X_exists() first for cleaner error messages and LBYL compliance.
+   127→**calling os.chdir() in erk code** [pattern: `os\.chdir\(`] → Read [Erk Architecture Patterns](erk-architecture.md) first. After os.chdir(), regenerate context using regenerate_context(ctx). Stale ctx.cwd causes FileNotFoundError.
+   133→**changing a gateway method signature** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Search for ALL callers with grep before changing. PR #6329 migrated 8 call sites across 7 files. Missing a call site causes runtime errors.
+   137→**changing erk_shared function signatures** → Read [Gateway Signature Migration](gateway-signature-migration.md) first. Grep all callers across full repo before committing. Missed call sites cause CI failures.
+   151→**choosing between exceptions and discriminated unions for operation failures** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. If callers branch on the error and continue the operation, use discriminated unions. If all callers just terminate and surface the message, use exceptions. Read the 'When to Use' section.
+   165→**creating Protocol with bare attributes for frozen dataclasses** → Read [Protocol vs ABC Interface Design Guide](protocol-vs-abc.md) first. Use @property decorators in Protocol for frozen dataclass compatibility. Bare attributes cause type errors.
+   169→**creating a new complex command with multiple validation steps** → Read [Linear Pipeline Architecture](linear-pipelines.md) first. Consider two-pipeline pattern: validation pipeline (check preconditions) + execution pipeline (perform operations). Use discriminated unions (State | Error) for pipeline steps. Reference land_pipeline.py as exemplar.
+   181→**designing error handling for a new gateway method** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Ask: does the caller continue after the failure? If yes, use discriminated union. If all callers terminate, use exceptions. See 'Non-Ideal State Decision Checklist' section.
+   217→**migrating a gateway method to return discriminated union** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Update ALL 5 implementations (ABC, real, fake, dry_run, printing) AND all call sites AND tests. Incomplete migrations break type safety.
+   219→**migrating git method calls after subgateway extraction** → Read [Gateway Decomposition Phases](gateway-decomposition-phases.md) first. The following methods have been moved from the Git ABC to subgateways: `git.fetch_branch()` → `git.remote.fetch_branch()` (Phase 3), `git.push_to_remote()` → `git.remote.push_to_remote()` (Phase 3), `git.commit()` → `git.commit.commit()` (Phase 4), `git.stage_files()` → `git.commit.stage_files()` (Phase 4), `git.has_staged_changes()` → `git.status.has_staged_changes()` (Phase 5), `git.rebase_onto()` → `git.rebase.rebase_onto()` (Phase 6), `git.tag_exists()` → `git.tag_exists()` (Phase 7), `git.create_tag()` → `git.tag.create_tag()` (Phase 7). Calling the old API will raise `AttributeError`. Always use the subgateway property.
+   221→**mixing discriminated unions with exception-based cleanup in a single method** → Read [Mixed Exception/Union Pattern (Deprecated)](gateway-specific-patterns.md) first. This pattern was tried in PR #6347 and reverted in PR #6375. Message-only discriminated unions with no domain-meaningful variants add complexity without value. Use exceptions for all error cases, or use discriminated unions with meaningful variants throughout. Document why in the PR.
+   223→**modifying Claude CLI error reporting or PromptResult.error format** → Read [Claude CLI Error Reporting](claude-cli-error-reporting.md) first. Error messages must maintain structured format with exit code, stderr, and context. Changes affect all callers of execute_prompt() and execute_command_streaming().
+   235→**parsing CalledProcessError messages for git operations** → Read [Git Operation Patterns](git-operation-patterns.md) first. Avoid parsing git error messages to determine failure modes. Use LBYL with git show-ref --verify to check existence before operations, or design discriminated unions that handle all returncode cases explicitly.
+   237→**passing None for http_client in service methods** → Read [HTTP-Accelerated Plan Refresh](http-accelerated-plan-refresh.md) first. http_client is a required parameter (not optional) in PlanListService and ObjectiveListService. Passing None causes TypeError. Validate at CLI entry point.
+   251→**placing @handle_non_ideal_exit before @click.command() or @click.pass_context** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. @handle_non_ideal_exit must come AFTER @click.command() / @click.pass_context (outermost position in decorator stack). Inner position causes it to receive wrong arguments.
+   269→**removing an abstract method from a gateway ABC** → Read [Gateway ABC Implementation Checklist](gateway-abc-implementation.md) first. Must remove from 5 places simultaneously: abc.py, real.py, fake.py, dry_run.py, printing.py. Partial removal causes type checker errors. Update all call sites to use subgateway property. Verify with grep across packages.
+   271→**returning a collection (list, tuple, str) directly from a function with NonIdealState return type** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Raw built-ins can't inherit EnsurableResult. Wrap in a named frozen dataclass that inherits EnsurableResult and implements **iter** if needed. See 'The Wrapping Rule' section.
+   283→**suppressing F401 (unused import) warnings** → Read [Re-Export Pattern](re-export-pattern.md) first. Use # noqa: F401 comment per-import with reason, not global ruff config. Indicates intentional re-export vs actual unused import.
+   285→**swallowing errors silently in a deterministic code path** → Read [Error Handling Patterns](error-handling-patterns.md) first. Never suppress errors deterministically. Use best-effort (catch + log warning) only for truly optional operations. Use error-first (check + fail with remediation) for required operations.
+   293→**try/except in fake.py or dry_run.py** [pattern: `\btry:|\bexcept\s`] → Read [Gateway Error Boundaries](gateway-error-boundaries.md) first. Gateway error handling (try/except) belongs ONLY in real.py. Fake and dry-run implementations return error discriminants based on constructor params, they don't catch exceptions.
+   301→**using None as a success return value in a validation function (ErrorType | None where None = success)** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. None-as-success is counterintuitive — None typically signals absence/failure, not success. Use ValidThing | InvalidThing so both outcomes are explicit named types.
+   305→**using PlanContextProvider** → Read [Plan Context Integration](plan-context-integration.md) first. Read this doc first. PlanContextProvider returns None on any failure (graceful degradation). Always handle the None case.
+   307→**using Protocol property descriptors on a frozen dataclass NonIdealState class** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Protocol property descriptors conflict with frozen dataclass fields. Use NonIdealStateMixin (at packages/erk-shared/src/erk_shared/non_ideal_state.py) when the NonIdealState class uses dataclass fields.
+   311→**using `gt restack` to resolve branch divergence errors** [pattern: `gt\s+restack`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. gt restack only handles parent-child stack rebasing, NOT same-branch remote divergence. Use git rebase origin/$BRANCH first.
+   313→**using bare subprocess.run with check=True** [pattern: `subprocess\.run\(`] → Read [Subprocess Wrappers](subprocess-wrappers.md) first. Use wrapper functions: run_subprocess_with_context() (gateway) or run_with_error_reporting() (CLI). Exception: Graceful degradation pattern with explicit CalledProcessError handling is acceptable for optional operations.
+   333→**using gh pr view --json merged** [pattern: `gh\s+pr\s+view.*--json.*\bmerged\b`] → Read [GitHub API Rate Limits](github-api-rate-limits.md) first. The `merged` field doesn't exist. Use `mergedAt` instead. Run `gh pr view --help` or check error output for valid field names.
+   335→**using git merge on a Graphite-managed branch** → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Merge commits break Graphite's linear stack model. Use git pull --rebase or gt sync. Merge commits cause gt squash divergence errors and broken parent tracking.
+   339→**using git stash in scripts that have running processes dependent on working tree state** → Read [Git Operation Patterns](git-operation-patterns.md) first. git stash changes working tree state which affects running processes. If code is executing from the working tree (e.g., Python scripts), stashing can cause import errors or missing file errors in the running process.
+   341→**using if/else on a discriminated union without isinstance() for type narrowing** → Read [Discriminated Union Error Handling](discriminated-union-error-handling.md) first. Type checkers require isinstance() for narrowing. 'if result.is_error' or 'if not result' does not narrow. Use 'if isinstance(result, ErrorType):' for correct narrowing in both branches.
+   359→**using try/except KeyError for JSON field access** → Read [JSON Parsing Patterns](json-parsing-patterns.md) first. Use LBYL pattern: check field presence with `any(f not in data for f in _REQUIRED_FIELDS)` before accessing. Never use try/except for control flow.
+   371→**writing a try-except block that wraps multiple independent operations** → Read [Error Handling Patterns](error-handling-patterns.md) first. Minimal exception scope: each try block should wrap only the single operation that can raise the caught exception. Split into separate try-except blocks with early returns. Broader scope is only acceptable when statements form an atomic unit (same message and recovery regardless of which line raises). See dignified-python references/exception-handling.md.
+   373→**writing complex business logic directly in Click command functions** → Read [CLI-to-Pipeline Boundary Pattern](cli-to-pipeline-boundary.md) first. Extract to pipeline layer when command has &gt;3 distinct steps or complex state management. CLI layer should handle: Click decorators, parameter parsing, output formatting. Pipeline layer should handle: business logic, state management, error types.
+  </tool_result>
+  <assistant>
+
+Now let me read the dignified-python core and the version file for this project.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="20038" cache_read_input_tokens="45755" cache_creation="{'ephemeral_5m_input_tokens': 20038, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01FMJdHSwae9EoiPUSPr48GY">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20038" cache_read_input_tokens="45755" cache_creation="{'ephemeral_5m_input_tokens': 20038, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011UVX1NoFMMJEwmL9SrHkAE">
+    <param name="file_path">/home/runner/work/erk/erk/pyproject.toml</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20038" cache_read_input_tokens="45755" cache_creation="{'ephemeral_5m_input_tokens': 20038, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FMJdHSwae9EoiPUSPr48GY">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [491 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   103→The key distinction: if removing the assert would cause a runtime error, it's control flow (WRONG). If removing it would only lose type information, it's type narrowing (ACCEPTABLE).
+   115→- `.resolve()` raises `OSError` for non-existent paths
+   116→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   117→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   132→# WRONG: Using exceptions for path validation
+   137→except (OSError, ValueError):
+   177→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   208→**The only acceptable exception:** Resolving genuine name collisions between two different modules that export identically-named symbols.
+   217→# CORRECT (rare exception): Resolving genuine collision
+   469→    log.warning("Non-numeric plan_id")
+   483→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   510→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_011UVX1NoFMMJEwmL9SrHkAE">
+     1→[tool.uv.workspace]
+     2→members = ["packages/*"]
+     3→
+     4→[tool.uv.sources]
+     5→erk-dev = { workspace = true }
+     6→erk-shared = { workspace = true }
+     7→erk-statusline = { workspace = true }
+     8→
+     9→[project]
+    10→name = "erk"
+    11→version = "0.9.5"
+    12→description = "Add your description here"
+    13→readme = "README.md"
+    14→authors = [
+    15→    { name = "Dagster Labs", email = "hello@dagsterlabs.com" }
+    16→]
+    17→requires-python = "&gt;=3.11"
+    18→dependencies = [
+    19→    "anthropic&gt;=0.40.0",
+    20→    "click&gt;=8.1.7",
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Good, Python 3.11+. I now have a thorough understanding of the codebase and the plan. Let me also check `should_enhance_with_graphite` usage more carefully, and look at how it's called to understand the refactoring needed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6557" cache_read_input_tokens="65793" cache_creation="{'ephemeral_5m_input_tokens': 6557, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01Row3iYKdxRAcft8iJumyX6">
+    <param name="todos">[{'content': 'Read key source files (submit_pipeline.py, submit_cmd.py, graphite_enhance.p...[truncated 619 chars]...ts and CI'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6557" cache_read_input_tokens="65793" cache_creation="{'ephemeral_5m_input_tokens': 6557, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Row3iYKdxRAcft8iJumyX6">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me implement **Change 1: Eliminate redundant API calls in `finalize_pr`**.
+
+The plan identifies two redundancies in `finalize_pr`:
+1. **Line 823**: `get_pr_for_branch` to get the final PR URL — `state.pr_url` is already set
+2. **Lines 828-834**: `check_auth_status` + `get_graphite_url` — `graphite_url` is already set by `_graphite_first_flow` or `enhance_with_graphite`
+
+Let me apply these changes:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="392" cache_read_input_tokens="72350" cache_creation="{'ephemeral_5m_input_tokens': 392, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_011ARMw48JgVTU3v4nNuUEGW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">    click.echo("")
+
+    # Get final PR URL
+    pr_result = ctx.github.get_pr_for_branch(st...[truncated 686 chars]...rl,
+        graphite_url=graphite_url,
+        title=pr_title,
+        body=pr_body,
+    )</param>
+    <param name="new_string">    click.echo("")
+
+    return dataclasses.replace(
+        state,
+        title=pr_title,
+        body=pr_body,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="392" cache_read_input_tokens="72350" cache_creation="{'ephemeral_5m_input_tokens': 392, 'ephemeral_1h_input_tokens': 0}" output_tokens="589" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011ARMw48JgVTU3v4nNuUEGW">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Change 1 is done. The `pr_url` is already set by `push_and_create_pr` (both `_graphite_first_flow` and `_core_submit_flow` set it), and `graphite_url` is already set by either `_graphite_first_flow` or `enhance_with_graphite`. Removed the redundant `get_pr_for_branch` call and the `check_auth_status` + `get_graphite_url` block.
+
+Now let me implement **Change 2: Use `state.existing_pr_body` for footer check in `_core_submit_flow`**.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="636" cache_read_input_tokens="72742" cache_creation="{'ephemeral_5m_input_tokens': 636, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01WN4QQ8iDHst82qYmBfcGW9">
+    <param name="todos">[{'content': 'Read key source files (submit_pipeline.py, submit_cmd.py, graphite_enhance.p...[truncated 621 chars]...ts and CI'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="636" cache_read_input_tokens="72742" cache_creation="{'ephemeral_5m_input_tokens': 636, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WN4QQ8iDHst82qYmBfcGW9">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>In `_core_submit_flow`, when the PR already exists (line 523), it calls `get_pr` to check for the footer. But `capture_existing_pr_body` already fetched and stored the body in `state.existing_pr_body`. Let me use that instead:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="481" cache_read_input_tokens="73378" cache_creation="{'ephemeral_5m_input_tokens': 481, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01RwtdwKxADCwcoprKw77TER">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">    # PR exists
+    pr_number = existing_pr.number
+    pr_url = existing_pr.url
+
+    # Add...[truncated 297 chars]...mber)
+        ctx.github.update_pr_body(state.repo_root, pr_number, current_body + footer)</param>
+    <param name="new_string">    # PR exists
+    pr_number = existing_pr.number
+    pr_url = existing_pr.url
+
+    # Add...[truncated 254 chars]...mber)
+        ctx.github.update_pr_body(state.repo_root, pr_number, current_body + footer)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="481" cache_read_input_tokens="73378" cache_creation="{'ephemeral_5m_input_tokens': 481, 'ephemeral_1h_input_tokens': 0}" output_tokens="483" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RwtdwKxADCwcoprKw77TER">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Change 2 is done. Now let me also check the `get_pr` call at line 495 (after `create_pr` for a new PR). The plan says we can construct the URL instead:
+
+Looking at line 495, after `create_pr` returns a `pr_number`, it calls `get_pr` just to get the URL. Let me construct the URL from repo info instead:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="530" cache_read_input_tokens="73859" cache_creation="{'ephemeral_5m_input_tokens': 530, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01CT9zsdjVKsxvyWYGTTPGo5">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">        pr_number = ctx.github.create_pr(
+            state.repo_root,
+            branch=...[truncated 284 chars]...und)
+            else f"https://github.com/{state.branch_name}/pull/{pr_number}"
+        )</param>
+    <param name="new_string">        pr_number = ctx.github.create_pr(
+            state.repo_root,
+            branch=...[truncated 301 chars]...rl(remote_url)
+        pr_url = f"https://github.com/{owner}/{repo_name}/pull/{pr_number}"</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="530" cache_read_input_tokens="73859" cache_creation="{'ephemeral_5m_input_tokens': 530, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CT9zsdjVKsxvyWYGTTPGo5">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me implement **Change 3: Cache Graphite check results in SubmitState**.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="545" cache_read_input_tokens="74389" cache_creation="{'ephemeral_5m_input_tokens': 545, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01TU34dmnMgPqLbKsmtN1tt8">
+    <param name="todos">[{'content': 'Read key source files (submit_pipeline.py, submit_cmd.py, graphite_enhance.p...[truncated 623 chars]...ts and CI'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="545" cache_read_input_tokens="74389" cache_creation="{'ephemeral_5m_input_tokens': 545, 'ephemeral_1h_input_tokens': 0}" output_tokens="313" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TU34dmnMgPqLbKsmtN1tt8">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>The plan says to add `graphite_is_authed` and `graphite_branch_tracked` fields to `SubmitState`, populate them during `prepare_state`, and use them in `push_and_create_pr` and `enhance_with_graphite` instead of re-calling `check_auth_status` and `get_all_branches`.
+
+Let me trace through the calls:
+1. `push_and_create_pr` calls `should_enhance_with_graphite` which calls `check_auth_status`, `get_repository_root`, `get_current_branch`, `get_all_branches`
+2. `enhance_with_graphite` (line 663) calls `check_auth_status` again and `get_all_branches` again
+3. `finalize_pr` previously called `check_auth_status` again (already removed in Change 1)
+
+Let me add the fields and refactor:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="355" cache_read_input_tokens="74934" cache_creation="{'ephemeral_5m_input_tokens': 355, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_016dFWAJ5tF243UwoEyTUkJe">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">    cwd: Path
+    repo_root: Path
+    branch_name: str
+    parent_branch: str
+    trunk_br...[truncated 302 chars]...t: PlanContext | None
+    title: str | None
+    body: str | None
+    existing_pr_body: str</param>
+    <param name="new_string">    cwd: Path
+    repo_root: Path
+    branch_name: str
+    parent_branch: str
+    trunk_br...[truncated 379 chars]..._pr_body: str
+    graphite_is_authed: bool | None
+    graphite_branch_tracked: bool | None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="355" cache_read_input_tokens="74934" cache_creation="{'ephemeral_5m_input_tokens': 355, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016dFWAJ5tF243UwoEyTUkJe">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now populate these in `prepare_state`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="735" cache_read_input_tokens="75289" cache_creation="{'ephemeral_5m_input_tokens': 735, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01G8oF8pfENsUJ6Q3F17qryd">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">    return dataclasses.replace(
+        state,
+        cwd=cwd,
+        repo_root=repo_roo...[truncated 28 chars]...nt_branch=parent_branch,
+        trunk_branch=trunk_branch,
+        plan_id=plan_id,
+    )</param>
+    <param name="new_string">    # Cache Graphite auth and branch tracking status to avoid redundant checks
+    graphit...[truncated 593 chars]..._authed=graphite_is_authed,
+        graphite_branch_tracked=graphite_branch_tracked,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="735" cache_read_input_tokens="75289" cache_creation="{'ephemeral_5m_input_tokens': 735, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01G8oF8pfENsUJ6Q3F17qryd">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `push_and_create_pr` to use the cached values instead of calling `should_enhance_with_graphite`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="494" cache_read_input_tokens="76024" cache_creation="{'ephemeral_5m_input_tokens': 494, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_019wRFkgwCzqoxmNkAJaTnvd">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">    # Determine if Graphite should handle the push
+    graphite_handles_push = (
+        state.use_graphite and should_enhance_with_graphite(ctx, state.cwd).should_enhance
+    )</param>
+    <param name="new_string">    # Use cached Graphite check from prepare_state instead of re-checking
+    graphite_han...[truncated 31 chars]...d state.graphite_is_authed is True
+        and state.graphite_branch_tracked is True
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="494" cache_read_input_tokens="76024" cache_creation="{'ephemeral_5m_input_tokens': 494, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019wRFkgwCzqoxmNkAJaTnvd">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `enhance_with_graphite` to use the cached values:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="549" cache_read_input_tokens="76518" cache_creation="{'ephemeral_5m_input_tokens': 549, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_016bktVe4tUoZgaDZS5XSgp6">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">    if state.pr_number is None:
+        return state
+
+    # Check Graphite auth
+    is_gt_...[truncated 525 chars]...skipping enhancement", dim=True)
+            )
+        click.echo("")
+        return state</param>
+    <param name="new_string">    if state.pr_number is None:
+        return state
+
+    # Use cached Graphite check from...[truncated 405 chars]...            )
+        click.echo("")
+        return state
+
+    repo_root = state.repo_root</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="549" cache_read_input_tokens="76518" cache_creation="{'ephemeral_5m_input_tokens': 549, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016bktVe4tUoZgaDZS5XSgp6">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `make_initial_state` to include the new fields:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="549" cache_read_input_tokens="77067" cache_creation="{'ephemeral_5m_input_tokens': 549, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01979TXoE3VrWyDvDBXHibow">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">        title=None,
+        body=None,
+        existing_pr_body="",
+    )</param>
+    <param name="new_string">        title=None,
+        body=None,
+        existing_pr_body="",
+        graphite_is_authed=None,
+        graphite_branch_tracked=None,
+    )</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="549" cache_read_input_tokens="77067" cache_creation="{'ephemeral_5m_input_tokens': 549, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01979TXoE3VrWyDvDBXHibow">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me check if the `should_enhance_with_graphite` import is still needed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="486" cache_read_input_tokens="77616" cache_creation="{'ephemeral_5m_input_tokens': 486, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01XwgfgBLnraYFdiSbiM8ods">
+    <param name="pattern">should_enhance_with_graphite</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="486" cache_read_input_tokens="77616" cache_creation="{'ephemeral_5m_input_tokens': 486, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XwgfgBLnraYFdiSbiM8ods">
+52:from erk_shared.gateway.pr.graphite_enhance import should_enhance_with_graphite
+  </tool_result>
+  <assistant>The import is no longer used in this file. Let me remove it:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="182" cache_read_input_tokens="78102" cache_creation="{'ephemeral_5m_input_tokens': 182, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01TiJhHYefmA574LRbuV7JRE">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="old_string">from erk_shared.gateway.pr.graphite_enhance import should_enhance_with_graphite
+from erk_shared.impl_context import impl_context_exists, remove_impl_context</param>
+    <param name="new_string">from erk_shared.impl_context import impl_context_exists, remove_impl_context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="182" cache_read_input_tokens="78102" cache_creation="{'ephemeral_5m_input_tokens': 182, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01TiJhHYefmA574LRbuV7JRE">
+The file /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify the file looks correct after all changes by reading the modified sections:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="483" cache_read_input_tokens="78284" cache_creation="{'ephemeral_5m_input_tokens': 483, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Tseq8mqTLfX2cj8rpB9xRR">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="limit">60</param>
+    <param name="offset">85</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="483" cache_read_input_tokens="78284" cache_creation="{'ephemeral_5m_input_tokens': 483, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_0126uSoCdQHCHdVwbD5EXkhw">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="limit">30</param>
+    <param name="offset">130</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="483" cache_read_input_tokens="78284" cache_creation="{'ephemeral_5m_input_tokens': 483, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Tseq8mqTLfX2cj8rpB9xRR">
+    85→
+    86→@dataclass(frozen=True)
+    87→class SubmitState:
+    88→    """Immutable state threaded through the submit pipeline."""
+    89→
+    90→    cwd: Path
+    91→    repo_root: Path
+    92→    branch_name: str
+    93→    parent_branch: str
+    94→    trunk_branch: str
+    95→    use_graphite: bool
+    96→    force: bool
+    97→    debug: bool
+    98→    session_id: str
+    99→    skip_description: bool
+   100→    quiet: bool
+   101→    plan_id: str | None
+   102→    pr_number: int | None
+   103→    pr_url: str | None
+   104→    was_created: bool
+   105→    base_branch: str | None
+   106→    graphite_url: str | None
+   107→    diff_file: Path | None
+   108→    plan_context: PlanContext | None
+   109→    title: str | None
+   110→    body: str | None
+   111→    existing_pr_body: str
+   112→    graphite_is_authed: bool | None
+   113→    graphite_branch_tracked: bool | None
+   114→
+
+... [35 lines omitted] ...
+
+   117→class SubmitError:
+   118→    """Error result from a pipeline step."""
+   121→    error_type: str
+   130→SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
+   133→def prepare_state(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+  </tool_result>
+  <tool_result tool="toolu_0126uSoCdQHCHdVwbD5EXkhw">
+   130→SubmitStep = Callable[[ErkContext, SubmitState], SubmitState | SubmitError]
+   131→
+   132→
+   133→def prepare_state(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   134→    """Resolve repo_root, branch_name, parent_branch, trunk_branch, plan_id.
+   135→
+   136→    Single location for all discovery. Consolidates duplicate parent-branch
+   137→    and plan-id discovery sites.
+   138→    """
+   139→    if not state.quiet:
+   140→        click.echo(click.style("   Resolving branch and plan context...", dim=True))
+   141→    cwd = state.cwd
+   142→    repo_root = ctx.git.repo.get_repository_root(cwd)
+   143→
+   144→    branch_name = ctx.git.branch.get_current_branch(cwd)
+   145→    if branch_name is None:
+   146→        return SubmitError(
+   147→            phase="prepare",
+   148→            error_type="no_branch",
+   149→            message="Not on a branch (detached HEAD state)",
+   150→            details={},
+   151→        )
+   152→
+   153→    trunk_branch = ctx.git.branch.detect_trunk_branch(repo_root)
+   154→    parent_branch = ctx.branch_manager.get_parent_branch(repo_root, branch_name) or trunk_branch
+   155→
+   156→    # Plan ID discovery via plan-ref.json in resolved .erk/impl-context/ dir
+   157→    impl_dir = resolve_impl_dir(cwd, branch_name=branch_name)
+   158→    plan_id: str | None = None
+   159→    if impl_dir is not None:
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Let me also check the prepare_state function with the graphite caching code and the other modified areas:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1817" cache_read_input_tokens="78767" cache_creation="{'ephemeral_5m_input_tokens': 1817, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01FTuTEZq4UaWmJRk6pPwdH2">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="limit">30</param>
+    <param name="offset">180</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1817" cache_read_input_tokens="78767" cache_creation="{'ephemeral_5m_input_tokens': 1817, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01KsD2auGcay3RM9qrFhS58E">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="limit">40</param>
+    <param name="offset">233</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1817" cache_read_input_tokens="78767" cache_creation="{'ephemeral_5m_input_tokens': 1817, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
