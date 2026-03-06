@@ -1,0 +1,946 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>i would like a keyboard shortut here that will bring up a list of nodes in the objective. for objetives that have affiliated PRs i want information like status, outstanding runs, etc</user>
+  <usage input_tokens="3" cache_creation_input_tokens="17546" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17546}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the TUI codebase to understand the objectives tab and existing patterns.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="17546" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17546}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_015L6osJsU1oEBBs7hkJh2au">
+    <param name="query">select:Agent,Read,Glob,Grep</param>
+    <param name="max_results">5</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="17546" cache_read_input_tokens="0" output_tokens="164" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 17546, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015L6osJsU1oEBBs7hkJh2au">
+
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01VK7jFLPkWRDCw4zrXU8TDc">
+    <param name="description">Explore TUI objectives tab</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 850 chars]...I checks, review status) is accessed via gateways
+
+Be thorough - read the key files fully.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4344" cache_read_input_tokens="17546" output_tokens="337" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4344, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VK7jFLPkWRDCw4zrXU8TDc">
+Perfect! Now I have a comprehensive understanding of the codebase. Let me compile all the findings into a thorough report.
+
+## Summary
+
+I've completed a thorough exploration of the TUI dashboard's Objectives tab and related systems. Here's what I found:
+
+### 1. **TUI Objectives-Related Files**
+
+**Main TUI Directory Structure:**
+- `/Users/schrockn/code/erk/src/erk/tui/app.py` - Main ErkDashApp with BINDINGS and event handlers
+- `/Users/schrockn/code/erk/src/erk/tui/widgets/plan_table.py` - PlanDataTable with objectives view columns
+- `/Users/schrockn/code/erk/src/erk/tui/views/types.py` - ViewMode enum (PLANS, LEARN, OBJECTIVES)
+- `/Users/schrockn/code/erk/src/erk/tui/data/types.py` - PlanRowData with objective fields
+- `/Users/schrockn/code/erk/src/erk/tui/screens/plan_detail_screen.py` - Modal detail screen pattern
+- `/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py` - Action handlers for screen navigation
+
+**Objectives View Configuration:**
+- Objectives view is the third tab (key binding "3") in `ErkDashApp.BINDINGS`
+- Uses label `"erk-objective"` from `OBJECTIVES_VIEW` in `/Users/schrockn/code/erk/src/erk/tui/views/types.py`
+- Has a distinct column set: issue, slug, progress, state, deps-state, deps, next, updated, author
+
+### 2. **Data Model for Objectives in PlanRowData**
+
+**Objective-specific fields in PlanRowData** (all frozen dataclass):
+- `objective_issue`: int | None - The objective issue number
+- `objective_url`: str | None - URL to the objective
+- `objective_display`: str - Formatted display (e.g., "#123" or "-")
+- `objective_done_nodes`: int - Count of completed nodes
+- `objective_total_nodes`: int - Total nodes in roadmap
+- `objective_progress_display`: str - Formatted progress (e.g., "3/7" or "-")
+
+... [150 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2979" cache_read_input_tokens="21890" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2979}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me read a few critical files to fill in details.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2979" cache_read_input_tokens="21890" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2979}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01A1bUyMNECcg6bHSTZdHTZs">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/screens/check_runs_screen.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2979" cache_read_input_tokens="21890" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2979}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01A1bUyMNECcg6bHSTZdHTZs">
+     1→"""Modal screen displaying failing CI check runs for a PR."""
+     2→
+     3→from textual import work
+     4→from textual.app import ComposeResult
+     5→from textual.binding import Binding
+     6→from textual.containers import Container, Vertical
+     7→from textual.screen import ModalScreen
+     8→from textual.widgets import Label, Markdown
+     9→
+    10→from erk_shared.gateway.github.ci_summary_parsing import match_summary_to_check
+    11→from erk_shared.gateway.github.types import PRCheckRun
+    12→from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+    13→
+    14→
+    15→def _format_check_line(check: PRCheckRun) -&gt; str:
+    16→    """Format a single check run as a markdown list item.
+    17→
+    18→    Args:
+    19→        check: The check run to format
+    20→
+    21→    Returns:
+    22→        Markdown list item string
+    23→    """
+    24→    conclusion_str = check.conclusion or "in progress"
+    25→    if check.detail_url is not None:
+    26→        return f"- **{check.name}** — {conclusion_str} ([details]({check.detail_url}))"
+    27→    return f"- **{check.name}** — {conclusion_str}"
+    28→
+    29→
+    30→def _format_summary_blockquote(
+
+... [278 lines omitted] ...
+
+   158→    #checks-error {
+   159→        color: $error;
+   223→        error: str | None = None
+   227→        except Exception as e:
+   228→            error = str(e)
+   230→        self.app.call_from_thread(self._on_check_runs_loaded, check_runs, error)
+   232→    def _on_check_runs_loaded(self, check_runs: list[PRCheckRun], error: str | None) -&gt; None:
+   240→            error: Error message if fetch failed, or None
+   247→        if error is not None:
+   248→            container.mount(Label(f"Error: {error}", id="checks-error"))
+   265→        container.mount(Label("Loading failure summaries...", id="checks-summaries-loading"))
+   270→        """Fetch CI failure summaries in background thread."""
+   275→        except Exception:
+   276→            # Summaries are best-effort; silently ignore failures
+  </tool_result>
+  <tool_use name="Read" id="toolu_01B4HwwV3qupGiQMaRNvQZjK">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/app.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2979" cache_read_input_tokens="21890" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2979}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01B4HwwV3qupGiQMaRNvQZjK">
+     1→"""Main Textual application for erk dash interactive mode."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→import asyncio
+     6→import time
+     7→from collections.abc import Iterator
+     8→from datetime import datetime
+     9→from pathlib import Path
+    10→
+    11→from textual import on
+    12→from textual.app import App, ComposeResult, SystemCommand
+    13→from textual.binding import Binding
+    14→from textual.containers import Container
+    15→from textual.screen import Screen
+    16→from textual.widgets import Header, Input, Label
+    17→
+    18→from erk.tui.actions.filter_actions import FilterActionsMixin
+    19→from erk.tui.actions.navigation import NavigationActionsMixin
+    20→from erk.tui.actions.palette import PaletteActionsMixin
+    21→from erk.tui.commands.provider import MainListCommandProvider
+    22→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+    23→from erk.tui.filtering.logic import filter_plans
+    24→from erk.tui.filtering.types import FilterMode, FilterState
+    25→from erk.tui.operations.logic import build_github_url
+    26→from erk.tui.operations.streaming import StreamingOperationsMixin
+    27→from erk.tui.operations.workers import BackgroundWorkersMixin
+    28→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+    29→from erk.tui.sorting.logic import sort_plans
+    30→from erk.tui.sorting.types import BranchActivity, SortKey, SortState
+
+... [507 lines omitted] ...
+
+   232→        except Exception as e:
+   233→            # GitHub API failure, network error, etc.
+   234→            self.notify(f"Failed to load plans: {e}", severity="error", timeout=5)
+   360→            if severity in ("information", "warning", "error"):
+   502→                    self.notify("Clipboard unavailable", severity="error", timeout=2)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VkxcZUj162FUsbuvDoPfbk">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/data/types.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2979" cache_read_input_tokens="21890" output_tokens="257" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2979, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VkxcZUj162FUsbuvDoPfbk">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from datetime import datetime
+     7→
+     8→from erk_shared.gateway.github.types import IssueFilterState
+     9→
+    10→
+    11→@dataclass(frozen=True)
+    12→class PlanRowData:
+    13→    """Row data for displaying a plan in the TUI table.
+    14→
+    15→    Contains pre-formatted display strings and raw data needed for actions.
+    16→    Immutable to ensure table state consistency.
+    17→
+    18→    **Display vs Raw convention:** Many data points have both a raw field (for
+    19→    logic/predicates) and a display field (for table rendering). Raw fields are
+    20→    often nullable (None when absent), while display fields are always strings
+    21→    (dash "-" or empty when absent). Use raw fields in availability predicates
+    22→    (``ctx.row.pr_number is not None``), display fields for rendering.
+    23→
+    24→    Attributes:
+    25→
+    26→        plan_id: GitHub issue number (e.g., 123). Never None.
+    27→        plan_url: Full URL to the GitHub issue. None when unavailable.
+    28→        full_title: Complete untruncated plan title. Empty string possible.
+    29→        plan_body: Raw issue body text (markdown). Empty string possible.
+    30→
+
+... [196 lines omitted] ...
+
+    56→        run_conclusion: Run conclusion ("success", "failure", "cancelled").
+   168→    warnings: tuple[str, ...] = ()
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="16771" cache_read_input_tokens="24869" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16771}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at the dependency graph model and the navigation actions mixin.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="16771" cache_read_input_tokens="24869" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16771}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SnW5V3EvNLSpqTYUSTeWVV">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/dependency_graph.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16771" cache_read_input_tokens="24869" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16771}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SnW5V3EvNLSpqTYUSTeWVV">
+     1→"""Dependency graph representation for objective roadmaps.
+     2→
+     3→Provides ObjectiveNode and DependencyGraph types that model node dependencies
+     4→explicitly, plus a graph_from_phases() parser that infers sequential dependencies
+     5→from existing RoadmapPhase/RoadmapNode data.
+     6→"""
+     7→
+     8→from collections import Counter
+     9→from dataclasses import dataclass
+    10→
+    11→from erk_shared.gateway.github.metadata.roadmap import (
+    12→    RoadmapNode,
+    13→    RoadmapNodeStatus,
+    14→    RoadmapPhase,
+    15→    group_nodes_by_phase,
+    16→    parse_v2_roadmap,
+    17→)
+    18→
+    19→_TERMINAL_STATUSES: set[RoadmapNodeStatus] = {"done", "skipped"}
+    20→
+    21→_STATUS_ORDER: dict[RoadmapNodeStatus, int] = {
+    22→    "pending": 0,
+    23→    "blocked": 1,
+    24→    "planning": 2,
+    25→    "in_progress": 3,
+    26→    "done": 4,
+    27→    "skipped": 4,
+    28→}
+    29→
+    30→_STATUS_SYMBOLS: dict[RoadmapNodeStatus, str] = {
+
+... [287 lines omitted] ...
+
+   309→        (graph, enriched_phases, errors) or None if body is not v2 format.
+   314→    phases, errors = v2_result
+   316→    return (graph, phases, errors)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01T7XyYC2TNxo3f8u4DYw8KR">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/actions/navigation.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="16771" cache_read_input_tokens="24869" output_tokens="218" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 16771, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01T7XyYC2TNxo3f8u4DYw8KR">
+     1→"""Navigation action handlers for TUI application."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING
+     6→
+     7→from erk.tui.commands.types import CommandContext
+     8→from erk.tui.data.types import PlanRowData
+     9→from erk.tui.screens.check_runs_screen import CheckRunsScreen
+    10→from erk.tui.screens.help_screen import HelpScreen
+    11→from erk.tui.screens.launch_screen import LaunchScreen
+    12→from erk.tui.screens.plan_body_screen import PlanBodyScreen
+    13→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+    14→from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
+    15→from erk.tui.views.types import ViewMode
+    16→from erk_shared.gateway.command_executor.real import RealCommandExecutor
+    17→
+    18→if TYPE_CHECKING:
+    19→    from erk.tui.app import ErkDashApp
+    20→
+    21→
+    22→class NavigationActionsMixin:
+    23→    """Mixin providing navigation and detail-view action handlers.
+    24→
+    25→    Includes action_exit_app, action_refresh, action_help, action_launch,
+    26→    action_show_detail, action_view_plan_body, action_view_comments,
+    27→    action_view_checks, action_cursor_down, action_cursor_up,
+    28→    action_open_pr, action_open_run, action_show_implement,
+    29→    action_copy_checkout, action_close_plan, and helpers.
+    30→    """
+
+... [284 lines omitted] ...
+
+   268→            self.notify("Cannot close plan: no issue URL", severity="warning")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="8747" cache_read_input_tokens="41640" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8747}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me look at how objective row data is built and what the provider ABC looks like for fetching node details.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8747" cache_read_input_tokens="41640" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8747}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_0149ZM9wvADUpYBB4yv6gLo1">
+    <param name="pattern">objective_done_nodes|objective_state_display|objective_deps_plans|graph_from</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8747" cache_read_input_tokens="41640" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8747}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0149ZM9wvADUpYBB4yv6gLo1">
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:791:        objective_done_nodes = 0
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:794:        objective_state_display = "-"
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:797:        objective_deps_plans: list[tuple[str, str]] = []
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:803:                objective_done_nodes = summary["done"]
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:805:                objective_progress_display = f"{objective_done_nodes}/{objective_total_nodes}"
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:806:                objective_state_display = build_state_sparkline(graph.nodes)
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:827:                                    objective_deps_plans.append((dep.pr, url))
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:835:                        existing_prs = {pr_ref for pr_ref, _ in objective_deps_plans}
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:840:                            objective_deps_plans.append((target.pr, url))
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:908:            objective_done_nodes=objective_done_nodes,
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:912:            objective_state_display=objective_state_display,
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:914:            objective_deps_plans=tuple(objective_deps_plans),
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py:338:    objective_done_nodes: int = 0,
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py:342:    objective_state_display: str = "-",
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py:344:    objective_deps_plans: tuple[tuple[str, str], ...] = (),
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py:381:        objective_done_nodes: Count of done nodes in objective roadmap
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py:385:        objective_state_display: Sparkline string (e.g., "✓✓✓▶▶○○○○")
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py:495:        objective_done_nodes=objective_done_nodes,
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py:499:        objective_state_display=objective_state_display,
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py:501:        objective_deps_plans=objective_deps_plans,
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Bkprrzr8BdJLfNwjVFa1B3">
+    <param name="pattern">fetch_objective|fetch_issue_body|fetch_plan_body</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8747" cache_read_input_tokens="41640" output_tokens="379" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8747, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Bkprrzr8BdJLfNwjVFa1B3">
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py:169:    def fetch_objective_content(self, plan_id: int, plan_body: str) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py:377:    def fetch_objective_content(self, plan_id: int, plan_body: str) -&gt; str | None:
+packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py:117:    def fetch_objective_content(self, plan_id: int, plan_body: str) -&gt; str | None:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01YFtZW6oBJeuxc8gPuGNSog">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="offset">780</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1593" cache_read_input_tokens="50387" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1593}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01YFtZW6oBJeuxc8gPuGNSog">
+   780→        # Compute slug display
+   781→        objective_slug_display = "-"
+   782→        if plan.body:
+   783→            slug = extract_objective_slug(plan.body)
+   784→            if slug is not None:
+   785→                objective_slug_display = slug[:25]
+   786→            elif plan.title:
+   787→                stripped = plan.title.removeprefix("Objective: ")
+   788→                objective_slug_display = stripped[:25]
+   789→
+   790→        # Parse roadmap for objective-specific fields
+   791→        objective_done_nodes = 0
+   792→        objective_total_nodes = 0
+   793→        objective_progress_display = "-"
+   794→        objective_state_display = "-"
+   795→        objective_deps_display = "-"
+   796→        objective_next_node_display = "-"
+   797→        objective_deps_plans: list[tuple[str, str]] = []
+   798→        if plan.body:
+   799→            phases, _errors = parse_roadmap(plan.body)
+   800→            if phases:
+   801→                graph = build_graph(phases)
+   802→                summary = compute_graph_summary(graph)
+   803→                objective_done_nodes = summary["done"]
+   804→                objective_total_nodes = summary["total_nodes"]
+   805→                objective_progress_display = f"{objective_done_nodes}/{objective_total_nodes}"
+   806→                objective_state_display = build_state_sparkline(graph.nodes)
+   807→                next_node = find_graph_next_node(graph, phases)
+   808→                if next_node is not None:
+   809→                    objective_next_node_display = next_node["id"]
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01HUz7Paj6zyvaMz7fwqhG5W">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py</param>
+    <param name="offset">100</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1593" cache_read_input_tokens="50387" output_tokens="231" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1593, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HUz7Paj6zyvaMz7fwqhG5W">
+   100→    @abstractmethod
+   101→    def fetch_plan_content(self, plan_id: int, plan_body: str) -&gt; str | None:
+   102→        """Return plan content from the PR body.
+   103→
+   104→        Plans are PR-based: plan_body is the already-extracted content.
+   105→        Return it directly, or None if empty.
+   106→
+   107→        Args:
+   108→            plan_id: The GitHub PR number
+   109→            plan_body: The extracted plan content from the PR body
+   110→
+   111→        Returns:
+   112→            The plan content, or None if empty
+   113→        """
+   114→        ...
+   115→
+   116→    @abstractmethod
+   117→    def fetch_objective_content(self, plan_id: int, plan_body: str) -&gt; str | None:
+   118→        """Fetch objective content from the first comment of an issue.
+   119→
+   120→        Args:
+   121→            plan_id: The GitHub issue number
+   122→            plan_body: The issue body (to extract objective_comment_id from metadata)
+   123→
+   124→        Returns:
+   125→            The extracted objective content, or None if not found
+   126→        """
+   127→        ...
+   128→
+   129→    @abstractmethod
+
+... [30 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2210" cache_read_input_tokens="51980" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2210}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a thorough understanding. Let me design the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2210" cache_read_input_tokens="51980" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2210}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01LHQnadCwX2hNQqGWn3AskB">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2210" cache_read_input_tokens="51980" output_tokens="748" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2210, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LHQnadCwX2hNQqGWn3AskB">
+
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_011YhfvtfqTjmvXiS9kxz9rL">
+    <param name="query">select:AskUserQuestion,ExitPlanMode</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1025" cache_read_input_tokens="54190" output_tokens="83" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1025, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011YhfvtfqTjmvXiS9kxz9rL">
+
+  </tool_result>
+  <assistant>
+
+Let me check one more thing - what keys are truly available and how the help screen lists bindings.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2064" cache_read_input_tokens="55215" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2064}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012fQuyoQRCUirkifGEhxUco">
+    <param name="pattern">class HelpScreen</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/tui/screens</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2064" cache_read_input_tokens="55215" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2064}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TJtWjDMgBUf7C3RN38Dwvw">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/tui/screens/help_screen.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2064" cache_read_input_tokens="55215" output_tokens="202" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2064, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TJtWjDMgBUf7C3RN38Dwvw">
+     1→"""Modal screen showing keyboard shortcuts."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from textual.app import ComposeResult
+     6→from textual.binding import Binding
+     7→from textual.containers import Vertical
+     8→from textual.events import Key
+     9→from textual.screen import ModalScreen
+    10→from textual.widgets import Label
+    11→
+    12→
+    13→class HelpScreen(ModalScreen):
+    14→    """Modal screen showing keyboard shortcuts."""
+    15→
+    16→    BINDINGS = [
+    17→        Binding("escape", "dismiss", "Close"),
+    18→        Binding("q", "dismiss", "Close"),
+    19→        Binding("?", "dismiss", "Close"),
+    20→    ]
+    21→
+    22→    DEFAULT_CSS = """
+    23→    HelpScreen {
+    24→        align: center middle;
+    25→    }
+    26→
+    27→    #help-dialog {
+    28→        width: 60;
+    29→        height: auto;
+    30→        max-height: 80%;
+
+... [82 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_012fQuyoQRCUirkifGEhxUco">
+Found 1 file
+src/erk/tui/screens/help_screen.py
+  </tool_result>
+  <assistant>Now I have everything I need. Let me write the plan.</assistant>
+  <usage input_tokens="1466" cache_creation_input_tokens="367" cache_read_input_tokens="57279" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 367}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01KV1CgNMRJddwXMasE27Zxu">
+    <param name="file_path">/Users/schrockn/.claude/plans/atomic-napping-leaf.md</param>
+    <param name="content"># Objective Nodes Detail Screen
+
+## Context
+
+The Objectives tab in `erk dash -i` shows a h...[truncated 3857 chars]...ose
+6. Press `?` to verify help screen shows the new binding
+7. Run tests: `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="1466" cache_creation_input_tokens="367" cache_read_input_tokens="57279" output_tokens="1319" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 367, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KV1CgNMRJddwXMasE27Zxu">
+File created successfully at: /Users/schrockn/.claude/plans/atomic-napping-leaf.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01KDAJm3QRfZtTTPBKB15BsS">
+    <param name="plan"># Objective Nodes Detail Screen
+
+## Context
+
+The Objectives tab in `erk dash -i` shows a h...[truncated 3857 chars]...ose
+6. Press `?` to verify help screen shows the new binding
+7. Run tests: `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2915" cache_read_input_tokens="57646" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2915, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KDAJm3QRfZtTTPBKB15BsS">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/atomic-napping-leaf.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Objective Nodes Detail Screen
+Current context: (wt:erk) (br:master) (plan:#8751)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 82b7f265-578a-43b0-ba5d-5993ab269532 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Objective Nodes Detail Screen
+
+## Context
+
+The Objectives tab in `erk dash -i` shows a high-level row per objective with a sparkline and progress count, but there's no way to drill into individual nodes. The user wants a keyboard shortcut that opens a modal listing all nodes in the selected objective, showing PR status, CI checks, and run info for nodes with affiliated PRs.
+
+## Approach
+
+Add a new `ObjectiveNodesScreen` modal triggered by `b` ("breakdown") from the Objectives view. The screen parses the objective body to extract the dependency graph, then fetches PR details for nodes with PR references, displaying a rich node list.
+
+## Files to Modify
+
+### 1. New: `src/erk/tui/screens/objective_nodes_screen.py`
+
+Create a modal screen following the `CheckRunsScreen` pattern:
+
+- **Constructor**: Takes `provider: PlanDataProvider`, `plan_id: int`, `plan_body: str`, `full_title: str`
+- **on_mount()**: Kicks off async `_fetch_nodes()` worker
+- **_fetch_nodes()** (threaded worker):
+  1. Parse objective body via `parse_graph(plan_body)` to get `DependencyGraph` and phases
+  2. Collect PR numbers from nodes that have `node.pr` set
+  3. Call `provider.fetch_plans_by_ids(pr_numbers)` to get `PlanRowData` for each PR
+  4. Build a lookup dict: `pr_number -&gt; PlanRowData`
+- **_on_nodes_loaded()**: Renders markdown list of nodes grouped by phase with PR status, checks, run state
+
+### 2. Modify: `src/erk/tui/app.py` — Add binding `Binding("b", "view_nodes", "Nodes", show=False)`
+
+### 3. Modify: `src/erk/tui/actions/navigation.py` — Add `action_view_nodes()` (Objectives view only)
+
+### 4. Modify: `src/erk/tui/screens/help_screen.py` — Add `b` to help
+
+### 5. New: `tests/tui/screens/test_objective_nodes_screen.py` — Unit + integration tests
+
+## Display Format
+
+```
+## Phase 1: Foundation
+- **1.1** done        Scaffold project structure     #8701 MERGED  checks:5/5
+- **1.2** done        Add core gateway ABC           #8705 MERGED  checks:5/5
+
+## Phase 2: Implementation
+- **2.1** in_progress Build CLI commands             #8710 OPEN   checks:3/5  run:in_progress
+- **2.2** pending     Add TUI integration            -
+```
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="674" cache_read_input_tokens="60561" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 674}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01AwSTXeycEeQNt4czYQxroG">
+    <param name="questions">[{'question': '📋 Objective Nodes Detail Screen\nCurrent context: (wt:erk) (br:master) (pla...[truncated 370 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="674" cache_read_input_tokens="60561" output_tokens="878" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 674, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AwSTXeycEeQNt4czYQxroG">
+User has answered your questions: "📋 Objective Nodes Detail Screen
+Current context: (wt:erk) (br:master) (plan:#8751)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01WdF5qPTDtcy6pstBRv1ZCn">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="958" cache_read_input_tokens="61235" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 958, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WdF5qPTDtcy6pstBRv1ZCn">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01VHsfu7XqjJaYwicQ4KuumT">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="562" cache_read_input_tokens="62193" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 562, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VHsfu7XqjJaYwicQ4KuumT">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="82b7f265-578a-43b0-ba5d-5993ab269532" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="82b7f265-578a-43b0-ba5d-5993ab269532" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "82b7f265-578a-43b0-ba5d-5993ab269532" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "82b7f265-578a-43b0-ba5d-5993ab269532" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "82b7f265-578a-43b0-ba5d-5993ab269532" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "82b7f265-578a-43b0-ba5d-5993ab269532" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me execute the plan-save workflow.
+
+**Branch slug:** `objective-nodes-screen`
+
+**Plan summary:** Adds a keyboard shortcut (b) to the TUI Objectives view that opens a modal showing all nodes in the selected objective. Nodes with affiliated PRs display PR state, CI check counts, and workflow run status. Follows the existing CheckRunsScreen async loading pattern.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="3468" cache_read_input_tokens="62755" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3468}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_013MniCWbfrhWwuWYtUGbNRH">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3468" cache_read_input_tokens="62755" output_tokens="162" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3468, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013MniCWbfrhWwuWYtUGbNRH">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01TWwE6acHSKCYf252UDAXWE">
+    <param name="command">erk exec plan-save --format json --session-id="82b7f265-578a-43b0-ba5d-5993ab269532" --bra...[truncated 201 chars]...nts, and workflow run status. Follows the existing CheckRunsScreen async loading pattern."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3383" cache_read_input_tokens="66223" output_tokens="222" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3383, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TWwE6acHSKCYf252UDAXWE">
+{"success": true, "plan_number": 8778, "plan_url": "https://github.com/dagster-io/erk/pull/8778", "title": "[erk-plan] Objective Nodes Detail Screen", "branch_name": "plnd/objective-nodes-screen-03-05-1119", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/82b7f265-578a-43b0-ba5d-5993ab269532/plan_snapshots/000001-c2293ebe"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_015sFdjtdMqpzS3r8dQSR7Ab">
+    <param name="command">erk exec upload-impl-session --session-id "82b7f265-578a-43b0-ba5d-5993ab269532" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="488" cache_read_input_tokens="69606" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 488, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015sFdjtdMqpzS3r8dQSR7Ab">
+{"uploaded": true, "plan_id": 8751}
+  </tool_result>
+  <assistant>Plan saved as draft PR **#8778**: https://github.com/dagster-io/erk/pull/8778</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="70094" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 162}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01EZUqxTJSPTFoJXzviyQzTc">
+    <param name="plan"># Objective Nodes Detail Screen
+
+## Context
+
+The Objectives tab in `erk dash -i` shows a h...[truncated 3857 chars]...ose
+6. Press `?` to verify help screen shows the new binding
+7. Run tests: `make fast-ci`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="162" cache_read_input_tokens="70094" output_tokens="67" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 162, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EZUqxTJSPTFoJXzviyQzTc">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8778 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8778:
+  In current wt:    source "$(erk br co --for-plan 8778 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8778 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8778 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8778 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8778:
+  In current wt:  erk br co --for-plan 8778
+  In new wt:      erk br co --new-slot --for-plan 8778
+
+Dispatch plan #8778:
+  CLI command:    erk pr dispatch 8778
+  Slash command:  /erk:pr-dispatch 8778
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan **#8778** saved successfully.
+
+**Implement plan #8778:**
+```
+In current wt:    source "$(erk br co --for-plan 8778 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --for-plan 8778 --script)" &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 8778 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 8778 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout plan #8778:**
+```
+In current wt:  erk br co --for-plan 8778
+In new wt:      erk br co --new-slot --for-plan 8778
+```
+
+**Dispatch plan #8778:**
+```
+CLI command:    erk pr dispatch 8778
+Slash command:  /erk:pr-dispatch 8778
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="452" cache_read_input_tokens="70256" output_tokens="249" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 452, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
