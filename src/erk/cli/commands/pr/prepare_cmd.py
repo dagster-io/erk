@@ -15,7 +15,7 @@ from erk.cli.ensure import Ensure
 from erk.core.context import ErkContext
 from erk.core.repo_discovery import NoRepoSentinel, RepoContext
 from erk_shared.gateway.github.types import PRNotFound
-from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
+from erk_shared.impl_folder import find_existing_plan_ref
 from erk_shared.output.output import user_output
 
 
@@ -67,12 +67,10 @@ def pr_prepare(ctx: click.Context, plan_number: int | None) -> None:
         plan_number = pr_result.number
 
     # Idempotent: check if impl-context already exists for this plan
-    impl_dir = resolve_impl_dir(erk_ctx.cwd, branch_name=branch)
-    if impl_dir is not None:
-        existing_ref = read_plan_ref(impl_dir)
-        if existing_ref is not None and existing_ref.plan_id == str(plan_number):
-            user_output(f"Impl-context already set up for plan #{plan_number}")
-            return
+    existing_ref = find_existing_plan_ref(erk_ctx.cwd, branch_name=branch, plan_id=str(plan_number))
+    if existing_ref is not None:
+        user_output(f"Impl-context already set up for plan #{plan_number}")
+        return
 
     result = create_impl_context_from_pr(
         ctx,
