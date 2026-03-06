@@ -167,7 +167,10 @@ def doctor_cmd(
     click.echo("")
 
     # Run all checks
-    results = run_all_checks(erk_ctx, check_hooks=check_hooks)
+    if erk_ctx.health_check_runner is not None:
+        results = erk_ctx.health_check_runner.run_all(erk_ctx, check_hooks=check_hooks)
+    else:
+        results = run_all_checks(erk_ctx, check_hooks=check_hooks)
 
     # Group results by category
     prerequisite_names = {"erk", "claude", "graphite", "github", "uv"}
