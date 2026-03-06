@@ -1,0 +1,1497 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>(internal) ➜  internal git:(upgrade-0.9.8) erk doctor --verbose
+🔍 Checking erk setup...
+
+Repository Setup
+  Git repository
+  ✅ Git repository with erk setup detected
+  ✅ Required gitignore entries present
+  Claude settings
+  ✅ erk permission configured (Bash(erk:*))
+  ✅ .claude/settings.json looks valid
+  ✅ UserPromptSubmit hook configured
+  ✅ ExitPlanMode hook configured
+  Erk configuration
+  ✅ erk version matches required (0.9.8)
+  ✅ No legacy prompt hooks found
+  ℹ️ No CI instructions hook (.erk/prompt-hooks/post-plan-implement-ci.md) - Create .erk/prompt-hooks/post-plan-implement-ci.md to add CI instructions for plan implementation
+  ⚠️ Managed artifacts have issues
+        ✅ skills (7)
+           dignified-python
+           erk-diff-analysis
+           erk-exec
+           gh
+           objective
+           pr-feedback-classifier
+           pr-operations
+        ✅ commands (25)
+           erk/diag-lock-error.md
+           erk/git-pr-push.md
+           erk/land.md
+           erk/learn.md
+           erk/migrate-objective-schema.md
+           erk/objective-create.md
+           erk/objective-list.md
+           erk/objective-plan.md
+           erk/objective-update-with-closed-plan.md
+           erk/one-shot-plan.md
+           erk/one-shot.md
+           erk/plan-implement.md
+           erk/plan-save.md
+           erk/pr-address-remote.md
+           erk/pr-address.md
+           erk/pr-dispatch.md
+           erk/pr-incremental-dispatch.md
+           erk/pr-list.md
+           erk/pr-preview-address.md
+           erk/pr-submit.md
+           erk/rebase.md
+           erk/reconcile-with-remote.md
+           erk/replan.md
+           erk/system/objective-plan-node.md
+           erk/system/objective-update-with-landed-pr.md
+        ✅ agents (1)
+           devrun.md
+        ✅ workflows (6)
+           code-reviews.yml
+           learn.yml
+           one-shot.yml
+           plan-implement.yml
+           pr-address.yml
+           pr-rebase.yml
+        ⚠️ actions (3) - locally modified
+           erk-remote-setup
+           setup-claude-code
+           setup-claude-erk (locally-modified)
+        ✅ hooks (2)
+           exit-plan-mode-hook
+           user-prompt-hook
+
+        (locally-modified): these artifacts were edited locally
+  ✅ Config at primary location (.erk/config.toml)
+  ✅ All slot assignments use current naming
+  GitHub
+  ✅ Workflows can create PRs
+  ✅ ERK_QUEUE_GH_PAT secret configured
+  ✅ ANTHROPIC_API_KEY configured
+
+User Setup
+✅ erk CLI installed: v0.9.8
+✅ Claude CLI installed: Code)
+✅ Graphite CLI installed: 1.6.6
+✅ GitHub CLI installed: gh version 2.87.3 (2026-02-23)
+✅ uv installed: 0.9.21
+  User checks
+  ✅ GitHub authenticated as schrockn
+  ✅ Hooks enabled (not globally disabled)
+  ✅ erk-statusline configured
+
+Other Checks
+ℹ️ No post-init hook (.erk/prompt-hooks/post-init.md) - Create .erk/prompt-hooks/post-init.md to add setup instructions for developers joining the project
+
+Remediation
+  Run 'erk artifact sync --force' to restore erk defaults
+
+✨ All checks passed!
+(internal) ➜  internal git:(upgrade-0.9.8)
+
+A few problems here:
+1. The Erk Doctor without verbose doesn't say there are any errors but it suggests a remediation so it's super easy to miss. As you can see in verbose mode it shows one. The rule is that if there's a suggested remediation there has to be a warning or error flagged.
+2. We need to allow for people to locally modify artifacts if they need to, at least on a temporary basis. I think we should allow users to add a magic string of some sort to files or to configure a blacklist where it doesn't check against the hashes.
+We need to do these two things</user>
+  <usage input_tokens="3" cache_creation_input_tokens="16325" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16325}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll explore the codebase to understand the current `erk doctor` implementation and artifact checking logic.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16325" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16325}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01EcWA29PpxC2cu23JJsdt2N">
+    <param name="query">select:Agent,Read,Glob,Grep</param>
+    <param name="max_results">4</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16325" cache_read_input_tokens="0" output_tokens="255" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 16325, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01EcWA29PpxC2cu23JJsdt2N">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="4371" cache_read_input_tokens="16325" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4371}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the relevant code areas in parallel.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="4371" cache_read_input_tokens="16325" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4371}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01MpA5vAicVpYvyjoMqBUTDm">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore erk doctor command</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 649 chars]...remediations are collected and displayed
+
+Read the full implementation files. Be thorough.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4371" cache_read_input_tokens="16325" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4371}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01TSa3G6XzWpEhaaX3ZKyF5s">
+    <param name="subagent_type">Explore</param>
+    <param name="description">Explore artifact hash checking</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 603 chars]...tifact management
+
+Be thorough - read the full implementation files for artifact checking.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4371" cache_read_input_tokens="16325" output_tokens="576" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4371, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MpA5vAicVpYvyjoMqBUTDm">
+Perfect! Now I have all the information I need to provide a comprehensive analysis. Let me write up my findings:
+
+## Analysis Report: `erk doctor` Command Implementation
+
+Based on my thorough review of the implementation files, here's how the `erk doctor` command works:
+
+### 1. **How Results Are Reported (Verbose vs Non-Verbose Mode)**
+
+The formatting is handled by `_format_check_result()` in `/Users/schrockn/code/erk/src/erk/cli/commands/doctor.py` (lines 42-71):
+
+**Key differences:**
+- **Verbose mode**: Uses `result.verbose_details` if available; falls back to `result.details`
+- **Non-verbose mode**: Always uses `result.details`
+- **Visual indicators** (consistent in both modes):
+  - ❌ Red for failures (`passed=False`)
+  - ⚠️ Yellow for warnings (`warning=True` when `passed=True`)
+  - ℹ️ Cyan for info (`info=True` when `passed=True`)
+  - ✅ Green for success (default)
+
+**Display logic for details:**
+- Single-line details: displayed inline with `dim=True` styling
+- Multi-line details: displayed on separate lines with indentation
+
+### 2. **Remediation Section Logic**
+
+Remediations are collected in lines 241-247 of `doctor.py`:
+
+```python
+# Collect and display consolidated remediations for failing checks and warnings
+remediations = {r.remediation for r in results if r.remediation and (not r.passed or r.warning)}
+
+... [143 lines omitted] ...
+
+- Only checks where `r.remediation` is non-None AND (`not r.passed` OR `r.warning`)
+failed = total - passed
+if failed == 0:
+    click.echo(click.style(f"⚠️  {failed} check(s) failed", fg="yellow", bold=True))
+- When `failed == 0` (all checks have `passed=True`)
+**When "X check(s) failed" displays:**
+- When `failed &gt; 0` (one or more checks have `passed=False`)
+- Yellow, bold, with warning emoji
+- Important: **Warnings do NOT cause this message** — a check can have `passed=True` with `warning=True` and it still counts as passed
+### 6. **Status Icons and Warnings in Artifact Check**
+- **Passed=False, failed remediation**: if artifacts are "not-installed"
+- **Passed=True, Warning=True**: if artifacts have "locally-modified" or "changed-upstream" statuses
+- **Passed=True, no warning**: if all up-to-date
+  </tool_result>
+  <tool_result tool="toolu_01TSa3G6XzWpEhaaX3ZKyF5s">
+Perfect! I have comprehensive understanding now. Let me compile my findings:
+
+## Summary of Erk Artifact Management System
+
+Based on my thorough analysis of the codebase, here's a complete overview of how erk manages artifacts:
+
+### 1. **Artifact Storage and Hash Tracking**
+
+**Files involved:**
+- `/Users/schrockn/code/erk/src/erk/artifacts/state.py` - Loads/saves state
+- `/Users/schrockn/code/erk/src/erk/artifacts/discovery.py` - Computes hashes
+- `/Users/schrockn/code/erk/.erk/state.toml` - State file (TOML format)
+
+**State Storage (.erk/state.toml):**
+```toml
+[artifacts]
+version = "0.5.5"
+
+[artifacts.files."skills/dignified-python"]
+version = "0.5.5"
+hash = "929cbcd538a879cc"
+
+[artifacts.files."commands/erk/plan-save.md"]
+version = "0.5.5"
+hash = "d1e6e8ab5bff252d"
+
+[artifacts.files."hooks/user-prompt-hook"]
+version = "0.5.5"
+hash = "fffa0612d9511160"
+```
+
+... [134 lines omitted] ...
+  </tool_result>
+  <assistant>
+
+Good exploration results. Let me now read the critical implementation files directly to understand the exact logic.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5197" cache_read_input_tokens="20696" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5197}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Ccj6JVct31EXuQP7RupmEC">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/doctor.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5197" cache_read_input_tokens="20696" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5197}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Ccj6JVct31EXuQP7RupmEC">
+     1→"""Doctor command for erk setup diagnostics.
+     2→
+     3→Runs health checks on the erk setup to identify issues with
+     4→CLI availability, repository configuration, and Claude settings.
+     5→"""
+     6→
+     7→import click
+     8→
+     9→from erk.core.context import ErkContext
+    10→from erk.core.health_checks import run_all_checks
+    11→from erk.core.health_checks.models import CheckResult
+    12→from erk.core.health_checks_dogfooder import EARLY_DOGFOODER_CHECK_NAMES
+    13→from erk_shared.hooks.logging import clear_hook_logs
+    14→
+    15→# Sub-group definitions for Repository Setup condensed display
+    16→REPO_SUBGROUPS: dict[str, set[str]] = {
+    17→    "Git repository": {"repository", "gitignore"},
+    18→    "Claude settings": {
+    19→        "claude-erk-permission",
+    20→        "claude-settings",
+    21→        "user-prompt-hook",
+    22→        "exit-plan-hook",
+    23→    },
+    24→    "Erk configuration": {
+    25→        "required-version",
+    26→        "legacy-prompt-hooks",
+    27→        "legacy-config",
+    28→        "legacy-slot-naming",
+    29→        "managed-artifacts",
+    30→        "post-plan-implement-ci-hook",
+
+... [232 lines omitted] ...
+
+    52→    elif result.warning:
+   100→        # Failed: show summary line + expand failures
+   241→    # Collect and display consolidated remediations for failing checks and warnings
+   242→    remediations = {r.remediation for r in results if r.remediation and (not r.passed or r.warning)}
+   256→    failed = total - passed
+   258→    if failed == 0:
+   261→        click.echo(click.style(f"⚠️  {failed} check(s) failed", fg="yellow", bold=True))
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Y73HPDELq97pn9XtL26J35">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/health_checks/managed_artifacts.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5197" cache_read_input_tokens="20696" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5197}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y73HPDELq97pn9XtL26J35">
+     1→"""Check status of erk-managed artifacts."""
+     2→
+     3→from dataclasses import dataclass
+     4→from pathlib import Path
+     5→
+     6→from erk.artifacts.artifact_health import (
+     7→    ArtifactHealthResult,
+     8→    ArtifactStatusType,
+     9→    get_artifact_health,
+    10→)
+    11→from erk.artifacts.models import ArtifactFileState
+    12→from erk.artifacts.paths import ErkPackageInfo
+    13→from erk.artifacts.state import load_artifact_state
+    14→from erk.core.health_checks.models import CheckResult
+    15→
+    16→
+    17→def _worst_status(statuses: list[ArtifactStatusType]) -&gt; ArtifactStatusType:
+    18→    """Determine worst status from a list of statuses.
+    19→
+    20→    Priority: not-installed &gt; locally-modified &gt; changed-upstream &gt; up-to-date
+    21→    """
+    22→    if "not-installed" in statuses:
+    23→        return "not-installed"
+    24→    if "locally-modified" in statuses:
+    25→        return "locally-modified"
+    26→    if "changed-upstream" in statuses:
+    27→        return "changed-upstream"
+    28→    return "up-to-date"
+    29→
+    30→
+
+... [295 lines omitted] ...
+
+   148→        # Special case: actions not-installed is informational (not error) when workflows
+   241→            warning=True,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01RhHdWiY6FnCx1uwbNYEAUE">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/health_checks/models.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5197" cache_read_input_tokens="20696" output_tokens="224" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5197, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RhHdWiY6FnCx1uwbNYEAUE">
+     1→"""Shared data model for health check results."""
+     2→
+     3→from dataclasses import dataclass
+     4→
+     5→
+     6→@dataclass(frozen=True)
+     7→class CheckResult:
+     8→    """Result of a single health check.
+     9→
+    10→    Attributes:
+    11→        name: Name of the check
+    12→        passed: Whether the check passed
+    13→        message: Human-readable message describing the result
+    14→        details: Optional additional details (e.g., version info)
+    15→        verbose_details: Extended details shown only in verbose mode
+    16→        warning: If True and passed=True, displays warning instead of success
+    17→        info: If True and passed=True, displays info (informational, not success)
+    18→        remediation: Optional command/action to fix a failing check
+    19→    """
+    20→
+    21→    name: str
+    22→    passed: bool
+    23→    message: str
+    24→    details: str | None = None
+    25→    verbose_details: str | None = None
+    26→    warning: bool = False
+    27→    info: bool = False
+    28→    remediation: str | None = None
+    29→
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="8425" cache_read_input_tokens="25893" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8425}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me look at the config structure and artifact health code to understand the allowlist approach.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8425" cache_read_input_tokens="25893" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8425}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LvenEs1mTaiGUcSZbb8fsi">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/artifacts/artifact_health.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8425" cache_read_input_tokens="25893" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8425}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LvenEs1mTaiGUcSZbb8fsi">
+     1→"""Orphaned artifact detection for erk-managed .claude/ directories."""
+     2→
+     3→import json
+     4→from dataclasses import dataclass
+     5→from pathlib import Path
+     6→from typing import Literal
+     7→
+     8→from erk.artifacts.discovery import (
+     9→    _compute_directory_hash,
+    10→    _compute_file_hash,
+    11→    _compute_hook_hash,
+    12→)
+    13→from erk.artifacts.models import (
+    14→    ArtifactFileState,
+    15→    CompletenessCheckResult,
+    16→    InstalledArtifact,
+    17→    OrphanCheckResult,
+    18→)
+    19→from erk.artifacts.paths import ErkPackageInfo, get_bundled_claude_dir
+    20→from erk.artifacts.state import load_artifact_state
+    21→from erk.artifacts.sync import _key_to_orphaned_path
+    22→from erk.core.capabilities.registry import (
+    23→    get_capability,
+    24→    get_managed_artifacts,
+    25→    is_capability_managed,
+    26→)
+    27→from erk.core.claude_settings import (
+    28→    ERK_EXIT_PLAN_HOOK_COMMAND,
+    29→    ERK_USER_PROMPT_HOOK_COMMAND,
+    30→    has_exit_plan_hook,
+
+... [770 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01UtNYXNnnmg3t2kyLa7aoxr">
+    <param name="pattern">config\.toml|artifact.*ignore|artifact.*allow|artifact.*skip</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8425" cache_read_input_tokens="25893" output_tokens="1027" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8425, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UtNYXNnnmg3t2kyLa7aoxr">
+Found 14 files
+src/erk/cli/commands/pr/dispatch_cmd.py
+src/erk/cli/commands/wt/create_cmd.py
+src/erk/core/context.py
+src/erk/artifacts/artifact_health.py
+src/erk/cli/commands/init/main.py
+src/erk/cli/config.py
+src/erk/cli/commands/codespace/resolve.py
+src/erk/core/health_checks_dogfooder/legacy_config_locations.py
+src/erk/core/health_checks_dogfooder/legacy_kits_toml.py
+src/erk/core/init_utils.py
+src/erk/cli/commands/init/__init__.py
+src/erk/cli/commands/artifact/check.py
+src/erk/cli/commands/config.py
+src/erk/cli/commands/exec/scripts/session_id_injector_hook.py
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="12371" cache_read_input_tokens="34318" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12371}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the config structure and existing tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12371" cache_read_input_tokens="34318" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12371}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019UYA9hKm2Pd13Vbwa9xvYZ">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/config.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12371" cache_read_input_tokens="34318" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12371}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019UYA9hKm2Pd13Vbwa9xvYZ">
+     1→import tomllib
+     2→from dataclasses import dataclass
+     3→from pathlib import Path
+     4→
+     5→# Re-export LoadedConfig from erk_shared for backwards compatibility
+     6→from erk_shared.context.types import LoadedConfig as LoadedConfig
+     7→
+     8→
+     9→@dataclass(frozen=True)
+    10→class ProjectConfig:
+    11→    """In-memory representation of `.erk/project.toml`.
+    12→
+    13→    Example project.toml:
+    14→      # Optional: custom name (defaults to directory name)
+    15→      # name = "dagster-open-platform"
+    16→
+    17→      [env]
+    18→      # Project-specific env vars (merged with repo-level)
+    19→      DAGSTER_HOME = "{project_root}"
+    20→
+    21→      [post_create]
+    22→      # Runs AFTER repo-level commands, FROM project directory
+    23→      shell = "bash"
+    24→      commands = [
+    25→        "source .venv/bin/activate",
+    26→      ]
+    27→    """
+    28→
+    29→    name: str | None  # Custom project name (None = use directory name)
+    30→    env: dict[str, str]
+
+... [362 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GSQbiFLvAufgLoM6AhsQQ1">
+    <param name="pattern">class.*Config|config\.toml|load_config|ErkConfig</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.py</param>
+    <param name="head_limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12371" cache_read_input_tokens="34318" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12371}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GSQbiFLvAufgLoM6AhsQQ1">
+src/erk/tui/views/types.py:18:class ViewConfig:
+src/erk/core/health_checks_dogfooder/legacy_kits_toml.py:16:    detection now uses .erk/config.toml instead.
+src/erk/core/health_checks_dogfooder/legacy_kits_toml.py:40:            "This file is no longer used. Managed project detection now uses .erk/config.toml.\n"
+src/erk/core/claude_settings.py:319:class StatuslineConfig:
+src/erk/core/claude_settings.py:327:class StatuslineNotConfigured:
+src/erk/core/health_checks_dogfooder/legacy_config_locations.py:1:"""Check for legacy config.toml files that should be migrated.
+src/erk/core/health_checks_dogfooder/legacy_config_locations.py:4:all users have migrated their config to .erk/config.toml.
+src/erk/core/health_checks_dogfooder/legacy_config_locations.py:14:class LegacyConfigLocation:
+src/erk/core/health_checks_dogfooder/legacy_config_locations.py:15:    """Information about a legacy config.toml location."""
+src/erk/core/health_checks_dogfooder/legacy_config_locations.py:25:    """Detect legacy config.toml files at old locations.
+src/erk/core/health_checks_dogfooder/legacy_config_locations.py:28:    - repo_root/config.toml (legacy location)
+src/erk/core/health_checks_dogfooder/legacy_config_locations.py:29:    - metadata_dir/config.toml (legacy location)
+src/erk/core/health_checks_dogfooder/legacy_config_locations.py:41:    repo_root_config = repo_root / "config.toml"
+src/erk/core/health_checks_dogfooder/legacy_config_locations.py:62:        metadata_dir_config = metadata_dir / "config.toml"
+src/erk/core/health_checks_dogfooder/legacy_config_locations.py:78:    """Check for legacy config.toml files that should be migrated.
+src/erk/core/health_checks_dogfooder/legacy_config_locations.py:81:    be moved to .erk/config.toml. This is a warning-level check for early dogfooders.
+src/erk/core/health_checks_dogfooder/legacy_config_locations.py:91:    primary_path = repo_root / ".erk" / "config.toml"
+src/erk/core/health_checks_dogfooder/legacy_config_locations.py:96:            message="Config at primary location (.erk/config.toml)",
+src/erk/core/health_checks/__init__.py:133:        from erk.cli.config import load_config
+src/erk/core/health_checks/__init__.py:136:        repo_config = load_config(repo_root)
+src/erk/core/context.py:18:from erk.cli.config import load_config, load_local_config, merge_configs_with_local
+src/erk/core/context.py:552:        global_config = erk_installation.load_config()
+src/erk/core/context.py:608:        # Load config from primary location (.erk/config.toml)
+src/erk/core/context.py:612:        repo_config = load_config(main_root)
+src/erk/cli/help_formatter.py:46:        return installation.load_config().show_hidden_commands
+src/erk/cli/help_formatter.py:80:        config = installation.load_config()
+src/erk/cli/help_formatter.py:191:            config = installation.load_config()
+src/erk/core/init_utils.py:14:    A repository is considered erk-ified if it has a .erk/config.toml file.
+src/erk/core/init_utils.py:20:        True if .erk/config.toml exists, False otherwise
+src/erk/core/init_utils.py:27:    config_path = repo_root / ".erk" / "config.toml"
+
+... [2 lines omitted] ...
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01NSAYEZcrmxCLuXUZe8ow1m">
+    <param name="pattern">tests/**/test_*artifact*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12371" cache_read_input_tokens="34318" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12371}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01BmZ3LEFnXfoctGCSBqkFNP">
+    <param name="pattern">tests/**/test_*doctor*</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12371" cache_read_input_tokens="34318" output_tokens="354" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12371, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BmZ3LEFnXfoctGCSBqkFNP">
+/Users/schrockn/code/erk/tests/commands/doctor/dogfooder/test_doctor_integration.py
+/Users/schrockn/code/erk/tests/integration/cli/commands/test_doctor_integration.py
+/Users/schrockn/code/erk/tests/commands/doctor/test_doctor.py
+/Users/schrockn/code/erk/tests/commands/doctor/test_doctor_workflow.py
+  </tool_result>
+  <tool_result tool="toolu_01NSAYEZcrmxCLuXUZe8ow1m">
+/Users/schrockn/code/erk/tests/artifacts/test_artifact_health.py
+/Users/schrockn/code/erk/tests/unit/core/capabilities/test_managed_artifacts.py
+  </tool_result>
+  <usage input_tokens="141" cache_creation_input_tokens="6627" cache_read_input_tokens="46689" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6627}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check the LoadedConfig type and see the existing test patterns.</assistant>
+  <usage input_tokens="141" cache_creation_input_tokens="6627" cache_read_input_tokens="46689" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6627}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FKtrJ1Ar9bS4VRT1yVCmo5">
+    <param name="pattern">class LoadedConfig</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="141" cache_creation_input_tokens="6627" cache_read_input_tokens="46689" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6627}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FKtrJ1Ar9bS4VRT1yVCmo5">
+packages/erk-shared/src/erk_shared/context/types.py:277:class LoadedConfig:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/context/types.py-278-    """In-memory representation of merged repo + project config."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/context/types.py-279-
+packages/erk-shared/src/erk_shared/context/types.py-280-    env: dict[str, str]
+packages/erk-shared/src/erk_shared/context/types.py-281-    post_create_commands: list[str]
+packages/erk-shared/src/erk_shared/context/types.py-282-    post_create_shell: str | None
+packages/erk-shared/src/erk_shared/context/types.py-283-    plans_repo: str | None
+packages/erk-shared/src/erk_shared/context/types.py-284-    pool_size: int | None  # None = use default
+packages/erk-shared/src/erk_shared/context/types.py-285-    pool_checkout_commands: list[str]  # Commands to run after pooled checkout
+packages/erk-shared/src/erk_shared/context/types.py-286-    pool_checkout_shell: str | None  # Shell to use for checkout commands
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/context/types.py-287-    # Overridable global keys (can be set at repo or local level to override global config)
+packages/erk-shared/src/erk_shared/context/types.py-288-    prompt_learn_on_land: bool | None  # None = not set at this level, use global
+packages/erk-shared/src/erk_shared/context/types.py-289-    dispatch_ref: str | None  # None = use default branch for workflow dispatch
+packages/erk-shared/src/erk_shared/context/types.py-290-    docs_path: str | None  # None = use repo root for docs operations
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/context/types.py-291-    # Per-repo codespace configuration
+packages/erk-shared/src/erk_shared/context/types.py-292-    codespace_name: str | None  # None = not set, fall through to global default
+packages/erk-shared/src/erk_shared/context/types.py-293-    codespace_working_directory: str | None  # None = no directory change on remote
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/context/types.py-294-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/context/types.py-295-    @staticmethod
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/context/types.py-296-    def test(
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/context/types.py-297-        *,
+packages/erk-shared/src/erk_shared/context/types.py-298-        env: dict[str, str] | None = None,
+packages/erk-shared/src/erk_shared/context/types.py-299-        post_create_commands: list[str] | None = None,
+packages/erk-shared/src/erk_shared/context/types.py-300-        post_create_shell: str | None = None,
+packages/erk-shared/src/erk_shared/context/types.py-301-        plans_repo: str | None = None,
+packages/erk-shared/src/erk_shared/context/types.py-302-        pool_size: int | None = None,
+packages/erk-shared/src/erk_shared/context/types.py-303-        pool_checkout_commands: list[str] | None = None,
+packages/erk-shared/src/erk_shared/context/types.py-304-        pool_checkout_shell: str | None = None,
+packages/erk-shared/src/erk_shared/context/types.py-305-        prompt_learn_on_land: bool | None = None,
+packages/erk-shared/src/erk_shared/context/types.py-306-        dispatch_ref: str | None = None,
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Gr1S2oJmcfXHqi41WbNzh3">
+    <param name="file_path">/Users/schrockn/code/erk/tests/commands/doctor/test_doctor.py</param>
+  </tool_use>
+  <usage input_tokens="141" cache_creation_input_tokens="6627" cache_read_input_tokens="46689" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6627}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Gr1S2oJmcfXHqi41WbNzh3">
+     1→"""Tests for erk doctor command - production command integration tests."""
+     2→
+     3→import json
+     4→import time
+     5→
+     6→import pytest
+     7→from click.testing import CliRunner
+     8→
+     9→from erk.cli.commands import doctor as doctor_module
+    10→from erk.cli.commands.doctor import doctor_cmd
+    11→from erk.core.health_checks.models import CheckResult
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.github_admin.abc import AuthStatus
+    14→from tests.fakes.github_admin import FakeGitHubAdmin
+    15→from tests.fakes.shell import FakeShell
+    16→from tests.test_utils.context_builders import build_workspace_test_context
+    17→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    18→
+    19→
+    20→def _make_test_shell() -&gt; FakeShell:
+    21→    """Create a FakeShell configured with all tools installed for tests."""
+    22→    return FakeShell(
+    23→        installed_tools={
+    24→            "claude": "/usr/local/bin/claude",
+    25→            "gt": "/usr/local/bin/gt",
+    26→            "gh": "/usr/local/bin/gh",
+    27→            "uv": "/usr/local/bin/uv",
+    28→        },
+    29→        tool_versions={
+    30→            "claude": "claude 1.0.41",
+
+... [556 lines omitted] ...
+
+    41→        auth_status=AuthStatus(authenticated=True, username="testuser", error=None),
+   132→        # Should show either "All checks passed" or "check(s) failed"
+   133→        assert "passed" in result.output.lower() or "failed" in result.output.lower()
+   302→def test_doctor_subgroup_auto_expands_on_failure() -&gt; None:
+   303→    """Test that sub-groups with failures auto-expand to show failed checks."""
+   322→        # Command should succeed but with failures
+   326→        # When hooks are missing, should show specific failure messages
+   383→def test_doctor_shows_remediation_for_warnings(monkeypatch: pytest.MonkeyPatch) -&gt; None:
+   384→    """Test that doctor shows remediation for warning checks (not just failures).
+   386→    This test verifies that when a CheckResult has warning=True with a remediation,
+   388→    remediations were only shown for failed checks (passed=False), not warnings.
+   405→        # Mock run_all_checks to return a warning with remediation
+   408→                # A passing check (no warning)
+   414→                # A warning check with remediation - this is what we're testing
+   416→                    name="test-warning",
+   417→                    passed=True,  # Still passes but has warning
+   418→                    warning=True,
+   419→                    message="Test has warning",
+   420→                    remediation="Run 'test-command' to fix the warning",
+   432→        # Command should succeed (no failures)
+   435→        # CRITICAL: Should show remediation section for the warning
+   544→        # Create hook failure logs
+   552→            "exit_status": "error",
+   564→        # Hook health check should not appear (no "hook logs" or failure details)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BMpBerJVRPrxAVmLdwor9b">
+    <param name="file_path">/Users/schrockn/code/erk/tests/unit/core/capabilities/test_managed_artifacts.py</param>
+  </tool_use>
+  <usage input_tokens="141" cache_creation_input_tokens="6627" cache_read_input_tokens="46689" output_tokens="307" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6627, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BMpBerJVRPrxAVmLdwor9b">
+     1→"""Tests for managed_artifacts property on individual capabilities.
+     2→
+     3→Tests that each capability type correctly declares its managed artifacts.
+     4→"""
+     5→
+     6→from erk.capabilities.agents.devrun import DevrunAgentCapability
+     7→from erk.capabilities.hooks import HooksCapability
+     8→from erk.capabilities.learned_docs import LearnedDocsCapability
+     9→from erk.capabilities.ruff_format import RuffFormatCapability
+    10→from erk.capabilities.workflows.erk_impl import ErkImplWorkflowCapability
+    11→from erk.core.capabilities.registry import get_capability
+    12→
+    13→# =============================================================================
+    14→# Tests for ManagedArtifact and managed_artifacts Property
+    15→# =============================================================================
+    16→
+    17→
+    18→def test_skill_capability_managed_artifacts() -&gt; None:
+    19→    """Test that SkillCapability declares its managed artifacts."""
+    20→    cap = get_capability("dignified-python")
+    21→    assert cap is not None
+    22→    managed = cap.managed_artifacts
+    23→
+    24→    assert len(managed) == 1
+    25→    assert managed[0].name == "dignified-python"
+    26→    assert managed[0].artifact_type == "skill"
+    27→
+    28→
+    29→def test_devrun_agent_managed_artifacts() -&gt; None:
+    30→    """Test that DevrunAgentCapability declares its managed artifacts."""
+
+... [54 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="17313" cache_read_input_tokens="53316" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17313}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how `run_all_checks` invokes the managed artifacts check and how config flows through.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="17313" cache_read_input_tokens="53316" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17313}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01AE7nLMPWAjSVdgZUrDRMMx">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/core/health_checks/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="17313" cache_read_input_tokens="53316" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 17313}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AE7nLMPWAjSVdgZUrDRMMx">
+     1→"""Health check implementations for erk doctor command.
+     2→
+     3→This module provides diagnostic checks for erk setup, including
+     4→CLI availability, repository configuration, and Claude settings.
+     5→
+     6→Submodules:
+     7→    models                    - CheckResult dataclass
+     8→    erk_version               - check_erk_version
+     9→    required_tool_version     - check_required_tool_version
+    10→    claude_cli                - check_claude_cli
+    11→    graphite_cli              - check_graphite_cli
+    12→    github_cli                - check_github_cli
+    13→    github_auth               - check_github_auth
+    14→    workflow_permissions       - check_workflow_permissions
+    15→    erk_queue_pat_secret      - check_erk_queue_pat_secret
+    16→    anthropic_api_secret      - check_anthropic_api_secret
+    17→    uv_version                - check_uv_version
+    18→    hooks_disabled            - check_hooks_disabled
+    19→    statusline_configured     - check_statusline_configured
+    20→    gitignore_entries         - check_gitignore_entries
+    21→    post_plan_implement_ci_hook - check_post_plan_implement_ci_hook
+    22→    post_init_hook            - check_post_init_hook
+    23→    legacy_prompt_hooks       - check_legacy_prompt_hooks
+    24→    claude_erk_permission     - check_claude_erk_permission
+    25→    plans_repo_labels         - check_plans_repo_labels
+    26→    repository                - check_repository
+    27→    claude_settings           - check_claude_settings
+    28→    user_prompt_hook          - check_user_prompt_hook
+    29→    exit_plan_hook            - check_exit_plan_hook
+    30→    hook_health               - check_hook_health
+
+... [126 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01MGbkj4pXZNvraGQZfcSBbA">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/artifacts/state.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="17313" cache_read_input_tokens="53316" output_tokens="1763" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 17313, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MGbkj4pXZNvraGQZfcSBbA">
+     1→"""Load and save artifact state from .erk/state.toml."""
+     2→
+     3→from pathlib import Path
+     4→from typing import Any
+     5→
+     6→import tomli
+     7→import tomli_w
+     8→
+     9→from erk.artifacts.models import ArtifactFileState, ArtifactState
+    10→
+    11→
+    12→def _state_file_path(project_dir: Path) -&gt; Path:
+    13→    """Return path to state file."""
+    14→    return project_dir / ".erk" / "state.toml"
+    15→
+    16→
+    17→def load_artifact_state(project_dir: Path) -&gt; ArtifactState | None:
+    18→    """Load artifact state from .erk/state.toml.
+    19→
+    20→    Returns None if the state file doesn't exist, has no artifacts section,
+    21→    or is missing the required files section.
+    22→
+    23→    Format:
+    24→        [artifacts]
+    25→        version = "0.3.1"
+    26→
+    27→        [artifacts.files."skills/dignified-python"]
+    28→        version = "0.3.0"
+    29→        hash = "a1b2c3d4e5f6g7h8"
+    30→    """
+
+... [163 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6930" cache_read_input_tokens="70629" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6930}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me quickly check the artifact health tests and the `_parse_config_file` to understand where the allowlist should live.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6930" cache_read_input_tokens="70629" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6930}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011fYVhrYFR2zkxxcNmwMMYP">
+    <param name="file_path">/Users/schrockn/code/erk/tests/artifacts/test_artifact_health.py</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6930" cache_read_input_tokens="70629" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6930}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011fYVhrYFR2zkxxcNmwMMYP">
+     1→"""Tests for get_artifact_health() function."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.artifacts.artifact_health import _get_bundled_by_type, get_artifact_health
+     6→from erk.artifacts.models import ArtifactFileState
+     7→from erk.artifacts.paths import ErkPackageInfo
+     8→
+     9→
+    10→def test_get_artifact_health_tracks_nested_commands(tmp_path: Path) -&gt; None:
+    11→    """get_artifact_health correctly enumerates nested command directories."""
+    12→    # Create bundled commands with nested structure
+    13→    bundled_claude = tmp_path / "bundled" / ".claude"
+    14→    bundled_cmd = bundled_claude / "commands" / "erk"
+    15→    bundled_cmd.mkdir(parents=True)
+    16→    (bundled_cmd / "plan-save.md").write_text("# Flat Command", encoding="utf-8")
+    17→
+    18→    # Create nested command (e.g., commands/erk/system/impl-execute.md)
+    19→    nested_cmd = bundled_cmd / "system"
+    20→    nested_cmd.mkdir(parents=True)
+    21→    (nested_cmd / "impl-execute.md").write_text("# Nested Command", encoding="utf-8")
+    22→
+    23→    # Create project with matching structure
+    24→    project_claude = tmp_path / "project" / ".claude"
+    25→    project_cmd = project_claude / "commands" / "erk"
+    26→    project_cmd.mkdir(parents=True)
+    27→    (project_cmd / "plan-save.md").write_text("# Flat Command", encoding="utf-8")
+    28→
+    29→    project_nested = project_cmd / "system"
+    30→    project_nested.mkdir(parents=True)
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01DsyvHq8gC5fE8dpH7m61st">
+    <param name="pattern">allow_modified|artifact_overrides|artifact_ignore</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6930" cache_read_input_tokens="70629" output_tokens="265" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6930, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DsyvHq8gC5fE8dpH7m61st">
+No files found
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1544" cache_read_input_tokens="77559" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1544}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a comprehensive understanding. Let me launch a Plan agent to design the implementation.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1544" cache_read_input_tokens="77559" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1544}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01RpTD6e27J3Lzq84pwwA1FD">
+    <param name="subagent_type">Plan</param>
+    <param name="description">Design doctor + artifact fixes</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 3941 chars]...?
+
+Please provide a detailed implementation plan with specific code changes for each file.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1544" cache_read_input_tokens="77559" output_tokens="1323" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1544, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RpTD6e27J3Lzq84pwwA1FD">
+Good -- the TOML parser uses `data.get()` which means unknown sections are silently ignored. This confirms that adding an `[artifacts]` section will be backwards-compatible.
+
+Now I have a complete picture. Let me formulate the implementation plan.
+
+---
+
+## Implementation Plan: `erk doctor` Warning Display and Artifact Allowlist
+
+### Summary
+
+This plan addresses two related issues:
+
+1. **Issue 1**: The doctor command's condensed display hides warnings behind a green checkmark, and the final summary says "All checks passed!" even when warnings with remediations exist.
+2. **Issue 2**: Users need a way to suppress warnings for intentionally modified artifacts via a config allowlist.
+
+---
+
+### Issue 1: Doctor Summary Inconsistency with Warnings
+
+#### Design Decisions
+
+**Q: Should warnings produce a different exit code?**
+A: No. Warnings represent "passed but noteworthy" -- they should not change the exit code. Only the display text needs fixing.
+
+**Q: In condensed mode, should warning subgroups be fully expanded or just show the warning icon?**
+A: Show the warning icon and auto-expand only the warning checks (matching the existing pattern for failures at lines 100-105 of `doctor.py`).
+
+#### Changes
+
+**File: `/Users/schrockn/code/erk/src/erk/cli/commands/doctor.py`**
+
+... [294 lines omitted] ...
+
+**Change 1: `_format_subgroup()` -- handle warnings in condensed mode (lines 86-105)**
+Currently `all_passed` is computed as `sum(1 for c in checks if c.passed) == total`, which treats warnings (which have `passed=True`) as fully passing. The fix adds a `has_warnings` check.
+has_warnings = any(c.warning for c in checks)
+    # Failed: show summary line + expand failures
+elif all_passed and not has_warnings:
+elif all_passed and has_warnings:
+    # Condensed: passed but has warnings, show warning icon + expand warnings
+        if result.warning:
+    # Failed: show summary line + expand failures
+**Change 2: Final summary -- distinguish warnings from clean pass (lines 254-261)**
+failed = total - passed
+if failed == 0:
+    click.echo(click.style(f"⚠️  {failed} check(s) failed", fg="yellow", bold=True))
+failed = total - passed
+has_warnings = any(r.warning for r in checks_for_summary)
+if failed == 0 and not has_warnings:
+elif failed == 0 and has_warnings:
+    click.echo(click.style("⚠️  Checks passed with warnings", fg="yellow", bold=True))
+    click.echo(click.style(f"⚠️  {failed} check(s) failed", fg="yellow", bold=True))
+**New test: `test_doctor_condensed_shows_warning_icon_for_subgroup_with_warnings`**
+Mock `run_all_checks` to return a check with `name="managed-artifacts"` (which falls in the "Erk configuration" subgroup), `passed=True`, `warning=True`, and a `remediation`. Assert that the output contains the warning icon and does NOT contain "All checks passed". Assert it contains "Checks passed with warnings".
+**Update existing test: `test_doctor_shows_remediation_for_warnings`**
+This test already verifies remediations show for warnings. Update the assertion to also check that the final summary says "Checks passed with warnings" instead of "All checks passed!".
+A: Treat as up-to-date in the CheckResult (so no warning, no remediation), but in verbose mode, add a note like "(allowed by config)" next to the artifact. This provides visibility without noise. The `ArtifactStatus.status` field stays `"locally-modified"` -- the filtering happens in `_build_managed_artifacts_result()` only, so the underlying data remains truthful.
+4. **`test_build_managed_artifacts_result_allows_locally_modified`**: Build an `ArtifactHealthResult` with a locally-modified artifact, pass an allowlist containing that artifact's key, and verify the resulting `CheckResult` has `warning=False` and no remediation.
+6. **`test_doctor_allowlisted_artifact_no_warning`**: Create a config.toml with `[artifacts] allow_modified = ["actions/setup-claude-erk"]`, mock `run_all_checks` to use real checks with the allowlist applied, and verify no warning appears for that artifact.
+1. **Step 1**: Fix `_format_subgroup()` in `doctor.py` -- add warning-aware condensed display
+2. **Step 2**: Fix final summary in `doctor.py` -- distinguish warnings from clean pass  
+- `/Users/schrockn/code/erk/src/erk/cli/commands/doctor.py` - Fix `_format_subgroup()` and final summary to properly display warnings
+- `/Users/schrockn/code/erk/src/erk/core/health_checks/models.py` - Reference: CheckResult model (no changes needed, but essential to understand the `warning` field semantics)
+- `/Users/schrockn/code/erk/tests/commands/doctor/test_doctor.py` - Add tests for warning display fix and allowlist integration
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="7029" cache_read_input_tokens="79103" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7029}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have a thorough understanding from the exploration and design phases. Let me write the plan file.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7029" cache_read_input_tokens="79103" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7029}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_0149EcYdCMqVgoPuS1hNXjw6">
+    <param name="query">select:Write,ExitPlanMode,AskUserQuestion</param>
+    <param name="max_results">3</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7029" cache_read_input_tokens="79103" output_tokens="552" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7029, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_0149EcYdCMqVgoPuS1hNXjw6">
+
+  </tool_result>
+  <assistant>
+
+I have one question about the allowlist design before finalizing the plan.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2708" cache_read_input_tokens="86132" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2708}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01RmtnNfPwdasTpji1RzfAA1">
+    <param name="questions">[{'question': 'For the artifact allowlist, where should the config live? Both options use ...[truncated 679 chars]..., but only per-user and co-mingles config with automated state.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2708" cache_read_input_tokens="86132" output_tokens="336" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2708, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RmtnNfPwdasTpji1RzfAA1">
+User has answered your questions: "For the artifact allowlist, where should the config live? Both options use the same `[artifacts] allow_modified = [...]` TOML syntax."=".erk/config.toml (Recommended)" selected preview:
+# .erk/config.toml (committed)
+[artifacts]
+allow_modified = [
+    "actions/setup-claude-erk",
+]
+
+# .erk/config.local.toml (gitignored, optional)
+[artifacts]
+allow_modified = [
+    "skills/dignified-python",
+]. You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Write" id="toolu_01RrUCqPdExNozAeBV7JSHAT">
+    <param name="file_path">/Users/schrockn/.claude/plans/swift-doodling-aurora.md</param>
+    <param name="content"># Fix Doctor Warning Display &amp; Add Artifact Allowlist
+
+## Context
+
+`erk doctor` has two is...[truncated 4625 chars]...est with allowlist configured: `erk doctor` should suppress warning for allowed artifacts
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="496" cache_read_input_tokens="88840" output_tokens="1540" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 496, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RrUCqPdExNozAeBV7JSHAT">
+File created successfully at: /Users/schrockn/.claude/plans/swift-doodling-aurora.md
+  </tool_result>
+  <assistant>Plan is written. Two focused changes:
+
+1. **Doctor display fix**: `_format_subgroup()` and the final summary in `doctor.py` become warning-aware — condensed subgroups show ⚠️ and expand warning checks, and the final line says "Checks passed with warnings" instead of "All checks passed!"
+
+2. **Artifact allowlist**: New `[artifacts] allow_modified` section in `.erk/config.toml` (committed) and/or `.erk/config.local.toml` (gitignored). Loaded directly in the managed artifacts health check — no changes to erk-shared needed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2026" cache_read_input_tokens="89336" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2026}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01AtVcQXX3y4evyLc2UW8EM9">
+    <param name="plan"># Fix Doctor Warning Display &amp; Add Artifact Allowlist
+
+## Context
+
+`erk doctor` has two is...[truncated 4625 chars]...est with allowlist configured: `erk doctor` should suppress warning for allowed artifacts
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2026" cache_read_input_tokens="89336" output_tokens="184" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2026, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AtVcQXX3y4evyLc2UW8EM9">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/swift-doodling-aurora.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix Doctor Warning Display &amp; Add Artifact Allowlist
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id c308d6f2-db62-4b80-bb5a-d335ce0ca91a \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UFQLA75qoeVufaK7FSiiyt">
+    <param name="file_path">/Users/schrockn/.claude/plans/swift-doodling-aurora.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="823" cache_read_input_tokens="91362" output_tokens="73" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 823, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UFQLA75qoeVufaK7FSiiyt">
+     1→# Fix Doctor Warning Display &amp; Add Artifact Allowlist
+     2→
+     3→## Context
+     4→
+     5→`erk doctor` has two issues:
+     6→1. **Warning/remediation mismatch**: In non-verbose mode, warnings (like locally-modified artifacts) are hidden behind green checkmarks in condensed subgroups. The Remediation section shows a fix, but the final summary says "All checks passed!" — contradictory and easy to miss.
+     7→2. **No way to allow local modifications**: Users who intentionally modify managed artifacts (e.g., customizing a GitHub Action) get persistent warnings with no suppression mechanism.
+     8→
+     9→## Issue 1: Fix Doctor Warning Display
+    10→
+    11→### Files to modify
+    12→- `src/erk/cli/commands/doctor.py`
+    13→- `tests/commands/doctor/test_doctor.py`
+    14→
+    15→### Changes
+    16→
+    17→**`_format_subgroup()` (doctor.py:86-105)** — Make condensed mode warning-aware:
+    18→
+    19→After computing `all_passed` on line 88, add:
+    20→```python
+    21→has_warnings = any(c.warning for c in checks)
+    22→```
+    23→
+    24→Replace the condensed branch (lines 95-105) with three cases:
+    25→- `all_passed and not has_warnings` → green checkmark, condensed (existing behavior)
+    26→- `all_passed and has_warnings` → yellow ⚠️ icon, expand warning checks (new)
+    27→- `not all_passed` → red ❌, expand failures (existing behavior)
+    28→
+    29→The warning expansion mirrors the failure expansion pattern at lines 103-105.
+    30→
+
+... [74 lines omitted] ...
+
+    31→**Final summary (doctor.py:254-261)** — Acknowledge warnings:
+    33→Add `has_warnings = any(r.warning for r in checks_for_summary)` and add a middle case:
+    34→- `failed == 0 and not has_warnings` → "✨ All checks passed!"
+    35→- `failed == 0 and has_warnings` → "⚠️ Checks passed with warnings"
+    36→- `failed &gt; 0` → "⚠️ N check(s) failed"
+    40→- Update `test_doctor_shows_remediation_for_warnings` to also assert the final summary says "Checks passed with warnings" (not "All checks passed!")
+    41→- Add `test_doctor_condensed_shows_warning_in_subgroup`: mock `run_all_checks` returning a check in the "Erk configuration" subgroup with `passed=True, warning=True`, assert the output contains "⚠️" for the subgroup and expands the warning check
+    84→- `test_build_managed_artifacts_result_allows_locally_modified`: Allowed artifact → no warning, no remediation
+    89→1. Fix `_format_subgroup()` warning display
+    90→2. Fix final summary warning display
+   102→4. Manual test in a repo with locally-modified artifacts: `erk doctor` should show ⚠️ in condensed mode and "Checks passed with warnings" in summary
+   103→5. Manual test with allowlist configured: `erk doctor` should suppress warning for allowed artifacts
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Fix Doctor Warning Display &amp; Add Artifact Allowlist
+
+**Issue 1 — Warning/remediation mismatch**: In non-verbose mode, warnings are hidden behind green checkmarks. The Remediation section shows a fix, but the final summary says "All checks passed!" Fix: make `_format_subgroup()` expand warnings like it expands failures, and change the summary to "Checks passed with warnings".
+
+**Issue 2 — Artifact allowlist**: Add `[artifacts] allow_modified = [...]` to `.erk/config.toml` (committed) and/or `.erk/config.local.toml` (per-user). Loaded directly in the managed artifacts health check — no erk-shared changes. Allowed artifacts treated as up-to-date but annotated in verbose mode.
+
+**Files**: `doctor.py`, `managed_artifacts.py`, and their test files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1877" cache_read_input_tokens="92185" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1877}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01CP3CmF31YTAZByoiuQyeLy">
+    <param name="questions">[{'question': 'What would you like to do with this plan?', 'header': 'br:master', 'options...[truncated 310 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1877" cache_read_input_tokens="92185" output_tokens="392" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1877, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CP3CmF31YTAZByoiuQyeLy">
+User has answered your questions: "What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_0134Yc5UduPQVnuzKdwxHAMh">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="537" cache_read_input_tokens="94062" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 537, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_0134Yc5UduPQVnuzKdwxHAMh">
+
+  </tool_result>
+  <assistant>
+
+Saving the plan as a draft PR now.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="568" cache_read_input_tokens="94599" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 568}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01EkRSRNXfj1Kti7vue6Rgv4">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="568" cache_read_input_tokens="94599" output_tokens="69" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 568, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EkRSRNXfj1Kti7vue6Rgv4">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="c308d6f2-db62-4b80-bb5a-d335ce0ca91a" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="c308d6f2-db62-4b80-bb5a-d335ce0ca91a" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "c308d6f2-db62-4b80-bb5a-d335ce0ca91a" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "c308d6f2-db62-4b80-bb5a-d335ce0ca91a" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "c308d6f2-db62-4b80-bb5a-d335ce0ca91a" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "c308d6f2-db62-4b80-bb5a-d335ce0ca91a" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2304" cache_read_input_tokens="95167" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2304}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Following the plan-save steps:
+
+**Step 1**: No flags passed — all flags empty.
+
+**Step 2**: Branch slug from title "Fix Doctor Warning Display &amp; Add Artifact Allowlist" → `fix-doctor-warning-allowlist`
+
+**Step 3**: Plan summary: "Fixes two issues with erk doctor: condensed subgroup display hides warnings behind green checkmarks while showing remediations with an All checks passed summary, and there is no way to suppress warnings for intentionally modified artifacts. Makes the doctor display warning-aware and adds an [artifacts] allow_modified config option."
+
+**Step 4**: Running save command.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2304" cache_read_input_tokens="95167" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2304}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01WGDHaj6jzQtsBdWxgbLytr">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2304" cache_read_input_tokens="95167" output_tokens="426" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2304, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01WGDHaj6jzQtsBdWxgbLytr">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012A4fTVDnNtbs7fbYyFXgAE">
+    <param name="command">erk exec plan-save --format json --session-id="c308d6f2-db62-4b80-bb5a-d335ce0ca91a" --bra...[truncated 275 chars]...es the doctor display warning-aware and adds an [artifacts] allow_modified config option."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3776" cache_read_input_tokens="97471" output_tokens="221" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3776, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012A4fTVDnNtbs7fbYyFXgAE">
+{"success": true, "plan_number": 8847, "plan_url": "https://github.com/dagster-io/erk/pull/8847", "title": "[erk-plan] Fix Doctor Warning Display &amp; Add Artifact Allowlist", "branch_name": "plnd/fix-doctor-warning-allowli-03-06-1023", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/c308d6f2-db62-4b80-bb5a-d335ce0ca91a/plan_snapshots/000001-556ce9f7"}
+  </tool_result>
+  <assistant>Plan saved. Now pushing the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="101247" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 402}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01B9YTMpg358aG2LFT4Lr57c">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null</param>
+    <param name="description">Get session file path for push</param>
+    <param name="timeout">10000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="402" cache_read_input_tokens="101247" output_tokens="115" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 402, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01B9YTMpg358aG2LFT4Lr57c">
+SESSION_ID=c308d6f2-db62-4b80-bb5a-d335ce0ca91a
+SESSION_FILE=/Users/schrockn/.claude/projects/-Users-schrockn-code-erk/c308d6f2-db62-4b80-bb5a-d335ce0ca91a.jsonl
+  </tool_result>
+  <tool_use name="Bash" id="toolu_011KZvoVnN2t6HTRk7w6rbyT">
+    <param name="command">erk exec push-session --session-file "/Users/schrockn/.claude/projects/-Users-schrockn-cod...[truncated 58 chars]...4b80-bb5a-d335ce0ca91a" --stage planning --source local --plan-id 8847 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="212" cache_read_input_tokens="101649" output_tokens="208" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 212, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011KZvoVnN2t6HTRk7w6rbyT">
+{"uploaded": true, "plan_id": 8847, "session_branch": "async-learn/8847", "session_id": "c308d6f2-db62-4b80-bb5a-d335ce0ca91a", "stage": "planning", "files": ["planning-c308d6f2-db62-4b80-bb5a-d335ce0ca91a-c308d6f2-db62-4b80-bb5a-d335ce0ca91a-part1.xml", "planning-c308d6f2-db62-4b80-bb5a-d335ce0ca91a-c308d6f2-db62-4b80-bb5a-d335ce0ca91a-part2.xml"]}
+  </tool_result>
+  <assistant>Plan "Fix Doctor Warning Display &amp; Add Artifact Allowlist" saved as draft PR #8847
+URL: https://github.com/dagster-io/erk/pull/8847</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="408" cache_read_input_tokens="101861" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 408}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01HyBDW4UigANT4dWNmhA4mQ">
+    <param name="plan"># Fix Doctor Warning Display &amp; Add Artifact Allowlist
+
+## Context
+
+`erk doctor` has two is...[truncated 4625 chars]...est with allowlist configured: `erk doctor` should suppress warning for allowed artifacts
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="408" cache_read_input_tokens="101861" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 408, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HyBDW4UigANT4dWNmhA4mQ">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8847 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8847:
+  In current wt:    source "$(erk br co --for-plan 8847 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8847 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8847 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8847 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8847:
+  In current wt:  erk br co --for-plan 8847
+  In new wt:      erk br co --new-slot --for-plan 8847
+
+Dispatch plan #8847:
+  CLI command:    erk pr dispatch 8847
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan #8847 saved successfully.
+
+**Implement plan #8847:**
+```
+In current wt:    source "$(erk br co --for-plan 8847 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --for-plan 8847 --script)" &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 8847 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 8847 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout plan #8847:**
+```
+In current wt:  erk br co --for-plan 8847
+In new wt:      erk br co --new-slot --for-plan 8847
+```
+
+**Dispatch plan #8847:**
+```
+CLI command:    erk pr dispatch 8847
+Slash command:  /erk:pr-dispatch
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="558" cache_read_input_tokens="102269" output_tokens="245" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 558, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "c308d6f2-db62-4b80-bb5a-d335ce0ca91a" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>The most recent plan is #8847. Dispatching it for remote implementation.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="812" cache_read_input_tokens="102827" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 812}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015RWCoCCHuqWUqgFDCtUS6X">
+    <param name="command">erk pr dispatch 8847</param>
+    <param name="description">Dispatch plan #8847 for remote AI implementation</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="812" cache_read_input_tokens="102827" output_tokens="121" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 812, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015RWCoCCHuqWUqgFDCtUS6X">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8847...
+
+✓ All 1 plan(s) validated
+
+  #8847: [erk-plan] Fix Doctor Warning Display &amp; Add Artifact Allowlist
+
+Dispatching PR #8847...
+
+Fetching plan content...
+Syncing branch: plnd/fix-doctor-warning-allowli-03-06-1023
+Committing plan to branch...
+✓ Branch pushed to remote
+
+Dispatching workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+  Waiting for workflow run... (attempt 3/11)
+✓ Workflow dispatched.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+
+... [5 lines omitted] ...
+
+  #8847: [erk-plan] Fix Doctor Warning Display &amp; Add Artifact Allowlist
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01VnLgyebCqpg1nTXbAwj9Xr">
+    <param name="command">erk exec marker delete --session-id "c308d6f2-db62-4b80-bb5a-d335ce0ca91a" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker to allow new plans</param>
+    <param name="timeout">5000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="476" cache_read_input_tokens="103639" output_tokens="135" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 476, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VnLgyebCqpg1nTXbAwj9Xr">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Plan #8847 dispatched successfully for remote implementation.
+
+- **Plan**: https://github.com/dagster-io/erk/pull/8847
+- **Workflow**: https://github.com/dagster-io/erk/actions/runs/22776444317</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="104115" output_tokens="66" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 276, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
