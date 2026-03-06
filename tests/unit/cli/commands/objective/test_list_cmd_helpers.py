@@ -214,10 +214,12 @@ def test_next_node_fields_ready_deps() -> None:
         _make_node(id="1.2", status="pending", depends_on=("1.1",)),
     )
     graph = DependencyGraph(nodes=nodes)
-    phases = _make_phases_from_nodes([
-        _roadmap_node(id="1.1", status="done"),
-        _roadmap_node(id="1.2", status="pending", depends_on=("1.1",)),
-    ])
+    phases = _make_phases_from_nodes(
+        [
+            _roadmap_node(id="1.1", status="done"),
+            _roadmap_node(id="1.2", status="pending", depends_on=("1.1",)),
+        ]
+    )
 
     next_node, deps_state, deps = _compute_next_node_fields(graph, phases)
 
@@ -233,10 +235,12 @@ def test_next_node_fields_blocking_dep_with_pr() -> None:
         _make_node(id="1.2", status="pending", depends_on=("1.1",)),
     )
     graph = DependencyGraph(nodes=nodes)
-    phases = _make_phases_from_nodes([
-        _roadmap_node(id="1.1", status="in_progress", pr="#200"),
-        _roadmap_node(id="1.2", status="pending", depends_on=("1.1",)),
-    ])
+    phases = _make_phases_from_nodes(
+        [
+            _roadmap_node(id="1.1", status="in_progress", pr="#200"),
+            _roadmap_node(id="1.2", status="pending", depends_on=("1.1",)),
+        ]
+    )
 
     next_node, deps_state, deps = _compute_next_node_fields(graph, phases)
 
@@ -252,10 +256,12 @@ def test_next_node_fields_own_pr_shown() -> None:
         _make_node(id="1.2", status="in_progress", pr="#300", depends_on=("1.1",)),
     )
     graph = DependencyGraph(nodes=nodes)
-    phases = _make_phases_from_nodes([
-        _roadmap_node(id="1.1", status="done"),
-        _roadmap_node(id="1.2", status="in_progress", pr="#300", depends_on=("1.1",)),
-    ])
+    phases = _make_phases_from_nodes(
+        [
+            _roadmap_node(id="1.1", status="done"),
+            _roadmap_node(id="1.2", status="in_progress", pr="#300", depends_on=("1.1",)),
+        ]
+    )
 
     next_node, deps_state, deps = _compute_next_node_fields(graph, phases)
 
