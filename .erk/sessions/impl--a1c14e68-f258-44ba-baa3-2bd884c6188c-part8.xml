@@ -1,0 +1,426 @@
+<session>
+  <meta source="agent-a93ecc7" />
+  <meta branch="plnd/O8832-decouple-cli-git-rep-03-06-1316" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+Find where tests for:
+1. HttpClient gateway (fake tests)
+2. one-shot command tests 
+3. General gateway fake tests in erk-shared
+
+are located. Give me the exact file paths.</user>
+  <assistant>I'll help you find the test files for those three areas. Let me start by checking the documentation index, then search the codebase.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18747" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18747, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018DQNn1XukWeSqQtR1Zn2qz">
+    <param name="pattern">HttpClient|one-shot|gateway.*fake</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="type">md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18747" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18747, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01K7JnRznRS8edL24v4HF9UD">
+    <param name="pattern">**/tests/**/*http*client*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18747" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18747, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01AP6fBgWyouRGQY8dyro7h2">
+    <param name="pattern">**/tests/**/*one*shot*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18747" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18747, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_011eZB1LCN1LrmkBpwNo7nbr">
+    <param name="pattern">**/tests/**/*gateway*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18747" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18747, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018DQNn1XukWeSqQtR1Zn2qz">
+Found 80 files
+docs/learned/workflows/index.md
+docs/learned/workflows/one-shot-workflow.md
+docs/learned/workflows/tripwires.md
+docs/learned/tui/architecture.md
+docs/learned/tui/async-action-refresh-pattern.md
+docs/learned/tui/column-addition-pattern.md
+docs/learned/tui/frozen-dataclass-field-management.md
+docs/learned/tui/index.md
+docs/learned/tui/keyboard-shortcuts.md
+docs/learned/tui/one-shot-prompt-modal.md
+docs/learned/tui/plan-row-data.md
+docs/learned/tui/view-aware-commands.md
+docs/learned/tui/view-switching.md
+docs/learned/testing/tripwires.md
+docs/learned/testing/tui-subprocess-testing.md
+docs/learned/testing/backend-testing-composition.md
+docs/learned/testing/cli-testing.md
+docs/learned/testing/exec-script-batch-testing.md
+docs/learned/testing/exec-script-testing.md
+docs/learned/testing/fake-api-migration-pattern.md
+docs/learned/testing/fake-git-divergence.md
+docs/learned/testing/fake-github-mutation-tracking.md
+docs/learned/testing/fake-github-testing.md
+docs/learned/testing/frozen-dataclass-test-doubles.md
+docs/learned/testing/gateway-fake-testing-exemplar.md
+docs/learned/testing/hook-testing.md
+docs/learned/testing/index.md
+docs/learned/testing/monkeypatch-elimination-checklist.md
+docs/learned/testing/monkeypatch-vs-fakes-decision.md
+
+... [51 lines omitted] ...
+
+docs/learned/architecture/gateway-error-boundaries.md
+  </tool_result>
+  <tool_result tool="toolu_01AP6fBgWyouRGQY8dyro7h2">
+/home/runner/work/erk/erk/tests/commands/objective/test_plan_one_shot.py
+/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot.py
+/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py
+/home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py
+/home/runner/work/erk/erk/tests/tui/screens/test_one_shot_prompt_screen.py
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py
+  </tool_result>
+  <tool_result tool="toolu_011eZB1LCN1LrmkBpwNo7nbr">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01K7JnRznRS8edL24v4HF9UD">
+/home/runner/work/erk/erk/tests/erk_shared/gateway/http/test_fake_http_client.py
+/home/runner/work/erk/erk/tests/real/test_real_http_client.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_http_client.py
+  </tool_result>
+  <assistant>Good start. Let me search more broadly for gateway fake tests:</assistant>
+  <usage input_tokens="244" cache_creation_input_tokens="1599" cache_read_input_tokens="18747" cache_creation="{'ephemeral_5m_input_tokens': 1599, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01E3EaVdmdjSm6B1NM3G7Uo1">
+    <param name="pattern">**/tests/**/*fake*gateway*.py</param>
+  </tool_use>
+  <usage input_tokens="244" cache_creation_input_tokens="1599" cache_read_input_tokens="18747" cache_creation="{'ephemeral_5m_input_tokens': 1599, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01NUHTpuSHywZaDZWJfo2zUv">
+    <param name="pattern">**/tests/erk_shared/gateway/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="244" cache_creation_input_tokens="1599" cache_read_input_tokens="18747" cache_creation="{'ephemeral_5m_input_tokens': 1599, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01GLnX9YtSUc4zwDHNgCTLop">
+    <param name="pattern">**/tests/**/test_fake*.py</param>
+  </tool_use>
+  <usage input_tokens="244" cache_creation_input_tokens="1599" cache_read_input_tokens="18747" cache_creation="{'ephemeral_5m_input_tokens': 1599, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NUHTpuSHywZaDZWJfo2zUv">
+/home/runner/work/erk/erk/tests/erk_shared/gateway/__init__.py
+/home/runner/work/erk/erk/tests/erk_shared/gateway/http/__init__.py
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/__init__.py
+/home/runner/work/erk/erk/tests/erk_shared/gateway/http/test_fake_http_client.py
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py
+  </tool_result>
+  <tool_result tool="toolu_01E3EaVdmdjSm6B1NM3G7Uo1">
+No files found
+  </tool_result>
+  <tool_result tool="toolu_01GLnX9YtSUc4zwDHNgCTLop">
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/time/test_fake_time.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/learn/extraction/claude_code_session_store/test_fake.py
+/home/runner/work/erk/erk/tests/erk_shared/gateway/http/test_fake_http_client.py
+/home/runner/work/erk/erk/tests/unit/core/github/test_fake_github.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_prompt_executor.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_github.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_agent_launcher.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_claude_installation.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_git_remote_ops.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_git_commit_ops.py
+/home/runner/work/erk/erk/tests/unit/fakes/gateway/console/test_fake_console.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_graphite.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_branch_manager.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_github_issues.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_git.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_command_executor.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_http_client.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_git_status_ops.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_erk_installation.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_ci_runner.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_shell.py
+/home/runner/work/erk/erk/tests/unit/gateways/agent_docs/test_fake_agent_docs.py
+/home/runner/work/erk/erk/tests/unit/gateways/browser/test_fake_browser_launcher.py
+/home/runner/work/erk/erk/tests/unit/gateways/clipboard/test_fake_clipboard.py
+/home/runner/work/erk/erk/tests/unit/gateways/codespace/test_fake_codespace.py
+  </tool_result>
+  <assistant>Excellent! Now let me get the exact paths and verify these are the main test files you're looking for:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1567" cache_read_input_tokens="20346" cache_creation="{'ephemeral_5m_input_tokens': 1567, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015rCSyXwWDPHthhZxizkSgq">
+    <param name="file_path">/home/runner/work/erk/erk/tests/erk_shared/gateway/http/test_fake_http_client.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1567" cache_read_input_tokens="20346" cache_creation="{'ephemeral_5m_input_tokens': 1567, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NKhUjhAAxei5AYbWjRxGFU">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1567" cache_read_input_tokens="20346" cache_creation="{'ephemeral_5m_input_tokens': 1567, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CEbw486qcanCm42CGGWZQu">
+    <param name="command">find /home/runner/work/erk/erk/tests/unit/fakes/gateway -name "*.py" | head -20</param>
+    <param name="description">List gateway fake test files</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1567" cache_read_input_tokens="20346" cache_creation="{'ephemeral_5m_input_tokens': 1567, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015rCSyXwWDPHthhZxizkSgq">
+     1→"""Tests for FakeHttpClient - Layer 1 fake infrastructure tests."""
+     2→
+     3→import pytest
+     4→
+     5→from erk_shared.gateway.http.abc import HttpError
+     6→from erk_shared.gateway.http.fake import FakeHttpClient, RecordedRequest
+     7→
+     8→
+     9→def test_patch_records_request() -&gt; None:
+    10→    """PATCH request should be recorded."""
+    11→    client = FakeHttpClient()
+    12→    client.set_response("repos/owner/repo/issues/123", response={"state": "closed"})
+    13→
+    14→    result = client.patch("repos/owner/repo/issues/123", data={"state": "closed"})
+    15→
+    16→    assert result == {"state": "closed"}
+    17→    assert len(client.requests) == 1
+    18→    assert client.requests[0] == RecordedRequest(
+    19→        method="PATCH",
+    20→        endpoint="repos/owner/repo/issues/123",
+    21→        data={"state": "closed"},
+    22→    )
+    23→
+    24→
+    25→def test_post_records_request() -&gt; None:
+    26→    """POST request should be recorded."""
+    27→    client = FakeHttpClient()
+    28→    client.set_response("repos/owner/repo/issues", response={"number": 456})
+    29→
+    30→    result = client.post("repos/owner/repo/issues", data={"title": "New issue"})
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01NKhUjhAAxei5AYbWjRxGFU">
+     1→"""Tests for erk one-shot command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.cli import cli
+     6→from erk_shared.gateway.git.fake import FakeGit
+     7→from erk_shared.gateway.git.remote_ops.types import PushError
+     8→from erk_shared.gateway.github.fake import FakeGitHub
+     9→from tests.test_utils.context_builders import build_workspace_test_context
+    10→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    11→
+    12→
+    13→def test_one_shot_happy_path() -&gt; None:
+    14→    """Test one-shot command creates branch, PR, and triggers workflow."""
+    15→    runner = CliRunner()
+    16→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    17→        env.setup_repo_structure()
+    18→
+    19→        git = FakeGit(
+    20→            git_common_dirs={env.cwd: env.git_dir},
+    21→            default_branches={env.cwd: "main"},
+    22→            trunk_branches={env.cwd: "main"},
+    23→            current_branches={env.cwd: "main"},
+    24→        )
+    25→        github = FakeGitHub(authenticated=True)
+    26→
+    27→        ctx = build_workspace_test_context(env, git=git, github=github)
+    28→
+    29→        result = runner.invoke(
+    30→            cli,
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01CEbw486qcanCm42CGGWZQu">
+/home/runner/work/erk/erk/tests/unit/fakes/gateway/console/__init__.py
+/home/runner/work/erk/erk/tests/unit/fakes/gateway/console/test_fake_console.py
+  </tool_result>
+  <assistant>Perfect! Let me verify the erk-shared gateway fake tests more thoroughly:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="6394" cache_read_input_tokens="21913" cache_creation="{'ephemeral_5m_input_tokens': 6394, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WW3y6AsoVF2RaRgiqie5xQ">
+    <param name="command">find /home/runner/work/erk/erk/packages/erk-shared/tests -name "*fake*gateway*" -o -path "*/gateway/*" -name "*.py" | grep -E "(fake|gateway)" | head -30</param>
+    <param name="description">Find erk-shared gateway fake tests</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6394" cache_read_input_tokens="21913" cache_creation="{'ephemeral_5m_input_tokens': 6394, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011VU5a6VD9LNt2jH9LmkKqh">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="6394" cache_read_input_tokens="21913" cache_creation="{'ephemeral_5m_input_tokens': 6394, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011VU5a6VD9LNt2jH9LmkKqh">
+EISDIR: illegal operation on a directory, read
+  </tool_result>
+  <tool_result tool="toolu_01WW3y6AsoVF2RaRgiqie5xQ">
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/time/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/time/test_fake_time.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/gt/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/gt/test_prompts.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/graphite/__init__.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/graphite/test_types.py
+  </tool_result>
+  <assistant>Let me search more comprehensively for all gateway fake tests:</assistant>
+  <usage input_tokens="41" cache_creation_input_tokens="617" cache_read_input_tokens="28307" cache_creation="{'ephemeral_5m_input_tokens': 617, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CBvh2QuYSKCeh4R5bncp9g">
+    <param name="command">find /home/runner/work/erk/erk -path "*/tests/*" -name "test_fake*.py" -o -path "*/tests/*/gateway/*" -name "test*.py" 2&gt;/dev/null | sort</param>
+    <param name="description">Find all gateway and fake test files</param>
+  </tool_use>
+  <usage input_tokens="41" cache_creation_input_tokens="617" cache_read_input_tokens="28307" cache_creation="{'ephemeral_5m_input_tokens': 617, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013oJceqCCfL1NjKd3ThPbiX">
+    <param name="command">ls -la /home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/*/</param>
+    <param name="description">List gateway test subdirectories in erk-shared</param>
+  </tool_use>
+  <usage input_tokens="41" cache_creation_input_tokens="617" cache_read_input_tokens="28307" cache_creation="{'ephemeral_5m_input_tokens': 617, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CBvh2QuYSKCeh4R5bncp9g">
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/graphite/test_types.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/gt/test_prompts.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/time/test_fake_time.py
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/learn/extraction/claude_code_session_store/test_fake.py
+/home/runner/work/erk/erk/tests/erk_shared/gateway/http/test_fake_http_client.py
+/home/runner/work/erk/erk/tests/erk_shared/gateway/plan_data_provider/test_real_routing.py
+/home/runner/work/erk/erk/tests/unit/core/github/test_fake_github.py
+/home/runner/work/erk/erk/tests/unit/fakes/gateway/console/test_fake_console.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_agent_launcher.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_branch_manager.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_ci_runner.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_claude_installation.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_command_executor.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_erk_installation.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_git.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_git_commit_ops.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_git_remote_ops.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_git_status_ops.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_github.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_github_issues.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_graphite.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_http_client.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_prompt_executor.py
+/home/runner/work/erk/erk/tests/unit/fakes/test_fake_shell.py
+/home/runner/work/erk/erk/tests/unit/gateway/github/metadata/test_dependency_graph.py
+/home/runner/work/erk/erk/tests/unit/gateway/github/test_ci_summary_parsing.py
+/home/runner/work/erk/erk/tests/unit/gateways/agent_docs/test_fake_agent_docs.py
+/home/runner/work/erk/erk/tests/unit/gateways/browser/test_fake_browser_launcher.py
+/home/runner/work/erk/erk/tests/unit/gateways/clipboard/test_fake_clipboard.py
+/home/runner/work/erk/erk/tests/unit/gateways/codespace/test_fake_codespace.py
+  </tool_result>
+  <tool_result tool="toolu_013oJceqCCfL1NjKd3ThPbiX">
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/graphite/:
+total 12
+drwxr-xr-x 2 runner runner 4096 Mar  6 13:18 .
+drwxr-xr-x 5 runner runner 4096 Mar  6 13:18 ..
+-rw-r--r-- 1 runner runner    0 Mar  6 13:18 __init__.py
+-rw-r--r-- 1 runner runner 1119 Mar  6 13:18 test_types.py
+
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/gt/:
+total 16
+drwxr-xr-x 2 runner runner 4096 Mar  6 13:18 .
+drwxr-xr-x 5 runner runner 4096 Mar  6 13:18 ..
+-rw-r--r-- 1 runner runner   34 Mar  6 13:18 __init__.py
+-rw-r--r-- 1 runner runner 1945 Mar  6 13:18 test_prompts.py
+
+/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/time/:
+total 12
+drwxr-xr-x 2 runner runner 4096 Mar  6 13:18 .
+drwxr-xr-x 5 runner runner 4096 Mar  6 13:18 ..
+-rw-r--r-- 1 runner runner    0 Mar  6 13:18 __init__.py
+-rw-r--r-- 1 runner runner 1501 Mar  6 13:18 test_fake_time.py
+  </tool_result>
+  <assistant>Excellent! Now let me verify the structure by reading a couple key files to confirm what these tests contain:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="1869" cache_read_input_tokens="28924" cache_creation="{'ephemeral_5m_input_tokens': 1869, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01L5iq49jNr8eDkqFuTsXasW">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/time/test_fake_time.py</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1869" cache_read_input_tokens="28924" cache_creation="{'ephemeral_5m_input_tokens': 1869, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01VW1ViUe6xkikN4jxrumGGQ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/fakes/gateway/console/test_fake_console.py</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="1869" cache_read_input_tokens="28924" cache_creation="{'ephemeral_5m_input_tokens': 1869, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L5iq49jNr8eDkqFuTsXasW">
+     1→from datetime import datetime
+     2→
+     3→from erk_shared.gateway.time.fake import DEFAULT_FAKE_TIME, FakeTime
+     4→
+     5→
+     6→def test_now_returns_default_time() -&gt; None:
+     7→    fake_time = FakeTime()
+     8→    assert fake_time.now() == DEFAULT_FAKE_TIME
+     9→
+    10→
+    11→def test_now_returns_custom_time() -&gt; None:
+    12→    custom = datetime(2025, 6, 15, 10, 0, 0)
+    13→    fake_time = FakeTime(current_time=custom)
+    14→    assert fake_time.now() == custom
+    15→
+    16→
+    17→def test_sleep_tracks_calls() -&gt; None:
+    18→    fake_time = FakeTime()
+    19→    fake_time.sleep(1.5)
+    20→    fake_time.sleep(0.5)
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <tool_result tool="toolu_01VW1ViUe6xkikN4jxrumGGQ">
+     1→"""Unit tests for FakeConsole - Layer 1 (Fake Infrastructure Tests)."""
+     2→
+     3→import pytest
+     4→
+     5→from erk_shared.gateway.console.fake import FakeConsole
+     6→
+     7→
+     8→class TestFakeConsoleTTYState:
+     9→    """Tests for TTY detection state configuration."""
+    10→
+    11→    def test_is_interactive_returns_configured_value(self) -&gt; None:
+    12→        """is_stdin_interactive returns the configured is_interactive value."""
+    13→        console = FakeConsole(
+    14→            is_interactive=True,
+    15→            is_stdout_tty=None,
+    16→            is_stderr_tty=None,
+    17→            confirm_responses=None,
+    18→        )
+    19→        assert console.is_stdin_interactive() is True
+    20→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! Now I have a complete picture. Let me compile the final answer with all three categories:
+
+## Summary
+
+I've found the exact file paths for all three test categories:
+
+### 1. **HttpClient Gateway Fake Tests**
+
+**Primary Test File (erk-shared):**
+- `/home/runner/work/erk/erk/tests/erk_shared/gateway/http/test_fake_http_client.py`
+
+**Additional HttpClient Tests:**
+- `/home/runner/work/erk/erk/tests/unit/fakes/test_fake_http_client.py`
+- `/home/runner/work/erk/erk/tests/real/test_real_http_client.py`
+
+### 2. **One-Shot Command Tests**
+
+Multiple locations covering different aspects:
+
+- `/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot.py` (main one-shot command tests)
+- `/home/runner/work/erk/erk/tests/commands/one_shot/test_one_shot_dispatch.py` (dispatch variant)
+- `/home/runner/work/erk/erk/tests/commands/objective/test_plan_one_shot.py` (objective-related)
+- `/home/runner/work/erk/erk/tests/tui/app/test_one_shot_prompt.py` (TUI modal)
+- `/home/runner/work/erk/erk/tests/tui/screens/test_one_shot_prompt_screen.py` (TUI screen)
+- `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_register_one_shot_plan.py` (exec script)
+
+### 3. **General Gateway Fake Tests in erk-shared**
+
+**Location:** `/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/`
+
+**Subdirectories with gateway fake tests:**
+
+- `/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/time/test_fake_time.py` (FakeTime tests)
+- `/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/gt/test_prompts.py` (Graphite prompts)
+- `/home/runner/work/erk/erk/packages/erk-shared/tests/unit/gateway/graphite/test_types.py` (Graphite types)
+
+**Additional gateway tests in main erk repo:**
+
+- `/home/runner/work/erk/erk/tests/unit/fakes/gateway/console/test_fake_console.py` (FakeConsole)
+- `/home/runner/work/erk/erk/tests/unit/gateways/agent_docs/test_fake_agent_docs.py` (FakeAgentDocs)
+- `/home/runner/work/erk/erk/tests/unit/gateways/browser/test_fake_browser_launcher.py` (FakeBrowserLauncher)
+- `/home/runner/work/erk/erk/tests/unit/gateways/clipboard/test_fake_clipboard.py` (FakeClipboard)
+- `/home/runner/work/erk/erk/tests/unit/gateways/codespace/test_fake_codespace.py` (FakeCodespace)</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3412" cache_read_input_tokens="30793" cache_creation="{'ephemeral_5m_input_tokens': 3412, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
