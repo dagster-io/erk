@@ -24,6 +24,7 @@ from erk_shared.context.helpers import (
     require_repo_root,
     require_time,
 )
+from erk_shared.context.types import NoRepoSentinel
 from erk_shared.gateway.git.remote_ops.types import PushError
 from erk_shared.gateway.github.parsing import (
     construct_workflow_run_url,
@@ -91,7 +92,11 @@ def incremental_dispatch(
     plan_content = plan_file.read_text(encoding="utf-8")
 
     # Ensure trunk is synced
-    ensure_trunk_synced(erk_ctx, erk_ctx.repo)
+    repo = erk_ctx.repo
+    if isinstance(repo, NoRepoSentinel):
+        _output_error(output_format, "Not in a git repository")
+        raise SystemExit(1)
+    ensure_trunk_synced(erk_ctx, repo)
 
     # Sync local branch ref to remote (no checkout required)
     user_output(f"Syncing branch: {click.style(branch_name, fg='cyan')}")

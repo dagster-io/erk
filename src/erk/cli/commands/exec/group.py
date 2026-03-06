@@ -43,9 +43,6 @@ from erk.cli.commands.exec.scripts.download_remote_session import (
 )
 from erk.cli.commands.exec.scripts.exit_plan_mode_hook import exit_plan_mode_hook
 from erk.cli.commands.exec.scripts.extract_latest_plan import extract_latest_plan
-from erk.cli.commands.exec.scripts.incremental_dispatch import (
-    incremental_dispatch,
-)
 from erk.cli.commands.exec.scripts.fetch_sessions import fetch_sessions
 from erk.cli.commands.exec.scripts.generate_pr_address_summary import (
     generate_pr_address_summary,
@@ -77,6 +74,9 @@ from erk.cli.commands.exec.scripts.handle_no_changes import handle_no_changes
 from erk.cli.commands.exec.scripts.impl_init import impl_init
 from erk.cli.commands.exec.scripts.impl_signal import impl_signal
 from erk.cli.commands.exec.scripts.impl_verify import impl_verify
+from erk.cli.commands.exec.scripts.incremental_dispatch import (
+    incremental_dispatch,
+)
 from erk.cli.commands.exec.scripts.land_execute import land_execute
 from erk.cli.commands.exec.scripts.list_sessions import list_sessions
 from erk.cli.commands.exec.scripts.marker import marker

@@ -31,6 +31,7 @@ Store the PR number as `PR_NUMBER`.
 ### 3. Confirm with user
 
 Show the user:
+
 - Plan title (first `# ` heading from the plan file)
 - PR number and title
 - "Dispatching plan against PR #NNNN (branch: xxx). Proceed?"
@@ -46,6 +47,7 @@ erk exec incremental-dispatch --plan-file "$PLAN_FILE" --pr $PR_NUMBER --format 
 ### 5. Display results
 
 Parse the JSON output and display:
+
 - PR URL
 - Workflow URL
 - Any errors

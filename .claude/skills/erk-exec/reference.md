@@ -61,6 +61,7 @@ Quick reference for all `erk exec` subcommands.
 | `impl-init`                       | Initialize implementation by validating .erk/impl-context/ folder.          |
 | `impl-signal`                     | Signal implementation events to GitHub.                                     |
 | `impl-verify`                     | Verify .erk/impl-context/ folder still exists after implementation.         |
+| `incremental-dispatch`            | Dispatch a local plan against an existing PR for remote implementation.     |
 | `land-execute`                    | Execute deferred land operations.                                           |
 | `list-sessions`                   | List Claude Code sessions with metadata for the current project.            |
 | `marker create`                   | Create a marker file.                                                       |
@@ -661,6 +662,22 @@ Signal implementation events to GitHub.
 Verify .erk/impl-context/ folder still exists after implementation.
 
 **Usage:** `erk exec impl-verify`
+
+### incremental-dispatch
+
+Dispatch a local plan against an existing PR for remote implementation.
+
+**Usage:** `erk exec incremental-dispatch`
+
+**Options:**
+
+| Flag            | Type    | Required | Default        | Description                               |
+| --------------- | ------- | -------- | -------------- | ----------------------------------------- |
+| `--plan-file`   | PATH    | Yes      | Sentinel.UNSET | Path to plan markdown file                |
+| `--pr`          | INTEGER | Yes      | Sentinel.UNSET | PR number to dispatch against             |
+| `--ref`         | TEXT    | No       | -              | Branch to dispatch workflow from          |
+| `--ref-current` | FLAG    | No       | -              | Dispatch workflow from the current branch |
+| `--format`      | CHOICE  | No       | 'json'         | Output format                             |
 
 ### land-execute
 
