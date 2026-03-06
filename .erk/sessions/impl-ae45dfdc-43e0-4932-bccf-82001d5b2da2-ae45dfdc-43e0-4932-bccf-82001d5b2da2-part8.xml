@@ -1,0 +1,263 @@
+<session>
+  <meta branch="plnd/flat-prompt-executors-03-06-1518" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01KhymbBfxrVqK2qjDoMexZ3">
+&lt;retrieval_status&gt;success&lt;/retrieval_status&gt;
+
+&lt;task_id&gt;aca5f05&lt;/task_id&gt;
+
+&lt;task_type&gt;local_agent&lt;/task_type&gt;
+
+&lt;status&gt;completed&lt;/status&gt;
+
+&lt;output&gt;
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py","old_string":"from erk.cli.commands.pr import pr_group\nfrom erk_shared.core.fakes import FakeLlmCaller\nfrom erk_shared.core.llm_caller import LlmCallFailed, LlmResponse\nfrom erk_shared.gateway.branch_manager.types import SubmitBranchError","new_string":"from erk.cli.commands.pr import pr_group\nfrom erk_shared.core.prompt_executor import PromptResult\nfrom erk_shared.gateway.branch_manager.types import SubmitBranchError"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py","old_string":"def _make_rewrite_fakes(\n    env: ErkIsolatedFsEnv,\n    *,\n    branch_name: str,\n    pr_number: int = 42,\n    pr_body: str = \"\",\n    commits_ahead: int = 3,\n    squash_raises: Exception | None = None,\n    prompt_output: str = \"Add awesome feature\\n\\nThis PR adds an awesome new feature.\",\n    prompt_error: str | None = None,\n    submit_branch_error: SubmitBranchError | None = None,\n) -&gt; tuple[FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor, FakeLlmCaller]:\n    \"\"\"Create standard fakes for rewrite command tests.\"\"\"\n    pr_details = _make_pr_details(number=pr_number, branch=branch_name, body=pr_body)\n\n    git = FakeGit(\n        git_common_dirs={env.cwd: env.git_dir},\n        repository_roots={env.cwd: env.git_dir},\n        local_branches={env.cwd: [\"main\", branch_name]},\n        default_branches={env.cwd: \"main\"},\n        trunk_branches={env.git_dir: \"main\"},\n        current_branches={env.cwd: branch_name},\n        commits_ahead={(env.cwd, \"main\"): commits_ahead},\n        diff_to_branch={(env.cwd, \"main\"): \"diff --git a/file.py b/file.py\\n+new content\"},\n    )\n\n    graphite = FakeGraphite(\n        authenticated=True,\n        squash_branch_raises=squash_raises,\n        branches={\n            branch_name: BranchMetadata(\n                name=branch_name,\n                parent=\"main\",\n                children=[],\n                is_trunk=False,\n                commit_sha=None,\n            ),\n            \"main\": BranchMetadata(\n                name=\"main\",\n                parent=None,\n                children=[branch_name],\n                is_trunk=True,\n                commit_sha=None,\n            ),\n        },\n    )\n\n    github = FakeGitHub(\n        authenticated=True,\n        prs_by_branch={branch_name: pr_details},\n    )\n\n    executor_kwargs: dict = {\"available\": True}\n    if prompt_error is not None:\n        executor_kwargs[\"simulated_prompt_error\"] = prompt_error\n    else:\n        executor_kwargs[\"simulated_prompt_output\"] = prompt_output\n    executor = FakePromptExecutor(**executor_kwargs)\n\n    if prompt_error is not None:\n        llm_caller = FakeLlmCaller(response=LlmCallFailed(message=prompt_error))\n    else:\n        llm_caller = FakeLlmCaller(response=LlmResponse(text=prompt_output))\n\n    return git, graphite, github, executor, llm_caller","new_string":"def _make_rewrite_fakes(\n    env: ErkIsolatedFsEnv,\n    *,\n    branch_name: str,\n    pr_number: int = 42,\n    pr_body: str = \"\",\n    commits_ahead: int = 3,\n    squash_raises: Exception | None = None,\n    prompt_output: str = \"Add awesome feature\\n\\nThis PR adds an awesome new feature.\",\n    prompt_error: str | None = None,\n    submit_branch_error: SubmitBranchError | None = None,\n) -&gt; tuple[FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor]:\n    \"\"\"Create standard fakes for rewrite command tests.\"\"\"\n    pr_details = _make_pr_details(number=pr_number, branch=branch_name, body=pr_body)\n\n    git = FakeGit(\n        git_common_dirs={env.cwd: env.git_dir},\n        repository_roots={env.cwd: env.git_dir},\n        local_branches={env.cwd: [\"main\", branch_name]},\n        default_branches={env.cwd: \"main\"},\n        trunk_branches={env.git_dir: \"main\"},\n        current_branches={env.cwd: branch_name},\n        commits_ahead={(env.cwd, \"main\"): commits_ahead},\n        diff_to_branch={(env.cwd, \"main\"): \"diff --git a/file.py b/file.py\\n+new content\"},\n    )\n\n    graphite = FakeGraphite(\n        authenticated=True,\n        squash_branch_raises=squash_raises,\n        branches={\n            branch_name: BranchMetadata(\n                name=branch_name,\n                parent=\"main\",\n                children=[],\n                is_trunk=False,\n                commit_sha=None,\n            ),\n            \"main\": BranchMetadata(\n                name=\"main\",\n                parent=None,\n                children=[branch_name],\n                is_trunk=True,\n                commit_sha=None,\n            ),\n        },\n    )\n\n    github = FakeGitHub(\n        authenticated=True,\n        prs_by_branch={branch_name: pr_details},\n    )\n\n    # Configure FakePromptExecutor with PromptResult for commit message generation\n    if prompt_error is not None:\n        prompt_results = [PromptResult(success=False, output=\"\", error=prompt_error)]\n    else:\n        prompt_results = [PromptResult(success=True, output=prompt_output, error=None)]\n\n    executor = FakePromptExecutor(available=True, prompt_results=prompt_results)\n\n    return git, graphite, github, executor"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py","old_string":"def _make_rewrite_fakes(\n    env: ErkIsolatedFsEnv,\n    *,\n    branch_name: str,\n    pr_number: int = 42,\n    pr_body: str = \"\",\n    commits_ahead: int = 3,\n    squash_raises: Exception | None = None,\n    prompt_output: str = \"Add awesome feature\\n\\nThis PR adds an awesome new feature.\",\n    prompt_error: str | None = None,\n    submit_branch_error: SubmitBranchError | None = None,\n) -&gt; tuple[FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor, FakeLlmCaller]:\n    \"\"\"Create standard fakes for rewrite command tests.\"\"\"\n    pr_details = _make_pr_details(number=pr_number, branch=branch_name, body=pr_body)\n\n    git = FakeGit(\n        git_common_dirs={env.cwd: env.git_dir},\n        repository_roots={env.cwd: env.git_dir},\n        local_branches={env.cwd: [\"main\", branch_name]},\n        default_branches={env.cwd: \"main\"},\n        trunk_branches={env.git_dir: \"main\"},\n        current_branches={env.cwd: branch_name},\n        commits_ahead={(env.cwd, \"main\"): commits_ahead},\n        diff_to_branch={(env.cwd, \"main\"): \"diff --git a/file.py b/file.py\\n+new content\"},\n    )\n\n    graphite = FakeGraphite(\n        authenticated=True,\n        squash_branch_raises=squash_raises,\n        branches={\n            branch_name: BranchMetadata(\n                name=branch_name,\n                parent=\"main\",\n                children=[],\n                is_trunk=False,\n                commit_sha=None,\n            ),\n            \"main\": BranchMetadata(\n                name=\"main\",\n                parent=None,\n                children=[branch_name],\n                is_trunk=True,\n                commit_sha=None,\n            ),\n        },\n    )\n\n    github = FakeGitHub(\n        authenticated=True,\n        prs_by_branch={branch_name: pr_details},\n    )\n\n    executor_kwargs: dict = {\"available\": True}\n    if prompt_error is not None:\n        executor_kwargs[\"simulated_prompt_error\"] = prompt_error\n    else:\n        executor_kwargs[\"simulated_prompt_output\"] = prompt_output\n    executor = FakePromptExecutor(**executor_kwargs)\n\n    if prompt_error is not None:\n        llm_caller = FakeLlmCaller(response=LlmCallFailed(message=prompt_error))\n    else:\n        llm_caller = FakeLlmCaller(response=LlmResponse(text=prompt_output))\n\n    return git, graphite, github, executor, llm_caller","new_string":"def _make_rewrite_fakes(\n    env: ErkIsolatedFsEnv,\n    *,\n    branch_name: str,\n    pr_number: int = 42,\n    pr_body: str = \"\",\n    commits_ahead: int = 3,\n    squash_raises: Exception | None = None,\n    prompt_output: str = \"Add awesome feature\\n\\nThis PR adds an awesome new feature.\",\n    prompt_error: str | None = None,\n    submit_branch_error: SubmitBranchError | None = None,\n) -&gt; tuple[FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor]:\n    \"\"\"Create standard fakes for rewrite command tests.\"\"\"\n    pr_details = _make_pr_details(number=pr_number, branch=branch_name, body=pr_body)\n\n    git = FakeGit(\n        git_common_dirs={env.cwd: env.git_dir},\n        repository_roots={env.cwd: env.git_dir},\n        local_branches={env.cwd: [\"main\", branch_name]},\n        default_branches={env.cwd: \"main\"},\n        trunk_branches={env.git_dir: \"main\"},\n        current_branches={env.cwd: branch_name},\n        commits_ahead={(env.cwd, \"main\"): commits_ahead},\n        diff_to_branch={(env.cwd, \"main\"): \"diff --git a/file.py b/file.py\\n+new content\"},\n    )\n\n    graphite = FakeGraphite(\n        authenticated=True,\n        squash_branch_raises=squash_raises,\n        branches={\n            branch_name: BranchMetadata(\n                name=branch_name,\n                parent=\"main\",\n                children=[],\n                is_trunk=False,\n                commit_sha=None,\n            ),\n            \"main\": BranchMetadata(\n                name=\"main\",\n                parent=None,\n                children=[branch_name],\n                is_trunk=True,\n                commit_sha=None,\n            ),\n        },\n    )\n\n    github = FakeGitHub(\n        authenticated=True,\n        prs_by_branch={branch_name: pr_details},\n    )\n\n    # Configure FakePromptExecutor with PromptResult for commit message generation\n    if prompt_error is not None:\n        prompt_results = [PromptResult(success=False, output=\"\", error=prompt_error)]\n    else:\n        prompt_results = [PromptResult(success=True, output=prompt_output, error=None)]\n\n    executor = FakePromptExecutor(available=True, prompt_results=prompt_results)\n\n    return git, graphite, github, executor"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py","old_string":"def test_pr_rewrite_happy_path() -&gt; None:\n    \"\"\"Test successful rewrite: squash, generate, amend, push, update PR.\"\"\"\n    runner = CliRunner()\n    with erk_isolated_fs_env(runner, env_overrides=None) as env:\n        git, graphite, github, executor, llm_caller = _make_rewrite_fakes(\n            env, branch_name=\"feature\"\n        )\n\n        ctx = build_workspace_test_context(\n            env,\n            git=git,\n            github=github,\n            graphite=graphite,\n            prompt_executor=executor,\n            llm_caller=llm_caller,\n        )\n\n        result = runner.invoke(pr_group, [\"rewrite\"], obj=ctx)\n\n        assert result.exit_code == 0, result.output\n        assert \"PR title and description updated\" in result.output\n        assert \"Add awesome feature\" in result.output\n\n        # Verify commit was amended\n        assert len(git.commits) == 1\n        commit_message = git.commits[0].message\n        assert \"Add awesome feature\" in commit_message\n        assert \"awesome new feature\" in commit_message\n\n        # Verify branch was pushed (Graphite submit_stack was called)\n        assert \"Branch pushed\" in result.output\n\n        # Verify PR was updated\n        assert len(github.updated_pr_titles) == 1\n        assert github.updated_pr_titles[0] == (42, \"Add awesome feature\")","new_string":"def test_pr_rewrite_happy_path() -&gt; None:\n    \"\"\"Test successful rewrite: squash, generate, amend, push, update PR.\"\"\"\n    runner = CliRunner()\n    with erk_isolated_fs_env(runner, env_overrides=None) as env:\n        git, graphite, github, executor = _make_rewrite_fakes(\n            env, branch_name=\"feature\"\n        )\n\n        ctx = build_workspace_test_context(\n            env,\n            git=git,\n            github=github,\n            graphite=graphite,\n            prompt_executor=executor,\n        )\n\n        result = runner.invoke(pr_group, [\"rewrite\"], obj=ctx)\n\n        assert result.exit_code == 0, result.output\n        assert \"PR title and description updated\" in result.output\n        assert \"Add awesome feature\" in result.output\n\n        # Verify commit was amended\n        assert len(git.commits) == 1\n        commit_message = git.commits[0].message\n        assert \"Add awesome feature\" in commit_message\n        assert \"awesome new feature\" in commit_message\n\n        # Verify branch was pushed (Graphite submit_stack was called)\n        assert \"Branch pushed\" in result.output\n\n        # Verify PR was updated\n        assert len(github.updated_pr_titles) == 1\n        assert github.updated_pr_titles[0] == (42, \"Add awesome feature\")"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py","old_string":"def test_pr_rewrite_already_single_commit() -&gt; None:\n    \"\"\"Test rewrite with already-single-commit (squash is idempotent).\"\"\"\n    runner = CliRunner()\n    with erk_isolated_fs_env(runner, env_overrides=None) as env:\n        git, graphite, github, executor, llm_caller = _make_rewrite_fakes(\n            env, branch_name=\"feature\", commits_ahead=1\n        )\n\n        ctx = build_workspace_test_context(\n            env,\n            git=git,\n            github=github,\n            graphite=graphite,\n            prompt_executor=executor,\n            llm_caller=llm_caller,\n        )\n\n        result = runner.invoke(pr_group, [\"rewrite\"], obj=ctx)\n\n        assert result.exit_code == 0, result.output\n        assert \"PR title and description updated\" in result.output","new_string":"def test_pr_rewrite_already_single_commit() -&gt; None:\n    \"\"\"Test rewrite with already-single-commit (squash is idempotent).\"\"\"\n    runner = CliRunner()\n    with erk_isolated_fs_env(runner, env_overrides=None) as env:\n        git, graphite, github, executor = _make_rewrite_fakes(\n            env, branch_name=\"feature\", commits_ahead=1\n        )\n\n        ctx = build_workspace_test_context(\n            env,\n            git=git,\n            github=github,\n            graphite=graphite,\n            prompt_executor=executor,\n        )\n\n        result = runner.invoke(pr_group, [\"rewrite\"], obj=ctx)\n\n        assert result.exit_code == 0, result.output\n        assert \"PR title and description updated\" in result.output"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py","old_string":"def test_pr_rewrite_fails_when_squash_conflicts() -&gt; None:\n    \"\"\"Test that rewrite fails when squash encounters conflicts.\"\"\"\n    runner = CliRunner()\n    with erk_isolated_fs_env(runner, env_overrides=None) as env:\n        git, graphite, github, executor, llm_caller = _make_rewrite_fakes(\n            env,\n            branch_name=\"feature\",\n            squash_raises=RuntimeError(\"Squash conflict: resolve manually\"),\n        )\n\n        ctx = build_workspace_test_context(\n            env,\n            git=git,\n            github=github,\n            graphite=graphite,\n            prompt_executor=executor,\n            llm_caller=llm_caller,\n        )\n\n        result = runner.invoke(pr_group, [\"rewrite\"], obj=ctx)\n\n        assert result.exit_code != 0\n        assert \"Squash failed\" in result.output","new_string":"def test_pr_rewrite_fails_when_squash_conflicts() -&gt; None:\n    \"\"\"Test that rewrite fails when squash encounters conflicts.\"\"\"\n    runner = CliRunner()\n    with erk_isolated_fs_env(runner, env_overrides=None) as env:\n        git, graphite, github, executor = _make_rewrite_fakes(\n            env,\n            branch_name=\"feature\",\n            squash_raises=RuntimeError(\"Squash conflict: resolve manually\"),\n        )\n\n        ctx = build_workspace_test_context(\n            env,\n            git=git,\n            github=github,\n            graphite=graphite,\n            prompt_executor=executor,\n        )\n\n        result = runner.invoke(pr_group, [\"rewrite\"], obj=ctx)\n\n        assert result.exit_code != 0\n        assert \"Squash failed\" in result.output"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py","old_string":"def test_pr_rewrite_fails_when_ai_generation_fails() -&gt; None:\n    \"\"\"Test that rewrite fails when commit message generation fails.\"\"\"\n    runner = CliRunner()\n    with erk_isolated_fs_env(runner, env_overrides=None) as env:\n        git, graphite, github, executor, llm_caller = _make_rewrite_fakes(\n            env,\n            branch_name=\"feature\",\n            prompt_error=\"Claude CLI execution failed\",\n        )\n\n        ctx = build_workspace_test_context(\n            env,\n            git=git,\n            github=github,\n            graphite=graphite,\n            prompt_executor=executor,\n            llm_caller=llm_caller,\n        )\n\n        result = runner.invoke(pr_group, [\"rewrite\"], obj=ctx)\n\n        assert result.exit_code != 0\n        assert \"Failed to generate message\" in result.output","new_string":"def test_pr_rewrite_fails_when_ai_generation_fails() -&gt; None:\n    \"\"\"Test that rewrite fails when commit message generation fails.\"\"\"\n    runner = CliRunner()\n    with erk_isolated_fs_env(runner, env_overrides=None) as env:\n        git, graphite, github, executor = _make_rewrite_fakes(\n            env,\n            branch_name=\"feature\",\n            prompt_error=\"Claude CLI execution failed\",\n        )\n\n        ctx = build_workspace_test_context(\n            env,\n            git=git,\n            github=github,\n            graphite=graphite,\n            prompt_executor=executor,\n        )\n\n        result = runner.invoke(pr_group, [\"rewrite\"], obj=ctx)\n\n        assert result.exit_code != 0\n        assert \"Failed to generate message\" in result.output"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py","old_string":"def test_pr_rewrite_planned_pr_backend_preserves_metadata() -&gt; None:\n    \"\"\"Test that rewrite preserves metadata prefix and omits Closes # for draft PR backend.\"\"\"\n    runner = CliRunner()\n    with erk_isolated_fs_env(runner, env_overrides=None) as env:\n        metadata_body = format_plan_header_body_for_test()\n        plan_content = \"# My Plan\\n\\nImplement the thing.\"\n        pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)\n\n        git, graphite, github, executor, llm_caller = _make_rewrite_fakes(\n            env,\n            branch_name=\"feature\",\n            pr_body=pr_body,\n        )\n\n        ctx = build_workspace_test_context(\n            env,\n            git=git,\n            github=github,\n            graphite=graphite,\n            prompt_executor=executor,\n            llm_caller=llm_caller,\n            plan_store=PlannedPRBackend(github, github.issues, time=FakeTime()),\n        )\n\n        result = runner.invoke(pr_group, [\"rewrite\"], obj=ctx)\n\n        assert result.exit_code == 0, result.output\n\n        # Verify the PR body preserves metadata prefix\n        assert len(github.updated_pr_bodies) == 1\n        updated_body = github.updated_pr_bodies[0][1]\n        assert \"plan-header\" in updated_body\n        # No self-closing reference for draft PR backend\n        assert \"Closes #\" not in updated_body","new_string":"def test_pr_rewrite_planned_pr_backend_preserves_metadata() -&gt; None:\n    \"\"\"Test that rewrite preserves metadata prefix and omits Closes # for draft PR backend.\"\"\"\n    runner = CliRunner()\n    with erk_isolated_fs_env(runner, env_overrides=None) as env:\n        metadata_body = format_plan_header_body_for_test()\n        plan_content = \"# My Plan\\n\\nImplement the thing.\"\n        pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)\n\n        git, graphite, github, executor = _make_rewrite_fakes(\n            env,\n            branch_name=\"feature\",\n            pr_body=pr_body,\n        )\n\n        ctx = build_workspace_test_context(\n            env,\n            git=git,\n            github=github,\n            graphite=graphite,\n            prompt_executor=executor,\n            plan_store=PlannedPRBackend(github, github.issues, time=FakeTime()),\n        )\n\n        result = runner.invoke(pr_group, [\"rewrite\"], obj=ctx)\n\n        assert result.exit_code == 0, result.output\n\n        # Verify the PR body preserves metadata prefix\n        assert len(github.updated_pr_bodies) == 1\n        updated_body = github.updated_pr_bodies[0][1]\n        assert \"plan-header\" in updated_body\n        # No self-closing reference for draft PR backend\n        assert \"Closes #\" not in updated_body"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py","old_string":"def test_pr_rewrite_retracks_graphite_branch_after_amend() -&gt; None:\n    \"\"\"Test that rewrite retracks Graphite branch immediately after amending commit.\n\n    The retrack must happen right after amend (before push or PR update) so that\n    Graphite's cache stays consistent even if subsequent operations fail.\n    \"\"\"\n    runner = CliRunner()\n    with erk_isolated_fs_env(runner, env_overrides=None) as env:\n        git, graphite, github, executor, llm_caller = _make_rewrite_fakes(\n            env, branch_name=\"feature\"\n        )\n\n        ctx = build_workspace_test_context(\n            env,\n            git=git,\n            github=github,\n            graphite=graphite,\n            prompt_executor=executor,\n            llm_caller=llm_caller,\n            use_graphite=True,\n        )\n\n        result = runner.invoke(pr_group, [\"rewrite\"], obj=ctx)\n\n        assert result.exit_code == 0, result.output\n        # Verify retrack_branch was called with repo root and branch name\n        assert len(graphite.retrack_branch_calls) == 1\n        retrack_cwd, retrack_branch = graphite.retrack_branch_calls[0]\n        assert retrack_cwd == env.git_dir\n        assert retrack_branch == \"feature\"","new_string":"def test_pr_rewrite_retracks_graphite_branch_after_amend() -&gt; None:\n    \"\"\"Test that rewrite retracks Graphite branch immediately after amending commit.\n\n    The retrack must happen right after amend (before push or PR update) so that\n    Graphite's cache stays consistent even if subsequent operations fail.\n    \"\"\"\n    runner = CliRunner()\n    with erk_isolated_fs_env(runner, env_overrides=None) as env:\n        git, graphite, github, executor = _make_rewrite_fakes(\n            env, branch_name=\"feature\"\n        )\n\n        ctx = build_workspace_test_context(\n            env,\n            git=git,\n            github=github,\n            graphite=graphite,\n            prompt_executor=executor,\n            use_graphite=True,\n        )\n\n        result = runner.invoke(pr_group, [\"rewrite\"], obj=ctx)\n\n        assert result.exit_code == 0, result.output\n        # Verify retrack_branch was called with repo root and branch name\n        assert len(graphite.retrack_branch_calls) == 1\n        retrack_cwd, retrack_branch = graphite.retrack_branch_calls[0]\n        assert retrack_cwd == env.git_dir\n        assert retrack_branch == \"feature\""}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py","old_string":"def test_pr_rewrite_skips_lifecycle_when_plan_not_resolved() -&gt; None:\n    \"\"\"Rewrite skips lifecycle update when plan cannot be resolved from branch name.\"\"\"\n    runner = CliRunner()\n    with erk_isolated_fs_env(runner, env_overrides=None) as env:\n        # plnd/ branch — resolve_plan_id_for_branch returns None\n        branch_name = \"plnd/add-feature\"\n\n        # Create plan issue with lifecycle_stage \"planned\"\n        plan_body = format_plan_header_body_for_test(lifecycle_stage=\"planned\")\n        plan_issue = IssueInfo(\n            number=100,\n            title=\"Plan #100\",\n            body=plan_body,\n            state=\"OPEN\",\n            url=\"https://github.com/owner/repo/issues/100\",\n            labels=[\"erk-pr\", \"erk-plan\"],\n            assignees=[],\n            created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),\n            updated_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),\n            author=\"test-user\",\n        )\n        fake_issues = FakeGitHubIssues(issues={100: plan_issue})\n\n        git, graphite, github, executor, llm_caller = _make_rewrite_fakes(\n            env,\n            branch_name=branch_name,\n        )\n\n        ctx = build_workspace_test_context(\n            env,\n            git=git,\n            github=github,\n            graphite=graphite,\n            prompt_executor=executor,\n            llm_caller=llm_caller,\n            issues=fake_issues,\n        )\n\n        result = runner.invoke(pr_group, [\"rewrite\"], obj=ctx)\n\n        assert result.exit_code == 0, result.output\n\n        # Plan cannot be resolved from branch name — no lifecycle update\n        assert len(fake_issues.updated_bodies) == 0","new_string":"def test_pr_rewrite_skips_lifecycle_when_plan_not_resolved() -&gt; None:\n    \"\"\"Rewrite skips lifecycle update when plan cannot be resolved from branch name.\"\"\"\n    runner = CliRunner()\n    with erk_isolated_fs_env(runner, env_overrides=None) as env:\n        # plnd/ branch — resolve_plan_id_for_branch returns None\n        branch_name = \"plnd/add-feature\"\n\n        # Create plan issue with lifecycle_stage \"planned\"\n        plan_body = format_plan_header_body_for_test(lifecycle_stage=\"planned\")\n        plan_issue = IssueInfo(\n            number=100,\n            title=\"Plan #100\",\n            body=plan_body,\n            state=\"OPEN\",\n            url=\"https://github.com/owner/repo/issues/100\",\n            labels=[\"erk-pr\", \"erk-plan\"],\n            assignees=[],\n            created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),\n            updated_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),\n            author=\"test-user\",\n        )\n        fake_issues = FakeGitHubIssues(issues={100: plan_issue})\n\n        git, graphite, github, executor = _make_rewrite_fakes(\n            env,\n            branch_name=branch_name,\n        )\n\n        ctx = build_workspace_test_context(\n            env,\n            git=git,\n            github=github,\n            graphite=graphite,\n            prompt_executor=executor,\n            issues=fake_issues,\n        )\n\n        result = runner.invoke(pr_group, [\"rewrite\"], obj=ctx)\n\n        assert result.exit_code == 0, result.output\n\n        # Plan cannot be resolved from branch name — no lifecycle update\n        assert len(fake_issues.updated_bodies) == 0"}
+[Tool: Edit] {"file_path":"/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py","old_string":"def test_pr_rewrite_skips_lifecycle_when_plan_not_resolved() -&gt; None:\n    \"\"\"Rewrite skips lifecycle update when plan cannot be resolved from branch name.\"\"\"\n    runner = CliRunner()\n    with erk_isolated_fs_env(runner, env_overrides=None) as env:\n        # plnd/ branch — resolve_plan_id_for_branch returns None\n        branch_name = \"plnd/add-feature\"\n\n        # Create plan issue with lifecycle_stage \"planned\"\n        plan_body = format_plan_header_body_for_test(lifecycle_stage=\"planned\")\n        plan_issue = IssueInfo(\n            number=100,\n            title=\"Plan #100\",\n            body=plan_body,\n            state=\"OPEN\",\n            url=\"https://github.com/owner/repo/issues/100\",\n            labels=[\"erk-pr\", \"erk-plan\"],\n            assignees=[],\n            created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),\n            updated_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),\n            author=\"test-user\",\n        )\n        fake_issues = FakeGitHubIssues(issues={100: plan_issue})\n\n        git, graphite, github, executor, llm_caller = _make_rewrite_fakes(\n            env,\n            branch_name=branch_name,\n        )\n\n        ctx = build_workspace_test_context(\n            env,\n            git=git,\n            github=github,\n            graphite=graphite,\n            prompt_executor=executor,\n            llm_caller=llm_caller,\n            issues=fake_issues,\n        )\n\n        result = runner.invoke(pr_group, [\"rewrite\"], obj=ctx)\n\n        assert result.exit_code == 0, result.output\n\n        # Plan cannot be resolved from branch name — no lifecycle update\n        assert len(fake_issues.updated_bodies) == 0","new_string":"def test_pr_rewrite_skips_lifecycle_when_plan_not_resolved() -&gt; None:\n    \"\"\"Rewrite skips lifecycle update when plan cannot be resolved from branch name.\"\"\"\n    runner = CliRunner()\n    with erk_isolated_fs_env(runner, env_overrides=None) as env:\n        # plnd/ branch — resolve_plan_id_for_branch returns None\n        branch_name = \"plnd/add-feature\"\n\n        # Create plan issue with lifecycle_stage \"planned\"\n        plan_body = format_plan_header_body_for_test(lifecycle_stage=\"planned\")\n        plan_issue = IssueInfo(\n            number=100,\n            title=\"Plan #100\",\n            body=plan_body,\n            state=\"OPEN\",\n            url=\"https://github.com/owner/repo/issues/100\",\n            labels=[\"erk-pr\", \"erk-plan\"],\n            assignees=[],\n            created_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),\n            updated_at=datetime(2024, 1, 15, 10, 30, tzinfo=UTC),\n            author=\"test-user\",\n        )\n        fake_issues = FakeGitHubIssues(issues={100: plan_issue})\n\n        git, graphite, github, executor = _make_rewrite_fakes(\n            env,\n            branch_name=branch_name,\n        )\n\n        ctx = build_workspace_test_context(\n            env,\n            git=git,\n            github=github,\n            graphite=graphite,\n            prompt_executor=executor,\n            issues=fake_issues,\n        )\n\n        result = runner.invoke(pr_group, [\"rewrite\"], obj=ctx)\n\n        assert result.exit_code == 0, result.output\n\n        # Plan cannot be resolved from branch name — no lifecycle update\n        assert len(fake_issues.updated_bodies) == 0"}
+[Tool: Grep] {"pattern":"llm_caller|LlmCaller|LlmResponse|LlmCallFailed|FakeLlmCaller","path":"/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py","output_mode":"content"}
+[Tool: Grep] {"pattern":"llm_caller|LlmCaller|LlmResponse|LlmCallFailed|FakeLlmCaller","path":"/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py","output_mode":"content"}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py","offset":1,"limit":70}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py","offset":100,"limit":25}
+[Tool: Read] {"file_path":"/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py","offset":100,"limit":25}
+[Tool: Bash] {"command":"python -m py_compile tests/commands/pr/test_rewrite.py","description":"Verify Python syntax is valid"}
+[Tool: Bash] {"command":"python -m py_compile tests/commands/pr/test_rewrite.py","description":"Verify Python syntax is valid"}
+
+
+... [35 lines omitted] ...
+
+Successfully updated `/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py` to remove all references to `FakeLlmCaller`, `LlmCaller`, `LlmResponse`, `LlmCallFailed`, and `llm_caller`. 
+   - Removed: `from erk_shared.core.llm_caller import LlmCallFailed, LlmResponse`
+   - For errors: `PromptResult(success=False, output="", error=prompt_error)`
+   - For success: `PromptResult(success=True, output=prompt_output, error=None)`
+  </tool_result>
+  <tool_result tool="toolu_018UMcDjktsNKDofpYCYNC7L">
+     1→"""Fake implementation of PromptExecutor for testing.
+     2→
+     3→This fake enables testing prompt execution without
+     4→requiring the actual Claude CLI or using subprocess mocks.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from collections.abc import Iterator
+    10→from pathlib import Path
+    11→from typing import TYPE_CHECKING
+    12→
+    13→if TYPE_CHECKING:
+    14→    from erk_shared.context.types import PermissionMode
+    15→
+    16→from erk_shared.core.prompt_executor import (
+    17→    CommandResult,
+    18→    ErrorEvent,
+    19→    ExecutorEvent,
+    20→    NoOutputEvent,
+    21→    NoTurnsEvent,
+    22→    PlanNumberEvent,
+    23→    PrNumberEvent,
+    24→    ProcessErrorEvent,
+    25→    PromptExecutor,
+    26→    PromptResult,
+    27→    PrTitleEvent,
+    28→    PrUrlEvent,
+    29→    SpinnerUpdateEvent,
+    30→    TextEvent,
+
+... [410 lines omitted] ...
+
+    57→        # Test command failure
+    61→        ... except RuntimeError:
+    62→        ...     print("Command failed as expected")
+    82→        simulated_process_error: str | None = None,
+    85→        simulated_prompt_error: str | None = None,
+    93→            command_should_fail: Whether execute_command should raise RuntimeError
+   102→            simulated_process_error: Error message to simulate process startup failure
+   109→            simulated_prompt_error: Error message to return from execute_prompt() on failure.
+   110→                If set, execute_prompt() will return a failure result.
+   113→                tests the "empty response" failure mode where Claude produces JSON
+   127→        self._simulated_process_error = simulated_process_error
+   133→        self._simulated_prompt_error = simulated_prompt_error
+   176→            RuntimeError: If command_should_fail was set to True
+   180→        # Process error takes precedence (simulates Popen failure)
+   181→        if self._simulated_process_error is not None:
+   182→            yield ProcessErrorEvent(message=self._simulated_process_error)
+   196→            diag += "\n  Run 'claude' directly to see hook error messages"
+   202→            yield ErrorEvent(message=f"Claude command {command} failed (simulated failure)")
+   260→            RuntimeError: If command_should_fail was set to True
+   272→                error_message=f"Claude command {command} failed (simulated failure)",
+   283→            error_message=None,
+   304→            RuntimeError: If Claude CLI is not available
+   307→            raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
+   361→            PromptResult with simulated output or error
+   365→        if self._simulated_prompt_error is not None:
+   369→                error=self._simulated_prompt_error,
+   386→            error=None,
+  </tool_result>
+  <assistant>Good. Agent a6cf9b8 (commit message gen tests) and aca5f05 (rewrite tests) are completed. Agent a293280 (submit tests) is still running. Now I can see the custom `FakePromptExecutor` in `tests/fakes/prompt_executor.py` - it does NOT have a `prompt_results` parameter. It uses `simulated_prompt_output`, `simulated_prompt_error`, etc. This means the agents that used `prompt_results=` with this custom fake will have issues.
+
+Let me check: the background agents were updating tests that use `build_workspace_test_context` which likely uses the custom FakePromptExecutor, not the one from `erk_shared.core.fakes`. Let me verify what `build_workspace_test_context` uses and then wait for the last agent to finish.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="49990" cache_read_input_tokens="44491" cache_creation="{'ephemeral_5m_input_tokens': 49990, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01BvaxrqReu3PjRybi9vTKGF">
+    <param name="pattern">def build_workspace_test_context</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="49990" cache_read_input_tokens="44491" cache_creation="{'ephemeral_5m_input_tokens': 49990, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_013rgte1egJ97oNzpRUpdQ34">
+    <param name="pattern">prompt_executor</param>
+    <param name="path">/home/runner/work/erk/erk/tests/fakes/prompt_executor.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="49990" cache_read_input_tokens="44491" cache_creation="{'ephemeral_5m_input_tokens': 49990, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BvaxrqReu3PjRybi9vTKGF">
+Found 1 file
+tests/test_utils/context_builders.py
+  </tool_result>
+  <tool_result tool="toolu_013rgte1egJ97oNzpRUpdQ34">
+16:from erk_shared.core.prompt_executor import (
+  </tool_result>
+  <tool_use name="Read" id="toolu_014PuNspqRVoDETzBGLwSK8D">
+    <param name="file_path">/home/runner/work/erk/erk/tests/test_utils/context_builders.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="843" cache_read_input_tokens="94481" cache_creation="{'ephemeral_5m_input_tokens': 843, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014PuNspqRVoDETzBGLwSK8D">
+     1→"""Shared context builders for test scenarios.
+     2→
+     3→This module provides reusable context builder functions to eliminate duplication
+     4→across test files. These builders encapsulate common patterns for setting up
+     5→ErkContext with appropriate fake implementations.
+     6→"""
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk_shared.core.fakes import FakePlanListService
+    10→from erk_shared.core.plan_list_service import PlanListData
+    11→from erk_shared.gateway.git.dry_run import DryRunGit
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.github.fake import FakeGitHub
+    14→from erk_shared.gateway.github.types import PullRequestInfo, WorkflowRun
+    15→from erk_shared.plan_store.types import Plan
+    16→from tests.fakes.shell import FakeShell
+    17→from tests.test_utils.env_helpers import ErkInMemEnv, ErkIsolatedFsEnv
+    18→
+    19→
+    20→def build_workspace_test_context(
+    21→    env: ErkInMemEnv | ErkIsolatedFsEnv,
+    22→    *,
+    23→    dry_run: bool = False,
+    24→    use_graphite: bool = False,
+    25→    current_branch: str | None = None,
+    26→    **kwargs,
+    27→) -&gt; ErkContext:
+    28→    """Build ErkContext for workspace command tests (create, split, consolidate, delete).
+    29→
+    30→    This builder provides a standard context configuration for workspace manipulation
+
+... [123 lines omitted] ...
+
+   137→    warnings: tuple[str, ...] = (),
+   145→            warnings=warnings,
+  </tool_result>
+  <assistant>I see - `build_workspace_test_context` passes `prompt_executor=executor` through `**kwargs` to `env.build_context()`. The tests use the custom `FakePromptExecutor` from `tests/fakes/prompt_executor.py`, which does NOT have `prompt_results` kwarg. 
+
+Looking at the agent changes more carefully, the submit test agent used `prompt_results=` on `FakePromptExecutor(available=True, prompt_results=[...])` which will cause a `TypeError` because the custom fake doesn't accept that parameter. The rewrite agent also used `FakePromptExecutor(available=True, prompt_results=[...])`.
+
+The commit message generator tests use `FakePromptExecutor` from `erk_shared.core.fakes` which DOES accept `prompt_results`. So those are fine.
+
+Let me check what the test files actually import - are they using the custom fake or the shared one?</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2297" cache_read_input_tokens="95324" cache_creation="{'ephemeral_5m_input_tokens': 2297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01BkaeHqJRE76UomJsc6mMiN">
+    <param name="pattern">FakePromptExecutor</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2297" cache_read_input_tokens="95324" cache_creation="{'ephemeral_5m_input_tokens': 2297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_018HdnHQWRBwrLHTSd2165FS">
+    <param name="pattern">FakePromptExecutor</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2297" cache_read_input_tokens="95324" cache_creation="{'ephemeral_5m_input_tokens': 2297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01Cbg5qjLmqCH4M2DBp2u5tE">
+    <param name="pattern">FakePromptExecutor</param>
+    <param name="path">/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2297" cache_read_input_tokens="95324" cache_creation="{'ephemeral_5m_input_tokens': 2297, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018HdnHQWRBwrLHTSd2165FS">
+21:from tests.fakes.prompt_executor import FakePromptExecutor
+36:        executor = FakePromptExecutor(available=False)
+124:        executor = FakePromptExecutor(available=False)
+202:        executor = FakePromptExecutor(
+244:        executor = FakePromptExecutor(available=True)
+296:        executor = FakePromptExecutor(available=True)
+385:        executor = FakePromptExecutor(
+482:        executor = FakePromptExecutor(
+581:        executor = FakePromptExecutor(
+721:        executor = FakePromptExecutor(
+826:        executor = FakePromptExecutor(
+929:        executor = FakePromptExecutor(
+1031:        executor = FakePromptExecutor(
+1123:        executor = FakePromptExecutor(
+1213:        executor = FakePromptExecutor(
+1313:        executor = FakePromptExecutor(
+1470:        executor = FakePromptExecutor(
+1640:        executor = FakePromptExecutor(
+1744:        executor = FakePromptExecutor(
+1820:        executor = FakePromptExecutor(available=True)
+1918:        executor = FakePromptExecutor(
+2020:        executor = FakePromptExecutor(
+  </tool_result>
+  <tool_result tool="toolu_01BkaeHqJRE76UomJsc6mMiN">
+25:from tests.fakes.prompt_executor import FakePromptExecutor
+66:) -&gt; tuple[FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor]:
+107:    # Configure FakePromptExecutor with PromptResult for commit message generation
+113:    executor = FakePromptExecutor(available=True, prompt_results=prompt_results)
+211:        executor = FakePromptExecutor(available=True)
+286:        executor = FakePromptExecutor(available=True)
+305:        executor = FakePromptExecutor(available=False)
+  </tool_result>
+  <tool_result tool="toolu_01Cbg5qjLmqCH4M2DBp2u5tE">
+11:from erk_shared.core.fakes import FakePromptExecutor
+42:    executor = FakePromptExecutor(
+89:    executor = FakePromptExecutor(
+126:    executor = FakePromptExecutor(
+156:    executor = FakePromptExecutor(
+184:    executor = FakePromptExecutor(
+211:    executor = FakePromptExecutor(
+237:    executor = FakePromptExecutor(
+277:    executor = FakePromptExecutor(
+311:    executor = FakePromptExecutor(
+351:    executor = FakePromptExecutor(
+382:    executor = FakePromptExecutor(
+430:    executor = FakePromptExecutor(
+472:    executor = FakePromptExecutor(
+512:    executor = FakePromptExecutor(
+  </tool_result>
+  <assistant>As I suspected:
+- `test_commit_message_generator.py` imports from `erk_shared.core.fakes` which has `prompt_results` - OK
+- `test_rewrite.py` imports from `tests.fakes.prompt_executor` which does NOT have `prompt_results` - BROKEN
+- `test_submit.py` imports from `tests.fakes.prompt_executor` which does NOT have `prompt_results` - BROKEN
+
+The agents used `prompt_results=` parameter on the custom fake which doesn't accept it. I need to fix the rewrite tests (which are done) and wait for submit tests to finish (still running). The fix is: the custom `FakePromptExecutor` uses `simulated_prompt_output` and `simulated_prompt_error` - the agents should have used those instead.
+
+Let me look at the current state of both files and fix the incompatibility. The rewrite test has the issue at the `_make_rewrite_fakes` function. Let me also wait for the submit agent to finish.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1646" cache_read_input_tokens="97621" cache_creation="{'ephemeral_5m_input_tokens': 1646, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_01B2BwjTpECssczRx1K7K97B">
+    <param name="task_id">a293280</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1646" cache_read_input_tokens="97621" cache_creation="{'ephemeral_5m_input_tokens': 1646, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+</session>

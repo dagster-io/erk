@@ -1,0 +1,140 @@
+<session>
+  <meta branch="plnd/flat-prompt-executors-03-06-1518" />
+  <meta model="claude-opus-4-6" />
+  <assistant>The submit test agent is still running but seems close - it already fixed itself by discovering the `prompt_results` incompatibility and switched to `simulated_prompt_output`/`simulated_prompt_error`. It also fixed the prompt_calls tuple access pattern. Let me now also fix the rewrite test file which has the same issue with `prompt_results=` on the custom FakePromptExecutor. Let me check the current state of the rewrite file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="30062" cache_read_input_tokens="99267" cache_creation="{'ephemeral_5m_input_tokens': 30062, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Pr8Ks6mHoJFRqnqNS98Mza">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py</param>
+    <param name="offset">60</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="30062" cache_read_input_tokens="99267" cache_creation="{'ephemeral_5m_input_tokens': 30062, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Pr8Ks6mHoJFRqnqNS98Mza">
+    60→    pr_body: str = "",
+    61→    commits_ahead: int = 3,
+    62→    squash_raises: Exception | None = None,
+    63→    prompt_output: str = "Add awesome feature\n\nThis PR adds an awesome new feature.",
+    64→    prompt_error: str | None = None,
+    65→    submit_branch_error: SubmitBranchError | None = None,
+    66→) -&gt; tuple[FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor]:
+    67→    """Create standard fakes for rewrite command tests."""
+    68→    pr_details = _make_pr_details(number=pr_number, branch=branch_name, body=pr_body)
+    69→
+    70→    git = FakeGit(
+    71→        git_common_dirs={env.cwd: env.git_dir},
+    72→        repository_roots={env.cwd: env.git_dir},
+    73→        local_branches={env.cwd: ["main", branch_name]},
+    74→        default_branches={env.cwd: "main"},
+    75→        trunk_branches={env.git_dir: "main"},
+    76→        current_branches={env.cwd: branch_name},
+    77→        commits_ahead={(env.cwd, "main"): commits_ahead},
+    78→        diff_to_branch={(env.cwd, "main"): "diff --git a/file.py b/file.py\n+new content"},
+    79→    )
+    80→
+    81→    graphite = FakeGraphite(
+    82→        authenticated=True,
+    83→        squash_branch_raises=squash_raises,
+    84→        branches={
+    85→            branch_name: BranchMetadata(
+    86→                name=branch_name,
+    87→                parent="main",
+    88→                children=[],
+    89→                is_trunk=False,
+
+... [35 lines omitted] ...
+
+   108→    if prompt_error is not None:
+   109→        prompt_results = [PromptResult(success=False, output="", error=prompt_error)]
+   111→        prompt_results = [PromptResult(success=True, output=prompt_output, error=None)]
+  </tool_result>
+  <assistant>The rewrite test uses `prompt_results=` on the custom `FakePromptExecutor` which doesn't accept it. I need to fix this. Let me also fix the import and check for remaining `PromptResult` usage.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1454" cache_read_input_tokens="129329" cache_creation="{'ephemeral_5m_input_tokens': 1454, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01PQfGhGs2Tj8Mcfk3heoGBR">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py</param>
+    <param name="offset">1</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1454" cache_read_input_tokens="129329" cache_creation="{'ephemeral_5m_input_tokens': 1454, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PQfGhGs2Tj8Mcfk3heoGBR">
+     1→"""Tests for erk pr rewrite command.
+     2→
+     3→These tests verify the CLI layer behavior of the rewrite command.
+     4→The command squashes commits, generates an AI-powered commit message,
+     5→amends the commit, pushes, and updates the remote PR.
+     6→"""
+     7→
+     8→from datetime import UTC, datetime
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.pr import pr_group
+    13→from erk_shared.core.prompt_executor import PromptResult
+    14→from erk_shared.gateway.branch_manager.types import SubmitBranchError
+    15→from erk_shared.gateway.git.fake import FakeGit
+    16→from erk_shared.gateway.github.fake import FakeGitHub
+    17→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    18→from erk_shared.gateway.github.issues.types import IssueInfo
+    19→from erk_shared.gateway.github.types import PRDetails
+    20→from erk_shared.gateway.graphite.fake import FakeGraphite
+    21→from erk_shared.gateway.graphite.types import BranchMetadata
+    22→from erk_shared.gateway.time.fake import FakeTime
+    23→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    24→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    25→from tests.fakes.prompt_executor import FakePromptExecutor
+    26→from tests.test_utils.context_builders import build_workspace_test_context
+    27→from tests.test_utils.env_helpers import ErkIsolatedFsEnv, erk_isolated_fs_env
+    28→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    29→
+    30→
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>I need to fix the rewrite test: remove `PromptResult` import and change `prompt_results=` to use the custom fake's `simulated_prompt_output`/`simulated_prompt_error` parameters.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="758" cache_read_input_tokens="130783" cache_creation="{'ephemeral_5m_input_tokens': 758, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01UaRbF4iepRGRr4bVj3SxTH">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py</param>
+    <param name="old_string">from erk.cli.commands.pr import pr_group
+from erk_shared.core.prompt_executor import PromptResult
+from erk_shared.gateway.branch_manager.types import SubmitBranchError</param>
+    <param name="new_string">from erk.cli.commands.pr import pr_group
+from erk_shared.gateway.branch_manager.types import SubmitBranchError</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="758" cache_read_input_tokens="130783" cache_creation="{'ephemeral_5m_input_tokens': 758, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UaRbF4iepRGRr4bVj3SxTH">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Kn6YHCAQUdFWkk5gPWVGHP">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py</param>
+    <param name="old_string">    # Configure FakePromptExecutor with PromptResult for commit message generation
+    if ...[truncated 181 chars]...r=None)]
+
+    executor = FakePromptExecutor(available=True, prompt_results=prompt_results)</param>
+    <param name="new_string">    # Configure FakePromptExecutor for commit message generation
+    executor_kwargs: dict...[truncated 140 chars]...lated_prompt_output"] = prompt_output
+    executor = FakePromptExecutor(**executor_kwargs)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="600" cache_read_input_tokens="131541" cache_creation="{'ephemeral_5m_input_tokens': 600, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Kn6YHCAQUdFWkk5gPWVGHP">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py has been updated successfully.
+  </tool_result>
+  <assistant>Good. Now let me also check if the rewrite tests have any tests that access `executor.prompt_calls` with `.prompt` attribute (they shouldn't, but let me verify):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="349" cache_read_input_tokens="132141" cache_creation="{'ephemeral_5m_input_tokens': 349, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_013FhBhXkDd578XM6DUmtaLz">
+    <param name="pattern">prompt_calls</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="349" cache_read_input_tokens="132141" cache_creation="{'ephemeral_5m_input_tokens': 349, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_013FhBhXkDd578XM6DUmtaLz">
+No matches found
+  </tool_result>
+  <assistant>Good, no `prompt_calls` references in rewrite tests. Now let me wait for the submit agent to finish, and then move to CI. Let me check if the agent has now completed:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="492" cache_read_input_tokens="132490" cache_creation="{'ephemeral_5m_input_tokens': 492, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TaskOutput" id="toolu_018fo2JZb915RLU7mZenuRcC">
+    <param name="task_id">a293280</param>
+    <param name="block">True</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="492" cache_read_input_tokens="132490" cache_creation="{'ephemeral_5m_input_tokens': 492, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>

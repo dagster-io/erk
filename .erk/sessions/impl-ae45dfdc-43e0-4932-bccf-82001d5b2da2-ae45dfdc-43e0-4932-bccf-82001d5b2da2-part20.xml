@@ -1,0 +1,303 @@
+<session>
+  <meta source="agent-aa0310b" />
+  <meta branch="plnd/flat-prompt-executors-03-06-1518" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Update the test file at `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py` to remove all references to `FakeLlmCaller`, `LlmCaller`, `LlmResponse`, and `llm_caller`.
+
+Same pattern as other test migrations:
+
+1. Import changes:
+   - Remove: `from erk_shared.core.fakes import FakeLlmCaller`
+   - Remove: `from erk_shared.core.llm_caller import LlmResponse`
+   - Add: `from erk_shared.core.prompt_executor import PromptResult` (if not already present)
+   - Ensure FakePromptExecutor is imported
+
+2. The `_make_standard_fakes` function returns a tuple including `FakeLlmCaller`. The key fix is the same as test_rewrite.py:
+
+The function creates both a FakePromptExecutor (for `prompt_executor`) and a FakeLlmCaller (for `llm_caller`). Now that llm_caller is gone, we need to configure the FakePromptExecutor with `prompt_results` to serve both needs.
+
+The function takes `prompt_output` param which is used as the LlmResponse text. Change the existing FakePromptExecutor construction to include `prompt_results=[PromptResult(success=True, output=prompt_output, error=None)]`.
+
+3. Update the return type from `(FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor, FakeLlmCaller)` to `(FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor)`.
+
+4. In each test that unpacks the tuple, change from `git, graphite, github, executor, llm_caller = _make_standard_fakes(...)` to `git, graphite, github, executor = _make_standard_fakes(...)`.
+
+5. In each `context_for_test(...)` call, remove `llm_caller=llm_caller` and ensure `prompt_executor=executor` is passed.
+
+6. For tests that assert on `llm_caller.calls[0].prompt`, change to `executor.prompt_calls[0].prompt` (FakePromptExecutor records calls as PromptCall namedtuples with field `prompt`).
+
+SPECIAL CASE: There's one test (around line 350) that creates a separate FakeLlmCaller with a different response than the standard fakes. For this test, configure a FakePromptExecutor with the appropriate prompt_results and pass it directly as `prompt_executor` to `context_for_test`.
+
+Write the changes to the file. Do NOT just research; actually edit the file.</user>
+  <assistant>I'll read the test file first to understand its structure, then apply the migration pattern.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16538" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16538, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WUogcyek9uP4JkY74sKMyq">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16538" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16538, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WUogcyek9uP4JkY74sKMyq">
+     1→"""Tests for erk exec update-pr-description command.
+     2→
+     3→These tests verify the CLI layer behavior of the update-pr-description exec command.
+     4→The command generates an AI-powered PR title/body and updates the PR on GitHub,
+     5→preserving existing header and footer metadata.
+     6→"""
+     7→
+     8→from datetime import UTC, datetime
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.update_pr_description import update_pr_description
+    13→from erk_shared.core.fakes import FakeLlmCaller
+    14→from erk_shared.core.llm_caller import LlmResponse
+    15→from erk_shared.gateway.git.fake import FakeGit
+    16→from erk_shared.gateway.github.fake import FakeGitHub
+    17→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    18→from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+    19→from erk_shared.gateway.github.metadata.plan_header import format_plan_content_comment
+    20→from erk_shared.gateway.github.types import PRDetails
+    21→from erk_shared.gateway.graphite.fake import FakeGraphite
+    22→from erk_shared.gateway.graphite.types import BranchMetadata
+    23→from erk_shared.gateway.time.fake import FakeTime
+    24→from erk_shared.impl_folder import get_impl_dir
+    25→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    26→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    27→from tests.fakes.prompt_executor import FakePromptExecutor
+    28→from tests.test_utils.context_builders import build_workspace_test_context
+    29→from tests.test_utils.env_helpers import ErkIsolatedFsEnv, erk_isolated_fs_env
+    30→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+
+... [452 lines omitted] ...
+
+    89→    prompt_error: str | None = None,
+   137→        simulated_prompt_output=prompt_output if prompt_error is None else None,
+   138→        simulated_prompt_error=prompt_error,
+  </tool_result>
+  <assistant>Now I'll apply the migration pattern to remove all references to `FakeLlmCaller`, `LlmCaller`, `LlmResponse`, and `llm_caller`:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="10784" cache_read_input_tokens="16538" cache_creation="{'ephemeral_5m_input_tokens': 10784, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01W6j7oNjhGKUaNyFtjsmbr3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="old_string">from erk.cli.commands.exec.scripts.update_pr_description import update_pr_description
+from...[truncated 32 chars]..._shared.core.llm_caller import LlmResponse
+from erk_shared.gateway.git.fake import FakeGit</param>
+    <param name="new_string">from erk.cli.commands.exec.scripts.update_pr_description import update_pr_description
+from erk_shared.core.prompt_executor import PromptResult
+from erk_shared.gateway.git.fake import FakeGit</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="10784" cache_read_input_tokens="16538" cache_creation="{'ephemeral_5m_input_tokens': 10784, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01W6j7oNjhGKUaNyFtjsmbr3">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012bLBnu45wcw7xY6ZH9VoR5">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="old_string">def _make_standard_fakes(
+    env: ErkIsolatedFsEnv,
+    *,
+    branch_name: str = "featur...[truncated 1958 chars]...e=LlmResponse(text=prompt_output))
+
+    return git, graphite, github, executor, llm_caller</param>
+    <param name="new_string">def _make_standard_fakes(
+    env: ErkIsolatedFsEnv,
+    *,
+    branch_name: str = "featur...[truncated 1926 chars]...alse, output=None, error=prompt_error)],
+    )
+
+    return git, graphite, github, executor</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="351" cache_read_input_tokens="27322" cache_creation="{'ephemeral_5m_input_tokens': 351, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012bLBnu45wcw7xY6ZH9VoR5">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015w9LHbZYuJb2JrjdT2Yc26">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="old_string">def test_success_updates_pr() -&gt; None:
+    """Test successful update-pr-description genera...[truncated 874 chars]...d_pr_bodies[0]
+        assert pr_number == 42
+        assert "awesome new feature" in body</param>
+    <param name="new_string">def test_success_updates_pr() -&gt; None:
+    """Test successful update-pr-description genera...[truncated 827 chars]...d_pr_bodies[0]
+        assert pr_number == 42
+        assert "awesome new feature" in body</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1497" cache_read_input_tokens="27673" cache_creation="{'ephemeral_5m_input_tokens': 1497, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015w9LHbZYuJb2JrjdT2Yc26">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Nh9z7kfnn33bLmXbi8mon7">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="old_string">def test_generates_footer_with_checkout_command() -&gt; None:
+    """Test that updated body i...[truncated 739 chars]...No issue closing reference (planned-PR only)
+        assert "Closes #" not in updated_body</param>
+    <param name="new_string">def test_generates_footer_with_checkout_command() -&gt; None:
+    """Test that updated body i...[truncated 692 chars]...No issue closing reference (planned-PR only)
+        assert "Closes #" not in updated_body</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="766" cache_read_input_tokens="29170" cache_creation="{'ephemeral_5m_input_tokens': 766, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Nh9z7kfnn33bLmXbi8mon7">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Tags5XvCiD79EhsJsr6YqQ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="old_string">def test_uses_graphite_parent() -&gt; None:
+    """Test that update-pr-description uses Graph...[truncated 2599 chars]... (Graphite parent)
+        assert "branch-1" in prompt
+        assert "branch-2" in prompt</param>
+    <param name="new_string">def test_uses_graphite_parent() -&gt; None:
+    """Test that update-pr-description uses Graph...[truncated 2610 chars]... (Graphite parent)
+        assert "branch-1" in prompt
+        assert "branch-2" in prompt</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="776" cache_read_input_tokens="29936" cache_creation="{'ephemeral_5m_input_tokens': 776, 'ephemeral_1h_input_tokens': 0}" output_tokens="1701" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Tags5XvCiD79EhsJsr6YqQ">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EMPSnohpzXfScfoTfYeGrW">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="old_string">def test_no_plan_context_after_pxxxx_removal() -&gt; None:
+    """Test that plan content from...[truncated 2567 chars]...dated_body = github.updated_pr_bodies[0]
+        assert "Fix the bug." not in updated_body</param>
+    <param name="new_string">def test_no_plan_context_after_pxxxx_removal() -&gt; None:
+    """Test that plan content from...[truncated 2520 chars]...dated_body = github.updated_pr_bodies[0]
+        assert "Fix the bug." not in updated_body</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1754" cache_read_input_tokens="30712" cache_creation="{'ephemeral_5m_input_tokens': 1754, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EMPSnohpzXfScfoTfYeGrW">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Rhe1Apjzd648kLk6bNP7gm">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="old_string">def test_update_pr_description_planned_pr_backend_preserves_metadata() -&gt; None:
+    """Tes...[truncated 1162 chars]... self-closing reference for draft PR backend
+        assert "Closes #" not in updated_body</param>
+    <param name="new_string">def test_update_pr_description_planned_pr_backend_preserves_metadata() -&gt; None:
+    """Tes...[truncated 1115 chars]... self-closing reference for draft PR backend
+        assert "Closes #" not in updated_body</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1817" cache_read_input_tokens="32466" cache_creation="{'ephemeral_5m_input_tokens': 1817, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Rhe1Apjzd648kLk6bNP7gm">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify the file to ensure all changes were applied correctly:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1035" cache_read_input_tokens="34283" cache_creation="{'ephemeral_5m_input_tokens': 1035, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01V52yYy9KM1g3YJvhnvWDze">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1035" cache_read_input_tokens="34283" cache_creation="{'ephemeral_5m_input_tokens': 1035, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V52yYy9KM1g3YJvhnvWDze">
+     1→"""Tests for erk exec update-pr-description command.
+     2→
+     3→These tests verify the CLI layer behavior of the update-pr-description exec command.
+     4→The command generates an AI-powered PR title/body and updates the PR on GitHub,
+     5→preserving existing header and footer metadata.
+     6→"""
+     7→
+     8→from datetime import UTC, datetime
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.exec.scripts.update_pr_description import update_pr_description
+    13→from erk_shared.core.prompt_executor import PromptResult
+    14→from erk_shared.gateway.git.fake import FakeGit
+    15→from erk_shared.gateway.github.fake import FakeGitHub
+    16→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    17→from erk_shared.gateway.github.issues.types import IssueComment, IssueInfo
+    18→from erk_shared.gateway.github.metadata.plan_header import format_plan_content_comment
+    19→from erk_shared.gateway.github.types import PRDetails
+    20→from erk_shared.gateway.graphite.fake import FakeGraphite
+    21→from erk_shared.gateway.graphite.types import BranchMetadata
+    22→from erk_shared.gateway.time.fake import FakeTime
+    23→from erk_shared.impl_folder import get_impl_dir
+    24→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    25→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    26→from tests.fakes.prompt_executor import FakePromptExecutor
+    27→from tests.test_utils.context_builders import build_workspace_test_context
+    28→from tests.test_utils.env_helpers import ErkIsolatedFsEnv, erk_isolated_fs_env
+    29→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    30→
+
+... [75 lines omitted] ...
+
+    88→    prompt_error: str | None = None,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Aa3jDd9PZgwYH9CmnM5xzD">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py</param>
+    <param name="offset">100</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1669" cache_read_input_tokens="35318" cache_creation="{'ephemeral_5m_input_tokens': 1669, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Aa3jDd9PZgwYH9CmnM5xzD">
+   100→        commit_messages_since={(env.cwd, parent_branch): ["Initial implementation"]},
+   101→    )
+   102→
+   103→    graphite = FakeGraphite(
+   104→        authenticated=True,
+   105→        branches={
+   106→            branch_name: BranchMetadata(
+   107→                name=branch_name,
+   108→                parent=parent_branch,
+   109→                children=[],
+   110→                is_trunk=False,
+   111→                commit_sha=None,
+   112→            ),
+   113→            "main": BranchMetadata(
+   114→                name="main",
+   115→                parent=None,
+   116→                children=[branch_name],
+   117→                is_trunk=True,
+   118→                commit_sha=None,
+   119→            ),
+   120→        },
+   121→    )
+   122→
+   123→    pr_details = _make_pr_details(
+   124→        number=pr_number,
+   125→        branch=branch_name,
+   126→        body=pr_body,
+   127→    )
+   128→    github = FakeGitHub(
+   129→        authenticated=True,
+
+... [25 lines omitted] ...
+
+   136→        prompt_results=[PromptResult(success=True, output=prompt_output, error=None)]
+   137→        if prompt_error is None
+   138→        else [PromptResult(success=False, output=None, error=prompt_error)],
+  </tool_result>
+  <assistant>Perfect! The migration has been successfully applied to `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py`. Here's a summary of the changes:
+
+## Summary of Changes
+
+### 1. Import Changes
+- **Removed**: `from erk_shared.core.fakes import FakeLlmCaller`
+- **Removed**: `from erk_shared.core.llm_caller import LlmResponse`
+- **Added**: `from erk_shared.core.prompt_executor import PromptResult`
+
+### 2. `_make_standard_fakes` Function Updates
+- **Return type changed**: From `tuple[FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor, FakeLlmCaller]` to `tuple[FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor]`
+- **Removed**: `llm_caller = FakeLlmCaller(response=LlmResponse(text=prompt_output))` (line 141)
+- **Updated**: `FakePromptExecutor` now includes `prompt_results` parameter to serve both needs:
+  ```python
+  executor = FakePromptExecutor(
+      available=available,
+      prompt_results=[PromptResult(success=True, output=prompt_output, error=None)]
+      if prompt_error is None
+      else [PromptResult(success=False, output=None, error=prompt_error)],
+  )
+  ```
+
+### 3. Test Function Updates
+All test functions that used `_make_standard_fakes` were updated:
+
+- **`test_success_updates_pr`**: Removed `llm_caller` from unpacking and `context_for_test` call
+- **`test_generates_footer_with_checkout_command`**: Same pattern
+- **`test_uses_graphite_parent`**: 
+  - Removed separate `FakeLlmCaller` creation
+  - Created `FakePromptExecutor` with `prompt_results` instead
+  - Changed assertion from `llm_caller.calls[0].prompt` to `executor.prompt_calls[0].prompt`
+- **`test_no_plan_context_after_pxxxx_removal`**: Removed `llm_caller` from unpacking and `context_for_test` call
+- **`test_update_pr_description_planned_pr_backend_preserves_metadata`**: Same pattern
+
+All references to `FakeLlmCaller`, `LlmCaller`, `LlmResponse`, and `llm_caller` have been successfully removed from the test file, following the same migration pattern as the other test files.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="888" cache_read_input_tokens="36987" cache_creation="{'ephemeral_5m_input_tokens': 888, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

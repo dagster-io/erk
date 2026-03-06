@@ -1,0 +1,1022 @@
+<session>
+  <meta source="agent-a293280" />
+  <meta branch="plnd/flat-prompt-executors-03-06-1518" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Update the test file at `/home/runner/work/erk/erk/tests/commands/pr/test_submit.py` to remove all references to `FakeLlmCaller`, `LlmCaller`, `LlmResponse`, `LlmCallFailed`, and `llm_caller`.
+
+The tests create contexts via `context_for_test(llm_caller=llm_caller, ...)`. The `llm_caller` parameter has been removed from `context_for_test`. Instead, tests should pass a `prompt_executor` parameter with a `FakePromptExecutor`.
+
+The key mapping is:
+- `FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))` → `FakePromptExecutor(prompt_results=[PromptResult(success=True, output="Title\n\nBody", error=None)])`
+- `FakeLlmCaller(response=LlmCallFailed(message="..."))` → `FakePromptExecutor(prompt_results=[PromptResult(success=False, output="", error="...")])`
+- `context_for_test(llm_caller=llm_caller, ...)` → `context_for_test(prompt_executor=executor, ...)`
+
+Needed import changes:
+1. Remove: `from erk_shared.core.fakes import FakeLlmCaller`
+2. Remove: `from erk_shared.core.llm_caller import LlmCallFailed, LlmResponse`  
+3. FakePromptExecutor should already be imported, but add if missing: `from erk_shared.core.fakes import FakePromptExecutor`
+4. Add: `from erk_shared.core.prompt_executor import PromptResult`
+
+When the existing test code does assertions like `llm_caller.calls[0].prompt`, change them to use `executor.prompt_calls[0].prompt` instead. The FakePromptExecutor records calls in `prompt_calls` as `PromptCall` namedtuples with fields: `prompt`, `model`, `tools`, `cwd`, `system_prompt`, `dangerous`.
+
+Rename local variables `llm_caller` to `executor` (or `prompt_executor` if `executor` is already used for something else - check context).
+
+NOTE: This file already imports FakePromptExecutor - check the imports before adding a duplicate. Also note that in test_submit.py there's already a variable called `executor` used for something else in some tests — if so, use `msg_executor` instead.
+
+Write the changes to the file. Do NOT just research; actually edit the file.</user>
+  <assistant>I'll start by reading the test file to understand its current structure and then make the necessary changes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16502" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16502, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01LG7SJmJeFDbiHHDktvKjcc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16502" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16502, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LG7SJmJeFDbiHHDktvKjcc">
+     1→"""Tests for erk pr submit command.
+     2→
+     3→These tests verify the CLI layer behavior of the submit command.
+     4→The command now uses Python orchestration (preflight -&gt; generate -&gt; finalize)
+     5→rather than delegating to a Claude slash command.
+     6→"""
+     7→
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.pr import pr_group
+    13→from erk_shared.core.fakes import FakeLlmCaller
+    14→from erk_shared.core.llm_caller import LlmCallFailed, LlmResponse
+    15→from erk_shared.gateway.git.abc import BranchDivergence
+    16→from erk_shared.gateway.git.fake import FakeGit
+    17→from erk_shared.gateway.github.fake import FakeGitHub
+    18→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    19→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    20→from erk_shared.gateway.graphite.fake import FakeGraphite
+    21→from erk_shared.gateway.graphite.types import BranchMetadata
+    22→from tests.fakes.prompt_executor import FakePromptExecutor
+    23→from tests.test_utils.context_builders import build_workspace_test_context
+    24→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    25→
+    26→
+    27→def test_pr_submit_fails_when_claude_not_available() -&gt; None:
+    28→    """Test that command fails when Claude CLI is not available."""
+    29→    runner = CliRunner()
+    30→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+
+... [1966 lines omitted] ...
+
+   144→    """Test that Graphite auth failure produces a warning (not a fatal error).
+   148→    When Graphite enhancement fails, it's reported as a warning, not a fatal error.
+   305→        # Use --no-graphite to test standard flow error handling
+   386→            simulated_prompt_error="Claude CLI execution failed",
+   388→        llm_caller = FakeLlmCaller(response=LlmCallFailed(message="Claude CLI execution failed"))
+   402→        assert "Failed to generate message" in result.output
+   496→        # The RuntimeError from FakeGitHub propagates up - command fails
+   498→        # The exception message should be captured in the output or exception
+   499→        assert result.exception is not None or "PR update failed" in result.output
+   745→def test_pr_submit_force_flag_bypasses_divergence_error() -&gt; None:
+  1203→        # Use --no-graphite to test standard flow error handling
+  1207→        # Should fail with helpful error message
+  1731→    the command should return a clean error with actionable fix suggestions
+  1732→    instead of letting gt submit fail with a raw error.
+  </tool_result>
+  <assistant>Now I'll make the necessary changes to remove all references to `FakeLlmCaller`, `LlmCaller`, `LlmResponse`, `LlmCallFailed`, and update the code to use `FakePromptExecutor` and `PromptResult` instead.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="31580" cache_read_input_tokens="16502" cache_creation="{'ephemeral_5m_input_tokens': 31580, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Kc1EZAeBv5SaomNAbRiq2y">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">from erk.cli.commands.pr import pr_group
+from erk_shared.core.fakes import FakeLlmCaller
+f...[truncated 10 chars]... import LlmCallFailed, LlmResponse
+from erk_shared.gateway.git.abc import BranchDivergence</param>
+    <param name="new_string">from erk.cli.commands.pr import pr_group
+from erk_shared.core.prompt_executor import PromptResult
+from erk_shared.gateway.git.abc import BranchDivergence</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="31580" cache_read_input_tokens="16502" cache_creation="{'ephemeral_5m_input_tokens': 31580, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Kc1EZAeBv5SaomNAbRiq2y">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JbZLiLH87swe7xdM7b124g">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_p...[truncated 306 chars]...aphite,
+            prompt_executor=executor,
+            llm_caller=llm_caller,
+        )</param>
+    <param name="new_string">        executor = FakePromptExecutor(
+            available=True,
+            prompt_resu...[truncated 293 chars]...hub=github,
+            graphite=graphite,
+            prompt_executor=executor,
+        )</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="348" cache_read_input_tokens="48082" cache_creation="{'ephemeral_5m_input_tokens': 348, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JbZLiLH87swe7xdM7b124g">
+&lt;tool_use_error&gt;Found 3 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:         executor = FakePromptExecutor(
+            available=True,
+            simulated_prompt_output="Add feature\n\nThis adds a new feature.",
+        )
+        llm_caller = FakeLlmCaller(
+            response=LlmResponse(text="Add feature\n\nThis adds a new feature.")
+        )
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            prompt_executor=executor,
+            llm_caller=llm_caller,
+        )&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Let me search for all unique patterns and update them one by one. Let me identify the different patterns first:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="591" cache_read_input_tokens="48430" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PRuXzjni1GWSkM5QVEidG4">
+    <param name="pattern">llm_caller = FakeLlmCaller</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="591" cache_read_input_tokens="48430" cache_creation="{'ephemeral_5m_input_tokens': 591, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PRuXzjni1GWSkM5QVEidG4">
+206:        llm_caller = FakeLlmCaller(
+387:        llm_caller = FakeLlmCaller(response=LlmCallFailed(message="Claude CLI execution failed"))
+480:        llm_caller = FakeLlmCaller(
+577:        llm_caller = FakeLlmCaller(
+715:        llm_caller = FakeLlmCaller(
+818:        llm_caller = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
+917:        llm_caller = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
+1015:        llm_caller = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
+1103:        llm_caller = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
+1189:        llm_caller = FakeLlmCaller(
+1287:        llm_caller = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
+1440:        llm_caller = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
+1606:        llm_caller = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
+1706:        llm_caller = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
+1876:        llm_caller = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
+1974:        llm_caller = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
+  </tool_result>
+  <assistant>Now let me update each occurrence systematically. I'll start with the first test function that has this pattern:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="718" cache_read_input_tokens="49021" cache_creation="{'ephemeral_5m_input_tokens': 718, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01LnWqPRwSaukfB8qv6RGgS3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_p...[truncated 577 chars]...R URL should be in output
+        assert "github.com/owner/repo/pull/123" in result.output</param>
+    <param name="new_string">        executor = FakePromptExecutor(
+            available=True,
+            prompt_resu...[truncated 564 chars]...R URL should be in output
+        assert "github.com/owner/repo/pull/123" in result.output</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="718" cache_read_input_tokens="49021" cache_creation="{'ephemeral_5m_input_tokens': 718, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LnWqPRwSaukfB8qv6RGgS3">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PaUjZzMPw9FT2Uxjw6n69o">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        # Configure executor to fail on prompt
+        executor = FakePromptExecutor(
+    ...[truncated 473 chars]... assert result.exit_code != 0
+        assert "Failed to generate message" in result.output</param>
+    <param name="new_string">        # Configure executor to fail on prompt
+        executor = FakePromptExecutor(
+    ...[truncated 489 chars]... assert result.exit_code != 0
+        assert "Failed to generate message" in result.output</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="578" cache_read_input_tokens="49739" cache_creation="{'ephemeral_5m_input_tokens': 578, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PaUjZzMPw9FT2Uxjw6n69o">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CWxKJx8sSNkhwQ6uZ8RvHj">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_p...[truncated 641 chars]...ception
+        assert result.exception is not None or "PR update failed" in result.output</param>
+    <param name="new_string">        executor = FakePromptExecutor(
+            available=True,
+            prompt_resu...[truncated 628 chars]...ception
+        assert result.exception is not None or "PR update failed" in result.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="594" cache_read_input_tokens="50317" cache_creation="{'ephemeral_5m_input_tokens': 594, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CWxKJx8sSNkhwQ6uZ8RvHj">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Vpgv5oKHfGQTGXjiYEpU9u">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_p...[truncated 817 chars]...in context
+        assert "main" in llm_caller.calls[0].prompt  # Parent branch in context</param>
+    <param name="new_string">        executor = FakePromptExecutor(
+            available=True,
+            prompt_resu...[truncated 804 chars]...ntext
+        assert "main" in executor.prompt_calls[0].prompt  # Parent branch in context</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="573" cache_read_input_tokens="50911" cache_creation="{'ephemeral_5m_input_tokens': 573, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Vpgv5oKHfGQTGXjiYEpU9u">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Cx6GQsEVHfwS41Gm4EgovQ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_p...[truncated 874 chars]...e (that would be a bug)
+        assert "feat: add feature 1 (from branch-1)" not in prompt</param>
+    <param name="new_string">        executor = FakePromptExecutor(
+            available=True,
+            prompt_resu...[truncated 885 chars]...e (that would be a bug)
+        assert "feat: add feature 1 (from branch-1)" not in prompt</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="682" cache_read_input_tokens="51484" cache_creation="{'ephemeral_5m_input_tokens': 682, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Cx6GQsEVHfwS41Gm4EgovQ">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011pvuG4BsWmUPFgpVLGrVoi">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_p...[truncated 821 chars]...ssert branch == "feature"
+        assert set_upstream is True
+        assert force is True</param>
+    <param name="new_string">        executor = FakePromptExecutor(
+            available=True,
+            prompt_resu...[truncated 856 chars]...ssert branch == "feature"
+        assert set_upstream is True
+        assert force is True</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="831" cache_read_input_tokens="52166" cache_creation="{'ephemeral_5m_input_tokens': 831, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011pvuG4BsWmUPFgpVLGrVoi">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_015raYyBDaPTnBcgGt9AdcKY">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_p...[truncated 712 chars]... remote, branch, set_upstream, force = git.pushed_branches[0]
+        assert force is True</param>
+    <param name="new_string">        executor = FakePromptExecutor(
+            available=True,
+            prompt_resu...[truncated 747 chars]... remote, branch, set_upstream, force = git.pushed_branches[0]
+        assert force is True</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="708" cache_read_input_tokens="52997" cache_creation="{'ephemeral_5m_input_tokens': 708, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015raYyBDaPTnBcgGt9AdcKY">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01592xX6ysUwukvmF9JTm74v">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_p...[truncated 485 chars]...b.com/owner/repo/pull/123" in result.output
+        assert "app.graphite" in result.output</param>
+    <param name="new_string">        executor = FakePromptExecutor(
+            available=True,
+            prompt_resu...[truncated 520 chars]...b.com/owner/repo/pull/123" in result.output
+        assert "app.graphite" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="662" cache_read_input_tokens="53705" cache_creation="{'ephemeral_5m_input_tokens': 662, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01592xX6ysUwukvmF9JTm74v">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BRR6N9HwtJYD3imgDZeT67">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_p...[truncated 621 chars]...ould NOT show "found" message
+        assert "found (already exists)" not in result.output</param>
+    <param name="new_string">        executor = FakePromptExecutor(
+            available=True,
+            prompt_resu...[truncated 656 chars]...ould NOT show "found" message
+        assert "found (already exists)" not in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="638" cache_read_input_tokens="54367" cache_creation="{'ephemeral_5m_input_tokens': 638, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BRR6N9HwtJYD3imgDZeT67">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01M1rCPTCcxUwqSQaPwNgyr6">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_p...[truncated 745 chars]...anch' does not have a PR yet" in result.output
+        assert "gt submit" in result.output</param>
+    <param name="new_string">        executor = FakePromptExecutor(
+            available=True,
+            prompt_resu...[truncated 732 chars]...anch' does not have a PR yet" in result.output
+        assert "gt submit" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="592" cache_read_input_tokens="55005" cache_creation="{'ephemeral_5m_input_tokens': 592, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M1rCPTCcxUwqSQaPwNgyr6">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01N5NToXqfRsASPn6CdavbA9">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_p...[truncated 718 chars]...eated" which would indicate the bug)
+        assert "PR #123 created" not in result.output</param>
+    <param name="new_string">        executor = FakePromptExecutor(
+            available=True,
+            prompt_resu...[truncated 753 chars]...eated" which would indicate the bug)
+        assert "PR #123 created" not in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="634" cache_read_input_tokens="55597" cache_creation="{'ephemeral_5m_input_tokens': 634, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01N5NToXqfRsASPn6CdavbA9">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_012Z8fLAAedFpsMtkdqYRQcL">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_p...[truncated 596 chars]...d plan context" in result.output
+        assert "Incorporating plan #123" in result.output</param>
+    <param name="new_string">        executor = FakePromptExecutor(
+            available=True,
+            prompt_resu...[truncated 631 chars]...d plan context" in result.output
+        assert "Incorporating plan #123" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="748" cache_read_input_tokens="56231" cache_creation="{'ephemeral_5m_input_tokens': 748, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012Z8fLAAedFpsMtkdqYRQcL">
+&lt;tool_use_error&gt;Found 2 matches of the string to replace, but replace_all is false. To replace all occurrences, set replace_all to true. To replace only one occurrence, please provide more context to uniquely identify the instance.
+String:         executor = FakePromptExecutor(
+            available=True,
+            simulated_prompt_output="Title\n\nBody",
+        )
+        llm_caller = FakeLlmCaller(response=LlmResponse(text="Title\n\nBody"))
+
+        ctx = build_workspace_test_context(
+            env,
+            git=git,
+            github=github,
+            graphite=graphite,
+            prompt_executor=executor,
+            llm_caller=llm_caller,
+            issues=github_issues,
+        )
+
+        result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
+
+        assert result.exit_code == 0
+        # Verify Phase 2 shows plan found (PR is the plan with PlannedPRBackend)
+        assert "Phase 2: Getting diff and plan context" in result.output
+        assert "Incorporating plan #123" in result.output&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>Let me add more context to differentiate these:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="862" cache_read_input_tokens="56979" cache_creation="{'ephemeral_5m_input_tokens': 862, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_012MbBEnfg3HdugAkGFw3aC9">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">def test_pr_submit_shows_plan_context_phase() -&gt; None:
+    """Test that Phase 2 shows plan...[truncated 4843 chars]...d plan context" in result.output
+        assert "Incorporating plan #123" in result.output</param>
+    <param name="new_string">def test_pr_submit_shows_plan_context_phase() -&gt; None:
+    """Test that Phase 2 shows plan...[truncated 4878 chars]...d plan context" in result.output
+        assert "Incorporating plan #123" in result.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="862" cache_read_input_tokens="56979" cache_creation="{'ephemeral_5m_input_tokens': 862, 'ephemeral_1h_input_tokens': 0}" output_tokens="3045" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012MbBEnfg3HdugAkGFw3aC9">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_011fKDF9VbednEnsQEQdD1ac">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">def test_pr_submit_shows_plan_context_with_objective() -&gt; None:
+    """Test that Phase 2 s...[truncated 5278 chars]...d plan context" in result.output
+        assert "Incorporating plan #123" in result.output</param>
+    <param name="new_string">def test_pr_submit_shows_plan_context_with_objective() -&gt; None:
+    """Test that Phase 2 s...[truncated 5313 chars]...d plan context" in result.output
+        assert "Incorporating plan #123" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="3192" cache_read_input_tokens="57841" cache_creation="{'ephemeral_5m_input_tokens': 3192, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011fKDF9VbednEnsQEQdD1ac">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CqfgUPteUT5P6C8TwcNVDy">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">def test_pr_submit_shows_no_plan_message() -&gt; None:
+    """Test that Phase 2 shows plan fo...[truncated 3258 chars]...d plan context" in result.output
+        assert "Incorporating plan #123" in result.output</param>
+    <param name="new_string">def test_pr_submit_shows_no_plan_message() -&gt; None:
+    """Test that Phase 2 shows plan fo...[truncated 3293 chars]...d plan context" in result.output
+        assert "Incorporating plan #123" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="3312" cache_read_input_tokens="61033" cache_creation="{'ephemeral_5m_input_tokens': 3312, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CqfgUPteUT5P6C8TwcNVDy">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me handle the remaining two tests:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="2074" cache_read_input_tokens="64345" cache_creation="{'ephemeral_5m_input_tokens': 2074, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_011Boh4hgxZkAW6TSB4qWS97">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">def test_pr_submit_graphite_flow_force_bypasses_divergence() -&gt; None:
+    """Test that --f...[truncated 3136 chars]...ave been called (divergence bypassed)
+        assert len(graphite.submit_stack_calls) == 1</param>
+    <param name="new_string">def test_pr_submit_graphite_flow_force_bypasses_divergence() -&gt; None:
+    """Test that --f...[truncated 3171 chars]...ave been called (divergence bypassed)
+        assert len(graphite.submit_stack_calls) == 1</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="2074" cache_read_input_tokens="64345" cache_creation="{'ephemeral_5m_input_tokens': 2074, 'ephemeral_1h_input_tokens': 0}" output_tokens="1984" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011Boh4hgxZkAW6TSB4qWS97">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Lex8gP4D4qVRSUu4P6DVeB">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">def test_pr_submit_graphite_flow_skips_check_for_new_branch() -&gt; None:
+    """Test that di...[truncated 3112 chars]...en called (no remote branch to check)
+        assert len(graphite.submit_stack_calls) == 1</param>
+    <param name="new_string">def test_pr_submit_graphite_flow_skips_check_for_new_branch() -&gt; None:
+    """Test that di...[truncated 3147 chars]...en called (no remote branch to check)
+        assert len(graphite.submit_stack_calls) == 1</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="2130" cache_read_input_tokens="66419" cache_creation="{'ephemeral_5m_input_tokens': 2130, 'ephemeral_1h_input_tokens': 0}" output_tokens="1932" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Lex8gP4D4qVRSUu4P6DVeB">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let's verify there are no remaining references to the old LLM caller code:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1974" cache_read_input_tokens="68549" cache_creation="{'ephemeral_5m_input_tokens': 1974, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01L1dCK23f5UdoLSJcYX2sG6">
+    <param name="pattern">FakeLlmCaller|LlmCallFailed|LlmResponse|llm_caller</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1974" cache_read_input_tokens="68549" cache_creation="{'ephemeral_5m_input_tokens': 1974, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01L1dCK23f5UdoLSJcYX2sG6">
+No matches found
+  </tool_result>
+  <assistant>Perfect! All references have been removed. Let's verify the file compiles and check if there are any issues with the imports:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="271" cache_read_input_tokens="70523" cache_creation="{'ephemeral_5m_input_tokens': 271, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01FYvU1qWxTjW6Sq9bPCB9fG">
+    <param name="command">python -m py_compile tests/commands/pr/test_submit.py</param>
+    <param name="description">Compile test file to check for syntax errors</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="271" cache_read_input_tokens="70523" cache_creation="{'ephemeral_5m_input_tokens': 271, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FYvU1qWxTjW6Sq9bPCB9fG">
+
+  </tool_result>
+  <assistant>Great! The file compiles successfully. Let's verify the imports are correct by reading the top of the file:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="145" cache_read_input_tokens="70794" cache_creation="{'ephemeral_5m_input_tokens': 145, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01PepCQybK5WS47tLkWvNW7h">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="145" cache_read_input_tokens="70794" cache_creation="{'ephemeral_5m_input_tokens': 145, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PepCQybK5WS47tLkWvNW7h">
+     1→"""Tests for erk pr submit command.
+     2→
+     3→These tests verify the CLI layer behavior of the submit command.
+     4→The command now uses Python orchestration (preflight -&gt; generate -&gt; finalize)
+     5→rather than delegating to a Claude slash command.
+     6→"""
+     7→
+     8→from pathlib import Path
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.pr import pr_group
+    13→from erk_shared.core.prompt_executor import PromptResult
+    14→from erk_shared.gateway.git.abc import BranchDivergence
+    15→from erk_shared.gateway.git.fake import FakeGit
+    16→from erk_shared.gateway.github.fake import FakeGitHub
+    17→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    18→from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
+    19→from erk_shared.gateway.graphite.fake import FakeGraphite
+    20→from erk_shared.gateway.graphite.types import BranchMetadata
+    21→from tests.fakes.prompt_executor import FakePromptExecutor
+    22→from tests.test_utils.context_builders import build_workspace_test_context
+    23→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    24→
+    25→
+    26→def test_pr_submit_fails_when_claude_not_available() -&gt; None:
+    27→    """Test that command fails when Claude CLI is not available."""
+    28→    runner = CliRunner()
+    29→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+    30→        git = FakeGit(
+
+... [5 lines omitted] ...
+  </tool_result>
+  <assistant>Perfect! The imports are clean and correct. Now let's run a quick test to make sure everything works:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="773" cache_read_input_tokens="70939" cache_creation="{'ephemeral_5m_input_tokens': 773, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01D8ifNKNJ4uRr8Zx8in65Kb">
+    <param name="command">python -m pytest tests/commands/pr/test_submit.py::test_pr_submit_fails_when_claude_not_available -xvs</param>
+    <param name="description">Run a single test to verify changes work</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="773" cache_read_input_tokens="70939" cache_creation="{'ephemeral_5m_input_tokens': 773, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D8ifNKNJ4uRr8Zx8in65Kb">
+Exit code 1
+/usr/bin/python: No module named pytest
+  </tool_result>
+  <assistant>Let me use uv run instead:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="71712" cache_creation="{'ephemeral_5m_input_tokens': 186, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01De4ijqVUZpD2a6jyeb899r">
+    <param name="command">uv run pytest tests/commands/pr/test_submit.py::test_pr_submit_fails_when_claude_not_available -xvs</param>
+    <param name="description">Run a single test to verify changes work</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="186" cache_read_input_tokens="71712" cache_creation="{'ephemeral_5m_input_tokens': 186, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01De4ijqVUZpD2a6jyeb899r">
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/commands/pr/test_submit.py .
+
+============================== 1 passed in 0.72s ===============================
+  </tool_result>
+  <assistant>Excellent! Let's run a few more tests to make sure all the changes work correctly:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="429" cache_read_input_tokens="71898" cache_creation="{'ephemeral_5m_input_tokens': 429, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013ppWDobvEEJzemDYBC6QPL">
+    <param name="command">uv run pytest tests/commands/pr/test_submit.py::test_pr_submit_success -xvs</param>
+    <param name="description">Run another test to verify prompt executor usage</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="429" cache_read_input_tokens="71898" cache_creation="{'ephemeral_5m_input_tokens': 429, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013ppWDobvEEJzemDYBC6QPL">
+Exit code 1
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/commands/pr/test_submit.py F
+
+=================================== FAILURES ===================================
+____________________________ test_pr_submit_success ____________________________
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-1/test_pr_submit_success0')
+
+    def test_pr_submit_success(tmp_path: Path) -&gt; None:
+        """Test successful PR submission with all phases completing."""
+        runner = CliRunner()
+        with erk_isolated_fs_env(runner, env_overrides=None) as env:
+            pr_info = PullRequestInfo(
+                number=123,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/123",
+                is_draft=False,
+                title="Feature PR",
+                checks_passing=True,
+                owner="owner",
+                repo="repo",
+            )
+
+... [75 lines omitted] ...
+
+                        error=None,
+E           TypeError: FakePromptExecutor.__init__() got an unexpected keyword argument 'prompt_results'
+tests/commands/pr/test_submit.py:581: TypeError
+FAILED tests/commands/pr/test_submit.py::test_pr_submit_success - TypeError: FakePromptExecutor.__init__() got an unexpected keyword argument 'prompt_results'
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+============================== 1 failed in 0.77s ===============================
+  </tool_result>
+  <assistant>I see the issue. Let me check the FakePromptExecutor interface to see what the correct parameter names are:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1287" cache_read_input_tokens="72327" cache_creation="{'ephemeral_5m_input_tokens': 1287, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SZUdcJW9JZPYMq6SaLwz6S">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/prompt_executor.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1287" cache_read_input_tokens="72327" cache_creation="{'ephemeral_5m_input_tokens': 1287, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SZUdcJW9JZPYMq6SaLwz6S">
+     1→"""Fake implementation of PromptExecutor for testing.
+     2→
+     3→This fake enables testing prompt execution without
+     4→requiring the actual Claude CLI or using subprocess mocks.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from collections.abc import Iterator
+    10→from pathlib import Path
+    11→from typing import TYPE_CHECKING
+    12→
+    13→if TYPE_CHECKING:
+    14→    from erk_shared.context.types import PermissionMode
+    15→
+    16→from erk_shared.core.prompt_executor import (
+    17→    CommandResult,
+    18→    ErrorEvent,
+    19→    ExecutorEvent,
+    20→    NoOutputEvent,
+    21→    NoTurnsEvent,
+    22→    PlanNumberEvent,
+    23→    PrNumberEvent,
+    24→    ProcessErrorEvent,
+    25→    PromptExecutor,
+    26→    PromptResult,
+    27→    PrTitleEvent,
+    28→    PrUrlEvent,
+    29→    SpinnerUpdateEvent,
+    30→    TextEvent,
+
+... [410 lines omitted] ...
+
+    57→        # Test command failure
+    61→        ... except RuntimeError:
+    62→        ...     print("Command failed as expected")
+    82→        simulated_process_error: str | None = None,
+    85→        simulated_prompt_error: str | None = None,
+    93→            command_should_fail: Whether execute_command should raise RuntimeError
+   102→            simulated_process_error: Error message to simulate process startup failure
+   109→            simulated_prompt_error: Error message to return from execute_prompt() on failure.
+   110→                If set, execute_prompt() will return a failure result.
+   113→                tests the "empty response" failure mode where Claude produces JSON
+   127→        self._simulated_process_error = simulated_process_error
+   133→        self._simulated_prompt_error = simulated_prompt_error
+   176→            RuntimeError: If command_should_fail was set to True
+   180→        # Process error takes precedence (simulates Popen failure)
+   181→        if self._simulated_process_error is not None:
+   182→            yield ProcessErrorEvent(message=self._simulated_process_error)
+   196→            diag += "\n  Run 'claude' directly to see hook error messages"
+   202→            yield ErrorEvent(message=f"Claude command {command} failed (simulated failure)")
+   260→            RuntimeError: If command_should_fail was set to True
+   272→                error_message=f"Claude command {command} failed (simulated failure)",
+   283→            error_message=None,
+   304→            RuntimeError: If Claude CLI is not available
+   307→            raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
+   361→            PromptResult with simulated output or error
+   365→        if self._simulated_prompt_error is not None:
+   369→                error=self._simulated_prompt_error,
+   386→            error=None,
+  </tool_result>
+  <assistant>I see! The `FakePromptExecutor` uses `simulated_prompt_output` and `simulated_prompt_outputs` parameters, not `prompt_results`. Let me fix all the test cases:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="5896" cache_read_input_tokens="73614" cache_creation="{'ephemeral_5m_input_tokens': 5896, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FgPBGPoSuSXRf3SNJEPWUk">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">from erk.cli.commands.pr import pr_group
+from erk_shared.core.prompt_executor import PromptResult
+from erk_shared.gateway.git.abc import BranchDivergence</param>
+    <param name="new_string">from erk.cli.commands.pr import pr_group
+from erk_shared.gateway.git.abc import BranchDivergence</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="5896" cache_read_input_tokens="73614" cache_creation="{'ephemeral_5m_input_tokens': 5896, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01FgPBGPoSuSXRf3SNJEPWUk">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me update all the FakePromptExecutor instantiations. Let me do this with replace_all since they all follow similar patterns:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="284" cache_read_input_tokens="79510" cache_creation="{'ephemeral_5m_input_tokens': 284, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01D3zor6tC6QUyNJGk4AuoGm">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        executor = FakePromptExecutor(
+            available=True,
+            prompt_resu...[truncated 104 chars]... new feature.",
+                    error=None,
+                )
+            ],
+        )</param>
+    <param name="new_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_prompt_output="Add feature\n\nThis adds a new feature.",
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="284" cache_read_input_tokens="79510" cache_creation="{'ephemeral_5m_input_tokens': 284, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D3zor6tC6QUyNJGk4AuoGm">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated. All occurrences of '        executor = FakePromptExecutor(
+            available=True,
+            prompt_results=[
+                PromptResult(
+                    success=True,
+                    output="Add feature\n\nThis adds a new feature.",
+                    error=None,
+                )
+            ],
+        )' were successfully replaced with '        executor = FakePromptExecutor(
+            available=True,
+            simulated_prompt_output="Add feature\n\nThis adds a new feature.",
+        )'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_013pTWDDTnyMG8XtVNxVj7Un">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        executor = FakePromptExecutor(
+            available=True,
+            prompt_resu...[truncated 91 chars]...           error="Claude CLI execution failed",
+                )
+            ],
+        )</param>
+    <param name="new_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_prompt_error="Claude CLI execution failed",
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="539" cache_read_input_tokens="79794" cache_creation="{'ephemeral_5m_input_tokens': 539, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013pTWDDTnyMG8XtVNxVj7Un">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated. All occurrences of '        executor = FakePromptExecutor(
+            available=True,
+            prompt_results=[
+                PromptResult(
+                    success=False,
+                    output="",
+                    error="Claude CLI execution failed",
+                )
+            ],
+        )' were successfully replaced with '        executor = FakePromptExecutor(
+            available=True,
+            simulated_prompt_error="Claude CLI execution failed",
+        )'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01PgyncwjDAveeZBHP7fVvfC">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        executor = FakePromptExecutor(
+            available=True,
+            prompt_resu...[truncated 124 chars]... new feature.",
+                    error=None,
+                )
+            ],
+        )</param>
+    <param name="new_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_prompt_output="Add awesome feature\n\nThis PR adds an awesome new feature.",
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="374" cache_read_input_tokens="80333" cache_creation="{'ephemeral_5m_input_tokens': 374, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PgyncwjDAveeZBHP7fVvfC">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated. All occurrences of '        executor = FakePromptExecutor(
+            available=True,
+            prompt_results=[
+                PromptResult(
+                    success=True,
+                    output="Add awesome feature\n\nThis PR adds an awesome new feature.",
+                    error=None,
+                )
+            ],
+        )' were successfully replaced with '        executor = FakePromptExecutor(
+            available=True,
+            simulated_prompt_output="Add awesome feature\n\nThis PR adds an awesome new feature.",
+        )'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01RrYcEMcMsSBszZJQ77fMxa">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        executor = FakePromptExecutor(
+            available=True,
+            prompt_resu...[truncated 102 chars]...ds feature 2.",
+                    error=None,
+                )
+            ],
+        )</param>
+    <param name="new_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_prompt_output="Add feature 2\n\nThis adds feature 2.",
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="416" cache_read_input_tokens="80707" cache_creation="{'ephemeral_5m_input_tokens': 416, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RrYcEMcMsSBszZJQ77fMxa">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated. All occurrences of '        executor = FakePromptExecutor(
+            available=True,
+            prompt_results=[
+                PromptResult(
+                    success=True,
+                    output="Add feature 2\n\nThis adds feature 2.",
+                    error=None,
+                )
+            ],
+        )' were successfully replaced with '        executor = FakePromptExecutor(
+            available=True,
+            simulated_prompt_output="Add feature 2\n\nThis adds feature 2.",
+        )'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014gK5vct5SmNXi7hbphVSqk">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        executor = FakePromptExecutor(
+            available=True,
+            prompt_resu...[truncated 78 chars]...Title\n\nBody",
+                    error=None,
+                )
+            ],
+        )</param>
+    <param name="new_string">        executor = FakePromptExecutor(
+            available=True,
+            simulated_prompt_output="Title\n\nBody",
+        )</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="515" cache_read_input_tokens="81123" cache_creation="{'ephemeral_5m_input_tokens': 515, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014gK5vct5SmNXi7hbphVSqk">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated. All occurrences of '        executor = FakePromptExecutor(
+            available=True,
+            prompt_results=[
+                PromptResult(
+                    success=True,
+                    output="Title\n\nBody",
+                    error=None,
+                )
+            ],
+        )' were successfully replaced with '        executor = FakePromptExecutor(
+            available=True,
+            simulated_prompt_output="Title\n\nBody",
+        )'.
+  </tool_result>
+  <assistant>Now let's verify the file compiles again:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="384" cache_read_input_tokens="81638" cache_creation="{'ephemeral_5m_input_tokens': 384, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018yydkBCtN1KiDECbZyVxGY">
+    <param name="command">python -m py_compile tests/commands/pr/test_submit.py</param>
+    <param name="description">Check for syntax errors after changes</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="384" cache_read_input_tokens="81638" cache_creation="{'ephemeral_5m_input_tokens': 384, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018yydkBCtN1KiDECbZyVxGY">
+
+  </tool_result>
+  <assistant>Good! Now let's run the test again:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="214" cache_read_input_tokens="82022" cache_creation="{'ephemeral_5m_input_tokens': 214, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011yurBhZeAKEv9b4d9d9wJC">
+    <param name="command">uv run pytest tests/commands/pr/test_submit.py::test_pr_submit_success -xvs</param>
+    <param name="description">Run test to verify prompt executor usage</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="214" cache_read_input_tokens="82022" cache_creation="{'ephemeral_5m_input_tokens': 214, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011yurBhZeAKEv9b4d9d9wJC">
+Exit code 1
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/commands/pr/test_submit.py F
+
+=================================== FAILURES ===================================
+____________________________ test_pr_submit_success ____________________________
+
+tmp_path = PosixPath('/tmp/pytest-of-runner/pytest-2/test_pr_submit_success0')
+
+    def test_pr_submit_success(tmp_path: Path) -&gt; None:
+        """Test successful PR submission with all phases completing."""
+        runner = CliRunner()
+        with erk_isolated_fs_env(runner, env_overrides=None) as env:
+            pr_info = PullRequestInfo(
+                number=123,
+                state="OPEN",
+                url="https://github.com/owner/repo/pull/123",
+                is_draft=False,
+                title="Feature PR",
+                checks_passing=True,
+                owner="owner",
+                repo="repo",
+            )
+
+... [88 lines omitted] ...
+
+E           AttributeError: 'tuple' object has no attribute 'prompt'
+tests/commands/pr/test_submit.py:583: AttributeError
+FAILED tests/commands/pr/test_submit.py::test_pr_submit_success - AttributeError: 'tuple' object has no attribute 'prompt'
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+============================== 1 failed in 0.81s ===============================
+  </tool_result>
+  <assistant>I see - the `prompt_calls` property returns a list of tuples, not objects with attributes. Let me check the structure again and fix the assertions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1404" cache_read_input_tokens="82236" cache_creation="{'ephemeral_5m_input_tokens': 1404, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BTZrDnLdwwnpZMSQiSx8hf">
+    <param name="file_path">/home/runner/work/erk/erk/tests/fakes/prompt_executor.py</param>
+    <param name="offset">389</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1404" cache_read_input_tokens="82236" cache_creation="{'ephemeral_5m_input_tokens': 1404, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BTZrDnLdwwnpZMSQiSx8hf">
+   389→    @property
+   390→    def prompt_calls(self) -&gt; list[tuple[str, str | None, bool]]:
+   391→        """Get the list of execute_prompt() calls that were made.
+   392→
+   393→        Returns list of (prompt, system_prompt, dangerous) tuples.
+   394→
+   395→        This property is for test assertions only.
+   396→        """
+   397→        return self._prompt_calls.copy()
+   398→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>So `prompt_calls` returns tuples of `(prompt, system_prompt, dangerous)`. I need to access the first element (index 0) of the tuple. Let me fix the assertions:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="453" cache_read_input_tokens="83640" cache_creation="{'ephemeral_5m_input_tokens': 453, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_014VXh9ttx9JJn64FB9Z7KKv">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        # Verify commit message was generated via prompt executor
+        assert len(execu...[truncated 83 chars]...ntext
+        assert "main" in executor.prompt_calls[0].prompt  # Parent branch in context</param>
+    <param name="new_string">        # Verify commit message was generated via prompt executor
+        assert len(execu...[truncated 75 chars]...n context
+        assert "main" in executor.prompt_calls[0][0]  # Parent branch in context</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="453" cache_read_input_tokens="83640" cache_creation="{'ephemeral_5m_input_tokens': 453, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014VXh9ttx9JJn64FB9Z7KKv">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01VomtDPPKeMevnczkwXiKtR">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_submit.py</param>
+    <param name="old_string">        # Verify the commit messages passed to prompt executor only include branch-2's com...[truncated 291 chars]...e (that would be a bug)
+        assert "feat: add feature 1 (from branch-1)" not in prompt</param>
+    <param name="new_string">        # Verify the commit messages passed to prompt executor only include branch-2's com...[truncated 287 chars]...e (that would be a bug)
+        assert "feat: add feature 1 (from branch-1)" not in prompt</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="338" cache_read_input_tokens="84093" cache_creation="{'ephemeral_5m_input_tokens': 338, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VomtDPPKeMevnczkwXiKtR">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_submit.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let's run the tests again:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="505" cache_read_input_tokens="84431" cache_creation="{'ephemeral_5m_input_tokens': 505, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Xg5rPmogXkgNieCuXv8Vas">
+    <param name="command">uv run pytest tests/commands/pr/test_submit.py::test_pr_submit_success -xvs</param>
+    <param name="description">Run test to verify fixed assertions</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="505" cache_read_input_tokens="84431" cache_creation="{'ephemeral_5m_input_tokens': 505, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Xg5rPmogXkgNieCuXv8Vas">
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/commands/pr/test_submit.py .
+
+============================== 1 passed in 0.71s ===============================
+  </tool_result>
+  <assistant>Great! Now let's test the other test that uses prompt_calls:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="315" cache_read_input_tokens="84936" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018D2vRi7qsJrpww4iAF22zL">
+    <param name="command">uv run pytest tests/commands/pr/test_submit.py::test_pr_submit_uses_graphite_parent_for_commit_messages -xvs</param>
+    <param name="description">Run test to verify stacked branch prompt calls</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="315" cache_read_input_tokens="84936" cache_creation="{'ephemeral_5m_input_tokens': 315, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018D2vRi7qsJrpww4iAF22zL">
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 1 item
+
+tests/commands/pr/test_submit.py .
+
+============================== 1 passed in 0.72s ===============================
+  </tool_result>
+  <assistant>Perfect! Now let's run all the tests in the file to make sure everything works:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="439" cache_read_input_tokens="85251" cache_creation="{'ephemeral_5m_input_tokens': 439, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PMMdos2sdYfrWxPbVKBG5m">
+    <param name="command">uv run pytest tests/commands/pr/test_submit.py -v</param>
+    <param name="description">Run all tests in test_submit.py</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="439" cache_read_input_tokens="85251" cache_creation="{'ephemeral_5m_input_tokens': 439, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PMMdos2sdYfrWxPbVKBG5m">
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 21 items
+
+tests/commands/pr/test_submit.py .....................                   [100%]
+
+============================== 21 passed in 0.76s ==============================
+  </tool_result>
+  <assistant>Excellent! All tests are passing. Let me create a summary of the changes made:
+
+## Summary
+
+Successfully updated `/home/runner/work/erk/erk/tests/commands/pr/test_submit.py` to remove all references to the old `LlmCaller` architecture and migrate to the new `PromptExecutor` pattern.
+
+### Changes Made:
+
+1. **Removed imports:**
+   - `from erk_shared.core.fakes import FakeLlmCaller`
+   - `from erk_shared.core.llm_caller import LlmCallFailed, LlmResponse`
+   - `from erk_shared.core.prompt_executor import PromptResult` (not needed with FakePromptExecutor)
+
+2. **Updated test fixtures:**
+   - Replaced all `FakeLlmCaller(response=LlmResponse(text="..."))` with `FakePromptExecutor(available=True, simulated_prompt_output="...")`
+   - Replaced all `FakeLlmCaller(response=LlmCallFailed(message="..."))` with `FakePromptExecutor(available=True, simulated_prompt_error="...")`
+   - Removed `llm_caller` parameter from all `build_workspace_test_context()` calls
+
+3. **Updated assertions:**
+   - Changed `llm_caller.calls[0].prompt` to `executor.prompt_calls[0][0]` (accessing the first element of the tuple)
+   - Changed `len(llm_caller.calls)` to `len(executor.prompt_calls)`
+
+4. **Variable naming:**
+   - Removed all local variables named `llm_caller`
+   - All tests now consistently use `executor` for the `FakePromptExecutor` instance
+
+### Tests Affected:
+- All 21 tests in the file were updated
+- All tests are now passing
+
+The migration follows the pattern:
+- Old: `LlmCaller` with `LlmResponse`/`LlmCallFailed` discriminated union
+- New: `PromptExecutor` with simulated output/error parameters in `FakePromptExecutor`</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="325" cache_read_input_tokens="85690" cache_creation="{'ephemeral_5m_input_tokens': 325, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,370 @@
+<session>
+  <meta source="agent-aca5f05" />
+  <meta branch="plnd/flat-prompt-executors-03-06-1518" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Update the test file at `/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py` to remove all references to `FakeLlmCaller`, `LlmCaller`, `LlmResponse`, `LlmCallFailed`, and `llm_caller`.
+
+The key changes needed:
+
+1. Import changes:
+   - Remove: `from erk_shared.core.fakes import FakeLlmCaller`
+   - Remove: `from erk_shared.core.llm_caller import LlmCallFailed, LlmResponse`
+   - Add: `from erk_shared.core.prompt_executor import PromptResult` (if not already present)
+   - Ensure FakePromptExecutor is imported from erk_shared.core.fakes
+
+2. The `_make_rewrite_fakes` function returns a tuple that currently includes `FakeLlmCaller`. Replace:
+   - `FakeLlmCaller(response=LlmCallFailed(message=...))` → `FakePromptExecutor(prompt_results=[PromptResult(success=False, output="", error=...)])`
+   - `FakeLlmCaller(response=LlmResponse(text=...))` → `FakePromptExecutor(prompt_results=[PromptResult(success=True, output=..., error=None)])`
+
+3. Update the return type annotation of `_make_rewrite_fakes` from including `FakeLlmCaller` to using a second `FakePromptExecutor` (rename the variable from `llm_caller` to `msg_executor` or similar).
+
+4. In each test function, replace `llm_caller=llm_caller` in `context_for_test(...)` calls with `prompt_executor=msg_executor` (or whatever variable name is used for the new FakePromptExecutor that produces commit messages).
+
+IMPORTANT: The existing `executor` variable in `_make_rewrite_fakes` is used for something else (FakePromptExecutor for the actual prompt_executor). So for the LLM-based commit message generation, since the real code now uses `ctx.prompt_executor` for BOTH streaming commands AND commit messages, the same FakePromptExecutor handles both. So instead of having two separate FakePromptExecutors, we should merge - the test's `executor` FakePromptExecutor should be configured with the `prompt_results` needed for commit message generation.
+
+Actually, let me be more precise: 
+
+Look at how `_make_rewrite_fakes` currently works. It creates both a `FakePromptExecutor` (for `prompt_executor`) and a `FakeLlmCaller` (for `llm_caller`). Now that `llm_caller` is gone, the caller constructs `CommitMessageGenerator(ctx.prompt_executor, ...)`, so the test's `prompt_executor` FakePromptExecutor needs to return the right results when `execute_prompt()` is called by CommitMessageGenerator.
+
+The fix: Configure the existing `executor` FakePromptExecutor with `prompt_results=[PromptResult(success=True, output=prompt_output, error=None)]` (or with error) based on the `prompt_output` and `prompt_error` parameters. Then pass `prompt_executor=executor` to `context_for_test` and remove the `llm_caller` parameter entirely.
+
+The return tuple should change from `(FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor, FakeLlmCaller)` to `(FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor)`.
+
+In each test that unpacks the tuple, change from `git, graphite, github, executor, llm_caller = _make_rewrite_fakes(...)` to `git, graphite, github, executor = _make_rewrite_fakes(...)`.
+
+In each `context_for_test(...)` call, change from `prompt_executor=executor, llm_caller=llm_caller` (or just `llm_caller=llm_caller`) to just `prompt_executor=executor`.
+
+Write the changes to the file. Do NOT just research; actually edit the file.</user>
+  <assistant>I'll read the test file first to understand its current structure, then make the necessary changes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16891" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16891, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Q8eWhjHgiUsNepxDaU2WBV">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16891" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16891, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Q8eWhjHgiUsNepxDaU2WBV">
+     1→"""Tests for erk pr rewrite command.
+     2→
+     3→These tests verify the CLI layer behavior of the rewrite command.
+     4→The command squashes commits, generates an AI-powered commit message,
+     5→amends the commit, pushes, and updates the remote PR.
+     6→"""
+     7→
+     8→from datetime import UTC, datetime
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.pr import pr_group
+    13→from erk_shared.core.fakes import FakeLlmCaller
+    14→from erk_shared.core.llm_caller import LlmCallFailed, LlmResponse
+    15→from erk_shared.gateway.branch_manager.types import SubmitBranchError
+    16→from erk_shared.gateway.git.fake import FakeGit
+    17→from erk_shared.gateway.github.fake import FakeGitHub
+    18→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    19→from erk_shared.gateway.github.issues.types import IssueInfo
+    20→from erk_shared.gateway.github.types import PRDetails
+    21→from erk_shared.gateway.graphite.fake import FakeGraphite
+    22→from erk_shared.gateway.graphite.types import BranchMetadata
+    23→from erk_shared.gateway.time.fake import FakeTime
+    24→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    25→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    26→from tests.fakes.prompt_executor import FakePromptExecutor
+    27→from tests.test_utils.context_builders import build_workspace_test_context
+    28→from tests.test_utils.env_helpers import ErkIsolatedFsEnv, erk_isolated_fs_env
+    29→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    30→
+
+... [411 lines omitted] ...
+
+    63→    squash_raises: Exception | None = None,
+    65→    prompt_error: str | None = None,
+    66→    submit_branch_error: SubmitBranchError | None = None,
+   109→    if prompt_error is not None:
+   110→        executor_kwargs["simulated_prompt_error"] = prompt_error
+   115→    if prompt_error is not None:
+   116→        llm_caller = FakeLlmCaller(response=LlmCallFailed(message=prompt_error))
+   242→            squash_raises=RuntimeError("Squash conflict: resolve manually"),
+   257→        assert "Squash failed" in result.output
+   267→            prompt_error="Claude CLI execution failed",
+   282→        assert "Failed to generate message" in result.output
+  </tool_result>
+  <assistant>Now I'll update the test file to remove all references to `FakeLlmCaller`, `LlmCaller`, `LlmResponse`, `LlmCallFailed`, and `llm_caller`. I need to:
+
+1. Remove imports related to `LlmCaller`
+2. Update `_make_rewrite_fakes` to configure `FakePromptExecutor` with `prompt_results` instead of creating a separate `FakeLlmCaller`
+3. Change the return type and tuple unpacking
+4. Update all test functions to use only `prompt_executor`</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="10916" cache_read_input_tokens="16891" cache_creation="{'ephemeral_5m_input_tokens': 10916, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01M56HJpocX1qcHhTyYkmYkK">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py</param>
+    <param name="old_string">from erk.cli.commands.pr import pr_group
+from erk_shared.core.fakes import FakeLlmCaller
+f...[truncated 24 chars]...lFailed, LlmResponse
+from erk_shared.gateway.branch_manager.types import SubmitBranchError</param>
+    <param name="new_string">from erk.cli.commands.pr import pr_group
+from erk_shared.core.prompt_executor import PromptResult
+from erk_shared.gateway.branch_manager.types import SubmitBranchError</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="10916" cache_read_input_tokens="16891" cache_creation="{'ephemeral_5m_input_tokens': 10916, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M56HJpocX1qcHhTyYkmYkK">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01WpdhX5sLkyLctRME1sJcNA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py</param>
+    <param name="old_string">def _make_rewrite_fakes(
+    env: ErkIsolatedFsEnv,
+    *,
+    branch_name: str,
+    pr_nu...[truncated 2089 chars]...e=LlmResponse(text=prompt_output))
+
+    return git, graphite, github, executor, llm_caller</param>
+    <param name="new_string">def _make_rewrite_fakes(
+    env: ErkIsolatedFsEnv,
+    *,
+    branch_name: str,
+    pr_nu...[truncated 1966 chars]...available=True, prompt_results=prompt_results)
+
+    return git, graphite, github, executor</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="426" cache_read_input_tokens="27807" cache_creation="{'ephemeral_5m_input_tokens': 426, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WpdhX5sLkyLctRME1sJcNA">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py has been updated successfully.
+  </tool_result>
+  <assistant>Now I need to update all the test functions to unpack the tuple without `llm_caller` and update the `context_for_test` calls:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1549" cache_read_input_tokens="28233" cache_creation="{'ephemeral_5m_input_tokens': 1549, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01KbC6Ci7mpx1Ajiihva34ER">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py</param>
+    <param name="old_string">def test_pr_rewrite_happy_path() -&gt; None:
+    """Test successful rewrite: squash, generate...[truncated 1102 chars]..._pr_titles) == 1
+        assert github.updated_pr_titles[0] == (42, "Add awesome feature")</param>
+    <param name="new_string">def test_pr_rewrite_happy_path() -&gt; None:
+    """Test successful rewrite: squash, generate...[truncated 1055 chars]..._pr_titles) == 1
+        assert github.updated_pr_titles[0] == (42, "Add awesome feature")</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1549" cache_read_input_tokens="28233" cache_creation="{'ephemeral_5m_input_tokens': 1549, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KbC6Ci7mpx1Ajiihva34ER">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01JBwDhRKsQqkL1LZ5g9ZtcE">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py</param>
+    <param name="old_string">def test_pr_rewrite_already_single_commit() -&gt; None:
+    """Test rewrite with already-sing...[truncated 565 chars]...ode == 0, result.output
+        assert "PR title and description updated" in result.output</param>
+    <param name="new_string">def test_pr_rewrite_already_single_commit() -&gt; None:
+    """Test rewrite with already-sing...[truncated 518 chars]...ode == 0, result.output
+        assert "PR title and description updated" in result.output</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="994" cache_read_input_tokens="29782" cache_creation="{'ephemeral_5m_input_tokens': 994, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JBwDhRKsQqkL1LZ5g9ZtcE">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0115MmXc6qXqozJHu7aNpMbr">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py</param>
+    <param name="old_string">def test_pr_rewrite_fails_when_squash_conflicts() -&gt; None:
+    """Test that rewrite fails ...[truncated 604 chars]...ctx)
+
+        assert result.exit_code != 0
+        assert "Squash failed" in result.output</param>
+    <param name="new_string">def test_pr_rewrite_fails_when_squash_conflicts() -&gt; None:
+    """Test that rewrite fails ...[truncated 557 chars]...ctx)
+
+        assert result.exit_code != 0
+        assert "Squash failed" in result.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="584" cache_read_input_tokens="30776" cache_creation="{'ephemeral_5m_input_tokens': 584, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0115MmXc6qXqozJHu7aNpMbr">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Hy1crtcQrFwW6v8dH49Cin">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py</param>
+    <param name="old_string">def test_pr_rewrite_fails_when_ai_generation_fails() -&gt; None:
+    """Test that rewrite fai...[truncated 603 chars]... assert result.exit_code != 0
+        assert "Failed to generate message" in result.output</param>
+    <param name="new_string">def test_pr_rewrite_fails_when_ai_generation_fails() -&gt; None:
+    """Test that rewrite fai...[truncated 556 chars]... assert result.exit_code != 0
+        assert "Failed to generate message" in result.output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="594" cache_read_input_tokens="31360" cache_creation="{'ephemeral_5m_input_tokens': 594, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Hy1crtcQrFwW6v8dH49Cin">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016zxR9yXtxYaECP6SLVvtCr">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py</param>
+    <param name="old_string">def test_pr_rewrite_planned_pr_backend_preserves_metadata() -&gt; None:
+    """Test that rewr...[truncated 1151 chars]... self-closing reference for draft PR backend
+        assert "Closes #" not in updated_body</param>
+    <param name="new_string">def test_pr_rewrite_planned_pr_backend_preserves_metadata() -&gt; None:
+    """Test that rewr...[truncated 1104 chars]... self-closing reference for draft PR backend
+        assert "Closes #" not in updated_body</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="685" cache_read_input_tokens="31954" cache_creation="{'ephemeral_5m_input_tokens': 685, 'ephemeral_1h_input_tokens': 0}" output_tokens="880" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016zxR9yXtxYaECP6SLVvtCr">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01BSvyaHG66q3sVwhJ5GWpq3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py</param>
+    <param name="old_string">def test_pr_rewrite_retracks_graphite_branch_after_amend() -&gt; None:
+    """Test that rewri...[truncated 987 chars]...ls[0]
+        assert retrack_cwd == env.git_dir
+        assert retrack_branch == "feature"</param>
+    <param name="new_string">def test_pr_rewrite_retracks_graphite_branch_after_amend() -&gt; None:
+    """Test that rewri...[truncated 940 chars]...ls[0]
+        assert retrack_cwd == env.git_dir
+        assert retrack_branch == "feature"</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="923" cache_read_input_tokens="32639" cache_creation="{'ephemeral_5m_input_tokens': 923, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01BSvyaHG66q3sVwhJ5GWpq3">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01MWToTPzMis1nv3u5Liu96K">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py</param>
+    <param name="old_string">def test_pr_rewrite_skips_lifecycle_when_plan_not_resolved() -&gt; None:
+    """Rewrite skips...[truncated 1441 chars]...from branch name — no lifecycle update
+        assert len(fake_issues.updated_bodies) == 0</param>
+    <param name="new_string">def test_pr_rewrite_skips_lifecycle_when_plan_not_resolved() -&gt; None:
+    """Rewrite skips...[truncated 1394 chars]...from branch name — no lifecycle update
+        assert len(fake_issues.updated_bodies) == 0</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="817" cache_read_input_tokens="33562" cache_creation="{'ephemeral_5m_input_tokens': 817, 'ephemeral_1h_input_tokens': 0}" output_tokens="1076" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MWToTPzMis1nv3u5Liu96K">
+The file /home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py has been updated successfully.
+  </tool_result>
+  <assistant>Now let me verify the changes by reading the updated file to make sure all references have been removed:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="1223" cache_read_input_tokens="34379" cache_creation="{'ephemeral_5m_input_tokens': 1223, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01MvxgB6Aqkk1o3pP4KYjm7J">
+    <param name="pattern">llm_caller|LlmCaller|LlmResponse|LlmCallFailed|FakeLlmCaller</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1223" cache_read_input_tokens="34379" cache_creation="{'ephemeral_5m_input_tokens': 1223, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MvxgB6Aqkk1o3pP4KYjm7J">
+No matches found
+  </tool_result>
+  <assistant>Perfect! Let me also verify that the file compiles correctly and has the expected structure:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="177" cache_read_input_tokens="35602" cache_creation="{'ephemeral_5m_input_tokens': 177, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01J2YtnXbfUhqqzbWc4pmnrZ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py</param>
+    <param name="offset">1</param>
+    <param name="limit">70</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="177" cache_read_input_tokens="35602" cache_creation="{'ephemeral_5m_input_tokens': 177, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01J2YtnXbfUhqqzbWc4pmnrZ">
+     1→"""Tests for erk pr rewrite command.
+     2→
+     3→These tests verify the CLI layer behavior of the rewrite command.
+     4→The command squashes commits, generates an AI-powered commit message,
+     5→amends the commit, pushes, and updates the remote PR.
+     6→"""
+     7→
+     8→from datetime import UTC, datetime
+     9→
+    10→from click.testing import CliRunner
+    11→
+    12→from erk.cli.commands.pr import pr_group
+    13→from erk_shared.core.prompt_executor import PromptResult
+    14→from erk_shared.gateway.branch_manager.types import SubmitBranchError
+    15→from erk_shared.gateway.git.fake import FakeGit
+    16→from erk_shared.gateway.github.fake import FakeGitHub
+    17→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    18→from erk_shared.gateway.github.issues.types import IssueInfo
+    19→from erk_shared.gateway.github.types import PRDetails
+    20→from erk_shared.gateway.graphite.fake import FakeGraphite
+    21→from erk_shared.gateway.graphite.types import BranchMetadata
+    22→from erk_shared.gateway.time.fake import FakeTime
+    23→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    24→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    25→from tests.fakes.prompt_executor import FakePromptExecutor
+    26→from tests.test_utils.context_builders import build_workspace_test_context
+    27→from tests.test_utils.env_helpers import ErkIsolatedFsEnv, erk_isolated_fs_env
+    28→from tests.test_utils.plan_helpers import format_plan_header_body_for_test
+    29→
+    30→
+
+... [45 lines omitted] ...
+
+    62→    squash_raises: Exception | None = None,
+    64→    prompt_error: str | None = None,
+    65→    submit_branch_error: SubmitBranchError | None = None,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01P3uqqnHn9tvGR7ZsRaxgQM">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py</param>
+    <param name="offset">100</param>
+    <param name="limit">25</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1340" cache_read_input_tokens="35779" cache_creation="{'ephemeral_5m_input_tokens': 1340, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01P3uqqnHn9tvGR7ZsRaxgQM">
+   100→    )
+   101→
+   102→    github = FakeGitHub(
+   103→        authenticated=True,
+   104→        prs_by_branch={branch_name: pr_details},
+   105→    )
+   106→
+   107→    # Configure FakePromptExecutor with PromptResult for commit message generation
+   108→    if prompt_error is not None:
+   109→        prompt_results = [PromptResult(success=False, output="", error=prompt_error)]
+   110→    else:
+   111→        prompt_results = [PromptResult(success=True, output=prompt_output, error=None)]
+   112→
+   113→    executor = FakePromptExecutor(available=True, prompt_results=prompt_results)
+   114→
+   115→    return git, graphite, github, executor
+   116→
+   117→
+   118→def test_pr_rewrite_happy_path() -&gt; None:
+   119→    """Test successful rewrite: squash, generate, amend, push, update PR."""
+   120→    runner = CliRunner()
+   121→    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+   122→        git, graphite, github, executor = _make_rewrite_fakes(
+   123→            env, branch_name="feature"
+   124→        )
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Perfect! Let me run a quick syntax check to make sure the file is valid Python:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="542" cache_read_input_tokens="37119" cache_creation="{'ephemeral_5m_input_tokens': 542, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01ACXG4djBb2P32A9pya74yh">
+    <param name="command">python -m py_compile tests/commands/pr/test_rewrite.py</param>
+    <param name="description">Verify Python syntax is valid</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="542" cache_read_input_tokens="37119" cache_creation="{'ephemeral_5m_input_tokens': 542, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ACXG4djBb2P32A9pya74yh">
+
+  </tool_result>
+  <assistant>Excellent! The file compiles successfully. Let me create a summary of all the changes made:
+
+## Summary
+
+Successfully updated `/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py` to remove all references to `FakeLlmCaller`, `LlmCaller`, `LlmResponse`, `LlmCallFailed`, and `llm_caller`. 
+
+### Key Changes Made:
+
+1. **Import changes:**
+   - Removed: `from erk_shared.core.fakes import FakeLlmCaller`
+   - Removed: `from erk_shared.core.llm_caller import LlmCallFailed, LlmResponse`
+   - Added: `from erk_shared.core.prompt_executor import PromptResult`
+
+2. **Updated `_make_rewrite_fakes` function:**
+   - Changed return type from `tuple[FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor, FakeLlmCaller]` to `tuple[FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor]`
+   - Replaced `FakeLlmCaller` construction with `FakePromptExecutor` configuration using `PromptResult`
+   - For errors: `PromptResult(success=False, output="", error=prompt_error)`
+   - For success: `PromptResult(success=True, output=prompt_output, error=None)`
+   - Removed the separate `llm_caller` variable and its return from the tuple
+
+3. **Updated all 8 test functions:**
+   - Changed tuple unpacking from `git, graphite, github, executor, llm_caller = ...` to `git, graphite, github, executor = ...`
+   - Removed `llm_caller=llm_caller` parameter from all `build_workspace_test_context()` calls
+   - Tests affected:
+     - `test_pr_rewrite_happy_path`
+     - `test_pr_rewrite_already_single_commit`
+     - `test_pr_rewrite_fails_when_squash_conflicts`
+     - `test_pr_rewrite_fails_when_ai_generation_fails`
+     - `test_pr_rewrite_planned_pr_backend_preserves_metadata`
+     - `test_pr_rewrite_retracks_graphite_branch_after_amend`
+     - `test_pr_rewrite_skips_lifecycle_when_plan_not_resolved`
+
+The changes align with the migration from the deprecated `LlmCaller` interface to the unified `PromptExecutor` interface, where commit message generation now uses the same `execute_prompt()` method as other streaming commands.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="223" cache_read_input_tokens="37661" cache_creation="{'ephemeral_5m_input_tokens': 223, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+</session>

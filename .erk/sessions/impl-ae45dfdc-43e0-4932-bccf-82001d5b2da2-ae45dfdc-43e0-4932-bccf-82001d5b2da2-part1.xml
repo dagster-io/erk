@@ -1,0 +1,1454 @@
+<session>
+  <meta branch="plnd/flat-prompt-executors-03-06-1518" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement is running…&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;
+&lt;command-args&gt;8874&lt;/command-args&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `8874` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="${CLAUDE_SESSION_ID}" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <assistant>
+
+I'll start by setting up the implementation for plan #8874.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="28436" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28436, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01UtbxLX46QtvgfYDLRqewQy">
+    <param name="command">erk exec setup-impl --issue 8874</param>
+    <param name="description">Set up implementation for plan #8874</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="28436" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 28436, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UtbxLX46QtvgfYDLRqewQy">
+{"success": true, "impl_path": "/home/runner/work/erk/erk/.erk/impl-context/plnd--flat-prompt-executors-03-06-1518", "plan_number": 8874, "plan_url": "https://github.com/dagster-io/erk/pull/8874", "branch": "plnd/flat-prompt-executors-03-06-1518", "plan_title": "[erk-plan] Plan: Flat prompt executor namespace + kill LlmCaller", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8874, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+Already on plan branch 'plnd/flat-prompt-executors-03-06-1518', teleporting from remote...
+  </tool_result>
+  <assistant>Good, the implementation environment is ready. Let me read the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="28436" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Wd3aQBUNdHpmY6zHGf3Qba">
+    <param name="file_path">/home/runner/work/erk/erk/.erk/impl-context/plnd--flat-prompt-executors-03-06-1518/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="346" cache_read_input_tokens="28436" cache_creation="{'ephemeral_5m_input_tokens': 346, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Wd3aQBUNdHpmY6zHGf3Qba">
+     1→# Plan: Flat prompt executor namespace + kill LlmCaller
+     2→
+     3→## Context
+     4→
+     5→The codebase has two parallel abstractions for LLM calls: `PromptExecutor` (subprocess-based, full-featured) and `LlmCaller` (SDK-based, narrow). `LlmCaller` is a thin adapter that today delegates its CLI fallback to `PromptExecutor.execute_prompt()` anyway. Killing `LlmCaller` simplifies the model: everything is a `PromptExecutor`, the Anthropic SDK path becomes `AnthropicApiPromptExecutor`, and a composite `FallbackPromptExecutor` handles the API-first/CLI-fallback routing.
+     6→
+     7→Simultaneously rename CLI-specific executors to be explicit about their nature.
+     8→
+     9→## End state
+    10→
+    11→```
+    12→src/erk/core/
+    13→  prompt_executor.py           → ClaudeCliPromptExecutor (renamed)
+    14→  codex_prompt_executor.py     → CodexCliPromptExecutor (renamed)
+    15→  anthropic_prompt_executor.py → AnthropicApiPromptExecutor (new)
+    16→  fallback_prompt_executor.py  → FallbackPromptExecutor (new composite)
+    17→  fast_llm.py                  → deleted
+    18→
+    19→packages/erk-shared/src/erk_shared/core/
+    20→  llm_caller.py                → deleted
+    21→  fakes.py                     → FakeLlmCaller, LlmCall removed
+    22→```
+    23→
+    24→`ErkContext.llm_caller` removed. All callers use `ctx.prompt_executor.execute_prompt()`.
+    25→
+    26→---
+    27→
+    28→## Step 1: Rename `ClaudePromptExecutor` → `ClaudeCliPromptExecutor`
+    29→
+    30→**`src/erk/core/prompt_executor.py`** — rename the class only.
+
+... [201 lines omitted] ...
+
+    55→  - Maps `TextBlock` → `PromptResult(success=True, output=text, error=None)`
+    56→  - Maps `APIError` → `PromptResult(success=False, output="", error=str(exc))`
+    58→- `execute_command_streaming(...)` → `raise NotImplementedError`
+    59→- `execute_interactive(...)` → `raise NotImplementedError`
+    60→- `execute_prompt_passthrough(...)` → `raise NotImplementedError`
+   160→- Replace `isinstance(result, (NoApiKey, LlmCallFailed))` with `not result.success`
+   175→- Replace `isinstance(result, (NoApiKey, LlmCallFailed))` with `not result.success`
+   181→- Collapse `isinstance(result, NoApiKey)` / `isinstance(result, LlmCallFailed)` → `not result.success`
+  </tool_result>
+  <assistant>Now let me read the key source files to understand the current state before implementing. Let me load the required skills and read the critical files in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4544" cache_read_input_tokens="28782" cache_creation="{'ephemeral_5m_input_tokens': 4544, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Skill" id="toolu_01DG4CUcT1FKPrWcoKiQb3MR">
+    <param name="skill">dignified-python</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4544" cache_read_input_tokens="28782" cache_creation="{'ephemeral_5m_input_tokens': 4544, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DG4CUcT1FKPrWcoKiQb3MR">
+Launching skill: dignified-python
+  </tool_result>
+  <user>Base directory for this skill: /home/runner/work/erk/erk/.claude/skills/dignified-python
+
+# Dignified Python Coding Standards
+
+## Core Knowledge (ALWAYS Loaded)
+
+@dignified-python-core.md
+
+## Version Detection
+
+**Identify the project's minimum Python version** by checking (in order):
+
+1. `pyproject.toml` - Look for `requires-python` field (e.g., `requires-python = "&gt;=3.12"`)
+2. `setup.py` or `setup.cfg` - Look for `python_requires`
+3. `.python-version` file - Contains version like `3.12` or `3.12.0`
+4. Default to Python 3.12 if no version specifier found
+
+**Once identified, load the appropriate version-specific file:**
+
+- Python 3.10: Load `versions/python-3.10.md`
+- Python 3.11: Load `versions/python-3.11.md`
+- Python 3.12: Load `versions/python-3.12.md`
+- Python 3.13: Load `versions/python-3.13.md`
+
+## Conditional Loading (Load Based on Task Patterns)
+
+Core files above cover 80%+ of Python code patterns. Only load these additional files when you detect specific patterns:
+
+Pattern detection examples:
+
+- If task mentions "click" or "CLI" -&gt; Load `cli-patterns.md`
+- If task mentions "subprocess" -&gt; Load `subprocess.md`
+
+## When to Read Each Reference Document
+
+The `references/` directory contains detailed guidance for specialized topics. Load these on-demand when you encounter relevant patterns:
+
+### `references/exception-handling.md`
+
+**Read when**:
+
+- Writing try/except blocks
+- Wrapping third-party APIs that may raise
+- Seeing or writing `from e` or `from None`
+- Unsure if LBYL alternative exists
+
+### `references/interfaces.md`
+
+**Read when**:
+
+- Creating ABC or Protocol classes
+- Writing @abstractmethod decorators
+- Designing gateway layer interfaces
+- Choosing between ABC and Protocol
+
+### `references/typing-advanced.md`
+
+**Read when**:
+
+- Using typing.cast()
+- Creating Literal type aliases
+- Narrowing types in conditional blocks
+
+### `references/module-design.md`
+
+**Read when**:
+
+- Creating new Python modules
+- Adding module-level code (beyond simple constants)
+- Using @cache decorator at module level
+- Seeing Path() or computation at module level
+- Considering inline imports
+
+### `references/api-design.md`
+
+**Read when**:
+
+- Adding default parameter values to functions
+- Defining functions with 5 or more parameters
+- Using ThreadPoolExecutor.submit()
+- Reviewing function signatures
+
+### `references/checklists.md`
+
+**Read when**:
+
+- Final review before committing Python code
+- Unsure if you've followed all rules
+- Need a quick lookup of requirements
+
+## How to Use This Skill
+
+1. **Core knowledge** is loaded automatically (LBYL, pathlib, basic imports, anti-patterns)
+2. **Version detection** happens once - identify the minimum Python version and load the appropriate version file
+3. **Reference documents** are loaded on-demand based on the triggers above
+4. **Additional patterns** may require extra loading (CLI patterns, subprocess)
+5. **Each file is self-contained** with complete guidance for its domain
+</user>
+  <tool_use name="Read" id="toolu_01WoxkNmZhNCpMStnfvPq6g6">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/dignified-python-core.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="906" cache_read_input_tokens="33326" cache_creation="{'ephemeral_5m_input_tokens': 906, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014ZSokoYRZWuQArqiEtz2Kn">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/dignified-python/versions/python-3.10.md</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="906" cache_read_input_tokens="33326" cache_creation="{'ephemeral_5m_input_tokens': 906, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WoxkNmZhNCpMStnfvPq6g6">
+     1→---
+     2→---
+     3→
+     4→# Dignified Python - Core Standards
+     5→
+     6→This document contains the core Python coding standards that apply to 80%+ of Python code. These principles are loaded with every skill invocation.
+     7→
+     8→For conditional loading of specialized patterns:
+     9→
+    10→- CLI development -&gt; Load `cli-patterns.md`
+    11→- Subprocess operations -&gt; Load `subprocess.md`
+    12→
+    13→For detailed reference material, see the "When to Read Each Reference" section in SKILL.md.
+    14→
+    15→---
+    16→
+    17→## The Cornerstone: LBYL Over EAFP
+    18→
+    19→**Look Before You Leap: Check conditions proactively, NEVER use exceptions for control flow.**
+    20→
+    21→This is the single most important rule in dignified Python. Every pattern below flows from this principle.
+    22→
+    23→```python
+    24→# CORRECT: Check first
+    25→if key in mapping:
+    26→    value = mapping[key]
+    27→    process(value)
+    28→
+    29→# WRONG: Exception as control flow
+    30→try:
+
+... [502 lines omitted] ...
+
+    33→except KeyError:
+    39→## Exception Handling Basics
+    45→LBYL means checking conditions before acting. EAFP (Easier to Ask for Forgiveness than Permission) means trying operations and catching exceptions. In dignified Python, we strongly prefer LBYL.
+    65→# WRONG: KeyError as control flow
+    68→except KeyError:
+    72→### When Exceptions ARE Acceptable
+    74→Exceptions are ONLY acceptable at:
+    76→1. **Error boundaries** (CLI/API level)
+    80→**Default: Let exceptions bubble up**
+    82→**When you must use try-except: scope the try block to the single operation that raises.** Don't wrap multiple operations in one try block — each handler should know exactly what failed. Use early returns to keep subsequent code flat.
+    84→For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
+   118→- `.resolve()` raises `OSError` for non-existent paths
+   119→- `.is_relative_to()` raises `ValueError` for invalid comparisons
+   120→- Checking `.exists()` first avoids exceptions entirely (LBYL!)
+   135→# WRONG: Using exceptions for path validation
+   140→except (OSError, ValueError):
+   180→3. **Inline imports only for specific exceptions** (circular deps, TYPE_CHECKING, conditional features)
+   211→**Acceptable exceptions:**
+   480→    log.warning("Non-numeric plan_id")
+   494→- **Raise exception**: When invalid data indicates a programming error or corrupt state
+   521→- **Exception chaining (B904), minimal exception scope**: `references/exception-handling.md`
+  </tool_result>
+  <tool_result tool="toolu_014ZSokoYRZWuQArqiEtz2Kn">
+     1→---
+     2→---
+     3→
+     4→# Type Annotations - Python 3.10
+     5→
+     6→This document provides complete, canonical type annotation guidance for Python 3.10. This is the baseline for modern Python type syntax.
+     7→
+     8→## Overview
+     9→
+    10→Python 3.10 introduced major improvements to type annotation syntax through PEP 604 (union types via `|`) and PEP 585 (generic types in standard collections). These features eliminated the need for most `typing` module imports and made type annotations more concise and readable.
+    11→
+    12→**What's new in 3.10:**
+    13→
+    14→- Union types with `|` operator (PEP 604)
+    15→- Built-in generic types: `list[T]`, `dict[K, V]`, etc. (PEP 585)
+    16→- No more need for `List`, `Dict`, `Union`, `Optional` from typing
+    17→
+    18→**What you need from typing module:**
+    19→
+    20→- `TypeVar` for generic functions/classes
+    21→- `Protocol` for structural typing (rare - prefer ABC)
+    22→- `TYPE_CHECKING` for conditional imports
+    23→- `Any` (use sparingly)
+    24→
+    25→## Complete Type Annotation Syntax for Python 3.10
+    26→
+    27→### Basic Collection Types
+    28→
+    29→✅ **PREFERRED** - Use built-in generic types:
+    30→
+
+... [493 lines omitted] ...
+
+   303→            raise ValueError("Entity must have id")
+   375→        raise FileNotFoundError(f"Config not found: {path}")
+   385→### API Client with Error Handling
+   394→    """Container for API response with data or error."""
+   396→    def __init__(self, data: T | None = None, error: str | None = None) -&gt; None:
+   398→        self.error = error
+   401→        return self.error is None
+   407→        return ApiResponse(error=self.error)
+   445→All code should pass type checking without errors.
+  </tool_result>
+  <assistant>Good, I have the coding standards. Now let me read the critical source files in parallel to understand the current codebase state.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="11638" cache_read_input_tokens="34232" cache_creation="{'ephemeral_5m_input_tokens': 11638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01QAgjacqzJUNfJdcnnWx8uv">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/prompt_executor.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11638" cache_read_input_tokens="34232" cache_creation="{'ephemeral_5m_input_tokens': 11638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01RR3eooo5sBHp8dEJA8PN4o">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/codex_prompt_executor.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11638" cache_read_input_tokens="34232" cache_creation="{'ephemeral_5m_input_tokens': 11638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Fud46Gytc4McE3pf5xFgL8">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/context.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11638" cache_read_input_tokens="34232" cache_creation="{'ephemeral_5m_input_tokens': 11638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Bt49ziFQiRwTKE7XH37c4R">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/fast_llm.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11638" cache_read_input_tokens="34232" cache_creation="{'ephemeral_5m_input_tokens': 11638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_012TNRzkkDhQU3AYVJh7uPHu">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/llm_caller.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11638" cache_read_input_tokens="34232" cache_creation="{'ephemeral_5m_input_tokens': 11638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01FjHbq5V1wbgd9Z5qZetc1A">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/fakes.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11638" cache_read_input_tokens="34232" cache_creation="{'ephemeral_5m_input_tokens': 11638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01R8V84jU2wb43WiLuVQL9jJ">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/context.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11638" cache_read_input_tokens="34232" cache_creation="{'ephemeral_5m_input_tokens': 11638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_017fAEKFC2SkU3wnhSVVikgV">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/testing.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11638" cache_read_input_tokens="34232" cache_creation="{'ephemeral_5m_input_tokens': 11638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_014sEtrmWr4SeQ5hnRoCw5eH">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/factories.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11638" cache_read_input_tokens="34232" cache_creation="{'ephemeral_5m_input_tokens': 11638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Rjp4AgJPw14h785q79eB14">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/prompt_executor.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="11638" cache_read_input_tokens="34232" cache_creation="{'ephemeral_5m_input_tokens': 11638, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RR3eooo5sBHp8dEJA8PN4o">
+     1→"""Codex CLI prompt execution implementation.
+     2→
+     3→This module provides the CodexPromptExecutor implementation that maps erk's
+     4→PromptExecutor ABC to OpenAI's Codex CLI. Codex uses a completely different
+     5→CLI interface and JSONL streaming format from Claude.
+     6→
+     7→See docs/learned/integrations/codex/codex-cli-reference.md for flag mapping.
+     8→See docs/learned/integrations/codex/codex-jsonl-format.md for output format.
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→import logging
+    14→import os
+    15→import shutil
+    16→import subprocess
+    17→import sys
+    18→import tempfile
+    19→import threading
+    20→from collections.abc import Iterator
+    21→from pathlib import Path
+    22→from typing import TYPE_CHECKING
+    23→
+    24→from erk.core.codex_output_parser import CodexParserState, parse_codex_jsonl_line
+    25→from erk_shared.context.types import permission_mode_to_codex_exec, permission_mode_to_codex_tui
+    26→from erk_shared.core.prompt_executor import (
+    27→    ErrorEvent,
+    28→    ExecutorEvent,
+    29→    NoOutputEvent,
+    30→    NoTurnsEvent,
+
+... [431 lines omitted] ...
+
+    31→    ProcessErrorEvent,
+   204→                yield ErrorEvent(message=f"Codex command failed with exit code {result.returncode}")
+   228→        except OSError as e:
+   229→            yield ProcessErrorEvent(
+   230→                message=f"Failed to start Codex CLI: {e}\nCommand: {' '.join(cmd_args)}"
+   263→            yield ProcessErrorEvent(
+   279→                yield ErrorEvent(message=f"Exit code {returncode}")
+   297→            error_msg = "Codex command failed"
+   298→            error_msg += f"\n  Exit code: {returncode}"
+   299→            error_msg += f"\n  Lines processed: {line_count}"
+   301→                error_msg += "\n  Stderr:\n" + "".join(stderr_output).strip()
+   302→            yield ErrorEvent(message=error_msg)
+   324→            raise RuntimeError("Codex CLI not found\nInstall from: https://github.com/openai/codex")
+   346→            except OSError:
+   399→                error_parts = [f"Exit code {result.returncode}"]
+   401→                    error_parts.append(f"stderr: {result.stderr.strip()}")
+   405→                    error=" | ".join(error_parts),
+   417→                error=None,
+  </tool_result>
+  <tool_result tool="toolu_01Bt49ziFQiRwTKE7XH37c4R">
+     1→"""Fast LLM calls via Anthropic SDK.
+     2→
+     3→For lightweight operations (slug generation) where spawning a full
+     4→Claude CLI subprocess is too slow. Falls back to Claude CLI via
+     5→PromptExecutor when ANTHROPIC_API_KEY is unavailable.
+     6→"""
+     7→
+     8→from __future__ import annotations
+     9→
+    10→import logging
+    11→import os
+    12→from typing import TYPE_CHECKING
+    13→
+    14→from anthropic import Anthropic, APIError
+    15→from anthropic.types import TextBlock
+    16→
+    17→from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey
+    18→
+    19→if TYPE_CHECKING:
+    20→    from erk_shared.core.prompt_executor import PromptExecutor
+    21→
+    22→logger = logging.getLogger(__name__)
+    23→
+    24→
+    25→class AnthropicLlmCaller(LlmCaller):
+    26→    def __init__(self, *, prompt_executor: PromptExecutor | None = None) -&gt; None:
+    27→        self._prompt_executor = prompt_executor
+    28→
+    29→    def call(
+    30→        self, prompt: str, *, system_prompt: str, max_tokens: int
+
+... [46 lines omitted] ...
+
+    31→    ) -&gt; LlmResponse | NoApiKey | LlmCallFailed:
+    34→            logger.warning("ANTHROPIC_API_KEY environment variable not set")
+    46→                return LlmCallFailed(message="Unexpected response type from LLM")
+    48→        except APIError as exc:
+    49→            logger.warning("LLM call failed: %s", exc)
+    50→            return LlmCallFailed(message=str(exc))
+    54→    ) -&gt; LlmResponse | NoApiKey | LlmCallFailed:
+    69→            return LlmCallFailed(message=f"Claude CLI failed: {result.error}")
+  </tool_result>
+  <tool_result tool="toolu_012TNRzkkDhQU3AYVJh7uPHu">
+     1→"""LLM caller ABC and discriminated union result types.
+     2→
+     3→Defines the interface for lightweight LLM calls (e.g., slug generation)
+     4→and the non-ideal state types returned when calls fail.
+     5→"""
+     6→
+     7→from abc import ABC, abstractmethod
+     8→from dataclasses import dataclass
+     9→
+    10→
+    11→@dataclass(frozen=True)
+    12→class LlmResponse:
+    13→    text: str
+    14→
+    15→
+    16→@dataclass(frozen=True)
+    17→class NoApiKey:
+    18→    message: str
+    19→
+    20→    @property
+    21→    def error_type(self) -&gt; str:
+    22→        return "no-api-key"
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class LlmCallFailed:
+    27→    message: str
+    28→
+    29→    @property
+    30→    def error_type(self) -&gt; str:
+
+... [16 lines omitted] ...
+
+    31→        return "llm-call-failed"
+    38→    ) -&gt; LlmResponse | NoApiKey | LlmCallFailed:
+  </tool_result>
+  <tool_result tool="toolu_01FjHbq5V1wbgd9Z5qZetc1A">
+     1→"""Fake implementations for erk-specific ABCs.
+     2→
+     3→These fakes are used in tests and in contexts (like erk-kits) that
+     4→don't need the real erk implementations.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from collections.abc import Iterator
+    10→from dataclasses import dataclass, field
+    11→from pathlib import Path
+    12→from typing import TYPE_CHECKING, NamedTuple
+    13→
+    14→from erk_shared.context.types import PermissionMode
+    15→from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey
+    16→from erk_shared.core.objective_list_service import ObjectiveListService
+    17→from erk_shared.core.plan_list_service import PlanListData, PlanListService
+    18→from erk_shared.core.prompt_executor import (
+    19→    ExecutorEvent,
+    20→    PromptExecutor,
+    21→    PromptResult,
+    22→)
+    23→from erk_shared.core.script_writer import ScriptResult, ScriptWriter
+    24→from erk_shared.gateway.codespace_registry.abc import CodespaceRegistry, RegisteredCodespace
+    25→from erk_shared.gateway.github.types import GitHubRepoLocation, IssueFilterState
+    26→from erk_shared.plan_store.types import PlanState
+    27→
+    28→if TYPE_CHECKING:
+    29→    from erk_shared.gateway.http.abc import HttpClient
+    30→
+
+... [351 lines omitted] ...
+
+   156→        return PromptResult(success=True, output="", error=None)
+   250→            raise ValueError(f"No codespace with name '{name}' exists")
+   255→            raise ValueError(f"Codespace with name '{codespace.name}' already exists")
+   260→            raise ValueError(f"No codespace with name '{name}' exists")
+   312→            warnings=self._data.warnings,
+   334→        response: LlmResponse | NoApiKey | LlmCallFailed,
+   335→        responses: list[LlmResponse | NoApiKey | LlmCallFailed] | None = None,
+   344→    ) -&gt; LlmResponse | NoApiKey | LlmCallFailed:
+  </tool_result>
+  <tool_result tool="toolu_01R8V84jU2wb43WiLuVQL9jJ">
+     1→"""Unified context for erk and erk-kits operations.
+     2→
+     3→This module provides ErkContext - the unified context that holds all dependencies
+     4→for erk and erk-kits operations.
+     5→
+     6→The ABCs for erk-specific services (PromptExecutor, ConfigStore, ScriptWriter,
+     7→PlanListService) are defined in erk_shared.core, enabling
+     8→proper type hints without circular imports. Real implementations remain in erk.
+     9→"""
+    10→
+    11→from __future__ import annotations
+    12→
+    13→from dataclasses import dataclass
+    14→from pathlib import Path
+    15→from typing import TYPE_CHECKING
+    16→
+    17→from erk_shared.context.types import (
+    18→    GlobalConfig,
+    19→    LoadedConfig,
+    20→    NoRepoSentinel,
+    21→    RepoContext,
+    22→)
+    23→
+    24→if TYPE_CHECKING:
+    25→    from erk.artifacts.paths import ErkPackageInfo
+    26→    from erk_shared.core.health_check_runner import HealthCheckRunner
+    27→    from erk_shared.core.objective_list_service import ObjectiveListService
+    28→
+    29→from erk_shared.core.llm_caller import LlmCaller
+    30→from erk_shared.core.plan_list_service import PlanListService
+
+... [242 lines omitted] ...
+
+   135→            RuntimeError: If not in a git repository
+   138→            raise RuntimeError("Not in a git repository")
+   198→            raise RuntimeError("graphite_branch_ops must be set when Graphite is enabled")
+  </tool_result>
+  <tool_result tool="toolu_017fAEKFC2SkU3wnhSVVikgV">
+     1→"""Test factories for creating ErkContext instances.
+     2→
+     3→This module provides factory functions for creating test contexts with
+     4→fake implementations. These are used by both erk and erk-kits tests.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from pathlib import Path
+    10→from typing import TYPE_CHECKING
+    11→
+    12→from erk_shared.context.context import ErkContext
+    13→from erk_shared.context.types import GlobalConfig, LoadedConfig, RepoContext
+    14→
+    15→if TYPE_CHECKING:
+    16→    from erk.artifacts.paths import ErkPackageInfo
+    17→from erk_shared.core.fakes import (
+    18→    FakeCodespaceRegistry,
+    19→    FakeLlmCaller,
+    20→    FakeObjectiveListService,
+    21→    FakePlanListService,
+    22→    FakePromptExecutor,
+    23→    FakeScriptWriter,
+    24→)
+    25→from erk_shared.core.llm_caller import LlmCaller, LlmResponse
+    26→from erk_shared.core.prompt_executor import PromptExecutor
+    27→from erk_shared.gateway.agent_docs.abc import AgentDocs
+    28→from erk_shared.gateway.agent_launcher.abc import AgentLauncher
+    29→from erk_shared.gateway.claude_installation.abc import ClaudeInstallation
+    30→from erk_shared.gateway.codespace.abc import Codespace
+
+... [200 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_014sEtrmWr4SeQ5hnRoCw5eH">
+     1→"""Factory functions for creating ErkContext instances.
+     2→
+     3→This module provides factory functions for creating production contexts
+     4→with real implementations. Used by CLI entry points.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import subprocess
+    10→from pathlib import Path
+    11→from typing import TYPE_CHECKING
+    12→
+    13→from erk_shared.core.fakes import (
+    14→    FakeCodespaceRegistry,
+    15→    FakeLlmCaller,
+    16→    FakeObjectiveListService,
+    17→    FakePlanListService,
+    18→    FakePromptExecutor,
+    19→    FakeScriptWriter,
+    20→)
+    21→from erk_shared.core.llm_caller import LlmResponse
+    22→
+    23→if TYPE_CHECKING:
+    24→    from erk_shared.context.context import ErkContext
+    25→    from erk_shared.gateway.git.abc import Git
+    26→    from erk_shared.gateway.github.types import RepoInfo
+    27→
+    28→
+    29→def get_repo_info(git: Git, repo_root: Path) -&gt; RepoInfo | None:
+    30→    """Detect repository info from git remote URL.
+
+... [143 lines omitted] ...
+
+    49→    except ValueError:
+    65→        debug: If True, enable debug mode (full stack traces in error handling)
+  </tool_result>
+  <tool_result tool="toolu_01Rjp4AgJPw14h785q79eB14">
+     1→"""Prompt execution abstraction - ABC and types.
+     2→
+     3→This module provides the abstract interface and typed events for prompt execution.
+     4→The real implementation (ClaudePromptExecutor) remains in erk.core.prompt_executor.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import time
+    10→from abc import ABC, abstractmethod
+    11→from collections.abc import Iterator
+    12→from dataclasses import dataclass, field
+    13→from pathlib import Path
+    14→from typing import TYPE_CHECKING
+    15→
+    16→if TYPE_CHECKING:
+    17→    from erk_shared.context.types import PermissionMode
+    18→
+    19→# =============================================================================
+    20→# Typed Executor Events
+    21→# =============================================================================
+    22→
+    23→
+    24→@dataclass(frozen=True)
+    25→class TextEvent:
+    26→    """Text content from Claude."""
+    27→
+    28→    content: str
+    29→
+    30→
+
+... [418 lines omitted] ...
+
+    74→class ErrorEvent:
+    75→    """Error with non-zero exit code."""
+    95→class ProcessErrorEvent:
+    96→    """Failed to start or timeout."""
+   110→    | ErrorEvent
+   113→    | ProcessErrorEvent
+   124→        error: Error message if command failed, None otherwise
+   129→    error: str | None
+   143→        error_message: Error description if command failed, None otherwise
+   153→    error_message: str | None
+   264→        error_message: str | None = None
+   289→                case ErrorEvent(message=msg):
+   290→                    error_message = msg
+   293→                    error_message = diag
+   296→                    error_message = diag
+   298→                case ProcessErrorEvent(message=msg):
+   299→                    error_message = msg
+   312→            error_message=error_message,
+   341→            RuntimeError: If the executor is not available
+  </tool_result>
+  <tool_result tool="toolu_01QAgjacqzJUNfJdcnnWx8uv">
+     1→"""Claude CLI prompt execution implementation.
+     2→
+     3→This module provides the ClaudePromptExecutor implementation and re-exports
+     4→ABC and types from erk_shared.core.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import json
+    10→import logging
+    11→import os
+    12→import shutil
+    13→import subprocess
+    14→import sys
+    15→import threading
+    16→from collections.abc import Iterator
+    17→from pathlib import Path
+    18→from typing import TYPE_CHECKING
+    19→
+    20→if TYPE_CHECKING:
+    21→    from erk_shared.context.types import PermissionMode
+    22→
+    23→from erk_shared.context.types import permission_mode_to_claude
+    24→from erk_shared.core.prompt_executor import (
+    25→    CommandResult,  # noqa: F401 - re-exported for erk.cli.output
+    26→    ErrorEvent,
+    27→    ExecutorEvent,
+    28→    NoOutputEvent,
+    29→    NoTurnsEvent,
+    30→    PlanNumberEvent,
+
+... [629 lines omitted] ...
+
+    32→    ProcessErrorEvent,
+    53→def format_prompt_error(
+    59→    """Format error message for failed prompt execution.
+    61→    Constructs a structured error message from subprocess failure details.
+    65→        stderr: Standard error output
+    69→        Formatted error string like "Exit code 1 | stderr: ... | stdout: ..."
+    71→    error_parts = [f"Exit code {returncode}"]
+    73→        error_parts.append(f"stderr: {stderr.strip()}")
+    76→        error_parts.append(f"stdout: {stdout_preview}")
+    77→    return " | ".join(error_parts)
+   153→                error_msg = f"Claude command {command} failed with exit code {result.returncode}"
+   154→                yield ErrorEvent(message=error_msg)
+   163→        # Handle Popen errors (e.g., claude not found, permission denied)
+   174→        except OSError as e:
+   175→            yield ProcessErrorEvent(
+   176→                message=f"Failed to start Claude CLI: {e}\nCommand: {' '.join(cmd_args)}"
+   282→                    diag += "\n  Run 'claude' directly to see hook error messages"
+   300→            yield ProcessErrorEvent(
+   318→                yield ErrorEvent(message=f"Exit code {returncode}")
+   321→        # Enhanced error messages for non-zero exit codes
+   323→            error_msg = f"Claude command {command} failed"
+   324→            error_msg += f"\n  Exit code: {returncode}"
+   325→            error_msg += f"\n  Lines processed: {line_count}"
+   327→                error_msg += "\n  Stderr:\n" + "".join(stderr_output).strip()
+   328→            yield ErrorEvent(message=error_msg)
+   364→        # Parse JSON safely - JSON parsing requires exception handling
+   371→            except json.JSONDecodeError:
+   386→            "is_error": None,
+   456→            result["is_error"] = data.get("is_error", False)
+   490→            raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
+   495→        # FileNotFoundError which is the appropriate error.
+   527→            except OSError:
+   592→                error=f"Prompt execution timed out after {PROMPT_TIMEOUT_SECONDS}s",
+   599→                error=format_prompt_error(
+   609→            error=None,
+  </tool_result>
+  <tool_result tool="toolu_01Fud46Gytc4McE3pf5xFgL8">
+     1→"""Application context with dependency injection.
+     2→
+     3→This module provides factory functions for erk CLI context creation.
+     4→The unified ErkContext dataclass is defined in erk_shared.context and
+     5→re-exported here for backwards compatibility.
+     6→"""
+     7→
+     8→from __future__ import annotations
+     9→
+    10→import shutil
+    11→from collections.abc import MutableMapping
+    12→from pathlib import Path
+    13→from typing import TYPE_CHECKING, Any, cast
+    14→
+    15→import click
+    16→import tomlkit
+    17→
+    18→# Re-export types from erk_shared.context and erk.artifacts.paths
+    19→from erk.artifacts.paths import ErkPackageInfo as ErkPackageInfo
+    20→from erk.cli.config import load_config, load_local_config, merge_configs_with_local
+    21→from erk.core.codex_prompt_executor import CodexPromptExecutor
+    22→from erk.core.completion import RealCompletion
+    23→from erk.core.prompt_executor import ClaudePromptExecutor
+    24→from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
+    25→from erk.core.script_writer import RealScriptWriter
+    26→from erk.core.services.objective_list_service import RealObjectiveListService
+    27→from erk.core.services.plan_list_service import PlannedPRPlanListService
+    28→from erk.core.shell import RealShell
+    29→
+    30→# Re-export ErkContext from erk_shared for isinstance() compatibility
+
+... [716 lines omitted] ...
+
+   501→        tuple[Path | None, str | None]: (path, error_message)
+   503→        - If directory deleted: (None, error_message)
+   512→    except (FileNotFoundError, OSError):
+   530→        debug: If True, enable debug mode for error handling (default False)
+   542→    cwd_result, error_msg = safe_cwd()
+   544→        assert error_msg is not None
+   545→        # Emit clear error and exit
+   546→        user_output(click.style("Error: ", fg="red") + error_msg)
+   597→        except ValueError:
+  </tool_result>
+  <assistant>Now I have a thorough understanding of the codebase. Let me set up the todo list and read the caller files that need modification.</assistant>
+  <usage input_tokens="21124" cache_creation_input_tokens="26327" cache_read_input_tokens="45870" cache_creation="{'ephemeral_5m_input_tokens': 26327, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_017HDbTx1U7z71QbeboCZsLv">
+    <param name="todos">[{'content': 'Step 1: Rename ClaudePromptExecutor → ClaudeCliPromptExecutor', 'status': 'p...[truncated 1023 chars]...un CI and fix issues', 'status': 'pending', 'activeForm': 'Running CI and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="21124" cache_creation_input_tokens="26327" cache_read_input_tokens="45870" cache_creation="{'ephemeral_5m_input_tokens': 26327, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017HDbTx1U7z71QbeboCZsLv">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me signal start and begin reading the remaining caller files in parallel.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="21644" cache_read_input_tokens="72197" cache_creation="{'ephemeral_5m_input_tokens': 21644, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_011munFdfWhQb9BuDqzJ2Vcb">
+    <param name="command">erk exec impl-signal started --session-id "${CLAUDE_SESSION_ID}" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21644" cache_read_input_tokens="72197" cache_creation="{'ephemeral_5m_input_tokens': 21644, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Re2dfQRaFJJtSNGHXAiBAJ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/commit_message_generator.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21644" cache_read_input_tokens="72197" cache_creation="{'ephemeral_5m_input_tokens': 21644, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01Kh124yohkCfCVpZHeFWWkL">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/objective/plan_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21644" cache_read_input_tokens="72197" cache_creation="{'ephemeral_5m_input_tokens': 21644, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_019m8dNysLB9GVZXRcmP918T">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/one_shot_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21644" cache_read_input_tokens="72197" cache_creation="{'ephemeral_5m_input_tokens': 21644, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01DBsr1AnDkyMyUxid4XBF2S">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="21644" cache_read_input_tokens="72197" cache_creation="{'ephemeral_5m_input_tokens': 21644, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011munFdfWhQb9BuDqzJ2Vcb">
+{
+  "success": false,
+  "event": "started",
+  "error_type": "session-id-required",
+  "message": "Session ID required for impl-signal started. Ensure ${CLAUDE_SESSION_ID} is available in the command context."
+}
+  </tool_result>
+  <tool_result tool="toolu_01Re2dfQRaFJJtSNGHXAiBAJ">
+     1→"""Commit message generation via Anthropic API.
+     2→
+     3→This module provides commit message generation for PR submissions,
+     4→using direct Anthropic API calls to analyze diffs and generate descriptive messages.
+     5→
+     6→The commit message prompt is loaded from the shared prompt file at:
+     7→packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md
+     8→"""
+     9→
+    10→from __future__ import annotations
+    11→
+    12→import logging
+    13→import threading
+    14→from collections.abc import Generator
+    15→from dataclasses import dataclass
+    16→from pathlib import Path
+    17→from typing import TYPE_CHECKING
+    18→
+    19→from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey
+    20→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+    21→from erk_shared.gateway.gt.prompts import get_commit_message_prompt
+    22→from erk_shared.gateway.time.abc import Time
+    23→
+    24→if TYPE_CHECKING:
+    25→    from erk.core.plan_context_provider import PlanContext
+    26→
+    27→logger = logging.getLogger(__name__)
+    28→
+    29→_PROGRESS_INTERVAL_SECONDS = 2.0
+    30→
+
+... [286 lines omitted] ...
+
+    61→        error_message: Error description if generation failed
+    67→    error_message: str | None
+   104→                    error_message=f"Diff file not found: {request.diff_file}",
+   117→                    error_message="Diff file is empty",
+   137→        result_holder: list[LlmResponse | NoApiKey | LlmCallFailed] = []
+   160→                    error_message="LLM call completed without result",
+   167→        if isinstance(result, (NoApiKey, LlmCallFailed)):
+   173→                    error_message=result.message,
+   187→                error_message=None,
+  </tool_result>
+  <tool_result tool="toolu_019m8dNysLB9GVZXRcmP918T">
+     1→"""Shared dispatch logic for one-shot autonomous execution.
+     2→
+     3→Extracts the branch-create/push/PR/workflow-dispatch sequence into reusable
+     4→pieces so both `erk one-shot` and `erk objective plan --one-shot` can
+     5→dispatch tasks through the same CI workflow.
+     6→"""
+     7→
+     8→import logging
+     9→import time
+    10→from dataclasses import dataclass
+    11→from datetime import UTC
+    12→
+    13→import click
+    14→
+    15→from erk.cli.commands.pr.metadata_helpers import write_dispatch_metadata
+    16→from erk.cli.ensure import Ensure
+    17→from erk.core.branch_slug_generator import (
+    18→    BRANCH_SLUG_SYSTEM_PROMPT,
+    19→    _postprocess_slug,
+    20→    generate_branch_slug,
+    21→)
+    22→from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
+    23→from erk_shared.core.llm_caller import LlmCallFailed, NoApiKey
+    24→from erk_shared.core.prompt_executor import PromptExecutor
+    25→from erk_shared.gateway.git.branch_ops.types import BranchAlreadyExists
+    26→from erk_shared.gateway.git.remote_ops.types import PushError
+    27→from erk_shared.gateway.github.label_ops import add_labels_resilient
+    28→from erk_shared.gateway.github.metadata.core import (
+    29→    create_submission_queued_block,
+    30→    render_erk_issue_event,
+
+... [426 lines omitted] ...
+
+   215→            elif isinstance(result, LlmCallFailed):
+   216→                user_output(click.style("  \u26a0 LLM failed: ", fg="yellow") + result.message)
+   238→                click.style("Error: ", fg="red")
+   249→                click.style("Error: ", fg="red")
+   274→        if isinstance(push_result, PushError):
+   275→            Ensure.invariant(False, f"Failed to push branch: {push_result.message}")
+   396→            except Exception as e:
+   398→                    click.style("Warning: ", fg="yellow")
+   399→                    + f"Failed to update dispatch metadata: {e}"
+   423→            except Exception as e:
+   425→                    click.style("Warning: ", fg="yellow") + f"Failed to post queued comment: {e}"
+   430→    except Exception as exc:
+   431→        user_output(click.style(f"Failed during: {current_step}", fg="red"))
+  </tool_result>
+  <tool_result tool="toolu_01DBsr1AnDkyMyUxid4XBF2S">
+     1→"""Linear pipeline for PR submission.
+     2→
+     3→Replaces the dual-path branching orchestration with a sequence of plain
+     4→functions transforming a frozen SubmitState dataclass.
+     5→
+     6→Each step: (ErkContext, SubmitState) -&gt; SubmitState | SubmitError
+     7→"""
+     8→
+     9→import concurrent.futures
+    10→import dataclasses
+    11→import sys
+    12→import uuid
+    13→from collections.abc import Callable
+    14→from dataclasses import dataclass
+    15→from functools import cache
+    16→from pathlib import Path
+    17→
+    18→import click
+    19→
+    20→from erk.cli.commands.pr.shared import (
+    21→    assemble_pr_body,
+    22→    echo_plan_context_status,
+    23→    maybe_advance_lifecycle_to_impl,
+    24→    recover_plan_header,
+    25→    run_commit_message_generation,
+    26→)
+    27→from erk.cli.constants import PLANNED_PR_TITLE_PREFIX
+    28→from erk.cli.ensure import UserFacingCliError
+    29→from erk.core.commit_message_generator import CommitMessageGenerator
+    30→from erk.core.context import ErkContext
+
+... [5 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Kh124yohkCfCVpZHeFWWkL">
+     1→"""Create a plan from an objective node."""
+     2→
+     3→from dataclasses import dataclass
+     4→from pathlib import Path
+     5→
+     6→import click
+     7→
+     8→from erk.cli.commands.exec.scripts.update_objective_node import (
+     9→    _replace_node_refs_in_body,
+    10→)
+    11→from erk.cli.commands.implement_shared import normalize_model_name
+    12→from erk.cli.commands.objective.check_cmd import (
+    13→    ObjectiveValidationError,
+    14→    ObjectiveValidationSuccess,
+    15→    validate_objective,
+    16→)
+    17→from erk.cli.commands.objective_helpers import get_objective_for_branch
+    18→from erk.cli.commands.one_shot_dispatch import (
+    19→    OneShotDispatchParams,
+    20→    dispatch_one_shot,
+    21→)
+    22→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    23→from erk.cli.github_parsing import parse_issue_identifier
+    24→from erk.core.branch_slug_generator import BRANCH_SLUG_SYSTEM_PROMPT, _postprocess_slug
+    25→from erk.core.context import ErkContext, NoRepoSentinel, RepoContext
+    26→from erk_shared.context.types import InteractiveAgentConfig
+    27→from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, NoApiKey
+    28→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    29→from erk_shared.gateway.github.issues.types import IssueNotFound
+    30→from erk_shared.gateway.github.metadata.core import extract_metadata_value
+
+... [769 lines omitted] ...
+
+    50→    Uses the LLM caller to generate a concise slug. On failure (no API key
+    51→    or LLM error), falls back to sanitizing the description directly.
+    61→    if isinstance(result, (NoApiKey, LlmCallFailed)):
+   122→        click.ClickException: If objective cannot be resolved or has no pending nodes
+   125→        raise click.ClickException("Not in a git repository")
+   134→            raise click.ClickException("Not on a branch")
+   137→            raise click.ClickException(
+   143→    if isinstance(result, ObjectiveValidationError):
+   144→        raise click.ClickException(result.error)
+   148→        raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
+   152→        raise click.ClickException(f"Objective #{issue_number} has no pending unblocked nodes")
+   158→        raise click.ClickException(
+   159→            f"Internal error: next node '{next_node.id}' not found in phases"
+   197→        click.ClickException: If objective cannot be resolved or has no pending unblocked nodes
+   200→        raise click.ClickException("Not in a git repository")
+   209→            raise click.ClickException("Not on a branch")
+   212→            raise click.ClickException(
+   218→    if isinstance(result, ObjectiveValidationError):
+   219→        raise click.ClickException(result.error)
+   223→        raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
+   227→        raise click.ClickException(f"Objective #{issue_number} has no pending unblocked nodes")
+   236→            raise click.ClickException(f"Internal error: node '{node.id}' not found in phases")
+   437→    Silently catches all errors — the inner skill will retry if needed.
+   575→        raise click.ClickException("--all-unblocked and --node are mutually exclusive")
+   577→        raise click.ClickException("--all-unblocked and --next are mutually exclusive")
+   579→        raise click.ClickException("--next and --node are mutually exclusive")
+   582→        raise click.ClickException("ISSUE_REF is required unless --next or --all-unblocked is used")
+   591→            raise click.ClickException("--model requires --one-shot")
+   593→            raise click.ClickException("--dry-run requires --one-shot")
+   679→    except RuntimeError as e:
+   680→        raise click.ClickException(str(e)) from e
+   707→            raise click.ClickException("Not in a git repository")
+   714→        if isinstance(result, ObjectiveValidationError):
+   715→            raise click.ClickException(result.error)
+   720→            raise click.ClickException(f"Objective #{issue_number} has no roadmap phases")
+   728→                raise click.ClickException(
+   742→                raise click.ClickException(
+   743→                    f"Internal error: next_node '{result.next_node['id']}' not found"
+  </tool_result>
+  <assistant>Now let me find the specific lines in submit_pipeline.py and rewrite_cmd.py where CommitMessageGenerator is instantiated, and also the branch_slug_generator module.</assistant>
+  <usage input_tokens="7055" cache_creation_input_tokens="14744" cache_read_input_tokens="93841" cache_creation="{'ephemeral_5m_input_tokens': 14744, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01V7yHcAukaXfJFbHZSxcjch">
+    <param name="pattern">CommitMessageGenerator\(</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="7055" cache_creation_input_tokens="14744" cache_read_input_tokens="93841" cache_creation="{'ephemeral_5m_input_tokens': 14744, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_014LfK76R9p2DqmrUqjSWgty">
+    <param name="pattern">ctx\.llm_caller</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="7055" cache_creation_input_tokens="14744" cache_read_input_tokens="93841" cache_creation="{'ephemeral_5m_input_tokens': 14744, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01AMaFVhL4p6wb372nSoiWcW">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/branch_slug_generator.py</param>
+  </tool_use>
+  <usage input_tokens="7055" cache_creation_input_tokens="14744" cache_read_input_tokens="93841" cache_creation="{'ephemeral_5m_input_tokens': 14744, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AMaFVhL4p6wb372nSoiWcW">
+     1→"""Branch slug generation via LLM inference.
+     2→
+     3→This module provides branch name slug generation using a fast LLM call
+     4→to distill plan titles into meaningful 2-4 word slugs before they
+     5→enter the branch naming pipeline.
+     6→
+     7→Follows the CommitMessageGenerator pattern from src/erk/core/commit_message_generator.py.
+     8→"""
+     9→
+    10→from __future__ import annotations
+    11→
+    12→from dataclasses import dataclass
+    13→
+    14→from erk_shared.core.prompt_executor import PromptExecutor
+    15→from erk_shared.naming import sanitize_worktree_name
+    16→
+    17→BRANCH_SLUG_SYSTEM_PROMPT = """\
+    18→You are a branch name slug generator. Given a title, return ONLY a concise
+    19→2-4 word slug using lowercase letters and hyphens. No explanation.
+    20→
+    21→Rules:
+    22→- Use 2-4 hyphenated words (e.g., "fix-auth-session", "add-plan-validation")
+    23→- Capture the distinctive essence, not generic words
+    24→- Drop filler words: "the", "a", "for", "and", "implementation", "plan"
+    25→- Prefer verbs: add, fix, refactor, update, consolidate, extract, migrate
+    26→- Never exceed 30 characters total
+    27→- Output ONLY the slug, nothing else"""
+    28→
+    29→
+    30→@dataclass(frozen=True)
+
+... [127 lines omitted] ...
+
+    37→        error_message: Error description if generation failed
+    42→    error_message: str | None
+    65→            BranchSlugResult with success status and slug or error
+    80→                error_message=result.error or "LLM execution failed",
+    88→                error_message=f"Invalid LLM output: {result.output!r}",
+    94→            error_message=None,
+   135→    """Generate a slug from title, falling back to raw title on failure.
+   138→    or the raw title on failure (so sanitize_worktree_name handles it downstream).
+   145→        LLM-generated slug on success, raw title on failure
+  </tool_result>
+  <tool_result tool="toolu_01V7yHcAukaXfJFbHZSxcjch">
+tests/core/test_commit_message_generator.py:45:    generator = CommitMessageGenerator(caller, time=FakeTime())
+tests/core/test_commit_message_generator.py:95:    generator = CommitMessageGenerator(caller, time=FakeTime())
+tests/core/test_commit_message_generator.py:117:    generator = CommitMessageGenerator(caller, time=FakeTime())
+tests/core/test_commit_message_generator.py:145:    generator = CommitMessageGenerator(caller, time=FakeTime())
+tests/core/test_commit_message_generator.py:173:    generator = CommitMessageGenerator(caller, time=FakeTime())
+tests/core/test_commit_message_generator.py:200:    generator = CommitMessageGenerator(caller, time=FakeTime())
+tests/core/test_commit_message_generator.py:234:    generator = CommitMessageGenerator(caller, time=FakeTime())
+tests/core/test_commit_message_generator.py:264:    generator = CommitMessageGenerator(caller, time=FakeTime())
+tests/core/test_commit_message_generator.py:292:    generator = CommitMessageGenerator(caller, time=FakeTime())
+tests/core/test_commit_message_generator.py:326:    generator = CommitMessageGenerator(caller, time=FakeTime())
+tests/core/test_commit_message_generator.py:355:    generator = CommitMessageGenerator(caller, time=FakeTime())
+tests/core/test_commit_message_generator.py:399:    generator = CommitMessageGenerator(caller, time=FakeTime())
+tests/core/test_commit_message_generator.py:435:    generator = CommitMessageGenerator(caller, time=FakeTime())
+tests/core/test_commit_message_generator.py:469:    generator = CommitMessageGenerator(caller, time=FakeTime())
+docs/learned/pr-operations/commit-message-generation.md:75:Override via `CommitMessageGenerator(executor, model="sonnet")` for complex diffs.
+docs/learned/architecture/threading-patterns.md:72:    generator = CommitMessageGenerator(executor=fake_executor, time=fake_time, ...)
+src/erk/cli/commands/exec/scripts/update_pr_description.py:120:    msg_gen = CommitMessageGenerator(ctx.llm_caller, time=ctx.time)
+src/erk/cli/commands/pr/rewrite_cmd.py:125:    msg_gen = CommitMessageGenerator(ctx.llm_caller, time=ctx.time)
+src/erk/cli/commands/pr/submit_pipeline.py:655:    msg_gen = CommitMessageGenerator(ctx.llm_caller, time=ctx.time)
+  </tool_result>
+  <tool_result tool="toolu_014LfK76R9p2DqmrUqjSWgty">
+src/erk/cli/commands/exec/scripts/update_pr_description.py:120:    msg_gen = CommitMessageGenerator(ctx.llm_caller, time=ctx.time)
+docs/learned/architecture/inference-hoisting.md:187:`AnthropicLlmCaller` is instantiated during context creation in `create_context()` at `src/erk/core/context.py` and stored as `ctx.llm_caller`. The branch slug generator and other dispatch-layer callers access it through the context.
+src/erk/cli/commands/one_shot_dispatch.py:208:            result = ctx.llm_caller.call(
+src/erk/cli/commands/pr/rewrite_cmd.py:125:    msg_gen = CommitMessageGenerator(ctx.llm_caller, time=ctx.time)
+src/erk/cli/commands/pr/submit_pipeline.py:655:    msg_gen = CommitMessageGenerator(ctx.llm_caller, time=ctx.time)
+src/erk/cli/commands/objective/plan_cmd.py:282:        slug = _generate_slug(ctx.llm_caller, node.description)
+src/erk/cli/commands/objective/plan_cmd.py:766:    slug = _generate_slug(ctx.llm_caller, target_node.description)
+docs/learned/planning/one-shot-workflow.md:155:Branch slugs for one-shot branches are generated by calling `ctx.llm_caller.call()` directly with `BRANCH_SLUG_SYSTEM_PROMPT` (defined in `src/erk/core/branch_slug_generator.py`). The prompt instructs the LLM to produce 2-4 hyphenated lowercase words (max 30 characters) that capture the essence of the task.
+docs/learned/planning/one-shot-workflow.md:159:1. The dispatch function calls `ctx.llm_caller.call()` directly with `BRANCH_SLUG_SYSTEM_PROMPT`
+  </tool_result>
+  <assistant>Now I have a comprehensive understanding of the codebase. Let me begin implementing. I'll start with Steps 1 and 2 (renaming) using the libcst-refactor agent for bulk renames, then proceed with creating new files and making the other modifications.</assistant>
+  <usage input_tokens="1822" cache_creation_input_tokens="8840" cache_read_input_tokens="108585" cache_creation="{'ephemeral_5m_input_tokens': 8840, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01JGjzYccRVsBmbpsERWqY2h">
+    <param name="todos">[{'content': 'Step 1: Rename ClaudePromptExecutor → ClaudeCliPromptExecutor', 'status': 'i...[truncated 1027 chars]...un CI and fix issues', 'status': 'pending', 'activeForm': 'Running CI and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="1822" cache_creation_input_tokens="8840" cache_read_input_tokens="108585" cache_creation="{'ephemeral_5m_input_tokens': 8840, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01JGjzYccRVsBmbpsERWqY2h">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Let me do both renames in parallel using the libcst-refactor agent:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2374" cache_read_input_tokens="117425" cache_creation="{'ephemeral_5m_input_tokens': 2374, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_01EfWEhXf81rp7aFwFURXZkb">
+    <param name="description">Rename ClaudePromptExecutor class</param>
+    <param name="subagent_type">libcst-refactor</param>
+    <param name="model">haiku</param>
+    <param name="prompt">Rename the class `ClaudePromptExecutor` to `ClaudeCliPromptExecutor` across the entire cod...[truncated 648 chars]...only the class name. Make sure to update all string references in docstrings/comments too.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2374" cache_read_input_tokens="117425" cache_creation="{'ephemeral_5m_input_tokens': 2374, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Task" id="toolu_012swzuLws3AfkdFR7t7nRAZ">
+    <param name="description">Rename CodexPromptExecutor class</param>
+    <param name="subagent_type">libcst-refactor</param>
+    <param name="model">haiku</param>
+    <param name="prompt">Rename the class `CodexPromptExecutor` to `CodexCliPromptExecutor` across the entire codeb...[truncated 265 chars]...s in tests/unit/core/test_context.py
+
+Do NOT rename the file itself - only the class name.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2374" cache_read_input_tokens="117425" cache_creation="{'ephemeral_5m_input_tokens': 2374, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012swzuLws3AfkdFR7t7nRAZ">
+Excellent! Let me create a final summary with absolute file paths as requested:
+
+## Summary
+
+I have successfully renamed the `CodexPromptExecutor` class to `CodexCliPromptExecutor` across the codebase. Here's what was changed:
+
+### Files Modified (4 total)
+
+**1. `/home/runner/work/erk/erk/src/erk/core/codex_prompt_executor.py`**
+- Renamed class definition from `CodexPromptExecutor` to `CodexCliPromptExecutor` (line 150)
+- Updated module docstring to reflect new class name (line 3)
+- Updated `__init__` docstring to use new class name (line 154)
+
+**2. `/home/runner/work/erk/erk/src/erk/core/context.py`**
+- Updated import: `from erk.core.codex_prompt_executor import CodexCliPromptExecutor` (line 21)
+- Updated `create_prompt_executor()` docstring (line 101)
+- Updated function return statement: `return CodexCliPromptExecutor(console=console)` (line 112)
+- Note: `ClaudePromptExecutor` was intentionally left unchanged
+
+**3. `/home/runner/work/erk/erk/tests/unit/core/test_codex_prompt_executor.py`**
+- Updated import: `from erk.core.codex_prompt_executor import CodexCliPromptExecutor` (line 240)
+- Updated instantiation: `executor = CodexCliPromptExecutor(console=None)` (line 242)
+
+**4. `/home/runner/work/erk/erk/tests/unit/core/test_context.py`**
+- Updated import: `from erk.core.codex_prompt_executor import CodexCliPromptExecutor` (line 7)
+- Updated test docstring (line 96)
+- Updated isinstance assertion: `assert isinstance(executor, CodexCliPromptExecutor)` (line 111)
+
+### Verification
+- All 26 tests pass in the affected test files
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01EfWEhXf81rp7aFwFURXZkb">
+Excellent! All references have been updated. Let me create a summary of the refactoring:
+
+## Summary
+
+I have successfully renamed the class `ClaudePromptExecutor` to `ClaudeCliPromptExecutor` across the entire codebase using a combination of LibCST-based refactoring and manual updates. Here are the details:
+
+### Files Modified
+
+1. **`/home/runner/work/erk/erk/src/erk/core/prompt_executor.py`**
+   - Renamed class definition from `ClaudePromptExecutor` to `ClaudeCliPromptExecutor`
+   - Updated docstrings and class initialization docstring
+
+2. **`/home/runner/work/erk/erk/src/erk/core/context.py`**
+   - Updated import statement to use `ClaudeCliPromptExecutor`
+   - Updated instantiation calls (2 locations)
+   - Updated docstring reference in `create_prompt_executor()` function
+
+3. **`/home/runner/work/erk/erk/tests/core/test_prompt_executor.py`**
+   - Updated import statement
+   - Updated all 11 test function calls that instantiate the class
+   - Fixed static method calls to `_subprocess_env()`
+
+4. **`/home/runner/work/erk/erk/tests/unit/core/test_context.py`**
+   - Updated import statement
+   - Updated test docstrings (2 locations)
+   - Updated isinstance() assertions (2 locations)
+
+5. **`/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/prompt_executor.py`**
+   - Updated all docstring examples (7 locations showing proper usage)
+   - Updated module docstring reference
+
+... [13 lines omitted] ...
+  </tool_result>
+  <assistant>Both renames completed successfully. Let me mark steps 1 and 2 as done and move on to creating the new files.</assistant>
+  <usage input_tokens="677" cache_creation_input_tokens="1309" cache_read_input_tokens="119799" cache_creation="{'ephemeral_5m_input_tokens': 1309, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_014n77HvMGJZhJKzmWDr8R7G">
+    <param name="todos">[{'content': 'Step 1: Rename ClaudePromptExecutor → ClaudeCliPromptExecutor', 'status': 'c...[truncated 1031 chars]...un CI and fix issues', 'status': 'pending', 'activeForm': 'Running CI and fixing issues'}]</param>
+  </tool_use>
+  <usage input_tokens="677" cache_creation_input_tokens="1309" cache_read_input_tokens="119799" cache_creation="{'ephemeral_5m_input_tokens': 1309, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014n77HvMGJZhJKzmWDr8R7G">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me create the AnthropicApiPromptExecutor and FallbackPromptExecutor files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1198" cache_read_input_tokens="121108" cache_creation="{'ephemeral_5m_input_tokens': 1198, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+</session>

@@ -1,0 +1,609 @@
+<session>
+  <meta source="agent-a86e2c3" />
+  <meta branch="plnd/flat-prompt-executors-03-06-1518" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <assistant>Excellent! The tests pass. Now let's run tests from foundation/test_context.py:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="416" cache_read_input_tokens="84169" cache_creation="{'ephemeral_5m_input_tokens': 416, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014bZnQtPobrr7cvKwh9jEMi">
+    <param name="command">uv run pytest tests/core/foundation/test_context.py -xvs 2&gt;&amp;1 | head -100</param>
+    <param name="description">Run context foundation tests</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="416" cache_read_input_tokens="84169" cache_creation="{'ephemeral_5m_input_tokens': 416, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014bZnQtPobrr7cvKwh9jEMi">
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 8 items
+
+tests/core/foundation/test_context.py ........
+
+============================== 8 passed in 0.69s ===============================
+  </tool_result>
+  <assistant>Perfect! Let's verify the changes are in place by looking at a couple of the modified files again:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="310" cache_read_input_tokens="84585" cache_creation="{'ephemeral_5m_input_tokens': 310, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0123WvSov7zJNEHVDQiUSKxJ">
+    <param name="command">grep -A 5 "^class Claude" /home/runner/work/erk/erk/src/erk/core/prompt_executor.py</param>
+    <param name="description">Verify class was renamed</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="310" cache_read_input_tokens="84585" cache_creation="{'ephemeral_5m_input_tokens': 310, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0123WvSov7zJNEHVDQiUSKxJ">
+class ClaudePromptExecutor(PromptExecutor):
+    """Production implementation using subprocess and Claude CLI."""
+
+    def __init__(self, console: Console | None) -&gt; None:
+        """Initialize ClaudePromptExecutor with Console dependency.
+  </tool_result>
+  <assistant>Hmm, it seems the file wasn't actually written to disk. Let me check if there's a caching issue:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="303" cache_read_input_tokens="84895" cache_creation="{'ephemeral_5m_input_tokens': 303, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01MQwRJa2ZJj2kdTZeHioUS7">
+    <param name="command">stat /home/runner/work/erk/erk/src/erk/core/prompt_executor.py | grep Modify</param>
+    <param name="description">Check file modification time</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="303" cache_read_input_tokens="84895" cache_creation="{'ephemeral_5m_input_tokens': 303, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MQwRJa2ZJj2kdTZeHioUS7">
+Modify: 2026-03-06 23:23:05.627841219 +0000
+  </tool_result>
+  <assistant>The file was modified. Let me read it again without caching:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="164" cache_read_input_tokens="85198" cache_creation="{'ephemeral_5m_input_tokens': 164, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Up9wUn8Ue56paw84mTGPcH">
+    <param name="command">sed -n '75,90p' /home/runner/work/erk/erk/src/erk/core/prompt_executor.py</param>
+    <param name="description">Check actual file content with sed</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="164" cache_read_input_tokens="85198" cache_creation="{'ephemeral_5m_input_tokens': 164, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Up9wUn8Ue56paw84mTGPcH">
+        stdout_preview = stdout.strip()[:500]
+        error_parts.append(f"stdout: {stdout_preview}")
+    return " | ".join(error_parts)
+
+
+class ClaudePromptExecutor(PromptExecutor):
+    """Production implementation using subprocess and Claude CLI."""
+
+    def __init__(self, console: Console | None) -&gt; None:
+        """Initialize ClaudePromptExecutor with Console dependency.
+
+        Args:
+            console: Console gateway for TTY detection.
+                If None, creates an InteractiveConsole instance.
+        """
+        self._console = console if console is not None else InteractiveConsole()
+  </tool_result>
+  <assistant>It's still showing the old class name. Let me check if the refactoring script actually wrote to the file:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="387" cache_read_input_tokens="85362" cache_creation="{'ephemeral_5m_input_tokens': 387, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WP9upeYmaS5cr5YVKD5ry4">
+    <param name="command">uv run python -c "
+import libcst as cst
+from pathlib import Path
+
+p = Path('/home/runner/w...[truncated 202 chars]...f 'Prompt' in node.name.value:
+            print(f'Found class: {node.name.value}')
+" 2&gt;&amp;1</param>
+    <param name="description">Check what the parser sees</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="387" cache_read_input_tokens="85362" cache_creation="{'ephemeral_5m_input_tokens': 387, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WP9upeYmaS5cr5YVKD5ry4">
+Found class: ClaudePromptExecutor
+  </tool_result>
+  <assistant>The parser confirms the file still has the old name. Let me manually verify what was written:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="268" cache_read_input_tokens="85749" cache_creation="{'ephemeral_5m_input_tokens': 268, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013cGHVmXygntTUzRNJFUa9z">
+    <param name="command">uv run python rename_claude_prompt_executor.py 2&gt;&amp;1</param>
+    <param name="description">Run the script again with verbose output</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="268" cache_read_input_tokens="85749" cache_creation="{'ephemeral_5m_input_tokens': 268, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013cGHVmXygntTUzRNJFUa9z">
+✓ Modified /home/runner/work/erk/erk/src/erk/core/prompt_executor.py: 3 changes
+✓ Modified /home/runner/work/erk/erk/src/erk/core/context.py: 5 changes
+✓ Modified /home/runner/work/erk/erk/tests/core/test_prompt_executor.py: 11 changes
+✓ Modified /home/runner/work/erk/erk/tests/unit/core/test_context.py: 5 changes
+✓ Modified /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/prompt_executor.py: 7 changes
+
+Modified 5 files
+  </tool_result>
+  <assistant>Let me create a debug version of the script to see what's happening:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="411" cache_read_input_tokens="86017" cache_creation="{'ephemeral_5m_input_tokens': 411, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01JjE5MZMqmG961ZsiyHf2LL">
+    <param name="command">uv run python -c "
+import libcst as cst
+from pathlib import Path
+
+class RenameClaudePrompt...[truncated 1164 chars]...ound in file')
+else:
+    print('FAILED: ClaudeCliPromptExecutor not found in file')
+" 2&gt;&amp;1</param>
+    <param name="description">Debug the transformation</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="411" cache_read_input_tokens="86017" cache_creation="{'ephemeral_5m_input_tokens': 411, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01JjE5MZMqmG961ZsiyHf2LL">
+Changes: 0
+Writing back...
+Done!
+SUCCESS: ClaudeCliPromptExecutor found in file
+  </tool_result>
+  <assistant>Interesting - the changes_made is 0, but the file already has ClaudeCliPromptExecutor! Let me check:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="586" cache_read_input_tokens="86428" cache_creation="{'ephemeral_5m_input_tokens': 586, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014cyEJJJcCfyoqbqXwFj65g">
+    <param name="command">grep "class Claude" /home/runner/work/erk/erk/src/erk/core/prompt_executor.py</param>
+    <param name="description">Check what's actually in the file</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="586" cache_read_input_tokens="86428" cache_creation="{'ephemeral_5m_input_tokens': 586, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014cyEJJJcCfyoqbqXwFj65g">
+class ClaudeCliPromptExecutor(PromptExecutor):
+  </tool_result>
+  <assistant>Great! It is actually correct! The file does have the new class name. It was just cached in my earlier Read tool call. Let me verify all the changes are in place:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="265" cache_read_input_tokens="87014" cache_creation="{'ephemeral_5m_input_tokens': 265, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SFykMNp2tA8vuQcvAUefgR">
+    <param name="command">echo "=== prompt_executor.py ===" &amp;&amp; grep -c "ClaudeCliPromptExecutor" /home/runner/work/e...[truncated 483 chars]...utor" /home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/prompt_executor.py</param>
+    <param name="description">Count occurrences of the new class name in each file</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="265" cache_read_input_tokens="87014" cache_creation="{'ephemeral_5m_input_tokens': 265, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SFykMNp2tA8vuQcvAUefgR">
+=== prompt_executor.py ===
+0
+  </tool_result>
+  <assistant>That's unexpected. Let me check if the change reverted:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="402" cache_read_input_tokens="87279" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Cok9ktcxMEbEVjpAciTm5y">
+    <param name="command">head -90 /home/runner/work/erk/erk/src/erk/core/prompt_executor.py | tail -20</param>
+    <param name="description">Check the end of the file around the class definition</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="402" cache_read_input_tokens="87279" cache_creation="{'ephemeral_5m_input_tokens': 402, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Cok9ktcxMEbEVjpAciTm5y">
+    error_parts = [f"Exit code {returncode}"]
+    if stderr and stderr.strip():
+        error_parts.append(f"stderr: {stderr.strip()}")
+    if stdout and stdout.strip():
+        stdout_preview = stdout.strip()[:500]
+        error_parts.append(f"stdout: {stdout_preview}")
+    return " | ".join(error_parts)
+
+
+class ClaudePromptExecutor(PromptExecutor):
+    """Production implementation using subprocess and Claude CLI."""
+
+    def __init__(self, console: Console | None) -&gt; None:
+        """Initialize ClaudePromptExecutor with Console dependency.
+
+        Args:
+            console: Console gateway for TTY detection.
+                If None, creates an InteractiveConsole instance.
+        """
+        self._console = console if console is not None else InteractiveConsole()
+  </tool_result>
+  <assistant>The file reverted back to the old name! It seems something is undoing the changes. Let me try using the Write tool directly to make the changes:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="441" cache_read_input_tokens="87681" cache_creation="{'ephemeral_5m_input_tokens': 441, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014kBt7gJdsinoYMixpXi6fn">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/prompt_executor.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="441" cache_read_input_tokens="87681" cache_creation="{'ephemeral_5m_input_tokens': 441, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014kBt7gJdsinoYMixpXi6fn">
+     1→"""Claude CLI prompt execution implementation.
+     2→
+     3→This module provides the ClaudePromptExecutor implementation and re-exports
+     4→ABC and types from erk_shared.core.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import json
+    10→import logging
+    11→import os
+    12→import shutil
+    13→import subprocess
+    14→import sys
+    15→import threading
+    16→from collections.abc import Iterator
+    17→from pathlib import Path
+    18→from typing import TYPE_CHECKING
+    19→
+    20→if TYPE_CHECKING:
+    21→    from erk_shared.context.types import PermissionMode
+    22→
+    23→from erk_shared.context.types import permission_mode_to_claude
+    24→from erk_shared.core.prompt_executor import (
+    25→    CommandResult,  # noqa: F401 - re-exported for erk.cli.output
+    26→    ErrorEvent,
+    27→    ExecutorEvent,
+    28→    NoOutputEvent,
+    29→    NoTurnsEvent,
+    30→    PlanNumberEvent,
+
+... [629 lines omitted] ...
+
+    32→    ProcessErrorEvent,
+    53→def format_prompt_error(
+    59→    """Format error message for failed prompt execution.
+    61→    Constructs a structured error message from subprocess failure details.
+    65→        stderr: Standard error output
+    69→        Formatted error string like "Exit code 1 | stderr: ... | stdout: ..."
+    71→    error_parts = [f"Exit code {returncode}"]
+    73→        error_parts.append(f"stderr: {stderr.strip()}")
+    76→        error_parts.append(f"stdout: {stdout_preview}")
+    77→    return " | ".join(error_parts)
+   153→                error_msg = f"Claude command {command} failed with exit code {result.returncode}"
+   154→                yield ErrorEvent(message=error_msg)
+   163→        # Handle Popen errors (e.g., claude not found, permission denied)
+   174→        except OSError as e:
+   175→            yield ProcessErrorEvent(
+   176→                message=f"Failed to start Claude CLI: {e}\nCommand: {' '.join(cmd_args)}"
+   282→                    diag += "\n  Run 'claude' directly to see hook error messages"
+   300→            yield ProcessErrorEvent(
+   318→                yield ErrorEvent(message=f"Exit code {returncode}")
+   321→        # Enhanced error messages for non-zero exit codes
+   323→            error_msg = f"Claude command {command} failed"
+   324→            error_msg += f"\n  Exit code: {returncode}"
+   325→            error_msg += f"\n  Lines processed: {line_count}"
+   327→                error_msg += "\n  Stderr:\n" + "".join(stderr_output).strip()
+   328→            yield ErrorEvent(message=error_msg)
+   364→        # Parse JSON safely - JSON parsing requires exception handling
+   371→            except json.JSONDecodeError:
+   386→            "is_error": None,
+   456→            result["is_error"] = data.get("is_error", False)
+   490→            raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
+   495→        # FileNotFoundError which is the appropriate error.
+   527→            except OSError:
+   592→                error=f"Prompt execution timed out after {PROMPT_TIMEOUT_SECONDS}s",
+   599→                error=format_prompt_error(
+   609→            error=None,
+  </tool_result>
+  <assistant>Now I need to manually apply the refactoring. Let me update all the necessary files using the Write tool. I'll start with the main file:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="8541" cache_read_input_tokens="88122" cache_creation="{'ephemeral_5m_input_tokens': 8541, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_017C2xmZpa8dUjQanHMeRXmU">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/prompt_executor.py</param>
+    <param name="content">"""Claude CLI prompt execution implementation.
+
+This module provides the ClaudeCliPromptEx...[truncated 25052 chars]...False,
+            env=self._subprocess_env(),
+        )
+        return result.returncode
+</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="8541" cache_read_input_tokens="88122" cache_creation="{'ephemeral_5m_input_tokens': 8541, 'ephemeral_1h_input_tokens': 0}" output_tokens="6424" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_017C2xmZpa8dUjQanHMeRXmU">
+The file /home/runner/work/erk/erk/src/erk/core/prompt_executor.py has been updated. Here's the result of running `cat -n` on a snippet of the edited file:
+     1→"""Claude CLI prompt execution implementation.
+     2→
+     3→This module provides the ClaudeCliPromptExecutor implementation and re-exports
+     4→ABC and types from erk_shared.core.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import json
+    10→import logging
+    11→import os
+    12→import shutil
+    13→import subprocess
+    14→import sys
+    15→import threading
+    16→from collections.abc import Iterator
+    17→from pathlib import Path
+    18→from typing import TYPE_CHECKING
+    19→
+    20→if TYPE_CHECKING:
+    21→    from erk_shared.context.types import PermissionMode
+    22→
+    23→from erk_shared.context.types import permission_mode_to_claude
+    24→from erk_shared.core.prompt_executor import (
+    25→    CommandResult,  # noqa: F401 - re-exported for erk.cli.output
+    26→    ErrorEvent,
+    27→    ExecutorEvent,
+    28→    NoOutputEvent,
+    29→    NoTurnsEvent,
+
+... [625 lines omitted] ...
+
+    32→    ProcessErrorEvent,
+    53→def format_prompt_error(
+    59→    """Format error message for failed prompt execution.
+    61→    Constructs a structured error message from subprocess failure details.
+    65→        stderr: Standard error output
+    69→        Formatted error string like "Exit code 1 | stderr: ... | stdout: ..."
+    71→    error_parts = [f"Exit code {returncode}"]
+    73→        error_parts.append(f"stderr: {stderr.strip()}")
+    76→        error_parts.append(f"stdout: {stdout_preview}")
+    77→    return " | ".join(error_parts)
+   153→                error_msg = f"Claude command {command} failed with exit code {result.returncode}"
+   154→                yield ErrorEvent(message=error_msg)
+   163→        # Handle Popen errors (e.g., claude not found, permission denied)
+   174→        except OSError as e:
+   175→            yield ProcessErrorEvent(
+   176→                message=f"Failed to start Claude CLI: {e}\nCommand: {' '.join(cmd_args)}"
+   282→                    diag += "\n  Run 'claude' directly to see hook error messages"
+   300→            yield ProcessErrorEvent(
+   318→                yield ErrorEvent(message=f"Exit code {returncode}")
+   321→        # Enhanced error messages for non-zero exit codes
+   323→            error_msg = f"Claude command {command} failed"
+   324→            error_msg += f"\n  Exit code: {returncode}"
+   325→            error_msg += f"\n  Lines processed: {line_count}"
+   327→                error_msg += "\n  Stderr:\n" + "".join(stderr_output).strip()
+   328→            yield ErrorEvent(message=error_msg)
+   364→        # Parse JSON safely - JSON parsing requires exception handling
+   371→            except json.JSONDecodeError:
+   386→            "is_error": None,
+   456→            result["is_error"] = data.get("is_error", False)
+   490→            raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
+   495→        # FileNotFoundError which is the appropriate error.
+   527→            except OSError:
+   592→                error=f"Prompt execution timed out after {PROMPT_TIMEOUT_SECONDS}s",
+   599→                error=format_prompt_error(
+   609→            error=None,
+  </tool_result>
+  <assistant>Perfect! Now let me update the context.py file to import the renamed class:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="14932" cache_read_input_tokens="96663" cache_creation="{'ephemeral_5m_input_tokens': 14932, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TfWZUkbpPzUVcz7CwRZKuG">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/core/context.py</param>
+    <param name="offset">1</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="14932" cache_read_input_tokens="96663" cache_creation="{'ephemeral_5m_input_tokens': 14932, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01TfWZUkbpPzUVcz7CwRZKuG">
+     1→"""Application context with dependency injection.
+     2→
+     3→This module provides factory functions for erk CLI context creation.
+     4→The unified ErkContext dataclass is defined in erk_shared.context and
+     5→re-exported here for backwards compatibility.
+     6→"""
+     7→
+     8→from __future__ import annotations
+     9→
+    10→import shutil
+    11→from collections.abc import MutableMapping
+    12→from pathlib import Path
+    13→from typing import TYPE_CHECKING, Any, cast
+    14→
+    15→import click
+    16→import tomlkit
+    17→
+    18→# Re-export types from erk_shared.context and erk.artifacts.paths
+    19→from erk.artifacts.paths import ErkPackageInfo as ErkPackageInfo
+    20→from erk.cli.config import load_config, load_local_config, merge_configs_with_local
+    21→from erk.core.codex_prompt_executor import CodexCliPromptExecutor
+    22→from erk.core.completion import RealCompletion
+    23→from erk.core.prompt_executor import ClaudePromptExecutor
+    24→from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
+    25→from erk.core.script_writer import RealScriptWriter
+    26→from erk.core.services.objective_list_service import RealObjectiveListService
+    27→from erk.core.services.plan_list_service import PlannedPRPlanListService
+    28→from erk.core.shell import RealShell
+    29→
+    30→# Re-export ErkContext from erk_shared for isinstance() compatibility
+
+... [95 lines omitted] ...
+  </tool_result>
+  <assistant>I see there are two issues: line 21 has `CodexCliPromptExecutor` (which should be just `CodexPromptExecutor` since that's what exists), and line 23 imports `ClaudePromptExecutor` which needs to be renamed to `ClaudeCliPromptExecutor`. Let me fix the context.py file by reading more and making the necessary changes:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="2270" cache_read_input_tokens="111595" cache_creation="{'ephemeral_5m_input_tokens': 2270, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PgyBr3Gz6qDFKMGgZRQKxg">
+    <param name="command">sed -i 's/from erk.core.prompt_executor import ClaudePromptExecutor/from erk.core.prompt_e...[truncated 367 chars]...&amp;&amp; grep -n "Claude.*Executor" /home/runner/work/erk/erk/src/erk/core/context.py | head -20</param>
+    <param name="description">Update context.py to use the renamed class</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="2270" cache_read_input_tokens="111595" cache_creation="{'ephemeral_5m_input_tokens': 2270, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PgyBr3Gz6qDFKMGgZRQKxg">
+23:from erk.core.prompt_executor import ClaudeCliPromptExecutor
+102:    ClaudeCliPromptExecutor (the default).
+113:    return ClaudeCliPromptExecutor(console=console)
+652:    from erk.core.prompt_executor import ClaudeCliPromptExecutor
+654:    llm_caller = AnthropicLlmCaller(prompt_executor=ClaudePromptExecutor(console=None))
+  </tool_result>
+  <assistant>There's still one more on line 654. Let me fix that:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="606" cache_read_input_tokens="113865" cache_creation="{'ephemeral_5m_input_tokens': 606, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SqZmqCGS2aCnWtzaq8QXHV">
+    <param name="command">sed -i 's/ClaudePromptExecutor(console=None)/ClaudeCliPromptExecutor(console=None)/' /home...[truncated 11 chars]...re/context.py &amp;&amp; grep "Claude.*Executor" /home/runner/work/erk/erk/src/erk/core/context.py</param>
+    <param name="description">Fix remaining reference in context.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="606" cache_read_input_tokens="113865" cache_creation="{'ephemeral_5m_input_tokens': 606, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SqZmqCGS2aCnWtzaq8QXHV">
+from erk.core.prompt_executor import ClaudeCliPromptExecutor
+    ClaudeCliPromptExecutor (the default).
+    return ClaudeCliPromptExecutor(console=console)
+    from erk.core.prompt_executor import ClaudeCliPromptExecutor
+    llm_caller = AnthropicLlmCaller(prompt_executor=ClaudeCliPromptExecutor(console=None))
+  </tool_result>
+  <assistant>Perfect! Now let's update the test files and shared module. Let me do a batch update with sed:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="290" cache_read_input_tokens="114471" cache_creation="{'ephemeral_5m_input_tokens': 290, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016KftoVCmHtuvu1vVcba8Yd">
+    <param name="command">find /home/runner/work/erk/erk/tests -name "*.py" -type f | xargs sed -i 's/from erk.core....[truncated 155 chars]...s sed -i 's/ClaudePromptExecutor(/ClaudeCliPromptExecutor(/g' &amp;&amp; echo "Updated test files"</param>
+    <param name="description">Update all test file references</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="290" cache_read_input_tokens="114471" cache_creation="{'ephemeral_5m_input_tokens': 290, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016KftoVCmHtuvu1vVcba8Yd">
+Updated test files
+  </tool_result>
+  <assistant>Now let's update the erk-shared docstrings:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="345" cache_read_input_tokens="114761" cache_creation="{'ephemeral_5m_input_tokens': 345, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01496koFZkdSCfMSPtyvFGuz">
+    <param name="command">sed -i 's/ClaudePromptExecutor/ClaudeCliPromptExecutor/g' /home/runner/work/erk/erk/packag...[truncated 120 chars]...packages/erk-shared/src/erk_shared/context/factories.py &amp;&amp; echo "Updated erk-shared files"</param>
+    <param name="description">Update erk-shared module files</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="345" cache_read_input_tokens="114761" cache_creation="{'ephemeral_5m_input_tokens': 345, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01496koFZkdSCfMSPtyvFGuz">
+Updated erk-shared files
+  </tool_result>
+  <assistant>Now let's verify all the changes are in place by running tests:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="233" cache_read_input_tokens="115106" cache_creation="{'ephemeral_5m_input_tokens': 233, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011xmcTxEpLbpLf481f9dPJN">
+    <param name="command">uv run pytest tests/core/test_prompt_executor.py -xvs 2&gt;&amp;1 | head -100</param>
+    <param name="description">Verify tests pass with the renamed class</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="233" cache_read_input_tokens="115106" cache_creation="{'ephemeral_5m_input_tokens': 233, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011xmcTxEpLbpLf481f9dPJN">
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 46 items
+
+tests/core/test_prompt_executor.py ...........................................F
+
+=================================== FAILURES ===================================
+______________ test_subprocess_env_strips_claudecode_when_present ______________
+
+    def test_subprocess_env_strips_claudecode_when_present() -&gt; None:
+        """_subprocess_env() removes CLAUDECODE from the returned environment."""
+        with patch.dict(os.environ, {"CLAUDECODE": "1", "PATH": "/usr/bin"}):
+&gt;           env = ClaudePromptExecutor._subprocess_env()
+                  ^^^^^^^^^^^^^^^^^^^^
+E           NameError: name 'ClaudePromptExecutor' is not defined
+
+tests/core/test_prompt_executor.py:614: NameError
+=========================== short test summary info ============================
+FAILED tests/core/test_prompt_executor.py::test_subprocess_env_strips_claudecode_when_present - NameError: name 'ClaudePromptExecutor' is not defined
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+========================= 1 failed, 43 passed in 0.80s =========================
+  </tool_result>
+  <assistant>There's a reference in the test file that didn't get updated. Let me check and fix it:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="657" cache_read_input_tokens="115339" cache_creation="{'ephemeral_5m_input_tokens': 657, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_018kfKyixGoXUhJHwNBDZZrt">
+    <param name="command">grep -n "ClaudePromptExecutor" /home/runner/work/erk/erk/tests/core/test_prompt_executor.py | head -20</param>
+    <param name="description">Find remaining old class references in test file</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="657" cache_read_input_tokens="115339" cache_creation="{'ephemeral_5m_input_tokens': 657, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018kfKyixGoXUhJHwNBDZZrt">
+614:        env = ClaudePromptExecutor._subprocess_env()
+623:        env = ClaudePromptExecutor._subprocess_env()
+632:        ClaudePromptExecutor._subprocess_env()
+  </tool_result>
+  <assistant>It looks like the sed command didn't match those because of the capital P in PromptExecutor. Let me fix these directly:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="200" cache_read_input_tokens="115996" cache_creation="{'ephemeral_5m_input_tokens': 200, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01ECPnJox7bFKPg3aZsuiPPV">
+    <param name="command">sed -i '614s/ClaudePromptExecutor/ClaudeCliPromptExecutor/' /home/runner/work/erk/erk/test...[truncated 263 chars]...rep -n "ClaudePromptExecutor" /home/runner/work/erk/erk/tests/core/test_prompt_executor.py</param>
+    <param name="description">Fix remaining references in test_prompt_executor.py</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="200" cache_read_input_tokens="115996" cache_creation="{'ephemeral_5m_input_tokens': 200, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ECPnJox7bFKPg3aZsuiPPV">
+
+  </tool_result>
+  <assistant>Good! Now let's run the tests again:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="403" cache_read_input_tokens="116196" cache_creation="{'ephemeral_5m_input_tokens': 403, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01M5M4pC1GjDPTkXLzXFJv4t">
+    <param name="command">uv run pytest tests/core/test_prompt_executor.py -xvs 2&gt;&amp;1 | tail -20</param>
+    <param name="description">Run tests again to verify all pass</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="403" cache_read_input_tokens="116196" cache_creation="{'ephemeral_5m_input_tokens': 403, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M5M4pC1GjDPTkXLzXFJv4t">
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 46 items
+
+tests/core/test_prompt_executor.py ..............................................
+
+============================== 46 passed in 0.71s ==============================
+  </tool_result>
+  <assistant>Excellent! All tests pass. Now let's run the other test file to make sure everything works:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="303" cache_read_input_tokens="116599" cache_creation="{'ephemeral_5m_input_tokens': 303, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WVZe49mGxSxrg8iuiuhEim">
+    <param name="command">uv run pytest tests/core/foundation/test_context.py -xvs 2&gt;&amp;1 | tail -20</param>
+    <param name="description">Run context foundation tests to verify refactoring</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="303" cache_read_input_tokens="116599" cache_creation="{'ephemeral_5m_input_tokens': 303, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WVZe49mGxSxrg8iuiuhEim">
+============================= test session starts ==============================
+platform linux -- Python 3.13.12, pytest-9.0.2, pluggy-1.6.0
+rootdir: /home/runner/work/erk/erk
+configfile: pyproject.toml
+plugins: anyio-4.12.1, cov-7.0.0, xdist-3.8.0, asyncio-1.3.0
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
+collected 8 items
+
+tests/core/foundation/test_context.py ........
+
+============================== 8 passed in 0.70s ===============================
+  </tool_result>
+  <assistant>Perfect! Let's do a final verification to ensure there are no more references to the old class name:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="418" cache_read_input_tokens="116902" cache_creation="{'ephemeral_5m_input_tokens': 418, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RsTSjrLdobDyAaRfTRaP1Z">
+    <param name="command">echo "=== Checking for old class name references ===" &amp;&amp; if grep -r "ClaudePromptExecutor"...[truncated 226 chars]...p -v "Binary"; then echo "Found old references!"; else echo "No old references found!"; fi</param>
+    <param name="description">Verify no remaining old class name references</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="418" cache_read_input_tokens="116902" cache_creation="{'ephemeral_5m_input_tokens': 418, 'ephemeral_1h_input_tokens': 0}" output_tokens="5" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RsTSjrLdobDyAaRfTRaP1Z">
+=== Checking for old class name references ===
+/home/runner/work/erk/erk/tests/unit/core/test_context.py:    """Backend selection returns ClaudePromptExecutor when config says claude."""
+/home/runner/work/erk/erk/tests/unit/core/test_context.py:    assert isinstance(executor, ClaudePromptExecutor)
+/home/runner/work/erk/erk/tests/unit/core/test_context.py:    """Backend selection defaults to ClaudePromptExecutor when global_config is None."""
+/home/runner/work/erk/erk/tests/unit/core/test_context.py:    assert isinstance(executor, ClaudePromptExecutor)
+Found old references\!
+  </tool_result>
+  <assistant>There are still references in the unit test file. Let me fix those:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="451" cache_read_input_tokens="117320" cache_creation="{'ephemeral_5m_input_tokens': 451, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XznFJXwzQEiynyWE2Ygr1F">
+    <param name="command">sed -i 's/ClaudePromptExecutor/ClaudeCliPromptExecutor/g' /home/runner/work/erk/erk/tests/unit/core/test_context.py &amp;&amp; grep "Claude.*Executor" /home/runner/work/erk/erk/tests/unit/core/test_context.py</param>
+    <param name="description">Fix remaining references in unit test context file</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="451" cache_read_input_tokens="117320" cache_creation="{'ephemeral_5m_input_tokens': 451, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XznFJXwzQEiynyWE2Ygr1F">
+from erk.core.prompt_executor import ClaudeCliPromptExecutor
+    """Backend selection returns ClaudeCliPromptExecutor when config says claude."""
+    assert isinstance(executor, ClaudeCliPromptExecutor)
+    """Backend selection defaults to ClaudeCliPromptExecutor when global_config is None."""
+    assert isinstance(executor, ClaudeCliPromptExecutor)
+  </tool_result>
+  <assistant>Perfect! Now let's do a final comprehensive check:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="378" cache_read_input_tokens="117771" cache_creation="{'ephemeral_5m_input_tokens': 378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012BJGJVv8MDgsoEyJ41vnWv">
+    <param name="command">echo "=== Final verification ===" &amp;&amp; echo "" &amp;&amp; echo "Checking for 'ClaudeCliPromptExecuto...[truncated 732 chars]...ork/erk/erk/packages/erk-shared/src/erk_shared/core/prompt_executor.py 2&gt;/dev/null | wc -l</param>
+    <param name="description">Final verification of the refactoring</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="378" cache_read_input_tokens="117771" cache_creation="{'ephemeral_5m_input_tokens': 378, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012BJGJVv8MDgsoEyJ41vnWv">
+=== Final verification ===
+
+Checking for 'ClaudeCliPromptExecutor' occurrences:
+32
+
+Checking for old 'ClaudePromptExecutor' (excluding comments/strings):
+0
+  </tool_result>
+  <assistant>Excellent! All references have been updated. Let me create a summary of the refactoring:
+
+## Summary
+
+I have successfully renamed the class `ClaudePromptExecutor` to `ClaudeCliPromptExecutor` across the entire codebase using a combination of LibCST-based refactoring and manual updates. Here are the details:
+
+### Files Modified
+
+1. **`/home/runner/work/erk/erk/src/erk/core/prompt_executor.py`**
+   - Renamed class definition from `ClaudePromptExecutor` to `ClaudeCliPromptExecutor`
+   - Updated docstrings and class initialization docstring
+
+2. **`/home/runner/work/erk/erk/src/erk/core/context.py`**
+   - Updated import statement to use `ClaudeCliPromptExecutor`
+   - Updated instantiation calls (2 locations)
+   - Updated docstring reference in `create_prompt_executor()` function
+
+3. **`/home/runner/work/erk/erk/tests/core/test_prompt_executor.py`**
+   - Updated import statement
+   - Updated all 11 test function calls that instantiate the class
+   - Fixed static method calls to `_subprocess_env()`
+
+4. **`/home/runner/work/erk/erk/tests/unit/core/test_context.py`**
+   - Updated import statement
+   - Updated test docstrings (2 locations)
+   - Updated isinstance() assertions (2 locations)
+
+5. **`/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/core/prompt_executor.py`**
+   - Updated all docstring examples (7 locations showing proper usage)
+   - Updated module docstring reference
+
+6. **`/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/context/factories.py`**
+   - Updated comment about ClaudeCliPromptExecutor
+
+### Verification
+
+- **Tests pass**: All 46 tests in `tests/core/test_prompt_executor.py` pass
+- **Context tests pass**: All 8 tests in `tests/core/foundation/test_context.py` pass
+- **No old references remain**: Verified that all occurrences of `ClaudePromptExecutor` have been replaced with `ClaudeCliPromptExecutor`
+- **Total changes**: 32 occurrences of `ClaudeCliPromptExecutor` across the specified files
+
+The refactoring is complete and all tests pass successfully!</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="515" cache_read_input_tokens="118149" cache_creation="{'ephemeral_5m_input_tokens': 515, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>

@@ -1,0 +1,365 @@
+<session>
+  <meta source="agent-a6cf9b8" />
+  <meta branch="plnd/flat-prompt-executors-03-06-1518" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>Update the test file at `/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py` to work with the refactored CommitMessageGenerator.
+
+The CommitMessageGenerator constructor changed from:
+```python
+CommitMessageGenerator(llm_caller: LlmCaller, *, time: Time)
+```
+to:
+```python
+CommitMessageGenerator(prompt_executor: PromptExecutor, *, time: Time)
+```
+
+And its internal logic changed from calling `llm_caller.call()` (which returns `LlmResponse | NoApiKey | LlmCallFailed`) to calling `prompt_executor.execute_prompt()` (which returns `PromptResult`).
+
+The key mapping is:
+- `FakeLlmCaller(response=LlmResponse(text="..."))` → `FakePromptExecutor(prompt_results=[PromptResult(success=True, output="...", error=None)])`
+- `FakeLlmCaller(response=NoApiKey(message="..."))` → `FakePromptExecutor(prompt_results=[PromptResult(success=False, output="", error="...")])`
+- `FakeLlmCaller(response=LlmCallFailed(message="..."))` → `FakePromptExecutor(prompt_results=[PromptResult(success=False, output="", error="...")])`
+
+Note: FakePromptExecutor is already imported in the file from `erk_shared.core.fakes`. PromptResult needs to be imported from `erk_shared.core.prompt_executor`.
+
+Make the following changes:
+1. Remove: `from erk_shared.core.fakes import FakeLlmCaller`
+2. Remove: `from erk_shared.core.llm_caller import LlmCallFailed, LlmResponse`
+3. Add: `from erk_shared.core.prompt_executor import PromptResult`
+4. Add: `from erk_shared.core.fakes import FakePromptExecutor` (if not already there)
+5. Replace all `FakeLlmCaller(response=LlmResponse(text="..."))` with `FakePromptExecutor(prompt_results=[PromptResult(success=True, output="...", error=None)])`
+6. Replace all `FakeLlmCaller(response=NoApiKey(message="..."))` with `FakePromptExecutor(prompt_results=[PromptResult(success=False, output="", error="...")])`
+7. Replace all `FakeLlmCaller(response=LlmCallFailed(message="..."))` with `FakePromptExecutor(prompt_results=[PromptResult(success=False, output="", error="...")])`
+8. Replace all `CommitMessageGenerator(caller, time=FakeTime())` with `CommitMessageGenerator(executor, time=FakeTime())`
+9. Rename local variables `caller` to `executor` where they hold the FakePromptExecutor
+
+Write the changes to the file. Do NOT just research; actually edit the file.</user>
+  <assistant>I'll read the test file first to understand its current structure, then make the necessary changes.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="16624" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16624, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_0197rqMf7U7wx3YoskPNSPUf">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="16624" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16624, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0197rqMf7U7wx3YoskPNSPUf">
+     1→"""Tests for CommitMessageGenerator."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.core.commit_message_generator import (
+     6→    CommitMessageGenerator,
+     7→    CommitMessageRequest,
+     8→    CommitMessageResult,
+     9→)
+    10→from erk.core.plan_context_provider import PlanContext
+    11→from erk_shared.core.fakes import FakeLlmCaller
+    12→from erk_shared.core.llm_caller import LlmCallFailed, LlmResponse
+    13→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+    14→from erk_shared.gateway.time.fake import FakeTime
+    15→
+    16→
+    17→def _consume_generator(
+    18→    generator: CommitMessageGenerator, request: CommitMessageRequest
+    19→) -&gt; tuple[CommitMessageResult, list[ProgressEvent]]:
+    20→    """Consume generator and return result with collected progress events."""
+    21→    progress_events: list[ProgressEvent] = []
+    22→    result: CommitMessageResult | None = None
+    23→
+    24→    for event in generator.generate(request):
+    25→        if isinstance(event, ProgressEvent):
+    26→            progress_events.append(event)
+    27→        elif isinstance(event, CompletionEvent):
+    28→            result = event.result
+    29→
+    30→    if result is None:
+
+... [467 lines omitted] ...
+
+    31→        raise AssertionError("Generator did not yield CompletionEvent")
+    62→    assert result.error_message is None
+   132→    assert result.error_message is not None
+   133→    assert "not found" in result.error_message.lower()
+   158→    assert result.error_message is not None
+   159→    assert "empty" in result.error_message.lower()
+   166→    """Test that generation fails when LLM call returns an error."""
+   171→        response=LlmCallFailed(message="API call failed"),
+   188→    assert result.error_message is not None
+   189→    assert "failed" in result.error_message.lower()
+  </tool_result>
+  <assistant>Now I'll make the necessary changes to update the test file to work with the refactored CommitMessageGenerator:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="11213" cache_read_input_tokens="16624" cache_creation="{'ephemeral_5m_input_tokens': 11213, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0177KscFTi9Y8rDR8MCougo4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py</param>
+    <param name="old_string">from erk.core.commit_message_generator import (
+    CommitMessageGenerator,
+    CommitMess...[truncated 219 chars]...ts import CompletionEvent, ProgressEvent
+from erk_shared.gateway.time.fake import FakeTime</param>
+    <param name="new_string">from erk.core.commit_message_generator import (
+    CommitMessageGenerator,
+    CommitMess...[truncated 215 chars]...ts import CompletionEvent, ProgressEvent
+from erk_shared.gateway.time.fake import FakeTime</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="11213" cache_read_input_tokens="16624" cache_creation="{'ephemeral_5m_input_tokens': 11213, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0177KscFTi9Y8rDR8MCougo4">
+The file /home/runner/work/erk/erk/tests/core/test_commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018G9rHpqBp8UVR3d3vhnFjJ">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py</param>
+    <param name="old_string">def test_generate_success(tmp_path: Path) -&gt; None:
+    """Test successful commit message g...[truncated 1270 chars]...branch" in call.prompt
+    assert "main" in call.prompt
+    assert call.max_tokens == 4096</param>
+    <param name="new_string">def test_generate_success(tmp_path: Path) -&gt; None:
+    """Test successful commit message g...[truncated 1417 chars]...branch" in call.prompt
+    assert "main" in call.prompt
+    assert call.max_tokens == 4096</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="441" cache_read_input_tokens="27837" cache_creation="{'ephemeral_5m_input_tokens': 441, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018G9rHpqBp8UVR3d3vhnFjJ">
+The file /home/runner/work/erk/erk/tests/core/test_commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01SXpB8ATG6Z4wH419XBHqsA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py</param>
+    <param name="old_string">def test_generate_with_multiline_body(tmp_path: Path) -&gt; None:
+    """Test generation with...[truncated 980 chars]...t None
+    assert "## Summary" in result.body
+    assert "## Files Changed" in result.body</param>
+    <param name="new_string">def test_generate_with_multiline_body(tmp_path: Path) -&gt; None:
+    """Test generation with...[truncated 1117 chars]...t None
+    assert "## Summary" in result.body
+    assert "## Files Changed" in result.body</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1058" cache_read_input_tokens="28278" cache_creation="{'ephemeral_5m_input_tokens': 1058, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01SXpB8ATG6Z4wH419XBHqsA">
+The file /home/runner/work/erk/erk/tests/core/test_commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CCYcQXGNbWeDDLuDAqbePc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py</param>
+    <param name="old_string">def test_generate_fails_when_diff_file_not_found(tmp_path: Path) -&gt; None:
+    """Test that...[truncated 630 chars]...error_message.lower()
+
+    # Verify no LLM call was made
+    assert len(caller.calls) == 0</param>
+    <param name="new_string">def test_generate_fails_when_diff_file_not_found(tmp_path: Path) -&gt; None:
+    """Test that...[truncated 700 chars]...age.lower()
+
+    # Verify no prompt execution was made
+    assert len(executor.calls) == 0</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="855" cache_read_input_tokens="29336" cache_creation="{'ephemeral_5m_input_tokens': 855, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CCYcQXGNbWeDDLuDAqbePc">
+The file /home/runner/work/erk/erk/tests/core/test_commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01AsZEdrzZTdUMmWPLe7DUr4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py</param>
+    <param name="old_string">def test_generate_fails_when_diff_file_empty(tmp_path: Path) -&gt; None:
+    """Test that gen...[truncated 622 chars]...error_message.lower()
+
+    # Verify no LLM call was made
+    assert len(caller.calls) == 0</param>
+    <param name="new_string">def test_generate_fails_when_diff_file_empty(tmp_path: Path) -&gt; None:
+    """Test that gen...[truncated 692 chars]...age.lower()
+
+    # Verify no prompt execution was made
+    assert len(executor.calls) == 0</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="757" cache_read_input_tokens="30191" cache_creation="{'ephemeral_5m_input_tokens': 757, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AsZEdrzZTdUMmWPLe7DUr4">
+The file /home/runner/work/erk/erk/tests/core/test_commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018ijW3tBhKg8B1g3zLasanc">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py</param>
+    <param name="old_string">def test_generate_fails_when_llm_call_fails(tmp_path: Path) -&gt; None:
+    """Test that gene...[truncated 663 chars]...ssert result.error_message is not None
+    assert "failed" in result.error_message.lower()</param>
+    <param name="new_string">def test_generate_fails_when_llm_call_fails(tmp_path: Path) -&gt; None:
+    """Test that gene...[truncated 711 chars]...ssert result.error_message is not None
+    assert "failed" in result.error_message.lower()</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="663" cache_read_input_tokens="30948" cache_creation="{'ephemeral_5m_input_tokens': 663, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018ijW3tBhKg8B1g3zLasanc">
+The file /home/runner/work/erk/erk/tests/core/test_commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01GrGADQgbh1Pynt5BdXqyF2">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py</param>
+    <param name="old_string">def test_generate_handles_title_only_output(tmp_path: Path) -&gt; None:
+    """Test generatio...[truncated 577 chars]...ccess is True
+    assert result.title == "Fix typo in README"
+    assert result.body == ""</param>
+    <param name="new_string">def test_generate_handles_title_only_output(tmp_path: Path) -&gt; None:
+    """Test generatio...[truncated 623 chars]...ccess is True
+    assert result.title == "Fix typo in README"
+    assert result.body == ""</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="669" cache_read_input_tokens="31611" cache_creation="{'ephemeral_5m_input_tokens': 669, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01GrGADQgbh1Pynt5BdXqyF2">
+The file /home/runner/work/erk/erk/tests/core/test_commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01D5jJC77qNmXnyTSfFdTyQq">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py</param>
+    <param name="old_string">def test_generate_strips_code_fence_wrapper(tmp_path: Path) -&gt; None:
+    """Test that code...[truncated 1132 chars]...ipped (the content can mention "code fence" as words)
+    assert "```" not in result.title</param>
+    <param name="new_string">def test_generate_strips_code_fence_wrapper(tmp_path: Path) -&gt; None:
+    """Test that code...[truncated 1265 chars]...ipped (the content can mention "code fence" as words)
+    assert "```" not in result.title</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="738" cache_read_input_tokens="32280" cache_creation="{'ephemeral_5m_input_tokens': 738, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01D5jJC77qNmXnyTSfFdTyQq">
+The file /home/runner/work/erk/erk/tests/core/test_commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01AxS64BpCeXVWz2wkRvS19c">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py</param>
+    <param name="old_string">def test_generate_strips_code_fence_with_language_tag(tmp_path: Path) -&gt; None:
+    """Test...[truncated 870 chars]...y" in result.body
+    assert "```" not in result.title
+    assert "```" not in result.body</param>
+    <param name="new_string">def test_generate_strips_code_fence_with_language_tag(tmp_path: Path) -&gt; None:
+    """Test...[truncated 979 chars]...y" in result.body
+    assert "```" not in result.title
+    assert "```" not in result.body</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="905" cache_read_input_tokens="33018" cache_creation="{'ephemeral_5m_input_tokens': 905, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01AxS64BpCeXVWz2wkRvS19c">
+The file /home/runner/work/erk/erk/tests/core/test_commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_013LdvaT6UEYu7NvhkNGJ6Dz">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py</param>
+    <param name="old_string">def test_generate_includes_commit_messages_in_prompt(tmp_path: Path) -&gt; None:
+    """Test ...[truncated 1094 chars]...t "Fixed edge case in parser" in prompt
+    assert "Developer's Commit Messages" in prompt</param>
+    <param name="new_string">def test_generate_includes_commit_messages_in_prompt(tmp_path: Path) -&gt; None:
+    """Test ...[truncated 1229 chars]...t "Fixed edge case in parser" in prompt
+    assert "Developer's Commit Messages" in prompt</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="796" cache_read_input_tokens="33923" cache_creation="{'ephemeral_5m_input_tokens': 796, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013LdvaT6UEYu7NvhkNGJ6Dz">
+The file /home/runner/work/erk/erk/tests/core/test_commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01QcmnYcbgP2oyx3stdYznje">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py</param>
+    <param name="old_string">def test_generate_works_without_commit_messages(tmp_path: Path) -&gt; None:
+    """Test that ...[truncated 698 chars]...    prompt = caller.calls[0].prompt
+    assert "Developer's Commit Messages" not in prompt</param>
+    <param name="new_string">def test_generate_works_without_commit_messages(tmp_path: Path) -&gt; None:
+    """Test that ...[truncated 770 chars]...  prompt = executor.calls[0].prompt
+    assert "Developer's Commit Messages" not in prompt</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1006" cache_read_input_tokens="34719" cache_creation="{'ephemeral_5m_input_tokens': 1006, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QcmnYcbgP2oyx3stdYznje">
+The file /home/runner/work/erk/erk/tests/core/test_commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01U1vf75uJv4JXLm5xvSuAaN">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py</param>
+    <param name="old_string">def test_generate_passes_system_prompt_separately(tmp_path: Path) -&gt; None:
+    """Test tha...[truncated 1165 chars]...ch" in call.prompt
+    assert "main" in call.prompt
+    assert "diff --git" in call.prompt</param>
+    <param name="new_string">def test_generate_passes_system_prompt_separately(tmp_path: Path) -&gt; None:
+    """Test tha...[truncated 1272 chars]...ch" in call.prompt
+    assert "main" in call.prompt
+    assert "diff --git" in call.prompt</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="691" cache_read_input_tokens="35725" cache_creation="{'ephemeral_5m_input_tokens': 691, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01U1vf75uJv4JXLm5xvSuAaN">
+The file /home/runner/work/erk/erk/tests/core/test_commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01RD3CPzKyiCShR8MLcKBg7B">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py</param>
+    <param name="old_string">def test_generate_includes_plan_context_in_prompt(tmp_path: Path) -&gt; None:
+    """Test tha...[truncated 1085 chars]...t
+    assert "session expiration" in prompt
+    assert "primary source of truth" in prompt</param>
+    <param name="new_string">def test_generate_includes_plan_context_in_prompt(tmp_path: Path) -&gt; None:
+    """Test tha...[truncated 1220 chars]...t
+    assert "session expiration" in prompt
+    assert "primary source of truth" in prompt</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="971" cache_read_input_tokens="36416" cache_creation="{'ephemeral_5m_input_tokens': 971, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01RD3CPzKyiCShR8MLcKBg7B">
+The file /home/runner/work/erk/erk/tests/core/test_commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01NzYcAVYQSmTPX5qtxuKfyj">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py</param>
+    <param name="old_string">def test_generate_includes_plan_context_with_objective_summary(tmp_path: Path) -&gt; None:
+  ...[truncated 1011 chars]... "Parent Objective" in prompt
+    assert "Objective #100: Improve Observability" in prompt</param>
+    <param name="new_string">def test_generate_includes_plan_context_with_objective_summary(tmp_path: Path) -&gt; None:
+  ...[truncated 1146 chars]... "Parent Objective" in prompt
+    assert "Objective #100: Improve Observability" in prompt</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="1030" cache_read_input_tokens="37387" cache_creation="{'ephemeral_5m_input_tokens': 1030, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NzYcAVYQSmTPX5qtxuKfyj">
+The file /home/runner/work/erk/erk/tests/core/test_commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01EPnq2keVjw56At3phqgRdS">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py</param>
+    <param name="old_string">def test_generate_includes_both_plan_and_commit_messages(tmp_path: Path) -&gt; None:
+    """T...[truncated 1121 chars]...rt "Developer's Commit Messages" in prompt
+    assert "WIP: Started refactoring" in prompt</param>
+    <param name="new_string">def test_generate_includes_both_plan_and_commit_messages(tmp_path: Path) -&gt; None:
+    """T...[truncated 1256 chars]...rt "Developer's Commit Messages" in prompt
+    assert "WIP: Started refactoring" in prompt</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="874" cache_read_input_tokens="38417" cache_creation="{'ephemeral_5m_input_tokens': 874, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01EPnq2keVjw56At3phqgRdS">
+The file /home/runner/work/erk/erk/tests/core/test_commit_message_generator.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! I've successfully updated all the tests in the file. Let me verify the changes by reading the updated imports section:</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="954" cache_read_input_tokens="39291" cache_creation="{'ephemeral_5m_input_tokens': 954, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KJ6G4qbeRFaitNX2kVjoiU">
+    <param name="file_path">/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="0" cache_creation_input_tokens="954" cache_read_input_tokens="39291" cache_creation="{'ephemeral_5m_input_tokens': 954, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KJ6G4qbeRFaitNX2kVjoiU">
+     1→"""Tests for CommitMessageGenerator."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.core.commit_message_generator import (
+     6→    CommitMessageGenerator,
+     7→    CommitMessageRequest,
+     8→    CommitMessageResult,
+     9→)
+    10→from erk.core.plan_context_provider import PlanContext
+    11→from erk_shared.core.fakes import FakePromptExecutor
+    12→from erk_shared.core.prompt_executor import PromptResult
+    13→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+    14→from erk_shared.gateway.time.fake import FakeTime
+    15→
+    16→
+    17→def _consume_generator(
+    18→    generator: CommitMessageGenerator, request: CommitMessageRequest
+    19→) -&gt; tuple[CommitMessageResult, list[ProgressEvent]]:
+    20→    """Consume generator and return result with collected progress events."""
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>Excellent! The file has been successfully updated. Let me create a summary of all the changes made:
+
+## Summary
+
+I've successfully updated `/home/runner/work/erk/erk/tests/core/test_commit_message_generator.py` to work with the refactored `CommitMessageGenerator` that now uses `PromptExecutor` instead of `LlmCaller`.
+
+### Changes Made:
+
+1. **Updated imports:**
+   - Removed: `from erk_shared.core.fakes import FakeLlmCaller`
+   - Removed: `from erk_shared.core.llm_caller import LlmCallFailed, LlmResponse`
+   - Added: `from erk_shared.core.fakes import FakePromptExecutor`
+   - Added: `from erk_shared.core.prompt_executor import PromptResult`
+
+2. **Replaced all test instances (14 test functions updated):**
+   - Changed all `FakeLlmCaller(response=LlmResponse(text="..."))` to `FakePromptExecutor(prompt_results=[PromptResult(success=True, output="...", error=None)])`
+   - Changed all `FakeLlmCaller(response=LlmCallFailed(message="..."))` to `FakePromptExecutor(prompt_results=[PromptResult(success=False, output="", error="...")])`
+   - Changed all `CommitMessageGenerator(caller, time=FakeTime())` to `CommitMessageGenerator(executor, time=FakeTime())`
+   - Renamed all local variables from `caller` to `executor`
+   - Updated all assertions from `caller.calls` to `executor.calls`
+   - Updated comments to reference "prompt executor" instead of "LLM caller"
+
+All 14 test functions have been updated to use the new `PromptExecutor`-based API while maintaining the same test logic and assertions.</assistant>
+  <usage input_tokens="0" cache_creation_input_tokens="570" cache_read_input_tokens="40245" cache_creation="{'ephemeral_5m_input_tokens': 570, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>
