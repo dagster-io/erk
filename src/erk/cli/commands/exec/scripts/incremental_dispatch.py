@@ -33,6 +33,7 @@ from erk_shared.gateway.github.parsing import (
 from erk_shared.gateway.github.types import PRNotFound
 from erk_shared.impl_context import build_impl_context_files
 from erk_shared.output.output import user_output
+from erk_shared.subprocess_utils import run_subprocess_with_context
 
 
 @click.command(name="incremental-dispatch")
@@ -101,8 +102,13 @@ def incremental_dispatch(
     # Sync local branch ref to remote (no checkout required)
     user_output(f"Syncing branch: {click.style(branch_name, fg='cyan')}")
     git.remote.fetch_branch(repo_root, "origin", branch_name)
-    if git.worktree.is_branch_checked_out(repo_root, branch_name) is None:
+    checked_out_path = git.worktree.is_branch_checked_out(repo_root, branch_name)
+    if checked_out_path is None:
         git.branch.create_branch(repo_root, branch_name, f"origin/{branch_name}", force=True)
+    else:
+        remote_sha = git.branch.get_branch_head(repo_root, f"origin/{branch_name}")
+        if remote_sha is not None:
+            git.branch.update_local_ref(repo_root, branch_name, remote_sha)
 
     # Build and commit impl-context files to branch
     user_output("Committing plan to branch...")
@@ -121,6 +127,18 @@ def incremental_dispatch(
         files=files,
         message=f"Add incremental plan for PR #{pr_number}",
     )
+
+    # If branch is checked out, sync index for committed files to avoid stale staged changes
+    if checked_out_path is not None:
+        try:
+            impl_context_paths = list(files.keys())
+            run_subprocess_with_context(
+                cmd=["git", "checkout", "HEAD", "--"] + impl_context_paths,
+                operation_context="sync index after plumbing commit",
+                cwd=checked_out_path,
+            )
+        except Exception:
+            pass  # Best-effort: stale index is cosmetic, not a correctness issue
 
     # Push
     push_result = git.remote.push_to_remote(

@@ -36,6 +36,7 @@ from erk_shared.impl_context import build_impl_context_files
 from erk_shared.impl_folder import read_plan_ref, resolve_impl_dir
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.types import PlanNotFound
+from erk_shared.subprocess_utils import run_subprocess_with_context
 
 logger = logging.getLogger(__name__)
 
@@ -220,9 +221,13 @@ def _dispatch_planned_pr_plan(
     # Sync local branch ref to remote (no checkout required)
     user_output(f"Syncing branch: {click.style(branch_name, fg='cyan')}")
     ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
-    worktree_with_branch = ctx.git.worktree.is_branch_checked_out(repo.root, branch_name)
-    if worktree_with_branch is None:
+    checked_out_path = ctx.git.worktree.is_branch_checked_out(repo.root, branch_name)
+    if checked_out_path is None:
         ctx.git.branch.create_branch(repo.root, branch_name, f"origin/{branch_name}", force=True)
+    else:
+        remote_sha = ctx.git.branch.get_branch_head(repo.root, f"origin/{branch_name}")
+        if remote_sha is not None:
+            ctx.git.branch.update_local_ref(repo.root, branch_name, remote_sha)
 
     # Commit impl-context files directly to branch (no checkout required)
     user_output("Committing plan to branch...")
@@ -241,6 +246,19 @@ def _dispatch_planned_pr_plan(
         files=files,
         message=f"Add plan for PR #{plan_number}",
     )
+
+    # If branch is checked out, sync index for committed files to avoid stale staged changes
+    if checked_out_path is not None:
+        try:
+            impl_context_paths = list(files.keys())
+            run_subprocess_with_context(
+                cmd=["git", "checkout", "HEAD", "--"] + impl_context_paths,
+                operation_context="sync index after plumbing commit",
+                cwd=checked_out_path,
+            )
+        except Exception:
+            pass  # Best-effort: stale index is cosmetic, not a correctness issue
+
     push_result = ctx.git.remote.push_to_remote(
         repo.root, "origin", branch_name, set_upstream=False, force=False
     )
