@@ -7,6 +7,7 @@ from erk_shared.gateway.plan_data_provider.lifecycle import (
     compute_lifecycle_display,
     compute_status_indicators,
     format_lifecycle_with_status,
+    resolve_lifecycle_stage,
 )
 from erk_shared.plan_store.types import Plan, PlanState
 
@@ -787,3 +788,76 @@ def test_format_lifecycle_stacked_implementing() -> None:
         is_stacked=True,
     )
     assert result == "[yellow]impl 🥞[/yellow]"
+
+
+# --- resolve_lifecycle_stage tests ---
+
+
+def test_resolve_stage_from_header_field() -> None:
+    """lifecycle_stage in header_fields takes precedence."""
+    plan = _make_plan(header_fields={LIFECYCLE_STAGE: "implementing"})
+    assert resolve_lifecycle_stage(plan) == "implementing"
+
+
+def test_resolve_stage_terminal_pr_state_overrides_header() -> None:
+    """Terminal MERGED pr_state overrides stale header lifecycle_stage."""
+    plan = _make_plan(
+        header_fields={LIFECYCLE_STAGE: "implementing"},
+        metadata={"is_draft": False, "pr_state": "MERGED"},
+    )
+    assert resolve_lifecycle_stage(plan) == "merged"
+
+
+def test_resolve_stage_falls_back_to_draft_open() -> None:
+    """Falls back to is_draft + pr_state when header field absent."""
+    plan = _make_plan(metadata={"is_draft": True, "pr_state": "OPEN"})
+    assert resolve_lifecycle_stage(plan) == "planned"
+
+
+def test_resolve_stage_falls_back_to_non_draft_open() -> None:
+    """Non-draft + OPEN infers impl."""
+    plan = _make_plan(metadata={"is_draft": False, "pr_state": "OPEN"})
+    assert resolve_lifecycle_stage(plan) == "impl"
+
+
+def test_resolve_stage_falls_back_to_merged() -> None:
+    """Non-draft + MERGED infers merged."""
+    plan = _make_plan(metadata={"is_draft": False, "pr_state": "MERGED"})
+    assert resolve_lifecycle_stage(plan) == "merged"
+
+
+def test_resolve_stage_falls_back_to_closed() -> None:
+    """Non-draft + CLOSED infers closed."""
+    plan = _make_plan(metadata={"is_draft": False, "pr_state": "CLOSED"})
+    assert resolve_lifecycle_stage(plan) == "closed"
+
+
+def test_resolve_stage_workflow_run_upgrades_planned() -> None:
+    """has_workflow_run=True upgrades planned to impl."""
+    plan = _make_plan(header_fields={LIFECYCLE_STAGE: "planned"})
+    assert resolve_lifecycle_stage(plan, has_workflow_run=True) == "impl"
+
+
+def test_resolve_stage_workflow_run_no_upgrade_when_not_planned() -> None:
+    """has_workflow_run=True does not affect non-planned stages."""
+    plan = _make_plan(header_fields={LIFECYCLE_STAGE: "merged"})
+    assert resolve_lifecycle_stage(plan, has_workflow_run=True) == "merged"
+
+
+def test_resolve_stage_returns_none_when_no_signals() -> None:
+    """Returns None when no header field and no metadata."""
+    plan = _make_plan()
+    assert resolve_lifecycle_stage(plan) is None
+
+
+def test_resolve_stage_returns_none_for_empty_metadata() -> None:
+    """Returns None when metadata exists but has no is_draft/pr_state."""
+    plan = _make_plan(metadata={})
+    assert resolve_lifecycle_stage(plan) is None
+
+
+def test_compute_display_uses_resolve_lifecycle_stage() -> None:
+    """compute_lifecycle_display produces correct output via resolve_lifecycle_stage."""
+    plan = _make_plan(header_fields={LIFECYCLE_STAGE: "planned"})
+    assert compute_lifecycle_display(plan, has_workflow_run=False) == "[dim]planned[/dim]"
+    assert compute_lifecycle_display(plan, has_workflow_run=True) == "[yellow]impl[/yellow]"
