@@ -1,4 +1,10 @@
 {
   "provider": "github-draft-pr",
-  "title": "Fix Doctor Warning Display & Add Artifact Allowlist"
+  "plan_id": "8847",
+  "url": "https://github.com/dagster-io/erk/pull/8847",
+  "created_at": "2026-03-06T10:24:45.578170",
+  "synced_at": "2026-03-06T10:24:45.578170",
+  "labels": [],
+  "objective_id": null,
+  "node_ids": null
 }
