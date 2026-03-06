@@ -74,6 +74,9 @@ from erk.cli.commands.exec.scripts.handle_no_changes import handle_no_changes
 from erk.cli.commands.exec.scripts.impl_init import impl_init
 from erk.cli.commands.exec.scripts.impl_signal import impl_signal
 from erk.cli.commands.exec.scripts.impl_verify import impl_verify
+from erk.cli.commands.exec.scripts.incremental_dispatch import (
+    incremental_dispatch,
+)
 from erk.cli.commands.exec.scripts.land_execute import land_execute
 from erk.cli.commands.exec.scripts.list_sessions import list_sessions
 from erk.cli.commands.exec.scripts.marker import marker
@@ -220,6 +223,7 @@ exec_group.add_command(get_pr_commits, name="get-pr-commits")
 exec_group.add_command(get_pr_discussion_comments, name="get-pr-discussion-comments")
 exec_group.add_command(get_pr_feedback, name="get-pr-feedback")
 exec_group.add_command(get_pr_review_comments, name="get-pr-review-comments")
+exec_group.add_command(incremental_dispatch, name="incremental-dispatch")
 exec_group.add_command(impl_init, name="impl-init")
 exec_group.add_command(impl_signal, name="impl-signal")
 exec_group.add_command(impl_verify, name="impl-verify")

@@ -146,15 +146,19 @@ jobs:
         run: |
           git fetch origin "$BRANCH_NAME"
           git checkout "$BRANCH_NAME"
-          rm -rf .erk/impl-context
-          erk exec create-impl-context-from-plan "$PLAN_ID"
-          if [ $? -ne 0 ]; then
-            if [ "$ERK_PLAN_BACKEND" = "planned_pr" ]; then
-              gh pr comment "$PLAN_ID" --body "Could not fetch plan content for plan #$PLAN_ID."
-            else
-              gh issue comment "$PLAN_ID" --body "Could not fetch plan content for plan #$PLAN_ID."
+          if [ -f .erk/impl-context/plan.md ]; then
+            echo "Using pre-committed impl-context from branch"
+          else
+            rm -rf .erk/impl-context
+            erk exec create-impl-context-from-plan "$PLAN_ID"
+            if [ $? -ne 0 ]; then
+              if [ "$ERK_PLAN_BACKEND" = "planned_pr" ]; then
+                gh pr comment "$PLAN_ID" --body "Could not fetch plan content for plan #$PLAN_ID."
+              else
+                gh issue comment "$PLAN_ID" --body "Could not fetch plan content for plan #$PLAN_ID."
+              fi
+              exit 1
             fi
-            exit 1
           fi
           git config user.name "$SUBMITTED_BY"
           git config user.email "$SUBMITTED_BY@users.noreply.github.com"
