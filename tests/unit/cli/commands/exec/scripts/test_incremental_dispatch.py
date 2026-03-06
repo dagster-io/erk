@@ -7,10 +7,12 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.incremental_dispatch import incremental_dispatch
 from erk_shared.context.context import ErkContext
+from erk_shared.context.testing import context_for_test
 from erk_shared.gateway.git.abc import WorktreeInfo
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails
+from erk_shared.gateway.graphite.fake import FakeGraphite
 
 
 def _make_pr(number: int, *, state: str = "OPEN", branch: str = "feature-branch") -> PRDetails:
@@ -171,12 +173,16 @@ def test_incremental_dispatch_checked_out_branch(tmp_path: Path) -> None:
         existing_paths={worktree_path},
     )
     fake_github = FakeGitHub(pr_details={42: pr})
+    fake_graphite = FakeGraphite()
 
     runner = CliRunner()
+    ctx = context_for_test(
+        git=fake_git, github=fake_github, graphite=fake_graphite, repo_root=tmp_path
+    )
     result = runner.invoke(
         incremental_dispatch,
         ["--plan-file", str(plan_file), "--pr", "42", "--format", "json"],
-        obj=ErkContext.for_test(git=fake_git, github=fake_github, repo_root=tmp_path),
+        obj=ctx,
     )
 
     assert result.exit_code == 0, f"Failed: {result.output}"
@@ -191,3 +197,15 @@ def test_incremental_dispatch_checked_out_branch(tmp_path: Path) -> None:
     # Verify create_branch was NOT called for the feature branch
     created = fake_git.branch.created_branches
     assert all(b[1] != "feature/checked-out" for b in created)
+
+    # Verify retrack_branch() was called with correct arguments
+    assert len(fake_graphite.retrack_branch_calls) == 1
+    assert fake_graphite.retrack_branch_calls[0] == (tmp_path, "feature/checked-out")
+
+    # Verify files were written to the worktree path
+    assert (worktree_path / ".erk/impl-context/plan.md").exists()
+    assert (worktree_path / ".erk/impl-context/ref.json").exists()
+
+    # Verify stage_files() was called with the impl-context files
+    assert ".erk/impl-context/plan.md" in fake_git.commit.staged_files
+    assert ".erk/impl-context/ref.json" in fake_git.commit.staged_files
