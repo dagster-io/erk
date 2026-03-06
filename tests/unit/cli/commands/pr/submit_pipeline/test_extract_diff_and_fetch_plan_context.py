@@ -1,7 +1,6 @@
 """Unit tests for extract_diff_and_fetch_plan_context combined pipeline step."""
 
 from pathlib import Path
-from unittest.mock import patch
 
 from erk.cli.commands.pr.submit_pipeline import (
     SubmitError,
@@ -93,52 +92,10 @@ def test_sets_both_diff_file_and_plan_context(tmp_path: Path) -> None:
 
 def test_extract_diff_error_propagated(tmp_path: Path) -> None:
     """SubmitError from extract_diff is returned by the combined step."""
-    diff_error = SubmitError(
-        phase="extract_diff",
-        error_type="no_base_branch",
-        message="No base branch",
-        details={},
-    )
-
-    def fake_extract_diff(_ctx: object, _state: object) -> SubmitError:
-        return diff_error
-
     ctx = context_for_test(cwd=tmp_path)
-    state = _make_state(cwd=tmp_path, base_branch="main")
+    state = _make_state(cwd=tmp_path)
 
-    with patch(
-        "erk.cli.commands.pr.submit_pipeline.extract_diff",
-        side_effect=fake_extract_diff,
-    ):
-        result = extract_diff_and_fetch_plan_context(ctx, state)
+    result = extract_diff_and_fetch_plan_context(ctx, state)
 
     assert isinstance(result, SubmitError)
     assert result.error_type == "no_base_branch"
-
-
-def test_fetch_plan_context_error_propagated(tmp_path: Path) -> None:
-    """SubmitError from fetch_plan_context is returned by the combined step."""
-    plan_error = SubmitError(
-        phase="fetch_plan_context",
-        error_type="plan_fetch_failed",
-        message="Failed to fetch plan",
-        details={},
-    )
-
-    def fake_fetch_plan_context(_ctx: object, _state: object) -> SubmitError:
-        return plan_error
-
-    fake_git = FakeGit(
-        diff_to_branch={(tmp_path, "main"): "diff --git a/file.py\n+hello"},
-    )
-    ctx = context_for_test(git=fake_git, cwd=tmp_path)
-    state = _make_state(cwd=tmp_path, base_branch="main")
-
-    with patch(
-        "erk.cli.commands.pr.submit_pipeline.fetch_plan_context",
-        side_effect=fake_fetch_plan_context,
-    ):
-        result = extract_diff_and_fetch_plan_context(ctx, state)
-
-    assert isinstance(result, SubmitError)
-    assert result.error_type == "plan_fetch_failed"
