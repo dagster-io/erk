@@ -203,9 +203,10 @@ Generate CI failure summaries using Haiku.
 
 **Options:**
 
-| Flag       | Type | Required | Default        | Description           |
-| ---------- | ---- | -------- | -------------- | --------------------- |
-| `--run-id` | TEXT | Yes      | Sentinel.UNSET | GitHub Actions run ID |
+| Flag          | Type    | Required | Default        | Description                  |
+| ------------- | ------- | -------- | -------------- | ---------------------------- |
+| `--run-id`    | TEXT    | Yes      | Sentinel.UNSET | GitHub Actions run ID        |
+| `--pr-number` | INTEGER | No       | -              | PR number to post comment on |
 
 ### ci-update-pr-body
 
