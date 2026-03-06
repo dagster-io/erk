@@ -60,20 +60,26 @@ def read_plan_saved_marker(session_id: str, repo_root: Path) -> int | None:
     return int(first_line)
 
 
-def create_plan_saved_issue_marker(session_id: str, repo_root: Path, plan_number: int) -> None:
-    """Create marker file storing the issue number of the saved plan.
+def create_plan_saved_issue_marker(
+    session_id: str, repo_root: Path, plan_number: int, *, title: str
+) -> None:
+    """Create marker file storing the issue number and title of the saved plan.
 
-    This marker enables automatic plan updates - when user says "update plan",
-    Claude can read this marker to find the issue number and invoke /local:plan-update.
+    This marker enables automatic plan updates and per-title deduplication.
+    When user says "update plan", Claude can read this marker to find the
+    issue number and invoke /local:plan-update. The title enables saving
+    multiple distinct plans in the same session while still blocking true
+    duplicates (same title saved twice).
 
     Args:
         session_id: The session ID for the scratch directory.
         repo_root: The repository root path.
         plan_number: The plan number where the plan was saved.
+        title: The plan title (used for per-title dedup).
     """
     marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
     marker_file = marker_dir / "plan-saved-issue.marker"
-    marker_file.write_text(str(plan_number), encoding="utf-8")
+    marker_file.write_text(f"{plan_number}\n{title}", encoding="utf-8")
 
 
 def read_objective_context_marker(session_id: str, repo_root: Path) -> int | None:
@@ -160,24 +166,34 @@ def get_existing_saved_branch(session_id: str, repo_root: Path) -> str | None:
     return content
 
 
-def get_existing_saved_issue(session_id: str, repo_root: Path) -> int | None:
-    """Check if this session already saved a plan and return the issue number.
+def get_existing_saved_issue(session_id: str, repo_root: Path, *, title: str) -> int | None:
+    """Check if this session already saved a plan with the same title.
 
     This prevents duplicate plan creation when the agent calls plan-save multiple times
-    in the same session.
+    in the same session with the same plan. Different titles are treated as distinct
+    plans and allowed through.
 
     Args:
         session_id: The session ID for the scratch directory.
         repo_root: The repository root path.
+        title: The plan title to match against the stored title.
 
     Returns:
-        The issue number if plan was already saved, None otherwise.
+        The issue number if a plan with the same title was already saved, None otherwise.
     """
     marker_dir = get_scratch_dir(session_id, repo_root=repo_root)
     marker_file = marker_dir / "plan-saved-issue.marker"
     if not marker_file.exists():
         return None
     content = marker_file.read_text(encoding="utf-8").strip()
-    if not content.isdigit():
+    lines = content.split("\n", maxsplit=1)
+    first_line = lines[0].strip()
+    if not first_line.isdigit():
         return None
-    return int(content)
+    # Old format (no title line): treat as match for backwards compatibility
+    if len(lines) == 1:
+        return int(first_line)
+    stored_title = lines[1].strip()
+    if stored_title == title:
+        return int(first_line)
+    return None

@@ -90,35 +90,45 @@ def test_read_plan_saved_marker_returns_none_for_non_numeric(tmp_path: Path) -> 
 # create_plan_saved_issue_marker tests
 
 
-def test_create_plan_saved_issue_marker_stores_number(tmp_path: Path) -> None:
-    """Verify issue number is stored as string."""
+def test_create_plan_saved_issue_marker_stores_number_and_title(tmp_path: Path) -> None:
+    """Verify issue number and title are stored."""
     session_id = "test-session-123"
 
-    create_plan_saved_issue_marker(session_id, tmp_path, 42)
+    create_plan_saved_issue_marker(session_id, tmp_path, 42, title="My Plan")
 
     marker_file = (
         tmp_path / ".erk" / "scratch" / "sessions" / session_id / "plan-saved-issue.marker"
     )
     assert marker_file.exists()
-    assert marker_file.read_text(encoding="utf-8") == "42"
+    assert marker_file.read_text(encoding="utf-8") == "42\nMy Plan"
 
 
 # get_existing_saved_issue tests
 
 
-def test_get_existing_saved_issue_returns_plan_number(tmp_path: Path) -> None:
-    """Verify stored plan number is returned."""
+def test_get_existing_saved_issue_returns_plan_number_for_same_title(tmp_path: Path) -> None:
+    """Verify stored plan number is returned when titles match."""
     session_id = "test-session-123"
-    create_plan_saved_issue_marker(session_id, tmp_path, 99)
+    create_plan_saved_issue_marker(session_id, tmp_path, 99, title="My Plan")
 
-    result = get_existing_saved_issue(session_id, tmp_path)
+    result = get_existing_saved_issue(session_id, tmp_path, title="My Plan")
 
     assert result == 99
 
 
+def test_get_existing_saved_issue_returns_none_for_different_title(tmp_path: Path) -> None:
+    """Verify None is returned when titles differ (distinct plans allowed)."""
+    session_id = "test-session-123"
+    create_plan_saved_issue_marker(session_id, tmp_path, 99, title="First Plan")
+
+    result = get_existing_saved_issue(session_id, tmp_path, title="Second Plan")
+
+    assert result is None
+
+
 def test_get_existing_saved_issue_returns_none_when_no_marker(tmp_path: Path) -> None:
     """Verify None is returned when no marker exists."""
-    result = get_existing_saved_issue("nonexistent-session", tmp_path)
+    result = get_existing_saved_issue("nonexistent-session", tmp_path, title="Any Title")
 
     assert result is None
 
@@ -131,9 +141,22 @@ def test_get_existing_saved_issue_returns_none_for_non_numeric(tmp_path: Path) -
     marker_file = marker_dir / "plan-saved-issue.marker"
     marker_file.write_text("not-a-number", encoding="utf-8")
 
-    result = get_existing_saved_issue(session_id, tmp_path)
+    result = get_existing_saved_issue(session_id, tmp_path, title="Any Title")
 
     assert result is None
+
+
+def test_get_existing_saved_issue_old_format_backwards_compat(tmp_path: Path) -> None:
+    """Old-format marker (no title line) treats as match for backwards compat."""
+    session_id = "test-session-123"
+    marker_dir = tmp_path / ".erk" / "scratch" / "sessions" / session_id
+    marker_dir.mkdir(parents=True)
+    marker_file = marker_dir / "plan-saved-issue.marker"
+    marker_file.write_text("42", encoding="utf-8")
+
+    result = get_existing_saved_issue(session_id, tmp_path, title="Any Title")
+
+    assert result == 42
 
 
 # create_plan_saved_branch_marker tests
@@ -251,12 +274,16 @@ def test_read_roadmap_step_marker_strips_whitespace(tmp_path: Path) -> None:
 def test_marker_roundtrip(tmp_path: Path) -> None:
     """Verify create + get roundtrip works correctly."""
     session_id = "roundtrip-session"
+    title = "Roundtrip Plan"
 
     # Initially no marker
-    assert get_existing_saved_issue(session_id, tmp_path) is None
+    assert get_existing_saved_issue(session_id, tmp_path, title=title) is None
 
     # Create marker
-    create_plan_saved_issue_marker(session_id, tmp_path, 123)
+    create_plan_saved_issue_marker(session_id, tmp_path, 123, title=title)
 
-    # Now returns the issue number
-    assert get_existing_saved_issue(session_id, tmp_path) == 123
+    # Now returns the issue number for same title
+    assert get_existing_saved_issue(session_id, tmp_path, title=title) == 123
+
+    # Different title returns None
+    assert get_existing_saved_issue(session_id, tmp_path, title="Different Plan") is None
