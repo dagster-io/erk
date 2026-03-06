@@ -38,6 +38,6 @@ Load **first** for any code area: [universal-tripwires.md](universal-tripwires.m
 | [sessions](sessions/tripwires.md)           | 12        | `~/.claude/projects/`, session analysis  |
 | [testing](testing/tripwires.md)             | 66        | `tests/`                                 |
 | [textual](textual/tripwires.md)             | 1         | Textual framework code                   |
-| [tui](tui/tripwires.md)                     | 59        | `src/erk/tui/`                           |
+| [tui](tui/tripwires.md)                     | 60        | `src/erk/tui/`                           |
 | [uncategorized](uncategorized/tripwires.md) | 15        | `uncategorized/` code                    |
 | [workflows](workflows/tripwires.md)         | 6         | `workflows/` code                        |

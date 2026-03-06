@@ -117,6 +117,7 @@ def on_key(self, event: Key) -> None:
 - `UnresolvedCommentsScreen` — fetches and displays PR review comments
 - `PlanBodyScreen` — fetches and displays plan body content
 - `PlanDetailScreen` — displays plan details with markdown rendering
+- `ObjectiveNodesScreen` — displays objective nodes with async data loading, phase separators, PR data enrichment, and next-node highlighting
 
 ## Related Documentation
 

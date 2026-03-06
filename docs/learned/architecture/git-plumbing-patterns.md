@@ -72,7 +72,36 @@ See `RealGitCommitOps.commit_files_to_branch()` in `packages/erk-shared/src/erk_
 
 ### How It Works
 
-`update_local_ref()` uses `git update-ref` to move a local branch pointer to a new commit SHA without checking out the branch. This is safe when the branch is NOT currently checked out in any worktree.
+`update_local_ref()` uses `git update-ref` to move a local branch pointer to a new commit SHA without checking out the branch.
+
+### Checked-Out Branch Handling
+
+When the target branch is currently checked out in a worktree, `update_local_ref` is used instead of `create_branch(force=True)` because git refuses to force-update a checked-out branch. The incremental dispatch script uses an LBYL check:
+
+```python
+checked_out_path = git.worktree.is_branch_checked_out(repo_root, branch_name)
+if checked_out_path is None:
+    # Branch not checked out anywhere — safe to force-create
+    git.branch.create_branch(repo_root, branch_name, f"origin/{branch_name}", force=True)
+else:
+    # Branch is checked out — use update_local_ref instead
+    remote_sha = git.branch.get_branch_head(repo_root, f"origin/{branch_name}")
+    if remote_sha is not None:
+        git.branch.update_local_ref(repo_root, branch_name, remote_sha)
+```
+
+After a plumbing commit to a checked-out branch, the index may contain stale staged changes. Reset with `git checkout HEAD --` on the committed files to sync the index:
+
+```python
+if checked_out_path is not None:
+    run_subprocess_with_context(
+        cmd=["git", "checkout", "HEAD", "--"] + impl_context_paths,
+        operation_context="sync index after plumbing commit",
+        cwd=checked_out_path,
+    )
+```
+
+<!-- Source: src/erk/cli/commands/exec/scripts/incremental_dispatch.py, lines 108-144 -->
 
 ### Implementation
 
@@ -99,6 +128,7 @@ See `update_local_ref()` in `packages/erk-shared/src/erk_shared/gateway/git/bran
 - PR #7783 replaced checkout with git plumbing to eliminate race conditions
 - PR #8578 applied `commit_files_to_branch` pattern to dispatch workflow
 - PR #8582 applied `update_local_ref` pattern to trunk sync in dispatch helpers
+- PR #8789 added checked-out branch handling and index sync to incremental dispatch
 
 ## Testing
 

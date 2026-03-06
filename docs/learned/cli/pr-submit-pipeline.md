@@ -63,9 +63,13 @@ Step 3 (`push_and_create_pr`) dispatches to `_graphite_first_flow()` or `_core_s
 
 ## Why 10 Steps: Granularity Trade-offs
 
-The pipeline has 10 steps: prepare, commit WIP, capture existing PR body, push+PR, extract diff, fetch plan, generate description, Graphite enhancement, finalize, link PR to objective nodes.
+The pipeline has 10 steps: prepare, commit WIP, capture existing PR body, push+PR, extract diff + fetch plan (parallelized), generate description, Graphite enhancement, finalize, link PR to objective nodes.
 
 **Step 3: `capture_existing_pr_body()`** was added to prevent a timing bug: `gt submit` overwrites the PR body during push+PR creation (step 4). For planned-PR plans, the existing PR body contains the plan-header metadata block that must be preserved. Capturing it before the destructive operation ensures the metadata survives the rewrite cycle.
+
+**Step 5: `extract_diff_and_fetch_plan_context()`** runs diff extraction and plan context fetching concurrently using `ThreadPoolExecutor(max_workers=2)` (PR #8799). Both operations involve independent GitHub API calls, so parallelization reduces latency. The combined step merges results into state using `dataclasses.replace()` with fields from both futures.
+
+**PR cache polling removal (PR #8794):** The pipeline previously polled for PR cache consistency after push. This was removed from the critical path because the statusline handles PR info display independently. See [Erk Statusline](../architecture/erk-statusline.md) for the caching strategy.
 
 **Why not fewer steps?** Merging "extract diff + generate description" would make testing harder (can't test diff extraction without running AI generation). Each step represents a **failure boundary** — a distinct phase where errors need different handling.
 

@@ -50,11 +50,22 @@ Some files are auto-generated (e.g., `tripwires.md`, `index.md`). For these:
    ```
 3. The regenerated file will be correct based on current frontmatter state
 
-## Mid-Rebase Recovery with `erk pr rebase`
+## Two-Phase Rebase Pattern
 
-`erk pr rebase` (and the `/erk:rebase` slash command) can resolve conflicts in a rebase that is already in progress. If you started a `git rebase` manually and hit conflicts you can't resolve, run `erk pr rebase` to have Claude pick up where you left off. It will detect the in-progress rebase, resolve the conflicted files, and continue the rebase to completion.
+`erk pr rebase` uses a two-phase approach:
 
-This makes `erk pr rebase` useful as both a start-from-scratch rebase tool and a mid-rebase recovery tool.
+**Phase 1: Mechanical rebase** — Attempts an automated rebase without human intervention:
+
+- If Graphite is enabled and the branch is tracked: runs `gt restack --no-interactive`
+- If Graphite is disabled: runs `git rebase <target>` (requires `--target` option)
+
+**Phase 2: Claude TUI fallback** — If Phase 1 hits conflicts, launches Claude Code interactively with `/erk:rebase` for AI-assisted conflict resolution via `execute_interactive()`.
+
+The `_is_graphite_enabled()` helper determines the Phase 1 strategy by unwrapping `DryRunGraphite` and checking for `GraphiteDisabled`.
+
+**Mid-rebase recovery**: If a rebase is already in progress (detected via `is_rebase_in_progress()`), Phase 1 is skipped entirely and Claude TUI launches directly to resolve the existing conflicts.
+
+<!-- Source: src/erk/cli/commands/pr/rebase_cmd.py -->
 
 ## Related Documentation
 

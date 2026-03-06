@@ -109,6 +109,30 @@ For each phase, follow the guide above.
 @docs/execution-workflow.md
 ```
 
+## LLM-Intelligent Parameter Pattern
+
+For user-facing parameters that accept flexible input (dates, ranges, etc.), prefer LLM interpretation over rigid format matching:
+
+**Before (format-matching):**
+
+```python
+# Rigid: requires exact format, fails on "last month" or "since January"
+click.option("--since", type=click.DateTime(formats=["%Y-%m-%d"]))
+```
+
+**After (LLM-interpreted):**
+
+```python
+# Flexible: LLM parses natural language into structured query
+# "last 30 days", "since January", "2026-02-01" all work
+```
+
+**Example:** The `code-stats` command upgraded date parsing from a fixed format list to flexible natural language interpretation, using Sonnet (upgraded from Haiku) for accuracy. Rolling defaults (e.g., "last 30 days") are preferred over fixed dates because they stay useful without manual updates.
+
+**Trade-off:** LLM interpretation adds latency and cost per invocation. Only use for user-facing parameters where flexibility matters. Internal APIs should use typed parameters.
+
+<!-- Source: .claude/commands/local/code-stats.md -->
+
 ## Related Documentation
 
 - [Context Analysis](../sessions/context-analysis.md) - Analyzing context consumption

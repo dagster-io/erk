@@ -60,17 +60,17 @@ If a skill just needs to be copied from the wheel to the project, use the bundle
 
 ## Drift Prevention Test
 
-`tests/unit/core/test_capabilities.py` contains `test_all_codex_portable_skills_have_capability()` which verifies every skill in `codex_portable_skills()` has a registered capability. If a new skill is added to the portable skills list without a corresponding capability, this test fails with instructions:
+`tests/unit/core/capabilities/test_skills.py` contains `test_all_codex_portable_skills_have_capability()` which verifies every skill in `codex_portable_skills()` has a registered capability. If a new skill is added to the portable skills list without a corresponding capability, this test fails with instructions:
 
 > Add it to bundled_skills() in bundled.py or create a dedicated capability class
 
 ## Source Code References
 
-| File                                     | Key Components                                                                      |
-| ---------------------------------------- | ----------------------------------------------------------------------------------- |
-| `src/erk/capabilities/skills/bundled.py` | `BundledSkillCapability`, `bundled_skills()`, `create_bundled_skill_capabilities()` |
-| `src/erk/core/capabilities/registry.py`  | `_all_capabilities()` with tuple unpacking                                          |
-| `tests/unit/core/test_capabilities.py`   | Drift prevention test                                                               |
+| File                                          | Key Components                                                                      |
+| --------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `src/erk/capabilities/skills/bundled.py`      | `BundledSkillCapability`, `bundled_skills()`, `create_bundled_skill_capabilities()` |
+| `src/erk/core/capabilities/registry.py`       | `_all_capabilities()` with tuple unpacking                                          |
+| `tests/unit/core/capabilities/test_skills.py` | Drift prevention test                                                               |
 
 ## Related Topics
 

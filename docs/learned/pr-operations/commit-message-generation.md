@@ -64,6 +64,20 @@ When plan context is unavailable:
 
 This allows the same workflow for plan-linked and non-plan branches.
 
+## LlmCaller Architecture
+
+`CommitMessageGenerator` takes a single `LlmCaller` dependency, using direct Anthropic API calls instead of spawning a Claude CLI subprocess:
+
+```python
+class CommitMessageGenerator:
+    def __init__(self, llm_caller: LlmCaller) -> None:
+        self._llm_caller = llm_caller
+```
+
+This replaced the previous `(executor, time, model)` constructor that used `PromptExecutor.execute_prompt()` with threading. The migration (PR #8820) reduced generation time from ~15 seconds to ~2-3 seconds by eliminating subprocess overhead.
+
+See `docs/learned/architecture/inference-hoisting.md` for the broader LlmCaller pattern.
+
 ## Model Selection
 
 Default model is `haiku` for:
@@ -72,7 +86,7 @@ Default model is `haiku` for:
 - Cost (frequent operation during development)
 - Sufficient quality for structured task (diff → description)
 
-Override via `CommitMessageGenerator(executor, model="sonnet")` for complex diffs.
+Model selection is configured via the `LlmCaller` instance passed to the constructor.
 
 ## Reference Implementation
 

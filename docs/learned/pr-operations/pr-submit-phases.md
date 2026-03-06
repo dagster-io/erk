@@ -11,7 +11,7 @@ audit_result: clean
 
 # PR Submit Workflow Phases
 
-The `erk pr submit` command uses a 6-phase workflow to submit PRs with AI-generated descriptions. This document explains each phase and the two-layer architecture.
+The `erk pr submit` command uses a 5-phase workflow to submit PRs with AI-generated descriptions. This document explains each phase and the two-layer architecture.
 
 ## Two-Layer Architecture
 
@@ -22,14 +22,13 @@ The workflow has two layers:
 
 ## Workflow Phases
 
-| Phase | Name                      | Description                                  |
-| ----- | ------------------------- | -------------------------------------------- |
-| 1     | Creating or Updating PR   | Push changes and create/find PR              |
-| 2     | Getting diff              | Extract diff from GitHub API for AI analysis |
-| 3     | Fetching plan context     | Get plan from linked erk-plan issue          |
-| 4     | Generating PR description | AI generates title and body via Claude CLI   |
-| 5     | Graphite enhancement      | Add stack metadata (if available)            |
-| 6     | Updating PR metadata      | Push AI-generated title/body to GitHub       |
+| Phase | Name                          | Description                                   |
+| ----- | ----------------------------- | --------------------------------------------- |
+| 1     | Creating or Updating PR       | Push changes and create/find PR               |
+| 2     | Getting diff and plan context | Extract diff and fetch plan concurrently      |
+| 3     | Generating PR description     | AI generates title and body via Anthropic API |
+| 4     | Graphite enhancement          | Add stack metadata (if available)             |
+| 5     | Updating PR metadata          | Push AI-generated title/body to GitHub        |
 
 ### Phase 1: Creating or Updating PR
 
@@ -47,16 +46,17 @@ Two execution paths depending on Graphite availability:
 - Avoids "tracking divergence" issue
 - Queries GitHub API to get PR info after submit
 
-### Phase 2: Getting diff
+### Phase 2: Getting diff and plan context
+
+Diff extraction and plan context fetching run **concurrently** using `ThreadPoolExecutor(max_workers=2)` (PR #8799). Both involve independent GitHub API calls:
+
+**Diff extraction:**
 
 - Uses GitHub API to get PR diff
 - Saves diff to session scratch directory for AI processing
 - Includes all commits since parent branch
 
-### Phase 3: Fetching plan context
-
-**This phase integrates plan context into PR generation.**
-
+**Plan context fetching:**
 The `PlanContextProvider` checks for a linked erk-plan issue:
 
 1. Looks for `.erk/impl-context/plan-ref.json` (or legacy `.impl/issue.json`) in repo root
@@ -64,36 +64,21 @@ The `PlanContextProvider` checks for a linked erk-plan issue:
 3. Fetches plan body from GitHub
 4. Includes objective summary if linked
 
-**Output**: Plan context is passed to the AI generator in Phase 4, enabling the AI to understand the original intent and produce better PR descriptions.
+**Output**: Both results are merged into pipeline state and passed to the AI generator in Phase 3.
 
-Example console output:
+### Phase 3: Generating PR description
 
-```
-Phase 3: Fetching plan context
-   Incorporating plan from issue #5828
-   Linked to Objective: Documentation improvements
-```
-
-Or if no plan is found:
-
-```
-Phase 3: Fetching plan context
-   No linked plan found
-```
-
-### Phase 4: Generating PR description
-
-- Uses `CommitMessageGenerator` with Claude CLI
+- Uses `CommitMessageGenerator` with `LlmCaller` (direct Anthropic API)
 - Inputs: diff file, commit messages, branch info, **plan context**
 - Outputs: AI-generated title and body
 
-The plan context from Phase 3 helps the AI:
+The plan context from Phase 2 helps the AI:
 
 - Match PR description to original intent
 - Include relevant context from the plan
 - Reference objective if applicable
 
-### Phase 5: Graphite enhancement
+### Phase 4: Graphite enhancement
 
 Only runs in standard flow (skipped if Graphite-first flow was used):
 
@@ -103,10 +88,10 @@ Only runs in standard flow (skipped if Graphite-first flow was used):
 
 This phase is non-fatal - errors are warnings, not failures.
 
-### Phase 6: Updating PR metadata
+### Phase 5: Updating PR metadata
 
 - Updates PR title and body via GitHub API
-- Uses AI-generated content from Phase 4
+- Uses AI-generated content from Phase 3
 - Embeds plan in PR body via `_build_plan_details_section()` when `plan_context` is present
 - Builds checkout footer with metadata section
 - Separates commit message (`pr_body`) from GitHub PR body (`pr_body_for_github`)
@@ -114,7 +99,7 @@ This phase is non-fatal - errors are warnings, not failures.
 
 **Plan Embedding**: When `state.plan_context` is available, the phase embeds the full plan content in a collapsible `<details>` section in the PR body. The plan appears on GitHub but **not** in the git commit message. See [Plan Embedding in PR](plan-embedding-in-pr.md) for details.
 
-**Two-Target Pattern**: Phase 6 uses separate strings for commit messages (plain text) and GitHub PR bodies (with HTML enhancements). See [PR Body Formatting](../architecture/pr-body-formatting.md) for the pattern.
+**Two-Target Pattern**: Phase 5 uses separate strings for commit messages (plain text) and GitHub PR bodies (with HTML enhancements). See [PR Body Formatting](../architecture/pr-body-formatting.md) for the pattern.
 
 ## CLI Options
 
@@ -134,7 +119,7 @@ erk pr submit --debug
 
 ## Architecture Note
 
-The internal implementation was refactored in PR #6300 from a monolithic function to a linear function pipeline. The 6 user-facing phases described above map to 10 internal pipeline steps in `submit_pipeline.py`. See [PR Submit Pipeline Architecture](../cli/pr-submit-pipeline.md) for the internal step-by-step architecture.
+The internal implementation was refactored in PR #6300 from a monolithic function to a linear function pipeline. The 5 user-facing phases described above map to 10 internal pipeline steps in `submit_pipeline.py`. See [PR Submit Pipeline Architecture](../cli/pr-submit-pipeline.md) for the internal step-by-step architecture.
 
 ## Related Topics
 
