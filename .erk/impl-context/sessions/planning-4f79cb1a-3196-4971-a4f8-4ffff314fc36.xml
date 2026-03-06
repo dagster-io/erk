@@ -1,0 +1,2099 @@
+<session>
+  <meta branch="plnd/consolidate-checkout-prepa-03-06-0452" />
+  <meta model="claude-opus-4-6" />
+  <user>▐▛███▜▌   Claude Code v2.1.70
+▝▜█████▛▘  Opus 4.6 with high effort · Claude Max
+  ▘▘ ▝▝    ~/.erk/repos/erk/worktrees/erk-slot-03
+
+❯ i would have expected this PR to remove more code. can you look for violoations of dry in these code paths
+
+❯ Tool loaded.
+
+⏺ Let me first look at what this PR changes, then hunt for DRY violations.
+
+⏺ Bash(git log main..HEAD --oneline)
+  ⎿  Error: Exit code 128
+     fatal: ambiguous argument 'main..HEAD': unknown revision or path not in the working tree.
+     Use '--' to separate paths from revisions, like this:
+     'git &lt;command&gt; [&lt;revision&gt;...] -- [&lt;file&gt;...]'
+
+     fatal: ambiguous argument 'main..HEAD': unknown revision or path not in the working tree.
+     Use '--' to separate paths from revisions, like this:
+     'git &lt;command&gt; [&lt;revision&gt;...] -- [&lt;file&gt;...]'
+
+⏺ Bash(git diff main..HEAD --stat)
+  ⎿  Cancelled: parallel tool call Bash(git log main..HEAD --oneline) errored
+
+⏺ Bash(git log origin/main..HEAD --oneline)
+  ⎿  d1605e94d Add Layer 4 unit tests for create_impl_context_from_pr()
+     92f7f9479 Separate CI validation from shipped code reviews (#8828)
+     05e6fd242 Upgrade astral-sh/setup-uv from v5 to v7 (#8836)
+     108c9acea Fix CI race condition: skip tier 3 jobs when fix-formatting pushes changes (#8823)
+     96f14cdf0 Auto-fix formatting (docs-sync + ruff + Prettier)
+     9c65c1cc6 Fix Graphite divergence in pr checkout + add pr prepare command
+     d7e6e4911 Remove plan staging dirs before implementation
+     36a12771c Add plan for PR #8830
+     dce948117 Remove plan staging dirs before implementation
+     ca670d802 Add plan for PR #8830
+     01d5dcf09 Add plan: Consolidate checkout/implementation-setup flow + fix Graphite divergence
+     23589b8cf Add plan for PR #8825
+     e37a47778 Add plan: Create module-to-subpackage skill
+     9179455d3 Release 0.9.8
+     e272651c4 Fix Dignified Python false positives: assert in tests and library import aliases (#8843)
+     45dfcd51e Upgrade code-stats date parsing to LLM-intelligent with flexible format support (#8819)
+     6fa998361 Separate CI validation from shipped code reviews (#8828)
+     d725dbd24 Fix `is_rebase_in_progress` detection in git worktrees (#8838)
+     e14b58a9b Fix Unbundled Skill Test: Portability Registries Should Only Cover Bundled Skills (#8820)
+     920368558 Implement persistent CI failure summaries as PR comments with fast-path fetch (#8812)
+     6c8c2694d Upgrade astral-sh/setup-uv from v5 to v7 (#8836)
+     a1ed6af41 Fix CI race condition: skip tier 3 jobs when fix-formatting pushes changes (#8823)
+     40e015c30 Split test_capabilities.py into organized subpackage structure (#8824)
+     4b09bd6a4 Implement per-title plan deduplication in session markers (#8831)
+     9482217e1 Split PlanDataProvider into domain service (PlanService) and TUI data provider (#8804)
+     dccd1b32e Replace Claude CLI subprocess with direct Anthropic API calls for PR description generation (#8801)
+     482e10bd1 Release 0.9.7
+     2581324cf Change `erk pr rebase` to use mechanical rebase with Claude TUI fallback (#8811)
+     614a2d0cd Add ObjectiveNodesScreen modal for objective node breakdown (b key) (#8778)
+     4bab14ab1 Add branch name to workflow run-name for better context (#8809)
+     a2c766e63 Extract CI check formatting to shared module (#8808)
+     1196db168 Fix: Attribute automated pushes to github-actions[bot] instead of user (#8810)
+     082109316 Fix race condition in check runs markdown rendering (#8807)
+     4bccacb3c Move code-reviews jobs into ci.yml downstream of fix-formatting (#8797)
+     e3fd5afdf Parallelize extract_diff and fetch_plan_context in PR submit pipeline (#8795)
+     6639c085d Remove PR cache polling from submit critical path (#8794)
+     23a7aed94 Release 0.9.6
+     b455eeb33 Fix incremental-dispatch robustness: branch sync and index desync (#8789)
+     0d3e15664 Enrich `erk objective list` CLI to match TUI dashboard (#8777)
+     a2192b135 Rename cmux sync → cmux checkout (#8790)
+     e6fce4797 Update CHANGELOG.md Unreleased section with entries from recent commits (#8791)
+     2e0bb588e Optimize PR submit pipeline by caching Graphite auth checks and eliminating redundant API calls (#8786)
+     1f0003c46 Add /erk:pr-incremental-dispatch — dispatch local plan against existing PR (#8785)
+     1dc0214cb Remove plan number argument from `/erk:pr-dispatch` slash command (#8780)
+     8e1ec8346 Fix planning/ docs terminology: replace "plan issue" with "plan" (#8775)
+     254cab922 Refactor objective-plan command with CLI push-down architecture (#8776)
+     bf47168c3 [erk-mcp] remove ability to set ERK_MCP_PORT due to conflict (#8782)
+     d38e74395 Add `erk pr teleport` command and rename sync→teleport terminology (#8767)
+     f6b4e9211 Fix: erk pr dispatch fails when branch is checked out in current worktree (#8764)
+     f30f74be8 Add author filter toggle to erk TUI dashboard (#8763)
+     1702fdf30 Scaffold Astro/Starlight v2 documentation site (#8759)
+     88472044b Promote `erk release-notes` to top-level command (#8756)
+     78f3043a2 Add skill-creator skill and fix CI integration (#8758)
+     b076bc72f Release version 0.9.5 (#8753)
+     d29fd053e Fix StatusBar MarkupError crash from subprocess error display (#8733)
+     5c3924bd9 Merge branch 'release-0.9.5'
+     3131b4db9 Consolidate Documentation from 18 Merged Erk-Learn Plans (#8701)
+     8093bcbf9 Release version 0.9.5
+     0993c1d02 Fix PR body section order: move "Key Changes" before "Files Changed" (#8745)
+     605b8dbd4 Generalize dangerous flag config across all implicitly dangerous commands (#8747)
+     2fac856d7 Fix pr-submit step labels for resubmission workflows (#8748)
+     8e7b6fa8a Remove child branch existence validation in land --up (#8744)
+     117a11558 Fix `erk down -d` for same-worktree downstack navigation (#8736)
+     b2c808d1f Detect missing child branch early in `erk land --up` (#8738)
+     77a8152b6 Update CHANGELOG.md with stacked branches and objective features (#8739)
+     7f57dead6 Consolidate documentation from 15 erk-learn plans (#8710)
+     09b5763a6 Consolidate documentation from 12 erk-learn plans (#8642)
+     9ca2e1ecf Restructure exit-plan-mode menu and next-steps output (#8659)
+     15167446b Add resilient PR label operations with retry logic (#8705)
+     a8347ca3f Fix stale parent branch in plan checkout with gt track (#8730)
+     3748ed8c4 Auto-rename cmux workspace on branch navigation via direnv (#8732)
+     0bb6f75ad Clarify loop closure capture pattern in no-defaults rule (#8719)
+     8a3185470 Add HTTP transport support to erk-mcp server (#8716)
+     694b8e5c7 Add "Minimal Exception Scope" standard to dignified-python (#8707)
+     51ed4fbcc Skip source activate.sh when already in target worktree (#8726)
+     55b3e2dc1 Switch CI Python setup to astral-sh/setup-uv (#8722)
+     1872695a7 Retrack branch after plumbing commit in plan-save (#8721)
+     c0d5ac2ae Make pr-address command plan-mode aware (#8714)
+     e69b3657f Fix: `erk br co --for-plan` allocates slot instead of staying in current worktree (#8713)
+     69cad1081 Add "unexpected end of JSON input" as transient error (#8703)
+     77ca8806b Add /local:cmux-workspace-rename command (#8697)
+     51d2e25f3 Fix `erk up/down` navigation when worktree has different branch checked out (#8693)
+     ccf0aeb21 Move uv sync outside VIRTUAL_ENV guard in activation scripts (#8696)
+     004b7b211 Rename "In plan br" to "In current wt" in plan-save output (#8689)
+     7bd67b60a Fix slot reuse to ignore untracked files in `find_inactive_slot` (#8683)
+     3a969663d Hide plan PR option when on trunk branch (#8684)
+     65fcd2e03 Add impl-context cleanup to end of plan-implement workflow (#8682)
+     65604d670 Eliminate all issue-based plan references and consolidate next-steps types (#8675)
+     88d9a35eb Sync CHANGELOG Unreleased section with master commits (#8674)
+     9006754f2 Add progress indicator during PR description generation (#8662)
+     ac59a65fb Remove incorrect plnd/ skip in cleanup_impl_for_submit (#8667)
+     19bcdc8b2 Add CI step for erk-mcp tests (#8664)
+     cb99d1752 Create erk-mcp server exposing erk capabilities via MCP protocol (#8660)
+     7577959c5 Support objectives without a roadmap (#8657)
+     dd35477c1 Delete erkbot package (#8658)
+     d7a070a62 Fix `erk down -f -d` from root worktree with non-trunk branch checked out (#8651)
+     bcaabaacf Update plan-save output: hierarchical Implement/Checkout format with action-based grouping (#8653)
+     a0e1ed2ff Add GitHub API fallback to dispatch auto-detection (#8624)
+     5e90352c2 Skip impl-context cleanup for plan PRs in submit pipeline (#8636)
+     081094be4 Improve "Using existing branch" message for `--for-plan` flows (#8640)
+     b9f51ab61 Auto-execute activation script in stack-in-place checkout (#8646)
+     620458c07 Add plan-only PR detection and Plan File Mode to pr-address command (#8641)
+     473b9a769 Add "Implement on current branch" option to exit plan mode hook (#8639)
+     db162cfdc Centralize metadata block key constants (#8634)
+     119dc9026 Ensure plan-header exists before writing dispatch metadata (#8627)
+     26830bf34 Let uv auto-discover Python version and fix flaky timestamp tests via time injection (#8637)
+     302e05e01 Fix flaky timestamp test by injecting time dependency into worktree naming functions (#8626)
+     41d6099a3 Release 0.9.4
+     01531d947 Loosen Pydantic version constraints to &gt;=2.0 (#8629)
+     d2e5b9e80 Update CHANGELOG with recent features and bug fixes (#8628)
+     95fb6ed9d Consolidate 4 learn-plan PRs into single documentation update (#8623)
+     b57587588 Always run `uv sync` in worktree activation scripts (#8618)
+     db646b84e Deduplicate statusline checks and refactor dispatch ref handling (#8619)
+     cff33ce55 Add --ref-current and --ref support to all dispatch commands (#8617)
+     8b4614605 Release 0.9.3
+     724af6ef8 Fix skills not bundled to claude path in wheel installs (#8614)
+     2d1a5c716 Release 0.9.2
+     38a9b25c9 Release 0.9.2
+     3ec12e66e Auto-Remove Orphaned Artifacts During `erk artifact sync` (#8590)
+     8c34ad41b Mark 5 bundled skills as required and hide them from user-facing capability lists (#8609)
+     a34ef0478 Fast slug generation via Anthropic SDK (#8597)
+     95d42f45e Add `--ref` CLI option to workflow dispatch commands (#8608)
+     c15b4bb6d Per-repo codespace configuration via [codespace] config section (#8588)
+     ddc00071a Consolidate documentation from Mar 2 learn sessions (#8596)
+     03099fd84 Update CHANGELOG.md with features, fixes, and improvements from recent commits (#8605)
+     c47fb22f2 Fix `--plan` → `--pr` in one-shot.yml workflow (#8602)
+     a4c8a8204 Make all workflow capabilities auto-install as required (#8591)
+     96a316dd0 Detect and execute from existing impl-context directory (#8599)
+     74415f696 Reclassify CLI help groups for workflow, launch, and one-shot (#8600)
+     9a17efe27 Add LBYL check for existing branch before creating PR in one-shot dispatch (#8595)
+     45ada49e0 Enforce always-save behavior for objective-plan commands (#8586)
+     b6f3d9ea3 Skip learn plan creation when no session material is found (#8570)
+     8f3caa191 Refactor download_remote_session.py to use read_file_from_ref gateway (#8579)
+     b02cb23e1 Standardize exec script terminology (Phase 5, nodes 5.3–5.5) (#8580)
+     845e845c4 Add `--skip-learn` option to `erk land` command (#8575)
+     81af72930 Eliminate master checkout requirement from plan-save and dispatch (#8574)
+     ecbcda66f Standardize workflow terminology from "trigger" to "dispatch" (#8573)
+     018306dcf Show workflow source and switch run list to PR-centric view (#8551)
+     8c733f414 Convert `_submit_draft_pr_plan` to Git Plumbing (#7991)
+     bf1681aa6 Merge branch 'release-0.9.1'
+     3582f7c5c Release 0.9.1
+     e7bd0cbcd Fix `erk land` hanging when no sessions discovered for learn plan (#8568)
+     ba7e735a7 Fix rebase shortcut key in TUI launch screen from 'f' to 'r' (#8560)
+     ff66e7b93 Consolidate documentation from Feb 28 learn sessions (#8489)
+     bcfb7008b Document mid-rebase recovery capability for `erk pr rebase` (#8544)
+     893239187 Unify Launch Modal and Command Palette via Single Source of Truth (#8559)
+     fd831e1c1 Update CHANGELOG.md with recent features and fixes (#8563)
+     ce527b556 Move `erk run` under `erk workflow run` command hierarchy (#8549)
+     127b8c20b Create `cli-push-down` skill for pushing mechanical computation to exec commands (#8548)
+     cbd936bc5 Fix: Dispatch uses existing worktree when plan branch is already checked out (#8550)
+     49ecb3a21 Fix double activation when direnv triggers during `erk pr checkout --script` (#8555)
+     3545fe9fb Add `erk doctor workflow` subcommand with smoke testing and rename deps columns (#8115)
+     7ae42eb07 Restructure review prompt to collect→dedup→post flow (#8545)
+     534985124 Improve cmux skill: extract reference, streamline SKILL.md (#8547)
+     a8111331a Fix pr-address command to document gitignore handling for plan-only PRs (#8546)
+     b1c82a090 Sync CHANGELOG with recently-landed features and fixes (#8541)
+     c261c6d98 Support external learned docs repository via config (#8534)
+     036715082 Implement session accumulation for cross-machine learning via preprocessed XML on git branches (#8511)
+     628ef45e2 Fix: `erk pr submit` silent hang with no output (#8525)
+     ca6e79f3a Fix duplicate `gt submit` in cmux sync workflow (#8531)
+     aa438395f Break up src/erk/tui/app.py into organized subpackage (#8528)
+     e846cd362 Untrack stub branches from Graphite and add auto-cleanup to audit-branches (#8530)
+     56dd99df3 Add auto-resolution of pre-existing bot threads in code-move PRs (#8523)
+     50d687194 Split health_checks.py into focused subpackage structure (#8516)
+     927439ed9 Sync changelog with 16 merged commits and update erk-exec reference (#8522)
+     b74658edc Add cmux workspace integration to dashboard and CLI (#8503)
+     d26ac8d2c Rename "fix-conflicts" to "rebase" across the codebase (#8514)
+     18ab7408e Make "p" open objective issue page in Objectives view (#8517)
+     f5b9b5c50 Require branch_name in create_plan_draft_pr, use LLM slugs at call sites (#8504)
+     5420bb34c Renumber fractional steps to whole numbers in skills and commands (#8512)
+     ba4590225 Run fix-formatting before other CI jobs (#8508)
+     bccad1071 Add pyproject.toml force-include sync test for bundled skills (#8467)
+     682827afc TUI: Show toast when learn plan is created on landing (#8494)
+     b9fc51011 Remove PlanSummaryGenerator and require --summary flag on `erk pr create` (#8480)
+     d04377e0d Fix: Suppress stale stack (🥞) indicator when parent PR is already merged (#8468)
+     f86a3c439 Log learn PR file inventory after creation (#8501)
+     fe5c1231c Rename "Fix Conflicts Remote" to "Rebase Remote" and always rebase (#8484)
+     36b93592e Fix consolidated learn plans missing `erk-plan` label and add replan validation (#8490)
+     efea76384 Rename `markdown-fix` to `fix-formatting` and add ruff format step to CI autofix job (#8492)
+     0d58bd0b7 Delete erkdesk Electron app and all references (#8495)
+     bfa7566d3 Improve pr-triage command output format with readable tier codes and flat table layout (#8498)
+     6edfcabe8 Embed session XML files in learn plans created by `erk land` (#8496)
+     a87c69bab Add one-shot prompt modal to erk dash (x keybinding) (#8476)
+     07ca35cdc Embed session XML files in learn plan PR diffs (#8488)
+     ae9b30db5 Sync CHANGELOG.md unreleased entries with recent master commits (#8485)
+     bd69797ac Add visible AI-generated summary to plan PRs (#8464)
+     a17e26257 Add parameterized round-trip tests for all metadata block types (#8473)
+     b372dfbcc Fix docstrings and help text across exec scripts to use "plan" instead of "plan issue" (#8471)
+     02cd44a1f Exclude skipped checks from CI check counts (#8469)
+     064737c47 Add `dispatch_ref` config to override workflow dispatch branch (#8479)
+     e86efb1e4 Add `launch one-shot` workflow handler with `--prompt`/`--file` options (#8472)
+     90bfd7870 Display learn plan PR link in `erk land` output (#8466)
+     c432d06f1 Fix CI check gap after markdown-fix auto-commits and unbreak ci-summarize (#8477)
+     97f488263 Add CI failure summarization via Haiku and enhanced failing checks modal (#8395)
+     b89f91249 Require HTTP client in plan and objective list services (#8231)
+     0ca0e8ec6 Add `/local:pr-triage` command for open PR analysis (#8454)
+     4efa20cb4 Entity Store: Generic KV State + Append-Only Log for GitHub Issues/PRs (#8452)
+     2ed31d082 Add session preprocessing stats to `erk land` discovery output (#8463)
+     795b3b559 Fix Drift in docs/learned/ Corpus (#8448)
+     6b0978292 Fix: Rebase stacked plan branch onto parent before `gt track` (#8457)
+     b774fde49 Consolidate 16 Feb 26 learn plans into coordinated documentation updates (#8324)
+     51e462c2f Update documentation for metadata blocks, CLI patterns, and TUI features (#8447)
+     783aee229 Create /erk:pr-list slash command for Claude Code terminal PR listing (#8451)
+     5e3d00e5a Remove dead code: NodeSlugGenerator, validate_node_slug, extract_trailing_number, derive_branch_name_from_title (#8450)
+     d4a006ddd Update CHANGELOG with unreleased features and fixes (#8453)
+     623898bca Consolidate Feb 26-27 learn documentation and fix _land_pr_async kwargs bug (#8402)
+     04dc3d38a Fix misleading data when GraphQL enrichment fails in `erk pr list` (#8449)
+     86d2118cc Restore rich session discovery logging with per-session type badges and sizes in `erk land` (#8443)
+     c9147a90d [no-changes] #8409 Impl Attempt: Remove 13 unused erk exec commands (#8409)
+     8ad22cb1f Consolidate Feb 25 learn session documentation: fix stale references, add tripwires, create reference docs (#8194)
+     1663ed44c Consolidate Feb 24-25 Learn Session Documentation (#8142)
+     add2748d2 Centralize clipboard text generation to fix sync command copy (#8436)
+     d605a5fea Restore session discovery logging in `erk land` (#8437)
+     0db2c3aa8 Harden metadata block system — eliminate duplication, extract helpers, fix API usage, add error reporting (#8425)
+     10ea581b5 Fix pr-rewrite workflow by removing invalid --pr flag (#8439)
+     92f5f2e7f Rebase stub branch onto master after landing (#8419)
+     704bbe6ad Add "rewrite" TUI command for remote PR rebase and AI summary regeneration (#8432)
+     35ea9aca8 Remove artifact test mocks and refactor sync_cmd for context injection (#8422)
+     04c46a7bb Make `--script` mode resilient to errors in `erk br co` (#8428)
+     ffd28b870 Fix workflow-started metadata block rendering in post-workflow-started-comment script (#8421)
+     6240893fa Add `gt submit` to TUI sync checkout command (#8429)
+     a59de3ee3 Improve erk upgrade tools for self-service upgrades (#8417)
+     ad6559fde Add resilient plan-header recovery for PR submission workflow (#8405)
+     1ffe2a82e Add forked context to /local:objective-view command (#8426)
+     c638d7272 Consolidate plan creation to use draft PRs via create_plan_draft_pr() (#8404)
+     a14a62273 Move impl-context cleanup from setup-impl to submit pipeline (#8414)
+     ea28671ea Release 0.9.0
+     894fb01e6 Auto-fix markdown formatting (docs-sync + Prettier) (#8410)
+     0034d793c Fix Click help strings and module docstrings (Nodes 4.1 + 4.4 + 4.5) (#8400)
+     a927ba46a Make ViewBar tabs clickable for view switching (#8403)
+     519880cea Thread `plan_id` through land execution pipeline for `create_learn_issue` support (#8394)
+     c885ea392 Add h keybinding for failing CI checks modal in erk dash (#8392)
+     2994b75a5 Fix plan-as-PR terminology in Claude Code commands (Phase 3) (#8396)
+     0ad769e67 Move objective-update-with-landed-pr command to erk/system/ namespace (#8387)
+     6fdf31067 Complete objective #7724 — Rename issue_number to plan_number in plan-related code (nodes 9.2, 9.4, 9.5) (#8379)
+     280451f14 Remove impl-verify guardrail from plan-implement workflow (#8393)
+     a593069d1 Fix CLI help, output messages, docstrings for plan-as-PR terminology (#8386)
+     b642327ce Disable CI autofix job temporarily (#8389)
+     a621f03c7 Simplify fetch_plan_content for PR-only plans (#8390)
+     2a00c9bea Delete .impl/issue.json legacy support and consolidate to plan-ref.json (#8388)
+     c698669a5 Fix slash command terminology: replace "issue" with "plan" in prose (#8385)
+     1e0aa46aa Update skill documentation terminology to reflect plans as GitHub PRs (#8383)
+     45148fca1 Update CLAUDE.md and AGENTS.md plan terminology to draft PR (#8381) (#8382)
+     c5829c83c Sync CHANGELOG with 46 unreleased commits + fix categorizer roll-up bias (#8380)
+     9f26e6533 Rename `issue_number` to `plan_number` in erk-shared core modules and cross-boundary callers (#8375)
+     296dbbcd8 Add transition comment to .gitignore .impl/ entry (#8378)
+     bd5abf28f Update all textual references from .impl/ to .erk/impl-context/ (#8374)
+     085f74837 Fix Graphite tracking divergence by retracking immediately after SHA changes (#8377)
+     f6484c722 Standardize impl-context terminology across exec scripts and skills (#8376)
+     cc0b693fc Update command files and documentation for .erk/impl-context/ protocol (Phase 3) (#8369)
+     f9f1e1dd0 Update exec script help strings and skills for impl-context unification (#8371)
+     53b68da02 Update plan-implement.yml to eliminate .impl/ copy and add has_tracked_files to GitStatusOps (#8370)
+     87c273de5 Eliminate .impl/ folder references — consolidate on .erk/impl-context/&lt;branch&gt;/ (#8366)
+     1818f6071 Add rename-swarm skill for parallel bulk identifier renames (#8363)
+     7596954fb Update ci.yml autofix job to check .erk/impl-context instead of .impl (#8368)
+     75ef06f02 Eliminate .impl/ from one-shot workflow, write directly to .erk/impl-context/ (#8367)
+     24944260b Fix objective update after land with deleted worktree path (#8340)
+     af28386eb Update impl-verify docstring to reference canonical .erk/impl-context/ location (#8362)
+     59494167d Update erk-exec reference and rename issue_url → plan_url in submit_pipeline (#8361)
+     b340c692c Rename issue_number to plan_number in plan-related code (Phase 8.2-8.5) (#8360)
+     cc31de798 Rename issue_number to plan_number in plan-related code (Objective #7724, Phase 9.1) (#8356)
+     5882310b3 Fix `gt track` and `gt retrack` to use repo root instead of worktree path (#8357)
+     b93b4b376 Fix objective-link preservation in replan flow (#8348)
+     05862768f Update tests and local variables for renamed plan_number metadata (#8354)
+     e7ad57f64 Rename issue_number → plan_number in CLI command layer (Objective #7724, Phase 8.1) (#8355)
+     a09888c04 Rename issue_number to plan_number in core output/parsing modules (Objective #7724, Phase 7) (#8349)
+     2ef5349a2 Eliminate tmux from codespace remote execution (#8327)
+     423313fff Update docs to reference .impl/plan-ref.json (with legacy .impl/issue.json fallback) (#8346)
+     2f667975a Simplify learn trigger in `erk land` with direct issue creation (#8323)
+     8c6828419 Fix modal dismiss keys (Esc/q/Space) in TUI screens (#8347)
+     e3dc3a3b3 Split tests/tui/test_app.py into tests/tui/app/ sub-module (#8336)
+     11905f56e Migrate "submit" to "dispatch" terminology in docs/learned/ (#8329)
+     45268b3bd Re-add .impl to .gitignore (#8342)
+     fc1313939 Update tests to exercise branch-scoped impl-context primary code paths (#8335)
+     fcad46de9 Add keyboard shortcut (n) to open GitHub Actions run URL from main list (#8330)
+     54c362406 Fix: plan-header metadata block lost silently in CI update flow (#8331)
+     1a944420c Update CI/Commands/Skills for .erk/impl-context/ consolidation (#8326)
+     28f1e8923 Update tests to exercise branch-scoped .erk/impl-context/ primary code paths (#8325)
+     e6b0b083a Rename "issue" exec scripts to PR terminology + add batch variants (#8280)
+     923aed79e Fix CI: force-add gitignored impl-context directory (#8328)
+     a79e489eb Delete `erk plan` CLI group and migrate active commands to `erk pr` (#8140)
+     e5ad757a8 Add async learn triggering to TUI land workflow (#8275)
+     5eabe3946 Add integration tests for modal on_key() handlers (#8304)
+     861644307 Link PR numbers to objective roadmap nodes at submit time (#8281)
+     595a2bdf2 junk
+     17bb63bb4 Complete Phase 1: Consolidate .impl/ folder discovery into unified pattern (#8314)
+     638445489 Fix: `erk br co --for-plan` output to include activation instructions (#8306)
+     692b3c6a6 Update error messages and tests for renamed plan identifiers in pr/close (#8295)
+     3ff1e030f Update CHANGELOG.md Unreleased section with 100 commits (#8316)
+     8ccf77f40 Complete Phase 3 Submit→Dispatch Terminology Migration in TUI Layer (#8291)
+     3277f42e8 Change dispatch keyboard shortcut from 's' to 'd' in TUI launch popup (#8300)
+     60ab97ffe Fix auto-match roadmap nodes by PR reference in objective-apply-landed-update (#8297)
+     e7e8f8470 Fix modal dismiss keys (Esc/q/Space) not working (#8309)
+     536f52161 Improve success output for erk CLI commands (#8301)
+     a363d5bf5 Add force parameter to stage_files gateway for gitignored paths (#8312)
+     eca302f73 Replace fix-conflicts modal with lightweight toast pattern (#8276)
+     85d47e68e Change Dispatch to Queue keyboard shortcut from 's' to 'd' (#8305)
+     8058e8d90 Move metadata blocks to bottom of planned PR bodies (#8169)
+     9553283b5 Add .erk/impl-context/ to .gitignore (#8308)
+     f19f13e22 Update CLI commands to use resolve_impl_dir() for unified impl folder discovery (#8302)
+     0d105f359 Fix modal keystroke leakage to underlying view (#8299)
+     c5854b1e2 Eliminate flat format: replace separator-based extraction with metadata block system (#8165)
+     49988cbd5 Fix: Pass plan PR number to objective roadmap update in plan-save (#8296)
+     284e74613 Update exec scripts to resolve implementation directories via branch-scoped discovery (#8279)
+     229697748 Document EnsurableResult .ensure() pattern and wrapping rule (#8290)
+     722cb4be2 Add .ensure() to NonIdealState classes and IssueComments wrapper (#8258)
+     bccb4a7dd Clean up documentation for deleted legacy branch-naming code (#8289)
+     1026519a8 Add persistent status bar messages for workflow operations (#8270)
+     43db9f606 Consolidate Feb 25-26 learn documentation (19 plans) (#8277)
+     daf9c0975 Delete get_branch_issue() dead code and simplify to plan-ref.json (#8269)
+     cfeef67ca Add inline objective filter to erk dash TUI (`o` key) (#8283)
+     aef3007bf [erk-plan] Stack Filter for erk dash TUI (#8211)
+     ec138061b Add `--sync` flag to auto-submit PR checkouts to Graphite (#8261)
+     42fe81910 Add model downgrades to slash commands for cost optimization (#8271)
+     eecd3f233 Update plan terminology from issue_number to plan_number across dispatch workflow (#8266)
+     581320081 Delete -t/--tmux feature from erk codespace connect (#8267)
+     a9f87a07d Add branch-scoped implementation directories under .erk/impl-context/&lt;branch&gt;/ (#8215)
+     9d0a451b7 Error when `--new-slot` is used but branch already exists in a worktree (#8255)
+     09c29328c Rename issue_info_to_plan to github_issue_to_plan and clarify plan data provider docstrings (#8263)
+     04246b7cb Rename submit to dispatch in gateway ABCs and TUI callers (#8265)
+     e90483add Delete the -t/--tmux feature from `erk codespace connect` (#8259)
+
+⏺ Bash(git diff origin/main..HEAD --stat)
+  ⎿   .claude/agents/changelog/commit-categorizer.md     |    18 +-
+      .../agents/learn/documentation-gap-identifier.md   |    10 +-
+      .claude/commands/erk/git-pr-push.md                |    54 +-
+      .claude/commands/erk/land.md                       |    22 +-
+      .claude/commands/erk/learn.md                      |    60 +-
+      .claude/commands/erk/objective-create.md           |    10 +-
+      .claude/commands/erk/objective-list.md             |    17 +-
+      .claude/commands/erk/objective-plan.md             |   157 +-
+      .../erk/objective-update-with-closed-plan.md       |     6 +-
+      .claude/commands/erk/one-shot-plan.md              |    32 +-
+      .claude/commands/erk/plan-implement.md             |    71 +-
+      .claude/commands/erk/plan-save.md                  |   179 +-
+      .claude/commands/erk/pr-address.md                 |   130 +-
+      .claude/commands/erk/pr-dispatch.md                |    25 +-
+      .claude/commands/erk/pr-incremental-dispatch.md    |    53 +
+      .claude/commands/erk/pr-list.md                    |    52 +
+      .claude/commands/erk/pr-preview-address.md         |    26 +-
+      .claude/commands/erk/pr-submit.md                  |    32 +-
+      .../commands/erk/{fix-conflicts.md =&gt; rebase.md}   |     8 +-
+      .claude/commands/erk/replan.md                     |   156 +-
+      .claude/commands/erk/system/objective-plan-node.md |    52 +-
+      .../objective-update-with-landed-pr.md             |    16 +-
+      .claude/commands/local/audit-branches.md           |    10 +
+      .claude/commands/local/audit-plans.md              |    32 +-
+      .claude/commands/local/check-relevance.md          |    28 +-
+      .claude/commands/local/cmux-workspace-rename.md    |    18 +
+      .claude/commands/local/code-stats.md               |    45 +-
+      .claude/commands/local/incremental-plan-mode.md    |     6 +-
+      .claude/commands/local/objective-view.md           |   127 +-
+      .claude/commands/local/plan-update.md              |    30 +-
+      .claude/commands/local/pr-triage.md                |    87 +
+      .claude/commands/local/quick-submit.md             |    78 +-
+      .claude/commands/local/replan-learn-plans.md       |    54 +-
+      .claude/commands/local/sessions-list.md            |     3 +
+      .claude/commands/local/statusline-refresh.md       |     3 +
+      .claude/skills/cli-push-down/SKILL.md              |   214 +
+      .claude/skills/cmux/SKILL.md                       |   254 +
+      .claude/skills/cmux/references/cmux-reference.md   |   414 +
+      .../dignified-python/dignified-python-core.md      |    43 +-
+      .../dignified-python/references/api-design.md      |     1 +
+      .../references/exception-handling.md               |    93 +-
+      .../references/commit-message-prompt.md            |    12 +-
+      .claude/skills/erk-exec/SKILL.md                   |    28 +-
+      .claude/skills/erk-exec/reference.md               |   573 +-
+      .claude/skills/erk-planning/SKILL.md               |    46 +-
+      .claude/skills/erk-planning/references/workflow.md |    48 +-
+      .claude/skills/erk-skill-onboarding/SKILL.md       |   152 +
+      .claude/skills/learned-docs/SKILL.md               |     2 +-
+      .claude/skills/objective/SKILL.md                  |     2 +-
+      .claude/skills/pr-feedback-classifier/SKILL.md     |    38 +-
+      .claude/skills/rename-swarm/SKILL.md               |   126 +
+      .claude/skills/session-inspector/SKILL.md          |    15 +-
+      .../skills/session-inspector/references/tools.md   |    41 +-
+      .claude/skills/skill-creator/LICENSE.txt           |   202 +
+      .claude/skills/skill-creator/SKILL.md              |   507 +
+      .claude/skills/skill-creator/agents/analyzer.md    |   283 +
+      .claude/skills/skill-creator/agents/comparator.md  |   211 +
+      .claude/skills/skill-creator/agents/grader.md      |   227 +
+      .../skills/skill-creator/assets/eval_review.html   |   146 +
+      .../skill-creator/eval-viewer/generate_review.py   |   471 +
+      .../skills/skill-creator/eval-viewer/viewer.html   |  1325 ++
+      .claude/skills/skill-creator/references/schemas.md |   439 +
+      .../skills/skill-creator/scripts}/__init__.py      |     0
+      .../skill-creator/scripts/aggregate_benchmark.py   |   401 +
+      .../skill-creator/scripts/generate_report.py       |   326 +
+      .../skill-creator/scripts/improve_description.py   |   248 +
+      .../skills/skill-creator/scripts/package_skill.py  |   136 +
+      .../skills/skill-creator/scripts/quick_validate.py |   103 +
+      .claude/skills/skill-creator/scripts/run_eval.py   |   310 +
+      .claude/skills/skill-creator/scripts/run_loop.py   |   332 +
+      .claude/skills/skill-creator/scripts/utils.py      |    47 +
+      .envrc                                             |     9 +
+      .erk/required-erk-uv-tool-version                  |     2 +-
+      .erk/reviews/dignified-python.md                   |     3 +-
+      .erk/state.toml                                    |     4 +-
+      .github/actions/erk-remote-setup/action.yml        |     4 +-
+      .github/actions/setup-python-uv/action.yml         |     5 +-
+      .github/prompts/ci-autofix.md                      |     2 +-
+      .github/prompts/ci-summarize.md                    |    20 +
+      .github/workflows/README.md                        |    41 +-
+      .github/workflows/ci.yml                           |   374 +-
+      .github/workflows/code-reviews.yml                 |    31 +-
+      .github/workflows/docs-v2.yml                      |    51 +
+      .github/workflows/learn.yml                        |     2 +-
+      .github/workflows/one-shot.yml                     |    31 +-
+      .github/workflows/plan-implement.yml               |    59 +-
+      .github/workflows/pr-address.yml                   |     5 +-
+      .../{pr-fix-conflicts.yml =&gt; pr-rebase.yml}        |     4 +-
+      .github/workflows/pr-rewrite.yml                   |   150 +
+      .gitignore                                         |    14 +-
+      .impl/issue.json                                   |     7 +
+      .impl/local-run-state.json                         |     6 +
+      .impl/plan.md                                      |    47 +
+      .mcp.json                                          |     9 +
+      .prettierignore                                    |    12 -
+      AGENTS.md                                          |    34 +-
+      CHANGELOG.md                                       |   385 +-
+      CLAUDE.md                                          |     2 +-
+      LICENSE.md                                         |     2 -
+      Makefile                                           |    57 +-
+      RELEASING.md                                       |    34 +-
+      docs-v2/STYLE-GUIDE.md                             |    69 +
+      docs-v2/astro.config.mjs                           |    38 +
+      docs-v2/package-lock.json                          |  7357 +++++++++++
+      docs-v2/package.json                               |    18 +
+      docs-v2/public/favicon.svg                         |     4 +
+      docs-v2/src/content.config.ts                      |     6 +
+      .../docs/concepts/01-plan-oriented-engineering.md  |    54 +
+      .../docs/getting-started/01-introduction.md        |    41 +
+      .../src/content/docs/guides/01-local-workflow.md   |    89 +
+      docs-v2/src/content/docs/index.mdx                 |    12 +
+      docs-v2/src/content/docs/reference/01-cli.md       |    96 +
+      docs-v2/tsconfig.json                              |     3 +
+      .../agentic-engineering-patterns/README.md         |    12 +
+      .../agentic-engineering-patterns/cli-push-down.md  |    79 +-
+      docs/howto/conflict-resolution.md                  |    20 +-
+      docs/howto/planless-workflow.md                    |     2 +-
+      .../architecture/bash-python-integration.md        |     2 +
+      .../architecture/branch-manager-abstraction.md     |     8 +
+      .../architecture/branch-manager-decision-tree.md   |     6 +-
+      docs/learned/architecture/capability-system.md     |    14 +-
+      docs/learned/architecture/claude-cli-progress.md   |     8 +-
+      docs/learned/architecture/command-boundaries.md    |     2 +-
+      docs/learned/architecture/command-composition.md   |     6 +-
+      .../commandresult-extension-pattern.md             |     2 +-
+      docs/learned/architecture/convergence-points.md    |    10 +-
+      docs/learned/architecture/derived-flags.md         |     2 +-
+      .../direct-condition-vs-derived-output.md          |     1 -
+      .../discriminated-union-error-handling.md          |   107 +-
+      docs/learned/architecture/erk-architecture.md      |    15 +-
+      docs/learned/architecture/erk-statusline.md        |    10 +
+      .../architecture/error-handling-patterns.md        |     3 +
+      .../architecture/gateway-abc-implementation.md     |    27 +-
+      docs/learned/architecture/gateway-vs-backend.md    |     2 +
+      .../architecture/gist-materials-interchange.md     |   134 -
+      .../learned/architecture/git-operation-patterns.md |     2 +
+      docs/learned/architecture/git-plumbing-patterns.md |   109 +
+      .../architecture/github-api-retry-mechanism.md     |     1 +
+      .../architecture/github-graphql-label-semantics.md |    51 +
+      docs/learned/architecture/github-graphql.md        |    45 +
+      .../architecture/http-accelerated-plan-refresh.md  |    85 +
+      docs/learned/architecture/impl-context-api.md      |     4 +-
+      docs/learned/architecture/impl-folder-discovery.md |    83 +
+      docs/learned/architecture/impl-folder-lifecycle.md |    24 +-
+      docs/learned/architecture/index.md                 |    20 +-
+      docs/learned/architecture/inference-hoisting.md    |    90 +-
+      docs/learned/architecture/issue-reference-flow.md  |    40 +-
+      docs/learned/architecture/lbyl-gateway-pattern.md  |     2 +
+      docs/learned/architecture/learn-origin-tracking.md |     2 +-
+      docs/learned/architecture/linear-pipelines.md      |     2 +-
+      docs/learned/architecture/metadata-blocks.md       |    20 +-
+      .../architecture/monolith-to-subpackage-pattern.md |   111 +
+      .../architecture/phase-zero-detection-pattern.md   |    20 +-
+      .../learned/architecture/plan-backend-migration.md |     8 +-
+      docs/learned/architecture/plan-ref-architecture.md |    15 +-
+      .../architecture/plan-save-branch-restoration.md   |    53 -
+      docs/learned/architecture/pr-body-assembly.md      |     2 +-
+      docs/learned/architecture/pr-finalization-paths.md |    12 +-
+      .../architecture/rebase-conflict-patterns.md       |     7 +
+      docs/learned/architecture/ref-json-migration.md    |     4 +-
+      .../selection-preservation-by-value.md             |    18 -
+      docs/learned/architecture/session-discovery.md     |    85 +-
+      .../session-storage-revert-rationale.md            |    16 +-
+      .../architecture/state-derivation-pattern.md       |    12 -
+      .../architecture/state-threading-pattern.md        |     2 +-
+      docs/learned/architecture/subprocess-wrappers.md   |    10 +-
+      docs/learned/architecture/threading-patterns.md    |    93 +
+      docs/learned/architecture/tripwires.md             |    62 +-
+      .../architecture/typescript-multi-config.md        |   110 -
+      .../architecture/worktree-dispatch-detection.md    |    39 +
+      docs/learned/architecture/worktree-metadata.md     |    36 +-
+      .../capabilities/adding-new-capabilities.md        |     4 +-
+      docs/learned/checklists/investigation-findings.md  |     1 -
+      docs/learned/ci/autofix-job-needs.md               |    74 -
+      docs/learned/ci/automated-review-system.md         |     4 +-
+      docs/learned/ci/check-state-classification.md      |    82 +
+      docs/learned/ci/ci-failure-summarization.md        |   139 +
+      docs/learned/ci/claude-commands-prettier.md        |    36 +-
+      docs/learned/ci/claude-kill-switch.md              |    19 +-
+      docs/learned/ci/containerless-ci.md                |     6 +-
+      docs/learned/ci/convention-based-reviews.md        |    12 +
+      docs/learned/ci/formatting-workflow.md             |     8 +-
+      .../ci/github-actions-claude-integration.md        |    11 +-
+      docs/learned/ci/github-actions-label-filtering.md  |    36 +-
+      docs/learned/ci/github-actions-label-queries.md    |    75 +-
+      docs/learned/ci/github-actions-output-patterns.md  |    10 +-
+      .../learned/ci/github-actions-workflow-patterns.md |    56 +-
+      docs/learned/ci/github-cli-comment-patterns.md     |     4 +-
+      docs/learned/ci/github-token-scopes.md             |    76 +-
+      .../ci/gitignored-directory-commit-patterns.md     |    62 +
+      docs/learned/ci/index.md                           |     9 +-
+      docs/learned/ci/job-ordering-strategy.md           |    75 +
+      docs/learned/ci/makefile-prettier-ignore-path.md   |     2 +-
+      docs/learned/ci/markdown-formatting.md             |    10 +-
+      docs/learned/ci/plan-implement-customization.md    |    65 +-
+      docs/learned/ci/test-coverage-detection.md         |     2 +-
+      docs/learned/ci/tripwires.md                       |    20 +-
+      docs/learned/ci/workflow-gating-patterns.md        |   102 +-
+      docs/learned/ci/workflow-model-policy.md           |    16 +-
+      docs/learned/ci/workflow-naming-conventions.md     |    12 +-
+      docs/learned/claude-code/context-fork-feature.md   |     2 +-
+      docs/learned/cli/activation-scripts.md             |    74 +
+      docs/learned/cli/command-deletion-patterns.md      |    94 +
+      docs/learned/cli/command-organization.md           |    20 +-
+      docs/learned/cli/command-rename-checklist.md       |     4 +
+      .../cli/commands/pr-reconcile-with-remote.md       |     4 +-
+      docs/learned/cli/doctor-workflow.md                |    52 +
+      docs/learned/cli/erk-exec-commands.md              |    90 +-
+      docs/learned/cli/erkdesk-makefile-targets.md       |   115 -
+      docs/learned/cli/error-handling-antipatterns.md    |     8 +-
+      docs/learned/cli/exec-script-patterns.md           |     6 +-
+      docs/learned/cli/exec-script-performance.md        |    64 +
+      docs/learned/cli/implement-command.md              |    64 +
+      docs/learned/cli/index.md                          |    12 +-
+      docs/learned/cli/land-learn-integration.md         |   137 +
+      docs/learned/cli/learn-plan-land-flow.md           |     4 +-
+      docs/learned/cli/local-commands.md                 |     7 +-
+      docs/learned/cli/local-remote-command-groups.md    |     2 +-
+      docs/learned/cli/optional-arguments.md             |    49 +-
+      docs/learned/cli/parameter-addition-checklist.md   |     2 +
+      docs/learned/cli/parameter-removal-checklist.md    |    45 +
+      docs/learned/cli/piped-output-flushing.md          |    51 +
+      docs/learned/cli/plan-implement.md                 |    40 +-
+      docs/learned/cli/pr-rewrite.md                     |    13 +-
+      docs/learned/cli/pr-submission.md                  |    10 +-
+      docs/learned/cli/pr-submit-pipeline.md             |    24 +-
+      docs/learned/cli/prompt-consolidation-pattern.md   |    10 +-
+      docs/learned/cli/shell-activation-pattern.md       |     6 +
+      .../cli/slash-command-llm-turn-optimization.md     |     4 +-
+      docs/learned/cli/tripwires.md                      |    44 +-
+      docs/learned/cli/upgrade-workflow.md               |    60 +
+      docs/learned/cli/workflow-commands.md              |    19 +-
+      docs/learned/cli/workflow-run-list.md              |    71 +
+      docs/learned/config/external-docs-path.md          |    45 +
+      docs/learned/config/index.md                       |     7 +
+      docs/learned/config/tripwires.md                   |     2 +
+      docs/learned/configuration/schema-driven-config.md |     6 +
+      docs/learned/conventions.md                        |    25 +-
+      docs/learned/desktop-dash/action-toolbar.md        |    68 -
+      docs/learned/desktop-dash/app-architecture.md      |    86 -
+      docs/learned/desktop-dash/backend-communication.md |    94 -
+      .../desktop-dash/defensive-bounds-handling.md      |    52 -
+      .../desktop-dash/erkdesk-auto-refresh-patterns.md  |    82 -
+      .../desktop-dash/erkdesk-project-structure.md      |    80 -
+      docs/learned/desktop-dash/forge-vite-setup.md      |   189 -
+      docs/learned/desktop-dash/framework-evaluation.md  |    75 -
+      docs/learned/desktop-dash/index.md                 |    24 -
+      docs/learned/desktop-dash/interaction-model.md     |   100 -
+      docs/learned/desktop-dash/ipc-actions.md           |    93 -
+      docs/learned/desktop-dash/main-process-startup.md  |    80 -
+      docs/learned/desktop-dash/pnpm-hoisting-pattern.md |    45 -
+      .../desktop-dash/preload-bridge-patterns.md        |   106 -
+      docs/learned/desktop-dash/security.md              |    80 -
+      .../desktop-dash/split-pane-implementation.md      |    80 -
+      docs/learned/desktop-dash/tripwires.md             |   129 -
+      .../desktop-dash/visual-status-indicators.md       |    79 -
+      docs/learned/desktop-dash/vitest-setup.md          |    67 -
+      .../desktop-dash/webcontentsview-lifecycle.md      |    82 -
+      docs/learned/desktop-dash/webview-api.md           |    49 -
+      .../documentation/documenting-evolving-systems.md  |    72 +
+      docs/learned/documentation/index.md                |     3 +-
+      .../documentation/language-scope-auditing.md       |    25 +-
+      docs/learned/documentation/source-pointers.md      |    22 +-
+      .../stale-code-blocks-are-silent-bugs.md           |     2 +
+      docs/learned/documentation/tripwires.md            |    14 +-
+      .../documentation/when-to-switch-pattern.md        |     4 +-
+      docs/learned/erk/branch-cleanup.md                 |    20 +-
+      docs/learned/erk/branch-naming.md                  |     4 +-
+      docs/learned/erk/dispatch-ref-config.md            |   113 +
+      docs/learned/erk/index.md                          |     5 +-
+      docs/learned/erk/issue-pr-linkage-storage.md       |    48 +-
+      docs/learned/erk/placeholder-branches.md           |     4 +-
+      docs/learned/erk/pr-address-workflows.md           |    44 +-
+      docs/learned/erk/pr-commands.md                    |    12 +-
+      docs/learned/erk/remote-workflow-template.md       |     8 +-
+      docs/learned/erk/slot-pool-architecture.md         |    11 +-
+      docs/learned/erk/stub-branch-lifecycle.md          |    39 +
+      docs/learned/erk/tripwires.md                      |    12 +-
+      docs/learned/erk/workspace-activation.md           |    18 +-
+      docs/learned/erk/worktree-branch-mismatch.md       |    56 +
+      docs/learned/glossary.md                           |    58 +-
+      docs/learned/guide.md                              |     2 +-
+      docs/learned/index.md                              |     3 +-
+      docs/learned/integrations/bundled-artifacts.md     |    10 +-
+      docs/learned/integrations/cmux-integration.md      |    31 +
+      .../integrations/codex/codex-jsonl-format.md       |     2 +-
+      .../integrations/codex/codex-skills-system.md      |     2 +-
+      .../learned/integrations/github-review-decision.md |     1 -
+      docs/learned/integrations/graphite-rendering.md    |    76 -
+      docs/learned/integrations/index.md                 |     4 +-
+      .../integrations/issue-pr-closing-integration.md   |    26 +-
+      docs/learned/integrations/mcp-integration.md       |    93 +
+      docs/learned/integrations/slack-bot-patterns.md    |    92 -
+      docs/learned/integrations/tripwires.md             |    12 +-
+      docs/learned/objectives/dependency-graph.md        |     4 +-
+      .../objectives/exec-command-consolidation.md       |    59 +
+      docs/learned/objectives/index.md                   |     3 +-
+      docs/learned/objectives/objective-lifecycle.md     |    79 +-
+      .../objectives/roadmap-format-versioning.md        |    62 +-
+      .../objectives/roadmap-mutation-patterns.md        |     2 +-
+      docs/learned/objectives/roadmap-parser-api.md      |    18 +-
+      docs/learned/objectives/roadmap-status-system.md   |    15 +
+      docs/learned/objectives/roadmap-validation.md      |    10 +
+      docs/learned/objectives/tripwires.md               |    16 +-
+      docs/learned/planning/agent-delegation.md          |     2 +-
+      .../planning/async-learn-local-preprocessing.md    |    14 +-
+      docs/learned/planning/branch-name-inference.md     |    38 +-
+      docs/learned/planning/branch-plan-resolution.md    |     6 +-
+      docs/learned/planning/consolidation-labels.md      |     4 +-
+      .../planning/context-preservation-in-replan.md     |     1 -
+      .../planning/context-preservation-patterns.md      |   173 -
+      .../planning/context-preservation-prompting.md     |     3 +-
+      docs/learned/planning/impl-context.md              |    32 +-
+      docs/learned/planning/index.md                     |    28 +-
+      docs/learned/planning/label-scheme.md              |    70 +
+      docs/learned/planning/learn-pipeline-workflow.md   |    63 +-
+      docs/learned/planning/learn-session-embedding.md   |    64 +
+      .../planning/learn-vs-implementation-plans.md      |     6 +-
+      docs/learned/planning/learn-workflow.md            |    34 +-
+      docs/learned/planning/lifecycle.md                 |   107 +-
+      docs/learned/planning/metadata-block-fallback.md   |    33 +-
+      docs/learned/planning/metadata-field-workflow.md   |    10 +-
+      docs/learned/planning/metadata-update-patterns.md  |    43 +
+      docs/learned/planning/next-steps-output.md         |    64 +-
+      .../planning/objective-update-after-land.md        |    37 +-
+      docs/learned/planning/one-shot-workflow.md         |    33 +-
+      docs/learned/planning/plan-creation-pathways.md    |     2 +-
+      docs/learned/planning/plan-execution-patterns.md   |    12 +-
+      docs/learned/planning/plan-id-semantics.md         |    11 +-
+      docs/learned/planning/plan-mismatch-recovery.md    |    62 +
+      docs/learned/planning/plan-title-prefix-system.md  |    18 +-
+      docs/learned/planning/planned-pr-backend.md        |    16 +-
+      ...ranch-sync.md =&gt; planned-pr-branch-teleport.md} |    64 +-
+      docs/learned/planning/planned-pr-learn-pipeline.md |    14 +-
+      docs/learned/planning/planned-pr-lifecycle.md      |    61 +-
+      docs/learned/planning/planning-patterns.md         |     6 +-
+      docs/learned/planning/pr-submission-patterns.md    |    19 +-
+      .../planning/remote-implementation-idempotency.md  |     9 +-
+      docs/learned/planning/schema-v3-migration.md       |     6 +-
+      docs/learned/planning/session-deduplication.md     |     2 +-
+      docs/learned/planning/session-preprocessing.md     |    35 +
+      .../learned/planning/stacked-plan-branch-rebase.md |    71 +
+      .../planning/sub-agent-context-limitations.md      |     2 +-
+      docs/learned/planning/subagent-output-handling.md  |    40 +
+      docs/learned/planning/submit-branch-reuse.md       |   104 -
+      docs/learned/planning/tripwires.md                 |    76 +-
+      docs/learned/planning/workflow-markers.md          |     4 +-
+      docs/learned/planning/workflow.md                  |   144 +-
+      docs/learned/planning/worktree-cleanup.md          |    44 +-
+      .../pr-operations/checkout-footer-syntax.md        |    12 +-
+      docs/learned/pr-operations/draft-pr-handling.md    |    30 +-
+      docs/learned/pr-operations/index.md                |     1 +
+      docs/learned/pr-operations/plan-embedding-in-pr.md |     2 +-
+      .../plan-implementation-auto-force.md              |     6 +-
+      docs/learned/pr-operations/pr-creation-patterns.md |    11 +-
+      docs/learned/pr-operations/pr-submit-phases.md     |     4 +-
+      docs/learned/pr-operations/pr-validation-rules.md  |    28 +-
+      .../pr-operations/pre-existing-detection.md        |    74 +
+      docs/learned/pr-operations/tripwires.md            |     6 +-
+      .../refactoring/feature-removal-checklist.md       |    11 +
+      docs/learned/refactoring/index.md                  |     2 +
+      .../post-refactor-documentation-audit.md           |    79 +
+      .../refactoring/python-package-rename-checklist.md |    35 +
+      docs/learned/refactoring/tripwires.md              |     6 +
+      docs/learned/reference/git-diff-syntax.md          |    43 +
+      docs/learned/reference/index.md                    |     1 +
+      docs/learned/reference/tripwires.md                |     2 +
+      .../learned/review/inline-comment-deduplication.md |    22 +-
+      docs/learned/review/tripwires.md                   |     2 +-
+      docs/learned/sessions/index.md                     |     1 +
+      docs/learned/sessions/lifecycle.md                 |     8 +-
+      .../learned/sessions/parallel-session-awareness.md |     6 +-
+      docs/learned/sessions/session-accumulation.md      |    76 +
+      docs/learned/sessions/tools.md                     |    44 +-
+      docs/learned/sessions/tripwires.md                 |     4 +
+      docs/learned/testing/artifact-distribution-sync.md |    83 +
+      .../learned/testing/bolt-async-dispatch-testing.md |   159 -
+      docs/learned/testing/cli-testing.md                |    28 +-
+      docs/learned/testing/context-builder-signatures.md |    46 +
+      docs/learned/testing/erk-package-info-pattern.md   |     6 +-
+      docs/learned/testing/erkdesk-component-testing.md  |   205 -
+      docs/learned/testing/exec-script-testing.md        |     4 +
+      docs/learned/testing/fake-git-divergence.md        |     2 +
+      docs/learned/testing/fake-github-api-reference.md  |    83 +
+      docs/learned/testing/index.md                      |    10 +-
+      docs/learned/testing/rebase-conflicts.md           |     2 +-
+      docs/learned/testing/test-file-organization.md     |    86 +
+      docs/learned/testing/testing.md                    |     4 +
+      docs/learned/testing/time-injection-patterns.md    |    80 +
+      docs/learned/testing/tripwires.md                  |    48 +-
+      .../testing/vitest-fake-timers-with-promises.md    |   180 -
+      docs/learned/testing/vitest-jsdom-stubs.md         |    80 -
+      docs/learned/testing/window-mock-patterns.md       |   115 -
+      docs/learned/tripwires-index.md                    |    61 +-
+      docs/learned/tui/action-inventory.md               |    30 +-
+      docs/learned/tui/adding-commands.md                |    10 +-
+      docs/learned/tui/architecture.md                   |    39 +-
+      docs/learned/tui/async-action-refresh-pattern.md   |     4 +-
+      docs/learned/tui/clipboard-text-generation.md      |    56 +
+      docs/learned/tui/command-palette.md                |     2 +-
+      docs/learned/tui/data-contract.md                  |     3 +-
+      docs/learned/tui/filter-pipeline.md                |    77 +
+      docs/learned/tui/index.md                          |     7 +
+      docs/learned/tui/keyboard-shortcuts.md             |    64 +
+      docs/learned/tui/modal-screen-pattern.md           |    30 +
+      docs/learned/tui/modal-widget-embedding.md         |    66 +
+      docs/learned/tui/multi-operation-tracking.md       |    83 +
+      docs/learned/tui/one-shot-prompt-modal.md          |    63 +
+      docs/learned/tui/stacked-pr-indicator.md           |    19 +-
+      docs/learned/tui/status-indicators.md              |     2 +-
+      docs/learned/tui/streaming-output.md               |     2 +-
+      docs/learned/tui/subprocess-feedback.md            |    50 +
+      docs/learned/tui/tripwires.md                      |    40 +-
+      docs/learned/tui/tui-command-registration.md       |    41 +
+      docs/learned/tui/view-aware-commands.md            |    49 +-
+      docs/learned/tui/view-switching.md                 |    59 +-
+      docs/learned/workflows/one-shot-workflow.md        |     2 +-
+      docs/learned/workflows/tripwires.md                |     2 +-
+      docs/ref/slash-commands.md                         |     2 +-
+      docs/topics/index.md                               |     1 -
+      docs/topics/why-github-issues.md                   |   117 -
+      docs/topics/worktrees.md                           |     1 -
+      erkdesk/.eslintrc.json                             |    16 -
+      erkdesk/.gitignore                                 |    92 -
+      erkdesk/.npmrc                                     |     1 -
+      erkdesk/forge.config.ts                            |    35 -
+      erkdesk/forge.env.d.ts                             |     1 -
+      erkdesk/index.html                                 |    12 -
+      erkdesk/package-lock.json                          | 12964 -------------------
+      erkdesk/package.json                               |    61 -
+      erkdesk/pnpm-lock.yaml                             |  7823 -----------
+      erkdesk/src/main/index.ts                          |   216 -
+      erkdesk/src/main/preload.ts                        |    39 -
+      erkdesk/src/main/tsconfig.json                     |    10 -
+      erkdesk/src/main/vite-env.d.ts                     |     4 -
+      erkdesk/src/renderer/App.test.tsx                  |   339 -
+      erkdesk/src/renderer/App.tsx                       |   161 -
+      erkdesk/src/renderer/components/ActionToolbar.css  |    38 -
+      .../src/renderer/components/ActionToolbar.test.tsx |   260 -
+      erkdesk/src/renderer/components/ActionToolbar.tsx  |   113 -
+      erkdesk/src/renderer/components/LogPanel.css       |    84 -
+      erkdesk/src/renderer/components/LogPanel.test.tsx  |    87 -
+      erkdesk/src/renderer/components/LogPanel.tsx       |    61 -
+      erkdesk/src/renderer/components/PlanList.css       |   100 -
+      erkdesk/src/renderer/components/PlanList.test.tsx  |   135 -
+      erkdesk/src/renderer/components/PlanList.tsx       |    86 -
+      erkdesk/src/renderer/components/SplitPane.test.tsx |    35 -
+      erkdesk/src/renderer/components/SplitPane.tsx      |   129 -
+      erkdesk/src/renderer/index.css                     |    19 -
+      erkdesk/src/renderer/index.tsx                     |    16 -
+      erkdesk/src/renderer/tsconfig.json                 |    10 -
+      erkdesk/src/renderer/vite.config.ts                |     7 -
+      erkdesk/src/test/setup.ts                          |    33 -
+      erkdesk/src/types/erkdesk.d.ts                     |    71 -
+      erkdesk/tsconfig.json                              |    14 -
+      erkdesk/vite.main.config.ts                        |     8 -
+      erkdesk/vite.preload.config.ts                     |    10 -
+      erkdesk/vitest.config.ts                           |    11 -
+      packages/erk-dev/pyproject.toml                    |     2 +-
+      packages/erk-mcp/README.md                         |    41 +
+      packages/erk-mcp/pyproject.toml                    |    23 +
+      .../resources =&gt; erk-mcp/src/erk_mcp}/__init__.py  |     0
+      packages/erk-mcp/src/erk_mcp/__main__.py           |    30 +
+      packages/erk-mcp/src/erk_mcp/server.py             |    70 +
+      packages/erk-mcp/tests/test_main.py                |    98 +
+      packages/erk-mcp/tests/test_server.py              |   176 +
+      packages/erk-shared/pyproject.toml                 |     2 +-
+      .../erk-shared/src/erk_shared/config/schema.py     |    16 +-
+      .../erk-shared/src/erk_shared/context/context.py   |     9 +
+      .../erk-shared/src/erk_shared/context/factories.py |     5 +-
+      .../erk-shared/src/erk_shared/context/helpers.py   |     2 +-
+      .../erk-shared/src/erk_shared/context/testing.py   |    11 +
+      .../erk-shared/src/erk_shared/context/types.py     |    22 +-
+      packages/erk-shared/src/erk_shared/core/fakes.py   |    51 +-
+      .../erk-shared/src/erk_shared/core/llm_caller.py   |    40 +
+      .../src/erk_shared/core/objective_list_service.py  |     7 +
+      .../src/erk_shared/core/plan_list_service.py       |     8 +-
+      .../src/erk_shared/core/prompt_executor.py         |    18 +-
+      .../src/erk_shared/entity_store}/__init__.py       |     0
+      .../src/erk_shared/ent
+
+⏺ That diff is massive because it's against a stale origin/main. Let me find the actual PR changes.
+
+⏺ Bash(gh pr view --json title,body,baseRefName,headRefName,number 2&gt;/dev/null || echo "No PR found")
+  ⎿  {"baseRefName":"master","body":"This change consolidates the fragmented checkout/implementation-setup flow and fixes a critical Graphite divergence bug where stacked PRs retrack
+      before rebase, causing the cached SHA to become stale. The solution introduces `erk pr prepare` as the clean, idempotent way to set up impl-context after checkout.\n\n## Key
+     Changes\n\n- **Fix Graphite retrack ordering in `pr checkout`** — Move retrack logic after rebase completes so cached SHA matches post-rebase commit, eliminating divergence for
+     stacked PRs. Add `update_local_ref` sync for locally-stale parent branches.\n- **Extract shared impl-context creation** — New `create_impl_context_from_pr()` function in
+     `setup_impl_from_pr.py` handles reading plan content and creating `.erk/impl-context/` folder (no checkout/worktree logic).\n- **Add `erk pr prepare` command** — New standalone
+     command that auto-detects plan number from current branch's PR or accepts explicit number. Idempotent: skips recreation if impl-context already exists.\n- **Update error
+     messaging** — `pr checkout` now suggests `erk pr prepare` as alternative to `erk br co --for-plan` when plan not yet implemented.\n- **Comprehensive test coverage** — Updated
+     Graphite linking tests to verify retrack-after-rebase ordering; added tests for stacked PR rebase-then-track flow, prepare command (auto-detect, explicit number, errors,
+     idempotency), and `create_impl_context_from_pr()` function behavior.\n\n&lt;details&gt;\n&lt;summary&gt;Files Changed&lt;/summary&gt;\n\n### Added (2 files)\n-
+     `src/erk/cli/commands/pr/prepare_cmd.py` — New `erk pr prepare` command for impl-context setup\n- `tests/commands/pr/test_prepare.py` — Tests for prepare command (auto-detect,
+     explicit number, errors, idempotency)\n\n### Modified (5 files)\n- `src/erk/cli/commands/pr/checkout_cmd.py` — Fix Graphite retrack ordering (move after rebase), add parent
+     branch sync logic, update error message\n- `src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py` — Extract `create_impl_context_from_pr()` function; refactor
+     `_setup_planned_pr_plan()` to call it\n- `src/erk/cli/commands/pr/__init__.py` — Import and register `pr_prepare` command\n-
+     `tests/commands/pr/test_checkout_graphite_linking.py` — Update docstring for retrack timing; add `test_pr_checkout_stacked_pr_rebases_then_tracks`\n-
+     `tests/commands/pr/test_checkout.py` — Update test description for base branch sync behavior\n- `tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py` — Add layer 4
+     unit tests for `create_impl_context_from_pr()` covering ref.json validation, missing fields, and error cases\n\n&lt;/details&gt;\n\n## User Experience\n\n**Before:**\n```\n$ erk pr
+     checkout 120              # Stacked PR\nCreated worktree...\n$ gt log                           # Graphite divergence warning!\n```\n\n**After:**\n```\n$ erk pr checkout 120
+               # Stacked PR\nCreated worktree...\nRebasing onto base branch...\nTracking branch with Graphite...\n$ gt log                           # No divergence, SHA is
+     consistent\n\n$ erk pr prepare                   # Auto-detect from current branch\nPrepared impl-context for plan #120\n\n$ erk pr prepare 300               # Explicit plan
+     number\nPrepared impl-context for plan #300\n```\n\n## Critical Notes\n\n- `erk exec setup-impl` and `erk exec setup-impl-from-pr` remain unchanged for CI/skill compatibility;
+     they are not deprecated in this change.\n- The Graphite retrack behavior change only affects stacked PRs (PRs with non-trunk base branches) and already-tracked branches.
+     New/untracked branches use `track_branch()` as before.\n\n&lt;details&gt;\n&lt;summary&gt;original-plan&lt;/summary&gt;\n\n# Consolidate checkout/implementation-setup flow + fix Graphite
+     divergence\n\n## Context\n\n`erk pr checkout` causes Graphite divergence for stacked PRs (retracks before rebase). Meanwhile, the checkout/implementation-setup flow is
+     fragmented across 6+ entry points with overlapping responsibilities. The user wants to:\n\n1. Fix the Graphite divergence bug\n2. Add `erk pr prepare` as the clean way to set up
+      impl-context for a checked-out PR\n3. Rationalize the relationship between the overlapping commands\n\n## Current Landscape\n\n| Command | Checkout? | Worktree? | Rebase
+     stacked? | Graphite? | Impl-context? |\n|---|---|---|---|---|---|\n| `erk pr checkout &lt;N&gt;` | Yes | Yes | Yes (buggy) | Yes (buggy) | No |\n| `erk pr checkout P&lt;N&gt;` | Yes | Yes |
+      No | No | No |\n| `erk br co --for-plan &lt;N&gt;` | Yes | Yes | Yes (correct) | Yes (correct) | Yes |\n| `erk exec setup-impl` | Yes | No | No | No | Yes |\n| `erk exec
+     setup-impl-from-pr` | Yes | No | No | No | Yes |\n\nThe intended clean flow after this change:\n```\nerk pr checkout &lt;N&gt;     →  get code into a worktree (fix Graphite bug
+     here)\nerk pr prepare [&lt;N&gt;]    →  set up impl-context for current worktree's PR\n```\n\n## Changes\n\n### Step 1: Fix Graphite divergence in `erk pr checkout`\n\n**File:**
+     `src/erk/cli/commands/pr/checkout_cmd.py`\n\n**Bug:** Lines 256-262 retrack with Graphite before the stacked-PR rebase at line 283. Graphite's cached SHA becomes stale after
+     rebase.\n\n**Fix:** Remove the early retrack block (lines 256-262). Move all Graphite tracking to after the rebase block (after line 290), consolidating the \"already tracked\"
+     and \"untracked\" cases into one block. The flow becomes:\n\n```\nfetch + force-update → create worktree → rebase (if stacked) → retrack/track\n```\n\nFor stacked PRs where the
+     parent branch exists locally but is stale, also add `update_local_ref` logic matching `_rebase_and_track_for_plan()` (branch/checkout_cmd.py:381-388).\n\n**Test update:**
+     `tests/commands/pr/test_checkout_graphite_linking.py`\n- Update `test_pr_checkout_retracks_diverged_graphite_branch` (line 232) — its docstring explicitly says retrack happens
+     \"before worktree creation or rebase\", which is the buggy behavior. Update to verify retrack happens after rebase.\n- Add a new test for stacked PR checkout that verifies
+     rebase-then-track ordering.\n\n### Step 2: Extract shared impl-context creation logic\n\n**File:** `src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py`\n\nExtract the
+     \"read plan content and create impl folder\" portion of `_setup_planned_pr_plan()` into a standalone function:\n\n```python\ndef create_impl_context_from_pr(\n    ctx:
+     click.Context,\n    *,\n    plan_number: int,\n    cwd: Path,\n    branch_name: str,\n) -&gt; dict[str, str | int | bool | None]:\n```\n\nThis function:\n- Fetches PR metadata,
+     reads plan content (from committed `.erk/impl-context/` files or PR body fallback)\n- Creates `.erk/impl-context/&lt;branch&gt;/` with plan.md and ref.json\n- Does NOT checkout
+     branches or create worktrees\n\nHave `_setup_planned_pr_plan()` call this after its branch checkout logic.\n\n### Step 3: Create `erk pr prepare` command\n\n**New file:**
+     `src/erk/cli/commands/pr/prepare_cmd.py`\n\n```\nerk pr prepare [PLAN_NUMBER]\n```\n\nBehavior:\n- Must be run from inside a worktree\n- If `PLAN_NUMBER` omitted: detect from
+     current branch's PR (via `ctx.github.get_pr_for_branch()`)\n- Calls `create_impl_context_from_pr()` from Step 2\n- Idempotent: if impl-context already exists for this plan,
+     reports success without recreating\n\n**Register in:** `src/erk/cli/commands/pr/__init__.py` — add import and `pr_group.add_command(pr_prepare, name=\"prepare\")`\n\n**New test
+     file:** `tests/commands/pr/test_prepare.py`\n- Test auto-detection from current branch\n- Test explicit plan number\n- Test error when not on a plan branch and no number
+     provided\n- Test idempotent behavior (impl-context already exists)\n\n### Step 4: Update references\n\n- `src/erk/cli/commands/pr/checkout_cmd.py` line 371: The `_checkout_plan`
+      error message says `erk br co --for-plan {plan_number}` — add `erk pr prepare` as alternative\n- Do NOT deprecate `erk br co --for-plan` yet (it has extensive TUI references).
+     That's a follow-up.\n\n## Files Modified\n\n- `src/erk/cli/commands/pr/checkout_cmd.py` — fix Graphite ordering, update help text\n-
+     `src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py` — extract shared function\n- `src/erk/cli/commands/pr/prepare_cmd.py` — **new** command\n-
+     `src/erk/cli/commands/pr/__init__.py` — register new command\n- `tests/commands/pr/test_checkout_graphite_linking.py` — update/add tests\n- `tests/commands/pr/test_prepare.py` —
+      **new** test file\n\n## Files NOT Modified\n\n- `erk exec setup-impl` / `erk exec setup-impl-from-pr` — must remain as-is for CI and skill compatibility\n- `erk br co
+     --for-plan` — deprecation is a follow-up\n- `erk implement` — orthogonal command\n- `.github/workflows/plan-implement.yml` — uses exec commands, unaffected\n\n##
+     Verification\n\n1. Run Graphite linking tests: `pytest tests/commands/pr/test_checkout_graphite_linking.py`\n2. Run prepare tests: `pytest tests/commands/pr/test_prepare.py`\n3.
+      Run all PR checkout tests: `pytest tests/commands/pr/ -k checkout`\n4. Manual: `erk pr checkout &lt;stacked-pr&gt;` then `gt ls` — no divergence warning\n5. Manual: `erk pr checkout
+     &lt;N&gt;` then `erk pr prepare` — creates impl-context\n\n\n&lt;/details&gt;\n\n&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;\n&lt;!--
+     erk:metadata-block:plan-header --&gt;\n&lt;details&gt;\n&lt;summary&gt;plan-header&lt;/summary&gt;\n\n```yaml\n\nschema_version: '2'\ncreated_at: '2026-03-06T04:52:59.501262+00:00'\ncreated_by:
+     schrockn\nplan_comment_id: null\nlast_dispatched_run_id: '22764377822'\nlast_dispatched_node_id: WFR_kwLOPxC3hc8AAAAFTNzW3g\nlast_dispatched_at:
+     '2026-03-06T12:56:09.838463+00:00'\nlast_local_impl_at: null\nlast_local_impl_event: null\nlast_local_impl_session: null\nlast_local_impl_user: null\nlast_remote_impl_at:
+     '2026-03-06T13:07:22+00:00'\nlast_remote_impl_run_id: '22764377822'\nlast_remote_impl_session_id: 1a6bde5d-6d69-4af9-b042-698b6a69623c\nbranch_name:
+     plnd/consolidate-checkout-prepa-03-06-0452\ncreated_from_session: e5cd63de-5071-4e8c-b74f-60c16338541c\nlifecycle_stage: impl\nworktree_name: erk\nlast_session_branch:
+     async-learn/8830\nlast_session_id: 1a6bde5d-6d69-4af9-b042-698b6a69623c\nlast_session_at: '2026-03-06T13:07:18.241015+00:00'\nlast_session_source:
+     remote\n\n```\n\n&lt;/details&gt;\n&lt;!-- /erk:metadata-block:plan-header --&gt;\n---\n\n\nTo replicate this PR locally, run:\n\n```\nerk pr teleport
+     8830\n```\n","headRefName":"plnd/consolidate-checkout-prepa-03-06-0452","number":8830,"title":"Fix Graphite divergence in pr checkout + add pr prepare command + extract shared
+     impl-context creation"}
+
+⏺ Bash(git merge-base origin/main HEAD 2&gt;/dev/null &amp;&amp; git log --oneline $(git merge-base origin/main HEAD)..HEAD | head -20)
+  ⎿  a406dba12b65597d30381f817122e734c11f636d
+     d1605e94d Add Layer 4 unit tests for create_impl_context_from_pr()
+     92f7f9479 Separate CI validation from shipped code reviews (#8828)
+     05e6fd242 Upgrade astral-sh/setup-uv from v5 to v7 (#8836)
+     108c9acea Fix CI race condition: skip tier 3 jobs when fix-formatting pushes changes (#8823)
+     96f14cdf0 Auto-fix formatting (docs-sync + ruff + Prettier)
+     9c65c1cc6 Fix Graphite divergence in pr checkout + add pr prepare command
+     d7e6e4911 Remove plan staging dirs before implementation
+     36a12771c Add plan for PR #8830
+     dce948117 Remove plan staging dirs before implementation
+     ca670d802 Add plan for PR #8830
+     01d5dcf09 Add plan: Consolidate checkout/implementation-setup flow + fix Graphite divergence
+     23589b8cf Add plan for PR #8825
+     e37a47778 Add plan: Create module-to-subpackage skill
+     9179455d3 Release 0.9.8
+     e272651c4 Fix Dignified Python false positives: assert in tests and library import aliases (#8843)
+     45dfcd51e Upgrade code-stats date parsing to LLM-intelligent with flexible format support (#8819)
+     6fa998361 Separate CI validation from shipped code reviews (#8828)
+     d725dbd24 Fix `is_rebase_in_progress` detection in git worktrees (#8838)
+     e14b58a9b Fix Unbundled Skill Test: Portability Registries Should Only Cover Bundled Skills (#8820)
+     920368558 Implement persistent CI failure summaries as PR comments with fast-path fetch (#8812)
+
+⏺ Bash(git diff origin/master..HEAD --stat -- src/ tests/ 2&gt;/dev/null | head -30)
+  ⎿   .../commands/exec/scripts/setup_impl_from_pr.py    | 186 +++++++++++++--------
+      .../commands/exec/scripts/update_pr_description.py |   3 +-
+      src/erk/cli/commands/pr/__init__.py                |   2 +
+      src/erk/cli/commands/pr/checkout_cmd.py            |  34 ++--
+      src/erk/cli/commands/pr/prepare_cmd.py             |  84 ++++++++++
+      src/erk/cli/commands/pr/rewrite_cmd.py             |   3 +-
+      src/erk/cli/commands/pr/shared.py                  |  55 ++----
+      src/erk/cli/commands/pr/submit_pipeline.py         |   3 +-
+      src/erk/core/commit_message_generator.py           |  39 +----
+      tests/commands/pr/test_checkout.py                 |   6 +-
+      .../commands/pr/test_checkout_graphite_linking.py  |  74 +++++++-
+      tests/commands/pr/test_prepare.py                  | 140 ++++++++++++++++
+      tests/core/test_commit_message_generator.py        |  29 ++--
+      .../exec/scripts/test_setup_impl_from_pr.py        | 178 ++++++++++++++++++++
+      14 files changed, 649 insertions(+), 187 deletions(-)
+
+⏺ Good, now I can see the actual files changed. Let me read the key source files to find DRY violations.
+
+⏺ Read(src/erk/cli/commands/pr/prepare_cmd.py)
+  ⎿  Read 85 lines
+
+⏺ Read(src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py)
+  ⎿  Read 349 lines
+
+⏺ Read(src/erk/cli/commands/pr/checkout_cmd.py)
+  ⎿  Read 487 lines
+
+⏺ Read(src/erk/cli/commands/pr/shared.py)
+  ⎿  Read 391 lines
+  ⎿  Loaded src/erk/cli/commands/exec/scripts/CLAUDE.md
+  ⎿  Loaded src/erk/cli/commands/exec/scripts/AGENTS.md
+
+⏺ Now let me also look at the commit_message_generator.py changes and the branch checkout flow for --for-plan to compare.
+
+⏺ Read(src/erk/core/commit_message_generator.py)
+  ⎿  Read 278 lines
+
+⏺ Search(pattern: "for-plan|for_plan|_rebase_and_track_for_plan", path: "src/erk/cli/commands")
+  ⎿  Found 9 files (ctrl+o to expand)
+
+⏺ Read(src/erk/cli/commands/branch/checkout_cmd.py)
+  ⎿  Read 826 lines
+
+⏺ Here are the DRY violations I found across these code paths:
+
+  ---
+  1. Stacked PR rebase + parent branch sync (most significant)
+
+  The "fetch parent, update local ref, rebase onto parent" logic is duplicated nearly verbatim:
+
+  - pr/checkout_cmd.py:261-290 (_checkout_pr)
+  - branch/checkout_cmd.py:346-400 (_rebase_and_track_for_plan)
+
+  The PR description literally says _rebase_and_track_for_plan "mirrors the pattern from pr/checkout_cmd.py for stacked PRs." Both do:
+
+  1. Check if parent branch exists locally
+  2. If not: fetch + create tracking branch
+  3. If yes: fetch, compare SHAs, update local ref if stale
+  4. Rebase onto origin/{parent}
+  5. Handle rebase conflicts with abort + warning
+
+  This should be a single shared function.
+
+  ---
+  2. Idempotent impl-context check
+
+  The "already set up?" guard is duplicated:
+
+  - prepare_cmd.py:69-75
+  - setup_impl_from_pr.py:243-261 (_setup_planned_pr_plan)
+
+  Both do:
+  impl_dir = resolve_impl_dir(cwd, branch_name=...)
+  if impl_dir is not None:
+      existing_ref = read_plan_ref(impl_dir)
+      if existing_ref is not None and existing_ref.plan_id == str(plan_number):
+          # already exists, skip
+
+  ---
+  3. _setup_impl_for_plan not consolidated with create_impl_context_from_pr
+
+  The PR extracted create_impl_context_from_pr as the shared impl-context creator, but branch/checkout_cmd.py:290-325 (_setup_impl_for_plan) still does its own create_impl_folder() +
+  save_plan_ref() calls independently. The --for-plan path could call create_impl_context_from_pr (or a shared lower-level function) instead of duplicating the folder creation + ref
+  saving.
+
+  ---
+  4. _rebase_and_track_for_plan + _setup_impl_for_plan call sequence repeated 3x
+
+  In branch/checkout_cmd.py, the same two-call sequence appears at lines 641-656, 676-703, and 739-753:
+
+  _rebase_and_track_for_plan(ctx, ...)
+  _setup_impl_for_plan(ctx, ...)
+
+  Each site also follows with _perform_checkout(...). This suggests a missing helper like _complete_plan_checkout(ctx, *, target_worktree, setup, ...) that bundles the rebase → impl-setup
+   → checkout sequence.
+
+  ---
+  Summary
+
+  The biggest win would be extracting the stacked-PR rebase logic (#1) into a shared function — it's ~30 lines of non-trivial git orchestration copied between two files. The idempotent
+  check (#2) and the 3x call sequence (#4) are smaller but easy consolidations. And #3 represents the "expected code removal" you noticed was missing — _setup_impl_for_plan should
+  delegate to the newly extracted create_impl_context_from_pr rather than doing its own impl folder creation.
+
+✻ Baked for 1m 25s
+
+❯ plan this work. all items
+
+⏺ Let me explore the codebase more deeply to understand the exact shapes of the functions involved and find any additional patterns I should reuse.
+
+⏺ Explore(Explore rebase/sync patterns)
+  ⎿  Done (9 tool uses · 49.7k tokens · 37s)
+  (ctrl+o to expand)
+
+⏺ Explore(Explore impl-context creation patterns)
+  ⎿  Done (15 tool uses · 61.2k tokens · 52s)
+  (ctrl+o to expand)
+
+⏺ Good exploration. Now let me design the implementation.
+
+⏺ Plan(Plan DRY consolidation)
+  ⎿  Done (43 tool uses · 125.0k tokens · 4m 2s)
+  (ctrl+o to expand)
+
+⏺ Let me read the critical files to validate the plan details before writing it up.
+
+⏺ Read(src/erk/cli/commands/checkout_helpers.py)
+  ⎿  Read 329 lines
+
+⏺ Read(packages/erk-shared/src/erk_shared/impl_folder.py)
+  ⎿  Read 577 lines
+
+⏺ Now I have everything I need. Let me write the plan.
+
+❯ Tool loaded.
+
+⏺ Updated plan
+  ⎿  Wrote 123 lines to /Users/schrockn/.claude/plans/crystalline-crunching-hinton.md
+        1 # Consolidate DRY violations in checkout/impl-context code paths
+        2
+        3 ## Context
+        4
+        5 PR #8830 extracted `create_impl_context_from_pr()` and added `erk pr prepare`, but left significant code duplication across the checkout and impl-context setup paths. Thi
+          s plan addresses 4 DRY violations to remove ~60 lines of duplicated logic.
+        6
+        7 ## Changes
+        8
+        9 ### 1. Extract `sync_parent_and_rebase()` into `checkout_helpers.py`
+       10
+       11 The "fetch parent branch, update stale local ref, rebase onto parent" sequence is duplicated verbatim between:
+       12 - `pr/checkout_cmd.py:261-290` (inline in `_checkout_pr`)
+       13 - `branch/checkout_cmd.py:372-398` (inside `_rebase_and_track_for_plan`)
+       14
+       15 **New function in `src/erk/cli/commands/checkout_helpers.py`:**
+       16
+       17 ```python
+       18 def sync_parent_and_rebase(
+       19     ctx: ErkContext,
+       20     *,
+       21     repo_root: Path,
+       22     worktree_path: Path,
+       23     parent_branch: str,
+       24 ) -&gt; None:
+       25 ```
+       26
+       27 Encapsulates: list local branches → fetch parent → create tracking or update local ref → rebase onto parent → abort + warn on conflict. Uses `user_output` consistently.
+       28
+       29 **Does NOT include** Graphite tracking — that differs between callers (conditional track/retrack in PR checkout vs unconditional `track_branch` in branch checkout) and st
+          ays at call sites.
+       30
+       31 **Call site A — `pr/checkout_cmd.py` `_checkout_pr`:** Replace lines 261-290 with:
+       32 ```python
+       33 trunk_branch = ctx.git.branch.detect_trunk_branch(repo.root)
+       34 if pr.base_ref_name != trunk_branch and not pr.is_cross_repository:
+       35     sync_parent_and_rebase(ctx, repo_root=repo.root, worktree_path=worktree_path, parent_branch=pr.base_ref_name)
+       36 ```
+       37
+       38 **Call site B — `branch/checkout_cmd.py` `_rebase_and_track_for_plan`:** Replace rebase body with:
+       39 ```python
+       40 if parent_branch != trunk:
+       41     sync_parent_and_rebase(ctx, repo_root=repo_root, worktree_path=worktree_path, parent_branch=parent_branch)
+       42 ctx.branch_manager.track_branch(repo_root, branch, parent_branch)
+       43 ```
+       44
+       45 ### 2. Add `find_existing_plan_ref()` to `impl_folder.py`
+       46
+       47 The idempotent "already set up?" check is duplicated between:
+       48 - `pr/prepare_cmd.py:69-75`
+       49 - `exec/scripts/setup_impl_from_pr.py:243-261`
+       50
+       51 **New function in `packages/erk-shared/src/erk_shared/impl_folder.py`:**
+       52
+       53 ```python
+       54 def find_existing_plan_ref(
+       55     base_path: Path,
+       56     *,
+       57     branch_name: str,
+       58     plan_id: str,
+       59 ) -&gt; PlanRef | None:
+       60 ```
+       61
+       62 Calls `resolve_impl_dir` → `read_plan_ref` → checks `ref.plan_id == plan_id` → returns `PlanRef` or `None`.
+       63
+       64 **Call site A — `prepare_cmd.py`:** Replace lines 69-75 with:
+       65 ```python
+       66 existing_ref = find_existing_plan_ref(erk_ctx.cwd, branch_name=branch, plan_id=str(plan_number))
+       67 if existing_ref is not None:
+       68     user_output(f"Impl-context already set up for plan #{plan_number}")
+       69     return
+       70 ```
+       71
+       72 **Call site B — `setup_impl_from_pr.py` `_setup_planned_pr_plan`:** Replace lines 244-247 with:
+       73 ```python
+       74 existing_ref = find_existing_plan_ref(cwd, branch_name=current_branch, plan_id=str(plan_number))
+       75 if existing_ref is not None:
+       76     # ... same early-return dict using existing_ref.url
+       77 ```
+       78
+       79 ### 3. Skip — `_setup_impl_for_plan` vs `create_impl_context_from_pr`
+       80
+       81 These have genuinely different data sources (`IssueBranchSetup` from plan store vs GitHub PR). The shared kernel is just two utility function calls (`create_impl_folder`
+          + `save_plan_ref`), which is the correct level of abstraction. No further extraction.
+       82
+       83 ### 4. Extract `_apply_plan_setup()` in `branch/checkout_cmd.py`
+       84
+       85 The `_rebase_and_track_for_plan` → `_setup_impl_for_plan` call pair is repeated 3x (lines 641-656, 676-690, 739-753).
+       86
+       87 **New private function in `branch/checkout_cmd.py`:**
+       88
+       89 ```python
+       90 def _apply_plan_setup(
+       91     ctx: ErkContext,
+       92     *,
+       93     setup: IssueBranchSetup,
+       94     repo_root: Path,
+       95     worktree_path: Path,
+       96     branch: str,
+       97     parent_branch: str,
+       98     trunk: str,
+       99     script: bool,
+      100 ) -&gt; None:
+      101 ```
+      102
+      103 Calls `_rebase_and_track_for_plan` then `_setup_impl_for_plan`. Each call site's `if setup is not None:` guard remains at the call site.
+      104
+      105 ## Files Modified
+      106
+      107 | File | Change |
+      108 |------|--------|
+      109 | `src/erk/cli/commands/checkout_helpers.py` | Add `sync_parent_and_rebase()` |
+      110 | `packages/erk-shared/src/erk_shared/impl_folder.py` | Add `find_existing_plan_ref()` |
+      111 | `src/erk/cli/commands/pr/checkout_cmd.py` | Use `sync_parent_and_rebase` in `_checkout_pr` |
+      112 | `src/erk/cli/commands/branch/checkout_cmd.py` | Use `sync_parent_and_rebase` in `_rebase_and_track_for_plan`; extract `_apply_plan_setup`; collapse 3 call sites |
+      113 | `src/erk/cli/commands/pr/prepare_cmd.py` | Use `find_existing_plan_ref` |
+      114 | `src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py` | Use `find_existing_plan_ref` |
+      115
+      116 ## Verification
+      117
+      118 1. Run checkout tests: `pytest tests/commands/pr/test_checkout.py tests/commands/pr/test_checkout_graphite_linking.py`
+      119 2. Run branch checkout tests: `pytest tests/commands/branch/test_checkout_cmd.py`
+      120 3. Run prepare tests: `pytest tests/commands/pr/test_prepare.py`
+      121 4. Run setup-impl tests: `pytest tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py`
+      122 5. Run impl_folder tests: `pytest tests/ -k impl_folder`
+      123 6. `ty` type check passes
+
+❯ Tool loaded.
+
+⏺ Reading Plan(~/.claude/plans/crystalline-crunching-hinton.md)
+  ⎿  Read 124 lines
+
+⏺ Here's the plan:
+
+  ---
+  Consolidate DRY violations in checkout/impl-context code paths
+
+  Context: PR #8830 extracted create_impl_context_from_pr() and added erk pr prepare, but left significant code duplication. This addresses 4 DRY violations to remove ~60 lines.
+
+  1. Extract sync_parent_and_rebase() → checkout_helpers.py
+
+  The fetch-parent + update-local-ref + rebase sequence is duplicated verbatim in pr/checkout_cmd.py and branch/checkout_cmd.py. Extract to shared function. Graphite tracking stays at
+  call sites (it differs between the two).
+
+  2. Add find_existing_plan_ref() → impl_folder.py
+
+  The idempotent "already set up?" check (resolve_impl_dir → read_plan_ref → compare plan_id) is duplicated in prepare_cmd.py and setup_impl_from_pr.py. Returns PlanRef | None.
+
+  3. Skip — _setup_impl_for_plan vs create_impl_context_from_pr
+
+  Different data sources (plan store vs GitHub PR). The shared kernel is just two utility calls — correct abstraction level already.
+
+  4. Extract _apply_plan_setup() in branch/checkout_cmd.py
+
+  The _rebase_and_track_for_plan → _setup_impl_for_plan pair is repeated 3x. Collapse into one helper.
+
+  6 files modified, pure refactoring, no behavior changes.
+
+  ---
+
+❯ Tool loaded.
+
+⏺ User answered Claude's questions:
+  ⎿  · What would you like to do with this plan?
+
+     Current context: (wt:erk-slot-03) (br:plnd/consolidate-checkout-prepa-03-06-0452) (pr:#8830) → Create new branch and planned PR
+
+❯ Tool loaded.
+  ⎿  Interrupted · What should Claude do instead?
+
+❯ /erk:pr-incremental-dispatch
+
+⏺ Let me find the plan file and get PR context.
+
+⏺ Bash(ls -t ~/.claude/plans/*.md 2&gt;/dev/null | head -5)
+  ⎿  /Users/schrockn/.claude/plans/crystalline-crunching-hinton.md
+     /Users/schrockn/.claude/plans/dreamy-cooking-goose.md
+     /Users/schrockn/.claude/plans/shimmying-toasting-lighthouse.md
+     … +2 lines (ctrl+o to expand)
+
+⏺ Bash(gh pr view --json number,title,headRefName)
+  ⎿  {
+       "headRefName": "plnd/consolidate-checkout-prepa-03-06-0452",
+       "number": 8830,
+       "title": "Fix Graphite divergence in pr checkout + add pr prepare command + extract shared impl-context creation"
+     }
+
+⏺ Bash(head -1 /Users/schrockn/.claude/plans/crystalline-crunching-hinton.md)
+  ⎿  # Consolidate DRY violations in checkout/impl-context code paths
+
+⏺ Ready to dispatch:
+
+  - Plan: Consolidate DRY violations in checkout/impl-context code paths
+  - PR: #8830 — Fix Graphite divergence in pr checkout + add pr prepare command + extract shared impl-context creation
+  - Branch: plnd/consolidate-checkout-prepa-03-06-0452
+
+  Dispatching plan against PR #8830. Proceed?
+
+⏺ User answered Claude's questions:
+  ⎿  · Dispatch incremental plan against PR #8830? → Yes, dispatch
+
+⏺ Bash(erk exec incremental-dispatch --plan-file /Users/schrockn/.claude/plans/crystalline-crunching-hinton.md --pr 8830 --format json)
+  ⎿  Syncing branch: plnd/consolidate-checkout-prepa-03-06-0452
+     Committing plan to branch...
+     ✓ Branch pushed to remote
+     Dispatching workflow: plan-implement.yml
+       Waiting for workflow run... (attempt 1/11)
+       Waiting for workflow run... (attempt 2/11)
+     ✓ Workflow dispatched
+     {
+       "success": true,
+       "pr_number": 8830,
+       "branch_name": "plnd/consolidate-checkout-prepa-03-06-0452",
+       "workflow_run_id": "22780869798",
+       "workflow_url": "https://github.com/dagster-io/erk/actions/runs/22780869798"
+     }
+  ⎿  (timeout 2m)
+
+⏺ Dispatched successfully:
+
+  - PR: #8830
+  - Workflow: Run #22780869798
+
+  The remote agent will implement the DRY consolidation plan (sync_parent_and_rebase, find_existing_plan_ref, _apply_plan_setup) against the existing PR branch.
+
+✻ Worked for 34s
+
+❯ /exit
+  ⎿  Goodbye!
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── ▪▪▪ ─
+❯ 
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ➜  (git:erk) (wt:erk-slot-03) (br:plnd/consolidate-checkout-prepa-03-06-0452) ✗ | (gh:#8830 st:👀 chks:[🔄:2] cmts:✓) │ (O)                                               110182 tokens
+  ⏸ plan mode on (shift+tab to cycle) · PR #8830                                                                                                         current: 2.1.70 · latest: 2.1.70
+
+Resume this session with:
+claude --resume b0b0965d-9363-480c-bfdc-b225207b13f8
+➜  erk-slot-03 git:(plnd/consolidate-checkout-prepa-03-06-0452) ✗ git diff
+➜  erk-slot-03 git:(plnd/consolidate-checkout-prepa-03-06-0452) ✗ git st
+On branch plnd/consolidate-checkout-prepa-03-06-0452
+Your branch is up to date with 'origin/plnd/consolidate-checkout-prepa-03-06-0452'.
+
+Changes to be committed:
+  (use "git restore --staged &lt;file&gt;..." to unstage)
+        modified:   src/erk/cli/commands/exec/scripts/update_pr_description.py
+        modified:   src/erk/cli/commands/pr/rewrite_cmd.py
+        modified:   src/erk/cli/commands/pr/shared.py
+        modified:   src/erk/cli/commands/pr/submit_pipeline.py
+        modified:   src/erk/core/commit_message_generator.py
+        modified:   tests/core/test_commit_message_generator.py
+        modified:   tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py
+
+➜  erk-slot-03 git:(plnd/consolidate-checkout-prepa-03-06-0452) ✗ git diff
+➜  erk-slot-03 git:(plnd/consolidate-checkout-prepa-03-06-0452) ✗ git commit -a -m cp
+[plnd/consolidate-checkout-prepa-03-06-0452 ce090d538] cp
+ 7 files changed, 106 insertions(+), 38 deletions(-)
+➜  erk-slot-03 git:(plnd/consolidate-checkout-prepa-03-06-0452) git diff HEAD^
+➜  erk-slot-03 git:(plnd/consolidate-checkout-prepa-03-06-0452) gt pr
+https://app.graphite.dev/github/pr/dagster-io/erk/8830
+
+WARNING: The following branch has diverged from Graphite's tracking:
+WARNING: ▸ plnd/consolidate-checkout-prepa-03-06-0452
+WARNING: This can happen when a Git command run outside of Graphite changes the commit history of a branch.
+WARNING: You can use gt track &lt;branch&gt; to remediate a diverged branch.
+WARNING: To silence reminders about a diverged branch, untrack it with gt untrack &lt;branch&gt;.
+➜  erk-slot-03 git:(plnd/consolidate-checkout-prepa-03-06-0452)
+
+how did it get diverged</user>
+  <usage input_tokens="3" cache_creation_input_tokens="44791" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 44791}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>The `erk exec incremental-dispatch` command committed the plan file and pushed using raw git (not Graphite). That commit (`2bd070146 Add incremental plan for PR #8830`) changed the branch history without updating Graphite's tracked SHA, causing the divergence.
+
+Your subsequent `git commit -a -m cp` also used raw git, compounding it.
+
+Fix with:
+
+```
+gt track
+```
+
+This updates Graphite's tracked SHA to match the current branch tip.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="44791" cache_read_input_tokens="0" output_tokens="622" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 44791, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;bash-input&gt;gt track&lt;/bash-input&gt;</user>
+  <user>[Request interrupted by user]</user>
+  <user>we need to fix the underlying root cause</user>
+  <usage input_tokens="3" cache_creation_input_tokens="846" cache_read_input_tokens="44791" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 846}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01Q6oPr4YNd4emjheFV8tUTa">
+    <param name="query">select:Read,Grep</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="846" cache_read_input_tokens="44791" output_tokens="144" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 846, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01Q6oPr4YNd4emjheFV8tUTa">
+
+  </tool_result>
+  <tool_use name="Grep" id="toolu_018J1ryQ6HRTx9MmDnnAFCj7">
+    <param name="pattern">incremental.dispatch|incremental_dispatch</param>
+    <param name="path">src/erk</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1802" cache_read_input_tokens="45637" output_tokens="98" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1802, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018J1ryQ6HRTx9MmDnnAFCj7">
+Found 2 files
+src/erk/cli/commands/exec/scripts/incremental_dispatch.py
+src/erk/cli/commands/exec/group.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_014qeQowG5w1TPYJ7TqDgMYQ">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="152" cache_read_input_tokens="47439" output_tokens="98" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 152, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014qeQowG5w1TPYJ7TqDgMYQ">
+     1→"""Dispatch a local plan against an existing PR for remote implementation.
+     2→
+     3→Usage:
+     4→    erk exec incremental-dispatch --plan-file &lt;path&gt; --pr &lt;number&gt; [OPTIONS]
+     5→
+     6→Commits the plan as impl-context to the PR's branch and triggers the
+     7→plan-implement workflow. Unlike regular dispatch, this does not require
+     8→the erk-plan label — just an OPEN PR.
+     9→"""
+    10→
+    11→import json
+    12→import logging
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.commands.pr.dispatch_cmd import load_workflow_config
+    18→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+    19→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    20→from erk.cli.constants import DISPATCH_WORKFLOW_NAME
+    21→from erk_shared.context.helpers import (
+    22→    require_context,
+    23→    require_git,
+    24→    require_github,
+    25→    require_repo_root,
+    26→    require_time,
+    27→)
+    28→from erk_shared.context.types import NoRepoSentinel
+    29→from erk_shared.gateway.git.remote_ops.types import PushError
+    30→from erk_shared.gateway.github.parsing import (
+
+... [186 lines omitted] ...
+
+    86→        _output_error(output_format, f"PR #{pr_number} not found")
+    90→        _output_error(output_format, f"PR #{pr_number} is {pr_result.state}, must be OPEN")
+   101→        _output_error(output_format, "Not in a git repository")
+   143→        except Exception:
+   144→            logger.warning("Failed to sync index after plumbing commit", exc_info=True)
+   150→    if isinstance(push_result, PushError):
+   151→        _output_error(output_format, f"Push failed: {push_result.message}")
+   210→def _output_error(output_format: str, message: str) -&gt; None:
+   211→    """Output error in the requested format."""
+   213→        click.echo(json.dumps({"success": False, "error": message}))
+   215→        user_output(click.style("Error: ", fg="red") + message)
+  </tool_result>
+  <assistant>The issue is at lines 134-144. After `commit_files_to_branch` (a git plumbing commit), it tries to sync the index with `git checkout HEAD -- &lt;files&gt;`. But this only syncs the *committed* impl-context files — it doesn't account for **other staged changes** already in the worktree's index.
+
+The plumbing commit updates the branch ref (HEAD), but the index still has the old HEAD's staged changes. Now those staged changes appear relative to the *new* HEAD, which is what you saw. And Graphite's tracking diverges because the branch moved via plumbing, not through `gt`.
+
+The real root cause: when the branch is checked out in the current worktree, the plumbing commit advances HEAD but leaves the working tree and index in an inconsistent state. The fix at line 138-143 only partially addresses this.
+
+Let me check how `commit_files_to_branch` works and what the Graphite retrack pattern looks like.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3799" cache_read_input_tokens="47591" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3799}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Ht6cxpJxJDkzBoPa4ssVtg">
+    <param name="pattern">def commit_files_to_branch</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3799" cache_read_input_tokens="47591" output_tokens="300" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3799, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Ht6cxpJxJDkzBoPa4ssVtg">
+Found 5 files
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/printing.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01EZqJGJkW39ds9wb4FFTzNG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="544" cache_read_input_tokens="51390" output_tokens="104" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 544, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EZqJGJkW39ds9wb4FFTzNG">
+     1→"""Production implementation of Git commit operations using subprocess."""
+     2→
+     3→import os
+     4→import subprocess
+     5→import tempfile
+     6→from pathlib import Path
+     7→
+     8→from erk_shared.gateway.git.commit_ops.abc import GitCommitOps
+     9→from erk_shared.gateway.git.lock import wait_for_index_lock
+    10→from erk_shared.gateway.time.abc import Time
+    11→from erk_shared.subprocess_utils import run_subprocess_with_context
+    12→
+    13→
+    14→class RealGitCommitOps(GitCommitOps):
+    15→    """Real implementation of Git commit operations using subprocess."""
+    16→
+    17→    def __init__(self, time: Time) -&gt; None:
+    18→        """Initialize RealGitCommitOps with Time provider.
+    19→
+    20→        Args:
+    21→            time: Time provider for lock waiting
+    22→        """
+    23→        self._time = time
+    24→
+    25→    # ============================================================================
+    26→    # Mutation Operations
+    27→    # ============================================================================
+    28→
+    29→    def stage_files(self, cwd: Path, paths: list[str], *, force: bool) -&gt; None:
+    30→        """Stage specific files for commit."""
+
+... [204 lines omitted] ...
+  </tool_result>
+  <assistant>Now I understand the full picture. The `commit_files_to_branch` plumbing correctly uses a temp index, but on line 136 it does `update-ref` which moves the branch tip. When this branch is the currently checked-out branch (HEAD), this moves HEAD without updating the working tree or real index. The partial fix at lines 134-144 in `incremental_dispatch.py` only resets the impl-context files, not the rest of the index.
+
+The Graphite divergence is a separate issue — Graphite tracks its own SHA, and the plumbing commit + push bypasses Graphite entirely.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2980" cache_read_input_tokens="51934" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2980}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01JKkHfpTHWdHVGmP4TQJZEV">
+    <param name="pattern">gt track|gt retrack|track_branch|retrack_branch</param>
+    <param name="path">src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2980" cache_read_input_tokens="51934" output_tokens="261" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2980, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JKkHfpTHWdHVGmP4TQJZEV">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01P17PLwXnn7yEbh4iUt47A9">
+    <param name="pattern">retrack|track_branch</param>
+    <param name="path">src/erk/cli/commands/exec/scripts</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="276" cache_read_input_tokens="54914" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 276}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01P17PLwXnn7yEbh4iUt47A9">
+Found 1 file
+src/erk/cli/commands/exec/scripts/plan_save.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01VSf5xkkp35T53WmKgVU9Ac">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="offset">1</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="248" cache_read_input_tokens="55190" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 248}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01VSf5xkkp35T53WmKgVU9Ac">
+     1→"""Plan save: creates a draft PR with the plan content.
+     2→
+     3→Usage:
+     4→    erk exec plan-save [OPTIONS]
+     5→
+     6→Options:
+     7→    --format json|display: Output format (default: json)
+     8→    --plan-file PATH: Use specific plan file (highest priority)
+     9→    --session-id ID: Session ID for scoped plan lookup
+    10→    --plan-type standard|learn: Plan type (default: standard)
+    11→    --learned-from-issue INT: Parent plan (for learn plans)
+    12→    --created-from-workflow-run-url URL: Workflow run URL
+    13→
+    14→Objective linking: use --objective to pass directly, or rely on
+    15→automatic linking via the objective-context session marker
+    16→(created by /erk:objective-plan). The --objective flag takes
+    17→precedence over the session marker.
+    18→
+    19→Exit Codes:
+    20→    0: Success
+    21→    1: Error
+    22→    2: Validation failed
+    23→"""
+    24→
+    25→import json
+    26→from pathlib import Path
+    27→
+    28→import click
+    29→
+    30→from erk.cli.commands.exec.scripts.validate_plan_content import _validate_plan_content
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01FcpUEbhVbkF2vD5V76AXUH">
+    <param name="pattern">retrack|track_branch</param>
+    <param name="path">src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="248" cache_read_input_tokens="55190" output_tokens="260" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 248, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FcpUEbhVbkF2vD5V76AXUH">
+257-    # Update Graphite tracking after plumbing commit advanced the branch
+258-    # (create_branch tracked position A, but commit_files_to_branch moved to B)
+259-    if not current_branch_flag:
+260:        branch_manager.retrack_branch(repo_root, branch_name)
+261-
+262-    # When saving on the current branch, the git plumbing commit advanced HEAD
+263-    # but left the working tree and index unchanged. Write files to disk and
+  </tool_result>
+  <assistant>There it is. `plan_save.py` already has the pattern — it calls `retrack_branch` after the plumbing commit. The `incremental_dispatch.py` script is missing this retrack step entirely.
+
+Let me also check what `plan_save.py` does for the full index sync (lines 262+):</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="868" cache_read_input_tokens="55438" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 868}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TWS2yGQHQWZEuAHJ7CvsJC">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/exec/scripts/plan_save.py</param>
+    <param name="offset">250</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="868" cache_read_input_tokens="55438" output_tokens="206" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 868, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TWS2yGQHQWZEuAHJ7CvsJC">
+   250→    git.commit.commit_files_to_branch(
+   251→        repo_root,
+   252→        branch=branch_name,
+   253→        files=files,
+   254→        message=f"Add plan: {title}",
+   255→    )
+   256→
+   257→    # Update Graphite tracking after plumbing commit advanced the branch
+   258→    # (create_branch tracked position A, but commit_files_to_branch moved to B)
+   259→    if not current_branch_flag:
+   260→        branch_manager.retrack_branch(repo_root, branch_name)
+   261→
+   262→    # When saving on the current branch, the git plumbing commit advanced HEAD
+   263→    # but left the working tree and index unchanged. Write files to disk and
+   264→    # stage them so git status is clean.
+   265→    if current_branch_flag:
+   266→        for rel_path, content in files.items():
+   267→            abs_path = repo_root / rel_path
+   268→            abs_path.parent.mkdir(parents=True, exist_ok=True)
+   269→            abs_path.write_text(content, encoding="utf-8")
+   270→        git.commit.stage_files(repo_root, list(files.keys()), force=True)
+   271→
+   272→    git.remote.push_to_remote(cwd, "origin", branch_name, set_upstream=True, force=False)
+   273→
+   274→    # Build metadata — base_ref_name sets the PR base ref
+   275→    metadata: dict[str, object] = {"branch_name": branch_name, "base_ref_name": base_branch}
+   276→
+   277→    if config.plans_repo is not None:
+   278→        metadata["source_repo"] = get_repo_identifier(ctx)
+   279→
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>Now I see the full pattern from `plan_save.py`:
+
+1. **Non-current branch**: `retrack_branch` after plumbing commit (line 259-260)
+2. **Current branch**: Write files to disk + `stage_files` with `force=True` (lines 265-270)
+
+The `incremental_dispatch.py` script is missing **both**:
+- No `retrack_branch` call → Graphite divergence
+- Uses `git checkout HEAD -- &lt;files&gt;` instead of the proper write-to-disk + `stage_files` pattern → leaves stale staged changes</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="805" cache_read_input_tokens="56306" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 805}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_013wH1BXk4pER7t8EmvRnUXo">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="805" cache_read_input_tokens="56306" output_tokens="216" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 805, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_013wH1BXk4pER7t8EmvRnUXo">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="1472" cache_read_input_tokens="57111" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1472}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>The root cause is clear. `incremental_dispatch.py` is missing a `retrack_branch` call after the plumbing commit. `plan_save.py` already has the correct pattern at line 259-260:
+
+```python
+# Update Graphite tracking after plumbing commit advanced the branch
+branch_manager.retrack_branch(repo_root, branch_name)
+```
+
+`incremental_dispatch.py` does the plumbing commit (line 127-132), partially syncs the index (lines 134-144), then pushes — but never retracks with Graphite. So Graphite's cached SHA becomes stale.
+
+The index sync is also weaker than `plan_save.py`'s approach — it uses `git checkout HEAD -- &lt;files&gt;` instead of the proper write-to-disk + `stage_files(force=True)` pattern.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1472" cache_read_input_tokens="57111" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1472}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_018BBsdpDFUsXWimvuUuQRBN">
+    <param name="questions">[{'question': 'Should I fix this now (add retrack + fix index sync in incremental_dispatch...[truncated 287 chars]...ude in the DRY consolidation PR that's already running remotely"}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1472" cache_read_input_tokens="57111" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1472}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_018BBsdpDFUsXWimvuUuQRBN">
+User has answered your questions: "Should I fix this now (add retrack + fix index sync in incremental_dispatch.py), or fold it into the DRY consolidation plan we just dispatched?"="make a completely new plan" user notes: make a completely new plan. You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01U6h7ZScQ7MrP5oNPD12HWh">
+    <param name="query">select:Write,ExitPlanMode</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="654" cache_read_input_tokens="58583" output_tokens="80" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 654, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01U6h7ZScQ7MrP5oNPD12HWh">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01PFBtTe3xdce9AGz3yqa4Ax">
+    <param name="file_path">/Users/schrockn/.claude/plans/calm-soaring-meteor.md</param>
+    <param name="content"># Fix Graphite divergence in incremental-dispatch after plumbing commit
+
+## Context
+
+`erk ...[truncated 1798 chars]...&gt;` from a worktree where the branch is checked out, then `gt log` — no divergence warning
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1013" cache_read_input_tokens="59237" output_tokens="676" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1013, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PFBtTe3xdce9AGz3yqa4Ax">
+File created successfully at: /Users/schrockn/.claude/plans/calm-soaring-meteor.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01PFeUb73vYzX4pa5UqwiQ9X">
+    <param name="plan"># Fix Graphite divergence in incremental-dispatch after plumbing commit
+
+## Context
+
+`erk ...[truncated 1798 chars]...&gt;` from a worktree where the branch is checked out, then `gt log` — no divergence warning
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="825" cache_read_input_tokens="60250" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 825, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PFeUb73vYzX4pa5UqwiQ9X">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/calm-soaring-meteor.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix Graphite divergence in incremental-dispatch after plumbing commit
+Current context: (wt:erk-slot-03) (br:plnd/consolidate-checkout-prepa-03-06-0452) (pr:#8830)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/cons"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 4f79cb1a-3196-4971-a4f8-4ffff314fc36 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/calm-soaring-meteor.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+## Fix Graphite divergence in incremental-dispatch after plumbing commit
+
+### Context
+
+`erk exec incremental-dispatch` uses `commit_files_to_branch` (git plumbing) to commit plan files to a branch without checkout. This advances the branch ref but bypasses Graphite, causing Graphite to report divergence. The fix already exists in `plan_save.py` (line 259-260) but was never applied to `incremental_dispatch.py`.
+
+Secondary issue: when the branch is checked out in the current worktree, the index sync uses `git checkout HEAD -- &lt;files&gt;` which is fragile. `plan_save.py` uses the better pattern of writing files to disk + `stage_files(force=True)`.
+
+### Changes
+
+**File: `src/erk/cli/commands/exec/scripts/incremental_dispatch.py`**
+
+**1. Add Graphite retrack after plumbing commit (after line 132)**
+
+```python
+# Update Graphite tracking after plumbing commit advanced the branch
+erk_ctx.branch_manager.retrack_branch(repo_root, branch_name)
+```
+
+**2. Replace index sync block (lines 134-144)**
+
+Replace the `git checkout HEAD -- &lt;files&gt;` approach with `plan_save.py`'s pattern:
+
+```python
+if checked_out_path is not None:
+    for rel_path, content in files.items():
+        abs_path = checked_out_path / rel_path
+        abs_path.parent.mkdir(parents=True, exist_ok=True)
+        abs_path.write_text(content, encoding="utf-8")
+    git.commit.stage_files(checked_out_path, list(files.keys()), force=True)
+```
+
+### Verification
+
+1. Run incremental-dispatch tests: `pytest tests/ -k incremental_dispatch`
+2. Manual verification with `gt log` after dispatch
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="670" cache_read_input_tokens="61075" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 670}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01SAKjUCqSy5i5RmKfH2Aisu">
+    <param name="questions">[{'question': 'Fix Graphite divergence in incremental-dispatch after plumbing commit\nCurr...[truncated 432 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="670" cache_read_input_tokens="61075" output_tokens="697" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 670, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SAKjUCqSy5i5RmKfH2Aisu">
+User has answered your questions: "Fix Graphite divergence in incremental-dispatch after plumbing commit
+Current context: (wt:erk-slot-03) (br:plnd/consolidate-checkout-prepa-03-06-0452) (pr:#8830)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01NZ4TCtKFoqANPUSi7TN2J2">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="900" cache_read_input_tokens="61745" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 900, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01NZ4TCtKFoqANPUSi7TN2J2">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_011o1G3ut3Nr5QZ5tqgcyoXo">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="568" cache_read_input_tokens="62645" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 568, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011o1G3ut3Nr5QZ5tqgcyoXo">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="4f79cb1a-3196-4971-a4f8-4ffff314fc36" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="4f79cb1a-3196-4971-a4f8-4ffff314fc36" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "4f79cb1a-3196-4971-a4f8-4ffff314fc36" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "4f79cb1a-3196-4971-a4f8-4ffff314fc36" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "4f79cb1a-3196-4971-a4f8-4ffff314fc36" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "4f79cb1a-3196-4971-a4f8-4ffff314fc36" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+**Branch slug:** `fix-incremental-dispatch-retrack`
+
+**Plan summary:** Adds missing Graphite retrack after plumbing commit in incremental-dispatch, matching the existing pattern in plan-save. Also replaces the fragile git-checkout index sync with the write-to-disk plus stage-files approach.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2286" cache_read_input_tokens="63213" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2286}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_019Yp11Kb5f4NGDdX9unrje5">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2286" cache_read_input_tokens="63213" output_tokens="149" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2286, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_019Yp11Kb5f4NGDdX9unrje5">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01VcmP472qVZtR1UNR1tzKRE">
+    <param name="command">erk exec plan-save --format json --session-id="4f79cb1a-3196-4971-a4f8-4ffff314fc36" --bra...[truncated 166 chars]...ces the fragile git-checkout index sync with the write-to-disk plus stage-files approach."</param>
+    <param name="description">Save plan as draft PR with branch slug</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3300" cache_read_input_tokens="65499" output_tokens="203" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3300, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VcmP472qVZtR1UNR1tzKRE">
+{"success": true, "plan_number": 8850, "plan_url": "https://github.com/dagster-io/erk/pull/8850", "title": "[erk-plan] Fix Graphite divergence in incremental-dispatch after plumbing commit", "branch_name": "plnd/fix-incremental-dispatch-r-03-06-1247", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.erk/scratch/sessions/4f79cb1a-3196-4971-a4f8-4ffff314fc36/plan_snapshots/000001-1e218b84"}
+  </tool_result>
+  <assistant>Plan saved as draft PR #8850: https://github.com/dagster-io/erk/pull/8850
+
+Now pushing the planning session:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1599" cache_read_input_tokens="68799" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1599}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01EW9JuLAwMS67eefYW4mfPA">
+    <param name="command">erk exec upload-impl-session --session-id "4f79cb1a-3196-4971-a4f8-4ffff314fc36" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1599" cache_read_input_tokens="68799" output_tokens="174" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1599, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01EW9JuLAwMS67eefYW4mfPA">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan saved as draft PR #8850.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="70398" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 311}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_0113zBoj4Lnxg4bB1Rka94kg">
+    <param name="plan"># Fix Graphite divergence in incremental-dispatch after plumbing commit
+
+## Context
+
+`erk ...[truncated 1798 chars]...&gt;` from a worktree where the branch is checked out, then `gt log` — no divergence warning
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="311" cache_read_input_tokens="70398" output_tokens="48" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 311, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0113zBoj4Lnxg4bB1Rka94kg">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8850 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8850:
+  In current wt:    source "$(erk br co --for-plan 8850 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8850 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8850 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8850 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8850:
+  In current wt:  erk br co --for-plan 8850
+  In new wt:      erk br co --new-slot --for-plan 8850
+
+Dispatch plan #8850:
+  CLI command:    erk pr dispatch 8850
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan #8850 saved. Next steps:
+
+**Implement plan #8850:**
+```
+In current wt:    source "$(erk br co --for-plan 8850 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --for-plan 8850 --script)" &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 8850 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 8850 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout plan #8850:**
+```
+In current wt:  erk br co --for-plan 8850
+In new wt:      erk br co --new-slot --for-plan 8850
+```
+
+**Dispatch plan #8850:**
+```
+CLI command:    erk pr dispatch 8850
+Slash command:  /erk:pr-dispatch
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="430" cache_read_input_tokens="70709" output_tokens="247" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 430, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>
