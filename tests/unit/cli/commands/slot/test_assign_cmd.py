@@ -426,6 +426,165 @@ def test_slot_assign_cleans_up_artifacts_when_reusing_worktree() -> None:
         assert not scratch_folder.exists(), ".erk/scratch/ folder should be removed"
 
 
+def test_slot_assign_from_current_branch_moves_branch_to_slot() -> None:
+    """Test --from-current-branch moves current branch to slot and switches worktree."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("feature-work"),
+            current_branches={env.cwd: "feature-work"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-work"]},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        result = runner.invoke(
+            cli,
+            ["slot", "assign", "--from-current-branch"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "Assigned feature-work to erk-slot-01" in result.output
+
+        # Verify state was persisted
+        state = load_pool_state(repo.pool_json_path)
+        assert state is not None
+        assert len(state.assignments) == 1
+        assert state.assignments[0].branch_name == "feature-work"
+
+        # Verify worktree was switched to trunk (main)
+        assert git_ops.branch._checked_out_branches == [(env.cwd, "main")]
+
+
+def test_slot_assign_from_current_branch_detaches_when_trunk_in_use() -> None:
+    """Test --from-current-branch detaches HEAD when target branch is checked out elsewhere."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        repo_dir = env.setup_repo_structure()
+
+        # Create a worktree that already has 'main' checked out
+        other_worktree = repo_dir / "worktrees" / "other-wt"
+        other_worktree.mkdir(parents=True)
+
+        worktrees = env.build_worktrees("feature-work")
+        worktrees[env.cwd].append(WorktreeInfo(path=other_worktree, branch="main"))
+
+        git_ops = FakeGit(
+            worktrees=worktrees,
+            current_branches={env.cwd: "feature-work", other_worktree: "main"},
+            git_common_dirs={env.cwd: env.git_dir, other_worktree: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-work"]},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        result = runner.invoke(
+            cli,
+            ["slot", "assign", "--from-current-branch"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 0
+        assert "Assigned feature-work to erk-slot-01" in result.output
+
+        # Verify detached HEAD checkout was used (because main is in use elsewhere)
+        assert git_ops.branch._detached_checkouts == [(env.cwd, "feature-work")]
+
+
+def test_slot_assign_from_current_branch_fails_on_trunk() -> None:
+    """Test --from-current-branch fails when already on trunk branch."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("main"),
+            current_branches={env.cwd: "main"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main"]},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        result = runner.invoke(
+            cli,
+            ["slot", "assign", "--from-current-branch"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 1
+        assert "Cannot use --from-current-branch" in result.output
+
+
+def test_slot_assign_from_current_branch_with_branch_arg_fails() -> None:
+    """Test that providing both BRANCH and --from-current-branch fails."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        repo_dir = env.setup_repo_structure()
+
+        git_ops = FakeGit(
+            worktrees=env.build_worktrees("feature-work"),
+            current_branches={env.cwd: "feature-work"},
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "feature-work"]},
+        )
+
+        repo = RepoContext(
+            root=env.cwd,
+            repo_name=env.cwd.name,
+            repo_dir=repo_dir,
+            worktrees_dir=repo_dir / "worktrees",
+            pool_json_path=repo_dir / "pool.json",
+        )
+
+        test_ctx = env.build_context(git=git_ops, repo=repo)
+
+        result = runner.invoke(
+            cli,
+            ["slot", "assign", "--from-current-branch", "some-branch"],
+            obj=test_ctx,
+            catch_exceptions=False,
+        )
+
+        assert result.exit_code == 1
+        assert "Cannot specify both" in result.output
+
+
 def test_slot_assign_creates_activation_script() -> None:
     """Test that slot assign creates .erk/bin/activate.sh in the worktree."""
     runner = CliRunner()
