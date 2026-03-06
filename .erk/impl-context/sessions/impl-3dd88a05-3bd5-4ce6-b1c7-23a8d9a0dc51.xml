@@ -1,0 +1,1091 @@
+<session>
+  <meta branch="plnd/add-branch-name-to-run-nam-03-05-1936" />
+  <meta model="claude-sonnet-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="3dd88a05-3bd5-4ce6-b1c7-23a8d9a0dc51" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="3dd88a05-3bd5-4ce6-b1c7-23a8d9a0dc51" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="3dd88a05-3bd5-4ce6-b1c7-23a8d9a0dc51" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="3dd88a05-3bd5-4ce6-b1c7-23a8d9a0dc51" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="16369" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 16369}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_018zVF6xbo2n7PCqQX3GUSWa">
+    <param name="query">select:Bash,Read</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="16369" cache_read_input_tokens="0" output_tokens="117" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 16369, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_018zVF6xbo2n7PCqQX3GUSWa">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="3932" cache_read_input_tokens="16369" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3932}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01N4imA8kKkzbUZu4nJ6gE1H">
+    <param name="command">erk exec setup-impl 2&gt;&amp;1</param>
+    <param name="description">Run setup-impl to auto-detect implementation context</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3932" cache_read_input_tokens="16369" output_tokens="146" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3932, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01N4imA8kKkzbUZu4nJ6gE1H">
+Found existing impl dir for plan #8809, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.erk/impl-context/plnd--add-branch-name-to-run-nam-03-05-1936", "plan_number": 8809, "plan_url": "https://github.com/dagster-io/erk/pull/8809", "branch": "plnd/add-branch-name-to-run-nam-03-05-1936", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8809, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <tool_use name="Read" id="toolu_01XuxqJGHDEFWj89RyqZ2oLq">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.erk/impl-context/plnd--add-branch-name-to-run-nam-03-05-1936/plan.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="334" cache_read_input_tokens="20301" output_tokens="111" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 334, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XuxqJGHDEFWj89RyqZ2oLq">
+     1→# Add branch name to workflow run-name for better context
+     2→
+     3→## Context
+     4→
+     5→GitHub Actions workflow run links show a `run-name` like `142:#460:abc456` which gives no context about what the change is about. Daniel requested the workflow link give more context. The `branch_name` input (e.g. `plnd/fix-auth-bug-01-15-1430`) is already available and provides human-readable context.
+     6→
+     7→## Constraint
+     8→
+     9→The `:{distinct_id}` suffix must remain — it's used by `real.py:438` (`f":{distinct_id}" in display_title`) for run correlation. The `#NNN` pattern is used by `extract_pr_number()` in `shared.py`. Both must be preserved.
+    10→
+    11→## Changes
+    12→
+    13→### 1. `.github/workflows/plan-implement.yml` (line 2)
+    14→
+    15→```yaml
+    16→# Before: "142:#460:abc456"
+    17→# After:  "plnd/fix-auth-bug-01-15-1430 (#460):abc456"
+    18→run-name: "${{ inputs.branch_name }} (#${{ inputs.pr_number }}):${{ inputs.distinct_id }}"
+    19→```
+    20→
+    21→### 2. Other workflows — leave as-is
+    22→
+    23→- `one-shot.yml` — `branch_name` isn't an input at the top level (generated mid-workflow)
+    24→- `pr-address.yml`, `pr-rebase.yml`, `pr-rewrite.yml` — already have descriptive prefixes
+    25→
+    26→### 3. Update `extract_plan_number()` in `src/erk/cli/commands/run/shared.py`
+    27→
+    28→Currently expects `display_title` to start with a plan number (`142:abc456`). With the new format the plan number is no longer at the start. Since plan number equals PR number for planned PRs (both are `plan_id`), and `extract_pr_number()` already extracts `#NNN`, we can either:
+    29→- Update `extract_plan_number()` to handle the new format
+    30→- Check if any callers depend on it and simplify
+
+... [18 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="973" cache_read_input_tokens="20635" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 973}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01RcTAvvXWG1uQGbpoSgy8kz">
+    <param name="query">select:TaskCreate</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="973" cache_read_input_tokens="20635" output_tokens="207" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 973, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01RcTAvvXWG1uQGbpoSgy8kz">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="970" cache_read_input_tokens="21608" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 970}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskCreate" id="toolu_01NwYCYQAcs9RQMR6mzFZxxY">
+    <param name="subject">Update run-name in plan-implement.yml</param>
+    <param name="description">Change the run-name from "142:#460:abc456" format to "plnd/fix-auth-bug (#460):abc456" format</param>
+    <param name="activeForm">Updating plan-implement.yml run-name</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="970" cache_read_input_tokens="21608" output_tokens="167" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 970, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NwYCYQAcs9RQMR6mzFZxxY">
+Task #1 created successfully: Update run-name in plan-implement.yml
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01GfdKxstKx8MEDbpyLpbfgp">
+    <param name="subject">Update extract_plan_number() in shared.py</param>
+    <param name="description">Update the parser to handle the new display_title format where plan number is inside (#NNN) instead of at the start</param>
+    <param name="activeForm">Updating extract_plan_number()</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="198" cache_read_input_tokens="22578" output_tokens="128" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 198, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GfdKxstKx8MEDbpyLpbfgp">
+Task #2 created successfully: Update extract_plan_number() in shared.py
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01My2RMhsVDCL6FLhDWAybF2">
+    <param name="subject">Update tests</param>
+    <param name="description">Update test fixtures and parser tests in test_list.py and test_shared.py to match new format</param>
+    <param name="activeForm">Updating tests</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="22776" output_tokens="111" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 158, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01My2RMhsVDCL6FLhDWAybF2">
+Task #3 created successfully: Update tests
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01T5oP7cffTNyEFDXNKYSyM6">
+    <param name="command">erk exec impl-signal started --session-id="3dd88a05-3bd5-4ce6-b1c7-23a8d9a0dc51" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="132" cache_read_input_tokens="22934" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 132, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01T5oP7cffTNyEFDXNKYSyM6">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8809
+}
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01AS5wnzKLYBj5GqVboMZcWk">
+    <param name="query">select:TaskUpdate,Grep,Glob</param>
+    <param name="max_results">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="157" cache_read_input_tokens="23066" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 157, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01AS5wnzKLYBj5GqVboMZcWk">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="2400" cache_read_input_tokens="23223" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2400}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_012S1CvFcz2PLCi1bWrcqL6L">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2400" cache_read_input_tokens="23223" output_tokens="96" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2400, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012S1CvFcz2PLCi1bWrcqL6L">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Nnp3YMhdaHJhcscieR4uFL">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/plan-implement.yml</param>
+    <param name="limit">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="116" cache_read_input_tokens="25623" output_tokens="105" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 116, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Nnp3YMhdaHJhcscieR4uFL">
+     1→name: plan-implement
+     2→run-name: "${{ inputs.plan_id }}:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      plan_id:
+     8→        description: "Plan identifier to implement"
+     9→        required: true
+    10→        type: string
+    11→      submitted_by:
+    12→        description: "GitHub username of the person who submitted the issue"
+    13→        required: true
+    14→        type: string
+    15→      distinct_id:
+    16→        description: "Unique identifier for run discovery (base36)"
+    17→        required: true
+    18→        type: string
+    19→      plan_title:
+    20→        description: "Plan title for workflow run display"
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="414" cache_read_input_tokens="25739" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 414}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014DNtP7nSYDjRT7CdsPj63X">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/plan-implement.yml</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="414" cache_read_input_tokens="25739" output_tokens="171" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 414, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014DNtP7nSYDjRT7CdsPj63X">
+     1→name: plan-implement
+     2→run-name: "${{ inputs.plan_id }}:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"
+     3→
+     4→on:
+     5→  workflow_dispatch:
+     6→    inputs:
+     7→      plan_id:
+     8→        description: "Plan identifier to implement"
+     9→        required: true
+    10→        type: string
+    11→      submitted_by:
+    12→        description: "GitHub username of the person who submitted the issue"
+    13→        required: true
+    14→        type: string
+    15→      distinct_id:
+    16→        description: "Unique identifier for run discovery (base36)"
+    17→        required: true
+    18→        type: string
+    19→      plan_title:
+    20→        description: "Plan title for workflow run display"
+    21→        required: true
+    22→        type: string
+    23→      branch_name:
+    24→        description: "Branch name for implementation (created by submit command)"
+    25→        required: true
+    26→        type: string
+    27→      pr_number:
+    28→        description: "PR number for implementation (created by submit command)"
+    29→        required: true
+    30→        type: string
+
+... [35 lines omitted] ...
+  </tool_result>
+  <assistant>`branch_name` is available as an input. Now let me read the shared.py and test files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="899" cache_read_input_tokens="26153" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 899}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_016e3qJMAmqxdHWCsX2XiE4g">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/run/shared.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="899" cache_read_input_tokens="26153" output_tokens="117" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 899, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016e3qJMAmqxdHWCsX2XiE4g">
+     1→"""Shared utilities for run commands."""
+     2→
+     3→import re
+     4→
+     5→
+     6→def extract_pr_number(display_title: str | None) -&gt; int | None:
+     7→    """Extract PR number from display_title containing '#NNN'.
+     8→
+     9→    Handles:
+    10→    - "pr-address:#456:abc123" → 456
+    11→    - "8559:#460:abc123" → 460
+    12→    - "one-shot:#458:abc123" → 458
+    13→    - "rebase:#456:abc123" → 456
+    14→    - "8559:abc123" (old format, no #) → None
+    15→    - "Some title [abc123]" (legacy) → None
+    16→    - None or empty → None
+    17→    """
+    18→    if not display_title:
+    19→        return None
+    20→    match = re.search(r"#(\d+)", display_title)
+    21→    if match is None:
+    22→        return None
+    23→    return int(match.group(1))
+    24→
+    25→
+    26→def extract_plan_number(display_title: str | None) -&gt; int | None:
+    27→    """Extract plan number from display_title format '123:abc456'.
+    28→
+    29→    Handles:
+    30→    - New format: "123:abc456" → 123
+
+... [17 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01ErPDJVMBNWnKj5V3jX4xsc">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_shared.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="731" cache_read_input_tokens="27052" output_tokens="90" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 731, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ErPDJVMBNWnKj5V3jX4xsc">
+     1→"""Unit tests for run command shared utilities.
+     2→
+     3→Tests the extract_plan_number and extract_pr_number helper functions
+     4→for parsing display_title formats.
+     5→"""
+     6→
+     7→from erk.cli.commands.run.shared import extract_plan_number, extract_pr_number
+     8→
+     9→
+    10→def test_extract_plan_number_new_format() -&gt; None:
+    11→    """Test parsing new format: '123:abc456' → 123."""
+    12→    assert extract_plan_number("123:abc456") == 123
+    13→    assert extract_plan_number("1:x") == 1
+    14→    assert extract_plan_number("999:distinct-id-here") == 999
+    15→
+    16→
+    17→def test_extract_plan_number_old_format_returns_none() -&gt; None:
+    18→    """Test old format: 'Issue title [abc123]' → None."""
+    19→    # Old format has title first, then distinct_id in brackets
+    20→    assert extract_plan_number("Add user authentication [abc123]") is None
+    21→    assert extract_plan_number("Fix bug in parser [xyz789]") is None
+    22→
+    23→
+    24→def test_extract_plan_number_with_colon_in_title_returns_none() -&gt; None:
+    25→    """Test titles with colons but non-numeric prefix → None."""
+    26→    # These look like they have colons but the prefix isn't a number
+    27→    assert extract_plan_number("Feature: Add caching [abc]") is None
+    28→    assert extract_plan_number("Bug fix: memory leak [xyz]") is None
+    29→
+    30→
+
+... [69 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6463" cache_read_input_tokens="27783" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6463}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01TJBtnfwQxUEyiooEjhGcMD">
+    <param name="pattern">display_title</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run</param>
+    <param name="output_mode">content</param>
+    <param name="context">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6463" cache_read_input_tokens="27783" output_tokens="180" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6463, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TJBtnfwQxUEyiooEjhGcMD">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py-104-
+tests/commands/run/test_list.py-105-def test_list_runs_pr_address_format_shows_pr(tmp_path: Path) -&gt; None:
+tests/commands/run/test_list.py:106:    """PR-address runs with #NNN in display_title show the PR number."""
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py-107-    workflow_runs = [
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py-108-        WorkflowRun(
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py-112-            branch="feat-1",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py-113-            head_sha="abc123",
+tests/commands/run/test_list.py:114:            display_title="pr-address:#456:abc123",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py-115-        ),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py-116-    ]
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py-136-            branch="feat-1",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py-137-            head_sha="abc123",
+tests/commands/run/test_list.py:138:            display_title="142:#460:abc456",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py-139-        ),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py-140-    ]
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py-160-            branch="feat-1",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py-161-            head_sha="abc123",
+tests/commands/run/test_list.py:162:            display_title="142:abc456",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py-163-        ),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py-164-    ]
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py-205-            branch="feat-1",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py-206-            head_sha="abc123",
+tests/commands/run/test_list.py:207:            display_title="Some legacy title [abc123]",
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py-208-        ),
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py-209-    ]
+--
+
+... [83 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4324" cache_read_input_tokens="34246" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4324}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01H86zT2bKnM7MLsSvyxsU1R">
+    <param name="pattern">extract_plan_number</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src</param>
+    <param name="output_mode">content</param>
+    <param name="context">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4324" cache_read_input_tokens="34246" output_tokens="498" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4324, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H86zT2bKnM7MLsSvyxsU1R">
+src/erk/cli/commands/learn/learn_cmd.py-37-    last_remote_impl_at: str | None
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/learn/learn_cmd.py-38-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/learn/learn_cmd.py-39-
+src/erk/cli/commands/learn/learn_cmd.py:40:def _extract_plan_number(identifier: str) -&gt; int | None:
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/learn/learn_cmd.py-41-    """Extract plan number from identifier (number or URL).
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/learn/learn_cmd.py-42-
+src/erk/cli/commands/learn/learn_cmd.py-43-    Args:
+--
+src/erk/cli/commands/learn/learn_cmd.py-108-    # Resolve plan_id: explicit argument or infer from branch
+src/erk/cli/commands/learn/learn_cmd.py-109-    plan_id: str | None = None
+src/erk/cli/commands/learn/learn_cmd.py-110-    if plan is not None:
+src/erk/cli/commands/learn/learn_cmd.py:111:        plan_number = _extract_plan_number(plan)
+src/erk/cli/commands/learn/learn_cmd.py-112-        if plan_number is None:
+src/erk/cli/commands/learn/learn_cmd.py-113-            user_output(click.style(f"Error: Invalid plan identifier: {plan}", fg="red"))
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/learn/learn_cmd.py-114-            raise SystemExit(1)
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/run/shared.py-23-    return int(match.group(1))
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/run/shared.py-24-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/run/shared.py-25-
+src/erk/cli/commands/run/shared.py:26:def extract_plan_number(display_title: str | None) -&gt; int | None:
+src/erk/cli/commands/run/shared.py-27-    """Extract plan number from display_title format '123:abc456'.
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/run/shared.py-28-
+src/erk/cli/commands/run/shared.py-29-    Handles:
+--
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/run/list_cmd.py-8-from rich.table import Table
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/run/list_cmd.py-9-
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/run/list_cmd.py-10-from erk.cli.commands.pr.list_cmd import format_pr_cell
+src/erk/cli/commands/run/list_cmd.py:11:from erk.cli.commands.run.shared import extract_plan_number, extract_pr_number
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/run/list_cmd.py-12-from erk.cli.constants import WORKFLOW_COMMAND_MAP
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/run/list_cmd.py-13-from erk.cli.core import discover_repo_context
+
+... [49 lines omitted] ...
+
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/exec/scripts/track_learn_evaluation.py-171-            error = TrackLearnError(
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/exec/scripts/get_learn_sessions.py-284-            error = GetLearnSessionsErrorDict(
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3557" cache_read_input_tokens="38570" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3557}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Gx3Qdv15HW18h8BiXucUZh">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/run/list_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3557" cache_read_input_tokens="38570" output_tokens="1029" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3557, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Gx3Qdv15HW18h8BiXucUZh">
+     1→"""List workflow runs command."""
+     2→
+     3→from datetime import UTC, datetime
+     4→
+     5→import click
+     6→from rich.console import Console
+     7→from rich.markup import escape as escape_markup
+     8→from rich.table import Table
+     9→
+    10→from erk.cli.commands.pr.list_cmd import format_pr_cell
+    11→from erk.cli.commands.run.shared import extract_plan_number, extract_pr_number
+    12→from erk.cli.constants import WORKFLOW_COMMAND_MAP
+    13→from erk.cli.core import discover_repo_context
+    14→from erk.cli.ensure import Ensure
+    15→from erk.core.context import ErkContext
+    16→from erk.core.display_utils import (
+    17→    format_submission_time,
+    18→    format_workflow_outcome,
+    19→    format_workflow_run_id,
+    20→)
+    21→from erk.core.pr_utils import select_display_pr
+    22→from erk_shared.gateway.github.emoji import format_checks_cell
+    23→from erk_shared.gateway.github.parsing import github_repo_location_from_url
+    24→from erk_shared.gateway.github.types import GitHubRepoId, PullRequestInfo, WorkflowRun
+    25→from erk_shared.output.output import user_output
+    26→
+    27→_MAX_DISPLAY_RUNS = 50
+    28→_PER_WORKFLOW_LIMIT = 20
+    29→_MAX_TITLE_LENGTH = 50
+    30→
+
+... [167 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3986" cache_read_input_tokens="42127" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3986}" output_tokens="12" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01389V3tRm3FpBZcttNzczs8">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py</param>
+    <param name="limit">180</param>
+    <param name="offset">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3986" cache_read_input_tokens="42127" output_tokens="1542" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3986, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01389V3tRm3FpBZcttNzczs8">
+   120→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   121→
+   122→    assert result.exit_code == 0
+   123→    assert "1234567890" in result.output
+   124→    assert "#456" in result.output
+   125→
+   126→
+   127→def test_list_runs_new_plan_implement_format_shows_pr(
+   128→    tmp_path: Path,
+   129→) -&gt; None:
+   130→    """New plan-implement format with #pr_number shows PR directly."""
+   131→    workflow_runs = [
+   132→        WorkflowRun(
+   133→            run_id="555666",
+   134→            status="completed",
+   135→            conclusion="success",
+   136→            branch="feat-1",
+   137→            head_sha="abc123",
+   138→            display_title="142:#460:abc456",
+   139→        ),
+   140→    ]
+   141→    ctx = _make_ctx(tmp_path, workflow_runs=workflow_runs)
+   142→
+   143→    runner = CliRunner()
+   144→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   145→
+   146→    assert result.exit_code == 0
+   147→    assert "#460" in result.output
+   148→    assert "plan-implement" in result.output
+   149→
+
+... [155 lines omitted] ...
+
+   190→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   213→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   251→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   275→            conclusion="failure",
+   292→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3735" cache_read_input_tokens="46113" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3735}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DwzZ3QKunfN37QPfmQkHV1">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py</param>
+    <param name="limit">120</param>
+    <param name="offset">300</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3735" cache_read_input_tokens="46113" output_tokens="1314" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3735, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DwzZ3QKunfN37QPfmQkHV1">
+   300→    assert "#203" in result.output
+   301→
+   302→
+   303→def test_list_runs_truncates_long_titles(tmp_path: Path) -&gt; None:
+   304→    """Test list command truncates PR titles longer than 50 characters."""
+   305→    long_title = (
+   306→        "This is a very long title that exceeds fifty characters "
+   307→        "and should be truncated with ellipsis"
+   308→    )
+   309→    workflow_runs = [
+   310→        WorkflowRun(
+   311→            run_id="123",
+   312→            status="completed",
+   313→            conclusion="success",
+   314→            branch="feat-1",
+   315→            head_sha="abc123",
+   316→            display_title="142:abc",
+   317→        ),
+   318→    ]
+   319→
+   320→    pr_info = PullRequestInfo(
+   321→        number=201,
+   322→        state="OPEN",
+   323→        url="https://github.com/owner/repo/pull/201",
+   324→        is_draft=False,
+   325→        title=long_title,
+   326→        checks_passing=True,
+   327→        owner="owner",
+   328→        repo="repo",
+   329→        has_conflicts=False,
+
+... [95 lines omitted] ...
+
+   344→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   369→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   392→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+   413→    result = runner.invoke(list_runs, obj=ctx, catch_exceptions=False)
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2996" cache_read_input_tokens="49848" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2996}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a complete picture. Let me make all the changes.
+
+**Phase 1: Update `plan-implement.yml`**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2996" cache_read_input_tokens="49848" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2996}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01W5UTKqG8v99Zx2kRkWEFaH">
+    <param name="query">select:Edit</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2996" cache_read_input_tokens="49848" output_tokens="1064" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2996, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01W5UTKqG8v99Zx2kRkWEFaH">
+
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Hz3DX7EkNY4KqxmJsoCoFS">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/plan-implement.yml</param>
+    <param name="old_string">run-name: "${{ inputs.plan_id }}:#${{ inputs.pr_number }}:${{ inputs.distinct_id }}"</param>
+    <param name="new_string">run-name: "${{ inputs.branch_name }} (#${{ inputs.pr_number }}):${{ inputs.distinct_id }}"</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1523" cache_read_input_tokens="52844" output_tokens="186" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1523, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Hz3DX7EkNY4KqxmJsoCoFS">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.github/workflows/plan-implement.yml has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_018rVWuVoG3wpuWvJaboqW4U">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="262" cache_read_input_tokens="54367" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 262, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018rVWuVoG3wpuWvJaboqW4U">
+Updated task #1 status
+  </tool_result>
+  <assistant>**Phase 2: Update `extract_plan_number()` in shared.py**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="54629" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01ApNC9A9sUfjDGqvhHLnr6F">
+    <param name="taskId">2</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="54629" output_tokens="92" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 88, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ApNC9A9sUfjDGqvhHLnr6F">
+Updated task #2 status
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01WwrDo3FeUkzwuyYM2thSkG">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/run/shared.py</param>
+    <param name="old_string">def extract_plan_number(display_title: str | None) -&gt; int | None:
+    """Extract plan numb...[truncated 86 chars]...rmat: "Issue title [abc123]" → None (no colon at start)
+    - None or empty → None
+    """</param>
+    <param name="new_string">def extract_plan_number(display_title: str | None) -&gt; int | None:
+    """Extract plan numb...[truncated 264 chars]...rmat: "Issue title [abc123]" → None (no colon at start)
+    - None or empty → None
+    """</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="110" cache_read_input_tokens="54717" output_tokens="367" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 110, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WwrDo3FeUkzwuyYM2thSkG">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/src/erk/cli/commands/run/shared.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01MNok1frRHwJ1PhqxsDyU37">
+    <param name="taskId">2</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="445" cache_read_input_tokens="54827" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 445, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MNok1frRHwJ1PhqxsDyU37">
+Updated task #2 status
+  </tool_result>
+  <assistant>**Phase 3: Update tests**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="55272" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="TaskUpdate" id="toolu_01Jz1MUxBKpT5CvKQYoFoffK">
+    <param name="taskId">3</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="55272" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 88, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Jz1MUxBKpT5CvKQYoFoffK">
+Updated task #3 status
+  </tool_result>
+  <assistant>First, update `test_shared.py` to add new format test cases:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="99" cache_read_input_tokens="55360" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 99}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_013mSjsdVtRXz4yDrHbZtMEX">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_shared.py</param>
+    <param name="old_string">def test_extract_pr_number_plan_implement_format() -&gt; None:
+    """Test new plan-implement...[truncated 38 chars]...r_number("8559:#460:abc123") == 460
+    assert extract_pr_number("142:#460:abc456") == 460</param>
+    <param name="new_string">def test_extract_pr_number_plan_implement_old_format() -&gt; None:
+    """Test old plan-imple...[truncated 339 chars]...0):abc456") == 460
+    assert extract_pr_number("plnd/add-feature (#8559):xyz123") == 8559</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="99" cache_read_input_tokens="55360" output_tokens="431" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 99, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013mSjsdVtRXz4yDrHbZtMEX">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_shared.py has been updated successfully.
+  </tool_result>
+  <assistant>Now add a test confirming new format returns None for `extract_plan_number`:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="487" cache_read_input_tokens="55459" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 487}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01JKZxdFRN6mj6ygffjmR8VZ">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_shared.py</param>
+    <param name="old_string">def test_extract_plan_number_with_colon_in_title_returns_none() -&gt; None:
+    """Test title...[truncated 144 chars]...ching [abc]") is None
+    assert extract_plan_number("Bug fix: memory leak [xyz]") is None</param>
+    <param name="new_string">def test_extract_plan_number_with_colon_in_title_returns_none() -&gt; None:
+    """Test title...[truncated 462 chars]...abc456") is None
+    assert extract_plan_number("plnd/add-feature (#8559):xyz123") is None</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="487" cache_read_input_tokens="55459" output_tokens="455" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 487, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JKZxdFRN6mj6ygffjmR8VZ">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_shared.py has been updated successfully.
+  </tool_result>
+  <assistant>Now update `test_list.py` — update the plan-implement style display_titles to use the new format:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="511" cache_read_input_tokens="55946" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 511}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FVSURpGPUBkFpBriEJ1f6T">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py</param>
+    <param name="old_string">def test_list_runs_new_plan_implement_format_shows_pr(
+    tmp_path: Path,
+) -&gt; None:
+    ...[truncated 216 chars]...          head_sha="abc123",
+            display_title="142:#460:abc456",
+        ),
+    ]</param>
+    <param name="new_string">def test_list_runs_new_plan_implement_format_shows_pr(
+    tmp_path: Path,
+) -&gt; None:
+    ...[truncated 263 chars]...          display_title="plnd/add-branch-name-to-run-name (#460):abc456",
+        ),
+    ]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="511" cache_read_input_tokens="55946" output_tokens="429" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 511, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FVSURpGPUBkFpBriEJ1f6T">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01TVY3ppXcozcxL7R17ejs29">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py</param>
+    <param name="old_string">        WorkflowRun(
+            run_id="111111",
+            status="completed",
+        ...[truncated 31 chars]...1",
+            head_sha="abc123",
+            display_title="142:#460:abc456",
+        ),</param>
+    <param name="new_string">        WorkflowRun(
+            run_id="111111",
+            status="completed",
+        ...[truncated 46 chars]... head_sha="abc123",
+            display_title="plnd/add-feature (#460):abc456",
+        ),</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="485" cache_read_input_tokens="56457" output_tokens="272" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 485, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TVY3ppXcozcxL7R17ejs29">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_0152CiYBTwyBssGpUy1fUNM5">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py</param>
+    <param name="old_string">            display_title="142:#201:abc",
+        ),
+        WorkflowRun(
+            run_...[truncated 304 chars]...at-3",
+            head_sha="ghi789",
+            display_title="144:#203:ghi",
+        ),</param>
+    <param name="new_string">            display_title="plnd/feat-1 (#201):abc",
+        ),
+        WorkflowRun(
+      ...[truncated 334 chars]...         head_sha="ghi789",
+            display_title="plnd/feat-3 (#203):ghi",
+        ),</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="328" cache_read_input_tokens="56942" output_tokens="441" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 328, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0152CiYBTwyBssGpUy1fUNM5">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01M4ezBG4sqay5p8LyDkadjL">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py</param>
+    <param name="old_string">            display_title="142:#460:abc456",
+        ),
+    ]
+    ctx = _make_ctx(tmp_path...[truncated 207 chars]..." in result.output
+    assert "555666" in result.output
+    assert "#460" in result.output</param>
+    <param name="new_string">            display_title="plnd/fix-auth-bug (#460):abc456",
+        ),
+    ]
+    ctx = _m...[truncated 223 chars]..." in result.output
+    assert "555666" in result.output
+    assert "#460" in result.output</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="497" cache_read_input_tokens="57270" output_tokens="398" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 497, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M4ezBG4sqay5p8LyDkadjL">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/tests/commands/run/test_list.py has been updated successfully.
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_017q6U2E3kiXy3pYbGb4yEXG">
+    <param name="taskId">3</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="454" cache_read_input_tokens="57767" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 454, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017q6U2E3kiXy3pYbGb4yEXG">
+Updated task #3 status
+  </tool_result>
+  <assistant>Now run CI to verify:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="58221" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 88}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01Ja8tDc3hAxuB8RBJTL2apL">
+    <param name="query">select:TaskCreate,TaskOutput</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="88" cache_read_input_tokens="58221" output_tokens="85" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 88, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01Ja8tDc3hAxuB8RBJTL2apL">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="1120" cache_read_input_tokens="58309" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1120}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_014WtxcS9atfTMruzJ2Bz4qN">
+    <param name="query">select:Agent</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1120" cache_read_input_tokens="58309" output_tokens="101" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1120, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_014WtxcS9atfTMruzJ2Bz4qN">
+
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01WwEWXugqDxtugbsvWqcvUp">
+    <param name="description">Run run-related tests</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the tests in tests/commands/run/ and report results. Command: uv run pytest tests/commands/run/ -v</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2307" cache_read_input_tokens="59429" output_tokens="121" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2307, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WwEWXugqDxtugbsvWqcvUp">
+pytest passed: 34 passed in 0.46s
+
+All tests in tests/commands/run/ passed successfully with no failures or skips.
+agentId: afc79f2a59692cb5a (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13596
+tool_uses: 1
+duration_ms: 4652&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 34 tests pass. Let me signal completion and clean up:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="224" cache_read_input_tokens="61736" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 224}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01HZQkhiXJmz3SdYtHh51eeb">
+    <param name="command">erk exec impl-signal ended --session-id="3dd88a05-3bd5-4ce6-b1c7-23a8d9a0dc51" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="224" cache_read_input_tokens="61736" output_tokens="135" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 224, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HZQkhiXJmz3SdYtHh51eeb">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8809
+}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01C9rJqJxR2BTtTA1hgnVNak">
+    <param name="command">erk exec upload-impl-session --session-id="3dd88a05-3bd5-4ce6-b1c7-23a8d9a0dc51" 2&gt;/dev/null || true</param>
+    <param name="description">Upload impl session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="173" cache_read_input_tokens="61960" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 173, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01C9rJqJxR2BTtTA1hgnVNak">
+{"uploaded": true, "plan_id": 8809}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01DMvqD6nThXWJ3fZpERHhix">
+    <param name="command">erk exec cleanup-impl-context 2&gt;&amp;1</param>
+    <param name="description">Clean up impl context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="148" cache_read_input_tokens="62133" output_tokens="84" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 148, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DMvqD6nThXWJ3fZpERHhix">
+{"cleaned": true}
+  </tool_result>
+  <assistant>Now check for CI hooks and run CI:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="100" cache_read_input_tokens="62281" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 100}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RRK5jr8fu55Mj65u7uvSjP">
+    <param name="command">test -f /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05/.erk/prompt-hooks/post-plan-i...[truncated 31 chars]...k/worktrees/erk-slot-05/.erk/prompt-hooks/post-plan-implement-ci.md || echo "no hook file"</param>
+    <param name="description">Check for CI hook</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="100" cache_read_input_tokens="62281" output_tokens="179" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 100, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RRK5jr8fu55Mj65u7uvSjP">
+# Post-Implementation CI
+
+Run CI validation after plan implementation using `make fast-ci`.
+
+Load the `ci-iteration` skill for the iterative fix workflow.
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01TM6orv3iwdVtoMRr68hZu9">
+    <param name="description">Run fast CI checks</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run `make fast-ci` in /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-05 and report all results including any failures. Report the full output.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="335" cache_read_input_tokens="62381" output_tokens="139" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 335, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TM6orv3iwdVtoMRr68hZu9">
+make fast-ci passed: All checks passed successfully across all components.
+
+**Summary:**
+- **Lint**: All checks passed
+- **Format Check**: 1614 files already formatted
+- **Prettier Check**: All files use Prettier code style
+- **Markdown Check**: AGENTS.md standard passed, 19 CLAUDE.md files checked, 0 violations
+- **Exec Reference Check**: .claude/skills/erk-exec/reference.md is up to date
+- **Type Check (ty)**: All checks passed
+- **Unit Tests (erk)**: 5647 passed in 20.42s
+- **Tests (erk-dev)**: 136 passed in 3.90s
+- **Tests (erk-statusline)**: 115 passed in 0.97s
+- **Tests (erk-mcp)**: 24 passed (installation complete)
+
+All checks and tests completed successfully with no failures.
+agentId: aa08555fdceff651c (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14550
+tool_uses: 1
+duration_ms: 47622&lt;/usage&gt;
+  </tool_result>
+  <assistant>All CI passes. Submitting the PR:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="418" cache_read_input_tokens="62716" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 418}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013prbmoxTEVZqhWWcn9M8FC">
+    <param name="command">erk pr submit 2&gt;&amp;1</param>
+    <param name="description">Submit PR with Graphite</param>
+    <param name="timeout">120000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="418" cache_read_input_tokens="62716" output_tokens="139" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 418, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013prbmoxTEVZqhWWcn9M8FC">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01YDUG4UTY3C43u3qxkgyaJk">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true &amp;&amp; erk pr check --stage=impl 2&gt;&amp;1</param>
+    <param name="description">Signal submitted and validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="63284" cache_read_input_tokens="0" output_tokens="101" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 63284, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01YDUG4UTY3C43u3qxkgyaJk">
+{
+  "success": false,
+  "event": "submitted",
+  "error_type": "no-plan-reference",
+  "message": "No plan reference found"
+}
+Checking PR #8809 for branch plnd/add-branch-name-to-run-nam-03-05-1936...
+
+[PASS] .erk/impl-context/ not present (cleaned up)
+[PASS] PR body contains checkout footer
+
+All checks passed
+  </tool_result>
+  <assistant>Plan execution complete. Summary of changes:
+
+**Changes made:**
+
+1. **`.github/workflows/plan-implement.yml` line 2** — Changed `run-name` format from `plan_id:#pr_number:distinct_id` to `branch_name (#pr_number):distinct_id`. Workflow runs now show e.g. `plnd/fix-auth-bug-01-15-1430 (#460):abc456` instead of `142:#460:abc456`.
+
+2. **`src/erk/cli/commands/run/shared.py`** — Updated `extract_plan_number()` docstring to clarify that the new plan-implement format is handled by `extract_pr_number()` instead (since plan_id == pr_number). No behavioral change needed — `extract_pr_number()` already handles the new format via `#NNN` regex.
+
+3. **`tests/commands/run/test_shared.py`** — Added `test_extract_pr_number_plan_implement_new_format` to verify the new format extracts PR numbers correctly, and `test_extract_plan_number_new_plan_implement_format_returns_none` to document that `extract_plan_number()` returns None for the new format.
+
+4. **`tests/commands/run/test_list.py`** — Updated plan-implement `display_title` fixtures from old `"142:#460:abc456"` style to new `"plnd/branch-name (#460):abc456"` style.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="220" cache_read_input_tokens="63284" output_tokens="353" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 220, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Catch you later!&lt;/local-command-stdout&gt;</user>
+</session>
