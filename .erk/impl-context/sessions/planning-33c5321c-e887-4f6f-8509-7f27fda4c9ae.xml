@@ -1,0 +1,1960 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>I'd like to explore the possibility of, instead of having erk land be required, being able to also have a command that an admin could install as, say, a post-commit hook or a post-merge hook. That would do all the things that land does so that, for example, people could still do merges from web UIs that are not under our control. It might not be as ideal; there might need to be cleanup after manually for folks in their local state, but through some sort of sync command or something. I think that's okay so let's think about this and how would this work </user>
+  <user>[Request interrupted by user]</user>
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>continue</user>
+  <usage input_tokens="3" cache_creation_input_tokens="9594" cache_read_input_tokens="4896" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9594}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me understand what `erk land` currently does before designing the hook approach.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="9594" cache_read_input_tokens="4896" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9594}" output_tokens="11" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01TJ18zw89kZHzgPSUafYymr">
+    <param name="query">select:Agent,Read,Grep,Glob</param>
+    <param name="max_results">5</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="9594" cache_read_input_tokens="4896" output_tokens="230" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9594, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01TJ18zw89kZHzgPSUafYymr">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="4347" cache_read_input_tokens="14490" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4347}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01AgGG5PpPeKvVJVUUsoYJsB">
+    <param name="pattern">def land|class.*Land|erk land|erk:land</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="glob">*.{py,md}</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4347" cache_read_input_tokens="14490" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4347}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01Nss8gWaREpK9tG5hbSZ7bR">
+    <param name="pattern">**/*land*</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4347" cache_read_input_tokens="14490" output_tokens="245" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4347, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AgGG5PpPeKvVJVUUsoYJsB">
+Found 71 files
+tests/tui/commands/test_execute_command.py
+tests/tui/app/test_async_operations.py
+tests/tui/app/test_command_palette.py
+CHANGELOG.md
+tests/tui/commands/test_registry.py
+src/erk/tui/commands/registry.py
+docs/learned/planning/learn-workflow.md
+docs/learned/planning/learn-vs-implementation-plans.md
+docs/learned/architecture/index.md
+tests/commands/land/test_git_pull.py
+tests/commands/land/test_up_flag.py
+src/erk/cli/commands/land_pipeline.py
+docs/learned/objectives/objective-lifecycle.md
+docs/learned/erk/index.md
+docs/learned/cli/index.md
+docs/learned/architecture/tripwires.md
+tests/unit/cli/test_activation.py
+src/erk/cli/activation.py
+docs/learned/cli/land-learn-integration.md
+tests/unit/cli/commands/land/test_render_land_script.py
+src/erk/cli/commands/land_cmd.py
+src/erk/cli/commands/exec/scripts/land_execute.py
+.claude/commands/erk/land.md
+.claude/commands/erk/learn.md
+docs/learned/planning/session-preprocessing.md
+docs/learned/planning/learn-pipeline-workflow.md
+docs/learned/glossary.md
+docs/ref/slash-commands.md
+docs/howto/planless-workflow.md
+
+... [42 lines omitted] ...
+
+tests/commands/land/test_branch_errors.py
+  </tool_result>
+  <tool_result tool="toolu_01Nss8gWaREpK9tG5hbSZ7bR">
+/Users/schrockn/code/erk/.venv/lib/python3.13/site-packages/pygments/styles/borland.py
+/Users/schrockn/code/erk/.erk/scratch/sessions/a3b5e323-3125-4631-a497-a4d149757795/plans/000001-dde4c41b/vivid-pondering-island.md
+/Users/schrockn/code/erk/.erk/scratch/sessions/a3b5e323-3125-4631-a497-a4d149757795/plans/000001-dde4c41b/vivid-pondering-island.meta.json
+/Users/schrockn/code/erk/.erk/scratch/sessions/727a38fc-65a5-46c5-a353-849526bccf4d/plans/000001-d284408b/nested-chasing-island.md
+/Users/schrockn/code/erk/.erk/scratch/sessions/727a38fc-65a5-46c5-a353-849526bccf4d/plans/000001-d284408b/nested-chasing-island.meta.json
+/Users/schrockn/code/erk/.erk/scratch/sessions/24cc5957-5284-41bd-a51c-5abb755fcf24/plans/000001-eeb483ce/peppy-juggling-sutherland.md
+/Users/schrockn/code/erk/.erk/scratch/sessions/24cc5957-5284-41bd-a51c-5abb755fcf24/plans/000001-eeb483ce/peppy-juggling-sutherland.meta.json
+/Users/schrockn/code/erk/.erk/scratch/sessions/80c81f97-3949-4be6-9660-4c5d582ac9b5/plans/000001-98bf3096/eager-twirling-sutherland.md
+/Users/schrockn/code/erk/.erk/scratch/sessions/80c81f97-3949-4be6-9660-4c5d582ac9b5/plans/000001-98bf3096/eager-twirling-sutherland.meta.json
+/Users/schrockn/code/erk/.erk/scratch/sessions/07c2da5e-e627-411a-9989-2b3bcda231fd/plans/000001-214f4675/lively-spinning-island.md
+/Users/schrockn/code/erk/.erk/scratch/sessions/07c2da5e-e627-411a-9989-2b3bcda231fd/plans/000001-214f4675/lively-spinning-island.meta.json
+/Users/schrockn/code/erk/tests/unit/cli/commands/exec/scripts/test_land_execute.py
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/gt/operations/land_pr.py
+/Users/schrockn/code/erk/tests/unit/cli/commands/land/test_validate_pr_for_landing.py
+/Users/schrockn/code/erk/docs/learned/architecture/land-state-threading.md
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/objective_apply_landed_update_result.py
+/Users/schrockn/code/erk/tests/unit/cli/commands/exec/scripts/test_objective_apply_landed_update.py
+/Users/schrockn/code/erk/.claude/commands/erk/system/objective-update-with-landed-pr.md
+/Users/schrockn/code/erk/docs/learned/cli/learn-plan-land-flow.md
+/Users/schrockn/code/erk/docs/learned/planning/objective-update-after-land.md
+/Users/schrockn/code/erk/tests/unit/cli/commands/exec/scripts/test_objective_update_after_land.py
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/objective_update_after_land.py
+/Users/schrockn/code/erk/tests/unit/cli/commands/exec/scripts/test_land_execute_objective_detection.py
+/Users/schrockn/code/erk/.claude/commands/erk/land.md
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/land_execute.py
+/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py
+/Users/schrockn/code/erk/tests/unit/cli/commands/land/test_render_land_script.py
+/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py
+/Users/schrockn/code/erk/tests/unit/cli/commands/land/test_land_learn.py
+/Users/schrockn/code/erk/.erk/bin/land.sh
+
+... [68 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_012KQXy2kos3dsuSGEy81sAT">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5572" cache_read_input_tokens="18837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5572}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012KQXy2kos3dsuSGEy81sAT">
+     1→"""Linear pipelines for the land command.
+     2→
+     3→Two pipelines bridge the shell script serialization boundary:
+     4→- Validation pipeline: runs in `erk land` CLI, gathers all state and confirmations
+     5→- Execution pipeline: runs in `erk exec land-execute`, performs mutations
+     6→
+     7→Each step: (ErkContext, LandState) -&gt; LandState | LandError
+     8→"""
+     9→
+    10→import dataclasses
+    11→from collections.abc import Callable
+    12→from dataclasses import dataclass
+    13→from functools import cache
+    14→from pathlib import Path
+    15→
+    16→import click
+    17→
+    18→from erk.cli.commands.land_learn import _create_learn_pr_with_sessions
+    19→from erk.cli.commands.navigation_helpers import check_clean_working_tree
+    20→from erk.cli.commands.objective_helpers import get_objective_for_branch
+    21→from erk.cli.core import discover_repo_context
+    22→from erk.cli.ensure import Ensure
+    23→from erk.cli.ensure_ideal import EnsureIdeal
+    24→from erk.core.context import ErkContext
+    25→from erk_shared.gateway.github.types import MergeError, PRDetails
+    26→from erk_shared.gateway.gt.cli import render_events
+    27→from erk_shared.gateway.gt.operations.land_pr import execute_land_pr
+    28→from erk_shared.gateway.gt.types import LandPrError
+    29→from erk_shared.output.output import user_output
+    30→from erk_shared.stack.validation import validate_parent_is_trunk
+
+... [581 lines omitted] ...
+
+    71→class LandError:
+    72→    """Error result from a pipeline step."""
+    75→    error_type: str
+    84→LandStep = Callable[[ErkContext, LandState], LandState | LandError]
+    92→def resolve_target(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   128→        return LandError(
+   130→            error_type="invalid_target",
+   145→) -&gt; LandState | LandError:
+   187→        validation_error = validate_parent_is_trunk(
+   193→            validation_error is None,
+   194→            validation_error.message if validation_error else "",
+   222→) -&gt; LandState | LandError:
+   227→        return LandError(
+   229→            error_type="up_with_pr",
+   264→) -&gt; LandState | LandError:
+   287→def validate_pr(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   300→        return LandError(
+   302→            error_type="no_pr_details",
+   332→def resolve_plan_id(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   341→def gather_confirmations(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   370→def resolve_objective(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   384→def merge_pr(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   391→        if isinstance(result, LandPrError):
+   392→            return LandError(
+   394→                error_type="graphite_merge_failed",
+   415→        if isinstance(merge_result, MergeError):
+   416→            return LandError(
+   418→                error_type="github_merge_failed",
+   419→                message=f"Failed to merge PR #{state.pr_number}\n\n{merge_result.message}",
+   428→def create_learn_pr(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   439→def cleanup_and_navigate(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   491→def run_validation_pipeline(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   492→    """Run the validation pipeline, returning final state or first error."""
+   495→        if isinstance(result, LandError):
+   501→def run_execution_pipeline(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   502→    """Run the execution pipeline, returning final state or first error."""
+   505→        if isinstance(result, LandError):
+  </tool_result>
+  <tool_use name="Read" id="toolu_01QTGDNXPo3LoUeup6vzTAob">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5572" cache_read_input_tokens="18837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5572}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01QTGDNXPo3LoUeup6vzTAob">
+&lt;persisted-output&gt;
+Output too large (68.4KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn-code-erk/33c5321c-e887-4f6f-8509-7f27fda4c9ae/tool-results/toolu_01QTGDNXPo3LoUeup6vzTAob.txt
+
+Preview (first 2KB):
+     1→"""Unified land command for PRs.
+     2→
+     3→This command merges a PR and cleans up the worktree/branch.
+     4→It accepts a branch name, PR number, or PR URL as argument.
+     5→
+     6→Usage:
+     7→    erk land              # Land current branch's PR
+     8→    erk land 123          # Land PR by number
+     9→    erk land &lt;url&gt;        # Land PR by URL
+    10→    erk land &lt;branch&gt;     # Land PR for branch
+    11→"""
+    12→
+    13→import re
+    14→from dataclasses import dataclass, replace
+    15→from enum import Enum, auto
+    16→from pathlib import Path
+    17→from typing import Literal, NamedTuple, assert_never
+    18→
+    19→import click
+    20→
+    21→from erk.cli.activation import print_temp_script_instructions, render_activation_script
+    22→from erk.cli.commands.land_pipeline import (
+    23→    LandError,
+    24→    make_execution_state,
+    25→    make_initial_state,
+    26→    run_execution_pipeline,
+
+... [26 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CkPq67orkqu5L6pyJRHcvk">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/land.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5572" cache_read_input_tokens="18837" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5572}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CkPq67orkqu5L6pyJRHcvk">
+     1→---
+     2→description: Land PR with objective awareness - updates objective after landing
+     3→argument-hint: "[branch|PR#|URL] [--skip-objective] [--skip-learn]"
+     4→---
+     5→
+     6→# /erk:land
+     7→
+     8→Objective-aware wrapper for `erk land`. Lands the PR first, then offers to update the linked objective if one exists.
+     9→
+    10→## Usage
+    11→
+    12→```bash
+    13→# Land PR for current branch
+    14→/erk:pr-land
+    15→
+    16→# Land PR for specific branch
+    17→/erk:pr-land feature-branch
+    18→
+    19→# Land PR by number
+    20→/erk:pr-land 123
+    21→
+    22→# Land PR by URL
+    23→/erk:pr-land https://github.com/owner/repo/pull/123
+    24→
+    25→# Skip objective update prompt
+    26→/erk:pr-land --skip-objective
+    27→```
+    28→
+    29→---
+    30→
+
+... [176 lines omitted] ...
+
+    74→**If no PR found:** Report error and exit - cannot land without a PR.
+   124→**If landing fails:** Report the error and exit.
+   182→| Any parsing/API error             | Warn, continue with landing     |
+   191→- **No PR found:** "Error: No PR found for branch `&lt;branch&gt;`"
+   200→## Error Handling
+   202→- **No PR found:** Report error and exit (cannot land without PR)
+   203→- **Landing fails:** Report `erk land` error output and exit
+   205→- **API errors during objective check:** Warn and skip objective workflow
+  </tool_result>
+  <tool_use name="Read" id="toolu_019eLR4gio2bcMiFz28w3Yjv">
+    <param name="file_path">/Users/schrockn/code/erk/docs/learned/architecture/land-state-threading.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5572" cache_read_input_tokens="18837" output_tokens="260" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5572, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019eLR4gio2bcMiFz28w3Yjv">
+     1→---
+     2→title: Land State Threading Pattern
+     3→read_when:
+     4→  - "implementing pipelines with immutable state"
+     5→  - "using dataclasses.replace() for state updates"
+     6→  - "designing stateful workflows with frozen dataclasses"
+     7→tripwires:
+     8→  - action: "threading state through pipeline steps with mutable dataclasses"
+     9→    warning: "Use frozen dataclasses (@dataclass(frozen=True)) for pipeline state. Update fields with dataclasses.replace() to create new instances. Immutability enables caching, testability, and replay."
+    10→last_audited: "2026-02-07 20:43 PT"
+    11→audit_result: edited
+    12→---
+    13→
+    14→# Land State Threading Pattern
+    15→
+    16→Pipeline steps thread immutable state through functional transformations. This document explains **why** erk uses frozen dataclasses for pipeline state, not **what** the implementation looks like (the code already shows that).
+    17→
+    18→## Why Immutability for Pipeline State
+    19→
+    20→The land command demonstrates three critical benefits of immutable state threading that generalize to any multi-step pipeline:
+    21→
+    22→### 1. Shell Script Serialization Boundary
+    23→
+    24→&lt;!-- Source: src/erk/cli/commands/land_pipeline.py, two-pipeline pattern --&gt;
+    25→
+    26→The land command splits into two pipelines separated by a shell script boundary. See `run_validation_pipeline()` and `run_execution_pipeline()` in `src/erk/cli/commands/land_pipeline.py`.
+    27→
+    28→**The problem**: After validation completes, the user must approve execution by sourcing a shell script. This creates a serialization boundary—all state must encode as CLI flags and arguments.
+    29→
+    30→**Why immutability matters**:
+
+... [113 lines omitted] ...
+
+   105→state.branch = discovered_branch  # Compiler error with frozen=True
+   118→def merge_pr(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+   132→- Pipeline step signature: `(ErkContext, LandState) -&gt; LandState | LandError`
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="13567" cache_read_input_tokens="24409" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13567}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me also look at the objective update logic and the `land.sh` script.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="13567" cache_read_input_tokens="24409" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13567}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01XNR6gEG6e1bbwSnw15UahL">
+    <param name="file_path">/Users/schrockn/code/erk/.erk/bin/land.sh</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13567" cache_read_input_tokens="24409" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13567}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01XNR6gEG6e1bbwSnw15UahL">
+     1→#!/bin/bash
+     2→# erk land
+     3→# Generated: 2026-03-02 02:23:27
+     4→# UUID: 56b3d1f0
+     5→# User: schrockn
+     6→# Working dir: /Users/schrockn/code/erk
+     7→# land cl-03-02-220
+     8→
+     9→# erk land deferred execution
+    10→# Usage: source land.sh &lt;pr_number&gt; &lt;branch&gt; [flags...]
+    11→PR_NUMBER="${1:?Error: PR number required}"
+    12→BRANCH="${2:?Error: Branch name required}"
+    13→shift 2
+    14→
+    15→erk exec land-execute --pr-number="$PR_NUMBER" --branch="$BRANCH" --worktree-path=/Users/schrockn/code/erk --is-current-branch --use-graphite --plan-number=8605 "$@" || return 1
+    16→cd /Users/schrockn/code/erk
+    17→
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UGyQrRQQiaCCrqcNjppPxN">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/objective_update_after_land.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13567" cache_read_input_tokens="24409" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 13567}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UGyQrRQQiaCCrqcNjppPxN">
+     1→"""Update objective after landing a PR.
+     2→
+     3→Standalone exec script that calls Claude to update the linked objective
+     4→after a PR has been merged. Always exits 0 (fail-open) because the
+     5→landing has already succeeded.
+     6→
+     7→This is a thin wrapper around the shared helper in objective_helpers.py.
+     8→It remains available for manual retries via:
+     9→    erk exec objective-update-after-land --objective 42 --pr 123 --branch feature
+    10→
+    11→Exit Codes:
+    12→    0: Always (fail-open - landing already succeeded)
+    13→"""
+    14→
+    15→import click
+    16→
+    17→from erk.cli.commands.objective_helpers import run_objective_update_after_land
+    18→from erk_shared.context.helpers import require_context
+    19→
+    20→
+    21→@click.command(name="objective-update-after-land")
+    22→@click.option(
+    23→    "--objective",
+    24→    type=int,
+    25→    required=True,
+    26→    help="Linked objective issue number",
+    27→)
+    28→@click.option(
+    29→    "--pr",
+    30→    type=int,
+
+... [39 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Qg715cLhU9Gbb9Y7GtoSg7">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/land_execute.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="13567" cache_read_input_tokens="24409" output_tokens="280" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 13567, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Qg715cLhU9Gbb9Y7GtoSg7">
+     1→"""Execute deferred land operations from activation script.
+     2→
+     3→This exec command performs the actual merge and cleanup operations for landing a PR.
+     4→It is called by the activation script after the user has approved the operation.
+     5→
+     6→Usage:
+     7→    erk exec land-execute --pr-number=123 --branch=foo [options]
+     8→
+     9→All validation happens during the validation phase (erk land). This command
+    10→executes the pre-validated operations.
+    11→
+    12→Exit Codes:
+    13→    0: Success (PR merged, branch deleted)
+    14→    1: Error (merge failed, validation error)
+    15→"""
+    16→
+    17→from pathlib import Path
+    18→
+    19→import click
+    20→
+    21→from erk.cli.commands.land_cmd import _execute_land
+    22→from erk.cli.commands.objective_helpers import run_objective_update_after_land
+    23→from erk_shared.context.helpers import require_context
+    24→
+    25→
+    26→@click.command(name="land-execute")
+    27→@click.option(
+    28→    "--pr-number",
+    29→    type=int,
+    30→    required=True,
+
+... [176 lines omitted] ...
+
+   161→            raise click.ClickException(f"Cannot use --up: branch '{branch}' has no children")
+   164→            raise click.ClickException(
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4615" cache_read_input_tokens="37976" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4615}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me look at the `_execute_land` function and the cleanup logic.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4615" cache_read_input_tokens="37976" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4615}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FD5f56jBFsdaRo7Zz1v6Yo">
+    <param name="pattern">def _execute_land|def _cleanup_and_navigate|def _gather_cleanup_confirmation</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4615" cache_read_input_tokens="37976" output_tokens="249" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4615, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FD5f56jBFsdaRo7Zz1v6Yo">
+196:def _gather_cleanup_confirmation(
+858:def _execute_land_directly(
+1105:def _cleanup_and_navigate(
+1395:def _execute_land(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01P1ah88qkH7pknbpe9ZrBAp">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">1395</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="303" cache_read_input_tokens="42591" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 303}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01P1ah88qkH7pknbpe9ZrBAp">
+  1395→def _execute_land(
+  1396→    ctx: ErkContext,
+  1397→    *,
+  1398→    pr_number: int | None,
+  1399→    branch: str | None,
+  1400→    worktree_path: Path | None,
+  1401→    is_current_branch: bool,
+  1402→    target_child_branch: str | None,
+  1403→    use_graphite: bool,
+  1404→    pull_flag: bool,
+  1405→    no_delete: bool,
+  1406→    no_cleanup: bool,
+  1407→    script: bool,
+  1408→    plan_number: int | None,
+  1409→    skip_learn: bool,
+  1410→) -&gt; None:
+  1411→    """Execute deferred land operations from activation script.
+  1412→
+  1413→    This function is called when `erk land --execute` is invoked by the
+  1414→    activation script. All validation has already been done - this just
+  1415→    performs the destructive operations via the execution pipeline.
+  1416→
+  1417→    Confirmations are skipped in execute mode because the user already approved
+  1418→    by sourcing the activation script. Confirmations happen during validation
+  1419→    phase only.
+  1420→
+  1421→    Args:
+  1422→        ctx: ErkContext
+  1423→        pr_number: PR number to merge
+  1424→        branch: Branch name being landed
+
+... [212 lines omitted] ...
+
+  1464→    if isinstance(result, LandError):
+  1465→        user_output(click.style("Error: ", fg="red") + result.message)
+  1595→    if isinstance(result, LandError):
+  1597→    # Type narrowing: Ensure.invariant exits on failure, so result is LandState here
+  1598→    assert not isinstance(result, LandError)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DGxHfbYoqQiWjgmDMvRnup">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">1105</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="303" cache_read_input_tokens="42591" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 303}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DGxHfbYoqQiWjgmDMvRnup">
+  1105→def _cleanup_and_navigate(
+  1106→    ctx: ErkContext,
+  1107→    *,
+  1108→    repo: RepoContext,
+  1109→    branch: str,
+  1110→    worktree_path: Path | None,
+  1111→    script: bool,
+  1112→    pull_flag: bool,
+  1113→    force: bool,
+  1114→    is_current_branch: bool,
+  1115→    target_child_branch: str | None,
+  1116→    no_delete: bool,
+  1117→    skip_activation_output: bool,
+  1118→    cleanup_confirmed: bool,
+  1119→) -&gt; None:
+  1120→    """Handle worktree/branch cleanup and navigation after PR merge.
+  1121→
+  1122→    This is shared logic used by both current-branch and specific-PR landing.
+  1123→
+  1124→    Args:
+  1125→        ctx: ErkContext
+  1126→        repo: Repository context
+  1127→        branch: Branch name to clean up
+  1128→        worktree_path: Path to worktree (None if no worktree exists)
+  1129→        script: Whether to output activation script
+  1130→        pull_flag: Whether to pull after landing
+  1131→        force: Whether to skip cleanup confirmation (legacy, kept for compatibility)
+  1132→        is_current_branch: True if landing from the branch's worktree
+  1133→        target_child_branch: Target child branch for --up navigation (None for trunk)
+  1134→        no_delete: Whether to preserve the branch and slot assignment
+
+... [120 lines omitted] ...
+
+  1225→        # Use --downstack to only restack the current branch, avoiding errors if
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="5773" cache_read_input_tokens="42894" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 5773}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have a clear picture. Let me summarize what `erk land` does and analyze the decomposition.
+
+## What `erk land` does today
+
+The operations split into two categories:
+
+### Merge-time operations
+1. **Merge the PR** (via Graphite or GitHub API)
+2. **Create learn PR** (extracts sessions for the plan, creates a draft PR)
+3. **Update objective** (marks nodes done on the linked objective issue)
+
+### Local cleanup operations  
+4. **Delete local branch** (`git branch -D`)
+5. **Delete worktree** (if slot-based or standalone)
+6. **Unassign slot** (if branch was assigned to a slot)
+7. **Navigate** to trunk or child branch
+8. **Pull latest trunk**
+
+## The problem with hooks
+
+If someone merges from the GitHub web UI:
+
+| Operation | Server-side possible? | Notes |
+|---|---|---|
+| Merge PR | Already done | Web UI handled it |
+| Update objective | Yes | Pure GitHub API |
+| Create learn PR | Partially | Needs local session data |
+| Delete local branch | No | Must be local |
+| Delete worktree | No | Must be local |
+| Unassign slot | No | Local state |
+| Navigate/pull | No | Local shell state |
+
+A single Git hook can't cover both sides. This really needs **two pieces**:
+
+### 1. GitHub Actions workflow (`on: pull_request: types: [closed]`)
+Fires server-side when any PR is merged (web UI, API, mobile, whatever). Can handle:
+- **Objective update** — detect plan number from branch name/PR body, find linked objective, post an update comment and mark nodes done
+- **Plan issue closure** — already handled by GitHub's "Fixes #N" auto-close, but could be made more robust
+- Learn PR creation is problematic since session data lives locally
+
+### 2. `erk sync` command (local cleanup)
+A user runs this periodically or after `git fetch`. It would:
+- `git fetch --prune` to detect which remote branches are gone
+- Find local branches whose remote tracking branch was deleted (i.e., merged on remote)
+- For each such branch: delete worktree, unassign slot, delete local branch
+- Pull latest trunk
+- Optionally create learn PRs if session data exists locally
+
+This could also be wired up as a `post-merge` Git hook (fires after `git pull`), but `post-merge` doesn't fire after `git fetch`, so a standalone command is more reliable.
+
+### The tradeoffs
+
+**What works well:**
+- Objective updates via GitHub Actions — fully automatable, no local dependency
+- Local cleanup via `erk sync` — straightforward branch/worktree garbage collection
+
+**What's lossy:**
+- **Learn PR creation** — sessions are local, so if someone merges on the web UI, the learn pipeline either needs to be triggered manually later or skipped. `erk sync` could check for local sessions and create learn PRs at sync time.
+- **No confirmation flow** — `erk land` confirms before deleting. `erk sync` would need a flag for auto-cleanup vs. interactive.
+
+### Sketch of `erk sync`
+
+```
+erk sync [--force]
+  1. git fetch --prune
+  2. For each local branch with deleted remote tracking:
+     a. Check: was PR merged? (gh pr view --json state)
+     b. If merged:
+        - Find and delete worktree
+        - Unassign slot
+        - Delete local branch (with confirmation unless --force)
+        - Create learn PR if sessions exist
+  3. Pull latest trunk
+```
+
+### Sketch of GitHub Actions workflow
+
+```yaml
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  post-merge:
+    if: github.event.pull_request.merged
+    steps:
+      - Extract plan number from branch/PR body
+      - If objective linked: update objective issue
+      - Close plan issue if not auto-closed
+```
+
+---
+
+Does this decomposition match what you're thinking? The main design question is whether `erk sync` should be:
+1. A standalone command users run manually
+2. A git hook wrapper (e.g., post-merge hook that calls `erk sync`)
+3. Both (command that can also be installed as a hook)
+
+And whether you want the GitHub Actions workflow to be a first-class feature or optional.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5773" cache_read_input_tokens="42894" output_tokens="2384" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5773, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>erk sync could also create the learn branches</user>
+  <assistant>
+
+Good point. `erk sync` has access to local sessions, so it can create learn PRs for any branches it detects as merged. The timeline works:
+
+1. Someone merges PR on web UI
+2. User eventually runs `erk sync` (or it fires via hook)
+3. `erk sync` sees the branch was merged, local sessions still exist
+4. Creates learn PR before deleting the branch/worktree
+
+The sessions are keyed by branch/plan, so as long as `erk sync` runs before the user manually `rm -rf`s the worktree, the data is there.
+
+This actually makes the GitHub Actions workflow optional — `erk sync` can handle everything *except* the case where nobody with local sessions ever syncs. Objective updates could go either way: local via `erk sync`, server-side via Actions, or both (idempotent update).
+
+Shall I write this up as a plan?</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2524" cache_read_input_tokens="48667" output_tokens="213" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2524, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>what are some alternative names for sync</user>
+  <assistant>
+
+Some options:
+
+- **`erk tidy`** — conveys cleanup/housekeeping without implying bidirectional sync
+- **`erk sweep`** — garbage collection feel, "sweep up" merged branches
+- **`erk reap`** — harvesting merged branches, cleaning up the dead ones
+- **`erk gc`** — familiar from `git gc`, explicit about garbage collection
+- **`erk prune`** — mirrors `git fetch --prune`, but might be confused with it
+- **`erk clean`** — simple, but might clash with "clean working tree" concepts
+- **`erk reconcile`** — emphasizes bringing local state in line with remote truth
+- **`erk catchup`** — "catch up" local state with what happened remotely
+
+My instinct says **`erk tidy`** or **`erk sweep`** — they're distinct from existing git/erk vocabulary, convey the right intent (cleanup after remote merges), and don't imply two-way synchronization like "sync" does.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="381" cache_read_input_tokens="51191" output_tokens="244" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 381, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>i want it to feel less "optional" and potentially have automation hooks to figure out when it is necessary to run. give me additional names given that context</user>
+  <assistant>
+
+Given that framing — something that *should* run, that detects when it's needed, that brings your local state into alignment with remote truth:
+
+- **`erk settle`** — the dust has settled remotely, now settle locally
+- **`erk land --recv`** / **`erk recv`** — counterpart to `erk land` (send); "receive" the consequences of a remote landing
+- **`erk harvest`** — collect the results of merges that happened elsewhere
+- **`erk dock`** — the PR has "landed" remotely, now "dock" it locally (completing the journey)
+- **`erk absorb`** — absorb remote merge outcomes into local state
+- **`erk claim`** — claim/acknowledge merges that happened without you
+- **`erk moor`** — nautical pair with "land"; secure what has arrived
+
+The `recv` / `land --recv` angle is interesting because it creates a conceptual pair: `erk land` pushes a merge out, `erk recv` pulls merge consequences in. That pairing also makes it feel like a natural part of the workflow rather than optional maintenance. And automation hooks become intuitive: "you have 3 unrecv'd landings" or a post-fetch hook that says "run `erk recv` to clean up 2 merged branches."</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="3720" cache_read_input_tokens="51572" output_tokens="310" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3720, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>we are sort of post processing landed prs in a way that is required. we are also bringing objectives, learned material, and local state up-to-date with the ground truth</user>
+  <assistant>
+
+That reframes it well. It's not cleanup — it's **reconciliation**. Bringing all the downstream artifacts into consistency with what actually happened.
+
+- **`erk reconcile`** — already in your vocabulary (`erk:reconcile-with-remote`), conveys "make consistent with truth"
+- **`erk resolve`** — these merges created unresolved downstream state, now resolve it
+- **`erk realize`** — the merge happened abstractly on remote; now "realize" it concretely across all systems
+- **`erk converge`** — local state, objectives, learn artifacts all converge on the new ground truth
+- **`erk finalize`** — the merge was step 1; finalization is everything else
+- **`erk close-out`** / **`erk closeout`** — close out all the loose ends from landed PRs
+- **`erk settle`** — (still works here) settle all accounts after landing
+
+**`erk reconcile`** feels strongest to me given your existing usage and the semantics. It says exactly what it does: the remote state changed, now reconcile everything else to match. And "you have 3 unreconciled landings" reads naturally.
+
+Though `erk finalize` has appeal too — it positions `erk land` as the merge step and `erk finalize` as everything that completes the lifecycle. Landing isn't done until it's finalized.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="508" cache_read_input_tokens="55292" output_tokens="330" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 508, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>i like reconcile. i want to rename reconcile-with-remote however as that is a fundamentally different operation</user>
+  <assistant>
+
+Agreed. `reconcile-with-remote` is about resolving divergence between a local branch and its remote tracking branch (rebase conflicts, force-push situations). Completely different semantics from reconciling post-merge state.
+
+Some rename options for the existing `reconcile-with-remote`:
+
+- **`erk:realign`** — realign your branch with remote's version
+- **`erk:resync`** — re-synchronize branch with remote
+- **`erk:rebase`** — you already have `erk:rebase`, so maybe fold it in?
+- **`erk:diverge-fix`** — explicit about what it solves
+- **`erk:branch-reconcile`** — scoped reconcile (branch-level vs repo-level)
+
+That frees up `erk reconcile` cleanly for the new post-merge lifecycle command. The mental model becomes:
+
+- **`erk land`** — merge + full lifecycle (when you control the merge)
+- **`erk reconcile`** — full lifecycle minus the merge (when someone else merged)
+
+Both end in the same state: objectives updated, learn PRs created, local branches/worktrees cleaned up.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="51399" cache_read_input_tokens="4896" output_tokens="278" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 51399, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>rename to erk:diverge-fix
+
+ok let's do a full plan for erk reconcile and the renmae</user>
+  <assistant>
+
+Let me explore the codebase to understand the existing reconcile-with-remote command and the full land lifecycle before planning.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1765" cache_read_input_tokens="56295" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1765}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01QEFWFRCq1NtqXr3NNDvgjN">
+    <param name="description">Explore reconcile-with-remote</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 467 chars]...ommand or related functionality in `src/erk/cli/`.
+
+Report all file paths and key content.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1765" cache_read_input_tokens="56295" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1765}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01JSPMJHMbhj2PqrLEjnqxmb">
+    <param name="description">Explore land lifecycle &amp; learn</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 964 chars]...rged remote tracking branches.
+
+Report all file paths, function signatures, and key logic.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1765" cache_read_input_tokens="56295" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1765}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01VLt4BjRFj9g4Fi2Tqi1CzB">
+    <param name="description">Explore branch detection patterns</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1026 chars]...teway for PR state queries.
+
+Report all file paths, function signatures, and key patterns.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1765" cache_read_input_tokens="56295" output_tokens="1055" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1765, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QEFWFRCq1NtqXr3NNDvgjN">
+Perfect! I have all the information needed. Let me compile my findings into a comprehensive report.
+
+## Summary: `erk:reconcile-with-remote` Slash Command
+
+I've completed a thorough exploration of the `erk:reconcile-with-remote` command. Here are all the key findings:
+
+---
+
+### 1. **Slash Command Definition** 
+**File:** `/Users/schrockn/code/erk/.claude/commands/erk/reconcile-with-remote.md`
+
+This is a Claude Code skill (marked with the `---` YAML frontmatter). It contains:
+- **Description:** "Reconcile branch with remote and resolve divergence intelligently"
+- **10-step workflow** for handling local/remote branch divergence, including:
+  - Fetching remote state
+  - Diagnosing divergence (commits only on remote vs. local)
+  - Fast-forward or rebase decisions
+  - Conflict resolution with semantic analysis
+  - Graphite re-tracking (`gt track`) after rebase
+  - Re-restacking (`gt restack --no-interactive`)
+  - Edge cases: force-pushes, uncommitted changes, multi-branch stacks
+
+---
+
+### 2. **CLI Command Implementation**
+**File:** `/Users/schrockn/code/erk/src/erk/cli/commands/pr/reconcile_with_remote_cmd.py`
+
+The `erk pr reconcile-with-remote` command:
+- **Requires `--dangerous` flag** (can be disabled via config)
+- **Workflow:**
+
+... [135 lines omitted] ...
+
+  9. Reports success/failure
+- No-output failure mode detection
+**Result type:** `ReconcileWithRemoteResult(success, error_message, requires_interactive)`
+- ✅ Error: No remote tracking branch
+- ✅ Error: Detached HEAD
+- ✅ Error: Claude not available
+- ✅ Command execution failure
+- ✅ No-work-events failure (Claude completes with no output)
+- **Read when:** branch divergence, "Branch has been updated remotely" errors
+- Detects no-work-events failure (Claude completes without changes)
+- Event types: TextEvent, ToolEvent, SpinnerUpdateEvent, ErrorEvent, NoOutputEvent, NoTurnsEvent, ProcessErrorEvent
+  </tool_result>
+  <tool_result tool="toolu_01JSPMJHMbhj2PqrLEjnqxmb">
+Perfect! Now I have enough information. Let me compile a comprehensive report of all the findings:
+
+## Comprehensive Report: Post-Merge Lifecycle Operations in `erk land`
+
+Based on my analysis of the erk codebase, here's a detailed breakdown of the post-merge lifecycle operations performed by `erk land`:
+
+---
+
+### **1. LEARN PLAN CREATION** (`src/erk/cli/commands/land_learn.py`)
+
+**Key Functions:**
+
+- **`_create_learn_pr_with_sessions(ctx, *, state: LandState)`** (lines 171-191)
+  - Fire-and-forget wrapper that creates a learn plan
+  - Catches all exceptions and emits warnings (never blocks landing)
+  - Calls `_create_learn_pr_impl()` which raises on error
+
+- **`_create_learn_pr_impl(ctx, *, state: LandState)`** (lines 345-441)
+  - Checks `state.plan_id` and `state.merged_pr_number` are populated
+  - Validates config via `_should_create_learn_pr()` (checks local_config.prompt_learn_on_land, falls back to global_config)
+  - **Cycle prevention**: Skips learn plan creation if source plan has `"erk-learn"` label
+  - Discovers sessions via `ctx.plan_backend.find_sessions_for_plan()` → returns `SessionsForPlan` dataclass
+  - Session discovery logs via `_log_session_discovery()` which returns dict of XML files for embedding
+
+- **`_log_session_discovery(ctx, *, sessions: SessionsForPlan, all_session_ids: list[str])`** (lines 211-307)
+  - Preprocesses each session via `_compute_session_stats()`
+  - Computes user turn count, duration, raw size, and XML chunks (200,000 token limit per chunk)
+  - Returns `dict[str, str]` mapping file paths to XML content
+  - File naming: `.erk/impl-context/sessions/{prefix}-{sid}.xml` where prefix is "planning", "impl", "learn", or "unknown"
+  - Multi-chunk sessions use `-part1`, `-part2` suffixes
+
+... [238 lines omitted] ...
+
+  - Handles both success and error without raising (fail-open design)
+    - SLOT_UNASSIGNED: "release slot and delete branch?" (with warning about manual checkout)
+  </tool_result>
+  <tool_result tool="toolu_01VLt4BjRFj9g4Fi2Tqi1CzB">
+Now let me compile my findings into a comprehensive report:
+
+## Summary
+
+I've completed a thorough exploration of the erk codebase to understand the five key areas you requested. Here's what I found:
+
+---
+
+## 1. Git Branch Discovery and Remote Status Checking
+
+**Location:** `/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/abc.py`
+
+**Key Interface Methods:**
+
+```
+list_local_branches(repo_root: Path) -&gt; list[str]
+list_remote_branches(repo_root: Path) -&gt; list[str]
+branch_exists_on_remote(repo_root: Path, remote: str, branch: str) -&gt; bool
+get_all_branch_sync_info(repo_root: Path) -&gt; dict[str, BranchSyncInfo]
+is_branch_diverged_from_remote(cwd: Path, branch: str, remote: str) -&gt; BranchDivergence
+get_branch_head(repo_root: Path, branch: str) -&gt; str | None
+get_all_branch_heads(repo_root: Path) -&gt; dict[str, str]
+```
+
+**Key Type Definitions** (`/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/abc.py`):
+
+```python
+@dataclass(frozen=True)
+class BranchSyncInfo:
+    branch: str
+
+... [305 lines omitted] ...
+
+**Critical Cleanup Decision Tree** (prevents errors):
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="10787" cache_read_input_tokens="58060" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10787}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me look at some specific files I need for the plan design.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="10787" cache_read_input_tokens="58060" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10787}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_015T21TMFHuBQ86sre6YYdCj">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/__init__.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10787" cache_read_input_tokens="58060" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 10787}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015T21TMFHuBQ86sre6YYdCj">
+     1→"""PR management commands."""
+     2→
+     3→import click
+     4→
+     5→from erk.cli.alias import register_with_aliases
+     6→from erk.cli.commands.pr.address_cmd import address
+     7→from erk.cli.commands.pr.check_cmd import pr_check
+     8→from erk.cli.commands.pr.checkout_cmd import pr_checkout
+     9→from erk.cli.commands.pr.close_cmd import pr_close
+    10→from erk.cli.commands.pr.create_cmd import pr_create
+    11→from erk.cli.commands.pr.dispatch_cmd import pr_dispatch
+    12→from erk.cli.commands.pr.duplicate_check_cmd import duplicate_check_plan
+    13→from erk.cli.commands.pr.list_cmd import pr_list
+    14→from erk.cli.commands.pr.log_cmd import pr_log
+    15→from erk.cli.commands.pr.rebase_cmd import rebase
+    16→from erk.cli.commands.pr.reconcile_with_remote_cmd import pr_reconcile_with_remote
+    17→from erk.cli.commands.pr.replan_cmd import pr_replan
+    18→from erk.cli.commands.pr.rewrite_cmd import pr_rewrite
+    19→from erk.cli.commands.pr.submit_cmd import pr_submit
+    20→from erk.cli.commands.pr.teleport_cmd import pr_teleport
+    21→from erk.cli.commands.pr.view_cmd import pr_view
+    22→
+    23→
+    24→@click.group("pr")
+    25→def pr_group() -&gt; None:
+    26→    """Manage pull requests."""
+    27→    pass
+    28→
+    29→
+    30→pr_group.add_command(address, name="address")
+
+... [16 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01WmyHKRL3jyi55f7hZDtKji">
+    <param name="pattern">reconcile.with.remote</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">files_with_matches</param>
+    <param name="glob">*.{py,md,yml,yaml,json}</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="10787" cache_read_input_tokens="58060" output_tokens="259" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 10787, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WmyHKRL3jyi55f7hZDtKji">
+Found 20 files
+tests/commands/pr/test_submit.py
+src/erk/cli/commands/pr/submit_pipeline.py
+CHANGELOG.md
+src/erk/cli/commands/pr/__init__.py
+tests/commands/pr/test_reconcile_with_remote.py
+src/erk/cli/commands/pr/reconcile_with_remote_cmd.py
+src/erk/cli/ensure.py
+docs/learned/cli/commands/pr-reconcile-with-remote.md
+docs/learned/cli/index.md
+docs/learned/cli/command-organization.md
+docs/learned/architecture/tripwires.md
+.claude/commands/erk/pr-address.md
+src/erk/cli/output.py
+docs/howto/conflict-resolution.md
+docs/learned/pr-operations/draft-pr-handling.md
+docs/learned/cli/commands/index.md
+docs/learned/erk/graphite-divergence-detection.md
+.claude/commands/erk/reconcile-with-remote.md
+docs/howto/pr-checkout-sync.md
+docs/learned/architecture/git-graphite-quirks.md
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1487" cache_read_input_tokens="68847" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1487}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01GEtJRCPPShgRdZqgd5ttTv">
+    <param name="pattern">reconcile-with-remote</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">content</param>
+    <param name="glob">*.{py,md,yml,yaml,json}</param>
+    <param name="head_limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1487" cache_read_input_tokens="68847" output_tokens="195" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1487, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GEtJRCPPShgRdZqgd5ttTv">
+src/erk/cli/output.py:385:    """Result from reconcile-with-remote streaming execution."""
+src/erk/cli/output.py:396:    """Stream reconcile-with-remote command via Claude executor with live feedback.
+src/erk/cli/output.py:398:    Handles the /erk:reconcile-with-remote command execution with:
+src/erk/cli/output.py:418:    click.echo(click.style("--- /erk:reconcile-with-remote ---", bold=True))
+src/erk/cli/output.py:422:        command="/erk:reconcile-with-remote",
+src/erk/cli/output.py:447:                    click.echo(click.style("    claude /erk:reconcile-with-remote", fg="cyan"))
+src/erk/cli/output.py:476:                pass  # PR metadata not relevant for reconcile-with-remote
+src/erk/cli/output.py:483:            "check hooks or run 'claude /erk:reconcile-with-remote' directly to debug"
+src/erk/cli/ensure.py:126:        --dangerously-skip-permissions (rebase, reconcile-with-remote, address).
+src/erk/cli/commands/pr/__init__.py:44:pr_group.add_command(pr_reconcile_with_remote, name="reconcile-with-remote")
+src/erk/cli/commands/pr/submit_pipeline.py:297:                    "  erk pr reconcile-with-remote --dangerous  # Reconcile with remote\n"
+src/erk/cli/commands/pr/reconcile_with_remote_cmd.py:4:handling rebase and conflicts as needed. Invokes the /erk:reconcile-with-remote
+src/erk/cli/commands/pr/reconcile_with_remote_cmd.py:15:@click.command("reconcile-with-remote")
+src/erk/cli/commands/pr/reconcile_with_remote_cmd.py:34:      erk pr reconcile-with-remote --dangerous
+docs/learned/erk/graphite-divergence-detection.md:51:1. **`erk pr reconcile-with-remote --dangerous`**: Fetch, rebase onto remote, resolve any conflicts
+docs/howto/conflict-resolution.md:78:| Branch diverged    | Local and remote both have new commits    | `erk pr reconcile-with-remote` |
+docs/howto/conflict-resolution.md:86:erk pr reconcile-with-remote --dangerous
+docs/howto/conflict-resolution.md:92:/erk:reconcile-with-remote
+docs/howto/pr-checkout-sync.md:48:/erk:reconcile-with-remote
+docs/howto/pr-checkout-sync.md:51:erk pr reconcile-with-remote --dangerous
+docs/howto/pr-checkout-sync.md:57:**Warning**: The `--dangerous` flag is required because syncing can rewrite history. Use `/erk:reconcile-with-remote` if you're unsure about the sync strategy.
+docs/howto/pr-checkout-sync.md:65:/erk:reconcile-with-remote
+docs/howto/pr-checkout-sync.md:141:| Sync after force push     | `/erk:reconcile-with-remote` or `erk pr reconcile-with-remote --dangerous` |
+docs/howto/pr-checkout-sync.md:147:- [pr-reconcile-with-remote](../learned/cli/commands/pr-reconcile-with-remote.md) - Divergence resolution details
+docs/learned/pr-operations/draft-pr-handling.md:97:**Resolution**: Run `erk pr reconcile-with-remote --dangerous` to fetch, rebase, and resolve conflicts. Or use `erk pr submit -f` to force push (overrides remote). See [Graphite Divergence Detection](../erk/graphite-divergence-detection.md).
+.claude/commands/erk/reconcile-with-remote.md:116:1. Stash changes: `git stash push -m "reconcile-with-remote: uncommitted work"`
+.claude/commands/erk/pr-address.md:373:   - If push is rejected (non-fast-forward): Run `/erk:reconcile-with-remote` to resolve. Do NOT use `git pull --rebase`.
+docs/learned/architecture/tripwires.md:337:**using git pull or git pull --rebase on a Graphite-managed branch** [pattern: `git\s+pull`] → Read [Git and Graphite Edge Cases Catalog](git-graphite-quirks.md) first. Use /erk:reconcile-with-remote instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push.
+docs/learned/cli/command-organization.md:77:| `reconcile-with-remote` | Reconcile branch with remote and resolve divergence |
+docs/learned/architecture/git-graphite-quirks.md:22:    warning: "Use /erk:reconcile-with-remote instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push."
+
+... [27 lines omitted] ...
+
+docs/learned/cli/index.md:22:- **[commands/pr-reconcile-with-remote.md](commands/pr-reconcile-with-remote.md)** — resolving branch divergence from remote, fixing gt submit 'Branch has been updated remotely' errors, reconciling local branch with remote tracking branch
+CHANGELOG.md:67:- Generalize `--dangerous` flag configuration across rebase, reconcile-with-remote, and address commands: all three now share a single config key (`require_dangerous_flag_for_implicitly_dangerous_operations`) with consistent error messaging
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2572" cache_read_input_tokens="70334" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2572}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01MQ19Xwmavcp2gu7simL8ra">
+    <param name="pattern">reconcile</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="glob">**/registr*.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2572" cache_read_input_tokens="70334" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2572}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01MQ19Xwmavcp2gu7simL8ra">
+No matches found
+  </tool_result>
+  <tool_use name="Read" id="toolu_01UVRzmPN93E8rM89QjhQpEn">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/reconcile_with_remote_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2572" cache_read_input_tokens="70334" output_tokens="234" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2572, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01UVRzmPN93E8rM89QjhQpEn">
+     1→"""Reconcile branch with remote.
+     2→
+     3→Uses Claude to reconcile a diverged local branch with its remote tracking branch,
+     4→handling rebase and conflicts as needed. Invokes the /erk:reconcile-with-remote
+     5→Claude slash command.
+     6→"""
+     7→
+     8→import click
+     9→
+    10→from erk.cli.ensure import Ensure
+    11→from erk.cli.output import stream_reconcile_with_remote
+    12→from erk.core.context import ErkContext
+    13→
+    14→
+    15→@click.command("reconcile-with-remote")
+    16→@click.option(
+    17→    "-d",
+    18→    "--dangerous",
+    19→    is_flag=True,
+    20→    help="Acknowledge that this command invokes Claude with --dangerously-skip-permissions.",
+    21→)
+    22→@click.pass_obj
+    23→def pr_reconcile_with_remote(ctx: ErkContext, *, dangerous: bool) -&gt; None:
+    24→    """Reconcile branch with remote and resolve divergence.
+    25→
+    26→    When gt submit fails with "Branch has been updated remotely", this command
+    27→    fetches remote changes, analyzes divergence, rebases if needed, and resolves
+    28→    any conflicts using Claude.
+    29→
+    30→    Examples:
+
+... [62 lines omitted] ...
+
+    48→        raise click.ClickException("Not on a branch (detached HEAD)")
+    52→        raise click.ClickException(f"No remote tracking branch: origin/{current_branch}")
+    76→        raise click.ClickException(
+    87→        raise click.ClickException("Semantic decision requires interactive resolution")
+    89→        raise click.ClickException(result.error_message or "Reconcile with remote failed")
+  </tool_result>
+  <assistant>Now let me look at the `find_sessions_for_plan` interface and existing `BranchSyncInfo` to understand how to detect merged branches.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1610" cache_read_input_tokens="72906" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1610}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_012HVDaVvswbT1zkqpriVMXu">
+    <param name="pattern">def find_sessions_for_plan|class SessionsForPlan</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1610" cache_read_input_tokens="72906" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1610}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_012HVDaVvswbT1zkqpriVMXu">
+packages/erk-shared/src/erk_shared/plan_store/backend.py:171:    def find_sessions_for_plan(
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py-172-        self,
+packages/erk-shared/src/erk_shared/plan_store/backend.py-173-        repo_root: Path,
+packages/erk-shared/src/erk_shared/plan_store/backend.py-174-        plan_id: str,
+packages/erk-shared/src/erk_shared/plan_store/backend.py-175-    ) -&gt; SessionsForPlan:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/plan_store/backend.py-176-        """Find all Claude Code sessions associated with a plan.
+--
+packages/erk-shared/src/erk_shared/sessions/discovery.py:19:class SessionsForPlan:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/sessions/discovery.py-20-    """Sessions associated with a plan issue.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/sessions/discovery.py-21-
+packages/erk-shared/src/erk_shared/sessions/discovery.py-22-    Attributes:
+packages/erk-shared/src/erk_shared/sessions/discovery.py-23-        planning_session_id: Session that created the plan (from created_from_session)
+packages/erk-shared/src/erk_shared/sessions/discovery.py-24-        implementation_session_ids: Sessions where plan was implemented
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01So53BBi7QvijxH4MyG7pEG">
+    <param name="pattern">def get_all_branch_sync_info</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared</param>
+    <param name="output_mode">content</param>
+    <param name="-A">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1610" cache_read_input_tokens="72906" output_tokens="282" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1610, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01So53BBi7QvijxH4MyG7pEG">
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py:99:    def get_all_branch_sync_info(self, repo_root: Path) -&gt; dict[str, BranchSyncInfo]:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-100-        """Get sync status for all local branches."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-101-        return self._wrapped.get_all_branch_sync_info(repo_root)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-102-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-103-    def is_branch_diverged_from_remote(
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-104-        self, cwd: Path, branch: str, remote: str
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-105-    ) -&gt; BranchDivergence:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-106-        """Check if a local branch has diverged from its remote tracking branch."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-107-        return self._wrapped.is_branch_diverged_from_remote(cwd, branch, remote)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-108-
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-109-    def get_behind_commit_authors(self, cwd: Path, branch: str) -&gt; list[str]:
+--
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py:343:    def get_all_branch_sync_info(self, repo_root: Path) -&gt; dict[str, BranchSyncInfo]:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py-344-        """Get sync status for all local branches."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py-345-        return self._branch_sync_info.get(repo_root, {})
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py-346-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py-347-    def is_branch_diverged_from_remote(
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py-348-        self, cwd: Path, branch: str, remote: str
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py-349-    ) -&gt; BranchDivergence:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py-350-        """Check if a local branch has diverged from its remote tracking branch."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py-351-        return self._branch_divergence.get(
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py-352-            (cwd, branch, remote), BranchDivergence(is_diverged=False, ahead=0, behind=0)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/fake.py-353-        )
+--
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py:105:    def get_all_branch_sync_info(self, repo_root: Path) -&gt; dict[str, BranchSyncInfo]:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-106-        """Get sync status for all local branches."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-107-        return self._wrapped.get_all_branch_sync_info(repo_root)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-108-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-109-    def is_branch_diverged_from_remote(
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/dry_run.py-110-        self, cwd: Path, branch: str, remote: str
+
+... [29 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01X2ftaxrBxDbMxg5Rrqu78q">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py</param>
+    <param name="offset">288</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3702" cache_read_input_tokens="74516" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3702, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X2ftaxrBxDbMxg5Rrqu78q">
+   288→    def get_all_branch_sync_info(self, repo_root: Path) -&gt; dict[str, BranchSyncInfo]:
+   289→        """Get sync status for all local branches via git for-each-ref."""
+   290→        result = subprocess.run(
+   291→            [
+   292→                "git",
+   293→                "for-each-ref",
+   294→                "--format=%(refname:short)\t%(upstream:short)\t%(upstream:track)",
+   295→                "refs/heads/",
+   296→            ],
+   297→            cwd=repo_root,
+   298→            capture_output=True,
+   299→            text=True,
+   300→            check=False,
+   301→        )
+   302→
+   303→        if result.returncode != 0:
+   304→            return {}
+   305→
+   306→        sync_info: dict[str, BranchSyncInfo] = {}
+   307→        for line in result.stdout.strip().split("\n"):
+   308→            if not line:
+   309→                continue
+   310→            parts = line.split("\t")
+   311→            branch = parts[0]
+   312→            upstream = parts[1] if len(parts) &gt; 1 and parts[1] else None
+   313→            track = parts[2] if len(parts) &gt; 2 else ""
+   314→
+   315→            ahead, behind = 0, 0
+   316→            if track:
+   317→                # Parse "[ahead N, behind M]" or "[ahead N]" or "[behind M]"
+
+... [30 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="891" cache_read_input_tokens="78218" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 891}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good — I now see that `get_all_branch_sync_info` uses `%(upstream:track)` which would output `[gone]` for branches whose remote was pruned, but the current parsing only extracts ahead/behind counts. That's a key extension point.
+
+Let me now design the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="891" cache_read_input_tokens="78218" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 891}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_014nHPrmZkPpqYRv4r3brGUh">
+    <param name="description">Design erk reconcile plan</param>
+    <param name="subagent_type">Plan</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic. Read relevant ...[truncated 4972 chars]...he rename and the new command. Include file paths, function signatures, and test strategy.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="891" cache_read_input_tokens="78218" output_tokens="1895" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 891, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014nHPrmZkPpqYRv4r3brGUh">
+Good, `fetch_prune` does not exist yet. I now have all the information I need to create a comprehensive implementation plan. Let me put it all together.
+
+---
+
+## Implementation Plan
+
+### Part 1: Rename `reconcile-with-remote` to `diverge-fix`
+
+This is a straightforward mechanical rename across 20 files, affecting code, commands, tests, and documentation.
+
+#### 1.1 Core Implementation Files (rename + content updates)
+
+**File renames:**
+- `.claude/commands/erk/reconcile-with-remote.md` -&gt; `.claude/commands/erk/diverge-fix.md`
+- `src/erk/cli/commands/pr/reconcile_with_remote_cmd.py` -&gt; `src/erk/cli/commands/pr/diverge_fix_cmd.py`
+- `tests/commands/pr/test_reconcile_with_remote.py` -&gt; `tests/commands/pr/test_diverge_fix.py`
+- `docs/learned/cli/commands/pr-reconcile-with-remote.md` -&gt; `docs/learned/cli/commands/pr-diverge-fix.md`
+
+**Content changes in renamed files:**
+
+1. `.claude/commands/erk/diverge-fix.md`:
+   - Title: "Diverge Fix" instead of "Reconcile With Remote"
+   - All occurrences of `reconcile-with-remote` -&gt; `diverge-fix`
+   - Stash message: `"diverge-fix: uncommitted work"` instead of `"reconcile-with-remote: uncommitted work"`
+
+2. `src/erk/cli/commands/pr/diverge_fix_cmd.py`:
+   - Module docstring: update slash command reference `/erk:diverge-fix`
+   - Import: `from erk.cli.output import stream_diverge_fix`
+   - Click command: `@click.command("diverge-fix")`
+   - Function name: `pr_diverge_fix` (from `pr_reconcile_with_remote`)
+
+... [482 lines omitted] ...
+
+   - Error messages: update `reconcile-with-remote` references
+   - Error message: `"  erk pr diverge-fix --dangerous  # Fix divergence with remote\n"`
+The pipeline pattern follows `land_pipeline.py`'s established `(ErkContext, State) -&gt; State | Error` step pattern.
+    ReconcileError,
+class ReconcileError:
+    """Error result from a reconcile step."""
+) -&gt; ReconcileError | None:
+    Returns None on success, ReconcileError on failure.
+4. **`test_process_merged_branch_learn_failure_continues`**: Learn PR failure doesn't block cleanup
+5. **`test_process_merged_branch_objective_failure_continues`**: Objective update failure doesn't block cleanup
+4. **Slot unassignment**: The `execute_unassign` function checks for uncommitted changes and raises `SystemExit(1)`. For reconcile, the branch's worktree may have uncommitted changes from abandoned work. The reconcile command should either warn and skip, or force-clean. Given that the PR is already merged, skipping the slot unassignment and logging a warning is safer.
+5. **Multiple branches**: When processing multiple branches, errors on one should not prevent processing others. Use a collect-and-report pattern.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="8479" cache_read_input_tokens="79109" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8479}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me verify a few more details before writing the final plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8479" cache_read_input_tokens="79109" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8479}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_015dB6ouuLdeSFSHAhdXYgqH">
+    <param name="pattern">add_command.*reconcile|add_command.*land[^_]</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8479" cache_read_input_tokens="79109" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8479}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015dB6ouuLdeSFSHAhdXYgqH">
+src/erk/cli/cli.py:193:cli.add_command(land)
+src/erk/cli/commands/pr/__init__.py:44:pr_group.add_command(pr_reconcile_with_remote, name="reconcile-with-remote")
+src/erk/cli/commands/exec/group.py:230:exec_group.add_command(land_execute, name="land-execute")
+src/erk/cli/commands/exec/group.py:237:exec_group.add_command(objective_apply_landed_update, name="objective-apply-landed-update")
+src/erk/cli/commands/exec/group.py:241:exec_group.add_command(objective_update_after_land, name="objective-update-after-land")
+  </tool_result>
+  <tool_use name="Read" id="toolu_01PxWALhLdbDwfJsJN9H27zz">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="offset">171</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8479" cache_read_input_tokens="79109" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8479}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PxWALhLdbDwfJsJN9H27zz">
+   171→def _create_learn_pr_with_sessions(
+   172→    ctx: ErkContext,
+   173→    *,
+   174→    state: LandState,
+   175→) -&gt; None:
+   176→    """Create a learn plan as a draft PR with session info for the landed plan.
+   177→
+   178→    This is a fire-and-forget operation that never blocks landing.
+   179→    Creates a draft PR with erk-learn label so the replan flow can pick it up.
+   180→
+   181→    Args:
+   182→        ctx: ErkContext
+   183→        state: LandState with plan_id and merged_pr_number populated
+   184→    """
+   185→    if state.plan_id is None or state.merged_pr_number is None:
+   186→        return
+   187→
+   188→    try:
+   189→        _create_learn_pr_impl(ctx, state=state)
+   190→    except Exception as exc:
+   191→        user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
+   192→
+   193→
+   194→def _session_type_prefix(
+   195→    sid: str,
+   196→    *,
+   197→    planning_ids: set[str],
+   198→    impl_ids: set[str],
+   199→    learn_ids: set[str],
+   200→) -&gt; str:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Pz64mFZg7WV5thj7tQpMYn">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="offset">345</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8479" cache_read_input_tokens="79109" output_tokens="421" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8479, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Pz64mFZg7WV5thj7tQpMYn">
+   345→def _create_learn_pr_impl(
+   346→    ctx: ErkContext,
+   347→    *,
+   348→    state: LandState,
+   349→) -&gt; None:
+   350→    """Inner implementation for learn plan creation (raises on error)."""
+   351→    plan_id = state.plan_id
+   352→    if plan_id is None:
+   353→        return
+   354→
+   355→    # Check config
+   356→    if not _should_create_learn_pr(ctx):
+   357→        return
+   358→
+   359→    # Fetch plan to check labels — skip learn plans (cycle prevention)
+   360→    plan_result = ctx.plan_store.get_plan(state.main_repo_root, plan_id)
+   361→    if isinstance(plan_result, PlanNotFound):
+   362→        return
+   363→    if "erk-learn" in plan_result.labels:
+   364→        return
+   365→
+   366→    # Discover sessions for the plan
+   367→    sessions = ctx.plan_backend.find_sessions_for_plan(state.main_repo_root, plan_id)
+   368→    all_session_ids = sessions.all_session_ids()
+   369→
+   370→    # Log session discovery summary and collect XML files for embedding
+   371→    xml_files = _log_session_discovery(ctx, sessions=sessions, all_session_ids=all_session_ids)
+   372→
+   373→    if not xml_files:
+   374→        if not all_session_ids:
+
+... [68 lines omitted] ...
+
+   438→    elif result.error:
+   440→            click.style("Warning: ", fg="yellow") + f"Learn plan creation failed: {result.error}"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2587" cache_read_input_tokens="87588" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2587}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_019TKxN6ZkLJHsTXUBMoRkJP">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/cli.py</param>
+    <param name="offset">180</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2587" cache_read_input_tokens="87588" output_tokens="446" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2587, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019TKxN6ZkLJHsTXUBMoRkJP">
+   180→# Register all commands
+   181→# Commands with @alias decorators use register_with_aliases() to auto-register aliases
+   182→cli.add_command(admin_group)
+   183→cli.add_command(artifact_group)
+   184→register_with_aliases(cli, branch_group)  # Has @alias("br")
+   185→cli.add_command(cc_group)
+   186→cli.add_command(codespace_group)
+   187→cli.add_command(completion_group)
+   188→cli.add_command(config_group)
+   189→cli.add_command(doctor_cmd)
+   190→cli.add_command(down_cmd)
+   191→register_with_aliases(cli, implement)  # Has @alias("impl")
+   192→cli.add_command(init_group)
+   193→cli.add_command(land)
+   194→if is_learned_docs_available(repo_ops=RealGitRepoOps(), cwd=Path.cwd()):
+   195→    from erk.cli.commands.learn.learn_cmd import learn_cmd
+   196→
+   197→    cli.add_command(learn_cmd)
+   198→admin_group.add_command(log_cmd)
+   199→cli.add_command(dash)
+   200→cli.add_command(pr_group)
+   201→cli.add_command(release_notes_cmd)
+   202→cli.add_command(objective_group)
+   203→cli.add_command(one_shot)
+   204→cli.add_command(project_group)
+   205→cli.add_command(slot_group)
+   206→cli.add_command(stack_group)
+   207→cli.add_command(up_cmd)
+   208→cli.add_command(launch)
+   209→cli.add_command(workflow_group)
+  </tool_result>
+  <assistant>Good, I now have all the details I need. Let me write the final plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="913" cache_read_input_tokens="90175" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 913}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01TGNCHgtTdo2yg9LJLTkEod">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="913" cache_read_input_tokens="90175" output_tokens="93" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 913, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01TGNCHgtTdo2yg9LJLTkEod">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01Y9vRXBJCwCTYgX4oFrJgY5">
+    <param name="file_path">/Users/schrockn/.claude/plans/validated-napping-tiger.md</param>
+    <param name="content"># Plan: `erk reconcile` + Rename `reconcile-with-remote` → `diverge-fix`
+
+## Context
+
+`erk...[truncated 9385 chars]...d-to-end
+5. All existing tests pass after rename
+6. New tests pass for reconcile pipeline
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="393" cache_read_input_tokens="91088" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 393}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Y9vRXBJCwCTYgX4oFrJgY5">
+File created successfully at: /Users/schrockn/.claude/plans/validated-napping-tiger.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01GepQNLPYBwiRkJNkj8uZ99">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3282" cache_read_input_tokens="91481" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3282}" output_tokens="20" service_tier="standard" inference_geo="not_available" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01GepQNLPYBwiRkJNkj8uZ99">
+
+  </tool_result>
+  <assistant>
+
+This is the same task continuing. The plan is already written and complete. Let me exit plan mode for approval.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1070" cache_read_input_tokens="94763" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1070}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01JfWdaEygnQMYQTgywn8ZNU">
+    <param name="allowedPrompts">[{'tool': 'Bash', 'prompt': 'run git commands for file renames (git mv)'}]</param>
+    <param name="plan"># Plan: `erk reconcile` + Rename `reconcile-with-remote` → `diverge-fix`
+
+## Context
+
+`erk...[truncated 9385 chars]...d-to-end
+5. All existing tests pass after rename
+6. New tests pass for reconcile pipeline
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1070" cache_read_input_tokens="94763" output_tokens="107" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1070, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JfWdaEygnQMYQTgywn8ZNU">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/validated-napping-tiger.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: `erk reconcile` + Rename `reconcile-with-remote` → `diverge-fix`
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 33c5321c-e887-4f6f-8509-7f27fda4c9ae \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01Y8mPJJsENmQCLF7p5Tf8KD">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="763" cache_read_input_tokens="95833" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 763, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01Y8mPJJsENmQCLF7p5Tf8KD">
+
+  </tool_result>
+  <assistant>
+
+Here's the plan:
+
+---
+
+# Plan: `erk reconcile` + Rename `reconcile-with-remote` → `diverge-fix`
+
+## Context
+
+`erk land` is the only way to trigger post-merge lifecycle operations (learn PR creation, objective updates, branch/worktree cleanup). If a PR is merged outside erk — via GitHub web UI, mobile, or API — these operations are skipped, leaving stale local branches, unupdated objectives, and lost session data.
+
+**`erk reconcile`** detects locally which PRs were merged remotely and runs the same post-merge lifecycle. It's a first-class command, not optional maintenance.
+
+To free up the "reconcile" name, the existing `erk pr reconcile-with-remote` (branch divergence fixer) is renamed to `erk pr diverge-fix`.
+
+---
+
+## Part 1: Rename `reconcile-with-remote` → `diverge-fix`
+
+Mechanical rename across files. No behavioral changes.
+
+### File renames (4 files)
+
+| From | To |
+|---|---|
+| `.claude/commands/erk/reconcile-with-remote.md` | `.claude/commands/erk/diverge-fix.md` |
+| `src/erk/cli/commands/pr/reconcile_with_remote_cmd.py` | `src/erk/cli/commands/pr/diverge_fix_cmd.py` |
+| `tests/commands/pr/test_reconcile_with_remote.py` | `tests/commands/pr/test_diverge_fix.py` |
+| `docs/learned/cli/commands/pr-reconcile-with-remote.md` | `docs/learned/cli/commands/pr-diverge-fix.md` |
+
+### Content-only updates (15 files)
+
+`src/erk/cli/commands/pr/__init__.py`, `src/erk/cli/output.py` (rename `ReconcileWithRemoteResult` → `DivergenceFixResult`, `stream_reconcile_with_remote` → `stream_diverge_fix`), `src/erk/cli/ensure.py`, `src/erk/cli/commands/pr/submit_pipeline.py`, `tests/commands/pr/test_submit.py`, `.claude/commands/erk/pr-address.md`, `docs/learned/cli/index.md`, `docs/learned/cli/commands/index.md`, `docs/learned/cli/command-organization.md`, `docs/learned/erk/graphite-divergence-detection.md`, `docs/learned/architecture/tripwires.md`, `docs/learned/architecture/git-graphite-quirks.md`, `docs/learned/pr-operations/draft-pr-handling.md`, `docs/howto/conflict-resolution.md`, `docs/howto/pr-checkout-sync.md`
+
+CHANGELOG.md historical entries left unchanged.
+
+---
+
+## Part 2: Git Layer Extensions
+
+- **`BranchSyncInfo`**: Add `gone: bool = False` field (`packages/erk-shared/.../git/abc.py`)
+- **Parse `[gone]`**: Update `get_all_branch_sync_info` in `real.py` to detect "gone" in track string
+- **`fetch_prune`**: Add to all 5 `GitRemoteOps` implementations (abc, real, fake, dry_run, printing)
+
+---
+
+## Part 3: `erk reconcile` Command
+
+- **`reconcile_pipeline.py`** (new): Detection via `fetch_prune` + `gone` filtering + GitHub API merge confirmation. Per-branch processing: learn → objective → cleanup. Fail-open on learn/objective.
+- **`land_learn.py`**: Extract `create_learn_pr_for_merged_branch()` that doesn't require `LandState`
+- **`reconcile_cmd.py`** (new): Top-level `erk reconcile` with `--force`, `--dry-run`, `--skip-learn`
+- **`cli.py`**: Register command
+
+---
+
+## Part 4: Tests
+
+- Git layer: `gone` field parsing, `fetch_prune`
+- Reconcile: detection, filtering, dry-run, force, cleanup, learn, objective, error isolation
+- Rename: existing tests pass under new names
+
+---</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="96596" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1333}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01Gb4w7DvvSRoQsJUhW7MoW3">
+    <param name="questions">[{'question': 'Plan: `erk reconcile` + Rename `reconcile-with-remote` → `diverge-fix`\nCur...[truncated 399 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="96596" output_tokens="1258" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Gb4w7DvvSRoQsJUhW7MoW3">
+User has answered your questions: "Plan: `erk reconcile` + Rename `reconcile-with-remote` → `diverge-fix`
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Save as planned PR (Recommended)". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01AiBS2rXG16dcSVgdUPy36M">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2663" cache_read_input_tokens="97929" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2663, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01AiBS2rXG16dcSVgdUPy36M">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01FjMqmxoMC87SXuEigFTewh">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="568" cache_read_input_tokens="100592" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 568, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FjMqmxoMC87SXuEigFTewh">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="33c5321c-e887-4f6f-8509-7f27fda4c9ae" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="33c5321c-e887-4f6f-8509-7f27fda4c9ae" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "33c5321c-e887-4f6f-8509-7f27fda4c9ae" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "33c5321c-e887-4f6f-8509-7f27fda4c9ae" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "33c5321c-e887-4f6f-8509-7f27fda4c9ae" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "33c5321c-e887-4f6f-8509-7f27fda4c9ae" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+I'll execute the plan-save workflow.
+
+**Step 2: Branch Slug**
+
+From the plan title "Plan: `erk reconcile` + Rename `reconcile-with-remote` → `diverge-fix`", the slug is: `add-erk-reconcile-rename-diverge-fix`
+
+**Step 3: Plan Summary**
+
+Introduces `erk reconcile`, a top-level command that detects PRs merged outside of erk land and performs the same post-merge lifecycle: learn PR creation, objective updates, and local branch/worktree cleanup. Also renames the existing erk pr reconcile-with-remote command to erk pr diverge-fix to free up the reconcile name.
+
+**Step 4: Save**</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2298" cache_read_input_tokens="101160" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2298}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01PELLwLZcfdsxwZ62nRjsQK">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2298" cache_read_input_tokens="101160" output_tokens="247" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2298, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01PELLwLZcfdsxwZ62nRjsQK">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01WZoAGr6K658bHRWn7xFKQp">
+    <param name="command">erk exec plan-save --format json --session-id="33c5321c-e887-4f6f-8509-7f27fda4c9ae" --bra...[truncated 272 chars]...erk pr reconcile-with-remote command to erk pr diverge-fix to free up the reconcile name."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3398" cache_read_input_tokens="103458" output_tokens="255" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3398, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WZoAGr6K658bHRWn7xFKQp">
+{"success": true, "plan_number": 8841, "plan_url": "https://github.com/dagster-io/erk/pull/8841", "title": "[erk-plan] Plan: `erk reconcile` + Rename `reconcile-with-remote` \u2192 `diverge-fix`", "branch_name": "plnd/add-erk-reconcile-rename-d-03-06-0728", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/33c5321c-e887-4f6f-8509-7f27fda4c9ae/plan_snapshots/000001-2e2e57b1"}
+  </tool_result>
+  <assistant>Now push the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="106856" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 542}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01M4NAaXSFyfXvbnB9aHCm2n">
+    <param name="command">erk exec capture-session-info 2&gt;/dev/null | head -1</param>
+    <param name="description">Get session file path for push</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="106856" output_tokens="98" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 542, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M4NAaXSFyfXvbnB9aHCm2n">
+SESSION_ID=33c5321c-e887-4f6f-8509-7f27fda4c9ae
+  </tool_result>
+  <tool_use name="Bash" id="toolu_019VUK8k1N1HMsmjQhYkuhfL">
+    <param name="command">erk exec upload-impl-session --session-id "33c5321c-e887-4f6f-8509-7f27fda4c9ae" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="140" cache_read_input_tokens="107398" output_tokens="141" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 140, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019VUK8k1N1HMsmjQhYkuhfL">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan saved successfully.
+
+**Plan saved as draft PR #8841**
+URL: https://github.com/dagster-io/erk/pull/8841</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="168" cache_read_input_tokens="107538" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 168}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_013YBqP27Jxr1jQF4RtrKMhK">
+    <param name="plan"># Plan: `erk reconcile` + Rename `reconcile-with-remote` → `diverge-fix`
+
+## Context
+
+`erk...[truncated 9385 chars]...d-to-end
+5. All existing tests pass after rename
+6. New tests pass for reconcile pipeline
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="168" cache_read_input_tokens="107538" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 168, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013YBqP27Jxr1jQF4RtrKMhK">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8841 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8841:
+  In current wt:    source "$(erk br co --for-plan 8841 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8841 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8841 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8841 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8841:
+  In current wt:  erk br co --for-plan 8841
+  In new wt:      erk br co --new-slot --for-plan 8841
+
+Dispatch plan #8841:
+  CLI command:    erk pr dispatch 8841
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan #8841 saved. Here are your next steps:
+
+**Implement plan #8841:**
+```
+In current wt:    source "$(erk br co --for-plan 8841 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --for-plan 8841 --script)" &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 8841 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 8841 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout plan #8841:**
+```
+In current wt:  erk br co --for-plan 8841
+In new wt:      erk br co --new-slot --for-plan 8841
+```
+
+**Dispatch plan #8841:**
+```
+CLI command:    erk pr dispatch 8841
+Slash command:  /erk:pr-dispatch
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="662" cache_read_input_tokens="107706" output_tokens="250" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 662, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "33c5321c-e887-4f6f-8509-7f27fda4c9ae" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>
+
+The most recent plan is #8841. Dispatching it for remote implementation.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="820" cache_read_input_tokens="108368" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 820}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0173D6Uo2fSSuGQvR6ZPWXWT">
+    <param name="command">erk pr dispatch 8841</param>
+    <param name="description">Dispatch plan #8841 for remote AI implementation</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="820" cache_read_input_tokens="108368" output_tokens="122" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 820, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0173D6Uo2fSSuGQvR6ZPWXWT">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8841...
+
+✓ All 1 plan(s) validated
+
+  #8841: [erk-plan] Plan: `erk reconcile` + Rename `reconcile-with-remote` → `diverge-fix`
+
+Dispatching PR #8841...
+
+Fetching plan content...
+Syncing branch: plnd/add-erk-reconcile-rename-d-03-06-0728
+Committing plan to branch...
+✓ Branch pushed to remote
+
+Dispatching workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow dispatched.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+Dispatched plans:
+
+... [4 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_013za2YXnYAKhLXb3oxJMwuU">
+    <param name="command">erk exec marker delete --session-id "33c5321c-e887-4f6f-8509-7f27fda4c9ae" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker to allow new plans</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="496" cache_read_input_tokens="109188" output_tokens="118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 496, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013za2YXnYAKhLXb3oxJMwuU">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Plan #8841 dispatched for remote implementation.
+
+- **Plan**: https://github.com/dagster-io/erk/pull/8841
+- **Workflow**: https://github.com/dagster-io/erk/actions/runs/22770062762
+
+The remote agent will implement the rename and the new `erk reconcile` command. You can monitor progress at the workflow URL.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="149" cache_read_input_tokens="109684" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 149}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>
