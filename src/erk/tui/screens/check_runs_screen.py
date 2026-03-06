@@ -294,14 +294,6 @@ class CheckRunsScreen(ModalScreen):
         if not summaries:
             return
 
-        # Re-render check runs with summaries
-        content = container.query("#checks-content")
-        for widget in content:
-            widget.remove()
-
-        container.mount(
-            Markdown(
-                _format_check_runs(self._check_runs, summaries=summaries),
-                id="checks-content",
-            )
-        )
+        # Update existing markdown content in-place (avoid remove/mount race)
+        markdown = container.query_one("#checks-content", Markdown)
+        markdown.update(_format_check_runs(self._check_runs, summaries=summaries))
