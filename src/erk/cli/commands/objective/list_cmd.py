@@ -171,8 +171,7 @@ def list_objectives(ctx: ErkContext) -> None:
     table = Table(show_header=True, header_style="bold", box=None)
     table.add_column("#", style="cyan", no_wrap=True)
     table.add_column("slug", no_wrap=True, min_width=20)
-    table.add_column("prog", no_wrap=True)
-    table.add_column("state", no_wrap=True)
+    table.add_column("progress", no_wrap=True)
     table.add_column("deps-state", no_wrap=True, min_width=10)
     table.add_column("deps", no_wrap=True)
     table.add_column("next", no_wrap=True)
@@ -188,8 +187,7 @@ def list_objectives(ctx: ErkContext) -> None:
         table.add_row(
             f"[link={plan.url}]#{plan.plan_identifier}[/link]",
             escape(slug),
-            fields["progress"],
-            _rich_sparkline(fields["state"]),
+            f"{_rich_sparkline(fields['state'])}  {fields['progress']}",
             fields["deps_state"],
             fields["deps"],
             fields["next_node"],
