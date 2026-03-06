@@ -1,0 +1,1049 @@
+<session>
+  <meta branch="plnd/parallelize-diff-fetch-03-05-1702" />
+  <meta model="claude-opus-4-6" />
+  <user>let's plan next performance win for
+
+
+   Resolving branch and plan context...
+   Checking for existing PR...
+Phase 1: Graphite Submit
+   Auto-forcing: plan implementation branch
+   Running gt submit...
+Running in non-interactive mode. Inline prompts to fill PR fields will be skipped.
+
+🥞 Validating that this Graphite stack is ready to submit...
+
+✏️ Preparing to submit PRs for the following branches...
+▸ plnd/parallelize-diff-fetch-03-05-1702 (Update code)
+
+🚀 Pushing branches to remote...
+
+📨 Creating/updating PRs...
+plnd/parallelize-diff-fetch-03-05-1702: https://app.graphite.com/github/pr/dagster-io/erk/8795 (updated)
+WARNING: Branch plnd/parallelize-diff-fetch-03-05-1702 has been updated remotely. Force submitting local version to remote...
+   Graphite submit completed
+
+   Getting PR info...
+   PR #8795 ready
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #8795
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (10,837 chars)
+   Analyzing changes with Claude...
+   Still waiting... (3s)
+   Still waiting... (6s)
+   Still waiting... (9s)
+   Still waiting... (12s)
+   Still waiting... (15s)
+   PR description generated
+
+Phase 5: Updating PR metadata
+   PR metadata updated
+
+  Waiting for PR to appear in Graphite cache...
+✅ PR submitted
+
+  Action:      Created PR #8795
+  Branch:      plnd/parallelize-diff-fetch-03-05-1702 → master
+  Title:       Parallelize extract_diff and fetch_plan_context in PR submit pipeline
+  PR:          https://github.com/dagster-io/erk/pull/8795
+  Graphite:    https://app.graphite.com/github/pr/dagster-io/erk/8795
+➜  erk-slot-03 git:(plnd/parallelize-diff-fetch-03-05-1702)
+
+instead of invoking claude code cli have Phase 3: Generating PR description
+   Reading diff file...
+   Diff loaded (10,837 chars)
+   Analyzing changes with Claude...
+   Still waiting... (3s)
+   Still waiting... (6s)
+   Still waiting... (9s)
+   Still waiting... (12s)
+   Still waiting... (15s)
+   PR description generated instead use the fast prompt llm caller to use the api</user>
+  <usage input_tokens="3" cache_creation_input_tokens="15867" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15867}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the PR submit pipeline and the fast prompt LLM caller.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15867" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15867}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_016ipt9gTbYmqiCtpu9XuWp4">
+    <param name="query">select:Agent,Read,Grep,Glob</param>
+    <param name="max_results">5</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15867" cache_read_input_tokens="0" output_tokens="174" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15867, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_016ipt9gTbYmqiCtpu9XuWp4">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="4291" cache_read_input_tokens="15867" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4291}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01CMABakjbmDb8D5a4ogiCg1">
+    <param name="description">Explore PR submit pipeline</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 546 chars]...d .claude/ directories. Be thorough - trace the full code path for description generation.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4291" cache_read_input_tokens="15867" output_tokens="304" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4291, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CMABakjbmDb8D5a4ogiCg1">
+Perfect! Now I have a comprehensive understanding. Let me create a summary document for the user:
+
+## Summary: PR Submit Pipeline Phase 3 Analysis
+
+I've traced the complete code path for Phase 3 "Generating PR description" in the PR submit pipeline. Here's what I found:
+
+### 1. **Main PR Submit Pipeline Entry Point**
+**File:** `/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/cli/commands/pr/submit_pipeline.py`
+
+The orchestration is managed by the `_submit_pipeline()` function (line 1003-1015) which executes these 10 steps:
+1. `prepare_state` - Discover branch/plan context
+2. `cleanup_impl_for_submit` - Remove staging dirs
+3. `commit_wip` - Commit uncommitted changes
+4. `capture_existing_pr_body` - Capture PR body before gt submit
+5. `push_and_create_pr` - Create/find PR (Graphite-first or core flow)
+6. `extract_diff_and_fetch_plan_context` - **Parallelize Phase 2** (concurrent extraction of diff and plan)
+7. `generate_description` - **Phase 3: Generate PR description**
+8. `enhance_with_graphite` - Graphite optimization
+9. `finalize_pr` - Update PR metadata
+10. `link_pr_to_objective_nodes` - Link to objective roadmap
+
+### 2. **Phase 3: generate_description() Function**
+**Location:** submit_pipeline.py, lines 638-681
+
+```python
+def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+    """Generate AI PR title and body via CommitMessageGenerator."""
+    if state.skip_description:
+        return state
+    click.echo(click.style("Phase 3: Generating PR description", bold=True))
+
+... [114 lines omitted] ...
+
+- Returns `PromptResult(success: bool, output: str, error: str | None)`
+- Each step: `(ErkContext, SubmitState) -&gt; SubmitState | SubmitError`
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2395" cache_read_input_tokens="20158" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2395}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, I have a clear picture. The current PR description generation calls `claude` CLI via subprocess (`claude --print --model haiku ...`), which has significant startup overhead. Let me find what direct API callers exist.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2395" cache_read_input_tokens="20158" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2395}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01FVVtrd3myVj86RGGVsaGK1">
+    <param name="pattern">anthropic|AnthropicClient|fast.*prompt|direct.*api|llm.*call</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk</param>
+    <param name="type">py</param>
+    <param name="-i">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2395" cache_read_input_tokens="20158" output_tokens="265" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2395, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FVVtrd3myVj86RGGVsaGK1">
+Found 19 files
+src/erk/cli/commands/one_shot_dispatch.py
+src/erk/cli/commands/exec/scripts/plan_save.py
+src/erk/core/services/objective_list_service.py
+src/erk/core/services/plan_list_service.py
+src/erk/core/plan_duplicate_checker.py
+src/erk/core/plan_relevance_checker.py
+src/erk/core/fast_llm.py
+src/erk/core/health_checks/__init__.py
+src/erk/core/health_checks/anthropic_api_secret.py
+src/erk/core/context.py
+src/erk/core/branch_slug_generator.py
+src/erk/cli/commands/objective_helpers.py
+src/erk/cli/commands/objective/plan_cmd.py
+src/erk/cli/commands/land_learn.py
+src/erk/cli/commands/exec/scripts/validate_claude_credentials.py
+src/erk/cli/commands/exec/scripts/objective_apply_landed_update.py
+src/erk/cli/commands/doctor_workflow.py
+src/erk/cli/commands/doctor.py
+src/erk/cli/commands/admin.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01CPfhCHRiSkythvGbyN8tfN">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/core/fast_llm.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="688" cache_read_input_tokens="22553" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 688}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CPfhCHRiSkythvGbyN8tfN">
+     1→"""Fast LLM calls via Anthropic SDK.
+     2→
+     3→For lightweight operations (slug generation) where spawning a full
+     4→Claude CLI subprocess is too slow.
+     5→"""
+     6→
+     7→import logging
+     8→import os
+     9→
+    10→from anthropic import Anthropic, APIError
+    11→from anthropic.types import TextBlock
+    12→
+    13→from erk_shared.core.llm_caller import LlmCaller, LlmCallFailed, LlmResponse, NoApiKey
+    14→
+    15→logger = logging.getLogger(__name__)
+    16→
+    17→
+    18→class AnthropicLlmCaller(LlmCaller):
+    19→    def call(self, prompt: str, *, system_prompt: str) -&gt; LlmResponse | NoApiKey | LlmCallFailed:
+    20→        api_key = os.environ.get("ANTHROPIC_API_KEY")
+    21→        if api_key is None:
+    22→            logger.warning("ANTHROPIC_API_KEY environment variable not set")
+    23→            return NoApiKey(message="ANTHROPIC_API_KEY environment variable not set")
+    24→        try:
+    25→            client = Anthropic(api_key=api_key)
+    26→            response = client.messages.create(
+    27→                model="claude-haiku-4-5-20251001",
+    28→                max_tokens=50,
+    29→                system=system_prompt,
+    30→                messages=[{"role": "user", "content": prompt}],
+
+... [9 lines omitted] ...
+
+    34→                return LlmCallFailed(message="Unexpected response type from LLM")
+    36→        except APIError as exc:
+    37→            logger.warning("LLM call failed: %s", exc)
+    38→            return LlmCallFailed(message=str(exc))
+  </tool_result>
+  <tool_use name="Read" id="toolu_01BPLEuYCMkLi3pUv3PeYqUA">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/core/prompt_executor.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="688" cache_read_input_tokens="22553" output_tokens="166" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 688, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BPLEuYCMkLi3pUv3PeYqUA">
+     1→"""Claude CLI prompt execution implementation.
+     2→
+     3→This module provides the ClaudePromptExecutor implementation and re-exports
+     4→ABC and types from erk_shared.core.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→import json
+    10→import logging
+    11→import os
+    12→import shutil
+    13→import subprocess
+    14→import sys
+    15→import threading
+    16→from collections.abc import Iterator
+    17→from pathlib import Path
+    18→from typing import TYPE_CHECKING
+    19→
+    20→if TYPE_CHECKING:
+    21→    from erk_shared.context.types import PermissionMode
+    22→
+    23→from erk_shared.context.types import permission_mode_to_claude
+    24→from erk_shared.core.prompt_executor import (
+    25→    CommandResult,  # noqa: F401 - re-exported for erk.cli.output
+    26→    ErrorEvent,
+    27→    ExecutorEvent,
+    28→    NoOutputEvent,
+    29→    NoTurnsEvent,
+    30→    PlanNumberEvent,
+
+... [624 lines omitted] ...
+
+    32→    ProcessErrorEvent,
+    53→def format_prompt_error(
+    59→    """Format error message for failed prompt execution.
+    61→    Constructs a structured error message from subprocess failure details.
+    65→        stderr: Standard error output
+    69→        Formatted error string like "Exit code 1 | stderr: ... | stdout: ..."
+    71→    error_parts = [f"Exit code {returncode}"]
+    73→        error_parts.append(f"stderr: {stderr.strip()}")
+    76→        error_parts.append(f"stdout: {stdout_preview}")
+    77→    return " | ".join(error_parts)
+   153→                error_msg = f"Claude command {command} failed with exit code {result.returncode}"
+   154→                yield ErrorEvent(message=error_msg)
+   163→        # Handle Popen errors (e.g., claude not found, permission denied)
+   174→        except OSError as e:
+   175→            yield ProcessErrorEvent(
+   176→                message=f"Failed to start Claude CLI: {e}\nCommand: {' '.join(cmd_args)}"
+   282→                    diag += "\n  Run 'claude' directly to see hook error messages"
+   300→            yield ProcessErrorEvent(
+   318→                yield ErrorEvent(message=f"Exit code {returncode}")
+   321→        # Enhanced error messages for non-zero exit codes
+   323→            error_msg = f"Claude command {command} failed"
+   324→            error_msg += f"\n  Exit code: {returncode}"
+   325→            error_msg += f"\n  Lines processed: {line_count}"
+   327→                error_msg += "\n  Stderr:\n" + "".join(stderr_output).strip()
+   328→            yield ErrorEvent(message=error_msg)
+   364→        # Parse JSON safely - JSON parsing requires exception handling
+   371→            except json.JSONDecodeError:
+   386→            "is_error": None,
+   456→            result["is_error"] = data.get("is_error", False)
+   490→            raise RuntimeError("Claude CLI not found\nInstall from: https://claude.com/download")
+   495→        # FileNotFoundError which is the appropriate error.
+   527→            except OSError:
+   592→                error=f"Prompt execution timed out after {PROMPT_TIMEOUT_SECONDS}s",
+   599→                error=format_prompt_error(
+   609→            error=None,
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="9104" cache_read_input_tokens="23241" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9104}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me check the LlmCaller ABC and the commit message generator.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="9104" cache_read_input_tokens="23241" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9104}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DipMSL85kz1MhHQ7Ecx2Kh">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/core/commit_message_generator.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9104" cache_read_input_tokens="23241" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 9104}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DipMSL85kz1MhHQ7Ecx2Kh">
+     1→"""Commit message generation via Claude CLI.
+     2→
+     3→This module provides commit message generation for PR submissions,
+     4→using Claude CLI to analyze diffs and generate descriptive messages.
+     5→
+     6→The commit message prompt is loaded from the shared prompt file at:
+     7→packages/erk-shared/src/erk_shared/gateway/gt/commit_message_prompt.md
+     8→"""
+     9→
+    10→from __future__ import annotations
+    11→
+    12→import logging
+    13→import threading
+    14→from collections.abc import Generator
+    15→from dataclasses import dataclass
+    16→from pathlib import Path
+    17→from typing import TYPE_CHECKING
+    18→
+    19→from erk.core.prompt_executor import PromptExecutor, PromptResult
+    20→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+    21→from erk_shared.gateway.gt.prompts import get_commit_message_prompt
+    22→from erk_shared.gateway.time.abc import Time
+    23→
+    24→if TYPE_CHECKING:
+    25→    from erk.core.plan_context_provider import PlanContext
+    26→
+    27→logger = logging.getLogger(__name__)
+    28→
+    29→_PROGRESS_INTERVAL_SECONDS = 3.0
+    30→
+
+... [371 lines omitted] ...
+
+    66→        error_message: Error description if generation failed
+    72→    error_message: str | None
+   117→                    error_message=f"Diff file not found: {request.diff_file}",
+   130→                    error_message="Diff file is empty",
+   144→        error_holder: list[Exception] = []
+   185→            except Exception as exc:  # noqa: BLE001
+   186→                logger.debug("Prompt execution failed", exc_info=True)
+   187→                error_holder.append(exc)
+   199→        if error_holder:
+   205→                    error_message=f"Prompt execution error: {error_holder[0]}",
+   216→                    error_message="Prompt execution returned no result",
+   229→                    error_message=result.error or "Claude CLI execution failed",
+   243→                error_message=None,
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GDV9jQw9DMAJztCmxksyht">
+    <param name="pattern">class LlmCaller</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="9104" cache_read_input_tokens="23241" output_tokens="269" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 9104, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GDV9jQw9DMAJztCmxksyht">
+packages/erk-shared/src/erk_shared/core/llm_caller.py:34:class LlmCaller(ABC):
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DxKe6ad5HxuSaVNiVLaE6e">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/packages/erk-shared/src/erk_shared/core/llm_caller.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4983" cache_read_input_tokens="32345" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4983}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DxKe6ad5HxuSaVNiVLaE6e">
+     1→"""LLM caller ABC and discriminated union result types.
+     2→
+     3→Defines the interface for lightweight LLM calls (e.g., slug generation)
+     4→and the non-ideal state types returned when calls fail.
+     5→"""
+     6→
+     7→from abc import ABC, abstractmethod
+     8→from dataclasses import dataclass
+     9→
+    10→
+    11→@dataclass(frozen=True)
+    12→class LlmResponse:
+    13→    text: str
+    14→
+    15→
+    16→@dataclass(frozen=True)
+    17→class NoApiKey:
+    18→    message: str
+    19→
+    20→    @property
+    21→    def error_type(self) -&gt; str:
+    22→        return "no-api-key"
+    23→
+    24→
+    25→@dataclass(frozen=True)
+    26→class LlmCallFailed:
+    27→    message: str
+    28→
+    29→    @property
+    30→    def error_type(self) -&gt; str:
+
+... [9 lines omitted] ...
+
+    31→        return "llm-call-failed"
+    36→    def call(self, prompt: str, *, system_prompt: str) -&gt; LlmResponse | NoApiKey | LlmCallFailed:
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Fpwm9um56fz2zh4CVbXPEf">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk/core/branch_slug_generator.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4983" cache_read_input_tokens="32345" output_tokens="177" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4983, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Fpwm9um56fz2zh4CVbXPEf">
+     1→"""Branch slug generation via LLM inference.
+     2→
+     3→This module provides branch name slug generation using a fast LLM call
+     4→to distill plan titles into meaningful 2-4 word slugs before they
+     5→enter the branch naming pipeline.
+     6→
+     7→Follows the CommitMessageGenerator pattern from src/erk/core/commit_message_generator.py.
+     8→"""
+     9→
+    10→from __future__ import annotations
+    11→
+    12→from dataclasses import dataclass
+    13→
+    14→from erk_shared.core.prompt_executor import PromptExecutor
+    15→from erk_shared.naming import sanitize_worktree_name
+    16→
+    17→BRANCH_SLUG_SYSTEM_PROMPT = """\
+    18→You are a branch name slug generator. Given a title, return ONLY a concise
+    19→2-4 word slug using lowercase letters and hyphens. No explanation.
+    20→
+    21→Rules:
+    22→- Use 2-4 hyphenated words (e.g., "fix-auth-session", "add-plan-validation")
+    23→- Capture the distinctive essence, not generic words
+    24→- Drop filler words: "the", "a", "for", "and", "implementation", "plan"
+    25→- Prefer verbs: add, fix, refactor, update, consolidate, extract, migrate
+    26→- Never exceed 30 characters total
+    27→- Output ONLY the slug, nothing else"""
+    28→
+    29→
+    30→@dataclass(frozen=True)
+
+... [122 lines omitted] ...
+
+    37→        error_message: Error description if generation failed
+    42→    error_message: str | None
+    65→            BranchSlugResult with success status and slug or error
+    80→                error_message=result.error or "LLM execution failed",
+    88→                error_message=f"Invalid LLM output: {result.output!r}",
+    94→            error_message=None,
+   135→    """Generate a slug from title, falling back to raw title on failure.
+   138→    or the raw title on failure (so sanitize_worktree_name handles it downstream).
+   145→        LLM-generated slug on success, raw title on failure
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2322" cache_read_input_tokens="37328" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2322}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me check how the generator is constructed and the test fakes.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2322" cache_read_input_tokens="37328" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2322}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01LSrpgDRt14ivhEzmDUWZ6m">
+    <param name="pattern">CommitMessageGenerator</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/src/erk</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2322" cache_read_input_tokens="37328" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2322}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01LSrpgDRt14ivhEzmDUWZ6m">
+src/erk/core/commit_message_generator.py:75:class CommitMessageGenerator:
+src/erk/core/branch_slug_generator.py:7:Follows the CommitMessageGenerator pattern from src/erk/core/commit_message_generator.py.
+src/erk/cli/commands/pr/shared.py:15:    CommitMessageGenerator,
+src/erk/cli/commands/pr/shared.py:341:    generator: CommitMessageGenerator,
+src/erk/cli/commands/pr/shared.py:353:        generator: CommitMessageGenerator instance
+src/erk/cli/commands/pr/rewrite_cmd.py:25:from erk.core.commit_message_generator import CommitMessageGenerator
+src/erk/cli/commands/pr/rewrite_cmd.py:125:    msg_gen = CommitMessageGenerator(ctx.prompt_executor, time=ctx.time, model="haiku")
+src/erk/cli/commands/pr/submit_pipeline.py:29:from erk.core.commit_message_generator import CommitMessageGenerator
+src/erk/cli/commands/pr/submit_pipeline.py:639:    """Generate AI PR title and body via CommitMessageGenerator."""
+src/erk/cli/commands/pr/submit_pipeline.py:655:    msg_gen = CommitMessageGenerator(ctx.prompt_executor, time=ctx.time, model="haiku")
+src/erk/cli/commands/exec/scripts/update_pr_description.py:33:from erk.core.commit_message_generator import CommitMessageGenerator
+src/erk/cli/commands/exec/scripts/update_pr_description.py:120:    msg_gen = CommitMessageGenerator(ctx.prompt_executor, time=ctx.time, model="haiku")
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01DDUoKgXqnXAhtJ7vNFdXrV">
+    <param name="pattern">FakeLlmCaller|class.*LlmCaller</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03</param>
+    <param name="type">py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2322" cache_read_input_tokens="37328" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2322}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01DDUoKgXqnXAhtJ7vNFdXrV">
+src/erk/core/fast_llm.py:18:class AnthropicLlmCaller(LlmCaller):
+src/erk/core/context.py:37:from erk_shared.core.fakes import FakeLlmCaller, FakeObjectiveListService, FakePlanListService
+src/erk/core/context.py:185:        llm_caller=FakeLlmCaller(response=LlmResponse(text="test-slug")),
+src/erk/core/context.py:382:        llm_caller = FakeLlmCaller(response=LlmResponse(text="test-slug"))
+tests/core/test_fast_llm.py:6:from erk_shared.core.fakes import FakeLlmCaller
+tests/core/test_fast_llm.py:11:    """FakeLlmCaller returns configured LlmResponse."""
+tests/core/test_fast_llm.py:12:    caller = FakeLlmCaller(response=LlmResponse(text="my-slug"))
+tests/core/test_fast_llm.py:19:    """FakeLlmCaller returns NoApiKey when configured."""
+tests/core/test_fast_llm.py:20:    caller = FakeLlmCaller(response=NoApiKey(message="no key"))
+tests/core/test_fast_llm.py:28:    """FakeLlmCaller returns LlmCallFailed when configured."""
+tests/core/test_fast_llm.py:29:    caller = FakeLlmCaller(response=LlmCallFailed(message="timeout"))
+packages/erk-shared/src/erk_shared/core/llm_caller.py:34:class LlmCaller(ABC):
+packages/erk-shared/src/erk_shared/core/fakes.py:317:class FakeLlmCaller(LlmCaller):
+packages/erk-shared/src/erk_shared/context/testing.py:19:    FakeLlmCaller,
+packages/erk-shared/src/erk_shared/context/testing.py:149:        else FakeLlmCaller(response=LlmResponse(text="test-slug"))
+packages/erk-shared/src/erk_shared/context/factories.py:15:    FakeLlmCaller,
+packages/erk-shared/src/erk_shared/context/factories.py:144:        llm_caller=FakeLlmCaller(response=LlmResponse(text="slug")),
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01AkuZmnZLxtjCbfjhdsstqh">
+    <param name="pattern">commit_message|CommitMessage</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2322" cache_read_input_tokens="37328" output_tokens="800" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2322, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AkuZmnZLxtjCbfjhdsstqh">
+Found 10 files
+tests/commands/pr/test_submit.py
+tests/unit/cli/commands/exec/scripts/test_update_pr_description.py
+tests/unit/fakes/test_fake_git.py
+tests/unit/cli/commands/exec/scripts/test_pr_sync_commit.py
+tests/unit/cli/commands/exec/scripts/test_get_pr_context.py
+tests/integration/test_real_git.py
+tests/core/test_commit_message_generator.py
+tests/commands/pr/test_rewrite.py
+tests/commands/admin/test_test_workflow.py
+tests/unit/test_file_sync.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Xu6mbB1shjjWkPiCgYQAEG">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/packages/erk-shared/src/erk_shared/core/fakes.py</param>
+    <param name="offset">310</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2224" cache_read_input_tokens="39650" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2224}" output_tokens="25" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Xu6mbB1shjjWkPiCgYQAEG">
+   310→            pr_linkages=self._data.pr_linkages,
+   311→            workflow_runs=self._data.workflow_runs,
+   312→            warnings=self._data.warnings,
+   313→        )
+   314→
+   315→
+   316→@dataclass(frozen=True)
+   317→class FakeLlmCaller(LlmCaller):
+   318→    """Fake LlmCaller that returns a pre-configured response."""
+   319→
+   320→    response: LlmResponse | NoApiKey | LlmCallFailed
+   321→
+   322→    def call(self, prompt: str, *, system_prompt: str) -&gt; LlmResponse | NoApiKey | LlmCallFailed:
+   323→        return self.response
+   324→
+   325→
+   326→class FakeObjectiveListService(ObjectiveListService):
+   327→    """Fake ObjectiveListService for testing.
+   328→
+   329→    Returns pre-configured data.
+   330→    """
+   331→
+   332→    def __init__(self, *, data: PlanListData | None) -&gt; None:
+   333→        self._data = data or PlanListData(plans=[], pr_linkages={}, workflow_runs={})
+   334→
+   335→    def get_objective_list_data(
+   336→        self,
+   337→        *,
+   338→        location: GitHubRepoLocation,
+   339→        state: IssueFilterState = "open",
+  </tool_result>
+  <tool_use name="Read" id="toolu_01K1BTKZaCJ9aoonvT2p2ZNg">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/tests/core/test_commit_message_generator.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2224" cache_read_input_tokens="39650" output_tokens="208" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2224, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01K1BTKZaCJ9aoonvT2p2ZNg">
+     1→"""Tests for CommitMessageGenerator."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.core.commit_message_generator import (
+     6→    CommitMessageGenerator,
+     7→    CommitMessageRequest,
+     8→    CommitMessageResult,
+     9→)
+    10→from erk.core.plan_context_provider import PlanContext
+    11→from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
+    12→from erk_shared.gateway.time.fake import FakeTime
+    13→from tests.fakes.prompt_executor import FakePromptExecutor
+    14→
+    15→
+    16→def _consume_generator(
+    17→    generator: CommitMessageGenerator, request: CommitMessageRequest
+    18→) -&gt; tuple[CommitMessageResult, list[ProgressEvent]]:
+    19→    """Consume generator and return result with collected progress events."""
+    20→    progress_events: list[ProgressEvent] = []
+    21→    result: CommitMessageResult | None = None
+    22→
+    23→    for event in generator.generate(request):
+    24→        if isinstance(event, ProgressEvent):
+    25→            progress_events.append(event)
+    26→        elif isinstance(event, CompletionEvent):
+    27→            result = event.result
+    28→
+    29→    if result is None:
+    30→        raise AssertionError("Generator did not yield CompletionEvent")
+
+... [501 lines omitted] ...
+
+    62→    assert result.error_message is None
+   130→    assert result.error_message is not None
+   131→    assert "not found" in result.error_message.lower()
+   156→    assert result.error_message is not None
+   157→    assert "empty" in result.error_message.lower()
+   170→        simulated_prompt_error="Claude CLI execution failed",
+   187→    assert result.error_message is not None
+   188→    assert "failed" in result.error_message.lower()
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="12234" cache_read_input_tokens="41874" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12234}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have a complete understanding. Let me now write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="12234" cache_read_input_tokens="41874" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 12234}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_0199VM6xJgBHSz8YK22CHXAE">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="12234" cache_read_input_tokens="41874" output_tokens="699" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 12234, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_0199VM6xJgBHSz8YK22CHXAE">
+
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01QKvCCP9LMc3Di6U9EBdF2S">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1102" cache_read_input_tokens="54108" output_tokens="79" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1102, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01QKvCCP9LMc3Di6U9EBdF2S">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01CSxNDWH2NG1dZHWYNg88Sv">
+    <param name="file_path">/Users/schrockn/.claude/plans/dazzling-conjuring-hare.md</param>
+    <param name="content"># Replace Claude CLI subprocess with direct Anthropic API call for PR description generati...[truncated 4412 chars]...pr submit` on a branch with changes and verify Phase 3 completes in ~2-3s instead of 15+s
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="838" cache_read_input_tokens="55210" output_tokens="1610" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 838, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01CSxNDWH2NG1dZHWYNg88Sv">
+File created successfully at: /Users/schrockn/.claude/plans/dazzling-conjuring-hare.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01HzX8zkwxnCyTQ5NdxLLxWk">
+    <param name="plan"># Replace Claude CLI subprocess with direct Anthropic API call for PR description generati...[truncated 4412 chars]...pr submit` on a branch with changes and verify Phase 3 completes in ~2-3s instead of 15+s
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1652" cache_read_input_tokens="56048" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1652, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HzX8zkwxnCyTQ5NdxLLxWk">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/dazzling-conjuring-hare.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Replace Claude CLI subprocess with direct Anthropic API call for PR description generation
+Current context: (wt:erk-slot-03) (br:plnd/parallelize-diff-fetch-03-05-1702) (pr:#8795)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/para"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id a94fe7e5-7102-4d65-82a9-b87e8f3d9191 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/dazzling-conjuring-hare.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01TMVqeimYhZFadpgbVYPPcw">
+    <param name="file_path">/Users/schrockn/.claude/plans/dazzling-conjuring-hare.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="679" cache_read_input_tokens="57700" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 679, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TMVqeimYhZFadpgbVYPPcw">
+     1→# Replace Claude CLI subprocess with direct Anthropic API call for PR description generation
+     2→
+     3→## Context
+     4→
+     5→PR description generation (Phase 3 of `pr-submit`) currently spawns a `claude --print --model haiku` subprocess via `PromptExecutor.execute_prompt()`. This takes 15+ seconds due to Node.js startup + Claude Code initialization overhead. The codebase already has `AnthropicLlmCaller` (`src/erk/core/fast_llm.py`) that makes direct Anthropic SDK calls — currently used only for slug generation with `max_tokens=50`. We should use this fast path for PR description generation too.
+     6→
+     7→## Changes
+     8→
+     9→### 1. Extend `LlmCaller` ABC with `max_tokens` parameter
+    10→
+    11→**File:** `packages/erk-shared/src/erk_shared/core/llm_caller.py`
+    12→
+    13→- Add `max_tokens: int` keyword parameter to `LlmCaller.call()`
+    14→
+    15→### 2. Update `AnthropicLlmCaller` to accept `max_tokens`
+    16→
+    17→**File:** `src/erk/core/fast_llm.py`
+    18→
+    19→- Pass `max_tokens` through to `client.messages.create()`
+    20→- Remove hardcoded `max_tokens=50`
+    21→
+    22→### 3. Update `FakeLlmCaller`
+    23→
+    24→**File:** `packages/erk-shared/src/erk_shared/core/fakes.py`
+    25→
+    26→- Add `max_tokens` parameter to `call()` signature
+    27→
+    28→### 4. Update all existing callers of `LlmCaller.call()`
+    29→
+    30→Search for all `.call(` invocations on `LlmCaller` instances and add `max_tokens=50` to preserve existing behavior.
+
+... [59 lines omitted] ...
+
+    38→- Map `LlmResponse` → success, `NoApiKey | LlmCallFailed` → error result
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01RMoQABL3aFFbrNKjXzSm1y">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1903" cache_read_input_tokens="58379" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1903, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01RMoQABL3aFFbrNKjXzSm1y">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01BS2fJ1M69GVqTrtka5Agj9">
+    <param name="questions">[{'question': '📋 Replace Claude CLI subprocess with direct Anthropic API call for PR descr...[truncated 470 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="60282" output_tokens="248" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BS2fJ1M69GVqTrtka5Agj9">
+User has answered your questions: "📋 Replace Claude CLI subprocess with direct Anthropic API call for PR description generation
+Current context: (wt:erk-slot-03) (br:plnd/parallelize-diff-fetch-03-05-1702) (pr:#8795)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01531FY3LwGWuzdUyWez9Tnd">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1559" cache_read_input_tokens="61615" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1559, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01531FY3LwGWuzdUyWez9Tnd">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01ErqqVYLG5Fjwtazs2RKmc9">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="568" cache_read_input_tokens="63174" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 568, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ErqqVYLG5Fjwtazs2RKmc9">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="a94fe7e5-7102-4d65-82a9-b87e8f3d9191" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="a94fe7e5-7102-4d65-82a9-b87e8f3d9191" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "a94fe7e5-7102-4d65-82a9-b87e8f3d9191" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "a94fe7e5-7102-4d65-82a9-b87e8f3d9191" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "a94fe7e5-7102-4d65-82a9-b87e8f3d9191" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "a94fe7e5-7102-4d65-82a9-b87e8f3d9191" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+I'll save the plan as a draft PR. Let me work through the steps.
+
+**Branch slug:** `fast-api-pr-description`
+
+**Plan summary:** Switches PR description generation from spawning a Claude CLI subprocess to using the existing AnthropicLlmCaller for direct Anthropic SDK API calls, reducing Phase 3 latency from 15+ seconds to 2-3 seconds. Extends the LlmCaller ABC with a max_tokens parameter and updates CommitMessageGenerator to use LlmCaller instead of PromptExecutor.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2304" cache_read_input_tokens="63742" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2304}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01FHYCSxfTojqiRdfKntzCch">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2304" cache_read_input_tokens="63742" output_tokens="203" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2304, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01FHYCSxfTojqiRdfKntzCch">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Xk44SEZxMXz33oUWDP9J1C">
+    <param name="command">erk exec plan-save --format json --session-id="a94fe7e5-7102-4d65-82a9-b87e8f3d9191" --bra...[truncated 277 chars]... parameter and updates CommitMessageGenerator to use LlmCaller instead of PromptExecutor."</param>
+    <param name="description">Save plan as draft PR via erk exec plan-save</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3463" cache_read_input_tokens="66046" output_tokens="275" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3463, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xk44SEZxMXz33oUWDP9J1C">
+{"success": true, "plan_number": 8801, "plan_url": "https://github.com/dagster-io/erk/pull/8801", "title": "[erk-plan] Replace Claude CLI subprocess with direct Anthropic API call for PR description generation", "branch_name": "plnd/fast-api-pr-description-03-05-1730", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.erk/scratch/sessions/a94fe7e5-7102-4d65-82a9-b87e8f3d9191/plan_snapshots/000001-f2e5a8ce"}
+  </tool_result>
+  <assistant>Plan saved. Now pushing the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="546" cache_read_input_tokens="69509" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 546}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_012vXwyDdabtgx4ckjDTcXje">
+    <param name="command">erk exec upload-impl-session --session-id "a94fe7e5-7102-4d65-82a9-b87e8f3d9191" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="546" cache_read_input_tokens="69509" output_tokens="152" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 546, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012vXwyDdabtgx4ckjDTcXje">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan saved as draft PR #8801.
+
+```
+Plan: [erk-plan] Replace Claude CLI subprocess with direct Anthropic API call for PR description generation
+PR:   #8801
+URL:  https://github.com/dagster-io/erk/pull/8801
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="179" cache_read_input_tokens="70055" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 179}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01JPr4xu9wXTY1DDrxVbvgJQ">
+    <param name="plan"># Replace Claude CLI subprocess with direct Anthropic API call for PR description generati...[truncated 4412 chars]...pr submit` on a branch with changes and verify Phase 3 completes in ~2-3s instead of 15+s
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="179" cache_read_input_tokens="70055" output_tokens="105" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 179, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JPr4xu9wXTY1DDrxVbvgJQ">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8801 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8801:
+  In current wt:    source "$(erk br co --for-plan 8801 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8801 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8801 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8801 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8801:
+  In current wt:  erk br co --for-plan 8801
+  In new wt:      erk br co --new-slot --for-plan 8801
+
+Dispatch plan #8801:
+  CLI command:    erk pr dispatch 8801
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan #8801 saved successfully.
+
+**Implement plan #8801:**
+- In current wt: `source "$(erk br co --for-plan 8801 --script)" &amp;&amp; erk implement`
+  - (dangerously): `source "$(erk br co --for-plan 8801 --script)" &amp;&amp; erk implement -d`
+- In new wt: `source "$(erk br co --new-slot --for-plan 8801 --script)" &amp;&amp; erk implement`
+  - (dangerously): `source "$(erk br co --new-slot --for-plan 8801 --script)" &amp;&amp; erk implement -d`
+
+**Checkout plan #8801:**
+- In current wt: `erk br co --for-plan 8801`
+- In new wt: `erk br co --new-slot --for-plan 8801`
+
+**Dispatch plan #8801:**
+- CLI command: `erk pr dispatch 8801`
+- Slash command: `/erk:pr-dispatch`</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="487" cache_read_input_tokens="70234" output_tokens="248" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 487, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;See ya!&lt;/local-command-stdout&gt;</user>
+</session>

@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Replace Claude CLI subprocess with direct Anthropic API calls for PR description generation"
+}
