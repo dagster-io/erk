@@ -9,6 +9,7 @@ from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.setup_impl_from_pr import (
     _get_current_branch,
+    create_impl_context_from_pr,
     setup_impl_from_pr,
 )
 from erk_shared.context.context import ErkContext
@@ -435,6 +436,183 @@ def test_planned_pr_falls_back_to_pr_body_when_no_impl_context(tmp_path: Path) -
     # "# Plan\n\nImplement something."
     assert "Plan" in impl_plan.read_text(encoding="utf-8")
     assert "Implement something" in impl_plan.read_text(encoding="utf-8")
+
+
+# =============================================================================
+# Direct tests for create_impl_context_from_pr()
+# =============================================================================
+
+
+def _invoke_create_impl_context(
+    tmp_path: Path,
+    plan_branch: str,
+    *,
+    impl_context_files: dict[str, str] | None = None,
+) -> tuple[dict[str, str | int | bool | None], Path]:
+    """Helper to invoke create_impl_context_from_pr() with a fake context.
+
+    Returns (result_dict, impl_path).
+    """
+    fake_github = FakeGitHub()
+    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    plan_result = backend.create_plan(
+        repo_root=tmp_path,
+        title="Test Plan Title",
+        content="# Plan\n\nDo the thing.",
+        labels=("erk-plan",),
+        metadata={"branch_name": plan_branch},
+        summary=None,
+    )
+    pr_number = int(plan_result.plan_id)
+
+    fake_git = FakeGit(current_branches={tmp_path: plan_branch})
+    ctx = context_for_test(
+        github=fake_github,
+        git=fake_git,
+        cwd=tmp_path,
+        repo_root=tmp_path,
+        plan_store=backend,
+    )
+
+    if impl_context_files is not None:
+        impl_context_dir = tmp_path / IMPL_CONTEXT_DIR
+        impl_context_dir.mkdir(parents=True, exist_ok=True)
+        for filename, content in impl_context_files.items():
+            (impl_context_dir / filename).write_text(content, encoding="utf-8")
+
+    # create_impl_context_from_pr expects a click.Context with obj set
+    runner = CliRunner()
+    result_holder: list[dict[str, str | int | bool | None]] = []
+
+    @click.command()
+    @click.pass_context
+    def _wrapper(click_ctx: click.Context) -> None:
+        result = create_impl_context_from_pr(
+            click_ctx,
+            plan_number=pr_number,
+            cwd=tmp_path,
+            branch_name=plan_branch,
+        )
+        result_holder.append(result)
+
+    invoke_result = runner.invoke(_wrapper, obj=ctx, catch_exceptions=False)
+    assert invoke_result.exit_code == 0, f"Wrapper failed: {invoke_result.output}"
+    impl_path = get_impl_dir(tmp_path, branch_name=plan_branch)
+    return result_holder[0], impl_path
+
+
+def test_create_impl_context_pr_not_found(tmp_path: Path) -> None:
+    """create_impl_context_from_pr exits 1 when PR does not exist."""
+    fake_github = FakeGitHub()
+    backend = PlannedPRBackend(fake_github, fake_github.issues, time=FakeTime())
+    fake_git = FakeGit(current_branches={tmp_path: "some-branch"})
+    ctx = context_for_test(
+        github=fake_github,
+        git=fake_git,
+        cwd=tmp_path,
+        repo_root=tmp_path,
+        plan_store=backend,
+    )
+
+    runner = CliRunner()
+
+    @click.command()
+    @click.pass_context
+    def _wrapper(click_ctx: click.Context) -> None:
+        create_impl_context_from_pr(
+            click_ctx,
+            plan_number=9999,
+            cwd=tmp_path,
+            branch_name="some-branch",
+        )
+
+    result = runner.invoke(_wrapper, obj=ctx)
+    assert result.exit_code == 1
+    assert "not found" in result.output.lower()
+
+
+def test_create_impl_context_ref_json_non_int_objective_id(tmp_path: Path) -> None:
+    """Non-int objective_id in ref.json is ignored (stays None)."""
+    result, impl_path = _invoke_create_impl_context(
+        tmp_path,
+        "plan-test-branch",
+        impl_context_files={
+            "plan.md": "# Plan\n\nContent.",
+            "ref.json": json.dumps({"objective_id": "not-an-int", "title": "Good Title"}),
+        },
+    )
+    assert result["success"] is True
+    # objective_id was not an int, so ref.json should have null objective_id
+    ref_data = json.loads((impl_path / "ref.json").read_text(encoding="utf-8"))
+    assert ref_data["objective_id"] is None
+
+
+def test_create_impl_context_ref_json_non_string_title(tmp_path: Path) -> None:
+    """Non-string title in ref.json falls back to PR title."""
+    result, _ = _invoke_create_impl_context(
+        tmp_path,
+        "plan-test-branch",
+        impl_context_files={
+            "plan.md": "# Plan\n\nContent.",
+            "ref.json": json.dumps({"title": 12345}),
+        },
+    )
+    assert result["success"] is True
+    # Non-string title falls back to PR title
+    assert result["plan_title"] == "Test Plan Title"
+
+
+def test_create_impl_context_ref_json_non_list_node_ids(tmp_path: Path) -> None:
+    """Non-list node_ids in ref.json is ignored (stays None)."""
+    result, impl_path = _invoke_create_impl_context(
+        tmp_path,
+        "plan-test-branch",
+        impl_context_files={
+            "plan.md": "# Plan\n\nContent.",
+            "ref.json": json.dumps({"node_ids": "not-a-list"}),
+        },
+    )
+    assert result["success"] is True
+    ref_data = json.loads((impl_path / "ref.json").read_text(encoding="utf-8"))
+    assert ref_data.get("node_ids") is None
+
+
+def test_create_impl_context_ref_json_missing_fields(tmp_path: Path) -> None:
+    """ref.json with no relevant fields uses defaults."""
+    result, impl_path = _invoke_create_impl_context(
+        tmp_path,
+        "plan-test-branch",
+        impl_context_files={
+            "plan.md": "# Plan\n\nContent.",
+            "ref.json": json.dumps({"unrelated_key": "value"}),
+        },
+    )
+    assert result["success"] is True
+    assert result["plan_title"] == "Test Plan Title"  # Falls back to PR title
+    ref_data = json.loads((impl_path / "ref.json").read_text(encoding="utf-8"))
+    assert ref_data["objective_id"] is None
+    assert ref_data.get("node_ids") is None
+
+
+def test_create_impl_context_valid_ref_json(tmp_path: Path) -> None:
+    """ref.json with valid fields extracts all metadata correctly."""
+    result, impl_path = _invoke_create_impl_context(
+        tmp_path,
+        "plan-test-branch",
+        impl_context_files={
+            "plan.md": "# Plan\n\nContent.",
+            "ref.json": json.dumps({
+                "objective_id": 42,
+                "title": "Custom Title",
+                "node_ids": ["node-1", "node-2"],
+            }),
+        },
+    )
+    assert result["success"] is True
+    assert result["plan_title"] == "Custom Title"
+    ref_data = json.loads((impl_path / "ref.json").read_text(encoding="utf-8"))
+    assert ref_data["objective_id"] == 42
+    assert ref_data["node_ids"] == ["node-1", "node-2"]
 
 
 def test_planned_pr_pr_not_found_reports_error(tmp_path: Path) -> None:
