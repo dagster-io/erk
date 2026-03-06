@@ -102,6 +102,24 @@ def test_fake_gitops_get_git_common_dir() -> None:
     assert common_dir == git_dir
 
 
+def test_fake_gitops_get_git_dir() -> None:
+    """Test that FakeGit returns configured per-worktree git dir."""
+    cwd = Path("/repo/worktree")
+    wt_git_dir = Path("/repo/.git/worktrees/worktree")
+    common_git_dir = Path("/repo/.git")
+
+    # When git_dirs is configured, returns per-worktree dir
+    git_ops = FakeGit(
+        git_dirs={cwd: wt_git_dir},
+        git_common_dirs={cwd: common_git_dir},
+    )
+    assert git_ops.repo.get_git_dir(cwd) == wt_git_dir
+
+    # When git_dirs is not configured, falls back to git_common_dirs
+    git_ops_fallback = FakeGit(git_common_dirs={cwd: common_git_dir})
+    assert git_ops_fallback.repo.get_git_dir(cwd) == common_git_dir
+
+
 def test_fake_gitops_detached_head() -> None:
     """Test FakeGit with detached HEAD (None branch)."""
     cwd = Path("/repo")

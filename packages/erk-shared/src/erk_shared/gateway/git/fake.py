@@ -169,6 +169,7 @@ class FakeGit(Git):
         remove_worktree_error: str | None = None,
         ahead_behind_raises: RuntimeError | None = None,
         tracked_paths: set[str] | None = None,
+        git_dirs: dict[Path, Path] | None = None,
     ) -> None:
         """Create FakeGit with pre-configured state.
 
@@ -234,6 +235,7 @@ class FakeGit(Git):
             remove_worktree_error: Error message to raise as RuntimeError from remove_worktree()
             ahead_behind_raises: If set, get_ahead_behind() raises this error
             tracked_paths: Set of relative paths tracked in the git index
+            git_dirs: Mapping of cwd -> per-worktree git directory
         """
         self._worktrees = worktrees or {}
         self._current_branches = current_branches or {}
@@ -309,7 +311,7 @@ class FakeGit(Git):
         self._updated_refs: list[tuple[Path, str, str]] = []  # (repo_root, branch, target_sha)
 
         # Per-worktree git dirs (empty by default; get_git_dir falls back to common dir)
-        self._git_dirs: dict[Path, Path] = {}
+        self._git_dirs: dict[Path, Path] = git_dirs if git_dirs is not None else {}
 
         # Repo operations subgateway
         self._repo_gateway = FakeGitRepoOps()
