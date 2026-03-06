@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Fix `is_rebase_in_progress` in git worktrees"
+}
