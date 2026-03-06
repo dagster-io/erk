@@ -1,0 +1,790 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>do the code review ci jobs block on fix-formatting?</user>
+  <usage input_tokens="3" cache_creation_input_tokens="15239" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15239}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01M3WvpVQkQwtx3Dw2kAN9vK">
+    <param name="query">select:Agent</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15239" cache_read_input_tokens="0" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15239, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M3WvpVQkQwtx3Dw2kAN9vK">
+
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01LjiCFuYXBnoRihixSmEWpN">
+    <param name="description">Explore CI workflow dependencies</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 339 chars]...elds
+
+Be thorough - check all workflow files for code review jobs and fix-formatting jobs.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2391" cache_read_input_tokens="15239" output_tokens="220" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2391, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01LjiCFuYXBnoRihixSmEWpN">
+Now I have all the information needed. Let me compile my findings:
+
+## CI Workflow Analysis Report
+
+Based on my thorough exploration of the GitHub Actions workflow files, here are my findings regarding the relationship between "code review" jobs and the "fix-formatting" job:
+
+### Key Finding: No Direct Dependency
+
+**The "code-reviews" workflow (code-reviews.yml) does NOT have a dependency on the "fix-formatting" job.**
+
+The code-reviews workflow is completely separate from the main CI workflow. Here's the breakdown:
+
+### Workflow: `code-reviews.yml`
+- **Trigger**: Pull request events (opened, synchronize, ready_for_review)
+- **Jobs**:
+  1. **discover** (lines 10-84)
+     - Discovers matching review files from `.erk/reviews/`
+     - No `needs:` dependency
+  2. **review** (lines 86-128)
+     - `needs: discover` (depends only on discover job)
+     - Runs convention-based code reviews
+     - No dependency on `fix-formatting`
+
+### Workflow: `ci.yml`
+The main CI workflow DOES have several jobs that depend on `fix-formatting`:
+
+**Jobs with `needs: [check-submission, fix-formatting]` dependency** (lines 34, 45, 106, 121, 132, 152, 165):
+- `format` (lines 33-42)
+- `lint` (lines 44-53)
+- `docs-check` (lines 105-117)
+
+... [23 lines omitted] ...
+  </tool_result>
+  <assistant>No, the code review CI jobs (`code-reviews.yml`) do **not** block on `fix-formatting`.
+
+- **`code-reviews.yml`** is a separate workflow triggered on PR events. Its `review` job only depends on its own `discover` job — no reference to `fix-formatting` at all.
+- **`fix-formatting`** lives in `ci.yml` and blocks the other CI jobs there (lint, format, ty, unit-tests, integration-tests, etc.), but the code reviews workflow is completely independent.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="913" cache_read_input_tokens="17630" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 913, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>what about the other way around?</user>
+  <assistant>
+
+Looking at the `ci.yml` structure the agent reported: `fix-formatting` only has `needs: check-submission`. It does **not** depend on the code review jobs.
+
+So there's no dependency in either direction — `code-reviews.yml` and the `fix-formatting` job in `ci.yml` are completely independent of each other.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="288" cache_read_input_tokens="18543" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 288, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>code-reviews should be downstream of fix-formatting</user>
+  <usage input_tokens="3" cache_creation_input_tokens="252" cache_read_input_tokens="18831" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 252}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>That makes sense — reviews should run against properly formatted code. Let me look at the actual workflow files to plan the right approach, since these are currently separate workflows.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="252" cache_read_input_tokens="18831" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 252}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01E4CLUjcUyKfgNJphQTnoMo">
+    <param name="query">select:Read</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="252" cache_read_input_tokens="18831" output_tokens="264" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 252, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01E4CLUjcUyKfgNJphQTnoMo">
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01V8AjXFVBw7oDEV6ovgr46U">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/code-reviews.yml</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1048" cache_read_input_tokens="19083" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1048}" output_tokens="19" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V8AjXFVBw7oDEV6ovgr46U">
+     1→# Convention-based code reviews
+     2→# Add a new review by dropping a markdown file in .erk/reviews/
+     3→name: code-reviews
+     4→
+     5→on:
+     6→  pull_request:
+     7→    types: [opened, synchronize, ready_for_review]
+     8→
+     9→jobs:
+    10→  discover:
+    11→    if: vars.CLAUDE_ENABLED != 'false' &amp;&amp; github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    12→    runs-on: ubuntu-latest
+    13→    timeout-minutes: 5
+    14→    outputs:
+    15→      matrix: ${{ steps.discover.outputs.matrix }}
+    16→      has_reviews: ${{ steps.discover.outputs.has_reviews }}
+    17→    permissions:
+    18→      contents: read
+    19→      pull-requests: read
+    20→
+    21→    steps:
+    22→      - name: Check local review marker
+    23→        id: check_local_review
+    24→        env:
+    25→          GH_TOKEN: ${{ github.token }}
+    26→        run: |
+    27→          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+    28→          MARKER="&lt;!-- erk:local-review-passed:${HEAD_SHA} --&gt;"
+    29→          PR_BODY=$(gh pr view ${{ github.event.pull_request.number }} \
+    30→            --repo ${{ github.repository }} --json body -q .body)
+
+... [98 lines omitted] ...
+
+    66→            echo "Discovery failed"
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Foc6QhJPpMSr8C6Lmtxbz7">
+    <param name="file_path">/Users/schrockn/code/erk/.github/workflows/ci.yml</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1048" cache_read_input_tokens="19083" output_tokens="130" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1048, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Foc6QhJPpMSr8C6Lmtxbz7">
+     1→name: ci
+     2→
+     3→on:
+     4→  push:
+     5→    branches: [master]
+     6→  pull_request:
+     7→    types: [opened, synchronize, reopened, ready_for_review]
+     8→  workflow_dispatch:
+     9→
+    10→permissions:
+    11→  contents: write # Needed for autofix to push
+    12→  actions: write # Needed to re-trigger workflow after autofix push
+    13→  statuses: write # Needed for autofix to update commit status
+    14→
+    15→concurrency:
+    16→  group: ci-${{ github.head_ref || github.ref }}
+    17→  cancel-in-progress: true
+    18→
+    19→jobs:
+    20→  check-submission:
+    21→    if: github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    22→    runs-on: ubuntu-latest
+    23→    timeout-minutes: 5
+    24→    outputs:
+    25→      skip: ${{ steps.check.outputs.skip }}
+    26→    steps:
+    27→      - uses: actions/checkout@v4
+    28→      - name: Check for submission folder
+    29→        id: check
+    30→        uses: ./.github/actions/check-impl-context
+
+... [448 lines omitted] ...
+
+    84→            echo "::error::Files need formatting or docs are out of sync"
+    93→            echo "::error::Formatting issues found (cannot auto-fix fork PRs)"
+   196→      (needs.format.result == 'failure' ||
+   197→       needs.lint.result == 'failure' ||
+   198→       needs.fix-formatting.result == 'failure' ||
+   199→       needs.docs-check.result == 'failure' ||
+   200→       needs.ty.result == 'failure')
+   309→      # Inlined from .github/actions/setup-claude-erk to avoid CodeQL warning
+   336→      - name: Collect failure context
+   338→        id: failures
+   349→      - name: Collect actual errors
+   351→        id: errors
+   353→          errors=""
+   355→          if [ "${{ needs.format.result }}" = "failure" ]; then
+   356→            errors+="=== RUFF FORMAT ERRORS ===\n"
+   357→            errors+="$(uv run ruff format --check . 2&gt;&amp;1 || true)\n\n"
+   360→          if [ "${{ needs.lint.result }}" = "failure" ]; then
+   361→            errors+="=== RUFF LINT ERRORS ===\n"
+   362→            errors+="$(uv run ruff check . 2&gt;&amp;1 || true)\n\n"
+   365→          if [ "${{ needs.fix-formatting.result }}" = "failure" ]; then
+   366→            errors+="=== MARKDOWN-FIX ERRORS ===\n"
+   367→            errors+="$(prettier --check '**/*.md' --ignore-path .gitignore 2&gt;&amp;1 || true)\n\n"
+   370→          if [ "${{ needs.docs-check.result }}" = "failure" ]; then
+   371→            errors+="=== DOCS CHECK ERRORS ===\n"
+   372→            errors+="$(make md-check 2&gt;&amp;1 || true)\n"
+   373→            errors+="$(make docs-check 2&gt;&amp;1 || true)\n\n"
+   376→          if [ "${{ needs.ty.result }}" = "failure" ]; then
+   377→            errors+="=== TY TYPE ERRORS ===\n"
+   378→            errors+="$(uv run ty check 2&gt;&amp;1 || true)\n\n"
+   382→          echo -e "$errors" &gt; /tmp/errors.txt
+   393→          echo "Debug: erk version: $(erk --version 2&gt;&amp;1 || echo 'version failed')"
+   403→            --var-file "ERRORS=/tmp/errors.txt" 2&gt;&amp;1); then
+   404→            echo "Error: Failed to get ci-autofix prompt"
+   411→            echo "Error: ci-autofix prompt is empty (command succeeded but no output)"
+   433→  # === CI Failure Summarization (Haiku) ===
+   452→      (needs.format.result == 'failure' ||
+   453→       needs.lint.result == 'failure' ||
+   454→       needs.fix-formatting.result == 'failure' ||
+   455→       needs.docs-check.result == 'failure' ||
+   456→       needs.ty.result == 'failure' ||
+   457→       needs.unit-tests.result == 'failure' ||
+   458→       needs.integration-tests.result == 'failure' ||
+   459→       needs.erk-mcp-tests.result == 'failure')
+   473→      - name: Summarize failures
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="8891" cache_read_input_tokens="20131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8891}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>The problem is these are separate workflows — you can't use `needs:` across workflow files. The cleanest fix is to move the code review jobs into `ci.yml`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="8891" cache_read_input_tokens="20131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 8891}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_0126Y1DadCq5xLQHqTtk5p7P">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="8891" cache_read_input_tokens="20131" output_tokens="270" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 8891, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0126Y1DadCq5xLQHqTtk5p7P">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_016oxuWbTCXXUsGkphLSSp21">
+    <param name="file_path">/Users/schrockn/.claude/plans/groovy-squishing-hartmanis.md</param>
+    <param name="content"># Plan: Make code-reviews downstream of fix-formatting
+
+## Context
+
+The `code-reviews.yml`...[truncated 1288 chars]...ws run against the formatted code
+- Push a clean PR and verify reviews still run normally
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="674" cache_read_input_tokens="29022" output_tokens="493" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 674, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016oxuWbTCXXUsGkphLSSp21">
+File created successfully at: /Users/schrockn/.claude/plans/groovy-squishing-hartmanis.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01BYiojjs1rwoueKPZN32F4f">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="632" cache_read_input_tokens="29696" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 632, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01BYiojjs1rwoueKPZN32F4f">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_018j1MPBQVwoUBthEQQAmDMt">
+    <param name="plan"># Plan: Make code-reviews downstream of fix-formatting
+
+## Context
+
+The `code-reviews.yml`...[truncated 1288 chars]...ws run against the formatted code
+- Push a clean PR and verify reviews still run normally
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="732" cache_read_input_tokens="30328" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 732, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018j1MPBQVwoUBthEQQAmDMt">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/groovy-squishing-hartmanis.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Make code-reviews downstream of fix-formatting
+Current context: (wt:erk) (br:master) (plan:#8751)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 5118a7d5-92f0-4499-b953-a575a2d7d8be \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Make code-reviews downstream of fix-formatting
+
+## Context
+
+The `code-reviews.yml` workflow runs independently of the `fix-formatting` job in `ci.yml`. Code reviews should run against properly formatted code, so they need to wait for `fix-formatting` to complete (and potentially push formatting fixes) first.
+
+Since GitHub Actions `needs:` only works within a single workflow file, we must move the code review jobs into `ci.yml`.
+
+## Changes
+
+### File: `.github/workflows/ci.yml`
+
+Add the `discover-reviews` and `review` jobs from `code-reviews.yml`, with these modifications:
+
+1. **`discover-reviews` job** (copied from `discover` in code-reviews.yml):
+   - Add `needs: [check-submission, fix-formatting]`
+   - Keep existing `if` conditions (CLAUDE_ENABLED, draft check, plan-review label check)
+   - Add `needs.check-submission.outputs.skip == 'false'` to the `if` condition
+   - Rename from `discover` to `discover-reviews` to avoid ambiguity
+
+2. **`review` job** (copied from code-reviews.yml):
+   - Change `needs: discover` to `needs: discover-reviews`
+   - Otherwise keep as-is
+
+### File: `.github/workflows/code-reviews.yml`
+
+Delete this file entirely — its jobs now live in `ci.yml`.
+
+## Verification
+
+- Push a PR with formatting issues and verify:
+  - `fix-formatting` runs and pushes fixes
+  - `discover-reviews` and `review` jobs wait for `fix-formatting` to complete
+  - Reviews run against the formatted code
+- Push a clean PR and verify reviews still run normally
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="691" cache_read_input_tokens="31060" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 691}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01JnxjfCY4mQfZX8xPdcJQma">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="691" cache_read_input_tokens="31060" output_tokens="487" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 691, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JnxjfCY4mQfZX8xPdcJQma">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_011gh2LTyGzE2hsWbuP45cAK">
+    <param name="questions">[{'question': '📋 Plan: Make code-reviews downstream of fix-formatting\nCurrent context: (w...[truncated 398 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1737" cache_read_input_tokens="31751" output_tokens="219" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1737, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011gh2LTyGzE2hsWbuP45cAK">
+User has answered your questions: "📋 Plan: Make code-reviews downstream of fix-formatting
+Current context: (wt:erk) (br:master) (plan:#8751)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01KrXkgRWSQFauz8He7TbPu3">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="36611" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 36611}" output_tokens="27" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KrXkgRWSQFauz8He7TbPu3">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_017b34aZEYJZF8F4NBJp4Qwg">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="562" cache_read_input_tokens="36611" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 562, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017b34aZEYJZF8F4NBJp4Qwg">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="5118a7d5-92f0-4499-b953-a575a2d7d8be" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="5118a7d5-92f0-4499-b953-a575a2d7d8be" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "5118a7d5-92f0-4499-b953-a575a2d7d8be" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "5118a7d5-92f0-4499-b953-a575a2d7d8be" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "5118a7d5-92f0-4499-b953-a575a2d7d8be" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "5118a7d5-92f0-4499-b953-a575a2d7d8be" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2295" cache_read_input_tokens="37173" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2295}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01MY7yuHtWVJNBpARmTFZiCv">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2295" cache_read_input_tokens="37173" output_tokens="232" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2295, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01MY7yuHtWVJNBpARmTFZiCv">
+
+  </tool_result>
+  <assistant>I'll save the plan as a draft PR. Let me generate the branch slug and summary, then run the save command.
+
+- **Branch slug**: `reviews-after-formatting`
+- **Summary**: Moves code review CI jobs from the separate code-reviews.yml workflow into ci.yml so they depend on the fix-formatting job. This ensures reviews run against properly formatted code after auto-fix commits.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3373" cache_read_input_tokens="39468" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3373}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VQb6Bs9M33cgYUfmkKkFRn">
+    <param name="command">erk exec plan-save --format json --session-id="5118a7d5-92f0-4499-b953-a575a2d7d8be" --bra...[truncated 142 chars]...ing job. This ensures reviews run against properly formatted code after auto-fix commits."</param>
+    <param name="description">Save plan as draft PR via erk</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3373" cache_read_input_tokens="39468" output_tokens="278" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3373, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VQb6Bs9M33cgYUfmkKkFRn">
+{"success": true, "plan_number": 8797, "plan_url": "https://github.com/dagster-io/erk/pull/8797", "title": "[erk-plan] Plan: Make code-reviews downstream of fix-formatting", "branch_name": "plnd/reviews-after-formatting-03-05-1708", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/5118a7d5-92f0-4499-b953-a575a2d7d8be/plan_snapshots/000001-8055a19a"}
+  </tool_result>
+  <assistant>Plan saved as draft PR #8797. Now pushing the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="664" cache_read_input_tokens="42841" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 664}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01WMxzfi2Y8cJuSeK1TAq1iF">
+    <param name="command">erk exec upload-impl-session --session-id "5118a7d5-92f0-4499-b953-a575a2d7d8be" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">15000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="664" cache_read_input_tokens="42841" output_tokens="157" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 664, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01WMxzfi2Y8cJuSeK1TAq1iF">
+{"uploaded": true, "plan_id": 8751}
+  </tool_result>
+  <assistant>Plan "Make code-reviews downstream of fix-formatting" saved as draft PR #8797
+URL: https://github.com/dagster-io/erk/pull/8797</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="182" cache_read_input_tokens="43505" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 182}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01Cg6LF1otfGW7N1y1vdySVB">
+    <param name="plan"># Plan: Make code-reviews downstream of fix-formatting
+
+## Context
+
+The `code-reviews.yml`...[truncated 1288 chars]...ws run against the formatted code
+- Push a clean PR and verify reviews still run normally
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="182" cache_read_input_tokens="43505" output_tokens="79" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 182, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Cg6LF1otfGW7N1y1vdySVB">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8797 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8797:
+  In current wt:    source "$(erk br co --for-plan 8797 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8797 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8797 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8797 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8797:
+  In current wt:  erk br co --for-plan 8797
+  In new wt:      erk br co --new-slot --for-plan 8797
+
+Dispatch plan #8797:
+  CLI command:    erk pr dispatch 8797
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan saved. Here are the next steps:
+
+**Implement plan #8797:**
+```
+In current wt:    source "$(erk br co --for-plan 8797 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --for-plan 8797 --script)" &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 8797 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 8797 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout plan #8797:**
+```
+In current wt:  erk br co --for-plan 8797
+In new wt:      erk br co --new-slot --for-plan 8797
+```
+
+**Dispatch plan #8797:**
+```
+CLI command:    erk pr dispatch 8797
+Slash command:  /erk:pr-dispatch
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="461" cache_read_input_tokens="43687" output_tokens="246" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 461, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "5118a7d5-92f0-4499-b953-a575a2d7d8be" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>
+
+The most recent plan is #8797. Let me dispatch it.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="41255" cache_read_input_tokens="4894" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 41255}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013QokxTL7ZDx2h6DUrVBLnC">
+    <param name="command">erk pr dispatch 8797</param>
+    <param name="description">Dispatch plan #8797 for remote AI implementation</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="41255" cache_read_input_tokens="4894" output_tokens="119" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 41255, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_013QokxTL7ZDx2h6DUrVBLnC">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8797...
+
+✓ All 1 plan(s) validated
+
+  #8797: [erk-plan] Plan: Make code-reviews downstream of fix-formatting
+
+Dispatching PR #8797...
+
+Fetching plan content...
+Syncing branch: plnd/reviews-after-formatting-03-05-1708
+Committing plan to branch...
+✓ Branch pushed to remote
+
+Dispatching workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow dispatched.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+Dispatched plans:
+
+... [4 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01PG35oCDwV1mJE7s13tUWjb">
+    <param name="command">erk exec marker delete --session-id "5118a7d5-92f0-4499-b953-a575a2d7d8be" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker to allow new plans</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="533" cache_read_input_tokens="46149" output_tokens="118" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 533, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PG35oCDwV1mJE7s13tUWjb">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Dispatched! Plan #8797 is now being implemented remotely.
+
+- **Plan**: https://github.com/dagster-io/erk/pull/8797
+- **Workflow**: https://github.com/dagster-io/erk/actions/runs/22744334494</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="149" cache_read_input_tokens="46682" output_tokens="70" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 149, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Goodbye!&lt;/local-command-stdout&gt;</user>
+</session>
