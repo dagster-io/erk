@@ -57,8 +57,15 @@ def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -> None:
         # Local is behind remote - safe to fast-forward
         _check_trunk_worktree_clean(ctx, repo, trunk=trunk)
 
+        trunk_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, trunk)
+
         user_output(f"Syncing {trunk} with origin/{trunk}...")
-        ctx.git.branch.update_local_ref(repo.root, trunk, remote_sha)
+        if trunk_worktree is not None:
+            # Trunk is checked out — must use pull to update index + working tree
+            ctx.git.remote.pull_branch(trunk_worktree, "origin", trunk, ff_only=True)
+        else:
+            # Trunk not checked out — safe to update ref directly
+            ctx.git.branch.update_local_ref(repo.root, trunk, remote_sha)
         user_output(click.style("✓", fg="green") + f" {trunk} synced with origin/{trunk}")
     elif merge_base == remote_sha:
         # Local is ahead of remote - user has local commits

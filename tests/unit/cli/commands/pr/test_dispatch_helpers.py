@@ -90,8 +90,8 @@ def test_diverged_exits(tmp_path: Path) -> None:
         ensure_trunk_synced(ctx, repo)
 
 
-def test_trunk_checked_out_with_clean_worktree_succeeds(tmp_path: Path) -> None:
-    """When trunk is checked out in a clean worktree, fast-forward succeeds."""
+def test_trunk_checked_out_with_clean_worktree_uses_pull(tmp_path: Path) -> None:
+    """When trunk is checked out in a clean worktree, uses pull_branch (not update_local_ref)."""
     git = FakeGit(
         current_branches={tmp_path: "master"},
         trunk_branches={tmp_path: "master"},
@@ -104,8 +104,10 @@ def test_trunk_checked_out_with_clean_worktree_succeeds(tmp_path: Path) -> None:
 
     ensure_trunk_synced(ctx, repo)
 
-    assert len(git.updated_refs) == 1
-    assert git.updated_refs[0][2] == REMOTE_SHA
+    # Should use pull_branch to update index + working tree, not update_local_ref
+    assert len(git.updated_refs) == 0
+    assert len(git.pulled_branches) == 1
+    assert git.pulled_branches[0] == ("origin", "master", True)
 
 
 def test_trunk_checked_out_with_dirty_worktree_exits(tmp_path: Path) -> None:
