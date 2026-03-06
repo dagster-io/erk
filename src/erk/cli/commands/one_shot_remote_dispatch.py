@@ -11,11 +11,7 @@ from datetime import UTC
 
 import click
 
-from erk.core.branch_slug_generator import (
-    BRANCH_SLUG_SYSTEM_PROMPT,
-    _postprocess_slug,
-)
-from erk_shared.core.llm_caller import LlmCallFailed, NoApiKey
+from erk.core.branch_slug_generator import generate_branch_slug
 from erk_shared.core.prompt_executor import PromptExecutor
 from erk_shared.gateway.github.metadata.core import (
     create_submission_queued_block,
@@ -109,7 +105,7 @@ def dispatch_one_shot_remote(
     dry_run: bool,
     ref: str | None,
     time_gateway: Time,
-    llm_caller: object | None,
+    prompt_executor: PromptExecutor | None,
 ) -> OneShotDispatchResult | None:
     """Execute the full remote dispatch sequence for a one-shot workflow.
 
@@ -124,7 +120,7 @@ def dispatch_one_shot_remote(
         dry_run: If True, print preview without executing
         ref: Branch to dispatch workflow from, or None for default branch
         time_gateway: Time gateway for timestamps
-        llm_caller: LlmCaller for slug generation, or None
+        prompt_executor: PromptExecutor for slug generation, or None
 
     Returns:
         OneShotDispatchResult with pr_number, run_id, branch_name,
@@ -190,26 +186,12 @@ def dispatch_one_shot_remote(
         if params.slug is not None:
             slug = params.slug
             user_output(click.style(f"  \u2713 Slug: {slug} (pre-generated)", dim=True))
-        elif llm_caller is not None:
-            from erk_shared.core.llm_caller import LlmCaller
-
-            assert isinstance(llm_caller, LlmCaller)  # type narrowing
-            result = llm_caller.call(
-                params.prompt, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT, max_tokens=50
-            )
-            if isinstance(result, NoApiKey):
-                user_output(click.style("  \u26a0 No API key: ", fg="yellow") + result.message)
-                slug = sanitize_worktree_name(params.prompt)[:25].rstrip("-")
-            elif isinstance(result, LlmCallFailed):
-                user_output(click.style("  \u26a0 LLM failed: ", fg="yellow") + result.message)
-                slug = sanitize_worktree_name(params.prompt)[:25].rstrip("-")
-            else:
-                slug = _postprocess_slug(result.text) or sanitize_worktree_name(params.prompt)[
-                    :25
-                ].rstrip("-")
         else:
-            slug = sanitize_worktree_name(params.prompt)[:25].rstrip("-")
-        user_output(click.style(f"  \u2713 Slug: {slug}", dim=True))
+            if prompt_executor is not None:
+                slug = generate_branch_slug(prompt_executor, params.prompt)
+            else:
+                slug = sanitize_worktree_name(params.prompt)[:25].rstrip("-")
+            user_output(click.style(f"  \u2713 Slug: {slug}", dim=True))
 
         branch_name = generate_planned_pr_branch_name(
             slug,

@@ -1,4 +1,4 @@
-"""Tests for CodexPromptExecutor arg building and logic.
+"""Tests for CodexCliPromptExecutor arg building and logic.
 
 These tests verify the arg-building functions extracted for testability,
 without requiring Codex CLI to be installed.
@@ -232,14 +232,14 @@ class TestBuildCodexPromptArgs:
         assert "--yolo" in result
 
 
-class TestCodexPromptExecutor:
-    """Tests for CodexPromptExecutor methods that don't require subprocess."""
+class TestCodexCliPromptExecutor:
+    """Tests for CodexCliPromptExecutor methods that don't require subprocess."""
 
     def test_is_available_checks_codex_in_path(self) -> None:
         """Verify is_available uses shutil.which for codex."""
-        from erk.core.codex_prompt_executor import CodexPromptExecutor
+        from erk.core.codex_prompt_executor import CodexCliPromptExecutor
 
-        executor = CodexPromptExecutor(console=None)
+        executor = CodexCliPromptExecutor(console=None)
         # We just verify it returns a bool without error
         result = executor.is_available()
         assert isinstance(result, bool)

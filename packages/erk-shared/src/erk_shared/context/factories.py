@@ -12,13 +12,11 @@ from typing import TYPE_CHECKING
 
 from erk_shared.core.fakes import (
     FakeCodespaceRegistry,
-    FakeLlmCaller,
     FakeObjectiveListService,
     FakePlanListService,
     FakePromptExecutor,
     FakeScriptWriter,
 )
-from erk_shared.core.llm_caller import LlmResponse
 
 if TYPE_CHECKING:
     from erk_shared.context.context import ErkContext
@@ -87,7 +85,7 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
     from erk_shared.gateway.graphite.fake import FakeGraphite
 
     # Note: For minimal contexts, use FakePromptExecutor since the real
-    # ClaudePromptExecutor lives in erk (not erk-shared)
+    # ClaudeCliPromptExecutor lives in erk (not erk-shared)
     from erk_shared.gateway.shell.fake import FakeShell
     from erk_shared.gateway.time.fake import FakeTime
     from erk_shared.gateway.time.real import RealTime
@@ -141,7 +139,6 @@ def create_minimal_context(*, debug: bool, cwd: Path | None = None) -> ErkContex
         github_admin=FakeGitHubAdmin(),
         claude_installation=RealClaudeInstallation(),
         prompt_executor=FakePromptExecutor(),
-        llm_caller=FakeLlmCaller(response=LlmResponse(text="slug")),
         graphite=fake_graphite,
         graphite_branch_ops=None,  # Graphite disabled, so None
         console=ScriptConsole(),

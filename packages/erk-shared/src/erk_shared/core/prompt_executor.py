@@ -1,7 +1,7 @@
 """Prompt execution abstraction - ABC and types.
 
 This module provides the abstract interface and typed events for prompt execution.
-The real implementation (ClaudePromptExecutor) remains in erk.core.prompt_executor.
+The real implementation (ClaudeCliPromptExecutor) remains in erk.core.prompt_executor.
 """
 
 from __future__ import annotations
@@ -169,7 +169,7 @@ class PromptExecutor(ABC):
             True if the executor is available, False otherwise.
 
         Example:
-            >>> executor = ClaudePromptExecutor()
+            >>> executor = ClaudeCliPromptExecutor()
             >>> if executor.is_available():
             ...     print("Executor is available")
         """
@@ -204,7 +204,7 @@ class PromptExecutor(ABC):
             ExecutorEvent objects as they occur during execution
 
         Example:
-            >>> executor = ClaudePromptExecutor()
+            >>> executor = ClaudeCliPromptExecutor()
             >>> for event in executor.execute_command_streaming(
             ...     "/erk:plan-implement",
             ...     Path("/repos/my-project"),
@@ -246,7 +246,7 @@ class PromptExecutor(ABC):
             CommandResult containing success status, PR URL, duration, and messages
 
         Example:
-            >>> executor = ClaudePromptExecutor()
+            >>> executor = ClaudeCliPromptExecutor()
             >>> result = executor.execute_command(
             ...     "/erk:plan-implement",
             ...     Path("/repos/my-project"),
@@ -341,13 +341,13 @@ class PromptExecutor(ABC):
             RuntimeError: If the executor is not available
 
         Note:
-            In production (ClaudePromptExecutor), this function never returns - the
+            In production (ClaudeCliPromptExecutor), this function never returns - the
             process is replaced by Claude CLI via os.execvp. In testing
             (FakePromptExecutor), this simulates the behavior without actually
             replacing the process.
 
         Example:
-            >>> executor = ClaudePromptExecutor()
+            >>> executor = ClaudeCliPromptExecutor()
             >>> executor.execute_interactive(
             ...     Path("/repos/my-project"),
             ...     dangerous=False
@@ -389,7 +389,7 @@ class PromptExecutor(ABC):
             PromptResult with success status and output text
 
         Example:
-            >>> executor = ClaudePromptExecutor()
+            >>> executor = ClaudeCliPromptExecutor()
             >>> result = executor.execute_prompt(
             ...     "Generate a commit message for this diff",
             ...     model="haiku",
@@ -429,7 +429,7 @@ class PromptExecutor(ABC):
             Exit code from Claude CLI
 
         Example:
-            >>> executor = ClaudePromptExecutor()
+            >>> executor = ClaudeCliPromptExecutor()
             >>> exit_code = executor.execute_prompt_passthrough(
             ...     "Review this PR",
             ...     model="sonnet",

@@ -18,9 +18,9 @@ import tomlkit
 # Re-export types from erk_shared.context and erk.artifacts.paths
 from erk.artifacts.paths import ErkPackageInfo as ErkPackageInfo
 from erk.cli.config import load_config, load_local_config, merge_configs_with_local
-from erk.core.codex_prompt_executor import CodexPromptExecutor
+from erk.core.codex_prompt_executor import CodexCliPromptExecutor
 from erk.core.completion import RealCompletion
-from erk.core.prompt_executor import ClaudePromptExecutor
+from erk.core.prompt_executor import ClaudeCliPromptExecutor
 from erk.core.repo_discovery import discover_repo_or_sentinel, ensure_erk_metadata_dir
 from erk.core.script_writer import RealScriptWriter
 from erk.core.services.objective_list_service import RealObjectiveListService
@@ -36,8 +36,7 @@ from erk_shared.context.types import NoRepoSentinel as NoRepoSentinel
 from erk_shared.context.types import RepoContext as RepoContext
 
 # Import ABCs and fakes from erk_shared.core
-from erk_shared.core.fakes import FakeLlmCaller, FakeObjectiveListService, FakePlanListService
-from erk_shared.core.llm_caller import LlmCaller, LlmResponse
+from erk_shared.core.fakes import FakeObjectiveListService, FakePlanListService
 from erk_shared.core.objective_list_service import ObjectiveListService
 from erk_shared.core.plan_list_service import PlanListService
 from erk_shared.core.prompt_executor import PromptExecutor
@@ -99,8 +98,8 @@ def create_prompt_executor(
 ) -> PromptExecutor:
     """Select prompt executor based on global configuration.
 
-    Returns CodexPromptExecutor when backend is "codex", otherwise
-    ClaudePromptExecutor (the default).
+    Returns CodexCliPromptExecutor when backend is "codex", otherwise
+    ClaudeCliPromptExecutor (the default).
 
     Args:
         global_config: Global configuration, or None if not yet initialized.
@@ -110,8 +109,8 @@ def create_prompt_executor(
         PromptExecutor implementation matching the configured backend.
     """
     if global_config is not None and global_config.interactive_agent.backend == "codex":
-        return CodexPromptExecutor(console=console)
-    return ClaudePromptExecutor(console=console)
+        return CodexCliPromptExecutor(console=console)
+    return ClaudeCliPromptExecutor(console=console)
 
 
 def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
@@ -188,7 +187,6 @@ def minimal_context(git: Git, cwd: Path, dry_run: bool = False) -> ErkContext:
         codespace_registry=FakeCodespaceRegistry(),
         claude_installation=FakeClaudeInstallation.for_test(),
         prompt_executor=FakePromptExecutor(),
-        llm_caller=FakeLlmCaller(response=LlmResponse(text="test-slug")),
         cwd=cwd,
         global_config=None,
         local_config=LoadedConfig.test(),
@@ -222,7 +220,6 @@ def context_for_test(
     codespace_registry: CodespaceRegistry | None = None,
     claude_installation: ClaudeInstallation | None = None,
     prompt_executor: PromptExecutor | None = None,
-    llm_caller: LlmCaller | None = None,
     cwd: Path | None = None,
     global_config: GlobalConfig | None = None,
     local_config: LoadedConfig | None = None,
@@ -386,9 +383,6 @@ def context_for_test(
     if prompt_executor is None:
         prompt_executor = FakePromptExecutor()
 
-    if llm_caller is None:
-        llm_caller = FakeLlmCaller(response=LlmResponse(text="test-slug"))
-
     if global_config is None:
         global_config = GlobalConfig(
             erk_root=Path("/test/erks"),
@@ -436,7 +430,6 @@ def context_for_test(
         codespace_registry=codespace_registry,
         claude_installation=claude_installation,
         prompt_executor=prompt_executor,
-        llm_caller=llm_caller,
         cwd=cwd or sentinel_path(),
         global_config=global_config,
         local_config=local_config,
@@ -650,13 +643,20 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
             graphite_branch_ops = DryRunGraphiteBranchOps(graphite_branch_ops)
         github = DryRunGitHub(github)
 
-    # 10. Create LLM caller for lightweight operations (slug generation)
-    from erk.core.fast_llm import AnthropicLlmCaller
-    from erk.core.prompt_executor import ClaudePromptExecutor
+    # 10. Create prompt executor (FallbackPromptExecutor: API-first, CLI-fallback)
+    from erk.core.anthropic_prompt_executor import AnthropicApiPromptExecutor
+    from erk.core.fallback_prompt_executor import FallbackPromptExecutor
 
-    llm_caller = AnthropicLlmCaller(prompt_executor=ClaudePromptExecutor(console=None))
+    cli_executor = create_prompt_executor(
+        global_config=global_config,
+        console=console,
+    )
+    prompt_executor: PromptExecutor = FallbackPromptExecutor(
+        api_executor=AnthropicApiPromptExecutor(),
+        cli_executor=cli_executor,
+    )
 
-    # 11. Create claude installation and prompt executor
+    # 11. Create claude installation and agent launcher
     from erk_shared.gateway.agent_docs.dry_run import DryRunAgentDocs
     from erk_shared.gateway.agent_launcher.real import RealAgentLauncher
     from erk_shared.gateway.claude_installation.real import RealClaudeInstallation
@@ -666,10 +666,6 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     real_agent_docs: AgentDocs = RealAgentDocs()
     if dry_run:
         real_agent_docs = DryRunAgentDocs(real_agent_docs)
-    prompt_executor = create_prompt_executor(
-        global_config=global_config,
-        console=console,
-    )
 
     # 12. Create package info
     package_info = ErkPackageInfo.from_project_dir(cwd)
@@ -706,7 +702,6 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         ),
         claude_installation=real_claude_installation,
         prompt_executor=prompt_executor,
-        llm_caller=llm_caller,
         cwd=cwd,
         global_config=global_config,
         local_config=local_config,

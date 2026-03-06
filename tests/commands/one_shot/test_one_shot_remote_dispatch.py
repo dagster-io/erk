@@ -37,7 +37,7 @@ def test_remote_dispatch_happy_path() -> None:
         dry_run=False,
         ref=None,
         time_gateway=time,
-        llm_caller=None,
+        prompt_executor=None,
     )
 
     assert result is not None
@@ -111,7 +111,7 @@ def test_remote_dispatch_dry_run() -> None:
         dry_run=True,
         ref=None,
         time_gateway=time,
-        llm_caller=None,
+        prompt_executor=None,
     )
 
     assert result is None
@@ -149,7 +149,7 @@ def test_remote_dispatch_with_model() -> None:
         dry_run=False,
         ref=None,
         time_gateway=time,
-        llm_caller=None,
+        prompt_executor=None,
     )
 
     assert result is not None
@@ -183,7 +183,7 @@ def test_remote_dispatch_with_explicit_ref() -> None:
         dry_run=False,
         ref="custom-branch",
         time_gateway=time,
-        llm_caller=None,
+        prompt_executor=None,
     )
 
     assert result is not None
@@ -217,7 +217,7 @@ def test_remote_dispatch_with_plan_only() -> None:
         dry_run=False,
         ref=None,
         time_gateway=time,
-        llm_caller=None,
+        prompt_executor=None,
     )
 
     assert result is not None

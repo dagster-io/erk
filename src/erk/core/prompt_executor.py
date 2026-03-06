@@ -1,6 +1,6 @@
 """Claude CLI prompt execution implementation.
 
-This module provides the ClaudePromptExecutor implementation and re-exports
+This module provides the ClaudeCliPromptExecutor implementation and re-exports
 ABC and types from erk_shared.core.
 """
 
@@ -77,11 +77,11 @@ def format_prompt_error(
     return " | ".join(error_parts)
 
 
-class ClaudePromptExecutor(PromptExecutor):
+class ClaudeCliPromptExecutor(PromptExecutor):
     """Production implementation using subprocess and Claude CLI."""
 
     def __init__(self, console: Console | None) -> None:
-        """Initialize ClaudePromptExecutor with Console dependency.
+        """Initialize ClaudeCliPromptExecutor with Console dependency.
 
         Args:
             console: Console gateway for TTY detection.
