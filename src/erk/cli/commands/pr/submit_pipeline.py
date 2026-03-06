@@ -49,7 +49,6 @@ from erk_shared.gateway.github.types import BodyText, GitHubRepoId, PRNotFound
 from erk_shared.gateway.gt.operations.finalize import ERK_SKIP_LEARN_LABEL, is_learn_plan
 from erk_shared.gateway.gt.prompts import truncate_diff
 from erk_shared.gateway.pr.diff_extraction import filter_diff_excluded_files
-from erk_shared.gateway.pr.graphite_enhance import should_enhance_with_graphite
 from erk_shared.impl_context import impl_context_exists, remove_impl_context
 from erk_shared.impl_folder import (
     has_plan_ref,
@@ -110,6 +109,8 @@ class SubmitState:
     title: str | None
     body: str | None
     existing_pr_body: str
+    graphite_is_authed: bool | None
+    graphite_branch_tracked: bool | None
 
 
 @dataclass(frozen=True)
@@ -181,6 +182,16 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
             node_ids=None,
         )
 
+    # Cache Graphite auth and branch tracking status to avoid redundant checks
+    graphite_is_authed: bool | None = None
+    graphite_branch_tracked: bool | None = None
+    if state.use_graphite:
+        is_authed, _, _ = ctx.graphite.check_auth_status()
+        graphite_is_authed = is_authed
+        if is_authed:
+            all_branches = ctx.graphite.get_all_branches(ctx.git, repo_root)
+            graphite_branch_tracked = branch_name in all_branches
+
     return dataclasses.replace(
         state,
         cwd=cwd,
@@ -189,6 +200,8 @@ def prepare_state(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitEr
         parent_branch=parent_branch,
         trunk_branch=trunk_branch,
         plan_id=plan_id,
+        graphite_is_authed=graphite_is_authed,
+        graphite_branch_tracked=graphite_branch_tracked,
     )
 
 
@@ -239,9 +252,11 @@ def push_and_create_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | Sub
 
     Dispatches internally: Graphite-first vs core path.
     """
-    # Determine if Graphite should handle the push
+    # Use cached Graphite check from prepare_state instead of re-checking
     graphite_handles_push = (
-        state.use_graphite and should_enhance_with_graphite(ctx, state.cwd).should_enhance
+        state.use_graphite
+        and state.graphite_is_authed is True
+        and state.graphite_branch_tracked is True
     )
 
     if graphite_handles_push:
@@ -491,13 +506,10 @@ def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | Subm
             base=state.parent_branch,
         )
 
-        # Get PR URL
-        pr_details = ctx.github.get_pr(state.repo_root, pr_number)
-        pr_url = (
-            pr_details.url
-            if not isinstance(pr_details, PRNotFound)
-            else f"https://github.com/{state.branch_name}/pull/{pr_number}"
-        )
+        # Construct PR URL from repo info instead of making another API call
+        remote_url = ctx.git.remote.get_remote_url(state.repo_root, "origin")
+        owner, repo_name = parse_git_remote_url(remote_url)
+        pr_url = f"https://github.com/{owner}/{repo_name}/pull/{pr_number}"
 
         # Update footer with actual PR number
         updated_footer = build_pr_body_footer(pr_number)
@@ -519,9 +531,8 @@ def _core_submit_flow(ctx: ErkContext, state: SubmitState) -> SubmitState | Subm
     pr_number = existing_pr.number
     pr_url = existing_pr.url
 
-    # Add footer if missing
-    pr_details = ctx.github.get_pr(state.repo_root, pr_number)
-    current_body = "" if isinstance(pr_details, PRNotFound) else pr_details.body
+    # Add footer if missing — use pre-captured body from capture_existing_pr_body step
+    current_body = state.existing_pr_body
     has_footer = "erk pr teleport" in current_body or "erk pr checkout" in current_body
     if not has_footer:
         footer = build_pr_body_footer(pr_number)
@@ -659,24 +670,22 @@ def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -> SubmitState | 
     if state.pr_number is None:
         return state
 
-    # Check Graphite auth
-    is_gt_authed, gt_username, _ = ctx.graphite.check_auth_status()
-    if not is_gt_authed:
+    # Use cached Graphite check from prepare_state
+    if state.graphite_is_authed is not True:
         if state.debug:
             click.echo(click.style("   Graphite not authenticated, skipping enhancement", dim=True))
         click.echo("")
         return state
 
-    # Check if branch is tracked
-    repo_root = state.repo_root
-    all_branches = ctx.graphite.get_all_branches(ctx.git, repo_root)
-    if state.branch_name not in all_branches:
+    if state.graphite_branch_tracked is not True:
         if state.debug:
             click.echo(
                 click.style("   Branch not tracked by Graphite, skipping enhancement", dim=True)
             )
         click.echo("")
         return state
+
+    repo_root = state.repo_root
 
     # Run gt submit
     sys.stdout.flush()
@@ -819,24 +828,8 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
 
     click.echo("")
 
-    # Get final PR URL
-    pr_result = ctx.github.get_pr_for_branch(state.repo_root, state.branch_name)
-    pr_url = pr_result.url if not isinstance(pr_result, PRNotFound) else state.pr_url or ""
-
-    # Get Graphite URL if not already set
-    graphite_url = state.graphite_url
-    if graphite_url is None and state.use_graphite:
-        is_gt_authed, _, _ = ctx.graphite.check_auth_status()
-        if is_gt_authed:
-            remote_url = ctx.git.remote.get_remote_url(state.repo_root, "origin")
-            owner, repo_name = parse_git_remote_url(remote_url)
-            repo_id = GitHubRepoId(owner=owner, repo=repo_name)
-            graphite_url = ctx.graphite.get_graphite_url(repo_id, state.pr_number)
-
     return dataclasses.replace(
         state,
-        pr_url=pr_url,
-        graphite_url=graphite_url,
         title=pr_title,
         body=pr_body,
     )
@@ -1055,4 +1048,6 @@ def make_initial_state(
         title=None,
         body=None,
         existing_pr_body="",
+        graphite_is_authed=None,
+        graphite_branch_tracked=None,
     )

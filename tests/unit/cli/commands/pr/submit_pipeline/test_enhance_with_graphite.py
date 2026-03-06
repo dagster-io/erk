@@ -35,6 +35,8 @@ def _make_state(
     plan_context: None = None,
     title: str | None = None,
     body: str | None = None,
+    graphite_is_authed: bool | None = True,
+    graphite_branch_tracked: bool | None = True,
 ) -> SubmitState:
     return SubmitState(
         cwd=cwd,
@@ -59,6 +61,8 @@ def _make_state(
         title=title,
         body=body,
         existing_pr_body="",
+        graphite_is_authed=graphite_is_authed,
+        graphite_branch_tracked=graphite_branch_tracked,
     )
 
 
@@ -104,7 +108,7 @@ def test_skips_when_not_authenticated(tmp_path: Path) -> None:
         cwd=tmp_path,
         global_config=_graphite_config(),
     )
-    state = _make_state(cwd=tmp_path)
+    state = _make_state(cwd=tmp_path, graphite_is_authed=False)
 
     result = enhance_with_graphite(ctx, state)
 
@@ -123,7 +127,7 @@ def test_skips_when_branch_not_tracked(tmp_path: Path) -> None:
         cwd=tmp_path,
         global_config=_graphite_config(),
     )
-    state = _make_state(cwd=tmp_path)
+    state = _make_state(cwd=tmp_path, graphite_branch_tracked=False)
 
     result = enhance_with_graphite(ctx, state)
 

@@ -103,6 +103,8 @@ def test_make_initial_state_sets_placeholders(tmp_path: Path) -> None:
     assert state.title is None
     assert state.body is None
     assert state.existing_pr_body == ""
+    assert state.graphite_is_authed is None
+    assert state.graphite_branch_tracked is None
 
 
 def test_catches_unhandled_exception_from_step(tmp_path: Path) -> None:

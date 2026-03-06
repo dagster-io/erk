@@ -61,6 +61,8 @@ def _make_state(
         title=title,
         body=body,
         existing_pr_body=existing_pr_body,
+        graphite_is_authed=None,
+        graphite_branch_tracked=None,
     )
 
 
@@ -252,6 +254,7 @@ def test_creates_new_pr_when_none_exists(tmp_path: Path) -> None:
             )
         },
         repository_roots={tmp_path: tmp_path},
+        remote_urls={(tmp_path, "origin"): "git@github.com:owner/repo.git"},
     )
     # No existing PR for branch; get_pr returns PRNotFound for pr 999 too
     fake_github = FakeGitHub()
@@ -263,6 +266,7 @@ def test_creates_new_pr_when_none_exists(tmp_path: Path) -> None:
     assert isinstance(result, SubmitState)
     assert result.was_created is True
     assert result.pr_number == 999  # FakeGitHub.create_pr returns 999
+    assert result.pr_url == "https://github.com/owner/repo/pull/999"
 
 
 def test_parent_branch_no_pr_returns_error(tmp_path: Path) -> None:
@@ -312,7 +316,7 @@ def test_existing_pr_adds_footer_if_missing(tmp_path: Path) -> None:
         pr_details={42: pr},
     )
     ctx = context_for_test(git=fake_git, github=fake_github, cwd=tmp_path)
-    state = _make_state(cwd=tmp_path)
+    state = _make_state(cwd=tmp_path, existing_pr_body="Some PR body")
 
     result = _core_submit_flow(ctx, state)
 
