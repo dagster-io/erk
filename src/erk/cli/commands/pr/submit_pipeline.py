@@ -6,6 +6,7 @@ functions transforming a frozen SubmitState dataclass.
 Each step: (ErkContext, SubmitState) -> SubmitState | SubmitError
 """
 
+import concurrent.futures
 import dataclasses
 import sys
 import uuid
@@ -555,7 +556,6 @@ def extract_diff(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErr
     """Local git diff to base branch, filter lock files, truncate, write scratch file."""
     if state.skip_description:
         return state
-    click.echo(click.style("Phase 2: Getting diff", bold=True))
 
     if state.base_branch is None:
         return SubmitError(
@@ -585,8 +585,6 @@ def extract_diff(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErr
         repo_root=state.repo_root,
     )
 
-    click.echo("")
-
     return dataclasses.replace(state, diff_file=diff_file)
 
 
@@ -594,7 +592,6 @@ def fetch_plan_context(ctx: ErkContext, state: SubmitState) -> SubmitState | Sub
     """Fetch plan context from linked erk-plan issue."""
     if state.skip_description:
         return state
-    click.echo(click.style("Phase 3: Fetching plan context", bold=True))
 
     plan_provider = PlanContextProvider(
         plan_backend=ctx.plan_backend, github_issues=ctx.github_issues
@@ -609,11 +606,40 @@ def fetch_plan_context(ctx: ErkContext, state: SubmitState) -> SubmitState | Sub
     return dataclasses.replace(state, plan_context=plan_context)
 
 
+def extract_diff_and_fetch_plan_context(
+    ctx: ErkContext, state: SubmitState
+) -> SubmitState | SubmitError:
+    """Run extract_diff and fetch_plan_context concurrently."""
+    if state.skip_description:
+        return state
+
+    click.echo(click.style("Phase 2: Getting diff and plan context", bold=True))
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        diff_future = executor.submit(extract_diff, ctx, state)
+        plan_future = executor.submit(fetch_plan_context, ctx, state)
+        diff_result = diff_future.result()
+        plan_result = plan_future.result()
+
+    if isinstance(diff_result, SubmitError):
+        return diff_result
+    if isinstance(plan_result, SubmitError):
+        return plan_result
+
+    click.echo("")
+
+    return dataclasses.replace(
+        state,
+        diff_file=diff_result.diff_file,
+        plan_context=plan_result.plan_context,
+    )
+
+
 def generate_description(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitError:
     """Generate AI PR title and body via CommitMessageGenerator."""
     if state.skip_description:
         return state
-    click.echo(click.style("Phase 4: Generating PR description", bold=True))
+    click.echo(click.style("Phase 3: Generating PR description", bold=True))
 
     if state.diff_file is None:
         return SubmitError(
@@ -665,7 +691,7 @@ def enhance_with_graphite(ctx: ErkContext, state: SubmitState) -> SubmitState | 
     if not state.use_graphite:
         return state
 
-    click.echo(click.style("Phase 5: Graphite enhancement", bold=True))
+    click.echo(click.style("Phase 4: Graphite enhancement", bold=True))
 
     if state.pr_number is None:
         return state
@@ -727,7 +753,7 @@ def finalize_pr(ctx: ErkContext, state: SubmitState) -> SubmitState | SubmitErro
     """Update PR title/body with footer, add labels, amend local commit, clean up diff file."""
     if state.skip_description:
         return state
-    click.echo(click.style("Phase 6: Updating PR metadata", bold=True))
+    click.echo(click.style("Phase 5: Updating PR metadata", bold=True))
 
     if state.pr_number is None:
         return SubmitError(
@@ -981,8 +1007,7 @@ def _submit_pipeline() -> tuple[SubmitStep, ...]:
         commit_wip,
         capture_existing_pr_body,
         push_and_create_pr,
-        extract_diff,
-        fetch_plan_context,
+        extract_diff_and_fetch_plan_context,
         generate_description,
         enhance_with_graphite,
         finalize_pr,

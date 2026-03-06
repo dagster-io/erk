@@ -1275,7 +1275,7 @@ def test_pr_submit_shows_found_message_for_existing_pr() -> None:
 
 
 def test_pr_submit_shows_plan_context_phase() -> None:
-    """Test that Phase 3 shows plan found for branches that have a PR.
+    """Test that Phase 2 shows plan found for branches that have a PR.
 
     With PlannedPRBackend, any branch with a PR resolves to that PR as its plan.
     The submit command shows "Incorporating plan from issue #123" for the PR.
@@ -1418,13 +1418,13 @@ plan_comment_id: 1000
         result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
 
         assert result.exit_code == 0
-        # Verify Phase 3 shows plan found (PR is the plan with PlannedPRBackend)
-        assert "Phase 3: Fetching plan context" in result.output
+        # Verify Phase 2 shows plan found (PR is the plan with PlannedPRBackend)
+        assert "Phase 2: Getting diff and plan context" in result.output
         assert "Incorporating plan #123" in result.output
 
 
 def test_pr_submit_shows_plan_context_with_objective() -> None:
-    """Test that Phase 3 shows plan found for branches that have a PR.
+    """Test that Phase 2 shows plan found for branches that have a PR.
 
     With PlannedPRBackend, any branch with a PR resolves to that PR as its plan,
     even when the old issue had an objective linkage.
@@ -1582,13 +1582,13 @@ objective_issue: 5000
         result = runner.invoke(pr_group, ["submit", "--no-graphite"], obj=ctx)
 
         assert result.exit_code == 0
-        # Verify Phase 3 shows plan found (PR is the plan with PlannedPRBackend)
-        assert "Phase 3: Fetching plan context" in result.output
+        # Verify Phase 2 shows plan found (PR is the plan with PlannedPRBackend)
+        assert "Phase 2: Getting diff and plan context" in result.output
         assert "Incorporating plan #123" in result.output
 
 
 def test_pr_submit_shows_no_plan_message() -> None:
-    """Test that Phase 3 shows plan found when branch has a PR.
+    """Test that Phase 2 shows plan found when branch has a PR.
 
     With PlannedPRBackend, any branch with a PR resolves to that PR as its plan.
     The submit command shows "Incorporating plan from issue #123".
@@ -1680,8 +1680,8 @@ def test_pr_submit_shows_no_plan_message() -> None:
         result = runner.invoke(pr_group, ["submit"], obj=ctx)
 
         assert result.exit_code == 0
-        # Verify Phase 3 shows plan found (PR is the plan with PlannedPRBackend)
-        assert "Phase 3: Fetching plan context" in result.output
+        # Verify Phase 2 shows plan found (PR is the plan with PlannedPRBackend)
+        assert "Phase 2: Getting diff and plan context" in result.output
         assert "Incorporating plan #123" in result.output
 
 
