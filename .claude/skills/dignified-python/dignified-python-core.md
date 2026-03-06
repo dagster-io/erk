@@ -87,22 +87,23 @@ For detailed exception handling patterns including minimal exception scope, B904
 
 **In test code** (`test_*.py`, `*_test.py`, `conftest.py`): `assert` is always acceptable. It is the standard pytest assertion mechanism. No restrictions apply.
 
-**In production code**: `assert` is acceptable when used **solely to narrow types** after a guard check has already established the invariant:
+**In production code**: `assert` is acceptable as long as the asserted expression has **no side effects**. Common valid uses include type narrowing, invariant documentation, and precondition checks.
 
 ```python
-# CORRECT: assert for type narrowing after guard check
-if not result.is_valid:
-    return None
-# is_valid guarantees metadata is not None, assert narrows the type
+# CORRECT: assert for type narrowing (no side effects)
 assert result.metadata is not None
 process(result.metadata)
 
-# WRONG: assert as control flow (no prior guard)
-assert result.metadata is not None  # This IS control flow
-process(result.metadata)
+# CORRECT: assert for invariant documentation (no side effects)
+assert len(items) > 0
+process_items(items)
+
+# WRONG: assert with side effects
+assert do_setup()  # Side effect in asserted expression
+assert items.pop() == expected  # Mutates list
 ```
 
-The key distinction: if removing the assert would cause a runtime error, it's control flow (WRONG). If removing it would only lose type information, it's type narrowing (ACCEPTABLE).
+The key rule: the expression inside `assert` must be pure — no mutations, no I/O, no function calls with side effects. Asserts are stripped in optimized mode (`python -O`), so side effects would silently disappear.
 
 ---
 
