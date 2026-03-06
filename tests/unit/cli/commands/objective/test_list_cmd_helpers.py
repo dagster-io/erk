@@ -6,6 +6,7 @@ from erk.cli.commands.objective.list_cmd import (
     _compute_enriched_fields,
     _compute_next_node_fields,
     _compute_slug,
+    _rich_sparkline,
 )
 from erk_shared.gateway.github.metadata.dependency_graph import (
     DependencyGraph,
@@ -262,3 +263,31 @@ def test_next_node_fields_own_pr_shown() -> None:
 
     assert next_node == "1.2"
     assert "#300" in deps
+
+
+# --- _rich_sparkline tests ---
+
+
+def test_rich_sparkline_wraps_known_chars() -> None:
+    result = _rich_sparkline("✓▶")
+    assert "[green]✓[/green]" in result
+    assert "[yellow]▶[/yellow]" in result
+
+
+def test_rich_sparkline_wraps_all_statuses() -> None:
+    result = _rich_sparkline("✓▶◐○⊘-")
+    assert "[green]✓[/green]" in result
+    assert "[yellow]▶[/yellow]" in result
+    assert "[blue]◐[/blue]" in result
+    assert "[dim]○[/dim]" in result
+    assert "[red]⊘[/red]" in result
+    assert "[dim]-[/dim]" in result
+
+
+def test_rich_sparkline_passes_unknown_chars_through() -> None:
+    result = _rich_sparkline("X")
+    assert result == "X"
+
+
+def test_rich_sparkline_empty_string() -> None:
+    assert _rich_sparkline("") == ""
