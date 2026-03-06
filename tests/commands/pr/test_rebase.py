@@ -4,14 +4,66 @@ from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
 from erk_shared.context.types import GlobalConfig
+from erk_shared.gateway.git.abc import RebaseResult
 from erk_shared.gateway.git.fake import FakeGit
 from tests.fakes.prompt_executor import FakePromptExecutor
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
 
 
-def test_pr_rebase_success() -> None:
-    """Test successful rebase."""
+def test_pr_rebase_non_graphite_success() -> None:
+    """Test successful rebase via git rebase (Graphite disabled)."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+        )
+
+        executor = FakePromptExecutor(available=True)
+
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+
+        result = runner.invoke(pr_group, ["rebase", "--dangerous", "--target", "main"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Rebase complete!" in result.output
+        assert len(executor.interactive_calls) == 0
+        assert len(git.rebase_onto_calls) == 1
+
+
+def test_pr_rebase_non_graphite_conflict_launches_tui() -> None:
+    """Test that git rebase conflicts launch Claude TUI."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+            rebase_onto_result=RebaseResult(success=False, conflict_files=("file.py",)),
+        )
+
+        executor = FakePromptExecutor(available=True)
+
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+
+        result = runner.invoke(pr_group, ["rebase", "--dangerous", "--target", "main"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Rebase hit conflicts" in result.output
+        assert len(executor.interactive_calls) == 1
+        call = executor.interactive_calls[0]
+        assert call[2] == "/erk:rebase"  # command
+        assert call[5] == "edits"  # permission_mode
+
+
+def test_pr_rebase_non_graphite_no_target_error() -> None:
+    """Test error when --target not provided with Graphite disabled."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
         git = FakeGit(
@@ -28,14 +80,32 @@ def test_pr_rebase_success() -> None:
 
         result = runner.invoke(pr_group, ["rebase", "--dangerous"], obj=ctx)
 
-        assert result.exit_code == 0
-        assert "Rebase complete!" in result.output
+        assert result.exit_code != 0
+        assert "Specify --target" in result.output
 
-        # Claude should be invoked for rebase
-        assert len(executor.executed_commands) == 1
-        command, _, dangerous_flag, _, _ = executor.executed_commands[0]
-        assert command == "/erk:rebase"
-        assert dangerous_flag is True
+
+def test_pr_rebase_in_progress_launches_tui() -> None:
+    """Test that existing rebase-in-progress launches Claude TUI directly."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main", "feature-branch"]},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            current_branches={env.cwd: "feature-branch"},
+            rebase_in_progress=True,
+        )
+
+        executor = FakePromptExecutor(available=True)
+
+        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
+
+        result = runner.invoke(pr_group, ["rebase", "--dangerous"], obj=ctx)
+
+        assert result.exit_code == 0
+        assert "Rebase in progress" in result.output
+        assert len(executor.interactive_calls) == 1
 
 
 def test_pr_rebase_requires_dangerous_flag() -> None:
@@ -58,7 +128,6 @@ def test_pr_rebase_requires_dangerous_flag() -> None:
 
         assert result.exit_code != 0
         assert "Missing option '--dangerous'" in result.output
-        # Verify error message includes config hint
         assert "require_dangerous_flag_for_implicitly_dangerous_operations false" in result.output
 
 
@@ -76,7 +145,6 @@ def test_pr_rebase_skip_dangerous_with_config() -> None:
 
         executor = FakePromptExecutor(available=True)
 
-        # Create GlobalConfig with require_dangerous_flag_for_implicitly_dangerous_operations=False
         global_config = GlobalConfig.test(
             env.erk_root,
             require_dangerous_flag_for_implicitly_dangerous_operations=False,
@@ -89,10 +157,8 @@ def test_pr_rebase_skip_dangerous_with_config() -> None:
             global_config=global_config,
         )
 
-        # Invoke WITHOUT --dangerous flag
-        result = runner.invoke(pr_group, ["rebase"], obj=ctx)
+        result = runner.invoke(pr_group, ["rebase", "--target", "main"], obj=ctx)
 
-        # Should succeed without --dangerous when config disables requirement
         assert result.exit_code == 0
         assert "Rebase complete!" in result.output
 
@@ -113,94 +179,10 @@ def test_pr_rebase_claude_not_available() -> None:
 
         ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
 
-        result = runner.invoke(pr_group, ["rebase", "--dangerous"], obj=ctx)
+        result = runner.invoke(pr_group, ["rebase", "--dangerous", "--target", "main"], obj=ctx)
 
         assert result.exit_code != 0
         assert "Claude CLI is required" in result.output
         assert "claude.com/download" in result.output
 
-        # Verify no command was executed
-        assert len(executor.executed_commands) == 0
-
-
-def test_pr_rebase_aborts_on_semantic_conflict() -> None:
-    """Test that command aborts when Claude prompts for user input (semantic conflict)."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
-            default_branches={env.cwd: "main"},
-            trunk_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
-        )
-
-        # Simulate Claude using AskUserQuestion tool (semantic conflict)
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_tool_events=["Using AskUserQuestion..."],
-        )
-
-        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
-
-        result = runner.invoke(pr_group, ["rebase", "--dangerous"], obj=ctx)
-
-        # Should fail with semantic conflict message
-        assert result.exit_code != 0
-        assert "Semantic conflict detected" in result.output
-        assert "interactive resolution" in result.output
-        assert "claude /erk:rebase" in result.output
-
-
-def test_pr_rebase_fails_on_command_error() -> None:
-    """Test that command fails when slash command execution fails."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
-            default_branches={env.cwd: "main"},
-            trunk_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
-        )
-
-        executor = FakePromptExecutor(
-            available=True,
-            command_should_fail=True,
-        )
-
-        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
-
-        result = runner.invoke(pr_group, ["rebase", "--dangerous"], obj=ctx)
-
-        assert result.exit_code != 0
-        # Error message from FakePromptExecutor
-        assert "failed" in result.output.lower()
-
-
-def test_pr_rebase_fails_when_no_work_events() -> None:
-    """Test that command fails when Claude completes but produces no work events."""
-    runner = CliRunner()
-    with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git = FakeGit(
-            git_common_dirs={env.cwd: env.git_dir},
-            local_branches={env.cwd: ["main", "feature-branch"]},
-            default_branches={env.cwd: "main"},
-            trunk_branches={env.cwd: "main"},
-            current_branches={env.cwd: "feature-branch"},
-        )
-
-        # Simulate Claude completing but emitting no work events
-        executor = FakePromptExecutor(
-            available=True,
-            simulated_no_work_events=True,
-        )
-
-        ctx = build_workspace_test_context(env, git=git, prompt_executor=executor)
-
-        result = runner.invoke(pr_group, ["rebase", "--dangerous"], obj=ctx)
-
-        # Should fail due to no work events
-        assert result.exit_code != 0
-        assert "without producing any output" in result.output
-        assert "check hooks" in result.output
+        assert len(executor.interactive_calls) == 0
