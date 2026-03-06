@@ -1,5 +1,5 @@
 ---
-name: module-to-subpackage
+name: refac-module-to-subpackage
 description: >
   Guide for converting a monolithic Python module into a subpackage with submodules.
   Use when breaking apart a large .py file into a directory of smaller modules,
