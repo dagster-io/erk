@@ -72,9 +72,9 @@ The automatic `github.token` is intentionally limited to repository operations f
 
 ## Auto-Commit Re-Triggering Pattern
 
-When CI auto-commits fixes (e.g., the `markdown-fix` job running Prettier), the push must trigger a new CI run to validate the fixed code. Pushes made with `GITHUB_TOKEN` do not trigger workflow events (a GitHub security measure to prevent infinite loops).
+When CI auto-commits fixes (e.g., the `fix-formatting` job running Prettier), the push must trigger a new CI run to validate the fixed code. Pushes made with `GITHUB_TOKEN` do not trigger workflow events (a GitHub security measure to prevent infinite loops).
 
-**Solution:** Use `ERK_QUEUE_GH_PAT` for checkout so that `git push` triggers a new CI run. See the checkout step in `.github/workflows/ci.yml` (the `markdown-fix` job) for the canonical implementation.
+**Solution:** Use `ERK_QUEUE_GH_PAT` for checkout so that `git push` triggers a new CI run. See the checkout step in `.github/workflows/ci.yml` (the `fix-formatting` job) for the canonical implementation.
 
 ### Loop Safety
 
