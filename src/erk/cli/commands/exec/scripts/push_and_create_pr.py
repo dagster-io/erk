@@ -27,7 +27,6 @@ from erk.cli.commands.pr.submit_pipeline import (
     make_initial_state,
     run_push_and_create_pipeline,
 )
-from erk.core.context import ErkContext
 from erk_shared.context.helpers import require_context
 
 
@@ -78,10 +77,6 @@ def push_and_create_pr(
 
     assert isinstance(result, SubmitState)
 
-    # Wait for PR to appear in Graphite cache for status line
-    if result.graphite_url is not None:
-        _wait_for_pr_in_cache(erk_ctx, result.repo_root, result.branch_name)
-
     output = {
         "success": True,
         "branch": result.branch_name,
@@ -95,21 +90,3 @@ def push_and_create_pr(
     }
     click.echo(json.dumps(output, indent=2))
 
-
-_PR_CACHE_POLL_MAX_WAIT_SECONDS = 10.0
-_PR_CACHE_POLL_INTERVAL_SECONDS = 0.5
-
-
-def _wait_for_pr_in_cache(
-    ctx: ErkContext,
-    repo_root: Path,
-    branch: str,
-) -> bool:
-    """Wait for PR to appear in Graphite cache after submission."""
-    start = ctx.time.now()
-    while (ctx.time.now() - start).total_seconds() < _PR_CACHE_POLL_MAX_WAIT_SECONDS:
-        prs = ctx.graphite.get_prs_from_graphite(ctx.git, repo_root)
-        if branch in prs:
-            return True
-        ctx.time.sleep(_PR_CACHE_POLL_INTERVAL_SECONDS)
-    return False
