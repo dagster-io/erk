@@ -1,0 +1,1339 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:objective-plan&lt;/command-message&gt;
+&lt;command-name&gt;/erk:objective-plan&lt;/command-name&gt;
+&lt;command-args&gt;8832&lt;/command-args&gt;</user>
+  <user># /erk:objective-plan
+
+Create an implementation plan for a specific node in an objective's dependency graph.
+
+## Usage
+
+```bash
+/erk:objective-plan 3679
+/erk:objective-plan 3679 --node 2.1
+/erk:objective-plan https://github.com/owner/repo/issues/3679
+/erk:objective-plan  # prompts for objective reference
+```
+
+---
+
+## Agent Instructions
+
+### Step 0: Check for Known Node (Fast Path)
+
+Parse `8832` for `--node &lt;node-id&gt;`. If `--node` is present along with an issue number:
+
+**Invoke the inner skill immediately** via the Skill tool:
+
+```
+/erk:system:objective-plan-node &lt;objective-number&gt; --node &lt;node-id&gt;
+```
+
+This skips the interactive selection flow (Steps 1-4 below) since the node is already known. The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving.
+
+**STOP here** — do not proceed to the steps below.
+
+### Step 1: Resolve Objective Reference
+
+Strip `--node` from `8832` if present, then run:
+
+```bash
+erk exec resolve-objective-ref 8832
+```
+
+**Interpret the JSON result:**
+
+- If `"resolved": true` with `"source": "branch_name"` or `"source": "plan_metadata"`: Inform user "Using objective #N from {source}. Run with explicit argument to override."
+- If `"resolved": true` with `"source": "argument"`: Use the `objective_number` directly.
+- If `"resolved": false`: Use AskUserQuestion to ask "What objective issue should I work from?"
+
+### Step 2: Fetch and Set Up Objective Context
+
+Run:
+
+```bash
+erk exec objective-plan-setup &lt;objective-number&gt; --session-id "77c9681c-97e9-47ba-90f2-0fda5a897b45"
+```
+
+**Interpret the JSON result:**
+
+- If `"success": false` with `"error": "not_found"`: Report error and exit.
+- If `"success": false` with `"error": "is_plan"`: Redirect to `/erk:plan-implement`.
+- If `"success": false` with `"error": "validation_error"`: Report error and exit.
+- If `"success": true`: Continue with the roadmap data.
+
+Display any `"warnings"` to the user.
+
+### Step 3: Load Objective Skill
+
+Load the `objective` skill for format templates and guidance.
+
+### Step 4: Display Roadmap and Prompt User
+
+Display the roadmap table from the `roadmap.phases` data in the JSON output.
+
+Then use AskUserQuestion to ask which node to plan:
+
+```
+Which node should I create a plan for?
+- Node 1A.1: &lt;description&gt; (Recommended) ← first pending node without plan in progress
+- Node 1A.2: &lt;description&gt;
+- Node 2B.1: &lt;description&gt; (plan in progress, #456) ← shown but not recommended
+- (Other - specify node number or description)
+```
+
+**Filtering rules (based on node `status` field from phases):**
+
+- **Show as options:** Nodes with status `"pending"`
+- **Show but deprioritize:** Nodes with status `"in_progress"` - still selectable via "Other" but not recommended
+- **Hide from options:** Nodes with status `"done"`, `"blocked"`, or `"skipped"`
+
+**Recommendation rule:** Use `roadmap.next_node` from the JSON as the recommended option. If `next_node` is null, no node is recommended.
+
+If all nodes are complete or have plans in progress, report appropriately:
+
+- All complete: "All roadmap nodes are complete! Consider closing the objective."
+- All have plans: "All pending nodes have plans in progress. You can still select one via 'Other' to create a parallel plan."
+
+### Step 5: Invoke Inner Skill
+
+After the user selects a node, invoke the inner skill via the Skill tool:
+
+```
+/erk:system:objective-plan-node &lt;objective-number&gt; --node &lt;selected-node-id&gt;
+```
+
+The inner skill handles marker creation, marking as planning, context gathering, plan mode, and saving. **STOP here** — the inner skill takes over.
+
+---
+
+## Output Format
+
+- **Start:** "Loading objective #&lt;number&gt;..."
+- **After parsing:** Display roadmap nodes with status
+- **After selection:** "Creating plan for node &lt;step-id&gt;: &lt;description&gt;"
+- **In plan mode:** Show plan content
+- **End:** Always proceed with `/erk:plan-save` — do not offer direct implementation
+
+---
+
+## Error Cases
+
+| Scenario                                | Action                                                           |
+| --------------------------------------- | ---------------------------------------------------------------- |
+| Objective not found                     | Report error and exit                                            |
+| Reference is erk-plan                   | Redirect to `/erk:plan-implement`                                |
+| No pending nodes                        | Report all nodes complete, suggest closing                       |
+| Invalid argument format                 | Prompt for valid issue number                                    |
+| Roadmap not parseable                   | Ask user to specify which node to plan                           |
+| Verification fails (no objective_issue) | `/erk:plan-save` handles automatically; follow remediation steps |
+
+---
+
+## Important Notes
+
+- **Objective context matters:** Read the full objective for design decisions and lessons learned
+- **One node at a time:** Each plan should focus on a single roadmap node
+- **Link back:** Always reference the parent objective in the plan
+- **Steelthread pattern:** If planning a Phase A node, focus on minimal vertical slice
+
+## Post-Plan Behavior
+
+**CRITICAL: Objective plans must ALWAYS be saved as PRs.** When the exit-plan-mode hook presents save-or-implement options, ALWAYS proceed with "Create a plan PR" by running `/erk:plan-save`. Do NOT offer to implement directly — objective node plans require PR tracking for the objective's roadmap status to work correctly.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="15089" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15089}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Loading objective #8832...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="15089" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15089}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01UjnHMhFV5ciEfRXg7LBN8P">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="15089" cache_read_input_tokens="0" output_tokens="166" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15089, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01UjnHMhFV5ciEfRXg7LBN8P">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01K4Woe1CRDQHx75PT5QVpDL">
+    <param name="command">erk exec resolve-objective-ref 8832</param>
+    <param name="description">Resolve objective reference for #8832</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3314" cache_read_input_tokens="15089" output_tokens="87" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3314, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01K4Woe1CRDQHx75PT5QVpDL">
+{"resolved": true, "objective_number": 8832, "source": "argument"}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_016R1o3xXS3Vy4naHdKphxnm">
+    <param name="command">erk exec objective-plan-setup 8832 --session-id "77c9681c-97e9-47ba-90f2-0fda5a897b45"</param>
+    <param name="description">Fetch and set up objective context for #8832</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="121" cache_read_input_tokens="18403" output_tokens="139" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 121, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016R1o3xXS3Vy4naHdKphxnm">
+{"success": true, "objective": {"number": 8832, "title": "Objective: Decouple CLI Commands from Git Repo Requirement", "state": "OPEN", "labels": ["erk-objective"]}, "roadmap": {"phases": [{"number": 1, "suffix": "", "name": "Phase 1", "nodes": [{"id": "1.1", "slug": "http-client-always", "description": "Always create HttpClient in context (remove git-repo guard)", "status": "pending", "pr": null, "depends_on": []}, {"id": "1.2", "slug": "remote-github-module", "description": "Create remote_github.py module with HttpClient-based GitHub operations", "status": "pending", "pr": null, "depends_on": ["1.1"]}, {"id": "1.3", "slug": "one-shot-repo-flag", "description": "Add --repo flag to one-shot command with remote dispatch path", "status": "pending", "pr": null, "depends_on": ["1.2"]}]}, {"number": 2, "suffix": "", "name": "Phase 2", "nodes": [{"id": "2.1", "slug": "pr-read-commands", "description": "Add --repo flag to pr list/dash, pr view, pr check, pr log, pr close, pr duplicate-check", "status": "pending", "pr": null, "depends_on": ["1.3"]}, {"id": "2.2", "slug": "objective-read-commands", "description": "Add --repo flag to objective list, objective view, objective check, objective close", "status": "pending", "pr": null, "depends_on": ["2.1"]}, {"id": "2.3", "slug": "discover-repo-refactor", "description": "Refactor discover_repo_context to accept explicit owner/repo as alternative to git discovery", "status": "pending", "pr": null, "depends_on": ["2.2"]}]}, {"number": 3, "suffix": "", "name": "Phase 3", "nodes": [{"id": "3.1", "slug": "pr-create-remote", "description": "Add --repo flag to pr create with remote dispatch path", "status": "pending", "pr": null, "depends_on": ["2.3"]}, {"id": "3.2", "slug": "pr-dispatch-remote", "description": "Add --repo flag to pr dispatch with remote dispatch path", "status": "pending", "pr": null, "depends_on": ["3.1"]}, {"id": "3.3", "slug": "launch-remote", "description": "Add --repo flag to launch with remote dispatch path", "status": "pending", "pr": null, "depends_on": ["3.2"]}, {"id": "3.4", "slug": "objective-plan-remote", "description": "Add --repo flag to objective plan --one-shot with remote dispatch path", "status": "pending", "pr": null, "depends_on": ["3.3"]}]}], "summary": {"total_nodes": 10, "pending": 10, "planning": 0, "done": 0, "in_progress": 0, "blocked": 0, "skipped": 0}, "next_node": {"id": "1.1", "slug": "http-client-always", "description": "Always create HttpClient in context (remove git-repo guard)", "phase": "Phase 1", "status": "pending"}, "all_complete": false}, "validation": {"passed": true, "checks": [{"passed": true, "description": "Issue has erk-objective label"}, {"passed": true, "description": "Roadmap parses successfully"}, {"passed": true, "description": "Status/PR consistency"}, {"passed": true, "description": "No orphaned done statuses (done steps have PR references)"}, {"passed": true, "description": "Phase numbering is sequential"}, {"passed": true, "description": "objective-header has objective_comment_id"}, {"passed": true, "description": "PR references use '#' prefix"}]}, "marker_created": true, "warnings": []}
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_0166DGQmro8rCFqpWVoYyR97">
+    <param name="query">select:Skill,AskUserQuestion</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1139" cache_read_input_tokens="18524" output_tokens="80" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1139, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_0166DGQmro8rCFqpWVoYyR97">
+
+  </tool_result>
+  <assistant>
+
+**Objective #8832: Decouple CLI Commands from Git Repo Requirement**
+
+### Roadmap
+
+| Phase | Node | Description | Status | Dependencies |
+|-------|------|-------------|--------|--------------|
+| **Phase 1** | 1.1 | Always create HttpClient in context (remove git-repo guard) | pending | — |
+| | 1.2 | Create remote_github.py module with HttpClient-based GitHub operations | pending | 1.1 |
+| | 1.3 | Add --repo flag to one-shot command with remote dispatch path | pending | 1.2 |
+| **Phase 2** | 2.1 | Add --repo flag to pr list/dash, pr view, pr check, pr log, pr close, pr duplicate-check | pending | 1.3 |
+| | 2.2 | Add --repo flag to objective list, objective view, objective check, objective close | pending | 2.1 |
+| | 2.3 | Refactor discover_repo_context to accept explicit owner/repo as alternative to git discovery | pending | 2.2 |
+| **Phase 3** | 3.1 | Add --repo flag to pr create with remote dispatch path | pending | 2.3 |
+| | 3.2 | Add --repo flag to pr dispatch with remote dispatch path | pending | 3.1 |
+| | 3.3 | Add --repo flag to launch with remote dispatch path | pending | 3.2 |
+| | 3.4 | Add --repo flag to objective plan --one-shot with remote dispatch path | pending | 3.3 |
+
+**Progress:** 0/10 nodes complete</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1802" cache_read_input_tokens="19663" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1802}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01FBphtqebJqNKLuDqeXwc5A">
+    <param name="questions">[{'question': 'Which node should I create a plan for?', 'header': 'Node', 'options': [{'la...[truncated 311 chars]... to one-shot command with remote dispatch path — depends on 1.2'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1802" cache_read_input_tokens="19663" output_tokens="599" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1802, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FBphtqebJqNKLuDqeXwc5A">
+User has answered your questions: "Which node should I create a plan for?"="all of phase 1" user notes: all of phase 1. You can now continue with the user's answers in mind.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="669" cache_read_input_tokens="21465" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 669}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Creating plan for all of Phase 1 (nodes 1.1, 1.2, 1.3).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="669" cache_read_input_tokens="21465" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 669}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01HCn6koWEXfpas2uX67FCh3">
+    <param name="skill">erk:system:objective-plan-node</param>
+    <param name="args">8832 --node 1.1
+User requested planning ALL of Phase 1 together (nodes 1.1, 1.2, 1.3) as a...[truncated 117 chars]...sed GitHub operations
+- 1.3: Add --repo flag to one-shot command with remote dispatch path</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="669" cache_read_input_tokens="21465" output_tokens="754" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 669, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HCn6koWEXfpas2uX67FCh3">
+Launching skill: erk:system:objective-plan-node
+  </tool_result>
+  <user># /erk:system:objective-plan-node
+
+Inner skill for creating an implementation plan when the objective issue and node ID are already known. Called by the outer `/erk:objective-plan` command or directly by `plan_cmd.py` via Claude launch.
+
+This skips interactive node selection (Steps 4-5 of the outer command) since the node is already determined.
+
+## Usage
+
+```bash
+/erk:system:objective-plan-node 3679 --node 2.1
+```
+
+Both `&lt;objective-number&gt;` and `--node &lt;node-id&gt;` are required.
+
+---
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Parse `8832 --node 1.1
+User requested planning ALL of Phase 1 together (nodes 1.1, 1.2, 1.3) as a single plan:
+- 1.1: Always create HttpClient in context (remove git-repo guard)
+- 1.2: Create remote_github.py module with HttpClient-based GitHub operations
+- 1.3: Add --repo flag to one-shot command with remote dispatch path` to extract:
+
+- **Objective number**: The numeric objective reference (required)
+- **Node ID**: The `--node` value (required)
+
+If either is missing, STOP and report: "ERROR: Both objective number and --node are required. Usage: /erk:system:objective-plan-node &lt;objective-number&gt; --node &lt;node-id&gt;"
+
+### Step 2: Create Objective Context Marker
+
+Launch a Task agent to fetch objective data and create the context marker:
+
+Use the Task tool with `subagent_type: "general-purpose"` and `model: "haiku"`:
+
+**Task Prompt:**
+
+```
+Fetch and validate objective #&lt;objective-number&gt; and return a structured summary.
+
+CRITICAL: Do NOT write scripts or code. Only use the Bash tool to run the erk CLI commands listed below.
+
+Instructions:
+1. Run: erk exec get-issue-body &lt;objective-number&gt;
+2. Validate this is an objective:
+   - Check for 'erk-objective' label
+   - If 'erk-plan' label instead: return error "This is an erk-plan PR, not an objective"
+   - If neither label: include warning but proceed
+3. Create objective context marker:
+   erk exec marker create --session-id "77c9681c-97e9-47ba-90f2-0fda5a897b45" --associated-objective &lt;objective-number&gt; objective-context
+4. Run: erk objective check &lt;objective-number&gt; --json-output --allow-legacy
+5. Format the JSON output from step 4 into the structured summary below. Do NOT write Python or any other scripts to parse the data — just read the JSON output directly and format it yourself.
+
+OBJECTIVE: #&lt;number&gt; — &lt;title&gt;
+STATUS: &lt;OPEN|CLOSED&gt;
+
+ROADMAP:
+| Node | Phase | Description | Status |
+| 1.1 | Phase 1 | &lt;description&gt; | done (PR #123) |
+| 1.2 | Phase 1 | &lt;description&gt; | pending |
+| 2.1 | Phase 2 | &lt;description&gt; | blocked |
+
+PENDING_NODES:
+- 1.2: &lt;description&gt;
+- 3.1: &lt;description&gt;
+
+RECOMMENDED: &lt;node-id or "none"&gt;
+
+WARNINGS: &lt;any warnings about labels, roadmap format, etc., or "none"&gt;
+
+Status mapping:
+- "pending" → "pending"
+- "done" → "done (PR #XXX)"
+- "in_progress" → "plan in progress (#XXX)"
+- "blocked" → "blocked"
+- "skipped" → "skipped"
+
+Only include nodes with status "pending" in PENDING_NODES section.
+Use the "next_step" field from check output as RECOMMENDED.
+```
+
+Replace `&lt;objective-number&gt;` with the parsed objective number.
+
+### Step 3: Verify Objective Context Marker
+
+```bash
+erk exec marker read --session-id "77c9681c-97e9-47ba-90f2-0fda5a897b45" objective-context
+```
+
+If this returns a value matching the objective issue number, proceed.
+If it fails or returns wrong value, STOP and report:
+"ERROR: objective-context marker not created. Re-run the marker command manually:
+erk exec marker create --session-id '77c9681c-97e9-47ba-90f2-0fda5a897b45' --associated-objective &lt;issue-number&gt; objective-context"
+
+### Step 4: Create Roadmap Node Marker and Mark as Planning
+
+Create the roadmap-step marker for the known node:
+
+```bash
+erk exec marker create --session-id "77c9681c-97e9-47ba-90f2-0fda5a897b45" \
+  --content "&lt;node-id&gt;" roadmap-step
+```
+
+Replace `&lt;node-id&gt;` with the node ID from arguments.
+
+Then mark the node as `planning` in the objective's roadmap (best-effort — may already be marked by the CLI):
+
+```bash
+erk exec update-objective-node &lt;objective-number&gt; --node &lt;node-id&gt; --status planning
+```
+
+If this fails, continue with planning — the CLI may have already marked it.
+
+### Step 5: Load Objective Skill
+
+Load the `objective` skill for format templates and guidance.
+
+### Step 6: Gather Context
+
+Before entering plan mode, gather relevant context:
+
+1. **Objective context:** Goal, design decisions, implementation context
+2. **Node context:** What the specific node requires
+3. **Prior work:** Look at completed nodes and their PRs for patterns
+
+Use this context to inform the plan.
+
+### Step 7: Enter Plan Mode
+
+Enter plan mode to create the implementation plan:
+
+1. Use the EnterPlanMode tool
+2. Focus the plan on the specific node selected
+3. Reference the parent objective in the plan
+
+**Plan should include:**
+
+- Reference to objective: `Part of Objective #&lt;number&gt;, Node &lt;node-id&gt;`
+- Clear goal for this specific node
+- Implementation phases (typically 1-3 for a single node)
+- Files to modify
+- Test requirements
+
+### Step 8: Save Plan as PR (Always Save)
+
+After the plan is approved in plan mode, **always save as a PR** — do not offer direct implementation. When the `exit-plan-mode-hook` fires, proceed directly with `/erk:plan-save`. Objective node plans require PR tracking for the objective's roadmap status to work correctly.
+
+The objective-context marker created in Step 2 is automatically read by `/erk:plan-save`. Simply run `/erk:plan-save` and it will link the plan to the objective.
+
+**If the marker was not created (fallback):**
+Create it manually before saving:
+
+```bash
+erk exec marker create --session-id "77c9681c-97e9-47ba-90f2-0fda5a897b45" --associated-objective &lt;objective-number&gt; objective-context
+```
+
+Then run `/erk:plan-save`.
+
+### Step 9: Verify Objective Link
+
+After saving, the JSON output includes `objective_issue`. Check that it matches the expected objective number.
+
+If verification is needed:
+
+```bash
+erk exec get-plan-metadata &lt;new-plan-number&gt; objective_issue
+```
+
+Check that `value` matches the expected objective number.
+
+---
+
+## Output Format
+
+- **Start:** "Planning node &lt;node-id&gt; of objective #&lt;number&gt;..."
+- **After context:** Display node description and gathered context
+- **In plan mode:** Show plan content
+- **End:** Always proceed with `/erk:plan-save` — do not offer direct implementation
+
+---
+
+## Error Cases
+
+| Scenario                                | Action                                                           |
+| --------------------------------------- | ---------------------------------------------------------------- |
+| Missing objective number or node ID     | Report error with usage instructions                             |
+| Objective not found                     | Report error and exit                                            |
+| Reference is erk-plan                   | Redirect to `/erk:plan-implement`                                |
+| Node not found in roadmap               | Report error and list available nodes                            |
+| Marker creation fails                   | Report error with manual command                                 |
+| Verification fails (no objective_issue) | `/erk:plan-save` handles automatically; follow remediation steps |
+
+---
+
+## Important Notes
+
+- **This is an inner skill** — it expects the node to be pre-selected, not interactive
+- **Best-effort marking** — the `planning` status update may already be done by the CLI before Claude launches
+- **Objective context matters:** Read the full objective for design decisions and lessons learned
+- **One node at a time:** Each plan should focus on a single roadmap node
+- **Link back:** Always reference the parent objective in the plan
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2849" cache_read_input_tokens="22134" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2849}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Planning node 1.1 of objective #8832 (covering all Phase 1: nodes 1.1, 1.2, 1.3)...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2849" cache_read_input_tokens="22134" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2849}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01JpKHz1GiK5WTZLS8XP6Wst">
+    <param name="query">select:TaskCreate,TaskOutput,EnterPlanMode</param>
+    <param name="max_results">3</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2849" cache_read_input_tokens="22134" output_tokens="266" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2849, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01JpKHz1GiK5WTZLS8XP6Wst">
+
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01W6fPnN1Vxaiov61dXt1F9o">
+    <param name="query">select:Agent</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2514" cache_read_input_tokens="24983" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2514, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01W6fPnN1Vxaiov61dXt1F9o">
+
+  </tool_result>
+  <assistant>
+
+Let me run Steps 2-4 in parallel: the context-gathering agent, the marker creation, and loading the objective skill.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="2281" cache_read_input_tokens="27497" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2281}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01NEvDv8jjgoCpuCYqUkDLgd">
+    <param name="description">Fetch objective #8832 context</param>
+    <param name="subagent_type">general-purpose</param>
+    <param name="prompt">Fetch and validate objective #8832 and return a structured summary.
+
+CRITICAL: Do NOT writ...[truncated 1348 chars]...ing" in PENDING_NODES section.
+Use the "next_step" field from check output as RECOMMENDED.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2281" cache_read_input_tokens="27497" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2281}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01Eyg6LkTjdK7fAEy3pGtM56">
+    <param name="command">erk exec marker create --session-id "77c9681c-97e9-47ba-90f2-0fda5a897b45" --content "1.1" roadmap-step</param>
+    <param name="description">Create roadmap-step marker for node 1.1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2281" cache_read_input_tokens="27497" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2281}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Skill" id="toolu_01QM6RtYwPqWVfZffqMvUHkk">
+    <param name="skill">objective</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2281" cache_read_input_tokens="27497" output_tokens="769" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2281, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01NEvDv8jjgoCpuCYqUkDLgd">
+All checks passed. Here is the structured summary:
+
+---
+
+OBJECTIVE: #8832 — Objective: Decouple CLI Commands from Git Repo Requirement
+STATUS: OPEN
+
+ROADMAP:
+| Node | Phase | Description | Status |
+|------|-------|-------------|--------|
+| 1.1 | Phase 1 | Always create HttpClient in context (remove git-repo guard) | pending |
+| 1.2 | Phase 1 | Create remote_github.py module with HttpClient-based GitHub operations | pending |
+| 1.3 | Phase 1 | Add --repo flag to one-shot command with remote dispatch path | pending |
+| 2.1 | Phase 2 | Add --repo flag to pr list/dash, pr view, pr check, pr log, pr close, pr duplicate-check | pending |
+| 2.2 | Phase 2 | Add --repo flag to objective list, objective view, objective check, objective close | pending |
+| 2.3 | Phase 2 | Refactor discover_repo_context to accept explicit owner/repo as alternative to git discovery | pending |
+| 3.1 | Phase 3 | Add --repo flag to pr create with remote dispatch path | pending |
+| 3.2 | Phase 3 | Add --repo flag to pr dispatch with remote dispatch path | pending |
+| 3.3 | Phase 3 | Add --repo flag to launch with remote dispatch path | pending |
+| 3.4 | Phase 3 | Add --repo flag to objective plan --one-shot with remote dispatch path | pending |
+
+PENDING_NODES:
+- 1.1: Always create HttpClient in context (remove git-repo guard)
+- 1.2: Create remote_github.py module with HttpClient-based GitHub operations
+- 1.3: Add --repo flag to one-shot command with remote dispatch path
+- 2.1: Add --repo flag to pr list/dash, pr view, pr check, pr log, pr close, pr duplicate-check
+- 2.2: Add --repo flag to objective list, objective view, objective check, objective close
+- 2.3: Refactor discover_repo_context to accept explicit owner/repo as alternative to git discovery
+- 3.1: Add --repo flag to pr create with remote dispatch path
+- 3.2: Add --repo flag to pr dispatch with remote dispatch path
+
+... [10 lines omitted] ...
+
+WARNINGS: none
+  </tool_result>
+  <tool_result tool="toolu_01Eyg6LkTjdK7fAEy3pGtM56">
+{"success": true, "message": "Created marker: roadmap-step"}
+  </tool_result>
+  <tool_result tool="toolu_01QM6RtYwPqWVfZffqMvUHkk">
+Launching skill: objective
+  </tool_result>
+  <user>Base directory for this skill: /workspaces/erk/.claude/skills/objective
+
+# Objective Skill
+
+## Overview
+
+Objectives are coordination documents for goals requiring multiple plans/PRs to complete. Unlike
+erk-plans (single executable implementations), objectives track progress across related work and
+capture lessons learned along the way.
+
+**Scope range:**
+
+- Small: Feature requiring 2-3 related PRs
+- Medium: Refactor spanning several plans
+- Large: Long-running strategic direction emitting many plans
+
+## Objective vs Erk-Plan
+
+| Aspect   | Erk-Plan                         | Objective                           |
+| -------- | -------------------------------- | ----------------------------------- |
+| Purpose  | Single executable implementation | Coordinate 2+ related plans/PRs     |
+| Scope    | One PR or tightly-coupled change | Multiple plans toward coherent goal |
+| Body     | Machine-parseable metadata       | Human-readable markdown             |
+| Comments | Session context dumps            | Action logs + lessons               |
+| Label    | `erk-plan`                       | `erk-objective`                     |
+| Tooling  | `erk pr dispatch/implement`      | Manual updates via comments         |
+
+## Key Design Principles
+
+1. **Human-first** - Plain markdown, no machine-generated metadata
+2. **Incremental capture** - Each action gets its own comment
+3. **Lessons as first-class** - Every action comment includes lessons learned
+4. **Clear roadmap** - Status visible at a glance in the body
+5. **Body stays current via reconciliation** - After every PR landing, agents audit prose sections against what was actually implemented and correct stale information
+6. **Steelthread-first** - Each phase starts with minimal vertical slice proving the concept works
+7. **One PR per phase** - Each phase is sized for a coherent single PR
+8. **Always shippable** - System remains functional after each merged PR
+9. **Body is source of truth** - Body always contains complete current state; comments are the changelog
+10. **Two-step for all changes** - Every addition (context, decisions, phases) gets a comment AND body update
+11. **Context over code** - Provide references to patterns, not prescriptive implementations
+12. **Session handoff ready** - Body should be self-contained for any session to pick up and implement
+
+## Quick Reference
+
+### Creating an Objective
+
+```bash
+gh issue create --title "Objective: [Title]" --label "erk-objective" --body "$(cat &lt;&lt;'EOF'
+# Objective: [Title]
+
+&gt; [1-2 sentence summary]
+
+## Goal
+
+[What success looks like - concrete end state]
+
+## Design Decisions
+
+1. **[Decision name]**: [What was decided]
+
+## Roadmap
+
+### Phase 1: [Name] Steelthread (1 PR)
+
+Minimal vertical slice proving the concept works.
+
+| Node | Description | Status | PR |
+|------|-------------|--------|-----|
+| 1.1 | [Minimal infrastructure] | pending | |
+| 1.2 | [Wire into one command] | pending | |
+
+**Test:** [End-to-end acceptance test for steelthread]
+
+### Phase 2: Complete [Name] (1 PR)
+
+Fill out remaining functionality.
+
+| Node | Description | Status | PR |
+|------|-------------|--------|-----|
+| 2.1 | [Extend to remaining commands] | pending | |
+| 2.2 | [Full test coverage] | pending | |
+
+**Test:** [Full acceptance criteria]
+
+EOF
+)"
+```
+
+### Logging an Action
+
+Post an action comment after completing work. See [format.md](references/format.md#action-comment-template) for full template.
+
+```bash
+gh issue comment &lt;issue-number&gt; --body "$(cat &lt;&lt;'EOF'
+## Action: [Brief title]
+**Date:** YYYY-MM-DD | **PR:** #123 | **Phase/Node:** 1.2
+### What Was Done
+### Lessons Learned
+### Roadmap Updates
+EOF
+)"
+```
+
+After posting, update the issue body (roadmap statuses, reconcile stale prose sections).
+
+### Viewing an Objective
+
+View an objective's dependency graph, dependencies, and next node:
+
+```bash
+# CLI
+erk objective view &lt;issue-number&gt;
+
+# Slash command (in-session)
+/local:objective-view &lt;issue-number&gt;
+```
+
+### Spawning an Erk-Plan
+
+To implement a specific roadmap node, create an erk-plan that references the objective:
+
+```bash
+erk pr create --file plan.md --title "Implement [node description]"
+```
+
+## Workflow Summary
+
+1. **Create objective** - When starting multi-plan work
+2. **Inspect progress** - View dependency graph and next node
+3. **Log actions** - After completing each significant piece of work
+4. **Update body** - Keep roadmap status current, reconcile stale prose after each PR landing
+5. **Spawn erk-plans** - For individual implementation nodes
+6. **Close** - When goal achieved or abandoned (proactively ask when all nodes done)
+
+## Resources
+
+### references/
+
+- `format.md` - Complete templates, examples, and update patterns
+- `workflow.md` - Creating objectives, spawning plans, steelthread structuring
+- `updating.md` - Quick reference for the two-step update workflow
+- `closing.md` - Closing triggers and procedures
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="2839" cache_read_input_tokens="29778" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2839}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me verify the marker and mark the node as planning, while also gathering codebase context.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2839" cache_read_input_tokens="29778" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2839}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014ZxzFGBdfq5WyjLH4Vk9xm">
+    <param name="command">erk exec marker read --session-id "77c9681c-97e9-47ba-90f2-0fda5a897b45" objective-context</param>
+    <param name="description">Verify objective-context marker</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2839" cache_read_input_tokens="29778" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2839}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KqZkXScR7S95oLDrBatftn">
+    <param name="command">erk exec update-objective-node 8832 --node 1.1 --status planning</param>
+    <param name="description">Mark node 1.1 as planning</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2839" cache_read_input_tokens="29778" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2839}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_014ZxzFGBdfq5WyjLH4Vk9xm">
+8832
+  </tool_result>
+  <tool_result tool="toolu_01KqZkXScR7S95oLDrBatftn">
+{"success": true, "issue_number": 8832, "node_id": "1.1", "previous_pr": null, "new_pr": null, "url": "https://github.com/dagster-io/erk/issues/8832"}
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01Lw78fivLq8vpWhJQH8Aupx">
+    <param name="description">Explore HttpClient and context setup</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1006 chars]...s currently dispatch work?
+
+Report exact file paths and line numbers for all key findings.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="2839" cache_read_input_tokens="29778" output_tokens="638" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2839, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Lw78fivLq8vpWhJQH8Aupx">
+Perfect! Now I have enough information. Let me compile my comprehensive report:
+
+## COMPREHENSIVE EXPLORATION REPORT: CLI Decoupling from Git Repo Requirement
+
+Based on thorough codebase analysis, here are the key findings for Phase 1 of objective #8832:
+
+---
+
+### 1. HttpClient Creation &amp; Git-Repo Guard
+
+**Location:** `/workspaces/erk/src/erk/core/context.py`, lines 594-599
+
+**Current Implementation:**
+```python
+# 6b. Create HTTP client for GitHub API (needs token from gh auth)
+http_client: HttpClient | None = None
+if not isinstance(repo, NoRepoSentinel):
+    token = fetch_github_token_or_none()
+    if token is not None:
+        http_client = RealHttpClient(token=token, base_url="https://api.github.com")
+```
+
+**Key Detail:** HttpClient creation is **double-guarded**:
+1. **First guard:** `if not isinstance(repo, NoRepoSentinel)` — Only attempts token fetch when in a git repo
+2. **Second guard:** `if token is not None` — Only creates HttpClient if token auth succeeds
+
+**Token Fetch Function:** `/workspaces/erk/packages/erk-shared/src/erk_shared/gateway/http/auth.py`, lines 34-54
+- `fetch_github_token_or_none()` calls `gh auth token --hostname github.com` with `check=False`
+- Returns `None` if auth fails, avoiding errors when not authenticated
+
+
+... [238 lines omitted] ...
+
+    Raises FileNotFoundError if not inside a git repo.
+        raise FileNotFoundError("Global config not found. Run 'erk init' to create it.")
+    raise FileNotFoundError(result.message)
+       user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+       user_output(click.style("Error: ", fg="red") + "GitHub authentication not available")
+  </tool_result>
+  <assistant>Excellent. I have comprehensive context. Let me now read the key files directly to understand the exact changes needed.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4265" cache_read_input_tokens="32617" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4265}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01A9Y56GnEjiqVPcf1Q96Uth">
+    <param name="query">select:Read</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4265" cache_read_input_tokens="32617" output_tokens="98" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4265, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01A9Y56GnEjiqVPcf1Q96Uth">
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_019k6Wqjt93Fbxr73p616R4N">
+    <param name="file_path">/workspaces/erk/src/erk/core/context.py</param>
+    <param name="offset">580</param>
+    <param name="limit">130</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="897" cache_read_input_tokens="36882" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 897}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_019k6Wqjt93Fbxr73p616R4N">
+   580→    repo = discover_repo_or_sentinel(cwd, erk_root, git)
+   581→
+   582→    # 6. Fetch repo_info (if in a repo with origin remote)
+   583→    # Note: try-except is acceptable at CLI entry point boundary per LBYL conventions
+   584→    repo_info: RepoInfo | None = None
+   585→    if not isinstance(repo, NoRepoSentinel):
+   586→        try:
+   587→            remote_url = git.remote.get_remote_url(repo.root, "origin")
+   588→            owner, name = parse_git_remote_url(remote_url)
+   589→            repo_info = RepoInfo(owner=owner, name=name)
+   590→        except ValueError:
+   591→            # No origin remote configured - repo_info stays None
+   592→            pass
+   593→
+   594→    # 6b. Create HTTP client for GitHub API (needs token from gh auth)
+   595→    http_client: HttpClient | None = None
+   596→    if not isinstance(repo, NoRepoSentinel):
+   597→        token = fetch_github_token_or_none()
+   598→        if token is not None:
+   599→            http_client = RealHttpClient(token=token, base_url="https://api.github.com")
+   600→
+   601→    # 7. Load local config (or defaults if no repo)
+   602→    # Loaded early so plans_repo can be used for GitHubIssues
+   603→    if isinstance(repo, NoRepoSentinel):
+   604→        local_config = LoadedConfig.test()
+   605→    else:
+   606→        # Ensure metadata directories exist (needed for worktrees)
+   607→        ensure_erk_metadata_dir(repo)
+   608→        # Load config from primary location (.erk/config.toml)
+   609→        # Legacy locations are detected by 'erk doctor' only
+
+... [100 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NyhyerF5ciqwauwULCswKf">
+    <param name="file_path">/workspaces/erk/src/erk/cli/commands/one_shot.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="897" cache_read_input_tokens="36882" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 897}" output_tokens="22" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NyhyerF5ciqwauwULCswKf">
+     1→"""Command to dispatch a task for fully autonomous remote execution.
+     2→
+     3→No local planning — the remote Claude explores the codebase, plans the change,
+     4→implements it, and creates a PR.
+     5→
+     6→Usage:
+     7→    erk one-shot "fix the import in config.py"
+     8→    erk one-shot --file prompt.md
+     9→    erk one-shot "add type hints to utils.py" --model opus
+    10→    erk one-shot "fix the typo in README.md" --dry-run
+    11→    erk one-shot "rename issue_number to plan_number in impl_init.py" --plan-only
+    12→"""
+    13→
+    14→from pathlib import Path
+    15→
+    16→import click
+    17→
+    18→from erk.cli.commands.implement_shared import normalize_model_name
+    19→from erk.cli.commands.one_shot_dispatch import (
+    20→    OneShotDispatchParams,
+    21→    dispatch_one_shot,
+    22→)
+    23→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    24→from erk.cli.ensure import Ensure
+    25→from erk.core.context import ErkContext
+    26→from erk_shared.output.output import user_output
+    27→
+    28→
+    29→@click.command("one-shot")
+    30→@click.argument("prompt", required=False, default=None)
+
+... [106 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DJo2cY1kt5en47wb3yt6WT">
+    <param name="file_path">/workspaces/erk/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="offset">100</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="897" cache_read_input_tokens="36882" output_tokens="255" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 897, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DJo2cY1kt5en47wb3yt6WT">
+   100→    sanitized = sanitize_worktree_name(title)
+   101→    prefix = "oneshot-"
+   102→    max_slug_len = 31 - len(prefix)
+   103→    if len(sanitized) &gt; max_slug_len:
+   104→        sanitized = sanitized[:max_slug_len].rstrip("-")
+   105→    timestamp = format_branch_timestamp_suffix(time.now())
+   106→    return f"{prefix}{sanitized}{timestamp}"
+   107→
+   108→
+   109→def dispatch_one_shot(
+   110→    ctx: ErkContext,
+   111→    *,
+   112→    params: OneShotDispatchParams,
+   113→    dry_run: bool,
+   114→    ref: str | None,
+   115→) -&gt; OneShotDispatchResult | None:
+   116→    """Execute the full dispatch sequence for a one-shot workflow.
+   117→
+   118→    Creates branch, commits prompt file directly to branch (no checkout),
+   119→    pushes, creates draft PR, and dispatches workflow. In dry-run mode,
+   120→    prints what would happen without executing.
+   121→
+   122→    Args:
+   123→        ctx: Erk context with git/github gateways
+   124→        params: Dispatch parameters
+   125→        dry_run: If True, print preview without executing
+   126→
+   127→    Returns:
+   128→        OneShotDispatchResult with pr_number, run_id, branch_name,
+   129→        or None in dry-run mode
+
+... [70 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_01M5auzyMN51EYh8Rphi8wdq">
+    <param name="file_path">/workspaces/erk/src/erk/cli/commands/one_shot_dispatch.py</param>
+    <param name="offset">199</param>
+    <param name="limit">260</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5383" cache_read_input_tokens="37779" output_tokens="110" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 5383, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01M5auzyMN51EYh8Rphi8wdq">
+   199→        plan_number: int | None = None
+   200→
+   201→        # Generate branch name with LLM-generated slug
+   202→        current_step = "Generating branch name"
+   203→        user_output("Generating branch name...")
+   204→        if params.slug is not None:
+   205→            slug = params.slug
+   206→            user_output(click.style(f"  \u2713 Slug: {slug} (pre-generated)", dim=True))
+   207→        else:
+   208→            result = ctx.llm_caller.call(
+   209→                params.prompt, system_prompt=BRANCH_SLUG_SYSTEM_PROMPT, max_tokens=50
+   210→            )
+   211→            if isinstance(result, NoApiKey):
+   212→                user_output(click.style("  \u26a0 No API key: ", fg="yellow") + result.message)
+   213→                slug = sanitize_worktree_name(params.prompt)[:25].rstrip("-")
+   214→                user_output(click.style(f"  \u2713 Slug: {slug} (sanitized)", dim=True))
+   215→            elif isinstance(result, LlmCallFailed):
+   216→                user_output(click.style("  \u26a0 LLM failed: ", fg="yellow") + result.message)
+   217→                slug = sanitize_worktree_name(params.prompt)[:25].rstrip("-")
+   218→                user_output(click.style(f"  \u2713 Slug: {slug} (sanitized)", dim=True))
+   219→            else:
+   220→                slug = _postprocess_slug(result.text)
+   221→                if slug is None:
+   222→                    slug = sanitize_worktree_name(params.prompt)[:25].rstrip("-")
+   223→                    user_output(click.style(f"  \u2713 Slug: {slug} (sanitized)", dim=True))
+   224→                else:
+   225→                    user_output(click.style(f"  \u2713 Slug: {slug}", dim=True))
+   226→        # planned_pr: plnd/ prefix (no issue number needed)
+   227→        branch_name = generate_planned_pr_branch_name(
+   228→            slug,
+
+... [223 lines omitted] ...
+
+   238→                click.style("Error: ", fg="red")
+   249→                click.style("Error: ", fg="red")
+   274→        if isinstance(push_result, PushError):
+   275→            Ensure.invariant(False, f"Failed to push branch: {push_result.message}")
+   396→            except Exception as e:
+   398→                    click.style("Warning: ", fg="yellow")
+   399→                    + f"Failed to update dispatch metadata: {e}"
+   423→            except Exception as e:
+   425→                    click.style("Warning: ", fg="yellow") + f"Failed to post queued comment: {e}"
+   430→    except Exception as exc:
+   431→        user_output(click.style(f"Failed during: {current_step}", fg="red"))
+  </tool_result>
+  <assistant>I have comprehensive context now. Let me enter plan mode.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4000" cache_read_input_tokens="43162" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4000}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="EnterPlanMode" id="toolu_01RMgJEACUnF2U7kkRdc654r">
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4000" cache_read_input_tokens="43162" output_tokens="51" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4000, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RMgJEACUnF2U7kkRdc654r">
+Entered plan mode. You should now focus on exploring the codebase and designing an implementation approach.
+
+In plan mode, you should:
+1. Thoroughly explore the codebase to understand existing patterns
+2. Identify similar features and architectural approaches
+3. Consider multiple approaches and their trade-offs
+4. Use AskUserQuestion if you need to clarify the approach
+5. Design a concrete implementation strategy
+6. When ready, use ExitPlanMode to present your plan for approval
+
+Remember: DO NOT write or edit any files yet. This is a read-only exploration and planning phase.
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1386" cache_read_input_tokens="47162" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1386}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>I have strong context from exploration. Let me design the implementation plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1386" cache_read_input_tokens="47162" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1386}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_012ebxSFAu3vat5fp2DeoNfF">
+    <param name="description">Design Phase 1 implementation plan</param>
+    <param name="subagent_type">Plan</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 3482 chars]...led, phased implementation plan with specific files to create/modify and key code changes.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1386" cache_read_input_tokens="47162" output_tokens="1383" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1386, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012ebxSFAu3vat5fp2DeoNfF">
+I now have a thorough understanding of the codebase. Let me compile the implementation plan.
+
+Here is the detailed implementation plan for Phase 1 of objective #8832 "Decouple CLI Commands from Git Repo Requirement."
+
+---
+
+## Implementation Plan: Phase 1 -- Steelthread for Repo-less One-Shot Dispatch
+
+### Design Decisions (Answering the Questions)
+
+**Q1: Where should remote_github.py live?**
+It should be a new gateway module at `packages/erk-shared/src/erk_shared/gateway/remote_github/`. This is consistent with how all other external service interactions are organized as gateways in the codebase. It uses the 3-file simplified gateway pattern (abc.py, real.py, fake.py) because dry-run and printing wrappers are not useful here -- the caller (`dispatch_one_shot`) already handles its own dry-run logic.
+
+**Q2: Should `--repo` be a Click option on each command, or a group-level option?**
+It should be a per-command Click option. Rationale: (a) only a subset of commands will support repo-less operation, (b) different commands may interpret `--repo` differently, (c) group-level options in erk are reserved for cross-cutting concerns like `--dry-run` and `--debug`. Phase 2 commands can copy the same `@click.option("--repo", ...)` pattern from one-shot.
+
+**Q3: How to handle `repo_info` when not in a git repo but `--repo` is provided?**
+Parse the `--repo owner/repo` string directly into a `RepoInfo(owner=owner, name=name)` at the command layer. This is passed to `dispatch_one_shot` as an explicit parameter, separate from `ctx.repo_info`. The dispatch function will use this explicit `RepoInfo` when present, falling back to `ctx.repo_info` for the local-repo path.
+
+**Q4: Minimal GitHub API operations for one-shot remote dispatch?**
+Analyzing `dispatch_one_shot()`, the remote path needs:
+1. **Create a ref (branch)** -- `POST /repos/{owner}/{repo}/git/refs` (needs a base SHA)
+2. **Get default branch SHA** -- `GET /repos/{owner}/{repo}/git/ref/heads/{branch}` (to get trunk SHA)
+3. **Create a file commit** -- GitHub Contents API `PUT /repos/{owner}/{repo}/contents/{path}` (creates blob+commit atomically)
+4. **Create a draft PR** -- `POST /repos/{owner}/{repo}/pulls`
+5. **Update PR body** -- `PATCH /repos/{owner}/{repo}/pulls/{number}`
+6. **Add labels** -- `POST /repos/{owner}/{repo}/issues/{number}/labels`
+7. **Trigger workflow** -- `POST /repos/{owner}/{repo}/actions/workflows/{workflow_id}/dispatches`
+8. **Poll for workflow run** -- `GET /repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs`
+9. **Get workflow run node_id** -- `GET /repos/{owner}/{repo}/actions/runs/{run_id}` (for metadata)
+
+... [291 lines omitted] ...
+
+**Risk**: The `fetch_github_token_or_none()` function calls `gh auth token` via subprocess. This already handles the failure case (returns None). No regression risk.
+- `--ref-current` is invalid (no local branch) -- validate and error
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6035" cache_read_input_tokens="48548" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6035}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good, comprehensive design. Let me write the plan file.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6035" cache_read_input_tokens="48548" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 6035}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_019Q7y2K5mLZVizDHpPHQAP5">
+    <param name="query">select:Write,ExitPlanMode</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6035" cache_read_input_tokens="48548" output_tokens="131" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 6035, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_019Q7y2K5mLZVizDHpPHQAP5">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01V6GmHtWAb59qBzanfA7rRu">
+    <param name="file_path">/home/vscode/.claude/plans/delightful-doodling-origami.md</param>
+    <param name="content"># Plan: Decouple CLI Commands from Git Repo Requirement — Phase 1 Steelthread
+
+Part of Obj...[truncated 6440 chars]...shot "test prompt" --repo dagster-io/erk --dry-run`
+5. Type check with ty, lint with ruff
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1173" cache_read_input_tokens="54583" output_tokens="2175" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1173, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V6GmHtWAb59qBzanfA7rRu">
+File created successfully at: /home/vscode/.claude/plans/delightful-doodling-origami.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01HXR7jgf5XE6bVrJhrrHxNi">
+    <param name="plan"># Plan: Decouple CLI Commands from Git Repo Requirement — Phase 1 Steelthread
+
+Part of Obj...[truncated 6440 chars]...shot "test prompt" --repo dagster-io/erk --dry-run`
+5. Type check with ty, lint with ruff
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2313" cache_read_input_tokens="55756" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2313, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01HXR7jgf5XE6bVrJhrrHxNi">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /home/vscode/.claude/plans/delightful-doodling-origami.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Plan: Decouple CLI Commands from Git Repo Requirement — Phase 1 Steelthread
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 77c9681c-97e9-47ba-90f2-0fda5a897b45 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Plan: Decouple CLI Commands from Git Repo Requirement — Phase 1 Steelthread
+
+Part of Objective #8832, Nodes 1.1, 1.2, 1.3
+
+## Context
+
+Currently, `erk one-shot` and other commands require a local git repo because:
+1. HttpClient creation is guarded behind a repo check in `create_context()`
+2. All GitHub operations go through gateways that use `repo_root: Path` and local git/gh CLI
+3. There's no way to specify a target repo without being inside one
+
+Phase 1 creates a steelthread: make `erk one-shot --repo owner/repo` work without a local git clone by using the GitHub REST API directly.
+
+## Step 1: Remove git-repo guard from HttpClient creation (Node 1.1)
+
+**File:** `src/erk/core/context.py` (lines 594-599)
+
+Remove the `if not isinstance(repo, NoRepoSentinel)` guard. HttpClient only needs a GitHub token.
+
+## Step 2: Add `put` method to HttpClient gateway
+
+The GitHub Contents API requires HTTP PUT. Add to abc/real/fake.
+
+## Step 3: Create RemoteGitHub gateway (Node 1.2)
+
+New package at `packages/erk-shared/src/erk_shared/gateway/remote_github/` with ABC, real (using HttpClient), and fake implementations. All methods take explicit `owner`/`repo` params — no `repo_root: Path`.
+
+Methods: get_authenticated_user, get_default_branch_name/sha, create_ref, create_file_commit, create_pull_request, update_pull_request_body, add_labels, dispatch_workflow, add_issue_comment.
+
+## Step 4: Add `--repo` flag to one-shot command (Node 1.3)
+
+New `dispatch_one_shot_remote()` function that mirrors the local path but uses RemoteGitHub gateway. Handles edge cases (`--repo` + `--ref-current` = error, dry-run support).
+
+## Step 5: Tests
+
+Unit tests for RemoteGitHub gateway and command tests for `--repo` flag.
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="694" cache_read_input_tokens="58069" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 694}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01VUsQpQBnPL7Nd4FU4XpMKP">
+    <param name="questions">[{'question': 'Plan: Decouple CLI Commands from Git Repo Requirement — Phase 1 Steelthread...[truncated 401 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="694" cache_read_input_tokens="58069" output_tokens="749" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 694, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01VUsQpQBnPL7Nd4FU4XpMKP">
+User has answered your questions: "Plan: Decouple CLI Commands from Git Repo Requirement — Phase 1 Steelthread
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="Skill" id="toolu_01XXnMXwndFHpDLAHg5GcY2G">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="837" cache_read_input_tokens="58763" output_tokens="57" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 837, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XXnMXwndFHpDLAHg5GcY2G">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="77c9681c-97e9-47ba-90f2-0fda5a897b45" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="77c9681c-97e9-47ba-90f2-0fda5a897b45" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "77c9681c-97e9-47ba-90f2-0fda5a897b45" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "77c9681c-97e9-47ba-90f2-0fda5a897b45" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "77c9681c-97e9-47ba-90f2-0fda5a897b45" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "77c9681c-97e9-47ba-90f2-0fda5a897b45" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Let me follow the plan-save steps.
+
+**Step 2: Branch slug** from title "Decouple CLI Commands from Git Repo Requirement — Phase 1 Steelthread":
+
+`BRANCH_SLUG`: `decouple-cli-git-repo-phase1`
+
+**Step 3: Summary**:
+
+Removes the git-repo guard from HttpClient creation so GitHub API access works outside repos. Creates a RemoteGitHub gateway for performing git+GitHub operations purely via REST API. Adds --repo flag to one-shot command enabling remote dispatch without a local git clone.
+
+**Step 4: Save**</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="2289" cache_read_input_tokens="59600" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2289}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+</session>
