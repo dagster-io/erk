@@ -1,15 +1,15 @@
-"""Tests for cmux-sync-workspace exec script."""
+"""Tests for cmux-checkout-workspace exec script."""
 
 import json
 from unittest import mock
 
 from click.testing import CliRunner
 
-from erk.cli.commands.exec.scripts.cmux_sync_workspace import cmux_sync_workspace
+from erk.cli.commands.exec.scripts.cmux_checkout_workspace import cmux_checkout_workspace
 
 
-def test_cmux_sync_workspace_success_with_branch() -> None:
-    """cmux-sync-workspace succeeds when branch is provided."""
+def test_cmux_checkout_workspace_success_with_branch() -> None:
+    """cmux-checkout-workspace succeeds when branch is provided."""
     runner = CliRunner()
 
     with mock.patch("subprocess.run") as mock_run:
@@ -20,7 +20,7 @@ def test_cmux_sync_workspace_success_with_branch() -> None:
         )
 
         result = runner.invoke(
-            cmux_sync_workspace,
+            cmux_checkout_workspace,
             ["--pr", "8152", "--branch", "my-branch"],
         )
 
@@ -32,8 +32,8 @@ def test_cmux_sync_workspace_success_with_branch() -> None:
     assert output["workspace_name"] == "workspace-12345"
 
 
-def test_cmux_sync_workspace_success_auto_detect_branch() -> None:
-    """cmux-sync-workspace auto-detects branch when not provided."""
+def test_cmux_checkout_workspace_success_auto_detect_branch() -> None:
+    """cmux-checkout-workspace auto-detects branch when not provided."""
     runner = CliRunner()
 
     with mock.patch("subprocess.run") as mock_run:
@@ -53,7 +53,7 @@ def test_cmux_sync_workspace_success_auto_detect_branch() -> None:
         ]
 
         result = runner.invoke(
-            cmux_sync_workspace,
+            cmux_checkout_workspace,
             ["--pr", "8152"],
         )
 
@@ -64,8 +64,8 @@ def test_cmux_sync_workspace_success_auto_detect_branch() -> None:
     assert output["branch"] == "feature-branch"
 
 
-def test_cmux_sync_workspace_fails_auto_detect() -> None:
-    """cmux-sync-workspace fails gracefully when branch auto-detection fails."""
+def test_cmux_checkout_workspace_fails_auto_detect() -> None:
+    """cmux-checkout-workspace fails gracefully when branch auto-detection fails."""
     runner = CliRunner()
 
     with mock.patch("subprocess.run") as mock_run:
@@ -76,7 +76,7 @@ def test_cmux_sync_workspace_fails_auto_detect() -> None:
         )
 
         result = runner.invoke(
-            cmux_sync_workspace,
+            cmux_checkout_workspace,
             ["--pr", "8152"],
         )
 
@@ -86,8 +86,8 @@ def test_cmux_sync_workspace_fails_auto_detect() -> None:
     assert "Failed to detect head branch" in output["error"]
 
 
-def test_cmux_sync_workspace_fails_cmux_command() -> None:
-    """cmux-sync-workspace fails when cmux pipeline fails."""
+def test_cmux_checkout_workspace_fails_cmux_command() -> None:
+    """cmux-checkout-workspace fails when cmux pipeline fails."""
     import subprocess
 
     runner = CliRunner()
@@ -102,7 +102,7 @@ def test_cmux_sync_workspace_fails_cmux_command() -> None:
         mock_run.side_effect = error
 
         result = runner.invoke(
-            cmux_sync_workspace,
+            cmux_checkout_workspace,
             ["--pr", "8152", "--branch", "my-branch"],
         )
 
@@ -112,8 +112,8 @@ def test_cmux_sync_workspace_fails_cmux_command() -> None:
     assert "Failed to create cmux workspace" in output["error"]
 
 
-def test_cmux_sync_workspace_extracts_workspace_name() -> None:
-    """cmux-sync-workspace correctly extracts workspace name from output."""
+def test_cmux_checkout_workspace_extracts_workspace_name() -> None:
+    """cmux-checkout-workspace correctly extracts workspace name from output."""
     runner = CliRunner()
 
     with mock.patch("subprocess.run") as mock_run:
@@ -124,7 +124,7 @@ def test_cmux_sync_workspace_extracts_workspace_name() -> None:
         )
 
         result = runner.invoke(
-            cmux_sync_workspace,
+            cmux_checkout_workspace,
             ["--pr", "8152", "--branch", "my-branch"],
         )
 

@@ -21,11 +21,11 @@ Erk integrates with [cmux](https://github.com/dagster-io/cmux), a terminal multi
 
 ## TUI Integration
 
-The TUI provides a `cmux_sync` command (launch key `m`) that synchronizes the cmux workspace name with the current branch. This serves a similar purpose but is integrated into the TUI workflow rather than being a standalone CLI command.
+The TUI provides a `cmux_checkout` command (launch key `m`) that creates a cmux workspace, checks out the PR, and syncs with trunk. This is integrated into the TUI workflow rather than being a standalone CLI command.
 
 ### When to Use Each
 
 | Tool                           | Context         | Use When                                  |
 | ------------------------------ | --------------- | ----------------------------------------- |
 | `/local:cmux-workspace-rename` | Claude Code CLI | Standalone rename during a Claude session |
-| TUI `cmux_sync` (key `m`)      | Erk TUI         | Rename while using the TUI                |
+| TUI `cmux_checkout` (key `m`)  | Erk TUI         | Checkout PR while using the TUI           |

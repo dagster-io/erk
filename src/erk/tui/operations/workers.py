@@ -122,8 +122,8 @@ class BackgroundWorkersMixin:
             )
 
     @work(thread=True)
-    def _cmux_sync_async(self: ErkDashApp, op_id: str, pr_number: int, branch: str) -> None:
-        """Create cmux workspace, sync PR, and focus the workspace.
+    def _cmux_checkout_async(self: ErkDashApp, op_id: str, pr_number: int, branch: str) -> None:
+        """Create cmux workspace, checkout PR, and focus the workspace.
 
         Args:
             op_id: Operation identifier for status bar tracking
@@ -135,7 +135,7 @@ class BackgroundWorkersMixin:
             command=[
                 "erk",
                 "exec",
-                "cmux-sync-workspace",
+                "cmux-checkout-workspace",
                 "--pr",
                 str(pr_number),
                 "--branch",

@@ -110,9 +110,9 @@ def _display_copy_teleport_new_slot(ctx: CommandContext) -> str:
     return f"erk pr teleport {ctx.row.pr_number} --new-slot"
 
 
-def _display_cmux_sync(ctx: CommandContext) -> str:
-    """Display name for cmux_sync command."""
-    return f"erk exec cmux-sync-workspace --pr {ctx.row.pr_number}"
+def _display_cmux_checkout(ctx: CommandContext) -> str:
+    """Display name for cmux_checkout command."""
+    return f"erk exec cmux-checkout-workspace --pr {ctx.row.pr_number}"
 
 
 def _display_copy_implement_local(ctx: CommandContext) -> str:
@@ -279,9 +279,9 @@ def get_all_commands() -> list[CommandDefinition]:
             get_display_name=_display_rewrite_remote,
         ),
         CommandDefinition(
-            id="cmux_sync",
-            name="cmux sync",
-            description="cmux sync",
+            id="cmux_checkout",
+            name="cmux checkout",
+            description="cmux checkout",
             category=CommandCategory.ACTION,
             shortcut=None,
             launch_key="m",
@@ -291,7 +291,7 @@ def get_all_commands() -> list[CommandDefinition]:
                 and ctx.row.pr_head_branch is not None
                 and ctx.cmux_integration
             ),
-            get_display_name=_display_cmux_sync,
+            get_display_name=_display_cmux_checkout,
         ),
         # === OBJECTIVE ACTIONS ===
         CommandDefinition(
@@ -418,9 +418,9 @@ def get_all_commands() -> list[CommandDefinition]:
             get_display_name=_display_copy_teleport_new_slot,
         ),
         CommandDefinition(
-            id="copy_cmux_sync",
-            name="cmux sync",
-            description="cmux sync",
+            id="copy_cmux_checkout",
+            name="cmux checkout",
+            description="cmux checkout",
             category=CommandCategory.COPY,
             shortcut="w",
             launch_key=None,
@@ -430,7 +430,7 @@ def get_all_commands() -> list[CommandDefinition]:
                 and ctx.row.pr_head_branch is not None
                 and ctx.cmux_integration
             ),
-            get_display_name=_display_cmux_sync,
+            get_display_name=_display_cmux_checkout,
         ),
         CommandDefinition(
             id="copy_implement_local",

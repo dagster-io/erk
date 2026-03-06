@@ -47,7 +47,7 @@ The `LaunchScreen.__init__()` builds a `_key_to_command_id` dict from these assi
 | r   | `rebase_remote`     | Rebase Remote     |
 | a   | `address_remote`    | Address Remote    |
 | w   | `rewrite_remote`    | Rewrite Remote    |
-| m   | `cmux_sync`         | cmux sync         |
+| m   | `cmux_checkout`     | cmux checkout     |
 
 ### Objective View
 

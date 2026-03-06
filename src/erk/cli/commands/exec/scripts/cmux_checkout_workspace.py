@@ -4,8 +4,8 @@ This script creates a cmux workspace that automatically checks out a PR,
 syncs it with the trunk, and renames the workspace to the PR's head branch.
 
 Usage:
-    erk exec cmux-sync-workspace --pr 8152
-    erk exec cmux-sync-workspace --pr 8152 --branch "my-branch"
+    erk exec cmux-checkout-workspace --pr 8152
+    erk exec cmux-checkout-workspace --pr 8152 --branch "my-branch"
 
 Output:
     JSON with {success, pr_number, branch, workspace_name} on success
@@ -24,8 +24,8 @@ import click
 
 
 @dataclass(frozen=True)
-class CmuxSyncSuccess:
-    """Success response for cmux-sync-workspace command."""
+class CmuxCheckoutSuccess:
+    """Success response for cmux-checkout-workspace command."""
 
     success: bool
     pr_number: int
@@ -34,8 +34,8 @@ class CmuxSyncSuccess:
 
 
 @dataclass(frozen=True)
-class CmuxSyncError:
-    """Error response for cmux-sync-workspace command."""
+class CmuxCheckoutError:
+    """Error response for cmux-checkout-workspace command."""
 
     success: bool
     error: str
@@ -82,7 +82,7 @@ def _extract_workspace_name(output: str) -> str | None:
     return None
 
 
-@click.command(name="cmux-sync-workspace")
+@click.command(name="cmux-checkout-workspace")
 @click.option(
     "--pr",
     required=True,
@@ -94,7 +94,7 @@ def _extract_workspace_name(output: str) -> str | None:
     default=None,
     help="PR head branch name (auto-detected via gh if omitted)",
 )
-def cmux_sync_workspace(pr: int, branch: str | None) -> None:
+def cmux_checkout_workspace(pr: int, branch: str | None) -> None:
     """Create a cmux workspace with PR checkout and sync.
 
     Creates a new cmux workspace that:
@@ -111,7 +111,7 @@ def cmux_sync_workspace(pr: int, branch: str | None) -> None:
             click.echo(
                 json.dumps(
                     asdict(
-                        CmuxSyncError(
+                        CmuxCheckoutError(
                             success=False,
                             error=f"Failed to detect head branch for PR #{pr}. "
                             "Provide --branch explicitly.",
@@ -147,7 +147,7 @@ def cmux_sync_workspace(pr: int, branch: str | None) -> None:
         click.echo(
             json.dumps(
                 asdict(
-                    CmuxSyncSuccess(
+                    CmuxCheckoutSuccess(
                         success=True,
                         pr_number=pr,
                         branch=branch,
@@ -161,7 +161,7 @@ def cmux_sync_workspace(pr: int, branch: str | None) -> None:
         click.echo(
             json.dumps(
                 asdict(
-                    CmuxSyncError(
+                    CmuxCheckoutError(
                         success=False,
                         error=f"Failed to create cmux workspace: {error_output}",
                     )
