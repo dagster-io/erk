@@ -370,7 +370,7 @@ Next steps:
 1. Push changes:
    - **Graphite repos**: `gt submit` (or `gt ss`)
    - **Plain git repos**: `git push`
-   - If push is rejected (non-fast-forward): Run `/erk:reconcile-with-remote` to resolve. Do NOT use `git pull --rebase`.
+   - If push is rejected (non-fast-forward): Run `/erk:diverge-fix` to resolve. Do NOT use `git pull --rebase`.
 2. Wait for CI to pass
 3. Request re-review if needed
 ```

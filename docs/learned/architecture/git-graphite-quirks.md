@@ -19,7 +19,7 @@ tripwires:
     warning: "gt restack only handles parent-child stack rebasing, NOT same-branch remote divergence. Use git rebase origin/$BRANCH first."
     pattern: "gt\\s+restack"
   - action: "using git pull or git pull --rebase on a Graphite-managed branch"
-    warning: "Use /erk:reconcile-with-remote instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push."
+    warning: "Use /erk:diverge-fix instead. git pull --rebase rewrites commit SHAs outside Graphite's tracking, causing stack divergence that requires manual cleanup with gt sync --restack and force-push."
     pattern: "git\\s+pull"
   - action: "comparing git SHA to Graphite's tracked SHA for divergence detection"
     warning: "Ensure both `commit_sha` and `graphite_tracked_sha` are non-None before comparison. Returning False when either is None avoids false negatives on new branches."

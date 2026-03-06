@@ -58,23 +58,23 @@ Only the highest-frequency workflow entry points are at the top level:
 
 Plan and PR operations are under the `erk pr` group:
 
-| Subcommand              | Description                                         |
-| ----------------------- | --------------------------------------------------- |
-| `create`                | Create a new plan issue                             |
-| `view`                  | View a plan                                         |
-| `close`                 | Close a plan                                        |
-| `list`                  | List open plans                                     |
-| `log`                   | View plan execution logs                            |
-| `replan`                | Replan an existing plan issue                       |
-| `dispatch`              | Submit a plan for remote execution                  |
-| `submit`                | Submit current branch as a pull request             |
-| `address`               | Address PR review comments with AI resolution       |
-| `check`                 | Validate PR rules for the current branch            |
-| `checkout` (`co`)       | Checkout PR into a worktree for review              |
-| `rebase`                | Fix merge conflicts with AI resolution              |
-| `rewrite`               | Squash, regenerate commit message, push             |
-| `sync`                  | Synchronize current PR branch with remote base      |
-| `reconcile-with-remote` | Reconcile branch with remote and resolve divergence |
+| Subcommand        | Description                                    |
+| ----------------- | ---------------------------------------------- |
+| `create`          | Create a new plan issue                        |
+| `view`            | View a plan                                    |
+| `close`           | Close a plan                                   |
+| `list`            | List open plans                                |
+| `log`             | View plan execution logs                       |
+| `replan`          | Replan an existing plan issue                  |
+| `dispatch`        | Submit a plan for remote execution             |
+| `submit`          | Submit current branch as a pull request        |
+| `address`         | Address PR review comments with AI resolution  |
+| `check`           | Validate PR rules for the current branch       |
+| `checkout` (`co`) | Checkout PR into a worktree for review         |
+| `rebase`          | Fix merge conflicts with AI resolution         |
+| `rewrite`         | Squash, regenerate commit message, push        |
+| `sync`            | Synchronize current PR branch with remote base |
+| `diverge-fix`     | Fix branch divergence with remote              |
 
 ### Grouped Commands
 

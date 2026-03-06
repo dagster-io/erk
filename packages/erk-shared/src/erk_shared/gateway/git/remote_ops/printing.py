@@ -37,6 +37,11 @@ class PrintingGitRemoteOps(PrintingBase, GitRemoteOps):
     # Mutation Operations (print before delegating)
     # ============================================================================
 
+    def fetch_prune(self, repo_root: Path, remote: str) -> None:
+        """Fetch and prune with printed output."""
+        self._emit(self._format_command(f"git fetch --prune {remote}"))
+        self._wrapped.fetch_prune(repo_root, remote)
+
     def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
         """Fetch branch with printed output."""
         self._emit(self._format_command(f"git fetch {remote} {branch}"))

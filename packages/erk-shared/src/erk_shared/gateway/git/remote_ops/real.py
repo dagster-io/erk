@@ -30,6 +30,16 @@ class RealGitRemoteOps(GitRemoteOps):
         """
         self._time = time
 
+    def fetch_prune(self, repo_root: Path, remote: str) -> None:
+        """Fetch from remote and prune deleted tracking branches."""
+        run_subprocess_with_context(
+            cmd=["git", "fetch", "--prune", remote],
+            operation_context=f"fetch --prune from remote '{remote}'",
+            cwd=repo_root,
+            timeout=_GIT_NETWORK_TIMEOUT,
+            env=copied_env_for_git_subprocess(),
+        )
+
     def fetch_branch(self, repo_root: Path, remote: str, branch: str) -> None:
         """Fetch a specific branch from a remote."""
         run_subprocess_with_context(
