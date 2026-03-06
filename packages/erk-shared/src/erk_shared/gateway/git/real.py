@@ -54,7 +54,7 @@ class RealGit(Git):
         self._config = RealGitConfigOps()
         # Rebase operations subgateway
         self._rebase_gateway = RealGitRebaseOps(
-            get_git_common_dir=self._repo.get_git_common_dir,
+            get_git_dir=self._repo.get_git_dir,
             get_conflicted_files=self._status.get_conflicted_files,
         )
         self._tag = RealGitTagOps()

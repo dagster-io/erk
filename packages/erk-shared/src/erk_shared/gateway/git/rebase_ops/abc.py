@@ -77,7 +77,7 @@ class GitRebaseOps(ABC):
     def is_rebase_in_progress(self, cwd: Path) -> bool:
         """Check if rebase in progress (.git/rebase-merge or .git/rebase-apply).
 
-        Handles worktrees by checking git common dir.
+        Handles worktrees by checking per-worktree git dir.
 
         Args:
             cwd: Working directory

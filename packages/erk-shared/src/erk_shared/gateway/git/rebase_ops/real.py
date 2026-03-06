@@ -13,14 +13,14 @@ from erk_shared.subprocess_utils import run_subprocess_with_context
 class RealGitRebaseOps(GitRebaseOps):
     """Real implementation of Git rebase operations using subprocess."""
 
-    def __init__(self, get_git_common_dir: Callable, get_conflicted_files: Callable) -> None:
+    def __init__(self, get_git_dir: Callable, get_conflicted_files: Callable) -> None:
         """Initialize RealGitRebaseOps with helper functions.
 
         Args:
-            get_git_common_dir: Function to get git common directory for worktree support
+            get_git_dir: Function to get per-worktree git directory
             get_conflicted_files: Function to get list of conflicted files
         """
-        self._get_git_common_dir = get_git_common_dir
+        self._get_git_dir = get_git_dir
         self._get_conflicted_files = get_conflicted_files
 
     def rebase_onto(self, cwd: Path, target_ref: str) -> RebaseResult:
@@ -59,10 +59,10 @@ class RealGitRebaseOps(GitRebaseOps):
         )
 
     def is_rebase_in_progress(self, cwd: Path) -> bool:
-        """Check for .git/rebase-merge or .git/rebase-apply directories."""
-        git_common_dir = self._get_git_common_dir(cwd)
-        if git_common_dir is None:
+        """Check for rebase-merge or rebase-apply in the per-worktree git dir."""
+        git_dir = self._get_git_dir(cwd)
+        if git_dir is None:
             return False
-        rebase_merge = git_common_dir / "rebase-merge"
-        rebase_apply = git_common_dir / "rebase-apply"
+        rebase_merge = git_dir / "rebase-merge"
+        rebase_apply = git_dir / "rebase-apply"
         return rebase_merge.exists() or rebase_apply.exists()

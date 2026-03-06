@@ -231,6 +231,39 @@ def test_get_git_common_dir_non_git_directory(git_ops: GitSetup, tmp_path: Path)
     assert git_dir is None
 
 
+def test_get_git_dir_from_main_repo(git_ops: GitSetup) -> None:
+    """Test getting per-worktree git dir from main repository (same as common dir)."""
+    git_dir = git_ops.git.repo.get_git_dir(git_ops.repo)
+
+    assert git_dir is not None
+    assert git_dir == git_ops.repo / ".git"
+
+
+def test_get_git_dir_from_worktree(git_ops_with_worktrees: GitWithWorktrees) -> None:
+    """Test getting per-worktree git dir from worktree (differs from common dir)."""
+    wt = git_ops_with_worktrees.worktrees[0]
+
+    git_dir = git_ops_with_worktrees.git.repo.get_git_dir(wt)
+    common_dir = git_ops_with_worktrees.git.repo.get_git_common_dir(wt)
+
+    assert git_dir is not None
+    assert common_dir is not None
+    # Per-worktree git dir differs from common dir in worktrees
+    assert git_dir != common_dir
+    # Common dir points to shared .git
+    assert common_dir == git_ops_with_worktrees.repo / ".git"
+
+
+def test_get_git_dir_non_git_directory(git_ops: GitSetup, tmp_path: Path) -> None:
+    """Test getting per-worktree git dir in non-git directory returns None."""
+    non_git = tmp_path / "not-a-repo"
+    non_git.mkdir()
+
+    git_dir = git_ops.git.repo.get_git_dir(non_git)
+
+    assert git_dir is None
+
+
 def test_add_worktree_with_existing_branch(
     git_ops_with_existing_branch: GitWithExistingBranch,
 ) -> None:

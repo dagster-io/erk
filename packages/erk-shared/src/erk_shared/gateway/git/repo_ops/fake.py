@@ -16,6 +16,7 @@ class FakeGitRepoOps(GitRepoOps):
         *,
         repository_roots: dict[Path, Path] | None = None,
         git_common_dirs: dict[Path, Path] | None = None,
+        git_dirs: dict[Path, Path] | None = None,
         worktrees: dict[Path, list] | None = None,
     ) -> None:
         """Create FakeGitRepoOps with pre-configured state.
@@ -23,6 +24,7 @@ class FakeGitRepoOps(GitRepoOps):
         Args:
             repository_roots: Mapping of cwd -> repo root
             git_common_dirs: Mapping of cwd -> git common dir
+            git_dirs: Mapping of cwd -> per-worktree git dir
             worktrees: Mapping of repo_root -> list of worktree info (for root inference)
         """
         self._repository_roots: dict[Path, Path] = (
@@ -31,6 +33,7 @@ class FakeGitRepoOps(GitRepoOps):
         self._git_common_dirs: dict[Path, Path] = (
             git_common_dirs if git_common_dirs is not None else {}
         )
+        self._git_dirs: dict[Path, Path] = git_dirs if git_dirs is not None else {}
         self._worktrees: dict[Path, list] = worktrees if worktrees is not None else {}
 
     # ============================================================================
@@ -103,6 +106,25 @@ class FakeGitRepoOps(GitRepoOps):
 
         return None
 
+    def get_git_dir(self, cwd: Path) -> Path | None:
+        """Get the per-worktree git directory.
+
+        Checks _git_dirs first, falls back to _git_common_dirs
+        (in non-worktree repos these are identical).
+        """
+        resolved_lookup = {k.resolve(): v for k, v in self._git_dirs.items()}
+        resolved_cwd = cwd.resolve()
+
+        if resolved_cwd in resolved_lookup:
+            return resolved_lookup[resolved_cwd]
+
+        for parent in resolved_cwd.parents:
+            if parent in resolved_lookup:
+                return resolved_lookup[parent]
+
+        # Fall back to common dir (same in non-worktree repos)
+        return self.get_git_common_dir(cwd)
+
     # ============================================================================
     # Test Setup (FakeGit integration)
     # ============================================================================
@@ -112,6 +134,7 @@ class FakeGitRepoOps(GitRepoOps):
         *,
         repository_roots: dict[Path, Path],
         git_common_dirs: dict[Path, Path],
+        git_dirs: dict[Path, Path],
         worktrees: dict[Path, list],
     ) -> None:
         """Link this fake's state to FakeGit's state.
@@ -119,8 +142,10 @@ class FakeGitRepoOps(GitRepoOps):
         Args:
             repository_roots: FakeGit's repository roots mapping
             git_common_dirs: FakeGit's git common dirs mapping
+            git_dirs: FakeGit's per-worktree git dirs mapping
             worktrees: FakeGit's worktrees mapping
         """
         self._repository_roots = repository_roots
         self._git_common_dirs = git_common_dirs
+        self._git_dirs = git_dirs
         self._worktrees = worktrees

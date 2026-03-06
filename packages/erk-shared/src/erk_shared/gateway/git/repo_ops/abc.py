@@ -47,3 +47,19 @@ class GitRepoOps(ABC):
             Path to the .git common directory, or None if not in a git repo
         """
         ...
+
+    @abstractmethod
+    def get_git_dir(self, cwd: Path) -> Path | None:
+        """Get the per-worktree git directory.
+
+        Returns the path via `git rev-parse --git-dir`. For worktrees, this
+        returns the worktree-specific git directory (e.g., .git/worktrees/slot-05).
+        For non-worktree repos, this is the same as get_git_common_dir.
+
+        Args:
+            cwd: Working directory
+
+        Returns:
+            Path to the per-worktree .git directory, or None if not in a git repo
+        """
+        ...
