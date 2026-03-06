@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.7] - 2026-03-05 20:08 PT
+
+### Added
+
+- Add objective node breakdown screen in TUI: press `b` in Objectives view to drill into individual nodes with PR status, CI checks, and phase grouping
+
+### Changed
+
+- Change `erk pr rebase` to use mechanical rebase with Claude TUI fallback: attempts fast mechanical rebase first, only launching Claude TUI for interactive conflict resolution when conflicts are detected
+- Speed up `erk pr submit` pipeline by parallelizing independent steps and removing cache polling from the critical path
+- Add branch name to workflow run-name for better context in bundled CI workflows
+- Move code-reviews jobs into ci.yml downstream of fix-formatting
+
+### Fixed
+
+- Fix race condition in check runs markdown rendering causing display glitches in TUI
+- Fix automated CI pushes being attributed to the triggering user instead of github-actions[bot]
+
 ## [0.9.6] - 2026-03-05 17:24 PT
 
 ### Added

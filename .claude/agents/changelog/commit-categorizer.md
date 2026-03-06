@@ -167,9 +167,10 @@ Example format:
 - Skill/agent documentation updates - usually internal
 - "Harden", "Strengthen" - usually internal enforcement
 
-**Exception - capability workflows ARE external-facing:**
+**Exception - bundled workflows and capabilities ARE external-facing:**
 
 - Changes to `.github/workflows/` that affect capabilities (e.g., `dignified-python-review.yml`) ARE user-facing and should be included, since capabilities are user-installable features
+- Changes to **bundled CI workflows** (e.g., `plan-implement.yml`, `pr-address.yml`, `pr-rebase.yml`, `ci.yml`) ARE user-facing — these workflows are distributed to user repositories via erk's artifact system. Include changes that affect behavior (run-name formatting, job organization, check run rendering) even if they're "just CI"
 
 #### Internal-Only Patterns (always filter)
 
@@ -179,7 +180,7 @@ Example format:
 - Changes only in `scripts/` (unless CLI-facing) -> internal
 - Changes only to `**/fake*.py` -> internal
 - Changes only to `Makefile` -> internal
-- Changes only to `.github/workflows/` -> internal
+- Changes only to `.github/workflows/` -> internal (UNLESS the workflow is bundled/user-installable — see exception above)
 
 **By content:**
 
