@@ -208,11 +208,11 @@ def test_teleport_stacked_pr_fetches_base_with_graphite() -> None:
         ) in git.created_tracking_branches
 
 
-def test_teleport_trunk_parent_skips_base_fetch() -> None:
-    """Teleport skips base fetch when base_ref_name equals trunk."""
+def test_teleport_trunk_parent_tracks_without_base_fetch() -> None:
+    """Teleport skips base fetch but still tracks with Graphite for non-stacked PRs."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        # PR with base = main (trunk)
+        # PR with base = main (trunk) — not stacked, but still needs Graphite tracking
         pr = _make_pr_details(123, "feature-branch", base_ref_name="main")
         github = FakeGitHub(pr_details={123: pr})
         git = FakeGit(
@@ -229,8 +229,8 @@ def test_teleport_trunk_parent_skips_base_fetch() -> None:
         result = runner.invoke(pr_group, ["teleport", "123", "--force"], obj=ctx)
         assert result.exit_code == 0
         assert "Fetching base branch" not in result.output
-        assert "Tracking branch with Graphite" not in result.output
-        # Verify no extra fetches or tracks happened
+        assert "Tracking branch with Graphite" in result.output
+        # No base branch fetching (trunk is already local)
         assert len(git.created_tracking_branches) == 0
 
 
