@@ -36,10 +36,12 @@ import click
 from erk.artifacts.paths import get_bundled_github_dir
 from erk_shared.context.helpers import require_cwd, require_prompt_executor
 from erk_shared.core.prompt_executor import PromptExecutor
+from erk_shared.gateway.github.metadata.core import find_metadata_block
 from erk_shared.gateway.github.metadata.plan_header import (
     extract_plan_header_ci_summary_comment_id,
     update_plan_header_ci_summary_comment_id,
 )
+from erk_shared.gateway.github.metadata.types import BlockKeys
 from erk_shared.subprocess_utils import run_subprocess_with_context
 
 
@@ -306,11 +308,15 @@ def _update_plan_header_comment_id(
         click.echo(f"Failed to read plan issue #{plan_issue}", err=True)
         return
 
-    try:
-        updated_body = update_plan_header_ci_summary_comment_id(result.stdout, comment_id)
-    except ValueError as e:
-        click.echo(f"Failed to update plan-header: {e}", err=True)
+    block = find_metadata_block(result.stdout, BlockKeys.PLAN_HEADER)
+    if block is None:
+        click.echo(
+            "Failed to update plan-header: plan-header block not found in issue body",
+            err=True,
+        )
         return
+
+    updated_body = update_plan_header_ci_summary_comment_id(result.stdout, comment_id)
 
     # Use gh api to update the issue body (gh issue edit --body can mangle content)
     update_result = run_subprocess_with_context(

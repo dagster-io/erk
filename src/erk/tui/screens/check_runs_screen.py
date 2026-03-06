@@ -203,7 +203,7 @@ class CheckRunsScreen(ModalScreen):
             summaries = self._service.fetch_ci_summaries(
                 self._pr_number, comment_id=self._ci_summary_comment_id
             )
-        except Exception:
+        except (RuntimeError, ValueError, KeyError):
             # Summaries are best-effort; silently ignore failures
             pass
 
