@@ -1,4 +1,0 @@
-{
-  "provider": "github-draft-pr",
-  "title": "Plan: Change `erk pr rebase` to use `gt restack` / `git rebase` with Claude TUI fallback"
-}
