@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "plan_id": 8795,
+  "sessions": [
+    {
+      "session_id": "",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-06T01:10:06.069675+00:00",
+      "files": [
+        "impl--313e6cde-cf6a-450f-b7b3-f075ed2725a9-part1.xml",
+        "impl--313e6cde-cf6a-450f-b7b3-f075ed2725a9-part2.xml",
+        "impl--313e6cde-cf6a-450f-b7b3-f075ed2725a9-part3.xml",
+        "impl--313e6cde-cf6a-450f-b7b3-f075ed2725a9-part4.xml",
+        "impl--313e6cde-cf6a-450f-b7b3-f075ed2725a9-part5.xml",
+        "impl--313e6cde-cf6a-450f-b7b3-f075ed2725a9-part6.xml",
+        "impl--313e6cde-cf6a-450f-b7b3-f075ed2725a9-part7.xml",
+        "impl--313e6cde-cf6a-450f-b7b3-f075ed2725a9-part8.xml"
+      ]
+    }
+  ]
+}
