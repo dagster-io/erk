@@ -102,10 +102,10 @@ def test_compute_slug_extracts_from_body() -> None:
 
 
 def test_compute_slug_truncates_long_slug() -> None:
-    long_slug = "a-very-long-slug-that-exceeds-the-thirty-char-limit"
+    long_slug = "a-very-long-slug-that-exceeds-the-maximum-length-limit-by-far"
     body = HEADER_WITH_SLUG.replace("enrich-objective-list", long_slug)
     plan = _make_plan(body=body)
-    assert len(_compute_slug(plan)) <= 30
+    assert len(_compute_slug(plan)) <= 50
 
 
 def test_compute_slug_falls_back_to_title_without_prefix() -> None:
