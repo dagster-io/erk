@@ -44,7 +44,7 @@ def _make_fake_git(repo_root: Path) -> FakeGit:
 def test_incremental_dispatch_success(tmp_path: Path) -> None:
     """Test successful incremental dispatch."""
     plan_file = tmp_path / "plan.md"
-    plan_file.write_text("# My Incremental Plan\n\n- Step 1\n- Step 2")
+    plan_file.write_text("# My Incremental Plan\n\n- Step 1\n- Step 2", encoding="utf-8")
 
     pr = _make_pr(42, branch="feature/my-feature")
     fake_git = _make_fake_git(tmp_path)
@@ -85,7 +85,7 @@ def test_incremental_dispatch_success(tmp_path: Path) -> None:
 def test_incremental_dispatch_pr_not_found(tmp_path: Path) -> None:
     """Test error when PR does not exist."""
     plan_file = tmp_path / "plan.md"
-    plan_file.write_text("# Plan")
+    plan_file.write_text("# Plan", encoding="utf-8")
 
     fake_github = FakeGitHub(pr_details={})
 
@@ -105,7 +105,7 @@ def test_incremental_dispatch_pr_not_found(tmp_path: Path) -> None:
 def test_incremental_dispatch_pr_not_open(tmp_path: Path) -> None:
     """Test error when PR is not OPEN."""
     plan_file = tmp_path / "plan.md"
-    plan_file.write_text("# Plan")
+    plan_file.write_text("# Plan", encoding="utf-8")
 
     pr = _make_pr(42, state="CLOSED")
     fake_github = FakeGitHub(pr_details={42: pr})
@@ -126,7 +126,7 @@ def test_incremental_dispatch_pr_not_open(tmp_path: Path) -> None:
 def test_incremental_dispatch_display_format(tmp_path: Path) -> None:
     """Test display output format."""
     plan_file = tmp_path / "plan.md"
-    plan_file.write_text("# Display Plan\n\n- Step 1")
+    plan_file.write_text("# Display Plan\n\n- Step 1", encoding="utf-8")
 
     pr = _make_pr(42, branch="feature/display-test")
     fake_git = _make_fake_git(tmp_path)
