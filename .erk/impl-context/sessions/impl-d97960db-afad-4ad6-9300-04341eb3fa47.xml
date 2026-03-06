@@ -1,0 +1,1270 @@
+<session>
+  <meta branch="plnd/fix-update-local-ref-index-03-06-1335" />
+  <meta model="claude-opus-4-6" />
+  <user>&lt;command-message&gt;erk:plan-implement&lt;/command-message&gt;
+&lt;command-name&gt;/erk:plan-implement&lt;/command-name&gt;</user>
+  <user># /erk:plan-implement
+
+Implement a plan - either from GitHub, a markdown file, an existing impl directory under `.erk/impl-context/`, or by saving the current plan first.
+
+This is the primary implementation workflow - it orchestrates:
+
+1. Setting up the impl directory under `.erk/impl-context/&lt;branch&gt;/` (from issue, file, existing folder, or fresh plan)
+2. Executing the implementation
+3. Running CI and submitting the PR
+
+## Prerequisites
+
+- Must be in a git repository managed by erk
+- GitHub CLI (`gh`) must be authenticated
+- One of:
+  - A plan number, URL, or file path argument
+  - An existing impl directory under `.erk/impl-context/`
+  - A plan branch checked out (e.g., `plnd/...` or `P{number}-...`)
+  - A plan in `~/.claude/plans/` (from plan mode)
+
+## Usage
+
+```bash
+/erk:plan-implement                    # Use impl directory, detect from branch, or save current plan
+/erk:plan-implement 2521               # Fetch and implement plan #2521
+/erk:plan-implement https://github.com/owner/repo/pull/2521   # URL form
+/erk:plan-implement ./my-plan.md       # Implement from local markdown file
+```
+
+---
+
+## CRITICAL: PR Operations
+
+**NEVER** run direct GitHub CLI commands for PR operations during implementation:
+
+- `gh pr edit` — destroys plan-header metadata block
+- `gh pr ready` — bypasses lifecycle tracking
+- `gh pr close` / `gh pr merge`
+
+All PR operations are handled by `erk pr submit` in Step 13. It automatically:
+
+- Generates the PR title and body
+- Preserves the plan-header metadata block
+- Marks draft PRs as ready for review
+- Updates lifecycle stage
+
+## Agent Instructions
+
+### Step 1: Set Up Implementation
+
+Parse `` and run the consolidated setup command:
+
+- **If numeric** (e.g., `2521`): `erk exec setup-impl --issue 2521`
+- **If GitHub URL** (e.g., `https://github.com/.../issues/2521`): Extract number, `erk exec setup-impl --issue 2521`
+- **If path to file** (anything else non-empty): `erk exec setup-impl --file &lt;path&gt;`
+- **If empty**: `erk exec setup-impl` (auto-detects from `.erk/impl-context/`, branch, or fails)
+
+```bash
+erk exec setup-impl [--issue &lt;N&gt; | --file &lt;path&gt;]
+```
+
+This single command handles:
+
+- Fetching plan from GitHub (draft PR)
+- Setting up from a local markdown file
+- Auto-detecting from existing impl directory under `.erk/impl-context/`
+- Auto-detecting plan number from branch name (P{number}-... or PR lookup)
+- Creating/checking out the feature branch
+- Creating impl directory under `.erk/impl-context/&lt;branch&gt;/` with plan content
+- Running impl-init validation
+- Cleaning up `.erk/impl-context/` staging directory (git rm + commit + push)
+
+Otherwise, generate a branch slug and set up from the specified issue:
+
+1. Fetch the title: `gh pr view &lt;ISSUE_ARG&gt; --json title -q .title`
+2. Generate a branch slug from the title:
+   - 2-4 hyphenated lowercase words, max 30 characters
+   - Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+   - Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+   - Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+3. Store as `BRANCH_SLUG`.
+
+```bash
+erk exec setup-impl --issue &lt;ISSUE_ARG&gt; --branch-slug="${BRANCH_SLUG}"
+```
+
+If `setup-impl` exits with code 1 and `error: "no_plan_found"`, fall back to saving the current plan:
+
+Generate a branch slug from the plan title (the first `# ` heading in the plan file):
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Store as `BRANCH_SLUG`
+
+Save the current plan to GitHub and capture the plan number:
+
+```bash
+erk exec plan-save --format json --session-id="d97960db-afad-4ad6-9300-04341eb3fa47" --branch-slug="${BRANCH_SLUG}"
+```
+
+Parse the JSON output to get `plan_number`, then:
+
+```bash
+erk exec setup-impl --issue &lt;plan_number&gt;
+```
+
+The `setup-impl` output includes `related_docs` (skills and docs to load) and `has_plan_tracking` (whether GitHub issue tracking is active).
+
+If this fails, display the error and stop.
+
+### Step 2: Read Plan and Load Context
+
+Read `plan.md` from the impl directory set up in Step 1 to understand:
+
+- Overall goal and context
+- Context &amp; Understanding sections (API quirks, architectural insights, pitfalls)
+- Implementation phases and dependencies
+- Success criteria
+
+**Context Consumption**: Plans contain expensive discoveries. Ignoring `[CRITICAL:]` tags, "Related Context:" subsections, or "DO NOT" items causes repeated mistakes.
+
+### Step 3: Load Related Documentation
+
+If plan contains "Related Documentation" section, load listed skills via Skill tool and read listed docs.
+
+### Step 4: Create TodoWrite Entries
+
+Create todo entries for each phase from the plan.
+
+### Step 5: Signal GitHub Started
+
+```bash
+erk exec impl-signal started --session-id="d97960db-afad-4ad6-9300-04341eb3fa47" 2&gt;/dev/null || true
+```
+
+This also deletes the Claude plan file (from `~/.claude/plans/`) since:
+
+- The content has been saved to GitHub
+- The content has been snapshotted to `.erk/scratch/`
+- Keeping it could cause confusion if the user tries to re-save
+
+### Step 6: Execute Each Phase Sequentially
+
+For each phase:
+
+1. **Mark phase as in_progress** (in TodoWrite)
+2. **Read task requirements** carefully
+3. **Implement code AND tests together**:
+   - Load `dignified-python-313` skill for coding standards
+   - Load `fake-driven-testing` skill for test patterns
+   - Follow project AGENTS.md standards
+4. **Mark phase as completed** (in TodoWrite)
+5. **Report progress**: changes made, what's next
+
+**Important:** `plan.md` is immutable - NEVER edit during implementation
+
+### Step 7: Report Progress
+
+After each phase: report changes made and what's next.
+
+### Step 8: Final Verification
+
+Confirm all tasks executed, success criteria met, note deviations, summarize changes.
+
+### Step 9: Signal GitHub Ended
+
+```bash
+erk exec impl-signal ended --session-id="d97960db-afad-4ad6-9300-04341eb3fa47" 2&gt;/dev/null || true
+```
+
+### Step 10: Upload Session for Async Learn
+
+```bash
+erk exec upload-impl-session --session-id="d97960db-afad-4ad6-9300-04341eb3fa47" 2&gt;/dev/null || true
+```
+
+This reads plan reference from the impl directory, captures session info, and uploads for async learn processing.
+
+### Step 11: Clean Up Impl Context
+
+Remove the `.erk/impl-context/` directory from the repo:
+
+```bash
+erk exec cleanup-impl-context
+```
+
+This removes `.erk/impl-context/`, stages the deletion, commits, and pushes — all idempotent.
+
+### Step 12: Run CI Iteratively
+
+1. If `.erk/prompt-hooks/post-plan-implement-ci.md` exists: follow its instructions
+2. Otherwise: check CLAUDE.md/AGENTS.md for CI commands
+
+### Step 13: Submit PR
+
+Push the branch and create or update the PR using the Graphite-aware submit pipeline:
+
+```bash
+erk pr submit
+```
+
+This handles pushing commits, creating/updating the PR, generating the PR description, and enhancing with Graphite stack metadata when available.
+
+After successful submission, signal lifecycle transition:
+
+```bash
+erk exec impl-signal submitted 2&gt;/dev/null || true
+```
+
+Then validate PR completion invariants:
+
+```bash
+erk pr check --stage=impl
+```
+
+This validates PR submission readiness including implementation-specific checks
+(e.g., `.erk/impl-context/` must be cleaned up). If checks fail, display output and warn user.
+
+### Step 14: Output Format
+
+- **Start**: "Setting up implementation..." or "Fetching plan #X..."
+- **After setup**: "Implementation environment ready, reading plan..."
+- **Each phase**: "Phase X: [brief description]" with code changes
+- **End**: "Plan execution complete. [Summary]"
+
+---
+
+## Related Commands
+
+- `/erk:plan-save` - Save plan only, don't implement (for defer-to-later workflow)
+- `/erk:replan` - Re-plan an existing plan with current codebase state
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="16455" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16455, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <assistant>Setting up implementation...</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="16455" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 16455, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="ToolSearch" id="toolu_01LTho7TcKH3WAQ8MVfKW75m">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="16455" cache_read_input_tokens="0" output_tokens="150" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 16455}" inference_geo="" iterations="[]" speed="fast" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01LTho7TcKH3WAQ8MVfKW75m">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01ESXFm4ZH9GRsBsVqo6swiy">
+    <param name="command">erk exec setup-impl</param>
+    <param name="description">Auto-detect and set up implementation from current branch</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3299" cache_read_input_tokens="16455" output_tokens="131" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 3299}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01ESXFm4ZH9GRsBsVqo6swiy">
+Found existing impl dir for plan #8856, skipping branch setup
+{"success": true, "impl_path": "/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/.erk/impl-context/plnd--fix-update-local-ref-index-03-06-1335", "plan_number": 8856, "plan_url": "https://github.com/dagster-io/erk/pull/8856", "branch": "plnd/fix-update-local-ref-index-03-06-1335", "plan_title": "", "no_impl": false}
+{"success": true, "source": "issue", "plan_number": 8856, "has_plan_tracking": true, "valid": true, "related_docs": {"skills": [], "docs": []}}
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01Msh41tJbgvqfUy6Cu3QXBx">
+    <param name="query">select:Read,TodoWrite</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="315" cache_read_input_tokens="19754" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 315}" inference_geo="" iterations="[]" speed="fast" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01Msh41tJbgvqfUy6Cu3QXBx">
+
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NQrNU4XnjfC8hGCyKkDNr3">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/.erk/impl-context/plnd--fix-update-local-ref-index-03-06-1335/plan.md</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="767" cache_read_input_tokens="20069" output_tokens="110" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 767}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01NQrNU4XnjfC8hGCyKkDNr3">
+     1→# Fix: `update_local_ref` corrupts index when branch is checked out
+     2→
+     3→## Context
+     4→
+     5→After `erk land` (run via `/erk:land` automation), the root worktree ends up with staged changes that would **reverse** the just-landed commit. For example, after landing PR #8825 (which adds `module-to-subpackage/SKILL.md`), `git status` shows that file as deleted.
+     6→
+     7→**Root cause chain:**
+     8→
+     9→1. `/erk:land` runs `erk land &lt;PR_NUMBER&gt; --force` from the root worktree
+    10→2. The PR's branch lives in a slot worktree, so `is_current_branch=False`
+    11→3. Since `is_current_branch=False`, `_navigate_or_exit` skips the pull — local master ref stays at the old commit, but the index is clean (matches old master)
+    12→4. Later, `erk pr dispatch` calls `ensure_trunk_synced()` which detects local master is behind origin/master
+    13→5. `ensure_trunk_synced` calls `update_local_ref()` which runs `git update-ref refs/heads/master &lt;new_sha&gt;` — this advances the branch pointer **without updating the index or working tree**
+    14→6. Now HEAD points to the new commit but index/working tree reflect the old commit → dirty index with reverse changes
+    15→
+    16→**The bug is in `ensure_trunk_synced`** (`dispatch_helpers.py:61`). It uses `update_local_ref` even when trunk is checked out in a worktree. The `_check_trunk_worktree_clean` guard only verifies no uncommitted changes exist — it doesn't prevent the ref-only update from desynchronizing HEAD from the index.
+    17→
+    18→## Fix
+    19→
+    20→**File:** `src/erk/cli/commands/pr/dispatch_helpers.py`
+    21→
+    22→Change `ensure_trunk_synced` so that when trunk IS checked out in a worktree, it uses `git pull --ff-only` (which properly updates HEAD + index + working tree) instead of `update_local_ref` (which only updates the ref).
+    23→
+    24→```python
+    25→def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -&gt; None:
+    26→    trunk = ctx.git.branch.detect_trunk_branch(repo.root)
+    27→    ctx.git.remote.fetch_branch(repo.root, "origin", trunk)
+    28→
+    29→    local_sha = ctx.git.branch.get_branch_head(repo.root, trunk)
+    30→    remote_sha = ctx.git.branch.get_branch_head(repo.root, f"origin/{trunk}")
+
+... [41 lines omitted] ...
+
+    33→        # ... existing error handling ...
+    56→        # ... existing error handling ...
+    58→        # ... existing error handling ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1538" cache_read_input_tokens="20836" cache_creation="{'ephemeral_5m_input_tokens': 1538, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <assistant>Implementation environment ready, reading plan...
+
+Now let me read the current source and test files.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1538" cache_read_input_tokens="20836" cache_creation="{'ephemeral_5m_input_tokens': 1538, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Read" id="toolu_01F4KSdtF4e1m9nuz39Ej8wB">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/src/erk/cli/commands/pr/dispatch_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1538" cache_read_input_tokens="20836" cache_creation="{'ephemeral_5m_input_tokens': 1538, 'ephemeral_1h_input_tokens': 0}" output_tokens="10" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01F4KSdtF4e1m9nuz39Ej8wB">
+     1→"""Helper functions for dispatch command."""
+     2→
+     3→import click
+     4→
+     5→from erk.core.context import ErkContext
+     6→from erk.core.repo_discovery import RepoContext
+     7→from erk_shared.output.output import user_output
+     8→
+     9→
+    10→def _check_trunk_worktree_clean(ctx: ErkContext, repo: RepoContext, *, trunk: str) -&gt; None:
+    11→    """Raise SystemExit(1) if trunk is checked out in a dirty worktree."""
+    12→    trunk_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, trunk)
+    13→    if trunk_worktree is None:
+    14→        return
+    15→    if not ctx.git.status.has_uncommitted_changes(trunk_worktree):
+    16→        return
+    17→    user_output(
+    18→        click.style("Error: ", fg="red")
+    19→        + f"Worktree at {trunk_worktree} has {trunk} checked out with "
+    20→        f"uncommitted changes.\n\n"
+    21→        f"Please commit or stash changes before running erk pr dispatch."
+    22→    )
+    23→    raise SystemExit(1)
+    24→
+    25→
+    26→def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -&gt; None:
+    27→    """Ensure local trunk ref is synced with remote, without requiring checkout.
+    28→
+    29→    Uses fetch + update_local_ref to advance the local trunk branch pointer
+    30→    without needing trunk to be checked out. If trunk IS checked out in a
+
+... [52 lines omitted] ...
+
+    33→    Raises SystemExit(1) on sync failure with clear error message.
+    45→            click.style("Error: ", fg="red")
+    66→            click.style("Error: ", fg="red")
+    75→            click.style("Error: ", fg="red")
+    79→            f"Warning: This will discard any local commits on {trunk}."
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01P5nzmiMF7VDUSAnYgLKUWV">
+    <param name="query">select:Glob,Grep</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1538" cache_read_input_tokens="20836" output_tokens="208" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1538}" inference_geo="" iterations="[]" speed="fast" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01P5nzmiMF7VDUSAnYgLKUWV">
+
+  </tool_result>
+  <tool_use name="Glob" id="toolu_01TcA4ayqFvqQhNwdHgh9NVF">
+    <param name="pattern">tests/**/test_dispatch_helpers*</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2742" cache_read_input_tokens="22374" cache_creation="{'ephemeral_5m_input_tokens': 2742, 'ephemeral_1h_input_tokens': 0}" output_tokens="27" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01TcA4ayqFvqQhNwdHgh9NVF">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/tests/unit/cli/commands/pr/test_dispatch_helpers.py
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/tests/unit/cli/commands/pr/__pycache__/test_dispatch_helpers.cpython-313-pytest-9.0.2.pyc
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Y9gVcUE8mSvfS8HDnhsuw1">
+    <param name="pattern">pull_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/src/erk</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2742" cache_read_input_tokens="22374" cache_creation="{'ephemeral_5m_input_tokens': 2742, 'ephemeral_1h_input_tokens': 0}" output_tokens="27" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01Y9gVcUE8mSvfS8HDnhsuw1">
+src/erk/cli/commands/land_cmd.py:1268:                    ctx.git.remote.pull_branch(main_repo_root, "origin", trunk_branch, ff_only=True)
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01L1CZxqGbUbCdHQfuSJ5RBz">
+    <param name="pattern">find_worktree_for_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/src/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2742" cache_read_input_tokens="22374" output_tokens="277" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 2742}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01L1CZxqGbUbCdHQfuSJ5RBz">
+Found 7 files
+src/erk/cli/commands/pr/checkout_cmd.py
+src/erk/cli/commands/checkout_helpers.py
+src/erk/cli/commands/pr/teleport_cmd.py
+src/erk/cli/commands/pr/dispatch_helpers.py
+src/erk/cli/commands/navigation_helpers.py
+src/erk/cli/commands/land_cmd.py
+src/erk/cli/commands/land_pipeline.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01AfgXtBpMrYTudVA8VyoHY9">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/tests/unit/cli/commands/pr/test_dispatch_helpers.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="746" cache_read_input_tokens="25116" output_tokens="96" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 746}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01AfgXtBpMrYTudVA8VyoHY9">
+     1→"""Unit tests for dispatch_helpers.ensure_trunk_synced."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import pytest
+     6→
+     7→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+     8→from erk_shared.context.testing import context_for_test
+     9→from erk_shared.context.types import RepoContext
+    10→from erk_shared.gateway.git.abc import WorktreeInfo
+    11→from erk_shared.gateway.git.fake import FakeGit
+    12→
+    13→LOCAL_SHA = "aaa1111"
+    14→REMOTE_SHA = "bbb2222"
+    15→
+    16→
+    17→def _repo_context(tmp_path: Path) -&gt; RepoContext:
+    18→    return RepoContext(
+    19→        root=tmp_path,
+    20→        repo_name="test-repo",
+    21→        repo_dir=tmp_path / ".erk" / "repos" / "test-repo",
+    22→        worktrees_dir=tmp_path / ".erk" / "repos" / "test-repo" / "worktrees",
+    23→        pool_json_path=tmp_path / ".erk" / "repos" / "test-repo" / "pool.json",
+    24→    )
+    25→
+    26→
+    27→def test_already_synced_is_noop(tmp_path: Path) -&gt; None:
+    28→    """When local and remote trunk have the same SHA, nothing happens."""
+    29→    git = FakeGit(
+    30→        current_branches={tmp_path: "feature/work"},
+
+... [119 lines omitted] ...
+
+    63→    """When local trunk is ahead of remote, exits with error."""
+    78→    """When local trunk has diverged from remote, exits with error."""
+   112→    """When trunk is checked out in a dirty worktree, exits with error."""
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="6636" cache_read_input_tokens="25862" cache_creation="{'ephemeral_5m_input_tokens': 6636, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <assistant>Now let me check the FakeGit remote gateway to see if `pull_branch` is already supported.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="6636" cache_read_input_tokens="25862" cache_creation="{'ephemeral_5m_input_tokens': 6636, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Grep" id="toolu_01HXYfRrcrN1t74eD8DUJ7iC">
+    <param name="pattern">pull_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/src/erk_shared/gateway/git</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6636" cache_read_input_tokens="25862" cache_creation="{'ephemeral_5m_input_tokens': 6636, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_result tool="toolu_01HXYfRrcrN1t74eD8DUJ7iC">
+&lt;tool_use_error&gt;Path does not exist: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/src/erk_shared/gateway/git. Note: your current working directory is /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01P2L2JX9SAoQrqa8s1qZhQ7">
+    <param name="pattern">pull_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/tests</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="6636" cache_read_input_tokens="25862" output_tokens="325" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 6636}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01P2L2JX9SAoQrqa8s1qZhQ7">
+&lt;tool_use_error&gt;Cancelled: parallel tool call Grep(pull_branch) errored&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_019QsaapR5aiJBYiJhMPsPEf">
+    <param name="pattern">pull_branch</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="501" cache_read_input_tokens="32498" output_tokens="150" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 501}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_019QsaapR5aiJBYiJhMPsPEf">
+src/erk/cli/commands/land_cmd.py:1268:                    ctx.git.remote.pull_branch(main_repo_root, "origin", trunk_branch, ff_only=True)
+tests/commands/land/test_git_pull.py:357:            pull_branch_raises=RuntimeError("git pull failed"),
+tests/commands/land/test_git_pull.py:817:            pull_branch_raises=RuntimeError("Unexpected pull failure"),
+packages/erk-shared/src/erk_shared/gateway/git/fake.py:150:        pull_branch_raises: Exception | None = None,
+packages/erk-shared/src/erk_shared/gateway/git/fake.py:212:            pull_branch_raises: Exception to raise when pull_branch() is called
+packages/erk-shared/src/erk_shared/gateway/git/fake.py:270:        self._pull_branch_raises = pull_branch_raises
+packages/erk-shared/src/erk_shared/gateway/git/fake.py:387:            pull_branch_raises=self._pull_branch_raises,
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/printing.py:45:    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/printing.py:49:        self._wrapped.pull_branch(repo_root, remote, branch, ff_only=ff_only)
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/abc.py:39:    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/real.py:43:    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py:30:    - pull_branch_raises: Exception to raise when pull_branch() is called
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py:38:    - pulled_branches: List of (remote, branch, ff_only) tuples from pull_branch()
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py:49:        pull_branch_raises: Exception | None = None,
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py:58:            pull_branch_raises: Exception to raise when pull_branch() is called
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py:65:        self._pull_branch_raises = pull_branch_raises
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py:82:    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -&gt; None:
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py:85:        if self._pull_branch_raises is not None:
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py:86:            raise self._pull_branch_raises
+packages/erk-shared/src/erk_shared/gateway/git/remote_ops/dry_run.py:51:    def pull_branch(self, repo_root: Path, remote: str, branch: str, *, ff_only: bool) -&gt; None:
+  </tool_result>
+  <assistant>Good — `pull_branch` exists in the ABC, fake, and real implementations, and the fake tracks calls via `pulled_branches`. Now let me implement the fix.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1109" cache_read_input_tokens="32999" cache_creation="{'ephemeral_5m_input_tokens': 1109, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="ToolSearch" id="toolu_01Nx1PJ92fXs3zUD5ZyFcycH">
+    <param name="query">select:Edit,TodoWrite</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1109" cache_read_input_tokens="32999" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1109}" inference_geo="" iterations="[]" speed="fast" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01Nx1PJ92fXs3zUD5ZyFcycH">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01Qszdk6WA5j8nDAtXohcvpn">
+    <param name="command">erk exec impl-signal started --session-id="d97960db-afad-4ad6-9300-04341eb3fa47" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation started</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="585" cache_read_input_tokens="34108" output_tokens="113" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 585}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01Qszdk6WA5j8nDAtXohcvpn">
+{
+  "success": true,
+  "event": "started",
+  "plan_number": 8856
+}
+  </tool_result>
+  <assistant>Now implementing the fix. The change is straightforward: when trunk is checked out in a worktree, use `pull_branch` instead of `update_local_ref`.
+
+**Phase 1: Fix `ensure_trunk_synced`**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="34693" cache_creation="{'ephemeral_5m_input_tokens': 153, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_01C8VdJm8QMhZUUad4epjEb7">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/src/erk/cli/commands/pr/dispatch_helpers.py</param>
+    <param name="old_string">    if merge_base == local_sha:
+        # Local is behind remote - safe to fast-forward
+  ...[truncated 172 chars]...        user_output(click.style("✓", fg="green") + f" {trunk} synced with origin/{trunk}")</param>
+    <param name="new_string">    if merge_base == local_sha:
+        # Local is behind remote - safe to fast-forward
+  ...[truncated 549 chars]...        user_output(click.style("✓", fg="green") + f" {trunk} synced with origin/{trunk}")</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="153" cache_read_input_tokens="34693" output_tokens="530" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 153}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01C8VdJm8QMhZUUad4epjEb7">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/src/erk/cli/commands/pr/dispatch_helpers.py has been updated successfully.
+  </tool_result>
+  <assistant>**Phase 2: Update tests**
+
+The existing `test_trunk_checked_out_with_clean_worktree_succeeds` test asserts `updated_refs` — now it should assert `pulled_branches` instead, since the code path uses `pull_branch` when trunk is checked out.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="721" cache_read_input_tokens="34846" cache_creation="{'ephemeral_5m_input_tokens': 721, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Grep" id="toolu_013uSazwRSRXd75Ev4yd9hU8">
+    <param name="pattern">pulled_branches</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="721" cache_read_input_tokens="34846" output_tokens="227" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 721}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_013uSazwRSRXd75Ev4yd9hU8">
+38:    - pulled_branches: List of (remote, branch, ff_only) tuples from pull_branch()
+71:        self._pulled_branches: list[tuple[str, str, bool]] = []
+84:        self._pulled_branches.append((remote, branch, ff_only))
+155:    def pulled_branches(self) -&gt; list[tuple[str, str, bool]]:
+160:        return list(self._pulled_branches)
+188:        pulled_branches: list[tuple[str, str, bool]],
+199:            pulled_branches: FakeGit's _pulled_branches list
+204:        self._pulled_branches = pulled_branches
+  </tool_result>
+  <assistant>Now let me check if `FakeGit` exposes `pulled_branches` at the top level or only through the remote sub-gateway.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="393" cache_read_input_tokens="35567" cache_creation="{'ephemeral_5m_input_tokens': 393, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Grep" id="toolu_01Eofegr1Bn8AcLPNhrMNoQ1">
+    <param name="pattern">pulled_branches</param>
+    <param name="path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/packages/erk-shared/src/erk_shared/gateway/git/fake.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="393" cache_read_input_tokens="35567" output_tokens="187" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 393}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01Eofegr1Bn8AcLPNhrMNoQ1">
+294:        self._pulled_branches: list[tuple[str, str, bool]] = []
+394:            pulled_branches=self._pulled_branches,
+578:    def pulled_branches(self) -&gt; list[tuple[str, str, bool]]:
+584:        return self._pulled_branches.copy()
+  </tool_result>
+  <assistant>Good, `FakeGit` has a top-level `pulled_branches` property. Now update the test:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="270" cache_read_input_tokens="35960" cache_creation="{'ephemeral_5m_input_tokens': 270, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Edit" id="toolu_01UrT26nrQ3zNZAXVD3gsyTt">
+    <param name="replace_all">False</param>
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/tests/unit/cli/commands/pr/test_dispatch_helpers.py</param>
+    <param name="old_string">def test_trunk_checked_out_with_clean_worktree_succeeds(tmp_path: Path) -&gt; None:
+    """Wh...[truncated 532 chars]...po)
+
+    assert len(git.updated_refs) == 1
+    assert git.updated_refs[0][2] == REMOTE_SHA</param>
+    <param name="new_string">def test_trunk_checked_out_with_clean_worktree_uses_pull(tmp_path: Path) -&gt; None:
+    """W...[truncated 690 chars]...(git.pulled_branches) == 1
+    assert git.pulled_branches[0] == ("origin", "master", True)</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="270" cache_read_input_tokens="35960" output_tokens="702" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 270}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01UrT26nrQ3zNZAXVD3gsyTt">
+The file /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/tests/unit/cli/commands/pr/test_dispatch_helpers.py has been updated successfully.
+  </tool_result>
+  <assistant>Now run the tests.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="783" cache_read_input_tokens="36230" cache_creation="{'ephemeral_5m_input_tokens': 783, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="ToolSearch" id="toolu_011Jtr32yDjR16khcyLyphHY">
+    <param name="query">select:TaskCreate</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="783" cache_read_input_tokens="36230" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 783}" inference_geo="" iterations="[]" speed="fast" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_011Jtr32yDjR16khcyLyphHY">
+
+  </tool_result>
+  <tool_use name="TaskCreate" id="toolu_01F5sPNq8LrSaZvfWK9aiBXU">
+    <param name="subject">Run dispatch_helpers tests</param>
+    <param name="activeForm">Running dispatch_helpers tests</param>
+    <param name="description">Run tests/unit/cli/commands/pr/test_dispatch_helpers.py to verify the fix</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="848" cache_read_input_tokens="37013" output_tokens="117" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 848}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01F5sPNq8LrSaZvfWK9aiBXU">
+Task #1 created successfully: Run dispatch_helpers tests
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01CYumwSfGHMifNNvqFYNAyn">
+    <param name="query">select:TaskUpdate,TaskOutput</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="143" cache_read_input_tokens="37861" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 143}" inference_geo="" iterations="[]" speed="fast" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01CYumwSfGHMifNNvqFYNAyn">
+
+  </tool_result>
+  <tool_use name="TaskUpdate" id="toolu_01TJzatJzcALLQHNeRP5ep31">
+    <param name="taskId">1</param>
+    <param name="status">in_progress</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1416" cache_read_input_tokens="38004" output_tokens="73" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1416}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01TJzatJzcALLQHNeRP5ep31">
+Updated task #1 status
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_016ay5VmhjAcoCmLSpm6JyYs">
+    <param name="query">select:Agent</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="93" cache_read_input_tokens="39420" output_tokens="74" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 93}" inference_geo="" iterations="[]" speed="fast" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_016ay5VmhjAcoCmLSpm6JyYs">
+
+  </tool_result>
+  <tool_use name="Agent" id="toolu_01WwV54AetkF4adbq7hnGdBm">
+    <param name="description">Run dispatch_helpers tests</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Run the dispatch_helpers tests and report results:
+
+uv run pytest tests/unit/cli/commands/pr/test_dispatch_helpers.py -v
+
+Report all test names and pass/fail status.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="2278" cache_read_input_tokens="39513" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 2278}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01WwV54AetkF4adbq7hnGdBm">
+pytest passed: All 7 tests passed in 0.37s
+
+**Test Results Summary:**
+- **Total:** 7 tests
+- **Passed:** 7
+- **Failed:** 0
+- **Duration:** 0.37s
+
+The test output shows all tests completed successfully, though verbose output doesn't list individual test names separately (that's the default pytest behavior when all tests pass). All tests in the dispatch_helpers module passed.
+agentId: a6b8475228ab73125 (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 13633
+tool_uses: 1
+duration_ms: 3598&lt;/usage&gt;
+  </tool_result>
+  <assistant>All 7 tests pass.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="304" cache_read_input_tokens="41791" cache_creation="{'ephemeral_5m_input_tokens': 304, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="TaskUpdate" id="toolu_01DGmgEVfPEK9MEqHRrdzA16">
+    <param name="taskId">1</param>
+    <param name="status">completed</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="304" cache_read_input_tokens="41791" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 304}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01DGmgEVfPEK9MEqHRrdzA16">
+Updated task #1 status
+  </tool_result>
+  <assistant>Implementation complete. Let me signal completion and clean up.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="96" cache_read_input_tokens="42095" cache_creation="{'ephemeral_5m_input_tokens': 96, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Bash" id="toolu_01J9zSzmFXdq75krwuLpaoYc">
+    <param name="command">erk exec impl-signal ended --session-id="d97960db-afad-4ad6-9300-04341eb3fa47" 2&gt;/dev/null || true</param>
+    <param name="description">Signal implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="96" cache_read_input_tokens="42095" cache_creation="{'ephemeral_5m_input_tokens': 96, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Bash" id="toolu_01EmWDAxxJhUnn3f3sKQRbMF">
+    <param name="command">erk exec upload-impl-session --session-id="d97960db-afad-4ad6-9300-04341eb3fa47" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="96" cache_read_input_tokens="42095" output_tokens="222" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 96}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01J9zSzmFXdq75krwuLpaoYc">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8856
+}
+  </tool_result>
+  <tool_result tool="toolu_01EmWDAxxJhUnn3f3sKQRbMF">
+{"uploaded": true, "plan_id": 8856}
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01CWpb86zaSnXDUjDuuVhePt">
+    <param name="command">erk exec cleanup-impl-context</param>
+    <param name="description">Clean up impl-context directory</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="322" cache_read_input_tokens="42191" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 322}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01CWpb86zaSnXDUjDuuVhePt">
+{"cleaned": true}
+  </tool_result>
+  <assistant>Now running CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="97" cache_read_input_tokens="42513" cache_creation="{'ephemeral_5m_input_tokens': 97, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Glob" id="toolu_01AwVmtunV4TpsjAFFxqPNDL">
+    <param name="pattern">.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="97" cache_read_input_tokens="42513" output_tokens="73" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 97}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01AwVmtunV4TpsjAFFxqPNDL">
+/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/.erk/prompt-hooks/post-plan-implement-ci.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01WGicvgZ8HqbFPzk69BxjmY">
+    <param name="file_path">/Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/.erk/prompt-hooks/post-plan-implement-ci.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="127" cache_read_input_tokens="42610" output_tokens="95" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 127}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01WGicvgZ8HqbFPzk69BxjmY">
+     1→# Post-Implementation CI
+     2→
+     3→Run CI validation after plan implementation using `make fast-ci`.
+     4→
+     5→Load the `ci-iteration` skill for the iterative fix workflow.
+     6→
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_0187rdQn9kxHBNkiG19enn3D">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="163" cache_read_input_tokens="42737" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 163}" inference_geo="" iterations="[]" speed="fast" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_0187rdQn9kxHBNkiG19enn3D">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_018tWsjJ1pxY98UL75Z7fEnZ">
+    <param name="skill">ci-iteration</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="568" cache_read_input_tokens="42900" output_tokens="55" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 568}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_018tWsjJ1pxY98UL75Z7fEnZ">
+Launching skill: ci-iteration
+  </tool_result>
+  <user>Base directory for this skill: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07/.claude/skills/ci-iteration
+
+# CI Iteration
+
+## Overview
+
+Run the specified CI target and automatically fix any failures. Keep iterating until all checks pass or you get stuck on an issue that requires human intervention.
+
+**IMPORTANT**: All `make` commands must be run from the repository root directory. The Makefile is located at the root of the repository, not in subdirectories.
+
+## Sub-Agent Policy
+
+**CRITICAL**: When spawning sub-agents to run `make`, `pytest`, `ty`, `ruff`, `prettier`, or `gt` commands, you MUST use `devrun`:
+
+```
+Task tool with:
+- subagent_type: devrun  &lt;- MUST be devrun, NEVER general-purpose
+```
+
+**Why**: devrun has hard tool constraints (no Edit/Write) preventing destructive changes. The parent agent (you) processes reports and applies fixes - sub-agents only report.
+
+**FORBIDDEN**:
+
+- Spawning general-purpose or other sub-agents for make/pytest/ty/ruff/prettier/gt
+- Giving sub-agents prompts like "fix issues" or "iterate until passing"
+
+**REQUIRED**:
+
+- Sub-agents run ONE command and report results
+- Parent agent decides what to fix based on reports
+
+## Core Workflow
+
+### 1. Initial Run
+
+Use the devrun agent to run the specified make target from the repository root:
+
+```
+Task tool with:
+- subagent_type: devrun
+- description: "Run [make target] from repo root"
+- prompt: "Change to repository root and execute: [make target]"
+```
+
+### 2. Parse Failures
+
+Analyze the output to identify which check(s) failed:
+
+- **Ruff lint failures**: "ruff check" errors
+- **Format failures**: "ruff format --check" or files needing reformatting
+- **Prettier failures**: Markdown files needing formatting
+- **MD-check failures**: CLAUDE.md files not properly referencing AGENTS.md
+- **ty failures**: Type errors with file paths and line numbers
+- **Test failures**: pytest failures with test names and assertion errors
+
+### 3. Apply Targeted Fixes
+
+Based on failure type, apply appropriate fixes:
+
+| Failure Type | Fix Command                                 |
+| ------------ | ------------------------------------------- |
+| Ruff lint    | `make fix` via devrun                       |
+| Ruff format  | `make format` via devrun                    |
+| Prettier     | `make prettier` via devrun                  |
+| Sync-Kit     | `erk sync` directly                         |
+| MD-check     | Edit CLAUDE.md to contain only `@AGENTS.md` |
+| ty           | Edit files to fix type annotations          |
+| Tests        | Read and edit source/test files             |
+
+### 4. Verify and Repeat
+
+After applying fixes, run the make target again via devrun. Continue the cycle: run -&gt; identify failures -&gt; fix -&gt; verify.
+
+## Iteration Control
+
+**Safety Limits:**
+
+- **Maximum iterations**: 10 attempts
+- **Stuck detection**: If the same error appears 3 times in a row, stop
+- **Progress tracking**: Use TodoWrite to show iteration progress
+
+## Progress Reporting
+
+Use TodoWrite to track progress:
+
+```
+Iteration 1: Fixing lint errors
+Iteration 2: Fixing format errors
+Iteration 3: Fixing type errors in src/erk/cli/commands/switch.py
+Iteration 4: All checks passed
+```
+
+## When to Stop
+
+**SUCCESS**: Stop when the make target exits with code 0 (all checks passed)
+
+**STUCK**: Stop and report to user if:
+
+1. You've completed 10 iterations without success
+2. The same error persists after 3 fix attempts
+3. You encounter an error you cannot automatically fix
+
+## Reporting Formats
+
+### Success Format
+
+```markdown
+## Finalization Status: SUCCESS
+
+All CI checks passed after N iteration(s):
+
+(check) **Lint (ruff check)**: PASSED
+
+(check) **Format (ruff format --check)**: PASSED
+
+(check) **Prettier**: PASSED
+
+(check) **AGENTS.md Standard (md-check)**: PASSED
+
+(check) **ty**: PASSED
+
+(check) **Tests**: PASSED
+
+(check) **Sync-Kit (erk check)**: PASSED
+
+The code is ready for commit/PR.
+```
+
+**IMPORTANT**: Each check line MUST be separated by a blank line in the markdown output to render properly in the CLI.
+
+### Stuck Format
+
+```markdown
+## Finalization Status: STUCK
+
+I was unable to resolve the following issue after N attempts:
+
+**Check**: [lint/format/prettier/md-check/ty/test]
+
+**Error**:
+[Exact error message]
+
+**File**: [file path if applicable]
+
+**Attempted Fixes**:
+
+1. [What you tried first]
+2. [What you tried second]
+3. [What you tried third]
+
+**Next Steps**:
+[Suggest what needs to be done manually]
+```
+
+## Guidelines
+
+1. **Be systematic**: Fix one type of error at a time
+2. **Run full CI**: Always run the full make target, not individual checks
+3. **Use devrun agent**: Always use the Task tool with devrun agent for ALL make commands
+4. **Run from repo root**: Always ensure make commands execute from repository root
+5. **Track progress**: Use TodoWrite for every iteration
+6. **Don't guess**: Read files before making changes
+7. **Follow standards**: Adhere to AGENTS.md coding standards
+8. **Fail gracefully**: Report clearly when stuck
+9. **Be efficient**: Use targeted fixes (don't reformat everything for one lint error)
+
+## Example Flow
+
+```
+Iteration 1:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 5 lint errors, 2 files need formatting
+- Fix: Use Task tool with devrun agent to run make fix, then make format from repo root
+- Result: 3 lint errors remain
+
+Iteration 2:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 3 lint errors (imports)
+- Fix: Edit files to fix import issues
+- Result: All lint/format pass, 2 type errors
+
+Iteration 3:
+- Use Task tool with devrun agent to run make target from repo root
+- Found: 2 ty errors in switch.py:45 and switch.py:67
+- Fix: Add type annotations
+- Result: All checks pass
+
+SUCCESS
+```
+
+## Important Reminders
+
+- NEVER run pytest/ty/ruff/prettier/make/gt directly via Bash
+- Always use the Task tool with subagent_type: devrun
+- Covered tools: pytest, ty, ruff, prettier, make, gt
+- Always ensure make commands execute from the repository root directory
+</user>
+  <tool_use name="Agent" id="toolu_018V7ziCEHC9fwacoeupHmoL">
+    <param name="description">Run make fast-ci</param>
+    <param name="subagent_type">devrun</param>
+    <param name="prompt">Change to repository root /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-07 and execute: make fast-ci
+
+Report all results including pass/fail for each check.</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="1702" cache_read_input_tokens="43468" output_tokens="143" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 1702}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_018V7ziCEHC9fwacoeupHmoL">
+Based on the output captured from `make fast-ci`, here are the comprehensive results:
+
+## Fast CI Results
+
+**Overall Status: ALL PASSED**
+
+### Check-by-Check Results:
+
+| Check | Status | Details |
+|-------|--------|---------|
+| **Lint** | ✓ PASSED | All checks passed |
+| **Format Check** | ✓ PASSED | 1640 files already formatted |
+| **Prettier Check** | ✓ PASSED | All matched files use Prettier code style |
+| **Markdown Check** | ✓ PASSED | AGENTS.md standard passed, 19 CLAUDE.md files, 0 violations |
+| **Exec Reference Check** | ✓ PASSED | reference.md is up to date |
+| **Type Check (ty)** | ✓ PASSED | All checks passed |
+| **Unit Tests (erk)** | ✓ PASSED | 5648 passed in 7.28s |
+| **Tests (erk-dev)** | ✓ PASSED | 136 passed in 2.66s |
+| **Tests (erk-statusline)** | ✓ PASSED | 115 passed in 0.74s |
+| **Tests (erk-mcp)** | ✓ PASSED | 24 passed (build successful, 45 packages installed in 115ms) |
+
+**Summary:** All quality checks and test suites passed successfully. The codebase is in good shape with no linting, formatting, type checking, or test failures.
+agentId: adfb430ff8c0426dc (for resuming to continue this agent's work if needed)
+&lt;usage&gt;total_tokens: 14901
+tool_uses: 2
+duration_ms: 26909&lt;/usage&gt;
+  </tool_result>
+  <assistant>
+
+All CI checks passed. Now submitting the PR.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="692" cache_read_input_tokens="45170" cache_creation="{'ephemeral_5m_input_tokens': 692, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Bash" id="toolu_01Vs9iP3YM5JZ3q424KRw1sr">
+    <param name="command">erk pr submit</param>
+    <param name="description">Submit PR via erk</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="692" cache_read_input_tokens="45170" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 692}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_01Vs9iP3YM5JZ3q424KRw1sr">
+🚀 Submitting PR...
+
+   Resolving branch and plan context...
+   Committing uncommitted changes...
+   Checking for existing PR...
+Phase 1: Graphite Submit
+   Running gt submit...
+Running in non-interactive mode. Inline prompts to fill PR fields will be skipped.
+
+🥞 Validating that this Graphite stack is ready to submit...
+
+✏️ Preparing to submit PRs for the following branches...
+▸ plnd/fix-update-local-ref-index-03-06-1335 (Update code)
+
+🚀 Pushing branches to remote...
+
+📨 Creating/updating PRs...
+plnd/fix-update-local-ref-index-03-06-1335: https://app.graphite.com/github/pr/dagster-io/erk/8856 (updated)
+WARNING: Branch plnd/fix-update-local-ref-index-03-06-1335 has been updated remotely. Force submitting local version to remote...
+   Graphite submit completed
+
+   Getting PR info...
+   PR #8856 ready
+
+Phase 2: Getting diff and plan context
+   Incorporating plan #8856
+
+
+Phase 3: Generating PR description
+   Reading diff file...
+
+... [16 lines omitted] ...
+  </tool_result>
+  <tool_use name="Bash" id="toolu_012ughGNei7433KFh5qHodwh">
+    <param name="command">erk exec impl-signal submitted 2&gt;/dev/null || true</param>
+    <param name="description">Signal PR submitted</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="657" cache_read_input_tokens="45862" cache_creation="{'ephemeral_5m_input_tokens': 657, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="not_available" speed="fast" />
+  <tool_use name="Bash" id="toolu_01G36NBr1vEWPMHEbVQ7sz9Z">
+    <param name="command">erk pr check --stage=impl 2&gt;/dev/null || true</param>
+    <param name="description">Validate PR completion</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="657" cache_read_input_tokens="45862" output_tokens="155" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 657}" inference_geo="" iterations="[]" speed="fast" />
+  <tool_result tool="toolu_012ughGNei7433KFh5qHodwh">
+{
+  "success": false,
+  "event": "submitted",
+  "error_type": "no-plan-reference",
+  "message": "No plan reference found"
+}
+  </tool_result>
+  <tool_result tool="toolu_01G36NBr1vEWPMHEbVQ7sz9Z">
+
+  </tool_result>
+  <assistant>Plan execution complete.
+
+**Summary:**
+- **Bug**: `ensure_trunk_synced` used `update_local_ref` even when trunk was checked out, which advanced the branch pointer without updating the index/working tree — causing staged reverse-changes.
+- **Fix**: When trunk is checked out in a worktree, use `pull_branch` (which updates HEAD + index + working tree) instead of `update_local_ref` (ref-only). When not checked out, keep the existing `update_local_ref` path.
+- **Files changed**:
+  - `src/erk/cli/commands/pr/dispatch_helpers.py` — branched logic based on `find_worktree_for_branch`
+  - `tests/unit/cli/commands/pr/test_dispatch_helpers.py` — updated test to verify `pull_branch` is used (not `update_local_ref`) when trunk is checked out
+- **PR**: https://github.com/dagster-io/erk/pull/8856</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="263" cache_read_input_tokens="46519" output_tokens="237" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 263}" inference_geo="" iterations="[]" speed="fast" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>/local:statusline-refresh</user>
+  <user>&lt;local-command-stdout&gt;
+🔄 Status line refreshed
+&lt;/local-command-stdout&gt;</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;bash-input&gt;gt pr&lt;/bash-input&gt;</user>
+  <user>&lt;bash-stdout&gt;https://app.graphite.dev/github/pr/dagster-io/erk/8856&lt;/bash-stdout&gt;&lt;bash-stderr&gt;&lt;/bash-stderr&gt;</user>
+  <user>can you add a test that would have detected the index corruption issue</user>
+  <assistant>API Error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"Fast mode is currently available in research preview in Claude Code. It is not yet available via API."},"request_id":"req_011CYnbAHsDpYss87WuevB4T"}</assistant>
+  <usage input_tokens="0" output_tokens="0" cache_creation_input_tokens="0" cache_read_input_tokens="0" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="None" cache_creation="{'ephemeral_1h_input_tokens': 0, 'ephemeral_5m_input_tokens': 0}" inference_geo="None" iterations="None" speed="None" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/fast&lt;/command-name&gt;
+            &lt;command-message&gt;fast&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Fast mode OFF&lt;/local-command-stdout&gt;</user>
+  <user>continue</user>
+  <usage input_tokens="3" cache_creation_input_tokens="48815" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 48815}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the testing patterns to design a good regression test.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="48815" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 48815}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_01X1Qx2kXuNyBKqtrebvYrQ4">
+    <param name="description">Explore dispatch_helpers testing</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 855 chars]...ed with the worktree path, not repo.root)
+- The tuple structure of pulled_branches entries</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="48815" cache_read_input_tokens="0" output_tokens="1132" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 48815, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01X1Qx2kXuNyBKqtrebvYrQ4">
+Excellent! Now I have all the information needed. Let me compile my findings in a comprehensive report.
+
+## Summary: Testing Patterns for dispatch_helpers and FakeGit Capabilities
+
+Based on my analysis of the test files and FakeGit implementation, here are the key findings:
+
+### 1. **FakeGit Updated Refs and Pulled Branches Assertions**
+
+**updated_refs** (from `FakeGit.updated_refs`):
+- Returns: `list[tuple[Path, str, str]]`
+- Tuple format: `(repo_root, branch, target_sha)`
+- **Example from test_dispatch_helpers.py, line 57-59:**
+  ```python
+  assert len(git.updated_refs) == 1
+  ref_update = git.updated_refs[0]
+  assert ref_update[1] == "master"  # branch name at index 1
+  assert ref_update[2] == REMOTE_SHA  # target SHA at index 2
+  ```
+- **Used for:** Distinguishing when `update_local_ref()` was called (used when trunk is NOT checked out)
+- **Implementation location:** FakeGit class, lines 311 &amp; 605-611 in `fake.py`
+- **Mutation tracking:** The `_branch_gateway` (FakeGitBranchOps) appends to `_updated_refs` and FakeGit exposes it via the `updated_refs` property (defensive copy, line 611)
+
+**pulled_branches** (from `FakeGit.pulled_branches`):
+- Returns: `list[tuple[str, str, bool]]`
+- Tuple format: `(remote, branch, ff_only)`
+- **Example from test_dispatch_helpers.py, line 109-110:**
+  ```python
+  assert len(git.pulled_branches) == 1
+  assert git.pulled_branches[0] == ("origin", "master", True)
+  ```
+
+... [102 lines omitted] ...
+
+- The tracking occurs **before** error checking (line 84 appends, line 85-86 checks for error), meaning mutations are tracked even on failure
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3243" cache_read_input_tokens="48815" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3243}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good findings. The key insight is that `pulled_branches` doesn't track the `cwd` path, but we can still write a meaningful regression test. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3243" cache_read_input_tokens="48815" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3243}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01GnGrEd9oYHDknsqGRwjy7q">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3243" cache_read_input_tokens="48815" output_tokens="1186" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3243, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01GnGrEd9oYHDknsqGRwjy7q">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01Sndnfkd6xkwxQ3HMJpxBLQ">
+    <param name="file_path">/Users/schrockn/.claude/plans/iridescent-jumping-sphinx.md</param>
+    <param name="content"># Add regression test for index corruption in `ensure_trunk_synced`
+
+## Context
+
+The exist...[truncated 1292 chars]...Verification
+
+Run: `uv run pytest tests/unit/cli/commands/pr/test_dispatch_helpers.py -v`
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1682" cache_read_input_tokens="52058" output_tokens="513" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1682, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Sndnfkd6xkwxQ3HMJpxBLQ">
+File created successfully at: /Users/schrockn/.claude/plans/iridescent-jumping-sphinx.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01N169aE2UrLD62h4DP7Mx9V">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="553" cache_read_input_tokens="53740" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 553, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01N169aE2UrLD62h4DP7Mx9V">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_01De6UneqixbxXxh1h4TpJVG">
+    <param name="plan"># Add regression test for index corruption in `ensure_trunk_synced`
+
+## Context
+
+The exist...[truncated 1292 chars]...Verification
+
+Run: `uv run pytest tests/unit/cli/commands/pr/test_dispatch_helpers.py -v`
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="738" cache_read_input_tokens="54293" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 738, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01De6UneqixbxXxh1h4TpJVG">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/iridescent-jumping-sphinx.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Add regression test for index corruption in `ensure_trunk_synced`
+Current context: (wt:erk-slot-07) (br:plnd/fix-update-local-ref-index-03-06-1335) (pr:#8856)\n\nWhat would you like to do with this plan?"
+  header: "br:plnd/fix-"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id d97960db-afad-4ad6-9300-04341eb3fa47 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+     Read the plan from: /Users/schrockn/.claude/plans/iridescent-jumping-sphinx.md
+     Implement changes, run CI, and optionally 'erk pr submit' when done.
+
+... [6 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+## Add regression test for index corruption in `ensure_trunk_synced`
+
+### Context
+
+The existing test `test_trunk_checked_out_with_clean_worktree_uses_pull` verifies the fix works, but it uses `cwd=tmp_path` and `repo_root=tmp_path` — the same path for everything. The actual bug occurred when running from a **slot worktree** (different cwd) while trunk was checked out in the **root worktree**. We should add a test that mirrors this exact scenario.
+
+### Plan
+
+**File:** `tests/unit/cli/commands/pr/test_dispatch_helpers.py`
+
+Add one test: `test_trunk_in_root_worktree_uses_pull_not_update_ref`
+
+This test simulates the exact bug scenario from the report:
+- Root worktree at `/root` has `master` checked out
+- Slot worktree at `/slot` has `feature/work` checked out (this is `cwd`)
+- `repo.root` points to the root worktree path
+- Local master is behind remote → needs sync
+- **Assert**: `pull_branch` is called (not `update_local_ref`), and `updated_refs` is empty
+
+This would have caught the original bug because the old code unconditionally used `update_local_ref` regardless of whether trunk was checked out. The test explicitly asserts the invariant: when trunk is checked out anywhere, use pull, not ref update.
+
+The existing `test_trunk_checked_out_with_clean_worktree_uses_pull` is similar but doesn't separate cwd from repo.root — this new test covers the realistic multi-worktree scenario.
+
+### Verification
+
+Run: `uv run pytest tests/unit/cli/commands/pr/test_dispatch_helpers.py -v`
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="674" cache_read_input_tokens="55031" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 674}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01Guqo8ga7U81ApcrSjxhS5m">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="674" cache_read_input_tokens="55031" output_tokens="510" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 674, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01Guqo8ga7U81ApcrSjxhS5m">
+
+  </tool_result>
+  <tool_use name="AskUserQuestion" id="toolu_01AvPeWLGHon2KcLgyy6W4Ks">
+    <param name="questions">[{'question': '📋 Add regression test for index corruption in `ensure_trunk_synced`\nCurren...[truncated 449 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1861" cache_read_input_tokens="55705" output_tokens="252" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1861, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01AvPeWLGHon2KcLgyy6W4Ks">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+  <user>[Request interrupted by user for tool use]</user>
+  <user>continue</user>
+  <usage input_tokens="3" cache_creation_input_tokens="494" cache_read_input_tokens="57566" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 494}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01XFtZqDQXgLpwqDNwofM9ZH">
+    <param name="command">erk exec marker create --session-id d97960db-afad-4ad6-9300-04341eb3fa47 exit-plan-mode-hook.implement-now</param>
+    <param name="description">Create implement-now marker</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="494" cache_read_input_tokens="57566" output_tokens="168" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 494, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XFtZqDQXgLpwqDNwofM9ZH">
+{"success": true, "message": "Created marker: exit-plan-mode-hook.implement-now"}
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_011hNjGwyw5segSSuLhDGVD2">
+    <param name="plan"># Add regression test for index corruption in `ensure_trunk_synced`
+
+## Context
+
+The exist...[truncated 1292 chars]...Verification
+
+Run: `uv run pytest tests/unit/cli/commands/pr/test_dispatch_helpers.py -v`
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="206" cache_read_input_tokens="58060" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 206, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011hNjGwyw5segSSuLhDGVD2">
+The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to tell you how to proceed.
+  </tool_result>
+</session>

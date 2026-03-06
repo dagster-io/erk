@@ -1,0 +1,4 @@
+{
+  "provider": "github-draft-pr",
+  "title": "Learn: Fix `ensure_trunk_synced` to use pull instead of update_local_ref when trunk is checked out"
+}

@@ -1,0 +1,2329 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>Last login: Fri Mar  6 12:58:48 on ttys029
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-03/.envrc
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-03/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03
+-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.venv (3.13.1)
+-&gt; Loading .env
+Activated: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03
+OK workspace:72
+direnv: export +REPO_ROOT +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT +WORKTREE_NAME +WORKTREE_PATH ~PATH
+➜  erk-slot-03 git:(plnd/consolidate-checkout-prepa-03-06-0452) erk-activate
+direnv: loading ~/code/erk/.envrc
+direnv: loading ~/code/erk/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/code/erk
+-&gt; Activating venv: /Users/schrockn/code/erk/.venv (3.13.1)
+Activated: /Users/schrockn/code/erk
+OK workspace:72
+direnv: export +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT ~PATH
+-&gt; cd /Users/schrockn/code/erk
+-&gt; Activating venv: /Users/schrockn/code/erk/.venv (3.13.1)
+claudeActivated: /Users/schrockn/code/erk
+(erk) ➜  erk git:(master) claude
+
+ ▐▛███▜▌   Claude Code v2.1.70
+▝▜█████▛▘  Opus 4.6 · Claude Max
+  ▘▘ ▝▝    ~/code/erk
+
+❯ when doing an incremental dispatch the intermediate commit looks like: https://github.com/dagster-io/erk/pull/8830/changes/6d166c9790bc8b1ad66b00b89022468f56d124ab
+
+  i would prefer it to be more description so that we can understand what happened. indicate that it is the implementation of incremental dispatch and include the plan in the commit
+  message
+
+⏺ Let me explore the incremental dispatch workflow to understand how commits are created.
+
+❯ Tool loaded.
+
+⏺ Search(pattern: "incremental.dispatch|incremental_dispatch", path: "~/code/erk")
+  ⎿  Found 3 files (ctrl+o to expand)
+
+⏺ Search(pattern: "pr-incremental-dispatch", path: ".claude")
+  ⎿  Found 1 file (ctrl+o to expand)
+
+⏺ Read(.claude/commands/erk/pr-incremental-dispatch.md)
+  ⎿  Read 54 lines
+
+⏺ Read(src/erk/cli/commands/exec/scripts/incremental_dispatch.py)
+  ⎿  Read 217 lines
+  ⎿  Loaded src/erk/cli/commands/exec/scripts/CLAUDE.md
+  ⎿  Loaded src/erk/cli/commands/exec/scripts/AGENTS.md
+
+⏺ Found it. The commit message is on line 131-132 of incremental_dispatch.py:
+
+  message=f"Add incremental plan for PR #{pr_number}",
+
+  The plan content is already available as plan_content (line 96). The fix is straightforward: include the plan in the commit message body and make the subject line more descriptive.
+
+  Let me also check how the regular dispatch does its commit message for consistency.
+
+⏺ Search(pattern: "commit_files_to_branch", path: "src")
+  ⎿  Found 61 lines (ctrl+o to expand)
+
+⏺ Now I have a clear picture. Let me also check if commit_files_to_branch supports multi-line messages (body).
+
+⏺ Search(pattern: "def commit_files_to_branch", path: "src")
+  ⎿  Found 0 files
+
+⏺ Search(pattern: "def commit_files_to_branch", path: "~/code/erk")
+  ⎿  Found 5 files (ctrl+o to expand)
+
+⏺ Read(packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py)
+  ⎿  Read 180 lines
+
+⏺ Good — the message parameter is just a string, so multi-line messages (with \n) should work fine since git supports that natively. Let me check the real implementation briefly to
+  confirm.
+
+⏺ Search(pattern: "def commit_files_to_branch", path: "packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py")
+  ⎿  Found 31 lines (ctrl+o to expand)
+
+⏺ Read(packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py)
+  ⎿  Read 40 lines
+
+⏺ Uses git commit-tree ... -m message — multi-line strings work fine with -m. Now let me also check the test to understand what's being asserted.
+
+⏺ Read(tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py)
+  ⎿  Read 192 lines
+  ⎿  Loaded tests/CLAUDE.md
+  ⎿  Loaded tests/AGENTS.md
+  ⎿  Loaded tests/unit/CLAUDE.md
+  ⎿  Loaded tests/unit/AGENTS.md
+
+⏺ I have everything I need. The change is simple — let me write the plan.
+
+❯ Tool loaded.
+
+❯ Tool loaded.
+
+⏺ Updated plan
+  ⎿  Wrote 36 lines to /Users/schrockn/.claude/plans/snappy-mapping-whistle.md
+       1 # Improve incremental dispatch commit message
+       2
+       3 ## Context
+       4
+       5 When incremental dispatch commits the plan to a PR branch, the commit message is generic: `"Add incremental plan for PR #N"`. Looking at the commit on GitHub (e.g., PR #88
+         30), it's hard to understand what happened. The user wants the commit to clearly indicate it's an incremental dispatch and include the plan content in the commit body.
+       6
+       7 ## Change
+       8
+       9 **File:** `src/erk/cli/commands/exec/scripts/incremental_dispatch.py` (line 127-132)
+      10
+      11 Change the commit message from:
+      12 ```python
+      13 message=f"Add incremental plan for PR #{pr_number}",
+      14 ```
+      15
+      16 To a multi-line message with a descriptive subject and the plan content as the body:
+      17 ```python
+      18 message=f"Incremental dispatch for PR #{pr_number}\n\n{plan_content}",
+      19 ```
+      20
+      21 This uses the standard git convention of subject line + blank line + body. The plan content is already available as `plan_content` (read on line 96).
+      22
+      23 **Test:** `tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py`
+      24
+      25 No test currently asserts on the commit message content, so no test changes are strictly required. However, we should add an assertion in `test_incremental_dispatch_succes
+         s` to verify the new message format:
+      26 ```python
+      27 assert "Incremental dispatch" in branch_commits[0].message
+      28 assert "My Incremental Plan" in branch_commits[0].message
+      29 ```
+      30
+      31 ## Verification
+      32
+      33 Run the incremental dispatch unit tests:
+      34 ```
+      35 uv run pytest tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py
+      36 ```
+
+❯ Tool loaded.
+
+⏺ Here's the plan:
+
+  Improve incremental dispatch commit message
+
+  Context: When incremental dispatch commits the plan to a PR branch, the commit message is generic ("Add incremental plan for PR #N"). The user wants it to clearly indicate it's an
+  incremental dispatch and include the plan content in the commit body.
+
+  Change: In src/erk/cli/commands/exec/scripts/incremental_dispatch.py (line 131), update the commit message from:
+  message=f"Add incremental plan for PR #{pr_number}",
+  to:
+  message=f"Incremental dispatch for PR #{pr_number}\n\n{plan_content}",
+
+  Test: Add assertion in test_incremental_dispatch_success to verify the message contains "Incremental dispatch" and the plan content.
+
+⏺ User answered Claude's questions:
+  ⎿  · 📋 Improve incremental dispatch commit message
+     Current context: (wt:erk) (br:master)
+
+     What would you like to do with this plan? → Create new branch and planned PR
+
+❯ Tool loaded.
+
+⏺ Skill(/erk:plan-save)
+  ⎿  Successfully loaded skill
+
+⏺ I'll save the plan now. The plan title is "Improve incremental dispatch commit message".
+
+  Branch slug: improve-dispatch-commit
+
+  Summary: Improves the incremental dispatch commit message to be more descriptive by including "Incremental dispatch" in the subject line and embedding the full plan content in the
+  commit body, making it easier to understand what happened when viewing commits on GitHub.
+
+❯ Tool loaded.
+
+⏺ Bash(erk exec plan-save --format json --session-id="89fc9e9a-9d3d-435d-bf6c-df287d87c222" --branch-slug="improve-dispatch-commit" --summary="Improves the incremental dispatch commit
+      message to be more descriptive by including Incremental dispatch in the subject line and embedding the full plan content in the commit body, making it easier to understand what
+      happened when viewing commits on GitHub.")
+  ⎿  {
+       "success": true,
+       "plan_number": 8853,
+       "plan_url": "https://github.com/dagster-io/erk/pull/8853",
+       "title": "[erk-plan] Improve incremental dispatch commit message",
+       "branch_name": "plnd/improve-dispatch-commit-03-06-1310",
+       "plan_backend": "planned_pr",
+       "objective_issue": null,
+       "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/89fc9e9a-9d3d-435d-bf6c-df287d87c222/plan_snapshots/000001-3fadf906"
+     }
+  ⎿  (timeout 30s)
+
+⏺ Plan saved successfully. Now pushing the planning session.
+
+⏺ Bash(erk exec upload-impl-session --session-id "89fc9e9a-9d3d-435d-bf6c-df287d87c222" 2&gt;/dev/null || true)
+  ⎿  {
+       "uploaded": false,
+       "reason": "no_impl_folder"
+     }
+
+⏺ Plan "Improve incremental dispatch commit message" saved as draft PR #8853
+  URL: https://github.com/dagster-io/erk/pull/8853
+
+⏺ Plan saved. Here are next steps for plan #8853:
+
+  Implement plan #8853:
+  In current wt:    source "$(erk br co --for-plan 8853 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8853 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8853 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8853 --script)" &amp;&amp; erk implement -d
+
+  Checkout plan #8853:
+  In current wt:  erk br co --for-plan 8853
+  In new wt:      erk br co --new-slot --for-plan 8853
+
+  Dispatch plan #8853:
+  CLI command:    erk pr dispatch 8853
+  Slash command:  /erk:pr-dispatch
+
+✻ Churned for 2m 25s
+
+❯ /erk:pr-dispatch
+
+⏺ The most recent plan is #8853. Dispatching it now.
+
+⏺ Bash(erk pr dispatch 8853)
+  ⎿  Checking GitHub authentication...
+     Syncing trunk with remote...
+     Syncing master with origin/master...
+     ✓ master synced with origin/master
+     Resolving GitHub username...
+     Validating 1 planned-PR plan(s)...
+
+     Validating PR #8853...
+
+     ✓ All 1 plan(s) validated
+
+       #8853: [erk-plan] Improve incremental dispatch commit message
+
+     Dispatching PR #8853...
+
+     Fetching plan content...
+     Syncing branch: plnd/improve-dispatch-commit-03-06-1310
+     Committing plan to branch...
+     ✓ Branch pushed to remote
+
+     Dispatching workflow: plan-implement.yml
+       Waiting for workflow run... (attempt 1/11)
+       Waiting for workflow run... (attempt 2/11)
+     ✓ Workflow dispatched.
+     ✓ Dispatch metadata written
+     Posting queued event comment...
+     ✓ Queued event comment posted
+
+
+     ✓ 1 plan(s) dispatched successfully!
+
+     Dispatched plans:
+       #8853: [erk-plan] Improve incremental dispatch commit message
+         Plan: https://github.com/dagster-io/erk/pull/8853
+         PR: https://github.com/dagster-io/erk/pull/8853
+         Workflow: https://github.com/dagster-io/erk/actions/runs/22782170940
+  ⎿  (timeout 1m)
+
+⏺ Dispatched successfully. Clearing the session marker.
+
+⏺ Bash(erk exec marker delete --session-id "89fc9e9a-9d3d-435d-bf6c-df287d87c222" plan-saved-issue)
+  ⎿  {
+       "success": true,
+       "message": "Deleted marker: plan-saved-issue"
+     }
+
+⏺ Plan #8853 dispatched for remote implementation:
+
+  - Plan/PR: https://github.com/dagster-io/erk/pull/8853
+  - Workflow: https://github.com/dagster-io/erk/actions/runs/22782170940
+
+❯ /exit
+  ⎿  Bye!
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── ▪▪▪ ─
+❯ 
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ➜  (git:erk) (wt:root) (br:master) ✗ | (gh:no-pr) │ (O)                                                                                                                    52666 tokens
+  ⏸ plan mode on (shift+tab to cycle)                                                                                                                    current: 2.1.70 · latest: 2.1.70
+
+Resume this session with:
+claude --resume 89fc9e9a-9d3d-435d-bf6c-df287d87c222
+(erk) ➜  erk git:(master) ✗ git st
+On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes to be committed:
+  (use "git restore --staged &lt;file&gt;..." to unstage)
+        deleted:    .claude/skills/module-to-subpackage/SKILL.md
+        modified:   src/erk/capabilities/skills/bundled.py
+
+(erk) ➜  erk git:(master) ✗ git diff
+(erk) ➜  erk git:(master) ✗
+
+we've been getting into this state after erk land even though it looks like to me here
+
+that this is already in master. why are we in a state where we are about to undo the hcanges? this is happening as part of automation </user>
+  <user>[Request interrupted by user]</user>
+  <user>Last login: Fri Mar  6 12:58:48 on ttys029
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-03/.envrc
+direnv: loading ~/.erk/repos/erk/worktrees/erk-slot-03/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03
+-&gt; Activating venv: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03/.venv (3.13.1)
+-&gt; Loading .env
+Activated: /Users/schrockn/.erk/repos/erk/worktrees/erk-slot-03
+OK workspace:72
+direnv: export +REPO_ROOT +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT +WORKTREE_NAME +WORKTREE_PATH ~PATH
+➜  erk-slot-03 git:(plnd/consolidate-checkout-prepa-03-06-0452) erk-activate
+direnv: loading ~/code/erk/.envrc
+direnv: loading ~/code/erk/.erk/bin/activate.sh
+-&gt; cd /Users/schrockn/code/erk
+-&gt; Activating venv: /Users/schrockn/code/erk/.venv (3.13.1)
+Activated: /Users/schrockn/code/erk
+OK workspace:72
+direnv: export +VIRTUAL_ENV +VIRTUAL_ENV_PROMPT ~PATH
+-&gt; cd /Users/schrockn/code/erk
+-&gt; Activating venv: /Users/schrockn/code/erk/.venv (3.13.1)
+claudeActivated: /Users/schrockn/code/erk
+(erk) ➜  erk git:(master) claude
+
+ ▐▛███▜▌   Claude Code v2.1.70
+▝▜█████▛▘  Opus 4.6 · Claude Max
+  ▘▘ ▝▝    ~/code/erk
+
+❯ when doing an incremental dispatch the intermediate commit looks like: https://github.com/dagster-io/erk/pull/8830/changes/6d166c9790bc8b1ad66b00b89022468f56d124ab
+
+  i would prefer it to be more description so that we can understand what happened. indicate that it is the implementation of incremental dispatch and include the plan in the commit
+  message
+
+⏺ Let me explore the incremental dispatch workflow to understand how commits are created.
+
+❯ Tool loaded.
+
+⏺ Search(pattern: "incremental.dispatch|incremental_dispatch", path: "~/code/erk")
+  ⎿  Found 3 files (ctrl+o to expand)
+
+⏺ Search(pattern: "pr-incremental-dispatch", path: ".claude")
+  ⎿  Found 1 file (ctrl+o to expand)
+
+⏺ Read(.claude/commands/erk/pr-incremental-dispatch.md)
+  ⎿  Read 54 lines
+
+⏺ Read(src/erk/cli/commands/exec/scripts/incremental_dispatch.py)
+  ⎿  Read 217 lines
+  ⎿  Loaded src/erk/cli/commands/exec/scripts/CLAUDE.md
+  ⎿  Loaded src/erk/cli/commands/exec/scripts/AGENTS.md
+
+⏺ Found it. The commit message is on line 131-132 of incremental_dispatch.py:
+
+  message=f"Add incremental plan for PR #{pr_number}",
+
+  The plan content is already available as plan_content (line 96). The fix is straightforward: include the plan in the commit message body and make the subject line more descriptive.
+
+  Let me also check how the regular dispatch does its commit message for consistency.
+
+⏺ Search(pattern: "commit_files_to_branch", path: "src")
+  ⎿  Found 61 lines (ctrl+o to expand)
+
+⏺ Now I have a clear picture. Let me also check if commit_files_to_branch supports multi-line messages (body).
+
+⏺ Search(pattern: "def commit_files_to_branch", path: "src")
+  ⎿  Found 0 files
+
+⏺ Search(pattern: "def commit_files_to_branch", path: "~/code/erk")
+  ⎿  Found 5 files (ctrl+o to expand)
+
+⏺ Read(packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py)
+  ⎿  Read 180 lines
+
+⏺ Good — the message parameter is just a string, so multi-line messages (with \n) should work fine since git supports that natively. Let me check the real implementation briefly to
+  confirm.
+
+⏺ Search(pattern: "def commit_files_to_branch", path: "packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py")
+  ⎿  Found 31 lines (ctrl+o to expand)
+
+⏺ Read(packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py)
+  ⎿  Read 40 lines
+
+⏺ Uses git commit-tree ... -m message — multi-line strings work fine with -m. Now let me also check the test to understand what's being asserted.
+
+⏺ Read(tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py)
+  ⎿  Read 192 lines
+  ⎿  Loaded tests/CLAUDE.md
+  ⎿  Loaded tests/AGENTS.md
+  ⎿  Loaded tests/unit/CLAUDE.md
+  ⎿  Loaded tests/unit/AGENTS.md
+
+⏺ I have everything I need. The change is simple — let me write the plan.
+
+❯ Tool loaded.
+
+❯ Tool loaded.
+
+⏺ Updated plan
+  ⎿  Wrote 36 lines to /Users/schrockn/.claude/plans/snappy-mapping-whistle.md
+       1 # Improve incremental dispatch commit message
+       2
+       3 ## Context
+       4
+       5 When incremental dispatch commits the plan to a PR branch, the commit message is generic: `"Add incremental plan for PR #N"`. Looking at the commit on GitHub (e.g., PR #88
+         30), it's hard to understand what happened. The user wants the commit to clearly indicate it's an incremental dispatch and include the plan content in the commit body.
+       6
+       7 ## Change
+       8
+       9 **File:** `src/erk/cli/commands/exec/scripts/incremental_dispatch.py` (line 127-132)
+      10
+      11 Change the commit message from:
+      12 ```python
+      13 message=f"Add incremental plan for PR #{pr_number}",
+      14 ```
+      15
+      16 To a multi-line message with a descriptive subject and the plan content as the body:
+      17 ```python
+      18 message=f"Incremental dispatch for PR #{pr_number}\n\n{plan_content}",
+      19 ```
+      20
+      21 This uses the standard git convention of subject line + blank line + body. The plan content is already available as `plan_content` (read on line 96).
+      22
+      23 **Test:** `tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py`
+      24
+      25 No test currently asserts on the commit message content, so no test changes are strictly required. However, we should add an assertion in `test_incremental_dispatch_succes
+         s` to verify the new message format:
+      26 ```python
+      27 assert "Incremental dispatch" in branch_commits[0].message
+      28 assert "My Incremental Plan" in branch_commits[0].message
+      29 ```
+      30
+      31 ## Verification
+      32
+      33 Run the incremental dispatch unit tests:
+      34 ```
+      35 uv run pytest tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py
+      36 ```
+
+❯ Tool loaded.
+
+⏺ Here's the plan:
+
+  Improve incremental dispatch commit message
+
+  Context: When incremental dispatch commits the plan to a PR branch, the commit message is generic ("Add incremental plan for PR #N"). The user wants it to clearly indicate it's an
+  incremental dispatch and include the plan content in the commit body.
+
+  Change: In src/erk/cli/commands/exec/scripts/incremental_dispatch.py (line 131), update the commit message from:
+  message=f"Add incremental plan for PR #{pr_number}",
+  to:
+  message=f"Incremental dispatch for PR #{pr_number}\n\n{plan_content}",
+
+  Test: Add assertion in test_incremental_dispatch_success to verify the message contains "Incremental dispatch" and the plan content.
+
+⏺ User answered Claude's questions:
+  ⎿  · 📋 Improve incremental dispatch commit message
+     Current context: (wt:erk) (br:master)
+
+     What would you like to do with this plan? → Create new branch and planned PR
+
+❯ Tool loaded.
+
+⏺ Skill(/erk:plan-save)
+  ⎿  Successfully loaded skill
+
+⏺ I'll save the plan now. The plan title is "Improve incremental dispatch commit message".
+
+  Branch slug: improve-dispatch-commit
+
+  Summary: Improves the incremental dispatch commit message to be more descriptive by including "Incremental dispatch" in the subject line and embedding the full plan content in the
+  commit body, making it easier to understand what happened when viewing commits on GitHub.
+
+❯ Tool loaded.
+
+⏺ Bash(erk exec plan-save --format json --session-id="89fc9e9a-9d3d-435d-bf6c-df287d87c222" --branch-slug="improve-dispatch-commit" --summary="Improves the incremental dispatch commit
+      message to be more descriptive by including Incremental dispatch in the subject line and embedding the full plan content in the commit body, making it easier to understand what
+      happened when viewing commits on GitHub.")
+  ⎿  {
+       "success": true,
+       "plan_number": 8853,
+       "plan_url": "https://github.com/dagster-io/erk/pull/8853",
+       "title": "[erk-plan] Improve incremental dispatch commit message",
+       "branch_name": "plnd/improve-dispatch-commit-03-06-1310",
+       "plan_backend": "planned_pr",
+       "objective_issue": null,
+       "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/89fc9e9a-9d3d-435d-bf6c-df287d87c222/plan_snapshots/000001-3fadf906"
+     }
+  ⎿  (timeout 30s)
+
+⏺ Plan saved successfully. Now pushing the planning session.
+
+⏺ Bash(erk exec upload-impl-session --session-id "89fc9e9a-9d3d-435d-bf6c-df287d87c222" 2&gt;/dev/null || true)
+  ⎿  {
+       "uploaded": false,
+       "reason": "no_impl_folder"
+     }
+
+⏺ Plan "Improve incremental dispatch commit message" saved as draft PR #8853
+  URL: https://github.com/dagster-io/erk/pull/8853
+
+⏺ Plan saved. Here are next steps for plan #8853:
+
+  Implement plan #8853:
+  In current wt:    source "$(erk br co --for-plan 8853 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8853 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8853 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8853 --script)" &amp;&amp; erk implement -d
+
+  Checkout plan #8853:
+  In current wt:  erk br co --for-plan 8853
+  In new wt:      erk br co --new-slot --for-plan 8853
+
+  Dispatch plan #8853:
+  CLI command:    erk pr dispatch 8853
+  Slash command:  /erk:pr-dispatch
+
+✻ Churned for 2m 25s
+
+❯ /erk:pr-dispatch
+
+⏺ The most recent plan is #8853. Dispatching it now.
+
+⏺ Bash(erk pr dispatch 8853)
+  ⎿  Checking GitHub authentication...
+     Syncing trunk with remote...
+     Syncing master with origin/master...
+     ✓ master synced with origin/master
+     Resolving GitHub username...
+     Validating 1 planned-PR plan(s)...
+
+     Validating PR #8853...
+
+     ✓ All 1 plan(s) validated
+
+       #8853: [erk-plan] Improve incremental dispatch commit message
+
+     Dispatching PR #8853...
+
+     Fetching plan content...
+     Syncing branch: plnd/improve-dispatch-commit-03-06-1310
+     Committing plan to branch...
+     ✓ Branch pushed to remote
+
+     Dispatching workflow: plan-implement.yml
+       Waiting for workflow run... (attempt 1/11)
+       Waiting for workflow run... (attempt 2/11)
+     ✓ Workflow dispatched.
+     ✓ Dispatch metadata written
+     Posting queued event comment...
+     ✓ Queued event comment posted
+
+
+     ✓ 1 plan(s) dispatched successfully!
+
+     Dispatched plans:
+       #8853: [erk-plan] Improve incremental dispatch commit message
+         Plan: https://github.com/dagster-io/erk/pull/8853
+         PR: https://github.com/dagster-io/erk/pull/8853
+         Workflow: https://github.com/dagster-io/erk/actions/runs/22782170940
+  ⎿  (timeout 1m)
+
+⏺ Dispatched successfully. Clearing the session marker.
+
+⏺ Bash(erk exec marker delete --session-id "89fc9e9a-9d3d-435d-bf6c-df287d87c222" plan-saved-issue)
+  ⎿  {
+       "success": true,
+       "message": "Deleted marker: plan-saved-issue"
+     }
+
+⏺ Plan #8853 dispatched for remote implementation:
+
+  - Plan/PR: https://github.com/dagster-io/erk/pull/8853
+  - Workflow: https://github.com/dagster-io/erk/actions/runs/22782170940
+
+❯ /exit
+  ⎿  Bye!
+
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── ▪▪▪ ─
+❯ 
+───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  ➜  (git:erk) (wt:root) (br:master) ✗ | (gh:no-pr) │ (O)                                                                                                                    52666 tokens
+  ⏸ plan mode on (shift+tab to cycle)                                                                                                                    current: 2.1.70 · latest: 2.1.70
+
+Resume this session with:
+claude --resume 89fc9e9a-9d3d-435d-bf6c-df287d87c222
+(erk) ➜  erk git:(master) ✗ git st
+On branch master
+Your branch is up to date with 'origin/master'.
+
+Changes to be committed:
+  (use "git restore --staged &lt;file&gt;..." to unstage)
+        deleted:    .claude/skills/module-to-subpackage/SKILL.md
+        modified:   src/erk/capabilities/skills/bundled.py
+
+(erk) ➜  erk git:(master) ✗ git diff
+(erk) ➜  erk git:(master) ✗
+
+we've been getting into this state after erk land even though it looks like to me here
+
+that this is already in master. why are we in a state where we are about to undo the hcanges? this is happening as part of automation not manual commands</user>
+  <usage input_tokens="3" cache_creation_input_tokens="25320" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25320}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me investigate the `erk land` workflow to understand what's contaminating the index.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="25320" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 25320}" output_tokens="10" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01KXJXwUgzEFXNNcyZ3uToiU">
+    <param name="query">select:Agent,Read,Grep,Glob</param>
+    <param name="max_results">5</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="25320" cache_read_input_tokens="0" output_tokens="370" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 25320, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01KXJXwUgzEFXNNcyZ3uToiU">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="4486" cache_read_input_tokens="25320" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4486}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the `erk land` workflow to understand what's contaminating the index on master.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="4486" cache_read_input_tokens="25320" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4486}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Agent" id="toolu_011gxbzV5dZaMc9EEUETX5xy">
+    <param name="description">Explore erk land workflow</param>
+    <param name="subagent_type">Explore</param>
+    <param name="prompt">FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant ...[truncated 1132 chars]...?
+
+Be very thorough - trace the full code path from the CLI command through to completion.</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4486" cache_read_input_tokens="25320" output_tokens="594" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4486, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011gxbzV5dZaMc9EEUETX5xy">
+Now let me compile my findings into a comprehensive analysis for the user.
+
+Based on my thorough code review, I've identified the root cause of the dirty git index issue after `erk land`. Let me summarize the complete workflow and the bug:
+
+## Summary: Git Index Corruption After `erk land`
+
+### The Complete Land Workflow
+
+**Phase 1: Merge** (`merge_pr` in `land_pipeline.py:384`)
+- PR is merged on GitHub via `gh pr merge` (or REST API)
+- Remote master is updated
+- **Local master branch ref in root worktree is NOT updated**
+
+**Phase 2: Cleanup** (`_cleanup_root_worktree` in `land_cmd.py:383`)
+When landing from the root worktree itself:
+```python
+cleanup.ctx.branch_manager.checkout_branch(cleanup.worktree_path, trunk)
+# Executes: git checkout master
+```
+
+This checks out the **local master branch reference**, which is still at the pre-merge commit. The working tree and index are now consistent but pointing to the old master commit.
+
+**Phase 3: Navigation/Pull** (`_navigate_after_land` in `land_cmd.py:1244`)
+After checkout, the code runs (in `main_repo_root`):
+```python
+ctx.git.remote.fetch_branch(main_repo_root, "origin", trunk_branch)
+# Executes: git fetch origin master
+# Updates origin/master remote-tracking branch
+
+divergence = ctx.git.branch.is_branch_diverged_from_remote(...)
+
+... [61 lines omitted] ...
+
+The pull operation **should** update the local master branch to the merged commit. However, there are two possible failure modes:
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1975" cache_read_input_tokens="29806" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1975}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Good analysis. Let me read the critical code paths directly.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1975" cache_read_input_tokens="29806" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1975}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CARpV3oV4CxrkstY2mAL9s">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">370</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1975" cache_read_input_tokens="29806" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1975}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CARpV3oV4CxrkstY2mAL9s">
+   370→            cleanup.ctx.git.branch.detect_trunk_branch(cleanup.main_repo_root),
+   371→            force=True,
+   372→        )
+   373→        cleanup.ctx.branch_manager.checkout_branch(cleanup.worktree_path, placeholder)
+   374→
+   375→    # Defensive: ensure branch is released before deletion
+   376→    _ensure_branch_not_checked_out(
+   377→        cleanup.ctx, repo_root=cleanup.main_repo_root, branch=cleanup.branch
+   378→    )
+   379→    cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch, force=True)
+   380→    user_output(click.style("✓", fg="green") + " Released slot and deleted branch")
+   381→
+   382→
+   383→def _cleanup_root_worktree(cleanup: CleanupContext) -&gt; None:
+   384→    """Handle cleanup for root worktree: delete branch, skip worktree removal."""
+   385→    assert cleanup.worktree_path is not None
+   386→
+   387→    if not cleanup.cleanup_confirmed:
+   388→        user_output("Branch preserved.")
+   389→        return
+   390→
+   391→    trunk = cleanup.ctx.git.branch.detect_trunk_branch(cleanup.main_repo_root)
+   392→    cleanup.ctx.branch_manager.checkout_branch(cleanup.worktree_path, trunk)
+   393→
+   394→    _ensure_branch_not_checked_out(
+   395→        cleanup.ctx, repo_root=cleanup.main_repo_root, branch=cleanup.branch
+   396→    )
+   397→    cleanup.ctx.branch_manager.delete_branch(cleanup.main_repo_root, cleanup.branch, force=True)
+   398→    user_output(click.style("✓", fg="green") + " Deleted branch (root worktree preserved)")
+   399→
+
+... [50 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_017fv6boX1XnoBmC79Sdav9w">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">1180</param>
+    <param name="limit">120</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1975" cache_read_input_tokens="29806" output_tokens="264" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1975, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_017fv6boX1XnoBmC79Sdav9w">
+  1180→        case CleanupType.ROOT_WORKTREE:
+  1181→            _cleanup_root_worktree(cleanup)
+  1182→        case CleanupType.NON_SLOT:
+  1183→            _cleanup_non_slot_worktree(cleanup)
+  1184→        case _:
+  1185→            assert_never(resolved.cleanup_type)
+  1186→
+  1187→    _navigate_or_exit(cleanup)
+  1188→
+  1189→
+  1190→def _navigate_after_land(
+  1191→    ctx: ErkContext,
+  1192→    *,
+  1193→    repo: RepoContext,
+  1194→    script: bool,
+  1195→    pull_flag: bool,
+  1196→    target_child_branch: str | None,
+  1197→    skip_activation_output: bool,
+  1198→) -&gt; None:
+  1199→    """Navigate to appropriate location after landing.
+  1200→
+  1201→    Args:
+  1202→        ctx: ErkContext
+  1203→        repo: Repository context
+  1204→        script: Whether to output activation script
+  1205→        pull_flag: Whether to include git pull in activation
+  1206→        target_child_branch: If set, navigate to this child branch (--up mode)
+  1207→        skip_activation_output: If True, skip activation message (used in execute mode
+  1208→            where the script's cd command handles navigation)
+  1209→    """
+
+... [90 lines omitted] ...
+
+  1225→        # Use --downstack to only restack the current branch, avoiding errors if
+  1259→                    click.style("Warning: ", fg="yellow")
+  1269→                except RuntimeError:
+  1272→                        click.style("Warning: ", fg="yellow")
+  1273→                        + "git pull failed (try running manually)"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3466" cache_read_input_tokens="31781" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3466}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01PK16KaHxC5mAWYvSWReSDT">
+    <param name="pattern">_navigate_or_exit</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3466" cache_read_input_tokens="31781" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3466}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01PK16KaHxC5mAWYvSWReSDT">
+450-    user_output(
+451-        click.style("✓", fg="green") + f" Deleted branch and removed worktree '{worktree_name}'"
+452-    )
+453-
+454-
+455:def _navigate_or_exit(cleanup: CleanupContext) -&gt; None:
+456-    """Handle navigation or exit after cleanup.
+457-
+458-    In dry-run mode, shows summary and exits.
+459-    Otherwise, navigates to appropriate location or outputs no-op script.
+460-    """
+--
+1182-        case CleanupType.NON_SLOT:
+1183-            _cleanup_non_slot_worktree(cleanup)
+1184-        case _:
+1185-            assert_never(resolved.cleanup_type)
+1186-
+1187:    _navigate_or_exit(cleanup)
+1188-
+1189-
+1190-def _navigate_after_land(
+1191-    ctx: ErkContext,
+1192-    *,
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01Fx44fMXSvDDEf4RhcVju6j">
+    <param name="pattern">pull_flag|pull=</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3466" cache_read_input_tokens="31781" output_tokens="731" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3466, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Fx44fMXSvDDEf4RhcVju6j">
+91-    worktree_path: Path | None
+92-    main_repo_root: Path
+93-    script: bool
+94:    pull_flag: bool
+95-    force: bool
+96-    is_current_branch: bool
+97-    target_child_branch: str | None
+--
+308-            cleanup.ctx,
+309-            repo=cleanup.repo,
+310-            script=cleanup.script,
+311:            pull_flag=cleanup.pull_flag,
+312-            target_child_branch=cleanup.target_child_branch,
+313-            skip_activation_output=cleanup.skip_activation_output,
+314-        )
+--
+469-            cleanup.ctx,
+470-            repo=cleanup.repo,
+471-            script=cleanup.script,
+472:            pull_flag=cleanup.pull_flag,
+473-            target_child_branch=cleanup.target_child_branch,
+474-            skip_activation_output=cleanup.skip_activation_output,
+475-        )
+--
+861-    repo: RepoContext,
+862-    target: LandTarget,
+863-    script: bool,
+864:    pull_flag: bool,
+865-    no_delete: bool,
+866-    skip_learn: bool,
+
+... [153 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3077" cache_read_input_tokens="35247" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3077}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_012Dgpe2pU86EHnw2jX3sr3T">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">455</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3077" cache_read_input_tokens="35247" output_tokens="152" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3077, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_012Dgpe2pU86EHnw2jX3sr3T">
+   455→def _navigate_or_exit(cleanup: CleanupContext) -&gt; None:
+   456→    """Handle navigation or exit after cleanup.
+   457→
+   458→    In dry-run mode, shows summary and exits.
+   459→    Otherwise, navigates to appropriate location or outputs no-op script.
+   460→    """
+   461→    # In dry-run mode, skip navigation and show summary
+   462→    if cleanup.ctx.dry_run:
+   463→        user_output(f"\n{click.style('[DRY RUN] No changes made', fg='yellow', bold=True)}")
+   464→        raise SystemExit(0)
+   465→
+   466→    # Navigate (only if we were in the deleted worktree)
+   467→    if cleanup.is_current_branch:
+   468→        _navigate_after_land(
+   469→            cleanup.ctx,
+   470→            repo=cleanup.repo,
+   471→            script=cleanup.script,
+   472→            pull_flag=cleanup.pull_flag,
+   473→            target_child_branch=cleanup.target_child_branch,
+   474→            skip_activation_output=cleanup.skip_activation_output,
+   475→        )
+   476→    else:
+   477→        if cleanup.script:
+   478→            # Output no-op script for shell integration consistency
+   479→            script_content = render_activation_script(
+   480→                worktree_path=cleanup.ctx.cwd,
+   481→                target_subpath=None,
+   482→                post_cd_commands=None,
+   483→                final_message='echo "Land complete"',
+   484→                comment="land complete (no navigation needed)",
+
+... [10 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="792" cache_read_input_tokens="38324" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 792}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011hnofVMaGKU2DGwkbB1v6b">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/remote_ops/real.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="792" cache_read_input_tokens="38324" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 792}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_011hnofVMaGKU2DGwkbB1v6b">
+     1→"""Production implementation of Git remote operations using subprocess."""
+     2→
+     3→import subprocess
+     4→from pathlib import Path
+     5→
+     6→from erk_shared.gateway.git.lock import wait_for_index_lock
+     7→from erk_shared.gateway.git.remote_ops.abc import GitRemoteOps
+     8→from erk_shared.gateway.git.remote_ops.types import (
+     9→    PullRebaseError,
+    10→    PullRebaseResult,
+    11→    PushError,
+    12→    PushResult,
+    13→)
+    14→from erk_shared.gateway.time.abc import Time
+    15→from erk_shared.subprocess_utils import copied_env_for_git_subprocess, run_subprocess_with_context
+    16→
+    17→# Timeout in seconds for network-touching git operations (push, pull, fetch).
+    18→# Prevents indefinite hangs on network issues or credential prompts.
+    19→_GIT_NETWORK_TIMEOUT = 120
+    20→
+    21→
+    22→class RealGitRemoteOps(GitRemoteOps):
+    23→    """Real implementation of Git remote operations using subprocess."""
+    24→
+    25→    def __init__(self, time: Time) -&gt; None:
+    26→        """Initialize RealGitRemoteOps with Time provider.
+    27→
+    28→        Args:
+    29→            time: Time provider for lock waiting
+    30→        """
+
+... [110 lines omitted] ...
+
+    84→    ) -&gt; PushResult | PushError:
+   101→        except RuntimeError as e:
+   102→            return PushError(message=str(e))
+   107→    ) -&gt; PullRebaseResult | PullRebaseError:
+   117→        except RuntimeError as e:
+   118→            return PullRebaseError(message=str(e))
+   125→            ValueError: If remote doesn't exist or has no URL
+   135→            raise ValueError(f"Remote '{remote}' not found in repository")
+   138→            raise ValueError(f"Remote '{remote}' has no URL configured")
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0189aYSpB6W2jCu6YMsn8A2K">
+    <param name="pattern">def sync_local_branch|sync_branch|sync_trunk</param>
+    <param name="path">/Users/schrockn/code/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="792" cache_read_input_tokens="38324" output_tokens="1089" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 792, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0189aYSpB6W2jCu6YMsn8A2K">
+No matches found
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3020" cache_read_input_tokens="39116" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3020}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01F3DgVbWcqPSjJakhNX8sbM">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py</param>
+    <param name="offset">75</param>
+    <param name="limit">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3020" cache_read_input_tokens="39116" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3020}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01F3DgVbWcqPSjJakhNX8sbM">
+    75→        flag = "-D" if force else "-d"
+    76→        run_subprocess_with_context(
+    77→            cmd=["git", "branch", flag, branch_name],
+    78→            operation_context=f"delete branch '{branch_name}'",
+    79→            cwd=cwd,
+    80→        )
+    81→
+    82→    def checkout_branch(self, cwd: Path, branch: str) -&gt; None:
+    83→        """Checkout a branch in the given directory."""
+    84→        # Wait for index lock if another git operation is in progress
+    85→        wait_for_index_lock(cwd, self._time)
+    86→
+    87→        run_subprocess_with_context(
+    88→            cmd=["git", "checkout", branch],
+    89→            operation_context=f"checkout branch '{branch}'",
+    90→            cwd=cwd,
+    91→        )
+    92→
+    93→    def checkout_detached(self, cwd: Path, ref: str) -&gt; None:
+    94→        """Checkout a detached HEAD at the given ref."""
+    95→        run_subprocess_with_context(
+    96→            cmd=["git", "checkout", "--detach", ref],
+    97→            operation_context=f"checkout detached HEAD at '{ref}'",
+    98→            cwd=cwd,
+    99→        )
+   100→
+   101→    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -&gt; None:
+   102→        """Create a local tracking branch from a remote branch."""
+   103→        run_subprocess_with_context(
+   104→            cmd=["git", "branch", "--track", branch, remote_ref],
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01PykXkbNfVPfMGH7YTXY1g4">
+    <param name="pattern">skip_activation_output|execute.*mode</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3020" cache_read_input_tokens="39116" output_tokens="1222" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3020, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01PykXkbNfVPfMGH7YTXY1g4">
+96-    is_current_branch: bool
+97-    target_child_branch: str | None
+98-    no_delete: bool
+99:    skip_activation_output: bool
+100-    cleanup_confirmed: bool  # Pre-gathered from validation phase
+101-
+102-
+--
+310-            script=cleanup.script,
+311-            pull_flag=cleanup.pull_flag,
+312-            target_child_branch=cleanup.target_child_branch,
+313:            skip_activation_output=cleanup.skip_activation_output,
+314-        )
+315-    else:
+316-        raise SystemExit(0)
+--
+471-            script=cleanup.script,
+472-            pull_flag=cleanup.pull_flag,
+473-            target_child_branch=cleanup.target_child_branch,
+474:            skip_activation_output=cleanup.skip_activation_output,
+475-        )
+476-    else:
+477-        if cleanup.script:
+--
+1114-    is_current_branch: bool,
+1115-    target_child_branch: str | None,
+1116-    no_delete: bool,
+1117:    skip_activation_output: bool,
+1118-    cleanup_confirmed: bool,
+1119-) -&gt; None:
+
+... [76 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2976" cache_read_input_tokens="42136" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2976}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now let me look at the `/erk:land` skill and how it invokes the land command.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2976" cache_read_input_tokens="42136" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2976}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01JNCohVA8NxrfHMh7ASVc85">
+    <param name="pattern">erk:land|erk land</param>
+    <param name="path">/Users/schrockn/code/erk/.claude</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2976" cache_read_input_tokens="42136" output_tokens="193" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2976, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01JNCohVA8NxrfHMh7ASVc85">
+Found 2 files
+.claude/commands/erk/land.md
+.claude/commands/erk/learn.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01B7DuLivFyEGVb7NNz38FhR">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/land.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="234" cache_read_input_tokens="45112" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 234, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01B7DuLivFyEGVb7NNz38FhR">
+     1→---
+     2→description: Land PR with objective awareness - updates objective after landing
+     3→argument-hint: "[branch|PR#|URL] [--skip-objective] [--skip-learn]"
+     4→---
+     5→
+     6→# /erk:land
+     7→
+     8→Objective-aware wrapper for `erk land`. Lands the PR first, then offers to update the linked objective if one exists.
+     9→
+    10→## Usage
+    11→
+    12→```bash
+    13→# Land PR for current branch
+    14→/erk:pr-land
+    15→
+    16→# Land PR for specific branch
+    17→/erk:pr-land feature-branch
+    18→
+    19→# Land PR by number
+    20→/erk:pr-land 123
+    21→
+    22→# Land PR by URL
+    23→/erk:pr-land https://github.com/owner/repo/pull/123
+    24→
+    25→# Skip objective update prompt
+    26→/erk:pr-land --skip-objective
+    27→```
+    28→
+    29→---
+    30→
+
+... [176 lines omitted] ...
+
+    74→**If no PR found:** Report error and exit - cannot land without a PR.
+   124→**If landing fails:** Report the error and exit.
+   182→| Any parsing/API error             | Warn, continue with landing     |
+   191→- **No PR found:** "Error: No PR found for branch `&lt;branch&gt;`"
+   200→## Error Handling
+   202→- **No PR found:** Report error and exit (cannot land without PR)
+   203→- **Landing fails:** Report `erk land` error output and exit
+   205→- **API errors during objective check:** Warn and skip objective workflow
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="2520" cache_read_input_tokens="45346" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2520}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01FKyQ1iE3VKukJBLWTsagVo">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">1294</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2520" cache_read_input_tokens="45346" output_tokens="1984" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2520, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FKyQ1iE3VKukJBLWTsagVo">
+  1294→def render_land_execution_script(
+  1295→    *,
+  1296→    pr_number: int,
+  1297→    branch: str,
+  1298→    worktree_path: Path | None,
+  1299→    is_current_branch: bool,
+  1300→    objective_number: int | None,
+  1301→    plan_number: int | None,
+  1302→    use_graphite: bool,
+  1303→    skip_learn: bool,
+  1304→    cleanup_confirmed: bool,
+  1305→    target_path: Path,
+  1306→) -&gt; str:
+  1307→    """Generate shell script that executes land and navigates.
+  1308→
+  1309→    This script is generated after validation passes. When sourced, it:
+  1310→    1. Validates required arguments (PR number and branch)
+  1311→    2. Calls `erk exec land-execute` with pre-validated state plus user flags
+  1312→    3. If land-execute fails (e.g., merge conflict), stops immediately via ``return 1``
+  1313→    4. On success, navigates to the target location (trunk or child branch)
+  1314→
+  1315→    Note: The execute phase always skips confirmation prompts because the user
+  1316→    already approved by sourcing the script. --force is not passed because
+  1317→    _execute_land handles this internally.
+  1318→
+  1319→    The script requires two positional arguments:
+  1320→    - $1: PR number to merge
+  1321→    - $2: Branch name being landed
+  1322→
+  1323→    Additional flags after the positional args (e.g., -f --up --no-pull --no-delete)
+
+... [120 lines omitted] ...
+
+  1355→    # Silence unused parameter warnings - these are still needed for the function
+  1386→PR_NUMBER="${{1:?Error: PR number required}}"
+  1387→BRANCH="${{2:?Error: Branch name required}}"
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4214" cache_read_input_tokens="47866" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4214}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SMcaedJAAHVEft2yoYXs6Z">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">1460</param>
+    <param name="limit">140</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4214" cache_read_input_tokens="47866" output_tokens="379" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4214, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SMcaedJAAHVEft2yoYXs6Z">
+  1460→    main_repo_root = repo.main_repo_root if repo.main_repo_root else repo.root
+  1461→    state = replace(state, main_repo_root=main_repo_root)
+  1462→
+  1463→    result = run_execution_pipeline(ctx, state)
+  1464→    if isinstance(result, LandError):
+  1465→        user_output(click.style("Error: ", fg="red") + result.message)
+  1466→        raise SystemExit(1)
+  1467→
+  1468→
+  1469→@click.command("land", cls=CommandWithHiddenOptions)
+  1470→@script_option
+  1471→@click.argument("target", required=False)
+  1472→@click.option(
+  1473→    "-u",
+  1474→    "--up",
+  1475→    "up_flag",
+  1476→    is_flag=True,
+  1477→    help="Navigate to child branch instead of trunk after landing",
+  1478→)
+  1479→@click.option(
+  1480→    "-d",
+  1481→    "--down",
+  1482→    "down_flag",
+  1483→    is_flag=True,
+  1484→    help="Navigate to trunk after landing (produces source command)",
+  1485→)
+  1486→@click.option(
+  1487→    "-f",
+  1488→    "--force",
+  1489→    is_flag=True,
+
+... [110 lines omitted] ...
+
+  1595→    if isinstance(result, LandError):
+  1597→    # Type narrowing: Ensure.invariant exits on failure, so result is LandState here
+  1598→    assert not isinstance(result, LandError)
+  </tool_result>
+  <tool_use name="Read" id="toolu_01KwxGbziLrrNA8xUbD8SV1c">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">1599</param>
+    <param name="limit">80</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2322" cache_read_input_tokens="52080" output_tokens="114" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2322, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KwxGbziLrrNA8xUbD8SV1c">
+  1599→    assert result.pr_details is not None
+  1600→
+  1601→    land_target = LandTarget(
+  1602→        branch=result.branch,
+  1603→        pr_details=result.pr_details,
+  1604→        worktree_path=result.worktree_path,
+  1605→        is_current_branch=result.is_current_branch,
+  1606→        use_graphite=result.use_graphite,
+  1607→        target_child_branch=result.target_child_branch,
+  1608→    )
+  1609→
+  1610→    if up_flag or down_flag:
+  1611→        # Navigation mode: generate deferred execution script (requires source command)
+  1612→        _land_target(
+  1613→            ctx,
+  1614→            repo=repo,
+  1615→            target=land_target,
+  1616→            script=script,
+  1617→            force=force,
+  1618→            pull_flag=pull_flag,
+  1619→            no_delete=no_delete,
+  1620→            skip_learn=skip_learn,
+  1621→            cleanup_confirmed=result.cleanup_confirmed,
+  1622→            down_flag=down_flag,
+  1623→        )
+  1624→    else:
+  1625→        # Direct execution mode: merge + cleanup inline (no navigation, no source command)
+  1626→        _execute_land_directly(
+  1627→            ctx,
+  1628→            repo=repo,
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_019Vb8VqMcNAc7hkoDvvw2vq">
+    <param name="pattern">def _execute_land_directly</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="715" cache_read_input_tokens="54402" output_tokens="138" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 715, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019Vb8VqMcNAc7hkoDvvw2vq">
+858:def _execute_land_directly(
+859-    ctx: ErkContext,
+860-    *,
+861-    repo: RepoContext,
+862-    target: LandTarget,
+863-    script: bool,
+864-    pull_flag: bool,
+865-    no_delete: bool,
+866-    skip_learn: bool,
+867-    cleanup_confirmed: bool,
+868-) -&gt; None:
+869-    """Execute land directly without generating a deferred script.
+870-
+871-    This is the default path when neither --up nor --down is passed.
+872-    Merges the PR and cleans up the branch inline without navigation.
+873-
+874-    Args:
+875-        ctx: ErkContext
+876-        repo: Repository context
+877-        target: Resolved landing target
+878-        script: Whether running in script mode
+879-        pull_flag: Whether to pull after landing
+880-        no_delete: Preserve branch after landing
+881-        skip_learn: Skip creating a learn plan after landing
+882-        cleanup_confirmed: Whether user confirmed cleanup during validation
+883-    """
+884-    branch = target.branch
+885-    pr_number = target.pr_details.number
+886-
+887-    # Handle dry-run mode
+
+... [31 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_016Y28BYC1YvYgD85PnH7C3F">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="offset">918</param>
+    <param name="limit">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="899" cache_read_input_tokens="55117" output_tokens="113" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 899, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016Y28BYC1YvYgD85PnH7C3F">
+   918→    state = replace(state, main_repo_root=main_repo_root)
+   919→
+   920→    # Run execution pipeline (merge + cleanup)
+   921→    exit_after: SystemExit | None = None
+   922→    try:
+   923→        result = run_execution_pipeline(ctx, state)
+   924→        if isinstance(result, LandError):
+   925→            user_output(click.style("Error: ", fg="red") + result.message)
+   926→            raise SystemExit(1)
+   927→    except SystemExit as exc:
+   928→        if exc.code != 0:
+   929→            raise
+   930→        exit_after = exc
+   931→
+   932→    # Objective update (fail-open — merge already succeeded)
+   933→    if objective_number is not None:
+   934→        run_objective_update_after_land(
+   935→            ctx,
+   936→            objective=objective_number,
+   937→            pr=pr_number,
+   938→            branch=branch,
+   939→            plan=int(plan_id) if plan_id is not None else None,
+   940→            worktree_path=main_repo_root,
+   941→        )
+   942→
+   943→    # Determine navigation target — if worktree was removed, navigate to root repo
+   944→    nav_target = ctx.cwd
+   945→    if target.worktree_path is not None and target.is_current_branch:
+   946→        if not ctx.git.worktree.path_exists(target.worktree_path):
+   947→            nav_target = main_repo_root
+
+... [20 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="862" cache_read_input_tokens="56016" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 862}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_018yid3Td9Qw1ErcAzCbcL6R">
+    <param name="pattern">sync.*trunk|sync.*master|sync_local_branch|update_local_branch</param>
+    <param name="path">/Users/schrockn/code/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="-C">3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="862" cache_read_input_tokens="56016" output_tokens="1417" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 862, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018yid3Td9Qw1ErcAzCbcL6R">
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py-59-
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py-60-        user_output(f"Syncing {trunk} with origin/{trunk}...")
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py-61-        ctx.git.branch.update_local_ref(repo.root, trunk, remote_sha)
+src/erk/cli/commands/pr/dispatch_helpers.py:62:        user_output(click.style("✓", fg="green") + f" {trunk} synced with origin/{trunk}")
+src/erk/cli/commands/pr/dispatch_helpers.py-63-    elif merge_base == remote_sha:
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py-64-        # Local is ahead of remote - user has local commits
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py-65-        user_output(
+--
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py-1-"""Create a cmux workspace with PR checkout and sync.
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py-2-
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py-3-This script creates a cmux workspace that automatically checks out a PR,
+src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py:4:syncs it with the trunk, and renames the workspace to the PR's head branch.
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py-5-
+src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py-6-Usage:
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py-7-    erk exec cmux-checkout-workspace --pr 8152
+--
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py-98-    """Create a cmux workspace with PR checkout and sync.
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py-99-
+src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py-100-    Creates a new cmux workspace that:
+src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py:101:    1. Checks out the PR and syncs it with trunk
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py-102-    2. Submits changes via Graphite
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py-103-    3. Renames the workspace to the PR's head branch
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/cmux_checkout_workspace.py-104-
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01RxdoYTvoj269hAoUFew9ra">
+    <param name="pattern">def update_local_ref</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared</param>
+    <param name="output_mode">content</param>
+    <param name="-C">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2319" cache_read_input_tokens="56878" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2319, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01RxdoYTvoj269hAoUFew9ra">
+&lt;persisted-output&gt;
+Output too large (20KB). Full output saved to: /Users/schrockn/.claude/projects/-Users-schrockn-code-erk/c90c688c-d877-4f84-b5de-38db8f68d082/tool-results/toolu_01RxdoYTvoj269hAoUFew9ra.txt
+
+Preview (first 2KB):
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-39-
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-40-    def checkout_branch(self, cwd: Path, branch: str) -&gt; None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-41-        """Checkout branch with printed output."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-42-        self._emit(self._format_command(f"git checkout {branch}"))
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-43-        self._wrapped.checkout_branch(cwd, branch)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-44-
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-45-    def checkout_detached(self, cwd: Path, ref: str) -&gt; None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-46-        """Checkout detached HEAD (delegates without printing for now)."""
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-47-        # No printing for detached HEAD in land-stack
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-48-        self._wrapped.checkout_detached(cwd, ref)
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-49-
+packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-50-    def create_tracking_branch(self, repo_root: Path, branch: str, remote_ref: str) -&gt; None:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/printing.py-51-        """Create tracking branch (delegates without printing for now)."""
+...
+&lt;/persisted-output&gt;
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0191H9aEHVFFeX31ZY8gBVRk">
+    <param name="pattern">def update_local_ref</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/branch_ops/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-C">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="925" cache_read_input_tokens="59197" output_tokens="148" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 925, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0191H9aEHVFFeX31ZY8gBVRk">
+399-        if result.returncode != 0:
+400-            return []
+401-
+402-        authors = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+403-        return authors
+404-
+405-    def get_branch_last_commit_time(self, repo_root: Path, branch: str, trunk: str) -&gt; str | None:
+406-        """Get the author date of the most recent commit unique to a branch."""
+407-        result = subprocess.run(
+408-            ["git", "log", f"{trunk}..{branch}", "-1", "--format=%aI"],
+409-            cwd=repo_root,
+410-            capture_output=True,
+411-            text=True,
+412-            check=False,
+413-        )
+414-        if result.returncode != 0:
+415-            return None
+416-        timestamp = result.stdout.strip()
+417-        return timestamp if timestamp else None
+418-
+419:    def update_local_ref(self, repo_root: Path, branch: str, target_sha: str) -&gt; None:
+420-        """Update a local branch ref to point at a new commit without checkout."""
+421-        run_subprocess_with_context(
+422-            cmd=["git", "update-ref", f"refs/heads/{branch}", target_sha],
+423-            operation_context=f"update local ref '{branch}' to '{target_sha[:8]}'",
+424-            cwd=repo_root,
+425-        )
+426-
+427-    def get_branch_commits_with_authors(
+428-        self, repo_root: Path, branch: str, trunk: str, *, limit: int
+
+... [11 lines omitted] ...
+  </tool_result>
+  <assistant>**Found it.** This is the smoking gun.
+
+`update_local_ref` at line 419-425 uses `git update-ref refs/heads/master &lt;sha&gt;` — this updates the branch pointer **without** touching the index or working tree. 
+
+Now let me trace where this is called in a context that could affect the root worktree.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="678" cache_read_input_tokens="60122" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 678}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NW7eMe8v1JGMdov3u5Z8ek">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py</param>
+    <param name="offset">30</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="678" cache_read_input_tokens="60122" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 678}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NW7eMe8v1JGMdov3u5Z8ek">
+    30→    without needing trunk to be checked out. If trunk IS checked out in a
+    31→    worktree, falls back to requiring a clean worktree before updating.
+    32→
+    33→    Raises SystemExit(1) on sync failure with clear error message.
+    34→    """
+    35→    trunk = ctx.git.branch.detect_trunk_branch(repo.root)
+    36→
+    37→    # Fetch latest remote trunk
+    38→    ctx.git.remote.fetch_branch(repo.root, "origin", trunk)
+    39→
+    40→    local_sha = ctx.git.branch.get_branch_head(repo.root, trunk)
+    41→    remote_sha = ctx.git.branch.get_branch_head(repo.root, f"origin/{trunk}")
+    42→
+    43→    if remote_sha is None:
+    44→        user_output(
+    45→            click.style("Error: ", fg="red")
+    46→            + f"Could not find origin/{trunk}. Run `git fetch origin` first."
+    47→        )
+    48→        raise SystemExit(1)
+    49→
+    50→    if local_sha == remote_sha:
+    51→        return  # Already synced
+    52→
+    53→    # Check if we can fast-forward (local is ancestor of remote)
+    54→    merge_base = ctx.git.analysis.get_merge_base(repo.root, trunk, f"origin/{trunk}")
+    55→
+    56→    if merge_base == local_sha:
+    57→        # Local is behind remote - safe to fast-forward
+    58→        _check_trunk_worktree_clean(ctx, repo, trunk=trunk)
+    59→
+
+... [23 lines omitted] ...
+
+    66→            click.style("Error: ", fg="red")
+    75→            click.style("Error: ", fg="red")
+    79→            f"Warning: This will discard any local commits on {trunk}."
+  </tool_result>
+  <tool_use name="Grep" id="toolu_019R6MzEbMqYWb7baa5vm1bB">
+    <param name="pattern">update_local_ref</param>
+    <param name="path">/Users/schrockn/code/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="-C">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="678" cache_read_input_tokens="60122" output_tokens="301" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 678, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_019R6MzEbMqYWb7baa5vm1bB">
+/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py-383-            # Update to match origin so gt track sees consistent history.
+/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py-384-            ctx.git.remote.fetch_branch(repo_root, "origin", parent_branch)
+/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py-385-            remote_sha = ctx.git.branch.get_branch_head(repo_root, f"origin/{parent_branch}")
+/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py-386-            local_sha = ctx.git.branch.get_branch_head(repo_root, parent_branch)
+src/erk/cli/commands/branch/checkout_cmd.py-387-            if remote_sha is not None and remote_sha != local_sha:
+src/erk/cli/commands/branch/checkout_cmd.py:388:                ctx.git.branch.update_local_ref(repo_root, parent_branch, remote_sha)
+/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py-389-
+/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py-390-        user_output("Rebasing onto base branch...")
+/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py-391-        rebase_result = ctx.git.rebase.rebase_onto(worktree_path, f"origin/{parent_branch}")
+/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py-392-
+src/erk/cli/commands/branch/checkout_cmd.py-393-        if not rebase_result.success:
+--
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py-24-
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py-25-
+src/erk/cli/commands/pr/dispatch_helpers.py-26-def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -&gt; None:
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py-27-    """Ensure local trunk ref is synced with remote, without requiring checkout.
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py-28-
+src/erk/cli/commands/pr/dispatch_helpers.py:29:    Uses fetch + update_local_ref to advance the local trunk branch pointer
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py-30-    without needing trunk to be checked out. If trunk IS checked out in a
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py-31-    worktree, falls back to requiring a clean worktree before updating.
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py-32-
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py-33-    Raises SystemExit(1) on sync failure with clear error message.
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py-34-    """
+--
+src/erk/cli/commands/pr/dispatch_helpers.py-56-    if merge_base == local_sha:
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py-57-        # Local is behind remote - safe to fast-forward
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py-58-        _check_trunk_worktree_clean(ctx, repo, trunk=trunk)
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py-59-
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py-60-        user_output(f"Syncing {trunk} with origin/{trunk}...")
+src/erk/cli/commands/pr/dispatch_helpers.py:61:        ctx.git.branch.update_local_ref(repo.root, trunk, remote_sha)
+
+... [29 lines omitted] ...
+
+src/erk/cli/commands/pr/dispatch_helpers.py-66-            click.style("Error: ", fg="red")
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4732" cache_read_input_tokens="60800" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4732}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01TBebcauYzYyo7JaJEwHFs8">
+    <param name="pattern">def _check_trunk_worktree_clean</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_helpers.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4732" cache_read_input_tokens="60800" output_tokens="482" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4732, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TBebcauYzYyo7JaJEwHFs8">
+10:def _check_trunk_worktree_clean(ctx: ErkContext, repo: RepoContext, *, trunk: str) -&gt; None:
+11-    """Raise SystemExit(1) if trunk is checked out in a dirty worktree."""
+12-    trunk_worktree = ctx.git.worktree.find_worktree_for_branch(repo.root, trunk)
+13-    if trunk_worktree is None:
+14-        return
+15-    if not ctx.git.status.has_uncommitted_changes(trunk_worktree):
+16-        return
+17-    user_output(
+18-        click.style("Error: ", fg="red")
+19-        + f"Worktree at {trunk_worktree} has {trunk} checked out with "
+20-        f"uncommitted changes.\n\n"
+21-        f"Please commit or stash changes before running erk pr dispatch."
+22-    )
+23-    raise SystemExit(1)
+24-
+25-
+26-def ensure_trunk_synced(ctx: ErkContext, repo: RepoContext) -&gt; None:
+27-    """Ensure local trunk ref is synced with remote, without requiring checkout.
+28-
+29-    Uses fetch + update_local_ref to advance the local trunk branch pointer
+30-    without needing trunk to be checked out. If trunk IS checked out in a
+31-    worktree, falls back to requiring a clean worktree before updating.
+32-
+33-    Raises SystemExit(1) on sync failure with clear error message.
+34-    """
+35-    trunk = ctx.git.branch.detect_trunk_branch(repo.root)
+36-
+37-    # Fetch latest remote trunk
+38-    ctx.git.remote.fetch_branch(repo.root, "origin", trunk)
+39-
+
+... [11 lines omitted] ...
+
+45-            click.style("Error: ", fg="red")
+  </tool_result>
+  <assistant>**Found the root cause.** Here's what's happening:
+
+`ensure_trunk_synced` in `dispatch_helpers.py:26` uses `git update-ref refs/heads/master &lt;sha&gt;` (line 61) to advance the master branch pointer. This updates the branch ref **without updating the index or working tree**. 
+
+When master is checked out in the root worktree and this function runs (e.g., during `erk pr dispatch`), it advances HEAD to the new commit but leaves the index and working tree at the old state. This creates the exact symptom: `git status` shows staged changes that are the reverse of what was just committed.
+
+The `_check_trunk_worktree_clean` guard (line 10-23) only checks for uncommitted changes — but a clean worktree on an old master is "clean", so it passes the check. Then `update_local_ref` corrupts the index.
+
+Now let me also check if this same pattern exists in `checkout_cmd.py` (line 388) and `dispatch_cmd.py` (line 230).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1082" cache_read_input_tokens="65532" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1082}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01STZ1NCyH73r94FDTqqB5zd">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_cmd.py</param>
+    <param name="offset">220</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1082" cache_read_input_tokens="65532" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1082}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01STZ1NCyH73r94FDTqqB5zd">
+   220→
+   221→    # Sync local branch ref to remote (no checkout required)
+   222→    user_output(f"Syncing branch: {click.style(branch_name, fg='cyan')}")
+   223→    ctx.git.remote.fetch_branch(repo.root, "origin", branch_name)
+   224→    checked_out_path = ctx.git.worktree.is_branch_checked_out(repo.root, branch_name)
+   225→    if checked_out_path is None:
+   226→        ctx.git.branch.create_branch(repo.root, branch_name, f"origin/{branch_name}", force=True)
+   227→    else:
+   228→        remote_sha = ctx.git.branch.get_branch_head(repo.root, f"origin/{branch_name}")
+   229→        if remote_sha is not None:
+   230→            ctx.git.branch.update_local_ref(repo.root, branch_name, remote_sha)
+   231→
+   232→    # Commit impl-context files directly to branch (no checkout required)
+   233→    user_output("Committing plan to branch...")
+   234→    files = build_impl_context_files(
+  </tool_result>
+  <tool_use name="Read" id="toolu_01FS8SE2NruqAwTAdGdwdM18">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/branch/checkout_cmd.py</param>
+    <param name="offset">378</param>
+    <param name="limit">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1082" cache_read_input_tokens="65532" output_tokens="460" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1082, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FS8SE2NruqAwTAdGdwdM18">
+   378→            ctx.branch_manager.create_tracking_branch(
+   379→                repo_root, parent_branch, f"origin/{parent_branch}"
+   380→            )
+   381→        else:
+   382→            # Parent exists locally but may be stale after squash/rebase.
+   383→            # Update to match origin so gt track sees consistent history.
+   384→            ctx.git.remote.fetch_branch(repo_root, "origin", parent_branch)
+   385→            remote_sha = ctx.git.branch.get_branch_head(repo_root, f"origin/{parent_branch}")
+   386→            local_sha = ctx.git.branch.get_branch_head(repo_root, parent_branch)
+   387→            if remote_sha is not None and remote_sha != local_sha:
+   388→                ctx.git.branch.update_local_ref(repo_root, parent_branch, remote_sha)
+   389→
+   390→        user_output("Rebasing onto base branch...")
+   391→        rebase_result = ctx.git.rebase.rebase_onto(worktree_path, f"origin/{parent_branch}")
+   392→
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="66614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1212}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me trace the full execution pipeline to see if there's an `ensure_trunk_synced` or `update_local_ref` call during the land flow.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="66614" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1212}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01R6qvDc6qEZurSXsm9ieL5q">
+    <param name="pattern">def run_execution_pipeline</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/land_pipeline.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1212" cache_read_input_tokens="66614" output_tokens="1633" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1212, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01R6qvDc6qEZurSXsm9ieL5q">
+501:def run_execution_pipeline(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+502-    """Run the execution pipeline, returning final state or first error."""
+503-    for step in _execution_pipeline():
+504-        result = step(ctx, state)
+505-        if isinstance(result, LandError):
+506-            return result
+507-        state = result
+508-    return state
+509-
+510-
+511-# ---------------------------------------------------------------------------
+512-# State Factories
+513-# ---------------------------------------------------------------------------
+514-
+515-
+516-def make_initial_state(
+517-    *,
+518-    cwd: Path,
+519-    force: bool,
+520-    script: bool,
+521-    pull_flag: bool,
+522-    no_delete: bool,
+523-    up_flag: bool,
+524-    dry_run: bool,
+525-    skip_learn: bool,
+526-    target_arg: str | None,
+527-    repo_root: Path,
+528-    main_repo_root: Path,
+529-) -&gt; LandState:
+530-    """Create initial LandState with CLI-provided values and pre-discovered repo paths.
+
+... [11 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01TgWkkQxZTj2cqmZnueBR8G">
+    <param name="pattern">def _execution_pipeline</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/land_pipeline.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">15</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2139" cache_read_input_tokens="67826" output_tokens="136" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2139, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TgWkkQxZTj2cqmZnueBR8G">
+478:def _execution_pipeline() -&gt; tuple[LandStep, ...]:
+479-    return (
+480-        merge_pr,
+481-        create_learn_pr,
+482-        cleanup_and_navigate,
+483-    )
+484-
+485-
+486-# ---------------------------------------------------------------------------
+487-# Pipeline Runners
+488-# ---------------------------------------------------------------------------
+489-
+490-
+491-def run_validation_pipeline(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+492-    """Run the validation pipeline, returning final state or first error."""
+493-    for step in _validation_pipeline():
+  </tool_result>
+  <tool_use name="Grep" id="toolu_011aQUNJ47Cx9AQd9rFyMNL8">
+    <param name="pattern">def cleanup_and_navigate</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/land_pipeline.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="295" cache_read_input_tokens="69965" output_tokens="137" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 295, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011aQUNJ47Cx9AQd9rFyMNL8">
+439:def cleanup_and_navigate(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+440-    """Dispatch cleanup by type, navigate. Terminal step (may SystemExit)."""
+441-    from erk.cli.commands.land_cmd import _cleanup_and_navigate
+442-
+443-    repo = discover_repo_context(ctx, state.cwd)
+444-    _cleanup_and_navigate(
+445-        ctx,
+446-        repo=repo,
+447-        branch=state.branch,
+448-        worktree_path=state.worktree_path,
+449-        script=state.script,
+450-        pull_flag=state.pull_flag,
+451-        force=True,
+452-        is_current_branch=state.is_current_branch,
+453-        target_child_branch=state.target_child_branch,
+454-        no_delete=state.no_delete,
+455-        skip_activation_output=True,
+456-        cleanup_confirmed=state.cleanup_confirmed,
+457-    )
+458-    return state
+459-
+460-
+461-# ---------------------------------------------------------------------------
+462-# Pipeline Definitions
+463-# ---------------------------------------------------------------------------
+464-
+465-
+466-@cache
+467-def _validation_pipeline() -&gt; tuple[LandStep, ...]:
+468-    return (
+
+... [1 lines omitted] ...
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="485" cache_read_input_tokens="70260" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 485}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01ArT3qdyARecwzMq7rdRpgV">
+    <param name="pattern">ensure_trunk_synced|update_local_ref</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/land_pipeline.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="485" cache_read_input_tokens="70260" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 485}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ArT3qdyARecwzMq7rdRpgV">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01H9zRetUk5GUKaAgMzPoih4">
+    <param name="pattern">ensure_trunk_synced|update_local_ref</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/land_cmd.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="485" cache_read_input_tokens="70260" output_tokens="869" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 485, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01H9zRetUk5GUKaAgMzPoih4">
+No matches found
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="932" cache_read_input_tokens="70745" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 932}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01KeRVB2CWG7WVWyQdq6h9ZV">
+    <param name="pattern">def copied_env_for_git_subprocess</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared</param>
+    <param name="output_mode">content</param>
+    <param name="-A">20</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="932" cache_read_input_tokens="70745" output_tokens="2307" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 932, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KeRVB2CWG7WVWyQdq6h9ZV">
+packages/erk-shared/src/erk_shared/subprocess_utils.py:27:def copied_env_for_git_subprocess() -&gt; dict[str, str]:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py-28-    """Return a copy of the environment for git subprocess calls.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py-29-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py-30-    Sets GIT_TERMINAL_PROMPT=0 so git commands fail fast with an error
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py-31-    instead of hanging while waiting for credentials or other interactive input.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py-32-    """
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py-33-    env = os.environ.copy()
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py-34-    env["GIT_TERMINAL_PROMPT"] = "0"
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py-35-    return env
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py-36-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py-37-
+packages/erk-shared/src/erk_shared/subprocess_utils.py-38-def build_claude_subprocess_env() -&gt; dict[str, str]:
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py-39-    """Build environment for Claude subprocess with nested session guard removed.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py-40-
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py-41-    Claude Code sets CLAUDECODE=1 to detect nested sessions and block them.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py-42-    Our subprocess calls use --print (non-interactive, single-shot) with
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py-43-    --no-session-persistence, so they don't share runtime resources with
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py-44-    the parent session. Stripping CLAUDECODE allows these safe subprocess
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py-45-    calls to work when erk commands are invoked from within a Claude session.
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py-46-    """
+/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/subprocess_utils.py-47-    env = os.environ.copy()
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="3339" cache_read_input_tokens="71677" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3339}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01S7a5m293DZ9TgY1JQu9LyZ">
+    <param name="pattern">def create_learn_pr|def merge_pr</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/land_pipeline.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3339" cache_read_input_tokens="71677" output_tokens="1103" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3339, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01S7a5m293DZ9TgY1JQu9LyZ">
+384:def merge_pr(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+385-    """Merge the PR via Graphite or GitHub API.
+386-
+387-    Populates: merged_pr_number.
+388-    """
+389-    if state.use_graphite and state.worktree_path is not None:
+390-        result = render_events(execute_land_pr(ctx, state.worktree_path))
+391-        if isinstance(result, LandPrError):
+392-            return LandError(
+393-                phase="merge_pr",
+394-                error_type="graphite_merge_failed",
+395-                message=result.message,
+396-                details={"branch": state.branch},
+397-            )
+398-        merged_pr_number = result.pr_number
+399-    else:
+400-        pr_details = EnsureIdeal.unwrap_pr(
+401-            ctx.github.get_pr(state.main_repo_root, state.pr_number),
+402-            f"Pull request #{state.pr_number} not found.",
+403-        )
+404-        user_output(f"Merging PR #{state.pr_number}...")
+405-        subject = f"{pr_details.title} (#{state.pr_number})" if pr_details.title else None
+406-        body = pr_details.body or None
+407-        merge_result = ctx.github.merge_pr(
+408-            state.main_repo_root,
+409-            state.pr_number,
+410-            squash=True,
+411-            verbose=False,
+412-            subject=subject,
+413-            body=body,
+
+... [33 lines omitted] ...
+
+428:def create_learn_pr(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+439-def cleanup_and_navigate(ctx: ErkContext, state: LandState) -&gt; LandState | LandError:
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01GdM8QfFScGKKrKMMLpn9EP">
+    <param name="pattern">def _create_learn_pr_with_sessions</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/land_pipeline.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">50</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1936" cache_read_input_tokens="75016" output_tokens="142" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1936, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01GdM8QfFScGKKrKMMLpn9EP">
+No matches found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01XgJScqHq1CG77ukfJBn5qt">
+    <param name="pattern">def _create_learn_pr_with_sessions</param>
+    <param name="path">/Users/schrockn/code/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="-A">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="157" cache_read_input_tokens="76952" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 157, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01XgJScqHq1CG77ukfJBn5qt">
+src/erk/cli/commands/land_learn.py:171:def _create_learn_pr_with_sessions(
+src/erk/cli/commands/land_learn.py-172-    ctx: ErkContext,
+/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py-173-    *,
+src/erk/cli/commands/land_learn.py-174-    state: LandState,
+src/erk/cli/commands/land_learn.py-175-) -&gt; None:
+/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py-176-    """Create a learn plan as a draft PR with session info for the landed plan.
+/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py-177-
+/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py-178-    This is a fire-and-forget operation that never blocks landing.
+/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py-179-    Creates a draft PR with erk-learn label so the replan flow can pick it up.
+/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py-180-
+src/erk/cli/commands/land_learn.py-181-    Args:
+src/erk/cli/commands/land_learn.py-182-        ctx: ErkContext
+src/erk/cli/commands/land_learn.py-183-        state: LandState with plan_id and merged_pr_number populated
+/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py-184-    """
+src/erk/cli/commands/land_learn.py-185-    if state.plan_id is None or state.merged_pr_number is None:
+/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py-186-        return
+/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py-187-
+src/erk/cli/commands/land_learn.py-188-    try:
+/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py-189-        _create_learn_pr_impl(ctx, state=state)
+src/erk/cli/commands/land_learn.py-190-    except Exception as exc:
+src/erk/cli/commands/land_learn.py-191-        user_output(click.style("Warning: ", fg="yellow") + f"Could not create learn plan: {exc}")
+/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py-192-
+/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py-193-
+/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py-194-def _session_type_prefix(
+src/erk/cli/commands/land_learn.py-195-    sid: str,
+/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py-196-    *,
+src/erk/cli/commands/land_learn.py-197-    planning_ids: set[str],
+src/erk/cli/commands/land_learn.py-198-    impl_ids: set[str],
+src/erk/cli/commands/land_learn.py-199-    learn_ids: set[str],
+src/erk/cli/commands/land_learn.py-200-) -&gt; str:
+
+... [11 lines omitted] ...
+  </tool_result>
+  <tool_use name="Grep" id="toolu_0113qpRSXcaP7FeLmdA5v2gR">
+    <param name="pattern">update_local_ref|ensure_trunk_synced</param>
+    <param name="path">/Users/schrockn/code/erk/src/erk/cli/commands/land_learn.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1575" cache_read_input_tokens="77109" output_tokens="125" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1575, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0113qpRSXcaP7FeLmdA5v2gR">
+No matches found
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="140" cache_read_input_tokens="78684" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 140}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Now I have the full picture. Let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="140" cache_read_input_tokens="78684" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 140}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01QqPzzqtWf159hEG5wTpe7f">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="140" cache_read_input_tokens="78684" output_tokens="1336" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 140, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01QqPzzqtWf159hEG5wTpe7f">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="1716" cache_read_input_tokens="78824" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1716}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Write" id="toolu_01ASYm3G4NMLiBiCsWS6JMju">
+    <param name="file_path">/Users/schrockn/.claude/plans/woolly-waddling-pearl.md</param>
+    <param name="content"># Fix: `update_local_ref` corrupts index when branch is checked out
+
+## Context
+
+After `er...[truncated 3819 chars]... slot worktree, then run `erk pr dispatch` — verify root worktree's `git status` is clean
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1716" cache_read_input_tokens="78824" output_tokens="1295" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1716, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ASYm3G4NMLiBiCsWS6JMju">
+File created successfully at: /Users/schrockn/.claude/plans/woolly-waddling-pearl.md
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01FBowM3pbStL4NP8ohqDTgF">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1336" cache_read_input_tokens="80540" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1336, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01FBowM3pbStL4NP8ohqDTgF">
+
+  </tool_result>
+  <assistant>
+
+Here's my analysis:
+
+**Root cause:** `ensure_trunk_synced()` in `dispatch_helpers.py` uses `git update-ref` to advance master's branch pointer, which does NOT update the index or working tree. When master is checked out in the root worktree, this desynchronizes HEAD from the index, creating the "reverse staged changes" you're seeing.
+
+**The sequence:**
+1. `/erk:land` runs from root worktree, but the PR's branch is in a slot worktree → `is_current_branch=False` → no pull happens on root worktree
+2. Later, `erk pr dispatch` calls `ensure_trunk_synced()` → detects master is behind → `update_local_ref` advances the ref only
+3. Root worktree now has HEAD at new commit but index/working tree at old commit = dirty index
+
+**The fix:** When trunk IS checked out in a worktree, use `git pull --ff-only` instead of `update_local_ref`, so the index and working tree are updated together with the ref.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="81876" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1333}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01TM87faMcLoB7ocep3jUjUA">
+    <param name="questions">[{'question': "Does this match what you're seeing? The dirty index appears specifically af...[truncated 375 chars]... immediately after erk land completes, before any dispatch runs'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="81876" output_tokens="437" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TM87faMcLoB7ocep3jUjUA">
+User has answered your questions: "Does this match what you're seeing? The dirty index appears specifically after running `erk pr dispatch` (which calls ensure_trunk_synced), not immediately after `erk land` itself?"="Yes, that tracks". You can now continue with the user's answers in mind.
+  </tool_result>
+  <assistant>Good, that confirms the diagnosis. The fix in the plan is straightforward — when trunk is checked out, use `pull_branch` instead of `update_local_ref`.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="517" cache_read_input_tokens="83209" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 517}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01WBV7Phy1c3scNmbbAmeima">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="517" cache_read_input_tokens="83209" output_tokens="116" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 517, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01WBV7Phy1c3scNmbbAmeima">
+
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_0154eaa4ThAsUicubZGqySbb">
+    <param name="plan"># Fix: `update_local_ref` corrupts index when branch is checked out
+
+## Context
+
+After `er...[truncated 3819 chars]... slot worktree, then run `erk pr dispatch` — verify root worktree's `git status` is clean
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="872" cache_read_input_tokens="83726" output_tokens="39" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 872, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0154eaa4ThAsUicubZGqySbb">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/woolly-waddling-pearl.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Fix: `update_local_ref` corrupts index when branch is checked out
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id c90c688c-d877-4f84-b5de-38db8f68d082 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <assistant>Here's the plan:
+
+---
+
+# Fix: `update_local_ref` corrupts index when branch is checked out
+
+## Context
+
+After `erk land` (run via `/erk:land` automation), the root worktree ends up with staged changes that would **reverse** the just-landed commit. For example, after landing PR #8825 (which adds `module-to-subpackage/SKILL.md`), `git status` shows that file as deleted.
+
+**Root cause chain:**
+
+1. `/erk:land` runs `erk land &lt;PR_NUMBER&gt; --force` from the root worktree
+2. The PR's branch lives in a slot worktree, so `is_current_branch=False`
+3. Since `is_current_branch=False`, `_navigate_or_exit` skips the pull — local master ref stays at the old commit, but the index is clean (matches old master)
+4. Later, `erk pr dispatch` calls `ensure_trunk_synced()` which detects local master is behind origin/master
+5. `ensure_trunk_synced` calls `update_local_ref()` which runs `git update-ref refs/heads/master &lt;new_sha&gt;` — this advances the branch pointer **without updating the index or working tree**
+6. Now HEAD points to the new commit but index/working tree reflect the old commit → dirty index with reverse changes
+
+**The bug is in `ensure_trunk_synced`** (`dispatch_helpers.py:61`). It uses `update_local_ref` even when trunk is checked out in a worktree. The `_check_trunk_worktree_clean` guard only verifies no uncommitted changes exist — it doesn't prevent the ref-only update from desynchronizing HEAD from the index.
+
+## Fix
+
+**File:** `src/erk/cli/commands/pr/dispatch_helpers.py`
+
+Change `ensure_trunk_synced` so that when trunk IS checked out in a worktree, it uses `git pull --ff-only` (which properly updates HEAD + index + working tree) instead of `update_local_ref` (which only updates the ref).
+
+Key change: `find_worktree_for_branch` is already used in `_check_trunk_worktree_clean` — we reuse that pattern to branch the logic. When checked out, use `pull_branch` with `cwd=trunk_worktree` (not `repo.root`, since they may differ). When not checked out, keep the existing `update_local_ref` path.
+
+**Test:** `tests/unit/cli/commands/pr/test_dispatch_helpers.py` (or wherever `ensure_trunk_synced` is tested)
+
+Add a test case: trunk checked out in root worktree, local behind remote → verify index is updated (not just the ref). The existing `_check_trunk_worktree_clean` test infrastructure should provide patterns.
+
+## Verification
+
+1. Run existing tests for dispatch_helpers
+2. Manual test: land a PR from a slot worktree, then run `erk pr dispatch` — verify root worktree's `git status` is clean
+
+---</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="798" cache_read_input_tokens="84598" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 798}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_014hHwmiTsaQJkuX2MXjvMeZ">
+    <param name="questions">[{'question': '📋 Fix: `update_local_ref` corrupts index when branch is checked out\nCurren...[truncated 480 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="798" cache_read_input_tokens="84598" output_tokens="945" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 798, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_014hHwmiTsaQJkuX2MXjvMeZ">
+User has answered your questions: "📋 Fix: `update_local_ref` corrupts index when branch is checked out
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_0148aQrvpQTnj5RLAMFYv9uM">
+    <param name="query">select:Skill,Bash</param>
+    <param name="max_results">2</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1051" cache_read_input_tokens="85396" output_tokens="78" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1051, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_0148aQrvpQTnj5RLAMFYv9uM">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_0188hGkGSAfLKBaFFFjKGEhE">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3693" cache_read_input_tokens="86447" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3693, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0188hGkGSAfLKBaFFFjKGEhE">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="c90c688c-d877-4f84-b5de-38db8f68d082" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="c90c688c-d877-4f84-b5de-38db8f68d082" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "c90c688c-d877-4f84-b5de-38db8f68d082" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "c90c688c-d877-4f84-b5de-38db8f68d082" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "c90c688c-d877-4f84-b5de-38db8f68d082" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "c90c688c-d877-4f84-b5de-38db8f68d082" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <assistant>
+
+Saving the plan to GitHub as a draft PR.
+
+**Branch slug:** `fix-update-local-ref-index`
+
+**Summary:** Fixes ensure_trunk_synced in dispatch_helpers.py to use git pull --ff-only instead of update_local_ref when trunk is checked out in a worktree. The bare ref update was advancing HEAD without updating the index or working tree, leaving the root worktree with staged changes that reverse the latest commit.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="3485" cache_read_input_tokens="90140" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3485}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015YaETa8dm5eTC8avYRzQuQ">
+    <param name="command">erk exec plan-save --format json --session-id="c90c688c-d877-4f84-b5de-38db8f68d082" --bra...[truncated 244 chars]...rking tree, leaving the root worktree with staged changes that reverse the latest commit."</param>
+    <param name="description">Save plan as draft PR on GitHub</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3485" cache_read_input_tokens="90140" output_tokens="322" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3485, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_015YaETa8dm5eTC8avYRzQuQ">
+{"success": true, "plan_number": 8856, "plan_url": "https://github.com/dagster-io/erk/pull/8856", "title": "[erk-plan] Fix: `update_local_ref` corrupts index when branch is checked out", "branch_name": "plnd/fix-update-local-ref-index-03-06-1335", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/c90c688c-d877-4f84-b5de-38db8f68d082/plan_snapshots/000001-1e18bf4e"}
+  </tool_result>
+  <assistant>Plan saved. Pushing the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="3329" cache_read_input_tokens="93625" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3329}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016PYzmJz2PSEMsw3zJGXzvG">
+    <param name="command">erk exec upload-impl-session --session-id "c90c688c-d877-4f84-b5de-38db8f68d082" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3329" cache_read_input_tokens="93625" output_tokens="131" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3329, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016PYzmJz2PSEMsw3zJGXzvG">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan "Fix: `update_local_ref` corrupts index when branch is checked out" saved as draft PR #8856
+URL: https://github.com/dagster-io/erk/pull/8856</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="96954" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 158}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01TzYZEuNdTPwAXQ8jKCxRMd">
+    <param name="plan"># Fix: `update_local_ref` corrupts index when branch is checked out
+
+## Context
+
+After `er...[truncated 3819 chars]... slot worktree, then run `erk pr dispatch` — verify root worktree's `git status` is clean
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="158" cache_read_input_tokens="96954" output_tokens="87" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 158, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01TzYZEuNdTPwAXQ8jKCxRMd">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8856 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8856:
+  In current wt:    source "$(erk br co --for-plan 8856 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8856 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8856 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8856 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8856:
+  In current wt:  erk br co --for-plan 8856
+  In new wt:      erk br co --new-slot --for-plan 8856
+
+Dispatch plan #8856:
+  CLI command:    erk pr dispatch 8856
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan saved. Here are next steps for plan #8856:
+
+Implement plan #8856:
+  In current wt:    source "$(erk br co --for-plan 8856 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8856 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8856 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8856 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8856:
+  In current wt:  erk br co --for-plan 8856
+  In new wt:      erk br co --new-slot --for-plan 8856
+
+Dispatch plan #8856:
+  CLI command:    erk pr dispatch 8856
+  Slash command:  /erk:pr-dispatch</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="676" cache_read_input_tokens="97112" output_tokens="241" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 676, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/fast&lt;/command-name&gt;
+            &lt;command-message&gt;fast&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;[38;2;255;120;20m↯[39m Fast mode ON · $30/$150 per Mtok&lt;/local-command-stdout&gt;</user>
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
