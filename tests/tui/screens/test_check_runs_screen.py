@@ -189,9 +189,7 @@ async def test_summaries_update_markdown_in_place() -> None:
     service.set_ci_summaries(42, {"lint": "- Unused import in foo.py"})
 
     filters = PlanFilters.default()
-    app = ErkDashApp(
-        provider=provider, service=service, filters=filters, refresh_interval=0
-    )
+    app = ErkDashApp(provider=provider, service=service, filters=filters, refresh_interval=0)
 
     async with app.run_test() as pilot:
         await pilot.pause()
