@@ -1,6 +1,6 @@
 """Unit tests for list_cmd helper functions."""
 
-from datetime import UTC, datetime
+from datetime import datetime
 
 from erk.cli.commands.objective.list_cmd import (
     _compute_enriched_fields,
@@ -12,9 +12,10 @@ from erk_shared.gateway.github.metadata.dependency_graph import (
     ObjectiveNode,
 )
 from erk_shared.gateway.github.metadata.roadmap import RoadmapNode, RoadmapPhase
+from erk_shared.gateway.time.fake import DEFAULT_FAKE_TIME
 from erk_shared.plan_store.types import Plan, PlanState
 
-NOW = datetime.now(UTC)
+NOW = DEFAULT_FAKE_TIME
 
 
 def _make_plan(
