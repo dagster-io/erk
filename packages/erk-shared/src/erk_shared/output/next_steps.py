@@ -28,7 +28,7 @@ class PlanNextSteps:
 
     @property
     def dispatch_slash_command(self) -> str:
-        return f"/erk:pr-dispatch {self.plan_number}"
+        return DISPATCH_SLASH_COMMAND
 
     @property
     def implement_current_wt(self) -> str:

@@ -1007,7 +1007,7 @@ class TestBuildStep2Message:
         """Step 2 shows dispatch commands (CLI and slash command)."""
         message = build_step2_message(plan_number=42, url="")
         assert "erk pr dispatch 42" in message
-        assert "/erk:pr-dispatch 42" in message
+        assert "/erk:pr-dispatch" in message
         assert "Dispatch plan #42:" in message
 
     def test_session_complete_no_exit_plan_mode(self) -> None:
