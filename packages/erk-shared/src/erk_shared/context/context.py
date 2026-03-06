@@ -23,6 +23,7 @@ from erk_shared.context.types import (
 
 if TYPE_CHECKING:
     from erk.artifacts.paths import ErkPackageInfo
+    from erk.core.health_checks.runner import HealthCheckRunner
     from erk_shared.core.objective_list_service import ObjectiveListService
 
 from erk_shared.core.llm_caller import LlmCaller
@@ -115,6 +116,9 @@ class ErkContext:
 
     # Package info (only needed by artifact commands; None for most commands)
     package_info: ErkPackageInfo | None = None
+
+    # Health check runner (only needed by doctor command; None for most commands)
+    health_check_runner: HealthCheckRunner | None = None
 
     # HTTP client for GitHub REST/GraphQL API
     http_client: HttpClient | None = None

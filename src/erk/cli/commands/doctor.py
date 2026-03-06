@@ -86,16 +86,24 @@ def _format_subgroup(name: str, checks: list[CheckResult], verbose: bool, indent
     passed = sum(1 for c in checks if c.passed)
     total = len(checks)
     all_passed = passed == total
+    has_warnings = any(c.warning for c in checks)
 
     if verbose:
         # Always show all individual checks with sub-group header
         click.echo(click.style(f"{indent}  {name}", dim=True))
         for result in checks:
             _format_check_result(result, indent=f"{indent}  ", verbose=True)
-    elif all_passed:
+    elif all_passed and not has_warnings:
         # Condensed: single line with count
         icon = click.style("✅", fg="green")
         click.echo(f"{indent}{icon} {name} ({total} checks)")
+    elif all_passed and has_warnings:
+        # Passed with warnings: expand warning checks
+        icon = click.style("⚠️", fg="yellow")
+        click.echo(f"{indent}{icon} {name} ({total} checks)")
+        for result in checks:
+            if result.warning:
+                _format_check_result(result, indent=f"{indent}   ", verbose=False)
     else:
         # Failed: show summary line + expand failures
         icon = click.style("❌", fg="red")
@@ -159,7 +167,10 @@ def doctor_cmd(
     click.echo("")
 
     # Run all checks
-    results = run_all_checks(erk_ctx, check_hooks=check_hooks)
+    if erk_ctx.health_check_runner is not None:
+        results = erk_ctx.health_check_runner.run_all(erk_ctx, check_hooks=check_hooks)
+    else:
+        results = run_all_checks(erk_ctx, check_hooks=check_hooks)
 
     # Group results by category
     prerequisite_names = {"erk", "claude", "graphite", "github", "uv"}
@@ -255,7 +266,11 @@ def doctor_cmd(
     total = len(checks_for_summary)
     failed = total - passed
 
-    if failed == 0:
+    has_warnings = any(r.warning for r in checks_for_summary)
+
+    if failed == 0 and not has_warnings:
         click.echo(click.style("✨ All checks passed!", fg="green", bold=True))
+    elif failed == 0 and has_warnings:
+        click.echo(click.style("⚠️  Checks passed with warnings", fg="yellow", bold=True))
     else:
         click.echo(click.style(f"⚠️  {failed} check(s) failed", fg="yellow", bold=True))

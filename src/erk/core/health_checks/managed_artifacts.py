@@ -1,5 +1,6 @@
 """Check status of erk-managed artifacts."""
 
+import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -68,6 +69,33 @@ def _status_description(status: ArtifactStatusType, count: int) -> str:
     return ""
 
 
+def _load_artifact_allowlist(repo_root: Path) -> frozenset[str]:
+    """Load artifact allowlist from config files.
+
+    Reads `[artifacts].allow_modified` from both `.erk/config.toml`
+    and `.erk/config.local.toml`, returning the union.
+
+    Args:
+        repo_root: Path to the repository root
+
+    Returns:
+        Frozenset of artifact keys that are allowed to be locally modified
+    """
+    allowed: set[str] = set()
+    for filename in ("config.toml", "config.local.toml"):
+        cfg_path = repo_root / ".erk" / filename
+        if not cfg_path.exists():
+            continue
+        data = tomllib.loads(cfg_path.read_text(encoding="utf-8"))
+        artifacts_section = data.get("artifacts")
+        if not isinstance(artifacts_section, dict):
+            continue
+        allow_modified = artifacts_section.get("allow_modified")
+        if isinstance(allow_modified, list):
+            allowed.update(str(item) for item in allow_modified)
+    return frozenset(allowed)
+
+
 def _build_erk_repo_artifacts_result(result: ArtifactHealthResult) -> CheckResult:
     """Build CheckResult for erk repo case (all artifacts from source)."""
     # Group artifacts by type, storing names
@@ -109,18 +137,31 @@ class _ArtifactInfo:
 
     name: str
     status: ArtifactStatusType
+    allowed_by_config: bool
 
 
-def _build_managed_artifacts_result(result: ArtifactHealthResult) -> CheckResult:
-    """Build CheckResult from ArtifactHealthResult."""
-    # Group artifacts by type, storing name and status
+def _build_managed_artifacts_result(
+    result: ArtifactHealthResult, *, allow_modified: frozenset[str]
+) -> CheckResult:
+    """Build CheckResult from ArtifactHealthResult.
+
+    Args:
+        result: Artifact health result from get_artifact_health
+        allow_modified: Set of artifact keys allowed to be locally modified
+    """
+    # Group artifacts by type, storing name and status.
+    # If an artifact is locally-modified but in the allowlist, treat as up-to-date.
     by_type: dict[str, list[_ArtifactInfo]] = {}
     for artifact in result.artifacts:
+        effective_status = artifact.status
+        allowed = artifact.status == "locally-modified" and artifact.name in allow_modified
+        if allowed:
+            effective_status = "up-to-date"
         artifact_type = _extract_artifact_type(artifact.name)
         # Extract display name (e.g. "skills/dignified-python" -> "dignified-python")
         display_name = artifact.name.split("/", 1)[1] if "/" in artifact.name else artifact.name
         by_type.setdefault(artifact_type, []).append(
-            _ArtifactInfo(name=display_name, status=artifact.status)
+            _ArtifactInfo(name=display_name, status=effective_status, allowed_by_config=allowed)
         )
 
     # Build per-type summary and verbose details
@@ -187,7 +228,9 @@ def _build_managed_artifacts_result(result: ArtifactHealthResult) -> CheckResult
 
         # Add individual artifact names to verbose output
         for artifact_info in sorted(artifacts, key=lambda a: a.name):
-            if artifact_info.status == "up-to-date":
+            if artifact_info.allowed_by_config:
+                status_indicator = " (locally-modified, allowed by config)"
+            elif artifact_info.status == "up-to-date":
                 status_indicator = ""
             else:
                 status_indicator = f" ({artifact_info.status})"
@@ -321,4 +364,5 @@ def check_managed_artifacts(
     if package.in_erk_repo:
         return _build_erk_repo_artifacts_result(result)
 
-    return _build_managed_artifacts_result(result)
+    allow_modified = _load_artifact_allowlist(repo_root)
+    return _build_managed_artifacts_result(result, allow_modified=allow_modified)

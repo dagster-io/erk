@@ -3,15 +3,14 @@
 import json
 import time
 
-import pytest
 from click.testing import CliRunner
 
-from erk.cli.commands import doctor as doctor_module
 from erk.cli.commands.doctor import doctor_cmd
 from erk.core.health_checks.models import CheckResult
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github_admin.abc import AuthStatus
 from tests.fakes.github_admin import FakeGitHubAdmin
+from tests.fakes.health_check_runner import FakeHealthCheckRunner
 from tests.fakes.shell import FakeShell
 from tests.test_utils.context_builders import build_workspace_test_context
 from tests.test_utils.env_helpers import erk_isolated_fs_env
@@ -380,7 +379,7 @@ def test_doctor_clear_hook_logs_with_no_logs() -> None:
         assert "Cleared 0 hook log(s)" in result.output
 
 
-def test_doctor_shows_remediation_for_warnings(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_doctor_shows_remediation_for_warnings() -> None:
     """Test that doctor shows remediation for warning checks (not just failures).
 
     This test verifies that when a CheckResult has warning=True with a remediation,
@@ -400,11 +399,8 @@ def test_doctor_shows_remediation_for_warnings(monkeypatch: pytest.MonkeyPatch) 
         settings_path.parent.mkdir(parents=True)
         settings_path.write_text('{"permissions": {"allow": ["Bash(erk:*)"]}}', encoding="utf-8")
 
-        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
-
-        # Mock run_all_checks to return a warning with remediation
-        def mock_run_all_checks(_ctx, *, check_hooks):  # type: ignore[no-untyped-def]
-            return [
+        fake_runner = FakeHealthCheckRunner(
+            results=[
                 # A passing check (no warning)
                 CheckResult(
                     name="test-pass",
@@ -414,17 +410,16 @@ def test_doctor_shows_remediation_for_warnings(monkeypatch: pytest.MonkeyPatch) 
                 # A warning check with remediation - this is what we're testing
                 CheckResult(
                     name="test-warning",
-                    passed=True,  # Still passes but has warning
+                    passed=True,
                     warning=True,
                     message="Test has warning",
                     remediation="Run 'test-command' to fix the warning",
                 ),
             ]
+        )
 
-        monkeypatch.setattr(
-            doctor_module,
-            "run_all_checks",
-            mock_run_all_checks,
+        ctx = build_workspace_test_context(
+            env, git=git, shell=_make_test_shell(), health_check_runner=fake_runner
         )
 
         result = runner.invoke(doctor_cmd, [], obj=ctx)
@@ -435,6 +430,53 @@ def test_doctor_shows_remediation_for_warnings(monkeypatch: pytest.MonkeyPatch) 
         # CRITICAL: Should show remediation section for the warning
         assert "Remediation" in result.output
         assert "test-command" in result.output
+
+        # Summary should say "Checks passed with warnings" (not "All checks passed!")
+        assert "Checks passed with warnings" in result.output
+        assert "All checks passed" not in result.output
+
+
+def test_doctor_condensed_shows_warning_in_subgroup() -> None:
+    """Test that condensed subgroups expand warning checks with ⚠️ icon."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+
+        fake_runner = FakeHealthCheckRunner(
+            results=[
+                # A passing check in the same subgroup (no warning)
+                CheckResult(
+                    name="required-version",
+                    passed=True,
+                    message="Required version OK",
+                ),
+                # A warning check in "Erk configuration" subgroup
+                CheckResult(
+                    name="managed-artifacts",
+                    passed=True,
+                    warning=True,
+                    message="Managed artifacts have issues",
+                    remediation="Run 'erk artifact sync --force' to restore erk defaults",
+                ),
+            ]
+        )
+
+        ctx = build_workspace_test_context(
+            env, git=git, shell=_make_test_shell(), health_check_runner=fake_runner
+        )
+
+        result = runner.invoke(doctor_cmd, [], obj=ctx)
+
+        assert result.exit_code == 0
+
+        # Subgroup should show ⚠️ icon (not green checkmark)
+        assert "⚠️" in result.output
+        # The warning check should be expanded (visible in condensed mode)
+        assert "Managed artifacts have issues" in result.output
 
 
 def test_doctor_remediation_points_to_artifact_sync() -> None:

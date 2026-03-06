@@ -5,10 +5,12 @@ The unified ErkContext dataclass is defined in erk_shared.context and
 re-exported here for backwards compatibility.
 """
 
+from __future__ import annotations
+
 import shutil
 from collections.abc import MutableMapping
 from pathlib import Path
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 import click
 import tomlkit
@@ -84,6 +86,9 @@ from erk_shared.gateway.time.real import RealTime
 from erk_shared.output.output import user_output
 from erk_shared.plan_store.backend import PlanBackend
 from erk_shared.plan_store.planned_pr import PlannedPRBackend
+
+if TYPE_CHECKING:
+    from erk.core.health_checks.runner import HealthCheckRunner
 
 
 def create_prompt_executor(
@@ -223,6 +228,7 @@ def context_for_test(
     repo: RepoContext | NoRepoSentinel | None = None,
     repo_info: RepoInfo | None = None,
     package_info: ErkPackageInfo | None = None,
+    health_check_runner: HealthCheckRunner | None = None,
     dry_run: bool = False,
     debug: bool = False,
 ) -> ErkContext:
@@ -435,6 +441,7 @@ def context_for_test(
         repo=repo,
         repo_info=repo_info,
         package_info=package_info,
+        health_check_runner=health_check_runner,
         http_client=FakeHttpClient(),
         dry_run=dry_run,
         debug=debug,
@@ -661,11 +668,14 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     )
 
     # 12. Create package info
-    from erk.artifacts.paths import ErkPackageInfo
-
     package_info = ErkPackageInfo.from_project_dir(cwd)
 
-    # 13. Create context with all values
+    # 13. Create health check runner (inline import: circular dependency with health_checks)
+    from erk.core.health_checks.runner import RealHealthCheckRunner
+
+    health_check_runner = RealHealthCheckRunner()
+
+    # 14. Create context with all values
     return ErkContext(
         git=git,
         github=github,
@@ -696,6 +706,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
         repo=repo,
         repo_info=repo_info,
         package_info=package_info,
+        health_check_runner=health_check_runner,
         http_client=http_client,
         dry_run=dry_run,
         debug=debug,
