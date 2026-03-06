@@ -436,6 +436,57 @@ def test_doctor_shows_remediation_for_warnings(monkeypatch: pytest.MonkeyPatch) 
         assert "Remediation" in result.output
         assert "test-command" in result.output
 
+        # Summary should say "Checks passed with warnings" (not "All checks passed!")
+        assert "Checks passed with warnings" in result.output
+        assert "All checks passed" not in result.output
+
+
+def test_doctor_condensed_shows_warning_in_subgroup(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Test that condensed subgroups expand warning checks with ⚠️ icon."""
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            local_branches={env.cwd: ["main"]},
+            default_branches={env.cwd: "main"},
+        )
+
+        ctx = build_workspace_test_context(env, git=git, shell=_make_test_shell())
+
+        # Mock run_all_checks to return a warning in the "Erk configuration" subgroup
+        def mock_run_all_checks(_ctx, *, check_hooks):  # type: ignore[no-untyped-def]
+            return [
+                # A passing check in the same subgroup (no warning)
+                CheckResult(
+                    name="required-version",
+                    passed=True,
+                    message="Required version OK",
+                ),
+                # A warning check in "Erk configuration" subgroup
+                CheckResult(
+                    name="managed-artifacts",
+                    passed=True,
+                    warning=True,
+                    message="Managed artifacts have issues",
+                    remediation="Run 'erk artifact sync --force' to restore erk defaults",
+                ),
+            ]
+
+        monkeypatch.setattr(
+            doctor_module,
+            "run_all_checks",
+            mock_run_all_checks,
+        )
+
+        result = runner.invoke(doctor_cmd, [], obj=ctx)
+
+        assert result.exit_code == 0
+
+        # Subgroup should show ⚠️ icon (not green checkmark)
+        assert "⚠️" in result.output
+        # The warning check should be expanded (visible in condensed mode)
+        assert "Managed artifacts have issues" in result.output
+
 
 def test_doctor_remediation_points_to_artifact_sync() -> None:
     """Test that doctor remediation for gitignore/hooks mentions 'erk artifact sync'."""

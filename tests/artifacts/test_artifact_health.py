@@ -2,9 +2,19 @@
 
 from pathlib import Path
 
-from erk.artifacts.artifact_health import _get_bundled_by_type, get_artifact_health
+from erk.artifacts.artifact_health import (
+    ArtifactHealthResult,
+    ArtifactStatus,
+    ArtifactStatusType,
+    _get_bundled_by_type,
+    get_artifact_health,
+)
 from erk.artifacts.models import ArtifactFileState
 from erk.artifacts.paths import ErkPackageInfo
+from erk.core.health_checks.managed_artifacts import (
+    _build_managed_artifacts_result,
+    _load_artifact_allowlist,
+)
 
 
 def test_get_artifact_health_tracks_nested_commands(tmp_path: Path) -> None:
@@ -108,3 +118,89 @@ def test_get_bundled_by_type_partial_installation() -> None:
     # Only dignified-python should be included
     assert "dignified-python" in skills
     assert "fake-driven-testing" not in skills
+
+
+# --- Tests for _load_artifact_allowlist ---
+
+
+def test_load_artifact_allowlist_empty_when_no_config(tmp_path: Path) -> None:
+    """Returns empty frozenset when no config files exist."""
+    result = _load_artifact_allowlist(tmp_path)
+    assert result == frozenset()
+
+
+def test_load_artifact_allowlist_reads_config_toml(tmp_path: Path) -> None:
+    """Reads allow_modified from .erk/config.toml."""
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+    (erk_dir / "config.toml").write_text(
+        '[artifacts]\nallow_modified = ["actions/setup-claude-erk"]\n',
+        encoding="utf-8",
+    )
+    result = _load_artifact_allowlist(tmp_path)
+    assert result == frozenset({"actions/setup-claude-erk"})
+
+
+def test_load_artifact_allowlist_merges_both_configs(tmp_path: Path) -> None:
+    """Union of config.toml and config.local.toml."""
+    erk_dir = tmp_path / ".erk"
+    erk_dir.mkdir()
+    (erk_dir / "config.toml").write_text(
+        '[artifacts]\nallow_modified = ["actions/setup-claude-erk"]\n',
+        encoding="utf-8",
+    )
+    (erk_dir / "config.local.toml").write_text(
+        '[artifacts]\nallow_modified = ["skills/dignified-python"]\n',
+        encoding="utf-8",
+    )
+    result = _load_artifact_allowlist(tmp_path)
+    assert result == frozenset({"actions/setup-claude-erk", "skills/dignified-python"})
+
+
+# --- Tests for _build_managed_artifacts_result with allowlist ---
+
+
+def _make_artifact(*, name: str, status: ArtifactStatusType) -> ArtifactStatus:
+    """Helper to create an ArtifactStatus for testing."""
+    return ArtifactStatus(
+        name=name,
+        installed_version="1.0.0",
+        current_version="1.0.0",
+        installed_hash="abc123",
+        current_hash="def456" if status != "up-to-date" else "abc123",
+        status=status,
+    )
+
+
+def test_build_managed_artifacts_result_allows_locally_modified() -> None:
+    """Allowed artifact produces no warning and no remediation."""
+    health = ArtifactHealthResult(
+        artifacts=[
+            _make_artifact(name="skills/dignified-python", status="up-to-date"),
+            _make_artifact(name="actions/setup-claude-erk", status="locally-modified"),
+        ],
+        skipped_reason=None,
+    )
+    result = _build_managed_artifacts_result(
+        health, allow_modified=frozenset({"actions/setup-claude-erk"})
+    )
+
+    assert result.passed is True
+    assert result.warning is False
+    assert result.remediation is None
+
+
+def test_build_managed_artifacts_result_verbose_shows_allowed_annotation() -> None:
+    """Verbose output shows '(locally-modified, allowed by config)' for allowed artifacts."""
+    health = ArtifactHealthResult(
+        artifacts=[
+            _make_artifact(name="actions/setup-claude-erk", status="locally-modified"),
+        ],
+        skipped_reason=None,
+    )
+    result = _build_managed_artifacts_result(
+        health, allow_modified=frozenset({"actions/setup-claude-erk"})
+    )
+
+    assert result.verbose_details is not None
+    assert "(locally-modified, allowed by config)" in result.verbose_details
