@@ -113,6 +113,107 @@ def _checkout_plan_branch(
             raise SystemExit(1)
 
 
+def create_impl_context_from_pr(
+    ctx: click.Context,
+    *,
+    plan_number: int,
+    cwd: Path,
+    branch_name: str,
+) -> dict[str, str | int | bool | None]:
+    """Create .erk/impl-context/ folder from a GitHub PR's plan content.
+
+    Fetches PR metadata, reads plan content (from committed .erk/impl-context/
+    files or PR body fallback), and creates the impl folder structure.
+
+    Does NOT checkout branches or create worktrees — the caller must already
+    be on the correct branch/worktree.
+
+    Args:
+        ctx: Click context (for gateway access)
+        plan_number: PR number containing the plan
+        cwd: Working directory (worktree root)
+        branch_name: Branch name for impl-context scoping
+
+    Returns:
+        Dict with success status, impl_path, plan_number, plan_url, branch,
+        and plan_title.
+    """
+    repo_root = require_repo_root(ctx)
+    github = require_github(ctx)
+
+    pr_result = github.get_pr(repo_root, plan_number)
+    if isinstance(pr_result, PRNotFound):
+        error_output = {
+            "success": False,
+            "error": "plan_not_found",
+            "message": f"Could not fetch plan for PR #{plan_number}: PR not found.",
+        }
+        click.echo(json.dumps(error_output), err=True)
+        raise SystemExit(1)
+
+    pr_url = pr_result.url
+
+    # Read plan content from committed .erk/impl-context/ files or PR body
+    impl_context_dir = repo_root / IMPL_CONTEXT_DIR
+    impl_context_plan = impl_context_dir / "plan.md"
+
+    node_ids: tuple[str, ...] | None = None
+    if impl_context_plan.exists():
+        plan_content = impl_context_plan.read_text(encoding="utf-8")
+        ref_json_path = impl_context_dir / "ref.json"
+        objective_id: int | None = None
+        plan_title: str = pr_result.title
+        if ref_json_path.exists():
+            ref_data = json.loads(ref_json_path.read_text(encoding="utf-8"))
+            raw_objective = ref_data.get("objective_id")
+            if isinstance(raw_objective, int):
+                objective_id = raw_objective
+            raw_title = ref_data.get("title")
+            if isinstance(raw_title, str):
+                plan_title = raw_title
+            raw_node_ids = ref_data.get("node_ids")
+            if isinstance(raw_node_ids, list):
+                node_ids = tuple(raw_node_ids)
+    else:
+        # Fallback: extract from PR body (legacy branch or already cleaned up)
+        plan_content = extract_plan_content(pr_result.body)
+        plan_title = pr_result.title
+        objective_id = None
+        block = find_metadata_block(pr_result.body, BlockKeys.PLAN_HEADER)
+        if block is not None:
+            raw_objective = block.data.get(OBJECTIVE_ISSUE)
+            if isinstance(raw_objective, int):
+                objective_id = raw_objective
+
+    impl_path = get_impl_dir(cwd, branch_name=branch_name)
+
+    create_impl_folder(
+        worktree_path=cwd,
+        plan_content=plan_content,
+        branch_name=branch_name,
+        overwrite=True,
+    )
+
+    save_plan_ref(
+        impl_path,
+        provider="github-draft-pr",
+        plan_id=str(plan_number),
+        url=pr_url,
+        labels=(),
+        objective_id=objective_id,
+        node_ids=node_ids,
+    )
+
+    return {
+        "success": True,
+        "impl_path": str(impl_path),
+        "plan_number": plan_number,
+        "plan_url": pr_url,
+        "branch": branch_name,
+        "plan_title": plan_title,
+    }
+
+
 def _setup_planned_pr_plan(
     ctx: click.Context,
     *,
@@ -188,73 +289,26 @@ def _setup_planned_pr_plan(
         branch_name=branch_name,
     )
 
-    # Phase B: After checkout, read plan content from local files or PR body
-    impl_context_dir = repo_root / IMPL_CONTEXT_DIR
-    impl_context_plan = impl_context_dir / "plan.md"
+    # Create .erk/impl-context/ folder (unless --no-impl)
+    if no_impl:
+        return {
+            "success": True,
+            "impl_path": None,
+            "plan_number": plan_number,
+            "plan_url": pr_url,
+            "branch": branch_name,
+            "plan_title": pr_result.title,
+            "no_impl": True,
+        }
 
-    node_ids: tuple[str, ...] | None = None
-    if impl_context_plan.exists():
-        # Read from committed .erk/impl-context/ files
-        plan_content = impl_context_plan.read_text(encoding="utf-8")
-        ref_json_path = impl_context_dir / "ref.json"
-        objective_id: int | None = None
-        plan_title: str = pr_result.title
-        if ref_json_path.exists():
-            ref_data = json.loads(ref_json_path.read_text(encoding="utf-8"))
-            raw_objective = ref_data.get("objective_id")
-            if isinstance(raw_objective, int):
-                objective_id = raw_objective
-            raw_title = ref_data.get("title")
-            if isinstance(raw_title, str):
-                plan_title = raw_title
-            raw_node_ids = ref_data.get("node_ids")
-            if isinstance(raw_node_ids, list):
-                node_ids = tuple(raw_node_ids)
-        # Do not delete here — Step 2d in plan-implement.md handles git rm + commit + push
-    else:
-        # Fallback: extract from PR body (legacy branch or already cleaned up)
-        plan_content = extract_plan_content(pr_result.body)
-        plan_title = pr_result.title
-        objective_id = None
-        block = find_metadata_block(pr_result.body, BlockKeys.PLAN_HEADER)
-        if block is not None:
-            raw_objective = block.data.get(OBJECTIVE_ISSUE)
-            if isinstance(raw_objective, int):
-                objective_id = raw_objective
-
-    # Create .erk/impl-context/ folder with plan content (unless --no-impl)
-    impl_path_str: str | None = None
-
-    if not no_impl:
-        impl_path = get_impl_dir(cwd, branch_name=branch_name)
-        impl_path_str = str(impl_path)
-
-        create_impl_folder(
-            worktree_path=cwd,
-            plan_content=plan_content,
-            branch_name=branch_name,
-            overwrite=True,
-        )
-
-        save_plan_ref(
-            impl_path,
-            provider="github-draft-pr",
-            plan_id=str(plan_number),
-            url=pr_url,
-            labels=(),
-            objective_id=objective_id,
-            node_ids=node_ids,
-        )
-
-    return {
-        "success": True,
-        "impl_path": impl_path_str,
-        "plan_number": plan_number,
-        "plan_url": pr_url,
-        "branch": branch_name,
-        "plan_title": plan_title,
-        "no_impl": no_impl,
-    }
+    result = create_impl_context_from_pr(
+        ctx,
+        plan_number=plan_number,
+        cwd=cwd,
+        branch_name=branch_name,
+    )
+    result["no_impl"] = False
+    return result
 
 
 @click.command(name="setup-impl-from-pr")

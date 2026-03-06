@@ -253,14 +253,6 @@ def _checkout_pr(
     else:
         _fetch_and_update_branch(ctx, repo, branch_name=branch_name, pr_number=pr_number)
 
-        # Retrack immediately after force-update if branch was already tracked by Graphite.
-        # This prevents divergence if subsequent operations (worktree creation, rebase) fail.
-        if (
-            ctx.graphite_branch_ops is not None
-            and ctx.branch_manager.get_parent_branch(repo.root, branch_name) is not None
-        ):
-            ctx.graphite_branch_ops.retrack_branch(repo.root, branch_name)
-
     # Create worktree using shared helper
     worktree_path, already_existed = ensure_branch_has_worktree(
         ctx, repo, branch_name=branch_name, no_slot=no_slot, force=force
@@ -278,6 +270,16 @@ def _checkout_pr(
             ctx.branch_manager.create_tracking_branch(
                 repo.root, pr.base_ref_name, f"origin/{pr.base_ref_name}"
             )
+        else:
+            # Parent exists locally but may be stale after squash/rebase.
+            # Update to match origin so gt track sees consistent history.
+            ctx.git.remote.fetch_branch(repo.root, "origin", pr.base_ref_name)
+            remote_sha = ctx.git.branch.get_branch_head(
+                repo.root, f"origin/{pr.base_ref_name}"
+            )
+            local_sha = ctx.git.branch.get_branch_head(repo.root, pr.base_ref_name)
+            if remote_sha is not None and remote_sha != local_sha:
+                ctx.git.branch.update_local_ref(repo.root, pr.base_ref_name, remote_sha)
 
         ctx.console.info("Rebasing onto base branch...")
         rebase_result = ctx.git.rebase.rebase_onto(worktree_path, f"origin/{pr.base_ref_name}")
@@ -289,16 +291,22 @@ def _checkout_pr(
                 f"Run: cd {worktree_path} && git rebase origin/{pr.base_ref_name}"
             )
 
-    # Graphite integration: Track untracked branches (for new worktrees only).
-    # Retracking for already-tracked branches is handled above immediately after
-    # force-update, so we only need to handle the "untracked" case here.
+    # Graphite integration: Track or retrack AFTER rebase completes.
+    # Tracking must happen after rebase so Graphite's cached SHA matches
+    # the post-rebase commit, preventing divergence.
     should_track_with_graphite = (
         ctx.branch_manager.is_graphite_managed()
         and not already_existed
         and not pr.is_cross_repository
     )
     if should_track_with_graphite:
-        if ctx.branch_manager.get_parent_branch(repo.root, branch_name) is None:
+        if (
+            ctx.graphite_branch_ops is not None
+            and ctx.branch_manager.get_parent_branch(repo.root, branch_name) is not None
+        ):
+            # Already tracked — retrack to update Graphite's cached SHA
+            ctx.graphite_branch_ops.retrack_branch(repo.root, branch_name)
+        else:
             ctx.console.info("Tracking branch with Graphite...")
             ctx.branch_manager.track_branch(repo.root, branch_name, pr.base_ref_name)
 
@@ -368,7 +376,9 @@ def _checkout_plan(
         user_output(
             f"No open PR found for plan #{plan_number}\n\n"
             "This plan has not been implemented yet. To prepare it:\n"
-            f"  erk br co --for-plan {plan_number}"
+            f"  erk br co --for-plan {plan_number}\n\n"
+            "Or if you've already checked out the branch:\n"
+            f"  erk pr prepare {plan_number}"
         )
         raise SystemExit(1)
 

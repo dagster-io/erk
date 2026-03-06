@@ -230,12 +230,11 @@ def test_pr_checkout_skips_graphite_for_fork_prs() -> None:
 
 
 def test_pr_checkout_retracks_diverged_graphite_branch() -> None:
-    """Test pr checkout retracks immediately after force-update.
+    """Test pr checkout retracks after worktree creation and rebase.
 
     When a branch is already tracked by Graphite and the local branch
-    is force-updated to match remote, the retrack happens immediately
-    after the force-update (before worktree creation or rebase) to
-    prevent divergence if later operations fail.
+    is force-updated to match remote, the retrack happens after rebase
+    so Graphite's cached SHA matches the post-rebase commit.
     """
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
@@ -475,3 +474,70 @@ def test_pr_checkout_skips_graphite_when_disabled() -> None:
         # Should NOT have Graphite linking messages
         assert "Tracking branch with Graphite" not in result.output
         assert "Submitting to link with Graphite" not in result.output
+
+
+def test_pr_checkout_stacked_pr_rebases_then_tracks() -> None:
+    """Test stacked PR checkout rebases onto base branch before Graphite tracking.
+
+    For stacked PRs (base is not trunk), the checkout must:
+    1. Create the worktree
+    2. Rebase onto the base branch
+    3. Track/retrack with Graphite AFTER rebase
+
+    This ordering prevents Graphite divergence where the cached SHA
+    becomes stale after rebase changes the branch's commit.
+    """
+    runner = CliRunner()
+    with erk_isolated_fs_env(runner, env_overrides=None) as env:
+        env.setup_repo_structure()
+        # Stacked PR: base is "parent-branch", not "main"
+        pr_details = _make_pr_details(
+            number=120,
+            head_ref_name="stacked-feature",
+            is_cross_repository=False,
+            state="OPEN",
+            base_ref_name="parent-branch",
+        )
+        github = FakeGitHub(pr_details={120: pr_details})
+        git = FakeGit(
+            git_common_dirs={env.cwd: env.git_dir},
+            default_branches={env.cwd: "main"},
+            trunk_branches={env.cwd: "main"},
+            local_branches={env.cwd: ["main", "stacked-feature", "parent-branch"]},
+            remote_branches={
+                env.cwd: [
+                    "origin/main",
+                    "origin/stacked-feature",
+                    "origin/parent-branch",
+                ]
+            },
+            branch_heads={
+                "parent-branch": "local-parent-sha",
+                "origin/parent-branch": "remote-parent-sha",
+            },
+            existing_paths={env.cwd, env.repo.worktrees_dir},
+        )
+        graphite = FakeGraphite()
+        ctx = build_workspace_test_context(
+            env, git=git, github=github, graphite=graphite, use_graphite=True
+        )
+
+        with patch.dict(os.environ, {"ERK_SHELL": "zsh"}):
+            result = runner.invoke(pr_group, ["checkout", "120"], obj=ctx)
+
+        assert result.exit_code == 0, result.output
+        assert "Rebasing onto base branch" in result.output
+        # Graphite tracking should happen (untracked branch)
+        assert "Tracking branch with Graphite" in result.output
+        assert len(graphite.track_branch_calls) == 1
+        track_cwd, track_branch, track_parent = graphite.track_branch_calls[0]
+        assert track_cwd == env.cwd
+        assert track_branch == "stacked-feature"
+        assert track_parent == "parent-branch"
+        # Rebase should have happened before tracking
+        assert len(git.rebase_onto_calls) == 1
+        # Parent branch should have been updated via update_local_ref
+        assert len(git.updated_refs) == 1
+        ref_root, ref_branch, ref_sha = git.updated_refs[0]
+        assert ref_branch == "parent-branch"
+        assert ref_sha == "remote-parent-sha"
