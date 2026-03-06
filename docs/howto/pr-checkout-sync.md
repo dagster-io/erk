@@ -132,12 +132,12 @@ The `erk land` command:
 
 ## Common Scenarios
 
-| Scenario                  | Command Sequence                                                           |
-| ------------------------- | -------------------------------------------------------------------------- |
-| Review teammate's PR      | `erk pr co 123` then explore/test                                          |
-| Address my PR's comments  | `erk pr co 123` → `/erk:pr-address` → submit                               |
-| Take over remote agent PR | `erk pr co 123` → make changes → submit                                    |
-| Debug CI failure          | `erk pr co 123` → run tests locally → fix → submit                         |
+| Scenario                  | Command Sequence                                       |
+| ------------------------- | ------------------------------------------------------ |
+| Review teammate's PR      | `erk pr co 123` then explore/test                      |
+| Address my PR's comments  | `erk pr co 123` → `/erk:pr-address` → submit           |
+| Take over remote agent PR | `erk pr co 123` → make changes → submit                |
+| Debug CI failure          | `erk pr co 123` → run tests locally → fix → submit     |
 | Sync after force push     | `/erk:diverge-fix` or `erk pr diverge-fix --dangerous` |
 
 ## See Also
