@@ -320,7 +320,7 @@ def _save_as_planned_pr(
     snapshot_result: PlanSnapshot | None = None
     if session_id is not None:
         create_plan_saved_marker(session_id, repo_root, plan_number)
-        create_plan_saved_issue_marker(session_id, repo_root, plan_number)
+        create_plan_saved_issue_marker(session_id, repo_root, plan_number, title=title)
         create_plan_saved_branch_marker(session_id, repo_root, branch_name)
 
         snapshot_result = _get_snapshot_result(
@@ -406,9 +406,27 @@ def _save_plan_via_planned_pr(
         if step_id is not None:
             node_ids = (step_id,)
 
-    # Session deduplication check
+    # Extract plan content before dedup so we can key dedup by title
+    plan = resolve_plan_content(
+        plan_file=plan_file,
+        session_id=session_id,
+        repo_root=repo_root,
+        claude_installation=claude_installation,
+        cwd=cwd,
+    )
+
+    if not plan:
+        if output_format == "display":
+            click.echo("Error: No plan found in ~/.claude/plans/", err=True)
+        else:
+            click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
+        raise SystemExit(1)
+
+    title = extract_title_from_plan(plan)
+
+    # Session deduplication check (keyed by plan title)
     if session_id is not None:
-        existing_issue = get_existing_saved_issue(session_id, repo_root)
+        existing_issue = get_existing_saved_issue(session_id, repo_root, title=title)
         if existing_issue is not None:
             existing_branch = get_existing_saved_branch(session_id, repo_root)
             if output_format == "display":
@@ -429,22 +447,6 @@ def _save_plan_via_planned_pr(
                     dedup_response["branch_name"] = existing_branch
                 click.echo(json.dumps(dedup_response))
             return
-
-    # Extract plan content (same priority as plan-save-to-issue)
-    plan = resolve_plan_content(
-        plan_file=plan_file,
-        session_id=session_id,
-        repo_root=repo_root,
-        claude_installation=claude_installation,
-        cwd=cwd,
-    )
-
-    if not plan:
-        if output_format == "display":
-            click.echo("Error: No plan found in ~/.claude/plans/", err=True)
-        else:
-            click.echo(json.dumps({"success": False, "error": "No plan found in ~/.claude/plans/"}))
-        raise SystemExit(1)
 
     # Validate plan content
     valid, error, details = _validate_plan_content(plan)

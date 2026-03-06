@@ -152,6 +152,63 @@ def test_planned_pr_session_deduplication(tmp_path: Path, monkeypatch: pytest.Mo
     assert output2["branch_name"] == output1["branch_name"]
 
 
+def test_planned_pr_different_titles_both_succeed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Two saves with different plan titles in the same session both succeed."""
+    runner = CliRunner()
+    session_id = "multi-plan-session"
+
+    first_plan = """# First Plan
+
+This plan describes the first feature implementation.
+
+- Step 1: Set up the environment
+- Step 2: Implement the core logic
+- Step 3: Add tests and documentation"""
+
+    second_plan = """# Second Plan
+
+This plan describes a different feature implementation.
+
+- Step 1: Set up the environment
+- Step 2: Implement the core logic
+- Step 3: Add tests and documentation"""
+
+    # First call with first plan
+    ctx1 = _planned_pr_context(
+        tmp_path=tmp_path,
+        fake_claude=FakeClaudeInstallation.for_test(plans={"plan": first_plan}),
+        monkeypatch=monkeypatch,
+    )
+    result1 = runner.invoke(
+        plan_save,
+        ["--format", "json", "--session-id", session_id, "--branch-slug", "first-slug"],
+        obj=ctx1,
+    )
+    assert result1.exit_code == 0, f"First call failed: {result1.output}"
+    output1 = json.loads(result1.output)
+    assert output1["success"] is True
+    assert "skipped_duplicate" not in output1
+
+    # Second call with different plan title
+    ctx2 = _planned_pr_context(
+        tmp_path=tmp_path,
+        fake_claude=FakeClaudeInstallation.for_test(plans={"plan": second_plan}),
+        monkeypatch=monkeypatch,
+    )
+    result2 = runner.invoke(
+        plan_save,
+        ["--format", "json", "--session-id", session_id, "--branch-slug", "second-slug"],
+        obj=ctx2,
+    )
+    assert result2.exit_code == 0, f"Second call failed: {result2.output}"
+    output2 = json.loads(result2.output)
+    assert output2["success"] is True
+    assert "skipped_duplicate" not in output2
+    assert output2["title"] == "[erk-plan] Second Plan"
+
+
 def test_planned_pr_plan_file_priority(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """--plan-file takes priority over claude_installation."""
     plan_file = tmp_path / "custom-plan.md"
