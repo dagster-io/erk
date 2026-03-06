@@ -1,0 +1,954 @@
+<session>
+  <meta branch="master" />
+  <meta model="claude-opus-4-6" />
+  <user>when doing an incremental dispatch the intermediate commit looks like: https://github.com/dagster-io/erk/pull/8830/changes/6d166c9790bc8b1ad66b00b89022468f56d124ab
+
+i would prefer it to be more description so that we can understand what happened. indicate that it is the implementation of incremental dispatch and include the plan in the commit message</user>
+  <usage input_tokens="3" cache_creation_input_tokens="15239" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15239}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>Let me explore the incremental dispatch workflow to understand how commits are created.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="15239" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 15239}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_018eYf23Bx56sfWUdXTZk7qR">
+    <param name="query">select:Agent,Read,Grep,Glob</param>
+    <param name="max_results">5</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="15239" cache_read_input_tokens="0" output_tokens="143" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 15239, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_018eYf23Bx56sfWUdXTZk7qR">
+
+  </tool_result>
+  <usage input_tokens="3" cache_creation_input_tokens="4260" cache_read_input_tokens="15239" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4260}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_016GVAf9X1SzwcMZFcNfsKyM">
+    <param name="pattern">incremental.dispatch|incremental_dispatch</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="type">py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4260" cache_read_input_tokens="15239" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4260}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016GVAf9X1SzwcMZFcNfsKyM">
+Found 3 files
+src/erk/cli/commands/exec/scripts/incremental_dispatch.py
+tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py
+src/erk/cli/commands/exec/group.py
+  </tool_result>
+  <tool_use name="Grep" id="toolu_016y37SSoSU8TRjziZHYKKuU">
+    <param name="pattern">pr-incremental-dispatch</param>
+    <param name="path">/Users/schrockn/code/erk/.claude</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="4260" cache_read_input_tokens="15239" output_tokens="206" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4260, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_016y37SSoSU8TRjziZHYKKuU">
+Found 1 file
+.claude/commands/erk/pr-incremental-dispatch.md
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Jk19QRLzyotMBtmgAXQKNq">
+    <param name="file_path">/Users/schrockn/code/erk/.claude/commands/erk/pr-incremental-dispatch.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="351" cache_read_input_tokens="19499" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 351}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Jk19QRLzyotMBtmgAXQKNq">
+     1→---
+     2→description: Dispatch a local plan against an existing PR for remote implementation
+     3→---
+     4→
+     5→# /erk:pr-incremental-dispatch
+     6→
+     7→## Goal
+     8→
+     9→Dispatch a plan written in plan mode against an existing PR's branch for remote AI implementation, without creating a separate planned PR.
+    10→
+    11→## Steps
+    12→
+    13→### 1. Find the plan file
+    14→
+    15→Search for the most recent plan file in `~/.claude/plans/` (same as plan-save discovery). Store the path as `PLAN_FILE`.
+    16→
+    17→If no plan file found, tell the user to write a plan in plan mode first and stop.
+    18→
+    19→### 2. Get PR context
+    20→
+    21→If `$ARGUMENTS` contains a PR number, use that. Otherwise, run:
+    22→
+    23→```bash
+    24→gh pr view --json number,title,headRefName
+    25→```
+    26→
+    27→to get the current branch's PR. If no PR found, ask the user to specify one and stop.
+    28→
+    29→Store the PR number as `PR_NUMBER`.
+    30→
+
+... [24 lines omitted] ...
+
+    53→- Any errors
+  </tool_result>
+  <tool_use name="Read" id="toolu_01G88Utr2BeS3UNBMeGt5ZGn">
+    <param name="file_path">/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="351" cache_read_input_tokens="19499" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 351}" output_tokens="18" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01G88Utr2BeS3UNBMeGt5ZGn">
+     1→"""Dispatch a local plan against an existing PR for remote implementation.
+     2→
+     3→Usage:
+     4→    erk exec incremental-dispatch --plan-file &lt;path&gt; --pr &lt;number&gt; [OPTIONS]
+     5→
+     6→Commits the plan as impl-context to the PR's branch and triggers the
+     7→plan-implement workflow. Unlike regular dispatch, this does not require
+     8→the erk-plan label — just an OPEN PR.
+     9→"""
+    10→
+    11→import json
+    12→import logging
+    13→from pathlib import Path
+    14→
+    15→import click
+    16→
+    17→from erk.cli.commands.pr.dispatch_cmd import load_workflow_config
+    18→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+    19→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    20→from erk.cli.constants import DISPATCH_WORKFLOW_NAME
+    21→from erk_shared.context.helpers import (
+    22→    require_context,
+    23→    require_git,
+    24→    require_github,
+    25→    require_repo_root,
+    26→    require_time,
+    27→)
+    28→from erk_shared.context.types import NoRepoSentinel
+    29→from erk_shared.gateway.git.remote_ops.types import PushError
+    30→from erk_shared.gateway.github.parsing import (
+
+... [187 lines omitted] ...
+
+    86→        _output_error(output_format, f"PR #{pr_number} not found")
+    90→        _output_error(output_format, f"PR #{pr_number} is {pr_result.state}, must be OPEN")
+   101→        _output_error(output_format, "Not in a git repository")
+   143→        except Exception:
+   144→            logger.warning("Failed to sync index after plumbing commit", exc_info=True)
+   150→    if isinstance(push_result, PushError):
+   151→        _output_error(output_format, f"Push failed: {push_result.message}")
+   211→def _output_error(output_format: str, message: str) -&gt; None:
+   212→    """Output error in the requested format."""
+   214→        click.echo(json.dumps({"success": False, "error": message}))
+   216→        user_output(click.style("Error: ", fg="red") + message)
+  </tool_result>
+  <usage input_tokens="1" cache_creation_input_tokens="4501" cache_read_input_tokens="19850" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4501}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <assistant>Found it. The commit message is on line 131-132 of `incremental_dispatch.py`:
+
+```python
+message=f"Add incremental plan for PR #{pr_number}",
+```
+
+The plan content is already available as `plan_content` (line 96). The fix is straightforward: include the plan in the commit message body and make the subject line more descriptive.
+
+Let me also check how the regular dispatch does its commit message for consistency.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4501" cache_read_input_tokens="19850" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 4501}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Xn9SuYEaXJVY2ft8upc4CG">
+    <param name="pattern">commit_files_to_branch</param>
+    <param name="path">/Users/schrockn/code/erk/src</param>
+    <param name="output_mode">content</param>
+    <param name="-B">2</param>
+    <param name="-A">5</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4501" cache_read_input_tokens="19850" output_tokens="376" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 4501, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Xn9SuYEaXJVY2ft8upc4CG">
+/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_dispatch.py-257-        current_step = "Committing prompt file"
+/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_dispatch.py-258-        user_output("Committing prompt file...")
+src/erk/cli/commands/one_shot_dispatch.py:259:        ctx.git.commit.commit_files_to_branch(
+/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_dispatch.py-260-            repo.root,
+/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_dispatch.py-261-            branch=branch_name,
+src/erk/cli/commands/one_shot_dispatch.py-262-            files={".erk/impl-context/prompt.md": params.prompt + "\n"},
+src/erk/cli/commands/one_shot_dispatch.py-263-            message=f"One-shot: {params.prompt[:60]}",
+/Users/schrockn/code/erk/src/erk/cli/commands/one_shot_dispatch.py-264-        )
+--
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_cmd.py-241-        node_ids=None,
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_cmd.py-242-    )
+src/erk/cli/commands/pr/dispatch_cmd.py:243:    ctx.git.commit.commit_files_to_branch(
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_cmd.py-244-        repo.root,
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_cmd.py-245-        branch=branch_name,
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_cmd.py-246-        files=files,
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_cmd.py-247-        message=f"Add plan for PR #{plan_number}",
+/Users/schrockn/code/erk/src/erk/cli/commands/pr/dispatch_cmd.py-248-    )
+--
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-248-                )
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-249-
+src/erk/cli/commands/exec/scripts/plan_save.py:250:    git.commit.commit_files_to_branch(
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-251-        repo_root,
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-252-        branch=branch_name,
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-253-        files=files,
+src/erk/cli/commands/exec/scripts/plan_save.py-254-        message=f"Add plan: {title}",
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-255-    )
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-256-
+/Users/schrockn/code/erk/src/erk/cli/commands/exec/scripts/plan_save.py-257-    # Update Graphite tracking after plumbing commit advanced the branch
+src/erk/cli/commands/exec/scripts/plan_save.py:258:    # (create_branch tracked position A, but commit_files_to_branch moved to B)
+src/erk/cli/commands/exec/scripts/plan_save.py-259-    if not current_branch_flag:
+
+... [31 lines omitted] ...
+  </tool_result>
+  <assistant>Now I have a clear picture. Let me also check if `commit_files_to_branch` supports multi-line messages (body).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2649" cache_read_input_tokens="24351" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 2649}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01ABF38qA85u27z2YmB7bmw1">
+    <param name="pattern">def commit_files_to_branch</param>
+    <param name="path">/Users/schrockn/code/erk/src</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2649" cache_read_input_tokens="24351" output_tokens="142" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 2649, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01ABF38qA85u27z2YmB7bmw1">
+No files found
+  </tool_result>
+  <tool_use name="Grep" id="toolu_01FRsvKLcbSDzobRXA3oiq7w">
+    <param name="pattern">def commit_files_to_branch</param>
+    <param name="path">/Users/schrockn/code/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="267" cache_read_input_tokens="27000" output_tokens="110" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 267, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FRsvKLcbSDzobRXA3oiq7w">
+Found 5 files
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/fake.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/printing.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py
+packages/erk-shared/src/erk_shared/gateway/git/commit_ops/dry_run.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01DdYSDgLcaTbcx4ASGLF3xA">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/abc.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="355" cache_read_input_tokens="27267" output_tokens="90" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 355, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01DdYSDgLcaTbcx4ASGLF3xA">
+     1→"""Abstract base class for Git commit operations.
+     2→
+     3→This sub-gateway extracts commit operations from the main Git gateway,
+     4→including staging, committing, amending, and commit message queries.
+     5→"""
+     6→
+     7→from __future__ import annotations
+     8→
+     9→from abc import ABC, abstractmethod
+    10→from pathlib import Path
+    11→
+    12→
+    13→class GitCommitOps(ABC):
+    14→    """Abstract interface for Git commit operations.
+    15→
+    16→    This interface contains both mutation and query operations for commits.
+    17→    All implementations (real, fake, dry-run, printing) must implement this interface.
+    18→    """
+    19→
+    20→    # ============================================================================
+    21→    # Mutation Operations
+    22→    # ============================================================================
+    23→
+    24→    @abstractmethod
+    25→    def stage_files(self, cwd: Path, paths: list[str], *, force: bool) -&gt; None:
+    26→        """Stage specific files for commit.
+    27→
+    28→        Args:
+    29→            cwd: Working directory
+    30→            paths: List of file paths to stage (relative to cwd)
+
+... [150 lines omitted] ...
+
+    34→            subprocess.CalledProcessError: If git command fails
+    49→            subprocess.CalledProcessError: If git command fails
+    61→            subprocess.CalledProcessError: If git command fails
+    74→            subprocess.CalledProcessError: If git command fails
+  </tool_result>
+  <assistant>Good — the `message` parameter is just a string, so multi-line messages (with `\n`) should work fine since git supports that natively. Let me check the real implementation briefly to confirm.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1955" cache_read_input_tokens="27622" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1955}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_011d3dN2HpxyVKzJa2MeUbdT">
+    <param name="pattern">def commit_files_to_branch</param>
+    <param name="path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py</param>
+    <param name="output_mode">content</param>
+    <param name="-A">30</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1955" cache_read_input_tokens="27622" output_tokens="194" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1955, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_011d3dN2HpxyVKzJa2MeUbdT">
+71:    def commit_files_to_branch(
+72-        self,
+73-        cwd: Path,
+74-        *,
+75-        branch: str,
+76-        files: dict[str, str],
+77-        message: str,
+78-    ) -&gt; None:
+79-        """Create a commit on a branch using git plumbing (no checkout)."""
+80-        # Get parent commit SHA
+81-        parent_sha = run_subprocess_with_context(
+82-            cmd=["git", "rev-parse", branch],
+83-            operation_context=f"resolve branch {branch}",
+84-            cwd=cwd,
+85-        ).stdout.strip()
+86-
+87-        # Create temporary index file to avoid touching the real index
+88-        tmp_fd, tmp_index = tempfile.mkstemp(suffix=".idx", prefix="erk-plan-")
+89-        os.close(tmp_fd)
+90-        try:
+91-            env = os.environ.copy()
+92-            env["GIT_INDEX_FILE"] = tmp_index
+93-
+94-            # Read parent tree into temp index
+95-            run_subprocess_with_context(
+96-                cmd=["git", "read-tree", parent_sha],
+97-                operation_context="read parent tree into temp index",
+98-                cwd=cwd,
+99-                env=env,
+100-            )
+
+... [1 lines omitted] ...
+  </tool_result>
+  <tool_use name="Read" id="toolu_0182KrthHVBB2KZoeRazTsFU">
+    <param name="file_path">/Users/schrockn/code/erk/packages/erk-shared/src/erk_shared/gateway/git/commit_ops/real.py</param>
+    <param name="offset">100</param>
+    <param name="limit">40</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="554" cache_read_input_tokens="29577" output_tokens="124" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 554, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0182KrthHVBB2KZoeRazTsFU">
+   100→            )
+   101→
+   102→            # Hash each file and add to temp index
+   103→            for path, content in files.items():
+   104→                blob_sha = run_subprocess_with_context(
+   105→                    cmd=["git", "hash-object", "-w", "--stdin"],
+   106→                    operation_context=f"hash content for {path}",
+   107→                    cwd=cwd,
+   108→                    input=content,
+   109→                ).stdout.strip()
+   110→
+   111→                cacheinfo = f"100644,{blob_sha},{path}"
+   112→                run_subprocess_with_context(
+   113→                    cmd=["git", "update-index", "--add", "--cacheinfo", cacheinfo],
+   114→                    operation_context=f"add {path} to temp index",
+   115→                    cwd=cwd,
+   116→                    env=env,
+   117→                )
+   118→
+   119→            # Write tree from temp index
+   120→            tree_sha = run_subprocess_with_context(
+   121→                cmd=["git", "write-tree"],
+   122→                operation_context="write tree from temp index",
+   123→                cwd=cwd,
+   124→                env=env,
+   125→            ).stdout.strip()
+   126→
+   127→            # Create commit object
+   128→            commit_sha = run_subprocess_with_context(
+   129→                cmd=["git", "commit-tree", tree_sha, "-p", parent_sha, "-m", message],
+
+... [10 lines omitted] ...
+  </tool_result>
+  <assistant>Uses `git commit-tree ... -m message` — multi-line strings work fine with `-m`. Now let me also check the test to understand what's being asserted.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="653" cache_read_input_tokens="30131" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 653}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01SST4pcwp2RLJ8ruvZ69N9v">
+    <param name="file_path">/Users/schrockn/code/erk/tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="653" cache_read_input_tokens="30131" output_tokens="123" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 653, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01SST4pcwp2RLJ8ruvZ69N9v">
+     1→"""Unit tests for incremental-dispatch command."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→from click.testing import CliRunner
+     7→
+     8→from erk.cli.commands.exec.scripts.incremental_dispatch import incremental_dispatch
+     9→from erk_shared.context.context import ErkContext
+    10→from erk_shared.gateway.git.abc import WorktreeInfo
+    11→from erk_shared.gateway.git.fake import FakeGit
+    12→from erk_shared.gateway.github.fake import FakeGitHub
+    13→from erk_shared.gateway.github.types import PRDetails
+    14→
+    15→
+    16→def _make_pr(number: int, *, state: str = "OPEN", branch: str = "feature-branch") -&gt; PRDetails:
+    17→    return PRDetails(
+    18→        number=number,
+    19→        url=f"https://github.com/test-owner/test-repo/pull/{number}",
+    20→        title=f"Test PR #{number}",
+    21→        body="PR body",
+    22→        state=state,
+    23→        is_draft=False,
+    24→        base_ref_name="main",
+    25→        head_ref_name=branch,
+    26→        is_cross_repository=False,
+    27→        mergeable="MERGEABLE",
+    28→        merge_state_status="CLEAN",
+    29→        owner="test-owner",
+    30→        repo="test-repo",
+
+... [162 lines omitted] ...
+
+    61→    assert result.exit_code == 0, f"Failed: {result.output}"
+    87→    """Test error when PR does not exist."""
+   103→    assert "not found" in output["error"]
+   107→    """Test error when PR is not OPEN."""
+   124→    assert "CLOSED" in output["error"]
+   143→    assert result.exit_code == 0, f"Failed: {result.output}"
+   180→    assert result.exit_code == 0, f"Failed: {result.output}"
+  </tool_result>
+  <assistant>I have everything I need. The change is simple — let me write the plan.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="7217" cache_read_input_tokens="30784" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 7217}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_01E8q8C1wKbW3HBKwib5jsQv">
+    <param name="query">select:Write</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="7217" cache_read_input_tokens="30784" output_tokens="92" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 7217, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01E8q8C1wKbW3HBKwib5jsQv">
+
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01L31BfapiyMggJTaB7cc7TN">
+    <param name="query">select:ExitPlanMode</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="392" cache_read_input_tokens="38001" output_tokens="79" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 392, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01L31BfapiyMggJTaB7cc7TN">
+
+  </tool_result>
+  <tool_use name="Write" id="toolu_01Tm33URVN1Bygwqe1RUyyUY">
+    <param name="file_path">/Users/schrockn/.claude/plans/snappy-mapping-whistle.md</param>
+    <param name="content"># Improve incremental dispatch commit message
+
+## Context
+
+When incremental dispatch commi...[truncated 1283 chars]...:
+```
+uv run pytest tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py
+```
+</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="850" cache_read_input_tokens="38393" output_tokens="481" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 850, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01Tm33URVN1Bygwqe1RUyyUY">
+File created successfully at: /Users/schrockn/.claude/plans/snappy-mapping-whistle.md
+  </tool_result>
+  <tool_use name="ExitPlanMode" id="toolu_018wk8mxhruDGaGGTxPtzxVi">
+    <param name="plan"># Improve incremental dispatch commit message
+
+## Context
+
+When incremental dispatch commi...[truncated 1283 chars]...:
+```
+uv run pytest tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="521" cache_read_input_tokens="39243" output_tokens="38" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 521, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_018wk8mxhruDGaGGTxPtzxVi">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: DISPLAY PLAN: Before asking the question below, read the plan file and display
+its contents to the user with proper markdown formatting: /Users/schrockn/.claude/plans/snappy-mapping-whistle.md
+
+PLAN SAVE PROMPT
+
+A plan exists for this session but has not been saved.
+
+Use AskUserQuestion to ask the user:
+  question: "📋 Improve incremental dispatch commit message
+Current context: (wt:erk) (br:master)\n\nWhat would you like to do with this plan?"
+  header: "br:master"
+
+IMPORTANT: Present options in this exact order:
+  1. "Create new branch and planned PR. Stays on current branch." - Create a new branch, save plan as draft PR.
+  2. "Implement without saving" - Implement directly on the current branch without saving a plan PR.
+  3. "View/Edit the Plan" - Open plan in editor to review or modify before deciding.
+
+⚠️  WARNING: Currently on 'master'. We strongly discourage implementing directly on the trunk branch. Consider saving the plan and implementing in a dedicated worktree instead.
+
+If user chooses 'Create new branch and planned PR':
+  1. Run /erk:plan-save
+  2. Call ExitPlanMode to end the planning session.
+
+If user chooses 'Implement without saving':
+  1. Create implement-now marker:
+     erk exec marker create --session-id 89fc9e9a-9d3d-435d-bf6c-df287d87c222 \
+       exit-plan-mode-hook.implement-now
+  2. Call ExitPlanMode
+  3. After exiting plan mode, implement the changes directly on the current branch.
+     Do NOT run 'erk exec setup-impl' or create a new branch.
+
+... [8 lines omitted] ...
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_01JscwdJvhUJcmdhgaYar1SH">
+    <param name="query">select:AskUserQuestion</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="770" cache_read_input_tokens="39764" output_tokens="77" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 770, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_01JscwdJvhUJcmdhgaYar1SH">
+
+  </tool_result>
+  <assistant>
+
+Here's the plan:
+
+## Improve incremental dispatch commit message
+
+**Context:** When incremental dispatch commits the plan to a PR branch, the commit message is generic (`"Add incremental plan for PR #N"`). The user wants it to clearly indicate it's an incremental dispatch and include the plan content in the commit body.
+
+**Change:** In `src/erk/cli/commands/exec/scripts/incremental_dispatch.py` (line 131), update the commit message from:
+```python
+message=f"Add incremental plan for PR #{pr_number}",
+```
+to:
+```python
+message=f"Incremental dispatch for PR #{pr_number}\n\n{plan_content}",
+```
+
+**Test:** Add assertion in `test_incremental_dispatch_success` to verify the message contains "Incremental dispatch" and the plan content.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="40534" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 1333}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="AskUserQuestion" id="toolu_01KgrzyKsd8oLveTUjLu8ZAD">
+    <param name="questions">[{'question': '📋 Improve incremental dispatch commit message\nCurrent context: (wt:erk) (b...[truncated 351 chars]...ion': 'Open plan in editor to review or modify before deciding.'}], 'multiSelect': False}]</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="1333" cache_read_input_tokens="40534" output_tokens="403" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 1333, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01KgrzyKsd8oLveTUjLu8ZAD">
+User has answered your questions: "📋 Improve incremental dispatch commit message
+Current context: (wt:erk) (br:master)
+
+What would you like to do with this plan?"="Create new branch and planned PR". You can now continue with the user's answers in mind.
+  </tool_result>
+  <tool_use name="ToolSearch" id="toolu_017CXj1J2iKnFN2GqssfMGQ7">
+    <param name="query">select:Skill</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="481" cache_read_input_tokens="41867" output_tokens="75" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 481, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_017CXj1J2iKnFN2GqssfMGQ7">
+
+  </tool_result>
+  <tool_use name="Skill" id="toolu_0122knCtZ4qeSV3Q5e5Laq45">
+    <param name="skill">erk:plan-save</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="568" cache_read_input_tokens="42348" output_tokens="58" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 568, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_0122knCtZ4qeSV3Q5e5Laq45">
+Launching skill: erk:plan-save
+  </tool_result>
+  <user># /erk:plan-save
+
+Save the current session's plan to GitHub with session context.
+
+## Usage
+
+```bash
+/erk:plan-save                           # Standalone plan
+/erk:plan-save --plan-type=learn         # Learn plan (erk-learn label)
+/erk:plan-save --objective=123           # Explicit objective link (overrides marker)
+/erk:plan-save --current-branch          # Use current branch instead of creating new plnd/ branch
+```
+
+Objective linking: if a plan was created via `/erk:objective-plan`, the session's objective-context marker is read automatically by the save command. Use `--objective=&lt;number&gt;` to override the marker or provide the link when no marker exists (e.g., during replan).
+
+## Plan Storage
+
+The plan is saved using the configured backend:
+
+- **Draft PR backend** (`PLAN_BACKEND = "draft_pr"`): Creates a branch, pushes a plan commit, and opens a draft PR. Plan content is in the PR body after the metadata separator.
+  The JSON output contract includes `plan_number`, `plan_url`, `title`, `branch_name`, `plan_backend`.
+
+## Agent Instructions
+
+### Step 1: Parse Arguments
+
+Check `` for the `--plan-type`, `--objective`, and `--current-branch` flags:
+
+```
+If  contains "--plan-type=&lt;type&gt;":
+  - Extract the type (standard or learn)
+  - Store as PLAN_TYPE variable
+  - Set PLAN_TYPE_FLAG to "--plan-type=&lt;type&gt;"
+Else:
+  - Set PLAN_TYPE_FLAG to empty string
+
+If  contains "--objective=&lt;number&gt;":
+  - Extract the number
+  - Set OBJECTIVE_FLAG to "--objective=&lt;number&gt;"
+Else:
+  - Set OBJECTIVE_FLAG to empty string
+
+If  contains "--current-branch":
+  - Set CURRENT_BRANCH_FLAG to "--current-branch"
+Else:
+  - Set CURRENT_BRANCH_FLAG to empty string
+```
+
+### Step 2: Generate Branch Slug
+
+**Skip this step if `--current-branch` was passed.** The current branch is used directly.
+
+Before saving, generate a branch slug from the plan title. Read the plan title from the plan file you wrote in plan mode (the first `# ` heading).
+
+Generate a branch slug from the title:
+
+- 2-4 hyphenated lowercase words, max 30 characters
+- Capture distinctive essence, drop filler words (the, a, for, implementation, plan)
+- Prefer action verbs: add, fix, refactor, update, consolidate, extract, migrate
+- Examples: "fix-auth-session", "add-plan-validation", "refactor-gateway-abc"
+
+Store the result as `BRANCH_SLUG`.
+
+### Step 3: Generate Plan Summary
+
+Write a concise 2-3 sentence summary of the plan. This summary will be visible
+at the top of the PR description (above the collapsed full plan).
+
+Guidelines:
+
+- Focus on WHAT the plan does and WHY
+- Do not repeat the title
+- Plain text, no markdown headers or formatting
+- Avoid special shell characters (backticks, dollar signs)
+- Store as PLAN_SUMMARY
+
+### Step 4: Run Save Command
+
+Run this command with the session ID, summary, and optional flags.
+
+If CURRENT_BRANCH_FLAG is set, pass `--current-branch` (no branch slug needed):
+
+```bash
+erk exec plan-save --format json --session-id="89fc9e9a-9d3d-435d-bf6c-df287d87c222" --current-branch --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Otherwise, pass the branch slug:
+
+```bash
+erk exec plan-save --format json --session-id="89fc9e9a-9d3d-435d-bf6c-df287d87c222" --branch-slug="${BRANCH_SLUG}" --summary="${PLAN_SUMMARY}" ${PLAN_TYPE_FLAG} ${OBJECTIVE_FLAG}
+```
+
+Parse the JSON output to extract `plan_number` for verification in Step 5.
+
+If the command fails, display the error and stop.
+
+### Step 5: Verify Objective Link (if applicable)
+
+**Only run this step if `objective_issue` is non-null in the JSON output from Step 4.**
+
+Verify the objective link was saved correctly:
+
+```bash
+erk exec get-plan-metadata &lt;plan_number&gt; objective_issue
+```
+
+Parse the JSON response:
+
+- If `success: true` and `value` matches the expected objective number: verification passed
+- If `success: false` or value doesn't match: verification failed
+
+**On verification success:**
+
+Display: `Verified objective link: #&lt;objective-number&gt;`
+
+**On verification failure:**
+
+Display error and remediation steps:
+
+```
+ERROR: Objective link verification failed
+Expected objective: #&lt;expected&gt;
+Actual: &lt;actual-or-null&gt;
+
+The plan was saved but without the correct objective link.
+Fix: Close draft PR #&lt;plan_number&gt;,
+ensure the objective-context marker exists, and re-run /erk:plan-save.
+```
+
+Exit without creating the plan-saved marker. The session continues so the user can retry.
+
+### Step 6: Update Objective Roadmap (if objective linked)
+
+**Only run this step if `objective_issue` was non-null in JSON output and verification passed.**
+
+Update the objective's roadmap table to show that a plan has been created for this node:
+
+1. **Read the roadmap node marker** to get the node ID:
+
+```bash
+step_id=$(erk exec marker read --session-id "89fc9e9a-9d3d-435d-bf6c-df287d87c222" roadmap-step)
+```
+
+If the marker doesn't exist (command fails), skip this step - the plan wasn't created via `objective-plan`.
+
+2. **Update the roadmap table** using the dedicated command:
+
+```bash
+erk exec update-objective-node &lt;objective-issue&gt; --node "$step_id" --pr "#&lt;plan_number&gt;" --status in_progress
+```
+
+This atomically fetches the objective body, finds the matching node row, sets the Status cell to `in-progress`, and writes the updated body back.
+
+3. **Report the update:**
+
+Display: `Updated objective #&lt;objective-issue&gt; roadmap: node &lt;step_id&gt; → plan #&lt;plan_number&gt;`
+
+**Error handling:** If the roadmap update fails, warn but continue - the plan was saved successfully, just the roadmap tracking didn't update. The user can manually update the objective.
+
+### Step 7: Display Results
+
+**If JSON contains `skipped_duplicate: true`:**
+
+Display: `Plan already saved as #&lt;plan_number&gt; (duplicate skipped)`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options.
+
+**Otherwise, on success**, display:
+
+```
+Plan "&lt;title&gt;" saved as draft PR #&lt;plan_number&gt;
+URL: &lt;issue_url&gt;
+```
+
+If objective was verified, also display: `Verified objective link: #&lt;objective-number&gt;`
+
+Then call ExitPlanMode. The exit-plan-mode hook will present "what next?" options
+(implement in current worktree, implement in new worktree, or done).
+
+On failure, display the error message and suggest:
+
+- Checking that a plan exists (enter Plan mode and exit it first)
+- Verifying GitHub CLI authentication (`gh auth status`)
+- Checking network connectivity
+
+### Step 5: Push Planning Session
+
+After saving successfully, push the planning session for cross-machine learning.
+This captures the in-progress session state so it's available even if implementation
+happens on a different machine.
+
+Run `erk exec capture-session-info` to get the session file path, then push it:
+
+```bash
+erk exec upload-impl-session --session-id "89fc9e9a-9d3d-435d-bf6c-df287d87c222" 2&gt;/dev/null || true
+```
+
+If the plan was saved successfully and `plan_number` is known, use push-session directly
+for better stage tracking:
+
+```bash
+erk exec push-session \
+    --session-file "&lt;session_file_path&gt;" \
+    --session-id "89fc9e9a-9d3d-435d-bf6c-df287d87c222" \
+    --stage planning \
+    --source local \
+    --plan-id &lt;plan_number&gt; \
+    2&gt;/dev/null || true
+```
+
+Where `&lt;session_file_path&gt;` is obtained from `erk exec capture-session-info` output
+and `&lt;plan_number&gt;` is from Step 2's JSON output.
+
+**Note:** This is non-critical. If it fails, the plan was still saved successfully.
+The `2&gt;/dev/null || true` ensures graceful degradation.
+
+## Session Tracking
+
+After successfully saving a plan, the plan number is stored in a marker file that enables automatic plan updates in the same session.
+
+**To read the saved plan number:**
+
+```bash
+erk exec marker read --session-id "89fc9e9a-9d3d-435d-bf6c-df287d87c222" plan-saved-issue
+```
+
+This returns the plan number (exit code 0) or exits with code 1 if no plan was saved in this session.
+</user>
+  <usage input_tokens="2" cache_creation_input_tokens="3490" cache_read_input_tokens="42916" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3490}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <assistant>I'll save the plan now. The plan title is "Improve incremental dispatch commit message".
+
+**Branch slug:** `improve-dispatch-commit`
+
+**Summary:** Improves the incremental dispatch commit message to be more descriptive by including "Incremental dispatch" in the subject line and embedding the full plan content in the commit body, making it easier to understand what happened when viewing commits on GitHub.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="3490" cache_read_input_tokens="42916" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 3490}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ToolSearch" id="toolu_019jgSoU68REdhwJMeoZUN25">
+    <param name="query">select:Bash</param>
+    <param name="max_results">1</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="3490" cache_read_input_tokens="42916" output_tokens="280" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3490, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>Tool loaded.</user>
+  <tool_result tool="toolu_019jgSoU68REdhwJMeoZUN25">
+
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01FT7eZVzJh6yAo8UtVJBfX1">
+    <param name="command">erk exec plan-save --format json --session-id="89fc9e9a-9d3d-435d-bf6c-df287d87c222" --bra...[truncated 195 chars]...commit body, making it easier to understand what happened when viewing commits on GitHub."</param>
+    <param name="description">Save plan as draft PR with branch slug</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="3426" cache_read_input_tokens="46406" output_tokens="210" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 3426, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01FT7eZVzJh6yAo8UtVJBfX1">
+{"success": true, "plan_number": 8853, "plan_url": "https://github.com/dagster-io/erk/pull/8853", "title": "[erk-plan] Improve incremental dispatch commit message", "branch_name": "plnd/improve-dispatch-commit-03-06-1310", "plan_backend": "planned_pr", "objective_issue": null, "archived_to": "/Users/schrockn/code/erk/.erk/scratch/sessions/89fc9e9a-9d3d-435d-bf6c-df287d87c222/plan_snapshots/000001-3fadf906"}
+  </tool_result>
+  <assistant>Plan saved successfully. Now pushing the planning session.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="479" cache_read_input_tokens="49832" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 479}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01QuvuregKPwRzy2Eaa8rggt">
+    <param name="command">erk exec upload-impl-session --session-id "89fc9e9a-9d3d-435d-bf6c-df287d87c222" 2&gt;/dev/null || true</param>
+    <param name="description">Push planning session for cross-machine learning</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="479" cache_read_input_tokens="49832" output_tokens="151" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 479, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01QuvuregKPwRzy2Eaa8rggt">
+{"uploaded": false, "reason": "no_impl_folder"}
+  </tool_result>
+  <assistant>Plan **"Improve incremental dispatch commit message"** saved as draft PR **#8853**
+URL: https://github.com/dagster-io/erk/pull/8853</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="50311" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 274}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="ExitPlanMode" id="toolu_01V34uUXMcfKzC41bGQ7drdz">
+    <param name="plan"># Improve incremental dispatch commit message
+
+## Context
+
+When incremental dispatch commi...[truncated 1283 chars]...:
+```
+uv run pytest tests/unit/cli/commands/exec/scripts/test_incremental_dispatch.py
+```
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="274" cache_read_input_tokens="50311" output_tokens="81" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 274, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01V34uUXMcfKzC41bGQ7drdz">
+PreToolUse:ExitPlanMode hook error: [command -v erk &gt;/dev/null 2&gt;&amp;1 || exit 0; ERK_HOOK_ID=exit-plan-mode-hook erk exec exit-plan-mode-hook]: Plan #8853 saved successfully.
+
+Display ALL of the following next-steps commands to the user as plain text.
+Show every line exactly as written — do NOT summarize, truncate, or omit any lines.
+(do NOT use AskUserQuestion — just display the text):
+
+Implement plan #8853:
+  In current wt:    source "$(erk br co --for-plan 8853 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --for-plan 8853 --script)" &amp;&amp; erk implement -d
+  In new wt:        source "$(erk br co --new-slot --for-plan 8853 --script)" &amp;&amp; erk implement
+    (dangerously):  source "$(erk br co --new-slot --for-plan 8853 --script)" &amp;&amp; erk implement -d
+
+Checkout plan #8853:
+  In current wt:  erk br co --for-plan 8853
+  In new wt:      erk br co --new-slot --for-plan 8853
+
+Dispatch plan #8853:
+  CLI command:    erk pr dispatch 8853
+  Slash command:  /erk:pr-dispatch
+
+Session complete. Do NOT call ExitPlanMode again.
+
+  </tool_result>
+  <assistant>Plan saved. Here are next steps for plan **#8853**:
+
+**Implement plan #8853:**
+```
+In current wt:    source "$(erk br co --for-plan 8853 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --for-plan 8853 --script)" &amp;&amp; erk implement -d
+In new wt:        source "$(erk br co --new-slot --for-plan 8853 --script)" &amp;&amp; erk implement
+  (dangerously):  source "$(erk br co --new-slot --for-plan 8853 --script)" &amp;&amp; erk implement -d
+```
+
+**Checkout plan #8853:**
+```
+In current wt:  erk br co --for-plan 8853
+In new wt:      erk br co --new-slot --for-plan 8853
+```
+
+**Dispatch plan #8853:**
+```
+CLI command:    erk pr dispatch 8853
+Slash command:  /erk:pr-dispatch
+```</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="463" cache_read_input_tokens="50585" output_tokens="252" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 463, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <system subtype="" duration_ms="" />
+  <user>&lt;command-message&gt;erk:pr-dispatch&lt;/command-message&gt;
+&lt;command-name&gt;/erk:pr-dispatch&lt;/command-name&gt;</user>
+  <user># /erk:pr-dispatch
+
+## Goal
+
+Find the most recent plan created in this conversation and dispatch it for remote AI implementation via `erk pr dispatch`.
+
+## What This Command Does
+
+1. Search conversation for the last plan reference
+2. Extract the plan number
+3. Run `erk pr dispatch &lt;plan_number&gt;` to trigger remote implementation
+
+## Finding the Plan
+
+Search the conversation from bottom to top for these patterns (in priority order):
+
+1. **Draft PR reference**: `saved as draft PR #&lt;number&gt;` or `draft PR #&lt;number&gt;`
+2. **Pull request URL**: `https://github.com/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;`
+3. **Plan URL**: `https://github.com/.../pull/&lt;number&gt;` (legacy: `https://github.com/.../issues/&lt;number&gt;`)
+
+Extract the plan number from the most recent match.
+
+## Execution
+
+Once you have the plan number, run:
+
+```bash
+erk pr dispatch &lt;plan_number&gt;
+```
+
+If the command succeeds, clear the session marker to allow creating new plans in this session:
+
+```bash
+erk exec marker delete --session-id "89fc9e9a-9d3d-435d-bf6c-df287d87c222" plan-saved-issue
+```
+
+Display the command output to the user. The `erk pr dispatch` command handles all validation (plan existence, labels, state).
+
+## Error Cases
+
+- **No plan found in conversation**: Report "No plan found in conversation. Run /erk:plan-save first to create a plan."
+- **erk pr dispatch fails**: Display the error output from the command (erk pr dispatch validates the plan)
+</user>
+  <assistant>
+
+The most recent plan is **#8853**. Dispatching it now.</assistant>
+  <usage input_tokens="2" cache_creation_input_tokens="820" cache_read_input_tokens="51048" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 820}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01F1FQnJWT3J5Tx5o1oMET36">
+    <param name="command">erk pr dispatch 8853</param>
+    <param name="description">Dispatch plan #8853 for remote AI implementation</param>
+    <param name="timeout">60000</param>
+  </tool_use>
+  <usage input_tokens="2" cache_creation_input_tokens="820" cache_read_input_tokens="51048" output_tokens="122" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 820, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01F1FQnJWT3J5Tx5o1oMET36">
+Checking GitHub authentication...
+Syncing trunk with remote...
+Syncing master with origin/master...
+✓ master synced with origin/master
+Resolving GitHub username...
+Validating 1 planned-PR plan(s)...
+
+Validating PR #8853...
+
+✓ All 1 plan(s) validated
+
+  #8853: [erk-plan] Improve incremental dispatch commit message
+
+Dispatching PR #8853...
+
+Fetching plan content...
+Syncing branch: plnd/improve-dispatch-commit-03-06-1310
+Committing plan to branch...
+✓ Branch pushed to remote
+
+Dispatching workflow: plan-implement.yml
+  Waiting for workflow run... (attempt 1/11)
+  Waiting for workflow run... (attempt 2/11)
+✓ Workflow dispatched.
+✓ Dispatch metadata written
+Posting queued event comment...
+✓ Queued event comment posted
+
+
+✓ 1 plan(s) dispatched successfully!
+
+... [6 lines omitted] ...
+  </tool_result>
+  <assistant>Dispatched successfully. Clearing the session marker.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="569" cache_read_input_tokens="51868" cache_creation="{'ephemeral_5m_input_tokens': 0, 'ephemeral_1h_input_tokens': 569}" output_tokens="2" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01L2xQJ6bC8bZjriR8zpf9Sw">
+    <param name="command">erk exec marker delete --session-id "89fc9e9a-9d3d-435d-bf6c-df287d87c222" plan-saved-issue</param>
+    <param name="description">Clear plan-saved marker to allow new plans</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="569" cache_read_input_tokens="51868" output_tokens="129" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 569, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <tool_result tool="toolu_01L2xQJ6bC8bZjriR8zpf9Sw">
+{"success": true, "message": "Deleted marker: plan-saved-issue"}
+  </tool_result>
+  <assistant>Plan **#8853** dispatched for remote implementation:
+
+- **Plan/PR:** https://github.com/dagster-io/erk/pull/8853
+- **Workflow:** https://github.com/dagster-io/erk/actions/runs/22782170940</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="160" cache_read_input_tokens="52437" output_tokens="68" server_tool_use="{'web_search_requests': 0, 'web_fetch_requests': 0}" service_tier="standard" cache_creation="{'ephemeral_1h_input_tokens': 160, 'ephemeral_5m_input_tokens': 0}" inference_geo="" iterations="[]" speed="standard" />
+  <user>&lt;local-command-caveat&gt;Caveat: The messages below were generated by the user while running local commands. DO NOT respond to these messages or otherwise consider them in your response unless the user explicitly asks you to.&lt;/local-command-caveat&gt;</user>
+  <user>&lt;command-name&gt;/exit&lt;/command-name&gt;
+            &lt;command-message&gt;exit&lt;/command-message&gt;
+            &lt;command-args&gt;&lt;/command-args&gt;</user>
+  <user>&lt;local-command-stdout&gt;Bye!&lt;/local-command-stdout&gt;</user>
+</session>
