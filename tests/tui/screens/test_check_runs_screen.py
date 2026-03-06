@@ -204,7 +204,7 @@ async def test_summaries_update_markdown_in_place() -> None:
         await pilot.pause(0.5)
 
         # The #checks-content Markdown widget should exist (updated in-place, not removed)
-        markdown = screen.query_one("#checks-content", Markdown)
+        screen.query_one("#checks-content", Markdown)
 
         # Check runs should be stored on the screen
         assert len(screen._check_runs) == 1
