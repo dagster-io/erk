@@ -1,0 +1,878 @@
+<session>
+  <meta branch="plnd/consolidate-14-learn-docs-03-06-1529" />
+  <meta model="claude-opus-4-6" />
+  <tool_result tool="toolu_01FtB1639SVXxVupCYd5EgDt">
+packages/erk-shared/src/erk_shared/gateway/git/repo_ops/abc.py:52:    def get_git_dir(self, cwd: Path) -&gt; Path | None:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/abc.py-53-        """Get the per-worktree git directory.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/abc.py-54-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/abc.py-55-        Returns the path via `git rev-parse --git-dir`. For worktrees, this
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/abc.py-56-        returns the worktree-specific git directory (e.g., .git/worktrees/slot-05).
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/abc.py-57-        For non-worktree repos, this is the same as get_git_common_dir.
+--
+packages/erk-shared/src/erk_shared/gateway/git/repo_ops/real.py:45:    def get_git_dir(self, cwd: Path) -&gt; Path | None:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/real.py-46-        """Get the per-worktree git directory."""
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/real.py-47-        import subprocess
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/real.py-48-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/real.py-49-        result = subprocess.run(
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/real.py-50-            ["git", "rev-parse", "--git-dir"],
+--
+packages/erk-shared/src/erk_shared/gateway/git/repo_ops/fake.py:109:    def get_git_dir(self, cwd: Path) -&gt; Path | None:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/fake.py-110-        """Get the per-worktree git directory.
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/fake.py-111-
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/fake.py-112-        Checks _git_dirs first, falls back to _git_common_dirs
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/fake.py-113-        (in non-worktree repos these are identical).
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/fake.py-114-        """
+--
+packages/erk-shared/src/erk_shared/gateway/git/repo_ops/dry_run.py:30:    def get_git_dir(self, cwd: Path) -&gt; Path | None:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/dry_run.py-31-        """Query operation (read-only, delegates to wrapped)."""
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/dry_run.py-32-        return self._wrapped.get_git_dir(cwd)
+--
+packages/erk-shared/src/erk_shared/gateway/git/repo_ops/printing.py:26:    def get_git_dir(self, cwd: Path) -&gt; Path | None:
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/printing.py-27-        """Query operation (read-only, no printing)."""
+/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/git/repo_ops/printing.py-28-        return self._wrapped.get_git_dir(cwd)
+  </tool_result>
+  <assistant>Good, I've confirmed the `get_git_dir()` method exists. Now I have all context needed. Let me start implementing all the documentation changes. I'll do them systematically.
+
+**Step 1: Update git-plumbing-patterns.md**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1440" cache_read_input_tokens="78164" cache_creation="{'ephemeral_5m_input_tokens': 1440, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01KcAt49zN6ZMiRd86bjvnXG">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/git-plumbing-patterns.md</param>
+    <param name="old_string">## Pattern 2: `update_local_ref` (Advance Branch Pointer)
+
+### How It Works
+
+`update_local...[truncated 78 chars]...out the branch. This is safe when the branch is NOT currently checked out in any worktree.</param>
+    <param name="new_string">## Pattern 2: `update_local_ref` (Advance Branch Pointer)
+
+### How It Works
+
+`update_local...[truncated 1305 chars]...
+&lt;!-- Source: src/erk/cli/commands/exec/scripts/incremental_dispatch.py, lines 108-144 --&gt;</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1440" cache_read_input_tokens="78164" cache_creation="{'ephemeral_5m_input_tokens': 1440, 'ephemeral_1h_input_tokens': 0}" output_tokens="690" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01KcAt49zN6ZMiRd86bjvnXG">
+The file /home/runner/work/erk/erk/docs/learned/architecture/git-plumbing-patterns.md has been updated successfully.
+  </tool_result>
+  <assistant>Now add PR #8789 to the evolution history:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1166" cache_read_input_tokens="79604" cache_creation="{'ephemeral_5m_input_tokens': 1166, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01FStiQj7G9N12JrLwvU2GLC">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/git-plumbing-patterns.md</param>
+    <param name="old_string">- PR #8578 applied `commit_files_to_branch` pattern to dispatch workflow
+- PR #8582 applied `update_local_ref` pattern to trunk sync in dispatch helpers</param>
+    <param name="new_string">- PR #8578 applied `commit_files_to_branch` pattern to dispatch workflow
+- PR #8582 applie...[truncated 36 chars]...elpers
+- PR #8789 added checked-out branch handling and index sync to incremental dispatch</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1166" cache_read_input_tokens="79604" cache_creation="{'ephemeral_5m_input_tokens': 1166, 'ephemeral_1h_input_tokens': 0}" output_tokens="233" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01FStiQj7G9N12JrLwvU2GLC">
+The file /home/runner/work/erk/erk/docs/learned/architecture/git-plumbing-patterns.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01RA78YDhdQWFMCsQwLMtRsh">
+    <param name="todos">[{'content': 'Step 1: Update git-plumbing-patterns.md (from #8798)', 'status': 'completed'...[truncated 1713 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="279" cache_read_input_tokens="80770" cache_creation="{'ephemeral_5m_input_tokens': 279, 'ephemeral_1h_input_tokens': 0}" output_tokens="644" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RA78YDhdQWFMCsQwLMtRsh">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Step 2: Update git-graphite-quirks.md** — Add section on `get_git_dir()` vs `get_git_common_dir()` distinction.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="81049" cache_creation="{'ephemeral_5m_input_tokens': 686, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01F8TPi4fvMUBz62oFMcSU1U">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/git-graphite-quirks.md</param>
+    <param name="old_string">## Adding New Quirks</param>
+    <param name="new_string">## `get_git_dir()` vs `get_git_common_dir()` Distinction
+
+**Surprising Behavior**: Rebase ...[truncated 1052 chars]...c.py` — both methods defined on `GitRepoOps` ABC. Added in PR #8838.
+
+## Adding New Quirks</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="81049" cache_creation="{'ephemeral_5m_input_tokens': 686, 'ephemeral_1h_input_tokens': 0}" output_tokens="575" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01F8TPi4fvMUBz62oFMcSU1U">
+The file /home/runner/work/erk/erk/docs/learned/architecture/git-graphite-quirks.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01Kn1mQ3jVkWtGPRh3Aj1QDZ">
+    <param name="todos">[{'content': 'Step 1: Update git-plumbing-patterns.md (from #8798)', 'status': 'completed'...[truncated 1715 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="621" cache_read_input_tokens="81735" cache_creation="{'ephemeral_5m_input_tokens': 621, 'ephemeral_1h_input_tokens': 0}" output_tokens="644" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Kn1mQ3jVkWtGPRh3Aj1QDZ">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Step 3: Update commit-message-generation.md** — Update constructor signature and migration note.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="82356" cache_creation="{'ephemeral_5m_input_tokens': 686, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01DB7nab9xuG3quxfSkqcF3J">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/commit-message-generation.md</param>
+    <param name="old_string">## Model Selection
+
+Default model is `haiku` for:
+
+- Speed (commits generate quickly)
+- Co...[truncated 78 chars]...ption)
+
+Override via `CommitMessageGenerator(executor, model="sonnet")` for complex diffs.</param>
+    <param name="new_string">## LlmCaller Architecture
+
+`CommitMessageGenerator` takes a single `LlmCaller` dependency,...[truncated 723 chars]...on)
+
+Model selection is configured via the `LlmCaller` instance passed to the constructor.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="82356" cache_creation="{'ephemeral_5m_input_tokens': 686, 'ephemeral_1h_input_tokens': 0}" output_tokens="442" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DB7nab9xuG3quxfSkqcF3J">
+The file /home/runner/work/erk/erk/docs/learned/pr-operations/commit-message-generation.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01AimCfqRMzGkzZ5EBhcM1z4">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/commit-message-generation.md</param>
+    <param name="old_string">### Phase 4: Generating PR description
+
+- Uses `CommitMessageGenerator` with Claude CLI
+- Inputs: diff file, commit messages, branch info, **plan context**
+- Outputs: AI-generated title and body</param>
+    <param name="new_string">### Phase 4: Generating PR description
+
+- Uses `CommitMessageGenerator` with `LlmCaller` (...[truncated 18 chars]...ile, commit messages, branch info, **plan context**
+- Outputs: AI-generated title and body</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="488" cache_read_input_tokens="83042" cache_creation="{'ephemeral_5m_input_tokens': 488, 'ephemeral_1h_input_tokens': 0}" output_tokens="228" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AimCfqRMzGkzZ5EBhcM1z4">
+&lt;tool_use_error&gt;String to replace not found in file.
+String: ### Phase 4: Generating PR description
+
+- Uses `CommitMessageGenerator` with Claude CLI
+- Inputs: diff file, commit messages, branch info, **plan context**
+- Outputs: AI-generated title and body&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>That text is in pr-submit-phases.md, not commit-message-generation.md. I'll fix it there in Step 5. Let me continue with Step 4.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="321" cache_read_input_tokens="83530" cache_creation="{'ephemeral_5m_input_tokens': 321, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01L9vKLG6ukmMJAnvGdvmU7v">
+    <param name="todos">[{'content': 'Step 1: Update git-plumbing-patterns.md (from #8798)', 'status': 'completed'...[truncated 1717 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="321" cache_read_input_tokens="83530" cache_creation="{'ephemeral_5m_input_tokens': 321, 'ephemeral_1h_input_tokens': 0}" output_tokens="684" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01L9vKLG6ukmMJAnvGdvmU7v">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Step 4: Update pr-submit-pipeline.md** — The plan says to update from 11-step to 10-step, document parallelized diff+plan fetch, and note PR cache polling removal. Let me check the current state — the doc already says "10 steps" (it was already updated). Let me verify the key claims.
+
+The doc already says "10 steps" at line 64. Let me check whether the parallelization is documented. Let me read the relevant section of submit_pipeline.py.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="726" cache_read_input_tokens="83851" cache_creation="{'ephemeral_5m_input_tokens': 726, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_012afZRYmAj9odZznFaQJiEm">
+    <param name="pattern">extract_diff_and_fetch_plan_context|ThreadPoolExecutor</param>
+    <param name="path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="726" cache_read_input_tokens="83851" cache_creation="{'ephemeral_5m_input_tokens': 726, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_012afZRYmAj9odZznFaQJiEm">
+609:def extract_diff_and_fetch_plan_context(
+618:    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+1010:        extract_diff_and_fetch_plan_context,
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GxwgaZ8bcWryXKKCEZbPuy">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py</param>
+    <param name="offset">605</param>
+    <param name="limit">60</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="332" cache_read_input_tokens="84577" cache_creation="{'ephemeral_5m_input_tokens': 332, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GxwgaZ8bcWryXKKCEZbPuy">
+   605→
+   606→    return dataclasses.replace(state, plan_context=plan_context)
+   607→
+   608→
+   609→def extract_diff_and_fetch_plan_context(
+   610→    ctx: ErkContext, state: SubmitState
+   611→) -&gt; SubmitState | SubmitError:
+   612→    """Run extract_diff and fetch_plan_context concurrently."""
+   613→    if state.skip_description:
+   614→        return state
+   615→
+   616→    click.echo(click.style("Phase 2: Getting diff and plan context", bold=True))
+   617→
+   618→    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+   619→        diff_future = executor.submit(extract_diff, ctx, state)
+   620→        plan_future = executor.submit(fetch_plan_context, ctx, state)
+   621→        diff_result = diff_future.result()
+   622→        plan_result = plan_future.result()
+   623→
+   624→    if isinstance(diff_result, SubmitError):
+   625→        return diff_result
+   626→    if isinstance(plan_result, SubmitError):
+   627→        return plan_result
+   628→
+   629→    click.echo("")
+   630→
+   631→    return dataclasses.replace(
+   632→        state,
+   633→        diff_file=diff_result.diff_file,
+   634→        plan_context=plan_result.plan_context,
+
+... [35 lines omitted] ...
+
+   638→def generate_description(ctx: ErkContext, state: SubmitState) -&gt; SubmitState | SubmitError:
+   645→        return SubmitError(
+   647→            error_type="no_diff_file",
+   648→            message="Failed to extract diff for AI analysis",
+  </tool_result>
+  <assistant>Now I can see the current pipeline. The pr-submit-pipeline.md already says 10 steps but doesn't mention the parallelization. Let me update it to document the `extract_diff_and_fetch_plan_context` combination and the PR cache polling removal.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="984" cache_read_input_tokens="84909" cache_creation="{'ephemeral_5m_input_tokens': 984, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01BvFCsk8bfUN6AUfGhcAoKP">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md</param>
+    <param name="old_string">The pipeline has 10 steps: prepare, commit WIP, capture existing PR body, push+PR, extract...[truncated 978 chars]...ntly and that failure requires distinct error handling, it deserves to be a separate step.</param>
+    <param name="new_string">The pipeline has 10 steps: prepare, commit WIP, capture existing PR body, push+PR, extract...[truncated 1647 chars]...ntly and that failure requires distinct error handling, it deserves to be a separate step.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="984" cache_read_input_tokens="84909" cache_creation="{'ephemeral_5m_input_tokens': 984, 'ephemeral_1h_input_tokens': 0}" output_tokens="851" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BvFCsk8bfUN6AUfGhcAoKP">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <assistant>I already read this file. Let me re-read it since the tool requires a fresh read.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="897" cache_read_input_tokens="85893" cache_creation="{'ephemeral_5m_input_tokens': 897, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015AzvN33wTxRLmJKwPmc47j">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="897" cache_read_input_tokens="85893" cache_creation="{'ephemeral_5m_input_tokens': 897, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015AzvN33wTxRLmJKwPmc47j">
+     1→---
+     2→title: PR Submit Pipeline Architecture
+     3→read_when:
+     4→  - "modifying the PR submit workflow"
+     5→  - "adding new steps to the submit pipeline"
+     6→  - "debugging PR submission failures"
+     7→  - "understanding the Graphite-first vs core submit dispatch"
+     8→tripwires:
+     9→  - action: "adding a new step to the submit pipeline"
+    10→    warning: "Each step must return SubmitState | SubmitError. Use dataclasses.replace() for state updates. Add the step to _submit_pipeline() tuple."
+    11→  - action: "mutating SubmitState fields directly"
+    12→    warning: "SubmitState is frozen. Use dataclasses.replace(state, field=value) to create new state."
+    13→  - action: "adding discovery logic outside prepare_state()"
+    14→    warning: "All discovery (branch name, issue number, parent branch, etc.) must happen in prepare_state() to prevent duplication. Later steps assume these fields are populated."
+    15→  - action: "using ctx.invoke() with kwargs that don't match target function parameter names"
+    16→    warning: "Click ctx.invoke() forwards kwargs directly — any name mismatch causes runtime TypeError. Verify all parameter names exactly match the target function signature."
+    17→  - action: "calling an external tool that overwrites state without capturing it first"
+    18→    warning: "Save state BEFORE calling external tools that may overwrite it. Reference: capture_existing_pr_body() in submit_pipeline.py captures the PR body before gt submit overwrites it."
+    19→last_audited: "2026-02-16 14:20 PT"
+    20→audit_result: clean
+    21→---
+    22→
+    23→# PR Submit Pipeline Architecture
+    24→
+    25→The PR submit pipeline is erk's reference implementation of the state threading pattern. This document explains **why** the architecture choices matter, not what the code does (read the source for that).
+    26→
+    27→## Why Linear Pipelines: The Dual-Path Problem
+    28→
+    29→Before the linear pipeline refactor, PR submission used branching orchestration with two paths (Graphite-first vs core). **The problem:** discovery code was duplicated between paths, issue linkage validation happened in multiple places, and error handling varied between branches.
+    30→
+
+... [138 lines omitted] ...
+
+    31→Linear pipelines solve this by **deferring the dispatch decision**. Discovery happens once in step 1, then step 3 dispatches internally to Graphite or core flow. Both paths share the same state type and error handling.
+    43→3. **Type narrowing** — Later steps assume `branch_name` is `str`, not `str | None`, because step 1 checks and errors if unresolved
+    57→- **Shared error handling** — Both return `SubmitState | SubmitError`, uniform consumption at CLI layer
+    70→**Why not fewer steps?** Merging "extract diff + generate description" would make testing harder (can't test diff extraction without running AI generation). Each step represents a **failure boundary** — a distinct phase where errors need different handling.
+    74→**Decision test:** If the step can fail independently and that failure requires distinct error handling, it deserves to be a separate step.
+    82→**Why auto-repair instead of erroring?** Early erk workflows created `.erk/impl-context/` but not a reference file. Erroring would break existing worktrees. Auto-repair maintains forward compatibility while migrating to the new structure.
+   131→## Why dict[str, str] for SubmitError.details
+   133→&lt;!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, SubmitError --&gt;
+   135→`SubmitError.details` is `dict[str, str]`, not `dict[str, str] | None` or `dict[str, Any]`.
+   137→**Why always present, never None?** Every error has details, even if empty `{}`. Making it optional adds ceremony (callers must check `if details is not None`) for no benefit.
+   139→**Why `str` values, not `Any`?** Error details are for logging and debugging. String values enable consistent serialization (JSON, log files) without type uncertainty. If you need structured data, that belongs in a dedicated error type, not in `details`.
+   154→- [Discriminated Union Error Handling](../architecture/discriminated-union-error-handling.md) — SubmitError as discriminated union
+  </tool_result>
+  <tool_use name="Edit" id="toolu_016FGjt3ongmvPJH6myCUaHp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md</param>
+    <param name="old_string">The pipeline has 10 steps: prepare, commit WIP, capture existing PR body, push+PR, extract...[truncated 597 chars]...represents a **failure boundary** — a distinct phase where errors need different handling.</param>
+    <param name="new_string">The pipeline has 10 steps: prepare, commit WIP, capture existing PR body, push+PR, extract...[truncated 1269 chars]...represents a **failure boundary** — a distinct phase where errors need different handling.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4130" cache_read_input_tokens="86790" cache_creation="{'ephemeral_5m_input_tokens': 4130, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_016FGjt3ongmvPJH6myCUaHp">
+The file /home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01VzBe4fXTc4CtnY1FqQTc8A">
+    <param name="todos">[{'content': 'Step 1: Update git-plumbing-patterns.md (from #8798)', 'status': 'completed'...[truncated 1719 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="681" cache_read_input_tokens="90920" cache_creation="{'ephemeral_5m_input_tokens': 681, 'ephemeral_1h_input_tokens': 0}" output_tokens="644" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VzBe4fXTc4CtnY1FqQTc8A">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Step 5: Update pr-submit-phases.md and plan-embedding-in-pr.md**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="91601" cache_creation="{'ephemeral_5m_input_tokens': 686, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_011yqJjKgeZwViFkPTriZMLq">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="91601" cache_creation="{'ephemeral_5m_input_tokens': 686, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_011yqJjKgeZwViFkPTriZMLq">
+     1→---
+     2→title: PR Submit Workflow Phases
+     3→read_when:
+     4→  - "understanding the erk pr submit workflow"
+     5→  - "debugging PR submission issues"
+     6→  - "working with AI-generated PR descriptions"
+     7→  - "understanding plan context integration in PRs"
+     8→last_audited: "2026-02-16 14:20 PT"
+     9→audit_result: clean
+    10→---
+    11→
+    12→# PR Submit Workflow Phases
+    13→
+    14→The `erk pr submit` command uses a 6-phase workflow to submit PRs with AI-generated descriptions. This document explains each phase and the two-layer architecture.
+    15→
+    16→## Two-Layer Architecture
+    17→
+    18→The workflow has two layers:
+    19→
+    20→1. **Core layer (always runs)**: `git push` + `gh pr create` - works without Graphite
+    21→2. **Graphite layer (optional)**: `gt submit` for stack metadata - runs when Graphite is available and branch is tracked
+    22→
+    23→## Workflow Phases
+    24→
+    25→| Phase | Name                      | Description                                  |
+    26→| ----- | ------------------------- | -------------------------------------------- |
+    27→| 1     | Creating or Updating PR   | Push changes and create/find PR              |
+    28→| 2     | Getting diff              | Extract diff from GitHub API for AI analysis |
+    29→| 3     | Fetching plan context     | Get plan from linked erk-plan issue          |
+    30→| 4     | Generating PR description | AI generates title and body via Claude CLI   |
+
+... [121 lines omitted] ...
+
+   104→This phase is non-fatal - errors are warnings, not failures.
+  </tool_result>
+  <assistant>Now update pr-submit-phases.md — phases 2 and 3 now run concurrently, and phase 4 uses LlmCaller:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="2092" cache_read_input_tokens="92287" cache_creation="{'ephemeral_5m_input_tokens': 2092, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01S6vP8aPCZtC6h1pdfZT31x">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md</param>
+    <param name="old_string">| Phase | Name                      | Description                                  |
+| ---...[truncated 479 chars]...    |
+| 6     | Updating PR metadata      | Push AI-generated title/body to GitHub       |</param>
+    <param name="new_string">| Phase | Name                          | Description                                     ...[truncated 478 chars]...  | Updating PR metadata          | Push AI-generated title/body to GitHub               |</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="2092" cache_read_input_tokens="92287" cache_creation="{'ephemeral_5m_input_tokens': 2092, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01S6vP8aPCZtC6h1pdfZT31x">
+The file /home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update the phase descriptions:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="492" cache_read_input_tokens="94379" cache_creation="{'ephemeral_5m_input_tokens': 492, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01XYN5cZL3sdCe4aQEYbkX9g">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md</param>
+    <param name="old_string">### Phase 2: Getting diff
+
+- Uses GitHub API to get PR diff
+- Saves diff to session scratc...[truncated 1497 chars]...adata
+
+- Updates PR title and body via GitHub API
+- Uses AI-generated content from Phase 4</param>
+    <param name="new_string">### Phase 2: Getting diff and plan context
+
+Diff extraction and plan context fetching run ...[truncated 1353 chars]...adata
+
+- Updates PR title and body via GitHub API
+- Uses AI-generated content from Phase 3</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="492" cache_read_input_tokens="94379" cache_creation="{'ephemeral_5m_input_tokens': 492, 'ephemeral_1h_input_tokens': 0}" output_tokens="958" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XYN5cZL3sdCe4aQEYbkX9g">
+The file /home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update the remaining phase references and architecture note:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="1434" cache_read_input_tokens="94871" cache_creation="{'ephemeral_5m_input_tokens': 1434, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01CpK9NUWDZvbyVFg2Uf6i2P">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md</param>
+    <param name="old_string">- Embeds plan in PR body via `_build_plan_details_section()` when `plan_context` is presen...[truncated 553 chars]...cements). See [PR Body Formatting](../architecture/pr-body-formatting.md) for the pattern.</param>
+    <param name="new_string">- Embeds plan in PR body via `_build_plan_details_section()` when `plan_context` is presen...[truncated 553 chars]...cements). See [PR Body Formatting](../architecture/pr-body-formatting.md) for the pattern.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1434" cache_read_input_tokens="94871" cache_creation="{'ephemeral_5m_input_tokens': 1434, 'ephemeral_1h_input_tokens': 0}" output_tokens="529" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CpK9NUWDZvbyVFg2Uf6i2P">
+The file /home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01LBRe7DVKZBeUj1LKvWXJ1M">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md</param>
+    <param name="old_string">The `erk pr submit` command uses a 6-phase workflow to submit PRs with AI-generated descriptions. This document explains each phase and the two-layer architecture.</param>
+    <param name="new_string">The `erk pr submit` command uses a 5-phase workflow to submit PRs with AI-generated descriptions. This document explains each phase and the two-layer architecture.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="575" cache_read_input_tokens="96305" cache_creation="{'ephemeral_5m_input_tokens': 575, 'ephemeral_1h_input_tokens': 0}" output_tokens="188" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01LBRe7DVKZBeUj1LKvWXJ1M">
+The file /home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update the architecture note about phase count:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="664" cache_read_input_tokens="96880" cache_creation="{'ephemeral_5m_input_tokens': 664, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01DJeuiWbKWyCznFseGzVtfu">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md</param>
+    <param name="old_string">The internal implementation was refactored in PR #6300 from a monolithic function to a lin...[truncated 124 chars]...ne Architecture](../cli/pr-submit-pipeline.md) for the internal step-by-step architecture.</param>
+    <param name="new_string">The internal implementation was refactored in PR #6300 from a monolithic function to a lin...[truncated 124 chars]...ne Architecture](../cli/pr-submit-pipeline.md) for the internal step-by-step architecture.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="664" cache_read_input_tokens="96880" cache_creation="{'ephemeral_5m_input_tokens': 664, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01DJeuiWbKWyCznFseGzVtfu">
+The file /home/runner/work/erk/erk/docs/learned/pr-operations/pr-submit-phases.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update plan-embedding-in-pr.md — update phase references:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="326" cache_read_input_tokens="97544" cache_creation="{'ephemeral_5m_input_tokens': 326, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01UYH4BR2qHHQZwGpYwBii4c">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/plan-embedding-in-pr.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="326" cache_read_input_tokens="97544" cache_creation="{'ephemeral_5m_input_tokens': 326, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01UYH4BR2qHHQZwGpYwBii4c">
+     1→---
+     2→title: Plan Embedding in PR Body
+     3→read_when:
+     4→  - "embedding plan content in a PR body"
+     5→  - "debugging missing or malformed plan sections in pull requests"
+     6→  - "modifying how plan context flows through PR submission"
+     7→tripwires:
+     8→  - action: "adding plan HTML to the pr_body variable instead of pr_body_for_github"
+     9→    warning: "Plan embedding uses &lt;details&gt; HTML which must never enter git commit messages. Append only to pr_body_for_github. See pr-body-formatting.md for the two-target pattern."
+    10→last_audited: "2026-02-08 00:00 PT"
+    11→audit_result: edited
+    12→---
+    13→
+    14→# Plan Embedding in PR Body
+    15→
+    16→## Why Embed Plans
+    17→
+    18→When a PR originates from an erk-plan issue, reviewers need the original plan for context — it explains the _intent_ behind the code, not just the diff. Embedding the plan directly in the PR body means reviewers don't have to chase cross-references to a separate GitHub issue. A collapsible `&lt;details&gt;` section keeps this context available without overwhelming the PR description.
+    19→
+    20→## Data Flow: Plan to PR
+    21→
+    22→Plan content arrives at the PR through a multi-system chain:
+    23→
+    24→1. **Branch name** → `PlanContextProvider` extracts the issue number from the `P{number}-{slug}` convention
+    25→2. **GitHub API** → fetches the plan issue body, then the plan comment containing the actual plan markdown
+    26→3. **Phase 3** of the submit pipeline populates `state.plan_context` (a `PlanContext` with issue number, plan markdown, and optional objective summary)
+    27→4. **Phase 6** (`finalize_pr`) conditionally appends the plan HTML to the GitHub-only body string
+    28→
+    29→&lt;!-- Source: src/erk/core/plan_context_provider.py, PlanContextProvider.get_plan_context --&gt;
+    30→
+
+... [28 lines omitted] ...
+
+    37→The embedding is **conditional** — `finalize_pr` only appends the plan section when `state.plan_context is not None`. Branches that don't follow the plan naming convention, or plans that fail to fetch, gracefully produce PRs with no plan section. Every step in `PlanContextProvider` returns `None` on failure rather than raising, so the embedding is always best-effort.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01Jp1ZHAaMrzdHXLD7ghoz6A">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/plan-embedding-in-pr.md</param>
+    <param name="old_string">3. **Phase 3** of the submit pipeline populates `state.plan_context` (a `PlanContext` with...[truncated 49 chars]...ase 6** (`finalize_pr`) conditionally appends the plan HTML to the GitHub-only body string</param>
+    <param name="new_string">3. **Phase 2** of the submit pipeline populates `state.plan_context` (a `PlanContext` with...[truncated 90 chars]...ase 5** (`finalize_pr`) conditionally appends the plan HTML to the GitHub-only body string</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1668" cache_read_input_tokens="97870" cache_creation="{'ephemeral_5m_input_tokens': 1668, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Jp1ZHAaMrzdHXLD7ghoz6A">
+The file /home/runner/work/erk/erk/docs/learned/pr-operations/plan-embedding-in-pr.md has been updated successfully.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01ALQKyuwRdpoXBjaCfdeUrA">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/pr-operations/plan-embedding-in-pr.md</param>
+    <param name="old_string">- [PR Submit Phases](pr-submit-phases.md) — Phase 3 (plan fetch) and Phase 6 (embedding) context</param>
+    <param name="new_string">- [PR Submit Phases](pr-submit-phases.md) — Phase 2 (plan fetch) and Phase 5 (embedding) context</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="308" cache_read_input_tokens="99538" cache_creation="{'ephemeral_5m_input_tokens': 308, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ALQKyuwRdpoXBjaCfdeUrA">
+The file /home/runner/work/erk/erk/docs/learned/pr-operations/plan-embedding-in-pr.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01H9AwK3GRhztc8x2raxNYkr">
+    <param name="todos">[{'content': 'Step 1: Update git-plumbing-patterns.md (from #8798)', 'status': 'completed'...[truncated 1721 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="232" cache_read_input_tokens="99846" cache_creation="{'ephemeral_5m_input_tokens': 232, 'ephemeral_1h_input_tokens': 0}" output_tokens="644" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01H9AwK3GRhztc8x2raxNYkr">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Step 6: Update workflow-run-list.md** — Add branch-name format from plan-implement workflow.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="100078" cache_creation="{'ephemeral_5m_input_tokens': 686, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01EuL4Kvo1DPnQoYGsrYSVPm">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-run-list.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="100078" cache_creation="{'ephemeral_5m_input_tokens': 686, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01EuL4Kvo1DPnQoYGsrYSVPm">
+     1→---
+     2→title: Workflow Run List
+     3→read_when:
+     4→  - "modifying workflow run list display"
+     5→  - "working with erk workflow run list"
+     6→  - "understanding run-name format parsing"
+     7→  - "modifying workflow run display"
+     8→---
+     9→
+    10→# Workflow Run List
+    11→
+    12→The `erk workflow run list` command displays GitHub Actions workflow runs in a PR-centric table view.
+    13→
+    14→## Command Hierarchy
+    15→
+    16→Moved from top-level `erk run` to `erk workflow run list` and `erk workflow run logs` in PR #8549.
+    17→
+    18→## Source Files
+    19→
+    20→- `src/erk/cli/commands/run/list_cmd.py` -- Main list command (192 lines)
+    21→- `src/erk/cli/commands/run/shared.py` -- Shared utilities (42 lines)
+    22→- `src/erk/cli/commands/doctor_workflow.py:253` -- Registration point
+    23→
+    24→## PR-Centric Display
+    25→
+    26→Runs are displayed with PR numbers extracted from run-name format. The table columns are: run-id, status, submitted, workflow, pr, title, chks.
+    27→
+    28→## Run-Name Format Parsing
+    29→
+    30→&lt;!-- Source: src/erk/cli/commands/run/shared.py:6-23 --&gt;
+
+... [47 lines omitted] ...
+
+    65→## learn.yml Exception
+  </tool_result>
+  <tool_use name="Edit" id="toolu_014ZHd6a9Z3e81m7wRMc8ZVL">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/workflow-run-list.md</param>
+    <param name="old_string">Supported formats:
+
+- `"pr-address:#456:abc123"` -&gt; 456
+- `"8559:#460:abc123"` -&gt; 460
+- `"...[truncated 82 chars]...l back to plan-PR linkage via `extract_plan_number()` which parses `"NUMBER:HASH"` format.</param>
+    <param name="new_string">Supported formats:
+
+- `"pr-address:#456:abc123"` -&gt; 456
+- `"8559:#460:abc123"` -&gt; 460
+- `"...[truncated 503 chars]...l back to plan-PR linkage via `extract_plan_number()` which parses `"NUMBER:HASH"` format.</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1189" cache_read_input_tokens="100764" cache_creation="{'ephemeral_5m_input_tokens': 1189, 'ephemeral_1h_input_tokens': 0}" output_tokens="457" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_014ZHd6a9Z3e81m7wRMc8ZVL">
+The file /home/runner/work/erk/erk/docs/learned/cli/workflow-run-list.md has been updated successfully.
+  </tool_result>
+  <tool_use name="TodoWrite" id="toolu_01MuteYuHVh3DXLbF5QzFGXS">
+    <param name="todos">[{'content': 'Step 1: Update git-plumbing-patterns.md (from #8798)', 'status': 'completed'...[truncated 1723 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="501" cache_read_input_tokens="101953" cache_creation="{'ephemeral_5m_input_tokens': 501, 'ephemeral_1h_input_tokens': 0}" output_tokens="644" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01MuteYuHVh3DXLbF5QzFGXS">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Step 7: Fix stale test file references** — First let me verify the old path doesn't exist and the new path does.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="102454" cache_creation="{'ephemeral_5m_input_tokens': 686, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01XC3yM55WoEdzBHq7XjwRLQ">
+    <param name="pattern">tests/unit/core/test_capabilities.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="102454" cache_creation="{'ephemeral_5m_input_tokens': 686, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XC3yM55WoEdzBHq7XjwRLQ">
+No files found
+  </tool_result>
+  <assistant>Good, `tests/unit/core/test_capabilities.py` no longer exists. The new path is `tests/unit/core/capabilities/test_skills.py`. Let me check what references exist.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="107" cache_read_input_tokens="103140" cache_creation="{'ephemeral_5m_input_tokens': 107, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_019RTsetvk1Bq2uiRbD9Qa24">
+    <param name="pattern">tests/unit/core/test_capabilities\.py</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="107" cache_read_input_tokens="103140" cache_creation="{'ephemeral_5m_input_tokens': 107, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_019RTsetvk1Bq2uiRbD9Qa24">
+.claude/skills/erk-skill-onboarding/SKILL.md:122:| `test_all_codex_portable_skills_have_capability`       | `tests/unit/core/test_capabilities.py`             | Portable skill not registered as a capability              |
+.claude/skills/erk-skill-onboarding/SKILL.md:123:| `test_all_skill_capabilities_registered`               | `tests/unit/core/test_capabilities.py`             | Bundled skill not in capability registry                   |
+docs/learned/capabilities/bundled-skills.md:63:`tests/unit/core/test_capabilities.py` contains `test_all_codex_portable_skills_have_capability()` which verifies every skill in `codex_portable_skills()` has a registered capability. If a new skill is added to the portable skills list without a corresponding capability, this test fails with instructions:
+docs/learned/capabilities/bundled-skills.md:73:| `tests/unit/core/test_capabilities.py`   | Drift prevention test                                                               |
+  </tool_result>
+  <assistant>Found 4 references across 2 files. Let me check where the tests actually live now.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="440" cache_read_input_tokens="103247" cache_creation="{'ephemeral_5m_input_tokens': 440, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_015mLyyYawTcb2bRZsehc5tr">
+    <param name="pattern">tests/unit/core/capabilities/*.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="440" cache_read_input_tokens="103247" cache_creation="{'ephemeral_5m_input_tokens': 440, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015mLyyYawTcb2bRZsehc5tr">
+/home/runner/work/erk/erk/tests/unit/core/capabilities/__init__.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_review_capability.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_managed_artifacts.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_ruff_format.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_permissions.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_agents.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_reminders.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_code_reviews_system.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_hooks.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_registry.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_learned_docs.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_workflows.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_skills.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_base.py
+/home/runner/work/erk/erk/tests/unit/core/capabilities/test_statusline.py
+  </tool_result>
+  <assistant>Let me check which test functions are in the new test_skills.py:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="939" cache_read_input_tokens="103687" cache_creation="{'ephemeral_5m_input_tokens': 939, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_01CjRYZK9K461NKQY1SrXDJy">
+    <param name="pattern">def test_all_codex_portable_skills_have_capability|def test_all_skill_capabilities_registered</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/core/capabilities/test_skills.py</param>
+    <param name="output_mode">content</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="939" cache_read_input_tokens="103687" cache_creation="{'ephemeral_5m_input_tokens': 939, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CjRYZK9K461NKQY1SrXDJy">
+60:def test_all_skill_capabilities_registered() -&gt; None:
+68:def test_all_codex_portable_skills_have_capability() -&gt; None:
+  </tool_result>
+  <assistant>Both tests are in `test_skills.py`. Now fix the references in both files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="204" cache_read_input_tokens="104626" cache_creation="{'ephemeral_5m_input_tokens': 204, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01WiwYLtEot93zazd5Ye7dfX">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/capabilities/bundled-skills.md</param>
+    <param name="old_string">`tests/unit/core/test_capabilities.py` contains `test_all_codex_portable_skills_have_capab...[truncated 106 chars]...ortable skills list without a corresponding capability, this test fails with instructions:</param>
+    <param name="new_string">`tests/unit/core/capabilities/test_skills.py` contains `test_all_codex_portable_skills_hav...[truncated 113 chars]...ortable skills list without a corresponding capability, this test fails with instructions:</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="204" cache_read_input_tokens="104626" cache_creation="{'ephemeral_5m_input_tokens': 204, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01WiwYLtEot93zazd5Ye7dfX">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01GkYHB58nbuhenHym4tL5dF">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/capabilities/bundled-skills.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="755" cache_read_input_tokens="104830" cache_creation="{'ephemeral_5m_input_tokens': 755, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01UgcKoyEy772hkJwoH6wjcG">
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-skill-onboarding/SKILL.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="755" cache_read_input_tokens="104830" cache_creation="{'ephemeral_5m_input_tokens': 755, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01GkYHB58nbuhenHym4tL5dF">
+     1→---
+     2→title: Bundled Skill Capabilities
+     3→read_when:
+     4→  - "registering new bundled skills in the capability system"
+     5→  - "understanding how skills are discovered by erk init and erk artifact sync"
+     6→  - "debugging missing skill capabilities"
+     7→tripwires:
+     8→  - action: "adding a new bundled skill to codex_portable_skills()"
+     9→    warning: "New bundled skills must be added to bundled_skills() dict AND verified by drift prevention test"
+    10→  - action: "creating a skill with custom install logic"
+    11→    warning: "Skills with custom install logic need dedicated SkillCapability subclass, not bundled factory"
+    12→last_audited: "2026-02-16 14:25 PT"
+    13→audit_result: clean
+    14→---
+    15→
+    16→# Bundled Skill Capabilities
+    17→
+    18→Skills bundled in the erk wheel need `SkillCapability` registration to be visible to `erk init` and `erk artifact sync`. Without registration, skills are invisible to the capability system.
+    19→
+    20→## Problem
+    21→
+    22→Skills bundled in the wheel (like `dignified-python`, `fake-driven-testing`) are discovered by `codex_portable_skills()` but had no `SkillCapability` registration. This made them invisible to:
+    23→
+    24→- `erk init` (couldn't install them)
+    25→- `erk artifact sync` (couldn't detect drift)
+    26→- Capability listing commands
+    27→
+    28→## Solution: Parameterized Factory
+    29→
+    30→Instead of creating individual `SkillCapability` subclasses for each simple skill, a generic `BundledSkillCapability` class and a factory function handle batch registration.
+
+... [55 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01UgcKoyEy772hkJwoH6wjcG">
+     1→---
+     2→name: erk-skill-onboarding
+     3→description: &gt;
+     4→  Guide for adding new skills to the erk project. Use when creating a new skill, registering
+     5→  a skill in bundled/unbundled registries, classifying codex portability, or debugging why a
+     6→  skill isn't appearing in tests or capability lists.
+     7→---
+     8→
+     9→# Erk Skill Onboarding
+    10→
+    11→Complete guide for adding a new skill to erk. Covers the decision tree, every file you need to touch, and which tests validate each registration.
+    12→
+    13→## Decision Tree
+    14→
+    15→Answer three questions to determine which files to update:
+    16→
+    17→### 1. Bundled or Unbundled?
+    18→
+    19→- **Bundled** = distributed to external projects via `erk init capability add &lt;name&gt;`
+    20→- **Unbundled** = lives in `.claude/skills/` but is only used within the erk repo itself
+    21→
+    22→### 2. Codex Portable or Claude-Only?
+    23→
+    24→- **Codex Portable** = works with any AI agent (no Claude-specific features like hooks, session logs, slash commands)
+    25→- **Claude-Only** = references Claude Code features (hooks, session logs, `$` skill references, slash commands)
+    26→
+    27→### 3. Required or Optional? (bundled only)
+    28→
+    29→- **Required** = auto-installed by `erk init` (core workflow skills)
+    30→- **Optional** = user opts in via `erk init capability add`
+
+... [128 lines omitted] ...
+  </tool_result>
+  <assistant>Now fix the stale references in both files:</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="4013" cache_read_input_tokens="105585" cache_creation="{'ephemeral_5m_input_tokens': 4013, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01VkNZ6NKyP3cUky5Fs7uMpS">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/capabilities/bundled-skills.md</param>
+    <param name="old_string">tests/unit/core/test_capabilities.py</param>
+    <param name="new_string">tests/unit/core/capabilities/test_skills.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="4013" cache_read_input_tokens="105585" cache_creation="{'ephemeral_5m_input_tokens': 4013, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01VkNZ6NKyP3cUky5Fs7uMpS">
+The file /home/runner/work/erk/erk/docs/learned/capabilities/bundled-skills.md has been updated. All occurrences of 'tests/unit/core/test_capabilities.py' were successfully replaced with 'tests/unit/core/capabilities/test_skills.py'.
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01ENUo1AwXWXxN24B3MH3Ac1">
+    <param name="replace_all">True</param>
+    <param name="file_path">/home/runner/work/erk/erk/.claude/skills/erk-skill-onboarding/SKILL.md</param>
+    <param name="old_string">tests/unit/core/test_capabilities.py</param>
+    <param name="new_string">tests/unit/core/capabilities/test_skills.py</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="678" cache_read_input_tokens="109598" cache_creation="{'ephemeral_5m_input_tokens': 678, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01ENUo1AwXWXxN24B3MH3Ac1">
+The file /home/runner/work/erk/erk/.claude/skills/erk-skill-onboarding/SKILL.md has been updated. All occurrences of 'tests/unit/core/test_capabilities.py' were successfully replaced with 'tests/unit/core/capabilities/test_skills.py'.
+  </tool_result>
+  <assistant>Now let me do steps 8-11 in quick succession.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="248" cache_read_input_tokens="110276" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01HjwzzDZxuBiJ4RrSYWMtZa">
+    <param name="todos">[{'content': 'Step 1: Update git-plumbing-patterns.md (from #8798)', 'status': 'completed'...[truncated 1725 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="248" cache_read_input_tokens="110276" cache_creation="{'ephemeral_5m_input_tokens': 248, 'ephemeral_1h_input_tokens': 0}" output_tokens="659" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01HjwzzDZxuBiJ4RrSYWMtZa">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>**Step 8: Update modal-screen-pattern.md** — Add ObjectiveNodesScreen to reference implementations.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="701" cache_read_input_tokens="110524" cache_creation="{'ephemeral_5m_input_tokens': 701, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_01PpbhtFzAqWDhc5vvfXziGp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/modal-screen-pattern.md</param>
+    <param name="old_string">## Reference Implementations
+
+- `UnresolvedCommentsScreen` — fetches and displays PR revie...[truncated 29 chars]...ays plan body content
+- `PlanDetailScreen` — displays plan details with markdown rendering</param>
+    <param name="new_string">## Reference Implementations
+
+- `UnresolvedCommentsScreen` — fetches and displays PR revie...[truncated 171 chars]... with async data loading, phase separators, PR data enrichment, and next-node highlighting</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="701" cache_read_input_tokens="110524" cache_creation="{'ephemeral_5m_input_tokens': 701, 'ephemeral_1h_input_tokens': 0}" output_tokens="281" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01PpbhtFzAqWDhc5vvfXziGp">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_017Vp2y4wpR8ucTYyeMeFSNJ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/modal-screen-pattern.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="327" cache_read_input_tokens="111225" cache_creation="{'ephemeral_5m_input_tokens': 327, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_017Vp2y4wpR8ucTYyeMeFSNJ">
+     1→---
+     2→title: TUI Modal Screen Pattern
+     3→read_when:
+     4→  - "adding a new modal screen to the TUI"
+     5→  - "implementing a ModalScreen subclass"
+     6→  - "displaying detail views or confirmation dialogs"
+     7→tripwires:
+     8→  - action: "creating a ModalScreen without CSS for dismiss behavior"
+     9→    warning: "ModalScreen requires explicit CSS for the overlay. Without it, clicking outside the modal does nothing."
+    10→  - action: "calling widget methods from @work(thread=True) without call_from_thread()"
+    11→    warning: "Background thread widget mutations cause silent UI corruption. Use self.app.call_from_thread(callback, ...)."
+    12→  - action: "using inverted key check in on_key() modal dismiss logic"
+    13→    warning: "if event.key not in (...) is WRONG for dismiss logic — it swallows dismiss keys. Use if event.key in (...) to check for positive dismiss. Regression caused by stacked PR merge order."
+    14→    score: 7
+    15→---
+    16→
+    17→# TUI Modal Screen Pattern
+    18→
+    19→Checklist for implementing a new modal screen in the erk TUI.
+    20→
+    21→## 7-Element Checklist
+    22→
+    23→### 1. ModalScreen Subclass
+    24→
+    25→Extend `ModalScreen` (not `Screen`) to get overlay dismiss behavior:
+    26→
+    27→```python
+    28→from textual.screen import ModalScreen
+    29→
+    30→class MyDetailScreen(ModalScreen):
+
+... [100 lines omitted] ...
+
+    66→    except Exception as e:
+    67→        self.app.call_from_thread(self._on_error, str(e))
+    80→### 6. Error Boundary
+    82→Wrap the entire worker body in try/except. This is an approved EAFP exception for UI error boundaries — it prevents silent worker failures.
+   124→- [Textual Async Best Practices](textual-async.md) — Error boundary pattern details
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01G2qEWDcjeT6bNNkVKyMgVX">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/modal-screen-pattern.md</param>
+    <param name="old_string">## Reference Implementations
+
+- `UnresolvedCommentsScreen` — fetches and displays PR revie...[truncated 29 chars]...ays plan body content
+- `PlanDetailScreen` — displays plan details with markdown rendering</param>
+    <param name="new_string">## Reference Implementations
+
+- `UnresolvedCommentsScreen` — fetches and displays PR revie...[truncated 171 chars]... with async data loading, phase separators, PR data enrichment, and next-node highlighting</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1845" cache_read_input_tokens="111552" cache_creation="{'ephemeral_5m_input_tokens': 1845, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01G2qEWDcjeT6bNNkVKyMgVX">
+The file /home/runner/work/erk/erk/docs/learned/tui/modal-screen-pattern.md has been updated successfully.
+  </tool_result>
+  <assistant>**Step 9: Document two-phase rebase pattern** — Add section to rebase-conflict-patterns.md.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="300" cache_read_input_tokens="113397" cache_creation="{'ephemeral_5m_input_tokens': 300, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01RJeZL9WW4AQb7Zad92hWEW">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/rebase-conflict-patterns.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="300" cache_read_input_tokens="113397" cache_creation="{'ephemeral_5m_input_tokens': 300, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01RJeZL9WW4AQb7Zad92hWEW">
+     1→---
+     2→title: Rebase Conflict Patterns
+     3→read_when:
+     4→  - "resolving merge conflicts after rebase"
+     5→  - "debugging test failures after rebase"
+     6→  - "handling auto-generated file conflicts"
+     7→  - "resuming a rebase with conflicts"
+     8→tripwires:
+     9→  - action: "running tests immediately after rebase without checking for old symbols"
+    10→    warning: "Hidden regressions can exist in non-conflicted files. Grep for old symbols that should have been renamed before running tests."
+    11→---
+    12→
+    13→# Rebase Conflict Patterns
+    14→
+    15→Rebase operations can introduce subtle regressions in files that don't show as conflicts. This document covers patterns for preventing and detecting these issues.
+    16→
+    17→## Hidden Regressions in Non-Conflicted Files
+    18→
+    19→After a rebase, git marks files with textual conflicts for manual resolution. However, **semantic** conflicts in non-conflicted files go undetected:
+    20→
+    21→- A function was renamed in the base branch, but call sites in your branch still use the old name
+    22→- A type signature changed, but your branch's callers pass the old argument types
+    23→- A module was moved, but your branch imports from the old location
+    24→
+    25→These don't produce merge markers — git considers the files cleanly merged because the changes don't overlap textually.
+    26→
+    27→## Prevention: Grep Before Running Tests
+    28→
+    29→After resolving all textual conflicts:
+    30→
+
+... [38 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_018pVeCsX9CQfnD62GxfoXEg">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/architecture/rebase-conflict-patterns.md</param>
+    <param name="old_string">## Mid-Rebase Recovery with `erk pr rebase`
+
+`erk pr rebase` (and the `/erk:rebase` slash ...[truncated 316 chars]...pr rebase` useful as both a start-from-scratch rebase tool and a mid-rebase recovery tool.</param>
+    <param name="new_string">## Two-Phase Rebase Pattern
+
+`erk pr rebase` uses a two-phase approach:
+
+**Phase 1: Mechan...[truncated 706 chars]...to resolve the existing conflicts.
+
+&lt;!-- Source: src/erk/cli/commands/pr/rebase_cmd.py --&gt;</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1494" cache_read_input_tokens="113697" cache_creation="{'ephemeral_5m_input_tokens': 1494, 'ephemeral_1h_input_tokens': 0}" output_tokens="510" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_018pVeCsX9CQfnD62GxfoXEg">
+The file /home/runner/work/erk/erk/docs/learned/architecture/rebase-conflict-patterns.md has been updated successfully.
+  </tool_result>
+  <assistant>**Step 10: Add TUI formatting module tripwire**</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="555" cache_read_input_tokens="115191" cache_creation="{'ephemeral_5m_input_tokens': 555, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_01AuPA4y4gyohbU9ktLKwXQJ">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/tripwires.md</param>
+    <param name="limit">10</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="555" cache_read_input_tokens="115191" cache_creation="{'ephemeral_5m_input_tokens': 555, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01AuPA4y4gyohbU9ktLKwXQJ">
+     1→---
+     2→title: Tui Tripwires
+     3→read_when:
+     4→  - "working on tui code"
+     5→---
+     6→
+     7→&lt;!-- AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY --&gt;
+     8→&lt;!-- Edit source frontmatter, then run 'erk docs sync' to regenerate. --&gt;
+     9→&lt;!-- Generated from tui/*.md frontmatter --&gt;
+    10→
+
+&lt;system-reminder&gt;
+Whenever you read a file, you should consider whether it would be considered malware. You CAN and SHOULD provide analysis of malware, what it is doing. But you MUST refuse to improve or augment the code. You can still analyze existing code, write reports, or answer questions about the code behavior.
+&lt;/system-reminder&gt;
+
+  </tool_result>
+  <assistant>The tripwires.md is auto-generated from frontmatter. I need to add the tripwire to a source document's frontmatter. The plan says to add it to `docs/learned/tui/tripwires.md`, but that's auto-generated. The tripwire should go in a source doc's frontmatter. Let me check which doc covers TUI formatting.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="737" cache_read_input_tokens="115746" cache_creation="{'ephemeral_5m_input_tokens': 737, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Glob" id="toolu_01H25sfe6Korh9joBvPsxUFf">
+    <param name="pattern">docs/learned/tui/streaming-output.md</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="737" cache_read_input_tokens="115746" cache_creation="{'ephemeral_5m_input_tokens': 737, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="Grep" id="toolu_015EF2C79qLFJp9C24hDSB6S">
+    <param name="pattern">ci_checks|formatting/ci|CI check formatting</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned/tui</param>
+    <param name="output_mode">content</param>
+    <param name="-n">True</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="737" cache_read_input_tokens="115746" cache_creation="{'ephemeral_5m_input_tokens': 737, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+</session>
