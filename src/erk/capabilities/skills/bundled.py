@@ -21,6 +21,7 @@ _UNBUNDLED_SKILLS: frozenset[str] = frozenset(
         "cmux",
         "command-creator",
         "learned-docs",  # has its own capability class (LearnedDocsCapability)
+        "module-to-subpackage",
         "rename-swarm",
         "session-inspector",
         "erk-skill-onboarding",
