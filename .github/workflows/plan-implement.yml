@@ -111,7 +111,7 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          token: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          token: ${{ github.token }}
           fetch-depth: 0
 
       - uses: ./.github/actions/erk-remote-setup
@@ -160,8 +160,8 @@ jobs:
               exit 1
             fi
           fi
-          git config user.name "$SUBMITTED_BY"
-          git config user.email "$SUBMITTED_BY@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -f .erk/impl-context
           if [[ -n $(git status --porcelain) ]]; then
             git commit -m "Update plan for plan #$PLAN_ID (rerun)"
@@ -209,11 +209,10 @@ jobs:
       - name: Remove plan staging dirs from git tracking
         env:
           BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
-          SUBMITTED_BY: ${{ inputs.submitted_by }}
         run: |
           NEEDS_CLEANUP=false
-          git config user.name "$SUBMITTED_BY"
-          git config user.email "$SUBMITTED_BY@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           if git ls-files --error-unmatch .erk/impl-context/ >/dev/null 2>&1; then
             git rm -r --cached .erk/impl-context/
             NEEDS_CLEANUP=true
@@ -286,7 +285,7 @@ jobs:
         if: always() && steps.session.outputs.session_id
         continue-on-error: true
         env:
-          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
+          GH_TOKEN: ${{ github.token }}
           PLAN_ID: ${{ inputs.plan_id }}
           RUN_ID: ${{ github.run_id }}
           SESSION_ID: ${{ steps.session.outputs.session_id }}
@@ -364,10 +363,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           PLAN_ID: ${{ inputs.plan_id }}
           BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
-          SUBMITTED_BY: ${{ inputs.submitted_by }}
         run: |
-          git config user.name "$SUBMITTED_BY"
-          git config user.email "$SUBMITTED_BY@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           claude --print \
             --model ${{ inputs.model_name }} \
             --output-format stream-json \
@@ -402,12 +400,11 @@ jobs:
         if: steps.implement.outputs.implementation_success == 'true' && steps.handle_outcome.outputs.has_changes == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
         env:
           BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
-          SUBMITTED_BY: ${{ inputs.submitted_by }}
         run: |
           git fetch origin "$BRANCH_NAME"
           git reset --hard "origin/$BRANCH_NAME"
-          git config user.name "$SUBMITTED_BY"
-          git config user.email "$SUBMITTED_BY@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           if git ls-files --error-unmatch .erk/impl-context/ >/dev/null 2>&1; then
             git rm -r --cached .erk/impl-context/
             git commit -m "Remove plan staging dirs after implementation"
@@ -438,16 +435,12 @@ jobs:
       - name: Trigger CI workflows
         if: steps.implement.outputs.implementation_success == 'true' && steps.handle_outcome.outputs.has_changes == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
         env:
+          GH_TOKEN: ${{ secrets.ERK_QUEUE_GH_PAT }}
           BRANCH_NAME: ${{ steps.find_pr.outputs.branch_name }}
-          SUBMITTED_BY: ${{ inputs.submitted_by }}
         run: |
-          git config user.name "$SUBMITTED_BY"
-          git config user.email "$SUBMITTED_BY@users.noreply.github.com"
-          git fetch origin "$BRANCH_NAME"
-          git reset --hard "origin/$BRANCH_NAME"
-          git commit --allow-empty -m "Trigger CI workflows"
-          git push origin "$BRANCH_NAME"
-          echo "CI workflows triggered via push event"
+          # Use PAT for workflow dispatch (push with github.token won't trigger CI)
+          gh workflow run ci.yml --ref "$BRANCH_NAME"
+          echo "CI workflows triggered via workflow dispatch"
 
       - name: Update lifecycle stage to implemented
         if: steps.implement.outputs.implementation_success == 'true' && steps.handle_outcome.outputs.has_changes == 'true' && (steps.submit.outcome == 'success' || steps.handle_conflicts.outcome == 'success')
