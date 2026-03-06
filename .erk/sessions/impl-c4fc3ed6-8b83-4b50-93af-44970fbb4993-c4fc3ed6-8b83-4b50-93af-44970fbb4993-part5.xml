@@ -1,0 +1,160 @@
+<session>
+  <meta source="agent-a93d200" />
+  <meta branch="plnd/consolidate-learn-docs-03-06-2252" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Verify that these source files referenced in the new documentation exist in `/home/runner/work/erk/erk/`:
+
+1. `src/erk/cli/commands/exec/scripts/incremental_dispatch.py`
+2. `src/erk/core/health_checks/runner.py`
+3. `tests/fakes/health_check_runner.py`
+4. `src/erk/cli/commands/doctor.py`
+5. `src/erk/core/health_checks/managed_artifacts.py`
+6. `src/erk/cli/commands/pr/prepare_cmd.py`
+7. `src/erk/cli/commands/pr/checkout_cmd.py`
+8. `src/erk/cli/commands/reconcile_cmd.py`
+9. `src/erk/cli/commands/reconcile_pipeline.py`
+10. `src/erk/core/commit_message_generator.py`
+11. `src/erk/cli/commands/pr/shared.py`
+12. `src/erk/cli/commands/pr/submit_pipeline.py`
+13. `src/erk/cli/commands/pr/rewrite_cmd.py`
+14. `src/erk/cli/commands/exec/scripts/update_pr_description.py`
+
+Report which exist and which don't.</user>
+  <assistant>I'll verify the existence of these source files by checking each one.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_014K8iTEBZoS7X64TV5Kms1i">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py 2&gt;&amp;1</param>
+    <param name="description">Check if incremental_dispatch.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_015Trm9ufc7gMWiD5EhewAWb">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/core/health_checks/runner.py 2&gt;&amp;1</param>
+    <param name="description">Check if health_checks/runner.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01VC5BNYqze3feHbNHpSJJpZ">
+    <param name="command">ls -la /home/runner/work/erk/erk/tests/fakes/health_check_runner.py 2&gt;&amp;1</param>
+    <param name="description">Check if health_check_runner.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_019pHsgDtUpbtoupcJ6cPH3M">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/doctor.py 2&gt;&amp;1</param>
+    <param name="description">Check if doctor.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01H8HszZmxjpAi8B1pXSut4d">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/core/health_checks/managed_artifacts.py 2&gt;&amp;1</param>
+    <param name="description">Check if managed_artifacts.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01PSLz41huKxYsrBGin4N3Qk">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py 2&gt;&amp;1</param>
+    <param name="description">Check if prepare_cmd.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01RKQ3MpN98r41hub3iFvEvJ">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py 2&gt;&amp;1</param>
+    <param name="description">Check if checkout_cmd.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01CcSVJDta97tZ9LbbXEnQnQ">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/reconcile_cmd.py 2&gt;&amp;1</param>
+    <param name="description">Check if reconcile_cmd.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0169vY9fF8djXkapjLe4PD5m">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py 2&gt;&amp;1</param>
+    <param name="description">Check if reconcile_pipeline.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01SsEWP1v8dx92Lu5QJASFY6">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/core/commit_message_generator.py 2&gt;&amp;1</param>
+    <param name="description">Check if commit_message_generator.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01U9npPJKkGqtzyyuKea2G6p">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py 2&gt;&amp;1</param>
+    <param name="description">Check if pr/shared.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_011q3MtVFXuosgBP2i3R1rBc">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py 2&gt;&amp;1</param>
+    <param name="description">Check if submit_pipeline.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_0156y84qQ3CVXru89aHn3KcA">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py 2&gt;&amp;1</param>
+    <param name="description">Check if rewrite_cmd.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01KCQhFMwsdg1aPGGxCBQxcg">
+    <param name="command">ls -la /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_pr_description.py 2&gt;&amp;1</param>
+    <param name="description">Check if update_pr_description.py exists</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="6117" cache_read_input_tokens="12909" cache_creation="{'ephemeral_5m_input_tokens': 6117, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_015Trm9ufc7gMWiD5EhewAWb">
+-rw-r--r-- 1 runner runner 924 Mar  6 22:55 /home/runner/work/erk/erk/src/erk/core/health_checks/runner.py
+  </tool_result>
+  <tool_result tool="toolu_014K8iTEBZoS7X64TV5Kms1i">
+-rw-r--r-- 1 runner runner 7352 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py
+  </tool_result>
+  <tool_result tool="toolu_01VC5BNYqze3feHbNHpSJJpZ">
+-rw-r--r-- 1 runner runner 624 Mar  6 22:55 /home/runner/work/erk/erk/tests/fakes/health_check_runner.py
+  </tool_result>
+  <tool_result tool="toolu_01H8HszZmxjpAi8B1pXSut4d">
+-rw-r--r-- 1 runner runner 13391 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/core/health_checks/managed_artifacts.py
+  </tool_result>
+  <tool_result tool="toolu_01SsEWP1v8dx92Lu5QJASFY6">
+-rw-r--r-- 1 runner runner 9631 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/core/commit_message_generator.py
+  </tool_result>
+  <tool_result tool="toolu_0169vY9fF8djXkapjLe4PD5m">
+-rw-r--r-- 1 runner runner 7998 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py
+  </tool_result>
+  <tool_result tool="toolu_019pHsgDtUpbtoupcJ6cPH3M">
+-rw-r--r-- 1 runner runner 10540 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/cli/commands/doctor.py
+  </tool_result>
+  <tool_result tool="toolu_01PSLz41huKxYsrBGin4N3Qk">
+-rw-r--r-- 1 runner runner 3126 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py
+  </tool_result>
+  <tool_result tool="toolu_01RKQ3MpN98r41hub3iFvEvJ">
+-rw-r--r-- 1 runner runner 17836 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py
+  </tool_result>
+  <tool_result tool="toolu_01CcSVJDta97tZ9LbbXEnQnQ">
+-rw-r--r-- 1 runner runner 5844 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/cli/commands/reconcile_cmd.py
+  </tool_result>
+  <tool_result tool="toolu_01U9npPJKkGqtzyyuKea2G6p">
+-rw-r--r-- 1 runner runner 13873 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py
+  </tool_result>
+  <tool_result tool="toolu_011q3MtVFXuosgBP2i3R1rBc">
+-rw-r--r-- 1 runner runner 38173 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py
+  </tool_result>
+  <tool_result tool="toolu_0156y84qQ3CVXru89aHn3KcA">
+-rw-r--r-- 1 runner runner 7605 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py
+  </tool_result>
+  <tool_result tool="toolu_01KCQhFMwsdg1aPGGxCBQxcg">
+-rw-r--r-- 1 runner runner 5411 Mar  6 22:54 /home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_pr_description.py
+  </tool_result>
+  <assistant>Perfect! All 14 source files exist in the repository. Here's the verification report:
+
+## File Existence Report
+
+All referenced files **exist** and are present in the codebase:
+
+1. ✓ `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py` (7,352 bytes)
+2. ✓ `/home/runner/work/erk/erk/src/erk/core/health_checks/runner.py` (924 bytes)
+3. ✓ `/home/runner/work/erk/erk/tests/fakes/health_check_runner.py` (624 bytes)
+4. ✓ `/home/runner/work/erk/erk/src/erk/cli/commands/doctor.py` (10,540 bytes)
+5. ✓ `/home/runner/work/erk/erk/src/erk/core/health_checks/managed_artifacts.py` (13,391 bytes)
+6. ✓ `/home/runner/work/erk/erk/src/erk/cli/commands/pr/prepare_cmd.py` (3,126 bytes)
+7. ✓ `/home/runner/work/erk/erk/src/erk/cli/commands/pr/checkout_cmd.py` (17,836 bytes)
+8. ✓ `/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_cmd.py` (5,844 bytes)
+9. ✓ `/home/runner/work/erk/erk/src/erk/cli/commands/reconcile_pipeline.py` (7,998 bytes)
+10. ✓ `/home/runner/work/erk/erk/src/erk/core/commit_message_generator.py` (9,631 bytes)
+11. ✓ `/home/runner/work/erk/erk/src/erk/cli/commands/pr/shared.py` (13,873 bytes)
+12. ✓ `/home/runner/work/erk/erk/src/erk/cli/commands/pr/submit_pipeline.py` (38,173 bytes)
+13. ✓ `/home/runner/work/erk/erk/src/erk/cli/commands/pr/rewrite_cmd.py` (7,605 bytes)
+14. ✓ `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/update_pr_description.py` (5,411 bytes)
+
+**Summary:** All 14 files referenced in the documentation exist in the repository. The documentation references are valid.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="2580" cache_read_input_tokens="19026" cache_creation="{'ephemeral_5m_input_tokens': 2580, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

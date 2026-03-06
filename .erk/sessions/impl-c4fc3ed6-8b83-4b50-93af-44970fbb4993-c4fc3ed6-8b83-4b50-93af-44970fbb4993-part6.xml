@@ -1,0 +1,131 @@
+<session>
+  <meta source="agent-aafe67b" />
+  <meta branch="plnd/consolidate-learn-docs-03-06-2252" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Read the file `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py` and provide:
+1. The overall structure and purpose
+2. Key functions and their line numbers
+3. The commit message format (around line 131)
+4. The two-part plan embedding strategy
+5. The worktree interaction/index sync logic (around lines 134-144)
+6. The workflow dispatch details (dispatch_type, plan_backend)
+
+Report all details with accurate line numbers.</user>
+  <assistant>I'll read the file and provide you with all the requested details.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18828" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18828, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013qf1FJVbmCEUxKucrxAmnQ">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18828" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18828, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013qf1FJVbmCEUxKucrxAmnQ">
+     1→"""Dispatch a local plan against an existing PR for remote implementation.
+     2→
+     3→Usage:
+     4→    erk exec incremental-dispatch --plan-file &lt;path&gt; --pr &lt;number&gt; [OPTIONS]
+     5→
+     6→Commits the plan as impl-context to the PR's branch and triggers the
+     7→plan-implement workflow. Unlike regular dispatch, this does not require
+     8→the erk-plan label — just an OPEN PR.
+     9→"""
+    10→
+    11→import json
+    12→from pathlib import Path
+    13→
+    14→import click
+    15→
+    16→from erk.cli.commands.pr.dispatch_cmd import load_workflow_config
+    17→from erk.cli.commands.pr.dispatch_helpers import ensure_trunk_synced
+    18→from erk.cli.commands.ref_resolution import resolve_dispatch_ref
+    19→from erk.cli.constants import DISPATCH_WORKFLOW_NAME
+    20→from erk_shared.context.helpers import (
+    21→    require_branch_manager,
+    22→    require_context,
+    23→    require_git,
+    24→    require_github,
+    25→    require_repo_root,
+    26→    require_time,
+    27→)
+    28→from erk_shared.context.types import NoRepoSentinel
+    29→from erk_shared.gateway.git.remote_ops.types import PushError
+    30→from erk_shared.gateway.github.parsing import (
+
+... [189 lines omitted] ...
+
+    83→        _output_error(output_format, f"PR #{pr_number} not found")
+    87→        _output_error(output_format, f"PR #{pr_number} is {pr_result.state}, must be OPEN")
+    98→        _output_error(output_format, "Not in a git repository")
+   147→    if isinstance(push_result, PushError):
+   148→        _output_error(output_format, f"Push failed: {push_result.message}")
+   208→def _output_error(output_format: str, message: str) -&gt; None:
+   209→    """Output error in the requested format."""
+   211→        click.echo(json.dumps({"success": False, "error": message}))
+   213→        user_output(click.style("Error: ", fg="red") + message)
+  </tool_result>
+  <assistant>Now I'll provide you with a comprehensive analysis of the file:
+
+## Overall Structure and Purpose
+
+The file `/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/incremental_dispatch.py` is an exec CLI command that dispatches a local plan against an existing PR for remote implementation. Unlike regular dispatch, it does not require the erk-plan label—just an OPEN PR. It commits the plan as impl-context to the PR's branch and triggers the plan-implement workflow.
+
+## Key Functions and Line Numbers
+
+| Function | Line Numbers | Purpose |
+|----------|--------------|---------|
+| `incremental_dispatch()` | 62-205 | Main CLI command handler |
+| `_output_error()` | 208-213 | Helper to output errors in requested format |
+
+## Commit Message Format (Line 128)
+
+The commit message is constructed on line 128 as:
+```python
+message=f"Incremental dispatch for PR #{pr_number}\n\n{plan_content}",
+```
+
+This creates a two-part commit message:
+1. **First line (subject)**: `Incremental dispatch for PR #{pr_number}`
+2. **Second part (body)**: The full `plan_content` (plan markdown) embedded directly
+
+This is the **two-part plan embedding strategy** - the plan itself is embedded in the git commit message body.
+
+## Worktree Interaction/Index Sync Logic (Lines 135-141)
+
+The logic handles the case where the branch is already checked out in a worktree:
+
+```python
+# If branch is checked out, write files to disk and stage so git status is clean
+if checked_out_path is not None:
+    for rel_path, content in files.items():
+        abs_path = checked_out_path / rel_path
+        abs_path.parent.mkdir(parents=True, exist_ok=True)
+        abs_path.write_text(content, encoding="utf-8")
+    git.commit.stage_files(checked_out_path, list(files.keys()), force=True)
+```
+
+This process:
+1. **Detects if branch is checked out**: Line 105-106 checks `git.worktree.is_branch_checked_out()`
+2. **Writes impl-context files to disk**: Lines 137-140 materialize the files (created by `build_impl_context_files()`)
+3. **Stages files to git index**: Line 141 calls `git.commit.stage_files()` with `force=True` to ensure the working tree matches the plumbing commit
+
+This ensures git status is clean after the plumbing commit advanced the branch.
+
+## Workflow Dispatch Details (Lines 162-172)
+
+The workflow dispatch uses two key parameters in the inputs dictionary:
+
+| Parameter | Line | Value | Purpose |
+|-----------|------|-------|---------|
+| `dispatch_type` | 170 | `"incremental"` | Indicates this is an incremental dispatch (vs. full dispatch) |
+| `plan_backend` | 169 | `"planned_pr"` | Specifies the plan backend type for the remote implementation workflow |
+
+Additional dispatch inputs (lines 162-172):
+- `plan_id`: PR number (line 163)
+- `submitted_by`: GitHub username (line 164)
+- `plan_title`: PR title (line 165)
+- `branch_name`: Target branch (line 166)
+- `pr_number`: PR number as string (line 167)
+- `base_branch`: Detected trunk branch (line 168)
+- Plus additional config from `load_workflow_config()` (line 171)
+
+The workflow is triggered on line 175 using `github.trigger_workflow()` with `DISPATCH_WORKFLOW_NAME` and the ref resolved from dispatch options.</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="3912" cache_read_input_tokens="18828" cache_creation="{'ephemeral_5m_input_tokens': 3912, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+</session>

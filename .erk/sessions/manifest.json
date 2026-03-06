@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "plan_id": 8869,
+  "sessions": [
+    {
+      "session_id": "c4fc3ed6-8b83-4b50-93af-44970fbb4993",
+      "stage": "impl",
+      "source": "local",
+      "uploaded_at": "2026-03-06T23:00:02.276936+00:00",
+      "files": [
+        "impl-c4fc3ed6-8b83-4b50-93af-44970fbb4993-c4fc3ed6-8b83-4b50-93af-44970fbb4993-part1.xml",
+        "impl-c4fc3ed6-8b83-4b50-93af-44970fbb4993-c4fc3ed6-8b83-4b50-93af-44970fbb4993-part2.xml",
+        "impl-c4fc3ed6-8b83-4b50-93af-44970fbb4993-c4fc3ed6-8b83-4b50-93af-44970fbb4993-part3.xml",
+        "impl-c4fc3ed6-8b83-4b50-93af-44970fbb4993-c4fc3ed6-8b83-4b50-93af-44970fbb4993-part4.xml",
+        "impl-c4fc3ed6-8b83-4b50-93af-44970fbb4993-c4fc3ed6-8b83-4b50-93af-44970fbb4993-part5.xml",
+        "impl-c4fc3ed6-8b83-4b50-93af-44970fbb4993-c4fc3ed6-8b83-4b50-93af-44970fbb4993-part6.xml",
+        "impl-c4fc3ed6-8b83-4b50-93af-44970fbb4993-c4fc3ed6-8b83-4b50-93af-44970fbb4993-part7.xml",
+        "impl-c4fc3ed6-8b83-4b50-93af-44970fbb4993-c4fc3ed6-8b83-4b50-93af-44970fbb4993-part8.xml",
+        "impl-c4fc3ed6-8b83-4b50-93af-44970fbb4993-c4fc3ed6-8b83-4b50-93af-44970fbb4993-part9.xml"
+      ]
+    }
+  ]
+}
