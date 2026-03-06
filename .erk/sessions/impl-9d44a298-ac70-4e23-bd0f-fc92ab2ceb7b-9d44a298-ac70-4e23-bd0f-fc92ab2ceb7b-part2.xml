@@ -1,0 +1,240 @@
+<session>
+  <meta branch="plnd/consolidate-learn-docs-03-06-0120" />
+  <meta model="claude-opus-4-6" />
+  <tool_use name="Write" id="toolu_01Q9146GoJCxQb7ohj4Rpnhp">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/refactoring/coordinated-rename.md</param>
+    <param name="content">---
+title: Coordinated Cross-Codebase Rename Pattern
+read_when:
+  - "renaming a command or...[truncated 2563 chars]...n Audit](post-refactor-documentation-audit.md) — ensuring docs stay current after renames
+</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="3224" cache_read_input_tokens="81220" cache_creation="{'ephemeral_5m_input_tokens': 3224, 'ephemeral_1h_input_tokens': 0}" output_tokens="4925" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Jfptn2MDZDXzCP4jfwyEMf">
+File created successfully at: /home/runner/work/erk/erk/docs/learned/cli/rich-table-output.md
+  </tool_result>
+  <tool_result tool="toolu_01TvCUXqdL196epimWJjkxD6">
+File created successfully at: /home/runner/work/erk/erk/docs/learned/architecture/checked-out-branch-handling.md
+  </tool_result>
+  <tool_result tool="toolu_01Bi7PJGJ53wmNtwbgdgjwtS">
+File created successfully at: /home/runner/work/erk/erk/docs/learned/planning/incremental-dispatch.md
+  </tool_result>
+  <tool_result tool="toolu_01WYvRy5fBEbXcbPK93mGKCH">
+File created successfully at: /home/runner/work/erk/erk/docs/learned/tui/filter-toggle-pattern.md
+  </tool_result>
+  <tool_result tool="toolu_01CZhMpTQ3mNunwnGiNDFqPT">
+File created successfully at: /home/runner/work/erk/erk/docs/learned/cli/command-promotion.md
+  </tool_result>
+  <tool_result tool="toolu_01Q9146GoJCxQb7ohj4Rpnhp">
+File created successfully at: /home/runner/work/erk/erk/docs/learned/refactoring/coordinated-rename.md
+  </tool_result>
+  <assistant>Steps 1, 2, 4, 5, 6, 7 are done. Now let me update the existing docs (Steps 3 and 8).</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="5641" cache_read_input_tokens="84444" cache_creation="{'ephemeral_5m_input_tokens': 5641, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01QGKjS9MLeWz6bxLdtzBbP2">
+    <param name="todos">[{'content': 'Step 1: Create docs/learned/cli/rich-table-output.md', 'status': 'completed'...[truncated 1565 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="5641" cache_read_input_tokens="84444" cache_creation="{'ephemeral_5m_input_tokens': 5641, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01QGKjS9MLeWz6bxLdtzBbP2">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <assistant>Now let me update the pr-submit-pipeline.md with caching details and the quirks.md with StatusBar fix.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="649" cache_read_input_tokens="90085" cache_creation="{'ephemeral_5m_input_tokens': 649, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_use name="Edit" id="toolu_015t1vmghJnQN8eTrwUJtQpc">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md</param>
+    <param name="old_string">## Graphite-First Dispatch: Why Not a Separate Pipeline</param>
+    <param name="new_string">## Graphite Status Caching in prepare_state()
+
+&lt;!-- Source: src/erk/cli/commands/pr/submit...[truncated 798 chars]...` means "checked and determined."
+
+## Graphite-First Dispatch: Why Not a Separate Pipeline</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="649" cache_read_input_tokens="90085" cache_creation="{'ephemeral_5m_input_tokens': 649, 'ephemeral_1h_input_tokens': 0}" output_tokens="6" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015t1vmghJnQN8eTrwUJtQpc">
+&lt;tool_use_error&gt;File has not been read yet. Read it first before writing to it.&lt;/tool_use_error&gt;
+  </tool_result>
+  <tool_use name="Read" id="toolu_01Ggniv8BXFBSfUykAhE63Rr">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md</param>
+    <param name="limit">55</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="471" cache_read_input_tokens="90734" cache_creation="{'ephemeral_5m_input_tokens': 471, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01Ggniv8BXFBSfUykAhE63Rr">
+     1→---
+     2→title: PR Submit Pipeline Architecture
+     3→read_when:
+     4→  - "modifying the PR submit workflow"
+     5→  - "adding new steps to the submit pipeline"
+     6→  - "debugging PR submission failures"
+     7→  - "understanding the Graphite-first vs core submit dispatch"
+     8→tripwires:
+     9→  - action: "adding a new step to the submit pipeline"
+    10→    warning: "Each step must return SubmitState | SubmitError. Use dataclasses.replace() for state updates. Add the step to _submit_pipeline() tuple."
+    11→  - action: "mutating SubmitState fields directly"
+    12→    warning: "SubmitState is frozen. Use dataclasses.replace(state, field=value) to create new state."
+    13→  - action: "adding discovery logic outside prepare_state()"
+    14→    warning: "All discovery (branch name, issue number, parent branch, etc.) must happen in prepare_state() to prevent duplication. Later steps assume these fields are populated."
+    15→  - action: "using ctx.invoke() with kwargs that don't match target function parameter names"
+    16→    warning: "Click ctx.invoke() forwards kwargs directly — any name mismatch causes runtime TypeError. Verify all parameter names exactly match the target function signature."
+    17→  - action: "calling an external tool that overwrites state without capturing it first"
+    18→    warning: "Save state BEFORE calling external tools that may overwrite it. Reference: capture_existing_pr_body() in submit_pipeline.py captures the PR body before gt submit overwrites it."
+    19→last_audited: "2026-02-16 14:20 PT"
+    20→audit_result: clean
+    21→---
+    22→
+    23→# PR Submit Pipeline Architecture
+    24→
+    25→The PR submit pipeline is erk's reference implementation of the state threading pattern. This document explains **why** the architecture choices matter, not what the code does (read the source for that).
+    26→
+    27→## Why Linear Pipelines: The Dual-Path Problem
+    28→
+    29→Before the linear pipeline refactor, PR submission used branching orchestration with two paths (Graphite-first vs core). **The problem:** discovery code was duplicated between paths, issue linkage validation happened in multiple places, and error handling varied between branches.
+    30→
+
+... [30 lines omitted] ...
+
+    31→Linear pipelines solve this by **deferring the dispatch decision**. Discovery happens once in step 1, then step 3 dispatches internally to Graphite or core flow. Both paths share the same state type and error handling.
+    43→3. **Type narrowing** — Later steps assume `branch_name` is `str`, not `str | None`, because step 1 checks and errors if unresolved
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01CkJJ8K2YEs5vZRcgb6hePg">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md</param>
+    <param name="old_string">## Graphite-First Dispatch: Why Not a Separate Pipeline
+
+&lt;!-- Source: src/erk/cli/commands/pr/submit_pipeline.py, push_and_create_pr, _graphite_first_flow, _core_submit_flow --&gt;</param>
+    <param name="new_string">## Graphite Status Caching in prepare_state()
+
+&lt;!-- Source: src/erk/cli/commands/pr/submit...[truncated 961 chars]...nds/pr/submit_pipeline.py, push_and_create_pr, _graphite_first_flow, _core_submit_flow --&gt;</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1338" cache_read_input_tokens="91205" cache_creation="{'ephemeral_5m_input_tokens': 1338, 'ephemeral_1h_input_tokens': 0}" output_tokens="25" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01CkJJ8K2YEs5vZRcgb6hePg">
+The file /home/runner/work/erk/erk/docs/learned/cli/pr-submit-pipeline.md has been updated successfully.
+  </tool_result>
+  <assistant>Now update the textual quirks.md with the StatusBar fix.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="92543" cache_creation="{'ephemeral_5m_input_tokens': 542, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_use name="Read" id="toolu_015F4fm8n1KnA5cn8kUG8dEi">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/textual/quirks.md</param>
+    <param name="offset">192</param>
+    <param name="limit">35</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="542" cache_read_input_tokens="92543" cache_creation="{'ephemeral_5m_input_tokens': 542, 'ephemeral_1h_input_tokens': 0}" output_tokens="2" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_015F4fm8n1KnA5cn8kUG8dEi">
+   192→3. Set `markup=False` on Labels that show user content without links
+   193→
+   194→### Static Widgets with Code/JSON Content
+   195→
+   196→**Problem**: When displaying raw JSON, code, or file contents in a Static widget, `escape_markup()` may not fully prevent `MarkupError`. Content with Python type annotations like `list[str]` or complex nested escape sequences can still cause parsing failures.
+   197→
+   198→**Error signature:**
+   199→
+   200→```
+   201→MarkupError: Expected markup value (found '\\"number\\"],\\n ...')
+   202→```
+   203→
+   204→**Solution**: Use `markup=False` on the Static widget instead of trying to escape content:
+   205→
+   206→```python
+   207→# WRONG - escape_markup may not handle all edge cases
+   208→yield Static(escape_markup(json_content))
+   209→
+   210→# CORRECT - disable markup parsing entirely for raw content
+   211→yield Static(json_content, markup=False)
+   212→```
+   213→
+   214→**When to use which:**
+   215→
+   216→- `escape_markup()` + `markup=True` (default): When you want Rich styling but need to escape user text (e.g., links with display text)
+   217→- `markup=False`: When displaying raw code, JSON, file contents, or any structured data that may contain brackets
+   218→
+   219→## General Recommendations
+   220→
+   221→1. **Use type annotations** - Textual uses Reactives heavily; proper types catch issues early
+
+... [9 lines omitted] ...
+  </tool_result>
+  <tool_use name="Edit" id="toolu_01XDSNnLu7yaUvFfpVvx9Gm7">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/textual/quirks.md</param>
+    <param name="old_string">- `markup=False`: When displaying raw code, JSON, file contents, or any structured data that may contain brackets
+
+## General Recommendations</param>
+    <param name="new_string">- `markup=False`: When displaying raw code, JSON, file contents, or any structured data th...[truncated 663 chars]...ts where you control the content and intentionally use markup.
+
+## General Recommendations</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="1072" cache_read_input_tokens="93085" cache_creation="{'ephemeral_5m_input_tokens': 1072, 'ephemeral_1h_input_tokens': 0}" output_tokens="24" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XDSNnLu7yaUvFfpVvx9Gm7">
+The file /home/runner/work/erk/erk/docs/learned/textual/quirks.md has been updated successfully.
+  </tool_result>
+  <assistant>Steps 3 and 8 are done. The tripwires are embedded in the frontmatter of each new doc, so `erk docs sync` will regenerate them. Step 9 is already handled by the `tripwires:` frontmatter entries I added. Let me update the todos and run the sync.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="94157" cache_creation="{'ephemeral_5m_input_tokens': 394, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01BdMfbSdadzH7sBv8wvAaSx">
+    <param name="todos">[{'content': 'Step 1: Create docs/learned/cli/rich-table-output.md', 'status': 'completed'...[truncated 1583 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="394" cache_read_input_tokens="94157" cache_creation="{'ephemeral_5m_input_tokens': 394, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01BdMfbSdadzH7sBv8wvAaSx">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_01H9NqNvRrpiBvBhijTNL1RM">
+    <param name="command">erk docs sync</param>
+    <param name="description">Run erk docs sync to regenerate indexes</param>
+    <param name="timeout">30000</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="686" cache_read_input_tokens="94551" cache_creation="{'ephemeral_5m_input_tokens': 686, 'ephemeral_1h_input_tokens': 0}" output_tokens="26" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01H9NqNvRrpiBvBhijTNL1RM">
+Scanning docs...
+Generating root index...
+Generating category indexes...
+Collecting tripwires...
+Generating tripwire files...
+Generating tripwires index...
+Updated 11 file(s):
+  ~ architecture/index.md
+  ~ cli/index.md
+  ~ planning/index.md
+  ~ refactoring/index.md
+  ~ tui/index.md
+  ~ architecture/tripwires.md
+  ~ cli/tripwires.md
+  ~ planning/tripwires.md
+  ~ refactoring/tripwires.md
+  ~ tui/tripwires.md
+  ~ tripwires-index.md
+
+Unchanged: 44 file(s)
+
+Tripwires: 830 collected
+  architecture: 183 (26 with patterns)
+  capabilities: 13
+  changelog: 3
+  checklists: 1
+  ci: 56
+  claude-code: 3
+  cli: 90
+  commands: 7
+
+... [22 lines omitted] ...
+  </tool_result>
+  <assistant>The sync completed successfully with 11 changes. All new docs are indexed and tripwires are updated. Let me now signal implementation ended and run CI.</assistant>
+  <usage input_tokens="1" cache_creation_input_tokens="492" cache_read_input_tokens="95237" cache_creation="{'ephemeral_5m_input_tokens': 492, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_use name="TodoWrite" id="toolu_01XjiGtypff8Lg6VkmEko8pC">
+    <param name="todos">[{'content': 'Step 1: Create docs/learned/cli/rich-table-output.md', 'status': 'completed'...[truncated 1579 chars]...CI checks'}, {'content': 'Submit PR', 'status': 'pending', 'activeForm': 'Submitting PR'}]</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="492" cache_read_input_tokens="95237" cache_creation="{'ephemeral_5m_input_tokens': 492, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_01XjiGtypff8Lg6VkmEko8pC">
+Todos have been modified successfully. Ensure that you continue to use the todo list to track your progress. Please proceed with the current tasks if applicable
+  </tool_result>
+  <tool_use name="Bash" id="toolu_0138oroo5BCXr9G3w3XP5KW7">
+    <param name="command">erk exec impl-signal ended --session-id "9d44a298-ac70-4e23-bd0f-fc92ab2ceb7b" 2&gt;/dev/null || true</param>
+    <param name="description">Signal GitHub implementation ended</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="647" cache_read_input_tokens="95729" cache_creation="{'ephemeral_5m_input_tokens': 647, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_use name="Bash" id="toolu_01Q1TP8naVLrinaYNEKGuqZs">
+    <param name="command">erk exec upload-impl-session --session-id "9d44a298-ac70-4e23-bd0f-fc92ab2ceb7b" 2&gt;/dev/null || true</param>
+    <param name="description">Upload session for async learn</param>
+  </tool_use>
+  <usage input_tokens="1" cache_creation_input_tokens="647" cache_read_input_tokens="95729" cache_creation="{'ephemeral_5m_input_tokens': 647, 'ephemeral_1h_input_tokens': 0}" output_tokens="19" service_tier="standard" inference_geo="global" />
+  <tool_result tool="toolu_0138oroo5BCXr9G3w3XP5KW7">
+{
+  "success": true,
+  "event": "ended",
+  "plan_number": 8799
+}
+  </tool_result>
+</session>
