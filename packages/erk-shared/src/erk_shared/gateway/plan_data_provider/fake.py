@@ -3,6 +3,7 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
+from erk.tui.data.provider_abc import PlanDataProvider
 from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
 from erk.tui.sorting.types import BranchActivity
 from erk_shared.gateway.browser.abc import BrowserLauncher
@@ -10,7 +11,6 @@ from erk_shared.gateway.browser.fake import FakeBrowserLauncher
 from erk_shared.gateway.clipboard.abc import Clipboard
 from erk_shared.gateway.clipboard.fake import FakeClipboard
 from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
-from erk.tui.data.provider_abc import PlanDataProvider
 
 
 class FakePlanDataProvider(PlanDataProvider):
