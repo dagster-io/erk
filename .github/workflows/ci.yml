@@ -225,3 +225,124 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GH_TOKEN: ${{ github.token }}
         run: erk exec ci-generate-summaries --run-id "${{ github.run_id }}" --pr-number "${{ github.event.pull_request.number }}"
+
+  # === Code Reviews (downstream of fix-formatting) ===
+  discover-reviews:
+    needs: [check-submission, fix-formatting]
+    if: vars.CLAUDE_ENABLED != 'false' && github.event.pull_request.draft != true && !contains(github.event.pull_request.labels.*.name, 'erk-plan-review') && needs.check-submission.outputs.skip == 'false' && needs.fix-formatting.outputs.pushed != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      matrix: ${{ steps.discover.outputs.matrix }}
+      has_reviews: ${{ steps.discover.outputs.has_reviews }}
+    permissions:
+      contents: read
+      pull-requests: read
+
+    steps:
+      - name: Check local review marker
+        id: check_local_review
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          MARKER="<!-- erk:local-review-passed:${HEAD_SHA} -->"
+          PR_BODY=$(gh pr view ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} --json body -q .body)
+          if printf '%s' "$PR_BODY" | grep -qF "$MARKER"; then
+            echo "Local review marker found for HEAD ${HEAD_SHA:0:8} - skipping CI reviews"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout repository
+        if: steps.check_local_review.outputs.skip != 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install uv
+        if: steps.check_local_review.outputs.skip != 'true'
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install erk
+        if: steps.check_local_review.outputs.skip != 'true'
+        run: uv tool install --from . --with ./packages/erk-shared erk
+
+      - name: Discover matching reviews
+        if: steps.check_local_review.outputs.skip != 'true'
+        id: discover
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Run discovery and capture output
+          OUTPUT=$(erk exec discover-reviews --pr-number ${{ github.event.pull_request.number }} --reviews-dir .erk/reviews)
+          echo "Discovery output:"
+          echo "$OUTPUT"
+
+          # Check if discovery succeeded
+          SUCCESS=$(echo "$OUTPUT" | jq -r '.success')
+          if [ "$SUCCESS" != "true" ]; then
+            echo "Discovery failed"
+            echo "$OUTPUT" | jq .
+            exit 1
+          fi
+
+          # Extract matrix and check if there are any reviews
+          MATRIX=$(echo "$OUTPUT" | jq -c '.matrix')
+          REVIEW_COUNT=$(echo "$OUTPUT" | jq '.reviews | length')
+
+          echo "Found $REVIEW_COUNT matching reviews"
+          echo "Matrix: $MATRIX"
+
+          # Set outputs
+          echo "matrix=$MATRIX" >> "$GITHUB_OUTPUT"
+          if [ "$REVIEW_COUNT" -gt 0 ]; then
+            echo "has_reviews=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_reviews=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  review:
+    needs: discover-reviews
+    if: needs.discover-reviews.outputs.has_reviews == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.discover-reviews.outputs.matrix) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Install Claude Code
+        uses: ./.github/actions/setup-claude-code
+
+      - name: Install erk
+        run: uv tool install --from . --with ./packages/erk-shared erk
+
+      - name: Run ${{ matrix.name }}
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Extract review name from filename (remove .md extension)
+          REVIEW_NAME="${{ matrix.filename }}"
+          REVIEW_NAME="${REVIEW_NAME%.md}"
+
+          echo "Running review: $REVIEW_NAME"
+          erk exec run-review \
+            --name "$REVIEW_NAME" \
+            --pr-number ${{ github.event.pull_request.number }} \
+            --reviews-dir .erk/reviews
