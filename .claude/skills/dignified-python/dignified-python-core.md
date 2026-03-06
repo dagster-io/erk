@@ -83,9 +83,11 @@ Exceptions are ONLY acceptable at:
 
 For detailed exception handling patterns including minimal exception scope, B904 chaining, third-party API examples, and anti-patterns, see `references/exception-handling.md`.
 
-### Assert for Type Narrowing
+### Assert Usage
 
-`assert` is acceptable when used **solely to narrow types** after a guard check has already established the invariant:
+**In test code** (`test_*.py`, `*_test.py`, `conftest.py`): `assert` is always acceptable. It is the standard pytest assertion mechanism. No restrictions apply.
+
+**In production code**: `assert` is acceptable when used **solely to narrow types** after a guard check has already established the invariant:
 
 ```python
 # CORRECT: assert for type narrowing after guard check
@@ -205,16 +207,24 @@ For detailed inline import patterns and when they're legitimate, see `references
 
 **Rationale:** Import aliases obscure the canonical name, make grep-based discovery harder, and invite cargo-culting. When reading code, aliases force you to scroll up to find the real import, breaking flow. When searching for usage of a symbol, aliases fragment results across different names.
 
-**The only acceptable exception:** Resolving genuine name collisions between two different modules that export identically-named symbols.
+**Acceptable exceptions:**
+
+1. **Name collisions**: Resolving genuine name collisions between two different modules that export identically-named symbols.
+2. **Well-known library aliases**: Community-standard top-level import aliases for major libraries (e.g., `import pandas as pd`, `import numpy as np`, `import dagster as dg`, `import matplotlib.pyplot as plt`). These are universally recognized conventions. The rule still prohibits gratuitous renaming of internal/project imports.
 
 ```python
-# WRONG: Gratuitous aliasing
+# WRONG: Gratuitous aliasing of internal imports
 from erk.helpers import require_issues as require_github_issues
 
 # CORRECT: Use canonical name
 from erk.helpers import require_issues
 
-# CORRECT (rare exception): Resolving genuine collision
+# CORRECT: Well-known library aliases
+import pandas as pd
+import numpy as np
+import dagster as dg
+
+# CORRECT: Resolving genuine collision
 from datetime import datetime as dt
 from pandas import datetime as pd_datetime
 ```
