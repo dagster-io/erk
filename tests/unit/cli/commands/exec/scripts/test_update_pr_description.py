@@ -10,6 +10,8 @@ from datetime import UTC, datetime
 from click.testing import CliRunner
 
 from erk.cli.commands.exec.scripts.update_pr_description import update_pr_description
+from erk_shared.core.fakes import FakeLlmCaller
+from erk_shared.core.llm_caller import LlmResponse
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
@@ -86,7 +88,7 @@ def _make_standard_fakes(
     prompt_output: str = "Add awesome feature\n\nThis PR adds an awesome new feature.",
     prompt_error: str | None = None,
     available: bool = True,
-) -> tuple[FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor]:
+) -> tuple[FakeGit, FakeGraphite, FakeGitHub, FakePromptExecutor, FakeLlmCaller]:
     """Create standard fakes for update-pr-description tests."""
     git = FakeGit(
         git_common_dirs={env.cwd: env.git_dir},
@@ -136,7 +138,9 @@ def _make_standard_fakes(
         simulated_prompt_error=prompt_error,
     )
 
-    return git, graphite, github, executor
+    llm_caller = FakeLlmCaller(response=LlmResponse(text=prompt_output))
+
+    return git, graphite, github, executor, llm_caller
 
 
 def test_fails_when_claude_not_available() -> None:
@@ -233,10 +237,15 @@ def test_success_updates_pr() -> None:
     """Test successful update-pr-description generates title/body and updates PR."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git, graphite, github, executor = _make_standard_fakes(env)
+        git, graphite, github, executor, llm_caller = _make_standard_fakes(env)
 
         ctx = build_workspace_test_context(
-            env, git=git, graphite=graphite, github=github, prompt_executor=executor
+            env,
+            git=git,
+            graphite=graphite,
+            github=github,
+            prompt_executor=executor,
+            llm_caller=llm_caller,
         )
 
         result = runner.invoke(update_pr_description, [], obj=ctx)
@@ -259,10 +268,17 @@ def test_generates_footer_with_checkout_command() -> None:
     """Test that updated body includes footer with checkout command."""
     runner = CliRunner()
     with erk_isolated_fs_env(runner, env_overrides=None) as env:
-        git, graphite, github, executor = _make_standard_fakes(env, pr_body="Old content")
+        git, graphite, github, executor, llm_caller = _make_standard_fakes(
+            env, pr_body="Old content"
+        )
 
         ctx = build_workspace_test_context(
-            env, git=git, graphite=graphite, github=github, prompt_executor=executor
+            env,
+            git=git,
+            graphite=graphite,
+            github=github,
+            prompt_executor=executor,
+            llm_caller=llm_caller,
         )
 
         result = runner.invoke(update_pr_description, [], obj=ctx)
@@ -331,18 +347,26 @@ def test_uses_graphite_parent() -> None:
             available=True,
             simulated_prompt_output="Add feature 2\n\nThis adds feature 2.",
         )
+        llm_caller = FakeLlmCaller(
+            response=LlmResponse(text="Add feature 2\n\nThis adds feature 2.")
+        )
 
         ctx = build_workspace_test_context(
-            env, git=git, graphite=graphite, github=github, prompt_executor=executor
+            env,
+            git=git,
+            graphite=graphite,
+            github=github,
+            prompt_executor=executor,
+            llm_caller=llm_caller,
         )
 
         result = runner.invoke(update_pr_description, [], obj=ctx)
 
         assert result.exit_code == 0
 
-        # Verify the prompt was called with correct branches
-        assert len(executor.prompt_calls) == 1
-        prompt, _system_prompt, _dangerous = executor.prompt_calls[0]
+        # Verify the LLM was called with correct branches
+        assert len(llm_caller.calls) == 1
+        prompt = llm_caller.calls[0].prompt
         # Should contain branch-1 as parent (Graphite parent)
         assert "branch-1" in prompt
         assert "branch-2" in prompt
@@ -373,7 +397,7 @@ def test_no_plan_context_after_pxxxx_removal() -> None:
             comments_with_urls={123: [comment]},
         )
 
-        git, graphite, github, executor = _make_standard_fakes(
+        git, graphite, github, executor, llm_caller = _make_standard_fakes(
             env,
             branch_name="plnd/fix-bug-123-01-01-1200",
             fake_github_issues=fake_github_issues,
@@ -401,6 +425,7 @@ def test_no_plan_context_after_pxxxx_removal() -> None:
             graphite=graphite,
             github=github,
             prompt_executor=executor,
+            llm_caller=llm_caller,
             plan_store=PlannedPRBackend(github, fake_github_issues, time=FakeTime()),
         )
 
@@ -423,7 +448,7 @@ def test_update_pr_description_planned_pr_backend_preserves_metadata() -> None:
         plan_content = "# My Plan\n\nImplement the thing."
         pr_body = build_plan_stage_body(metadata_body, plan_content, summary=None)
 
-        git, graphite, github, executor = _make_standard_fakes(
+        git, graphite, github, executor, llm_caller = _make_standard_fakes(
             env,
             branch_name="feature",
             pr_body=pr_body,
@@ -435,6 +460,7 @@ def test_update_pr_description_planned_pr_backend_preserves_metadata() -> None:
             graphite=graphite,
             github=github,
             prompt_executor=executor,
+            llm_caller=llm_caller,
             plan_store=PlannedPRBackend(github, github.issues, time=FakeTime()),
         )
 

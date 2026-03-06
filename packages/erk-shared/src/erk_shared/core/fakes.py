@@ -313,13 +313,42 @@ class FakePlanListService(PlanListService):
         )
 
 
-@dataclass(frozen=True)
+class LlmCall(NamedTuple):
+    """Record of an LlmCaller.call() invocation."""
+
+    prompt: str
+    system_prompt: str
+    max_tokens: int
+
+
 class FakeLlmCaller(LlmCaller):
-    """Fake LlmCaller that returns a pre-configured response."""
+    """Fake LlmCaller that returns pre-configured responses.
 
-    response: LlmResponse | NoApiKey | LlmCallFailed
+    Supports a single response or a queue of responses for sequential calls.
+    Records all calls for test assertions.
+    """
 
-    def call(self, prompt: str, *, system_prompt: str) -> LlmResponse | NoApiKey | LlmCallFailed:
+    def __init__(
+        self,
+        *,
+        response: LlmResponse | NoApiKey | LlmCallFailed,
+        responses: list[LlmResponse | NoApiKey | LlmCallFailed] | None = None,
+    ) -> None:
+        self.response = response
+        self._responses = list(responses) if responses is not None else None
+        self._response_index = 0
+        self.calls: list[LlmCall] = []
+
+    def call(
+        self, prompt: str, *, system_prompt: str, max_tokens: int
+    ) -> LlmResponse | NoApiKey | LlmCallFailed:
+        self.calls.append(
+            LlmCall(prompt=prompt, system_prompt=system_prompt, max_tokens=max_tokens)
+        )
+        if self._responses is not None and self._response_index < len(self._responses):
+            result = self._responses[self._response_index]
+            self._response_index += 1
+            return result
         return self.response
 
 

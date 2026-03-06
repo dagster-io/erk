@@ -7,6 +7,8 @@ is disabled (use_graphite=False), using the core path (git push + gh pr create).
 from click.testing import CliRunner
 
 from erk.cli.commands.pr import pr_group
+from erk_shared.core.fakes import FakeLlmCaller
+from erk_shared.core.llm_caller import LlmResponse
 from erk_shared.gateway.git.fake import FakeGit
 from erk_shared.gateway.github.fake import FakeGitHub
 from erk_shared.gateway.github.types import PRDetails, PullRequestInfo
@@ -79,11 +81,14 @@ def test_pr_submit_core_path_succeeds_without_graphite() -> None:
             simulated_prompt_output="fix: test change\n\nTest body",
         )
 
+        llm_caller = FakeLlmCaller(response=LlmResponse(text="fix: test change\n\nTest body"))
+
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             prompt_executor=executor,
+            llm_caller=llm_caller,
             use_graphite=False,
         )
 
@@ -124,11 +129,14 @@ def test_pr_submit_no_graphite_flag_works_without_graphite() -> None:
             simulated_prompt_output="fix: test change\n\nTest body",
         )
 
+        llm_caller = FakeLlmCaller(response=LlmResponse(text="fix: test change\n\nTest body"))
+
         ctx = build_workspace_test_context(
             env,
             git=git,
             github=github,
             prompt_executor=executor,
+            llm_caller=llm_caller,
             use_graphite=False,
         )
 
