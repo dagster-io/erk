@@ -1,0 +1,111 @@
+<session>
+  <meta source="agent-a1bc6e3" />
+  <meta branch="plnd/ci-summary-pr-comments-03-05-1942" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Run these test suites and report results:
+1. `cd /home/runner/work/erk/erk &amp;&amp; uv run pytest tests/shared/ -x -q --tb=short 2&gt;&amp;1 | tail -30`
+2. `cd /home/runner/work/erk/erk &amp;&amp; uv run pytest tests/tui/ -x -q --tb=short 2&gt;&amp;1 | tail -30`
+Report the full output for both.</user>
+  <assistant>I'll run both test suites and report the results.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="5901" cache_read_input_tokens="6447" cache_creation="{'ephemeral_5m_input_tokens': 5901, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016Tc8VHBxQziNQAjF5kuGjb">
+    <param name="command">uv run pytest tests/shared/ -x -q --tb=short 2&gt;&amp;1 | tail -30</param>
+    <param name="description">Run tests/shared/ suite and show last 30 lines</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5901" cache_read_input_tokens="6447" cache_creation="{'ephemeral_5m_input_tokens': 5901, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_013xmQLqMyZiCdVX4Qi123Y7">
+    <param name="command">uv run pytest tests/tui/ -x -q --tb=short 2&gt;&amp;1 | tail -30</param>
+    <param name="description">Run tests/tui/ suite and show last 30 lines</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="5901" cache_read_input_tokens="6447" cache_creation="{'ephemeral_5m_input_tokens': 5901, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_016Tc8VHBxQziNQAjF5kuGjb">
+..................................F
+=================================== FAILURES ===================================
+__________ TestWorktreeCreationSchema.test_invalid_issue_number_type ___________
+tests/shared/github/test_metadata_schemas.py:139: in test_invalid_issue_number_type
+    schema.validate(data)
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:75: in validate
+    raise ValueError("plan_number must be an integer")
+E   ValueError: plan_number must be an integer
+
+During handling of the above exception, another exception occurred:
+tests/shared/github/test_metadata_schemas.py:138: in test_invalid_issue_number_type
+    with pytest.raises(ValueError, match="issue_number must be an integer"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'issue_number must be an integer'
+E     Actual message: 'plan_number must be an integer'
+=========================== short test summary info ============================
+FAILED tests/shared/github/test_metadata_schemas.py::TestWorktreeCreationSchema::test_invalid_issue_number_type - AssertionError: Regex pattern did not match.
+  Expected regex: 'issue_number must be an integer'
+  Actual message: 'plan_number must be an integer'
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+  </tool_result>
+  <tool_result tool="toolu_013xmQLqMyZiCdVX4Qi123Y7">
+.............................................................F
+=================================== FAILURES ===================================
+_________ TestCmuxFocusWorkspace.test_focus_selects_matching_workspace _________
+tests/tui/app/test_async_operations.py:1172: in test_focus_selects_matching_workspace
+    assert len(captured_run_calls) == 2
+E   assert 0 == 2
+E    +  where 0 = len([])
+=========================== short test summary info ============================
+FAILED tests/tui/app/test_async_operations.py::TestCmuxFocusWorkspace::test_focus_selects_matching_workspace - assert 0 == 2
+ +  where 0 = len([])
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+  </tool_result>
+  <assistant>## Test Results
+
+### tests/shared/ - FAILED
+
+```
+..................................F
+=================================== FAILURES ===================================
+__________ TestWorktreeCreationSchema.test_invalid_issue_number_type ___________
+tests/shared/github/test_metadata_schemas.py:139: in test_invalid_issue_number_type
+    schema.validate(data)
+packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py:75: in validate
+    raise ValueError("plan_number must be an integer")
+E   ValueError: plan_number must be an integer
+
+During handling of the above exception, another exception occurred:
+tests/shared/github/test_metadata_schemas.py:138: in test_invalid_issue_number_type
+    with pytest.raises(ValueError, match="issue_number must be an integer"):
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E   AssertionError: Regex pattern did not match.
+E     Expected regex: 'issue_number must be an integer'
+E     Actual message: 'plan_number must be an integer'
+=========================== short test summary info ============================
+FAILED tests/shared/github/test_metadata_schemas.py::TestWorktreeCreationSchema::test_invalid_issue_number_type - AssertionError: Regex pattern did not match.
+  Expected regex: 'issue_number must be an integer'
+  Actual message: 'plan_number must be an integer'
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+```
+
+**Status:** 33 passed, 1 failed
+
+**Issue:** The test expects an error message saying "issue_number must be an integer" but the code is raising "plan_number must be an integer". This indicates a mismatch between the test expectation and the current error message in the schema validation code.
+
+---
+
+### tests/tui/ - FAILED
+
+```
+.............................................................F
+=================================== FAILURES ===================================
+_________ TestCmuxFocusWorkspace.test_focus_selects_matching_workspace _________
+tests/tui/app/test_async_operations.py:1172: in test_focus_selects_matching_workspace
+    assert len(captured_run_calls) == 2
+E   assert 0 == 2
+E    +  where 0 = len([])
+=========================== short test summary info ============================
+FAILED tests/tui/app/test_async_operations.py::TestCmuxFocusWorkspace::test_focus_selects_matching_workspace - assert 0 == 2
+ +  where 0 = len([])
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 1 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+```
+
+**Status:** 61 passed, 1 failed
+
+**Issue:** The test expects 2 captured run calls but got 0. This suggests the mocked/captured subprocess calls are not being recorded as expected, likely indicating a change in how the focus operation interacts with the subprocess layer or how the mock is capturing calls.</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="3583" cache_read_input_tokens="12348" cache_creation="{'ephemeral_5m_input_tokens': 3583, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

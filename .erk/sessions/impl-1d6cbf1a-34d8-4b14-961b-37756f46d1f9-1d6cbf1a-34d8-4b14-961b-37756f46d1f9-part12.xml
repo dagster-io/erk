@@ -1,0 +1,510 @@
+<session>
+  <meta source="agent-a84b459" />
+  <meta branch="plnd/ci-summary-pr-comments-03-05-1942" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <assistant>Perfect! Now I have all the information I need. Let me create a comprehensive summary of the patterns I found:
+
+## Summary: Pattern Analysis for CI Summaries Feature
+
+I've read all 15 files you specified and analyzed the key patterns. Here's a comprehensive breakdown:
+
+### 1. **PlanHeaderSchema &amp; Optional Int Fields** (`packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py`)
+
+**Pattern for optional int fields:**
+```python
+# In PlanHeaderSchema.validate():
+if PLAN_COMMENT_ID in data and data[PLAN_COMMENT_ID] is not None:
+    if not isinstance(data[PLAN_COMMENT_ID], int):
+        raise ValueError("plan_comment_id must be an integer or null")
+    if data[PLAN_COMMENT_ID] &lt;= 0:
+        raise ValueError("plan_comment_id must be positive when provided")
+
+# In schema constants:
+PLAN_COMMENT_ID: Literal["plan_comment_id"] = "plan_comment_id"
+
+# In PlanHeaderFieldName union:
+PlanHeaderFieldName = Literal[
+    ...,
+    "plan_comment_id",
+    ...
+]
+```
+
+**Key points:**
+- Validation checks `if field is not None` before type checking
+- Raises `ValueError` if type doesn't match or value is invalid
+- Required to add constant to `PlanHeaderFieldName` Literal union
+- Line 378-379: `PLAN_COMMENT_ID` defined with both assignment and type
+- Line 566-571: Validation logic for optional int fields
+
+### 2. **plan_header.py Extract/Update Functions** (`packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py`)
+
+**Extract pattern:**
+```python
+def extract_plan_header_comment_id(issue_body: str) -&gt; int | None:
+    """Extract plan_comment_id from plan-header block."""
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
+    if block is None:
+        return None
+    return block.data.get(PLAN_COMMENT_ID)
+```
+
+**Update pattern:**
+```python
+def update_plan_header_comment_id(
+    issue_body: str,
+    comment_id: int,
+) -&gt; str:
+    """Update plan_comment_id field in plan-header metadata block."""
+    block = find_metadata_block(issue_body, BlockKeys.PLAN_HEADER)
+    if block is None:
+        raise ValueError("plan-header block not found in issue body")
+    
+    updated_data = dict(block.data)
+    updated_data[PLAN_COMMENT_ID] = comment_id
+    
+    schema = PlanHeaderSchema()
+    schema.validate(updated_data)
+    
+    new_block = MetadataBlock(key=BlockKeys.PLAN_HEADER, data=updated_data)
+    new_block_content = render_metadata_block(new_block)
+    
+    return replace_metadata_block_in_body(issue_body, BlockKeys.PLAN_HEADER, new_block_content)
+```
+
+**Key points:**
+- Extract functions are simple `dict.get()` wrappers
+- Update functions: find → copy dict → update → validate → create new block → render → replace
+- Validation uses schema before rendering
+- Errors raise `ValueError` with descriptive messages
+
+### 3. **GitHub ABC Method Signature** (`packages/erk-shared/src/erk_shared/gateway/github/abc.py` lines 195-209)
+
+```python
+@abstractmethod
+def get_ci_summary_logs(self, repo_root: Path, run_id: str) -&gt; str | None:
+    """Fetch logs from the ci-summarize job in a workflow run.
+
+    Looks for a job named "ci-summarize" in the given run and returns
+    its raw log text containing ERK-CI-SUMMARY markers.
+
+    Args:
+        repo_root: Repository root directory
+        run_id: GitHub Actions run ID
+
+    Returns:
+        Raw log text from the ci-summarize job, or None if the job
+        doesn't exist or hasn't completed yet
+    """
+    ...
+```
+
+**Pattern:**
+- First positional args: `repo_root`, `run_id` (both common in GitHub gateway)
+- Return type: `str | None` (None means not found/unavailable)
+- Docstring: description, Args with types, Returns with behavior explanation
+- Minimal documentation of error conditions (errors let exceptions bubble)
+
+### 4. **RealGitHub Implementation** (`packages/erk-shared/src/erk_shared/gateway/github/real.py` lines 1-100)
+
+**Pattern:**
+```python
+class RealGitHub(GitHub):
+    """Production implementation using gh CLI."""
+```
+
+**Key design notes:**
+- Error Handling Philosophy documented at top (lines 3-10): let exceptions bubble, don't swallow
+- Uses `subprocess` for gh CLI calls
+- Feature flags for REST API vs gh CLI choice (lines 78-92)
+- Implementation uses subprocess wrapper functions like `run_subprocess_with_context`
+
+### 5. **FakeGitHub Pattern** (`packages/erk-shared/src/erk_shared/gateway/github/fake.py` lines 1-80)
+
+**Pattern:**
+```python
+class FakeGitHub(GitHub):
+    """In-memory fake implementation of GitHub operations.
+    
+    This class has NO public setup methods. All state is provided via constructor
+    using keyword arguments with sensible defaults (empty dicts).
+    """
+    
+    def __init__(
+        self,
+        *,
+        ci_summary_logs: dict[str, str] | None = None,
+        ...
+    ) -&gt; None:
+```
+
+**Key points:**
+- All state passed via keyword-only constructor arguments
+- No public setup methods like `set_*`
+- Default to empty dicts/lists
+- Line 78: `ci_summary_logs: dict[str, str] | None = None` for mapping run_id → log text
+- Line 123: Initialize in `__init__` with `self._ci_summary_logs = ci_summary_logs or {}`
+
+### 6. **DryRunGitHub Delegate Pattern** (`packages/erk-shared/src/erk_shared/gateway/github/dry_run.py`)
+
+```python
+class DryRunGitHub(GitHub):
+    """No-op wrapper for GitHub operations.
+    
+    Read operations are delegated to the wrapped implementation.
+    Write operations return without executing (no-op behavior).
+    """
+    
+    def __init__(self, wrapped: GitHub) -&gt; None:
+        self._wrapped = wrapped
+        self._dry_run_issues = DryRunGitHubIssues(wrapped.issues)
+    
+    def get_ci_summary_logs(self, repo_root: Path, run_id: str) -&gt; str | None:
+        """Get ci-summarize job logs (read-only, no printing)."""
+        return self._wrapped.get_ci_summary_logs(repo_root, run_id)
+```
+
+**Pattern:**
+- Read operations delegate directly: `return self._wrapped.method(...)`
+- Write operations return sentinel values or do nothing
+- Wraps `.issues` with dry-run version too
+- No printing
+
+### 7. **PrintingGitHub Delegate Pattern** (`packages/erk-shared/src/erk_shared/gateway/github/printing.py` lines 1-72)
+
+```python
+class PrintingGitHub(PrintingBase, GitHub):
+    """Wrapper that prints operations before delegating to inner implementation."""
+    
+    @property
+    def issues(self) -&gt; GitHubIssues:
+        """Access to issue operations (delegates to wrapped)."""
+        return self._wrapped.issues
+    
+    def get_ci_summary_logs(self, repo_root: Path, run_id: str) -&gt; str | None:
+        """Get ci-summarize job logs (read-only, no printing)."""
+        return self._wrapped.get_ci_summary_logs(repo_root, run_id)
+```
+
+**Pattern:**
+- Inherits from both `PrintingBase` (provides `_wrapped`, `_emit`, `_format_command`) and `GitHub`
+- Read operations: no printing, direct delegation
+- Write operations: `self._emit(self._format_command(...))` then delegate
+- Follows composition pattern
+
+### 8. **PlanRowData Structure** (`src/erk/tui/data/types.py` lines 11-150)
+
+```python
+@dataclass(frozen=True)
+class PlanRowData:
+    """Row data for displaying a plan in the TUI table."""
+    # ... many fields ...
+```
+
+**Key pattern:**
+- Frozen dataclass for immutability during table rendering
+- Mix of raw data (for logic) and display strings (for rendering)
+- Example raw/display pairs:
+  - `pr_number: int | None` ↔ `pr_display: str`
+  - `run_id: str | None` ↔ `run_id_display: str`
+  - `run_status: str | None`, `run_conclusion: str | None` ↔ `run_state_display: str`
+
+**No CI summary fields yet** - this is where they'll be added
+
+### 9. **PlanDataProvider ABC** (`packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py`)
+
+```python
+class PlanDataProvider(ABC):
+    """Abstract base class for plan data providers."""
+    
+    @abstractmethod
+    def fetch_ci_summaries(self, pr_number: int) -&gt; dict[str, str]:
+        """Fetch CI failure summaries for a pull request.
+        
+        Looks for the ci-summarize job in the latest CI workflow run for
+        this PR, parses ERK-CI-SUMMARY markers from its logs, and returns
+        a mapping of check name to summary text.
+        
+        Args:
+            pr_number: The PR number to fetch summaries for
+        
+        Returns:
+            Mapping of check name -&gt; summary text (empty dict on any failure)
+        """
+        ...
+```
+
+**Pattern:**
+- Returns `dict[str, str]` (check name → summary)
+- Empty dict on failure (fail-open)
+- Docstring includes orchestration steps
+
+### 10. **RealPlanDataProvider Implementation** (`packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py` lines 1-100)
+
+```python
+class RealPlanDataProvider(PlanDataProvider):
+    """Production implementation that wraps services."""
+    
+    def __init__(
+        self,
+        ctx: ErkContext,
+        *,
+        location: GitHubRepoLocation,
+        clipboard: Clipboard,
+        browser: BrowserLauncher,
+        http_client: HttpClient,
+    ) -&gt; None:
+        self._ctx = ctx
+        self._location = location
+        self._clipboard = clipboard
+        self._browser = browser
+        self._http_client = http_client
+```
+
+**Pattern:**
+- Takes `ErkContext` + location + optional helpers
+- Stores all dependencies as instance fields
+- Orchestrates across multiple gateways
+
+### 11. **FakePlanDataProvider** (`packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py` lines 1-150)
+
+```python
+class FakePlanDataProvider(PlanDataProvider):
+    """Fake implementation of PlanDataProvider for testing."""
+    
+    def __init__(
+        self,
+        *,
+        plans: list[PlanRowData] | None = None,
+        ...,
+        fetch_error: str | None = None,
+    ) -&gt; None:
+        self._plans = plans or []
+        ...
+        self._ci_summaries_by_pr: dict[int, dict[str, str]] = {}
+```
+
+**Pattern:**
+- Keyword-only constructor with defaults
+- Initialization of empty dicts in `__init__`
+- Line 55: `self._ci_summaries_by_pr: dict[int, dict[str, str]] = {}`
+- Methods like `fetch_ci_summaries()` read from these dicts
+
+### 12. **CheckRunsScreen Two-Phase Loading** (`src/erk/tui/screens/check_runs_screen.py`)
+
+```python
+class CheckRunsScreen(ModalScreen):
+    """Modal screen displaying failing CI check runs."""
+    
+    def __init__(
+        self,
+        *,
+        provider: PlanDataProvider,
+        pr_number: int,
+        full_title: str,
+        passing_count: int,
+        total_count: int,
+    ) -&gt; None:
+        self._provider = provider
+        self._pr_number = pr_number
+        # ...
+        self._check_runs: list[PRCheckRun] = []
+    
+    @work(thread=True)
+    def _fetch_check_runs(self) -&gt; None:
+        """Fetch failing check runs in background thread."""
+        check_runs = self._provider.fetch_check_runs(self._pr_number)
+        self.app.call_from_thread(self._on_check_runs_loaded, check_runs, error)
+    
+    def _on_check_runs_loaded(self, check_runs, error) -&gt; None:
+        """Phase 1: display check runs, start Phase 2."""
+        container.mount(Markdown(format_check_runs(check_runs, summaries=None)))
+        container.mount(Label("Loading failure summaries..."))
+        self._fetch_summaries()
+    
+    @work(thread=True)
+    def _fetch_summaries(self) -&gt; None:
+        """Phase 2: Fetch summaries in background."""
+        summaries = self._provider.fetch_ci_summaries(self._pr_number)
+        self.app.call_from_thread(self._on_summaries_loaded, summaries)
+    
+    def _on_summaries_loaded(self, summaries) -&gt; None:
+        """Phase 2: Update markdown with enriched content."""
+        markdown.update(format_check_runs(self._check_runs, summaries=summaries))
+```
+
+**Pattern:**
+- `__init__` stores provider and PR number
+- `on_mount()` kicks off Phase 1
+- `@work(thread=True)` fetches data without blocking UI
+- `app.call_from_thread(callback, ...)` updates UI from background thread
+- Two-phase: check runs first, then summaries in background
+- Summaries update existing markdown widget (no remove/mount race)
+
+### 13. **CheckRunsScreen Instantiation** (`src/erk/tui/actions/navigation.py` lines 144-165)
+
+```python
+def action_view_comments(self: ErkDashApp) -&gt; None:
+    """Display unresolved PR review comments in a modal."""
+    row = self._get_selected_row()
+    if row is None:
+        return
+    if row.pr_number is None:
+        if self._status_bar is not None:
+            # Error message
+        return
+    
+    self.push_screen(
+        UnresolvedCommentsScreen(
+            provider=self._provider,
+            pr_number=row.pr_number,
+            full_title=row.full_title,
+        )
+    )
+```
+
+**Pattern:**
+- Check row availability first
+- Get value from `row.field_name`
+- Create screen with `provider`, `pr_number`, `full_title`, etc.
+- Pass `self._provider` (already available on app)
+
+### 14. **ci_generate_summaries.py Structure** (`src/erk/cli/commands/exec/scripts/ci_generate_summaries.py`)
+
+**Full pattern:**
+```python
+def _build_summary_prompt(*, job_name: str, log_content: str, prompts_dir: Path) -&gt; str:
+    """Build the summary prompt from template."""
+    template_path = prompts_dir / "prompts" / "ci-summarize.md"
+    if template_path.exists():
+        template = template_path.read_text(encoding="utf-8")
+        result = template.replace("{{ JOB_NAME }}", job_name)
+        result = result.replace("{{ LOG_CONTENT }}", log_content)
+        return result
+    return f"Summarize this CI failure log for job '{job_name}'..."
+
+def _truncate_logs(log_text: str, *, max_lines: int) -&gt; str:
+    """Keep last N lines of log text."""
+    lines = log_text.splitlines()
+    if len(lines) &lt;= max_lines:
+        return log_text
+    return "\n".join(lines[-max_lines:])
+
+def _generate_all_summaries(
+    *,
+    run_id: str,
+    executor: PromptExecutor,
+    cwd: Path,
+) -&gt; None:
+    """Main orchestration function."""
+    # Fetch failing jobs
+    result = run_subprocess_with_context(
+        cmd=["gh", "api", ...],
+        operation_context="fetch failing jobs",
+        cwd=cwd,
+        check=False,
+    )
+    
+    jobs = _parse_failing_jobs(result.stdout)
+    
+    for job in jobs:
+        log_result = run_subprocess_with_context(...)
+        log_content = _truncate_logs(log_result.stdout, max_lines=500)
+        prompt = _build_summary_prompt(...)
+        
+        prompt_result = executor.execute_prompt(
+            prompt,
+            model="claude-haiku-4-5-20251001",
+            tools=None,
+            cwd=cwd,
+            system_prompt=None,
+            dangerous=False,
+        )
+        
+        # Output markers
+        click.echo(f"=== ERK-CI-SUMMARY:{job.name} ===")
+        click.echo(summary)
+        click.echo(f"=== /ERK-CI-SUMMARY:{job.name} ===")
+
+@click.command(name="ci-generate-summaries")
+@click.option("--run-id", required=True, help="GitHub Actions run ID")
+@click.pass_context
+def ci_generate_summaries(ctx: click.Context, *, run_id: str) -&gt; None:
+    """Generate CI failure summaries using Haiku."""
+    cwd = require_cwd(ctx)
+    executor = require_prompt_executor(ctx)
+    
+    _generate_all_summaries(
+        run_id=run_id,
+        executor=executor,
+        cwd=cwd,
+    )
+```
+
+**Key patterns:**
+- Helper functions are pure/testable
+- Main orchestration in `_generate_all_summaries()`
+- Click command delegates to orchestration function
+- Uses `@click.pass_context` + `require_cwd()` + `require_prompt_executor()`
+- Outputs to stdout (markers) and stderr (progress)
+- Model hardcoded: `"claude-haiku-4-5-20251001"`
+- Logs truncated to last 500 lines
+- Template variables: `{{ JOB_NAME }}`, `{{ LOG_CONTENT }}`
+
+### 15. **CI Workflow Job** (`.github/workflows/ci.yml`)
+
+```yaml
+ci-summarize:
+    needs: [format, lint, fix-formatting, docs-check, ty, unit-tests, integration-tests, erk-mcp-tests]
+    if: |
+      vars.CLAUDE_ENABLED != 'false' &amp;&amp;
+      always() &amp;&amp;
+      (github.event_name == 'pull_request') &amp;&amp;
+      (github.event.pull_request.draft != true) &amp;&amp;
+      !contains(github.event.pull_request.labels.*.name, 'erk-plan-review') &amp;&amp;
+      (needs.format.result == 'failure' || needs.lint.result == 'failure' || ...)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-python-uv
+      - name: Install erk
+        run: |
+          if [ -d "./packages/erk-shared" ]; then
+            uv tool install --from . --with-editable ./packages/erk-shared erk
+          else
+            uv tool install --from . --with erk-shared erk
+          fi
+      - uses: ./.github/actions/setup-claude-code
+      - name: Summarize failures
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GH_TOKEN: ${{ github.token }}
+        run: erk exec ci-generate-summaries --run-id "${{ github.run_id }}"
+```
+
+**Key patterns:**
+- Only runs on PR + draft != true + at least one job fails
+- Uses `always()` to run even when dependencies fail
+- Requires `CLAUDE_ENABLED != 'false'` variable
+- Skips plan review PRs
+- Uses `setup-claude-code` action
+- Passes `ANTHROPIC_API_KEY` + `GH_TOKEN` env vars
+- Calls `erk exec ci-generate-summaries --run-id ${{ github.run_id }}`
+
+---
+
+## Key Implementation Insights
+
+1. **Optional Fields Pattern**: For optional int fields like `plan_ci_summary_comment_id`, follow the `plan_comment_id` pattern: add to `PlanHeaderFieldName` union, validate with null check, extract/update functions
+2. **ABC/Real/Fake/Dry-Run/Printing Chain**: Each layer builds on previous - always implement all 5 places for new methods
+3. **Two-Phase TUI Loading**: CheckRunsScreen demonstrates best practice - show quick data first, then enrich with expensive data in background
+4. **Fail-Open Philosophy**: Return empty dict/None rather than raising on missing data
+5. **Template Variables**: Use `{{ VAR_NAME }}` format for substitution in prompt templates
+6. **Keyword-Only Args**: Most constructors use `*,` to enforce keyword arguments for clarity
+7. **Frozen Dataclasses**: Used throughout for immutability and consistency
+8. **Display vs Raw Fields**: Store both for flexibility in TUI rendering vs actions
+
+All absolute file paths are provided in the summary above. This should give you everything you need to understand how to implement the PR comment and CI summary comment tracking!</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="771" cache_read_input_tokens="92649" cache_creation="{'ephemeral_5m_input_tokens': 771, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>

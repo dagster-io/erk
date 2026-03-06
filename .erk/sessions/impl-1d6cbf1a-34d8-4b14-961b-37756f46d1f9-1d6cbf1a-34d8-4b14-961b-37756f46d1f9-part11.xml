@@ -1,0 +1,1131 @@
+<session>
+  <meta source="agent-a84b459" />
+  <meta branch="plnd/ci-summary-pr-comments-03-05-1942" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>FIRST check docs/learned/index.md for existing documentation on this topic.
+Read relevant docs before exploring raw files. Then explore codebase as necessary.
+
+I need to understand the existing patterns for the following files that I'll be modifying. Please read each file and provide a summary of the key patterns:
+
+1. `packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py` - Look at PlanHeaderSchema, especially existing optional int fields like plan_comment_id
+2. `packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py` - Look at existing extract/update functions for plan_comment_id 
+3. `packages/erk-shared/src/erk_shared/gateway/github/abc.py` - Look at existing method patterns (signatures, docstrings)
+4. `packages/erk-shared/src/erk_shared/gateway/github/real.py` - Look at how existing methods call gh CLI
+5. `packages/erk-shared/src/erk_shared/gateway/github/fake.py` - Look at fake patterns
+6. `packages/erk-shared/src/erk_shared/gateway/github/dry_run.py` - Look at dry_run delegate pattern
+7. `packages/erk-shared/src/erk_shared/gateway/github/printing.py` - Look at printing delegate pattern
+8. `src/erk/tui/data/types.py` - Look at PlanRowData
+9. `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py` - Look at fetch_ci_summaries signature
+10. `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py` - Look at fetch_ci_summaries and _build_row_data implementations
+11. `packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py` - Look at make_plan_row and fetch_ci_summaries
+12. `src/erk/tui/screens/check_runs_screen.py` - Look at __init__ and how it calls fetch_ci_summaries
+13. `src/erk/tui/actions/navigation.py` - Look at how CheckRunsScreen is instantiated
+14. `src/erk/cli/commands/exec/scripts/ci_generate_summaries.py` - The full file
+15. `.github/workflows/ci.yml` - Look at the ci-summarize job step
+
+For each file, provide the complete relevant code sections I need to understand to implement the changes.</user>
+  <assistant>I'll systematically read through these files to understand the existing patterns. Let me start by checking the documentation, then reading each file.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="7303" cache_read_input_tokens="8268" cache_creation="{'ephemeral_5m_input_tokens': 7303, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01WgUeF9YZUXJm8cXMt6bswP">
+    <param name="pattern">plan.*comment|CI.*summary|fetch_ci</param>
+    <param name="path">/home/runner/work/erk/erk/docs/learned</param>
+    <param name="glob">*.md</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="7303" cache_read_input_tokens="8268" cache_creation="{'ephemeral_5m_input_tokens': 7303, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01WgUeF9YZUXJm8cXMt6bswP">
+Found 42 files
+docs/learned/tui/view-switching.md
+docs/learned/tui/plan-row-data.md
+docs/learned/tui/architecture.md
+docs/learned/testing/tripwires.md
+docs/learned/testing/fake-github-testing.md
+docs/learned/sessions/context-analysis.md
+docs/learned/sessions/discovery-fallback.md
+docs/learned/sessions/lifecycle.md
+docs/learned/pr-operations/commit-message-generation.md
+docs/learned/pr-operations/plan-embedding-in-pr.md
+docs/learned/planning/tripwires.md
+docs/learned/planning/worktree-cleanup.md
+docs/learned/planning/planned-pr-learn-pipeline.md
+docs/learned/planning/planned-pr-lifecycle.md
+docs/learned/planning/pr-discovery.md
+docs/learned/planning/session-preprocessing.md
+docs/learned/planning/sub-agent-context-limitations.md
+docs/learned/planning/metadata-block-fallback.md
+docs/learned/planning/one-shot-workflow.md
+docs/learned/planning/plan-mismatch-recovery.md
+docs/learned/planning/index.md
+docs/learned/planning/learn-without-pr-context.md
+docs/learned/planning/lifecycle.md
+docs/learned/planning/async-learn-local-preprocessing.md
+docs/learned/objectives/exec-command-consolidation.md
+docs/learned/objectives/objective-lifecycle.md
+docs/learned/objectives/roadmap-mutation-patterns.md
+docs/learned/integrations/linear-erk-mapping.md
+docs/learned/cli/slash-command-llm-turn-optimization.md
+
+... [13 lines omitted] ...
+
+docs/learned/ci/ci-failure-summarization.md
+  </tool_result>
+  <assistant>Great! Let me read the most relevant docs first:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="792" cache_read_input_tokens="15571" cache_creation="{'ephemeral_5m_input_tokens': 792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Np1FG8gL5ZJHoyyHCnvGy5">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/plan-row-data.md</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="792" cache_read_input_tokens="15571" cache_creation="{'ephemeral_5m_input_tokens': 792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01EJgxRiDoWKoBEShLXxuJUW">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/ci/ci-failure-summarization.md</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="792" cache_read_input_tokens="15571" cache_creation="{'ephemeral_5m_input_tokens': 792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Lp36T4bFixD6Eyr7iPbNXY">
+    <param name="file_path">/home/runner/work/erk/erk/docs/learned/tui/architecture.md</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="792" cache_read_input_tokens="15571" cache_creation="{'ephemeral_5m_input_tokens': 792, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Np1FG8gL5ZJHoyyHCnvGy5">
+     1→---
+     2→title: PlanRowData Field Reference
+     3→read_when:
+     4→  - "writing command availability predicates"
+     5→  - "understanding what data is available for TUI commands"
+     6→  - "checking which PlanRowData fields are nullable"
+     7→last_audited: "2026-02-23 00:15 PT"
+     8→audit_result: edited
+     9→---
+    10→
+    11→# PlanRowData Field Reference
+    12→
+    13→Quick reference for writing command availability predicates and understanding
+    14→`PlanRowData` usage patterns.
+    15→
+    16→## Overview
+    17→
+    18→`PlanRowData` is a frozen dataclass containing all data for a single plan row in the TUI. It combines raw data (for actions) with pre-formatted display strings (for table rendering).
+    19→
+    20→**Location:** `src/erk/tui/data/types.py`
+    21→
+    22→## Field Categories
+    23→
+    24→### Plan Info
+    25→
+    26→| Field        | Type          | Description                   | Nullable?                     |
+    27→| ------------ | ------------- | ----------------------------- | ----------------------------- |
+    28→| `plan_id`    | `int`         | Plan identifier               | Never                         |
+    29→| `plan_url`   | `str \| None` | Full URL to the plan          | Yes                           |
+    30→| `full_title` | `str`         | Complete plan title           | Never (empty string possible) |
+
+... [196 lines omitted] ...
+
+    80→| `run_conclusion`    | `str \| None` | Run conclusion: "success", "failure", "cancelled" | Yes                   |
+  </tool_result>
+  <tool_result tool="toolu_01EJgxRiDoWKoBEShLXxuJUW">
+     1→---
+     2→title: CI Failure Summarization
+     3→read_when:
+     4→  - "working with CI failure summaries or ERK-CI-SUMMARY markers"
+     5→  - "modifying the ci-summarize workflow job"
+     6→  - "understanding how TUI displays CI failure details"
+     7→  - "debugging CI summary parsing or matching"
+     8→tripwires:
+     9→  - action: "changing the ci-summarize job `needs` array"
+    10→    warning: "The `needs` array must reference actual job names in ci.yml. Broken references silently skip the job. Verify every name exists."
+    11→  - action: "parsing ERK-CI-SUMMARY markers without re.DOTALL"
+    12→    warning: "Summary content is multiline. The regex uses re.DOTALL so `.` matches newlines. Without it, multiline summaries won't be captured."
+    13→  - action: "matching check names from summaries to GitHub check runs"
+    14→    warning: "GitHub prepends 'ci / ' to check names in statusCheckRollup. Use match_summary_to_check() which strips this prefix."
+    15→---
+    16→
+    17→# CI Failure Summarization
+    18→
+    19→When CI checks fail on a PR, the `ci-summarize` workflow job generates human-readable summaries using Haiku. These summaries are embedded in the job's logs as structured markers, then parsed and displayed in the TUI.
+    20→
+    21→## Architecture Overview
+    22→
+    23→```
+    24→CI job fails
+    25→  -&gt; ci-summarize job runs (ci.yml)
+    26→  -&gt; erk exec ci-generate-summaries fetches logs + calls Haiku
+    27→  -&gt; Outputs ERK-CI-SUMMARY markers to stdout
+    28→  -&gt; Markers stored in ci-summarize job logs
+    29→  -&gt; erk exec ci-fetch-summaries retrieves + parses markers
+    30→  -&gt; TUI check_runs_screen displays summaries as blockquotes
+
+... [115 lines omitted] ...
+
+    80→5. Returns `dict[str, str]` (empty dict on any failure)
+   107→Individual job failures don't stop processing of other jobs.
+   121→- What specific check/test failed (file names, test names)
+   122→- The error message or root cause
+  </tool_result>
+  <tool_result tool="toolu_01Lp36T4bFixD6Eyr7iPbNXY">
+     1→---
+     2→title: TUI Architecture Overview
+     3→read_when:
+     4→  - "understanding TUI structure"
+     5→  - "implementing TUI components"
+     6→  - "working with TUI data providers"
+     7→tripwires:
+     8→  - action: "reusing same DOM element id across loading/empty/content states"
+     9→    warning: "query_one() returns wrong element silently when id is reused across lifecycle phases. Use unique IDs per phase."
+    10→  - action: "calling widget methods directly from @work(thread=True) background threads"
+    11→    warning: "Direct widget calls from background threads cause silent UI corruption. Must use self.app.call_from_thread(callback, ...)."
+    12→  - action: "extending PlanDataProvider ABC"
+    13→    warning: "Requires 3-file update: abc.py + real.py + fake.py. Fake must initialize new dict in __init__. Missing init causes AttributeError at test time."
+    14→  - action: "adding a DataTable column with add_column(key=...)"
+    15→    warning: "Column key is a data binding contract — must match data field name. Silent failure when mismatched."
+    16→  - action: "moving @on decorated event handlers to a mixin"
+    17→    warning: "Textual's _MessagePumpMeta only scans class.__dict__, not inherited methods. Event handlers on mixins are silently ignored."
+    18→last_audited: "2026-02-17 18:30 PT"
+    19→audit_result: clean
+    20→---
+    21→
+    22→# TUI Architecture Overview
+    23→
+    24→The erk TUI is built with Textual and follows a layered architecture separating data fetching, filtering, and rendering.
+    25→
+    26→## Directory Structure
+    27→
+    28→```
+    29→src/erk/tui/
+    30→├── app.py              # Main Textual App (ErkDashApp)
+
+... [181 lines omitted] ...
+
+   126→Use fake providers instead of mocking. `FakePlanDataProvider` lives in `erk_shared.gateway.plan_data_provider.fake` and accepts keyword-only arguments (`plans`, `clipboard`, `browser`, `repo_root`, `fetch_error`). The `make_plan_row()` helper in the same module creates test `PlanRowData` instances with sensible defaults.
+  </tool_result>
+  <assistant>Now let me read the specific code files you need to understand. I'll read them in parallel:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="10298" cache_read_input_tokens="16363" cache_creation="{'ephemeral_5m_input_tokens': 10298, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CqQ3ChhWHeQFhv3pHCN3tx">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/schemas.py</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="10298" cache_read_input_tokens="16363" cache_creation="{'ephemeral_5m_input_tokens': 10298, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WNCg3RDyMj85FdN68L923a">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/metadata/plan_header.py</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="10298" cache_read_input_tokens="16363" cache_creation="{'ephemeral_5m_input_tokens': 10298, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KoT3Pp36eDxsLeghadkoMA">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="10298" cache_read_input_tokens="16363" cache_creation="{'ephemeral_5m_input_tokens': 10298, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KoT3Pp36eDxsLeghadkoMA">
+     1→"""Abstract base class for GitHub operations."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from abc import ABC, abstractmethod
+     6→from pathlib import Path
+     7→from typing import TYPE_CHECKING
+     8→
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.types import (
+    11→    BodyContent,
+    12→    GitHubRepoLocation,
+    13→    IssueFilterState,
+    14→    MergeError,
+    15→    MergeResult,
+    16→    PRCheckRun,
+    17→    PRDetails,
+    18→    PRListState,
+    19→    PRNotFound,
+    20→    PRReviewThread,
+    21→    PullRequestInfo,
+    22→    WorkflowRun,
+    23→)
+    24→
+    25→if TYPE_CHECKING:
+    26→    from erk_shared.gateway.github.issues.abc import GitHubIssues
+    27→
+    28→
+    29→class GitHub(ABC):
+    30→    """Abstract interface for GitHub operations.
+
+... [125 lines omitted] ...
+
+    77→    ) -&gt; MergeResult | MergeError:
+    91→            MergeResult on success, MergeError on failure
+  </tool_result>
+  <tool_result tool="toolu_01CqQ3ChhWHeQFhv3pHCN3tx">
+     1→"""Schema implementations for metadata blocks."""
+     2→
+     3→import warnings
+     4→from dataclasses import dataclass
+     5→from typing import Any, Literal
+     6→
+     7→from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlockSchema
+     8→
+     9→
+    10→def _migrate_issue_number_to_plan_number(data: dict[str, Any]) -&gt; None:
+    11→    """Migrate legacy ``issue_number`` key to ``plan_number`` in-place.
+    12→
+    13→    Several metadata schemas originally used ``issue_number``.  This helper
+    14→    centralises the backward-compatibility migration so each schema's
+    15→    ``validate`` method can call it instead of duplicating the logic.
+    16→    """
+    17→    if "issue_number" in data and "plan_number" not in data:
+    18→        data["plan_number"] = data.pop("issue_number")
+    19→
+    20→
+    21→@dataclass(frozen=True)
+    22→class ImplementationStatusSchema(MetadataBlockSchema):
+    23→    """Schema for erk-implementation-status blocks (completion status)."""
+    24→
+    25→    def validate(self, data: dict[str, Any]) -&gt; None:
+    26→        """Validate erk-implementation-status data structure."""
+    27→        required_fields = {
+    28→            "status",
+    29→            "timestamp",
+    30→        }
+
+... [844 lines omitted] ...
+
+    35→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+    38→        valid_statuses = {"pending", "in_progress", "complete", "failed"}
+    40→            raise ValueError(
+    63→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+    68→                raise ValueError(f"{field} must be a string")
+    70→                raise ValueError(f"{field} must not be empty")
+    75→                raise ValueError("plan_number must be an integer")
+    77→                raise ValueError("plan_number must be positive")
+    82→                raise ValueError("plan_file must be a string")
+    84→                raise ValueError("plan_file must not be empty")
+    90→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+   110→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   114→            raise ValueError("plan_number must be an integer")
+   116→            raise ValueError("plan_number must be positive")
+   119→            raise ValueError("worktree_name must be a string")
+   121→            raise ValueError("worktree_name must not be empty")
+   124→            raise ValueError("timestamp must be a string")
+   126→            raise ValueError("timestamp must not be empty")
+   131→                raise ValueError("plan_file must be a string")
+   133→                raise ValueError("plan_file must not be empty")
+   139→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+   166→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   170→            raise ValueError(f"Invalid status '{data['status']}'. Must be 'queued'")
+   174→            raise ValueError("queued_at must be a string")
+   176→            raise ValueError("queued_at must not be empty")
+   179→            raise ValueError("submitted_by must be a string")
+   181→            raise ValueError("submitted_by must not be empty")
+   184→            raise ValueError("expected_workflow must be a string")
+   186→            raise ValueError("expected_workflow must not be empty")
+   189→            raise ValueError("trigger_mechanism must be a string")
+   191→            raise ValueError("trigger_mechanism must not be empty")
+   195→            raise ValueError("plan_number must be an integer")
+   197→            raise ValueError("plan_number must be positive")
+   201→            raise ValueError("validation_results must be a dict")
+   227→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   231→            raise ValueError(f"Invalid status '{data['status']}'. Must be 'started'")
+   235→            raise ValueError("started_at must be a string")
+   237→            raise ValueError("started_at must not be empty")
+   240→            raise ValueError("workflow_run_id must be a string")
+   242→            raise ValueError("workflow_run_id must not be empty")
+   245→            raise ValueError("workflow_run_url must be a string")
+   247→            raise ValueError("workflow_run_url must not be empty")
+   251→            raise ValueError("plan_number must be an integer")
+   253→            raise ValueError("plan_number must be positive")
+   258→                raise ValueError("branch_name must be a string")
+   260→                raise ValueError("branch_name must not be empty")
+   264→                raise ValueError("worktree_path must be a string")
+   266→                raise ValueError("worktree_path must not be empty")
+   272→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+   294→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   298→            raise ValueError("retry_timestamp must be a string")
+   300→            raise ValueError("retry_timestamp must not be empty")
+   303→            raise ValueError("triggered_by must be a string")
+   305→            raise ValueError("triggered_by must not be empty")
+   309→            raise ValueError("retry_count must be an integer")
+   311→            raise ValueError("retry_count must be at least 1")
+   316→                raise ValueError("previous_retry_timestamp must be a string")
+   318→                raise ValueError("previous_retry_timestamp must not be empty")
+   324→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+   539→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   543→            raise ValueError(f"Invalid schema_version '{data[SCHEMA_VERSION]}'. Must be '2'")
+   548→                raise ValueError(f"{field} must be a string")
+   550→                raise ValueError(f"{field} must not be empty")
+   555→                raise ValueError("worktree_name must be a string or null")
+   557→                raise ValueError("worktree_name must not be empty when provided")
+   562→                raise ValueError("branch_name must be a string or null")
+   564→                raise ValueError("branch_name must not be empty when provided")
+   569→                raise ValueError("plan_comment_id must be an integer or null")
+   571→                raise ValueError("plan_comment_id must be positive when provided")
+   577→                    warnings.warn(
+   584→                    raise ValueError("last_dispatched_run_id must be a string or null")
+   589→                    raise ValueError("last_dispatched_node_id must be a string or null")
+   594→                    raise ValueError("last_dispatched_at must be a string or null")
+   599→                    raise ValueError("last_local_impl_at must be a string or null")
+   604→                    raise ValueError("last_remote_impl_at must be a string or null")
+   610→                    warnings.warn(
+   617→                    raise ValueError("last_remote_impl_run_id must be a string or null")
+   623→                    raise ValueError("last_remote_impl_session_id must be a string or null")
+   629→                    raise ValueError("last_local_impl_event must be a string or null")
+   633→                    raise ValueError(
+   641→                    raise ValueError("last_local_impl_session must be a string or null")
+   647→                    raise ValueError("last_local_impl_user must be a string or null")
+   652→                raise ValueError("source_repo must be a string or null")
+   654→                raise ValueError("source_repo must not be empty when provided")
+   657→                raise ValueError("source_repo must be in 'owner/repo' format")
+   662→                raise ValueError("objective_issue must be an integer or null")
+   664→                raise ValueError("objective_issue must be positive when provided")
+   669→                raise ValueError("created_from_session must be a string or null")
+   671→                raise ValueError("created_from_session must not be empty when provided")
+   679→                raise ValueError("created_from_workflow_run_url must be a string or null")
+   681→                raise ValueError("created_from_workflow_run_url must not be empty when provided")
+   686→                raise ValueError("last_learn_session must be a string or null")
+   688→                raise ValueError("last_learn_session must not be empty when provided")
+   693→                raise ValueError("last_learn_at must be a string or null")
+   695→                raise ValueError("last_learn_at must not be empty when provided")
+   700→                raise ValueError("learn_status must be a string or null")
+   712→                raise ValueError(f"learn_status must be one of: {valid_list}. Got '{status_value}'")
+   717→                warnings.warn(
+   723→                raise ValueError("learn_run_id must be a string or null")
+   725→                raise ValueError("learn_run_id must not be empty when provided")
+   730→                raise ValueError("last_session_branch must be a string or null")
+   732→                raise ValueError("last_session_branch must not be empty when provided")
+   737→                raise ValueError("last_session_id must be a string or null")
+   739→                raise ValueError("last_session_id must not be empty when provided")
+   744→                raise ValueError("last_session_at must be a string or null")
+   746→                raise ValueError("last_session_at must not be empty when provided")
+   751→                raise ValueError("last_session_source must be a string or null")
+   755→                raise ValueError(
+   762→                raise ValueError("learn_plan_issue must be an integer or null")
+   764→                raise ValueError("learn_plan_issue must be positive when provided")
+   769→                raise ValueError("learn_plan_pr must be an integer or null")
+   771→                raise ValueError("learn_plan_pr must be positive when provided")
+   776→                raise ValueError("learned_from_issue must be an integer or null")
+   778→                raise ValueError("learned_from_issue must be positive when provided")
+   783→                raise ValueError("learn_materials_branch must be a string or null")
+   785→                raise ValueError("learn_materials_branch must not be empty when provided")
+   790→                raise ValueError("lifecycle_stage must be a string or null")
+   802→                raise ValueError(
+   810→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+   838→            raise ValueError(f"Missing required fields: {', '.join(sorted(missing))}")
+   843→                raise ValueError(f"{field} must be a string")
+   845→                raise ValueError(f"{field} must not be empty")
+   850→                raise ValueError("objective_comment_id must be an integer or null")
+   852→                raise ValueError("objective_comment_id must be positive when provided")
+   857→                raise ValueError("slug must be a string")
+   859→                raise ValueError("slug must not be empty when provided")
+   865→            raise ValueError(f"Unknown fields: {', '.join(sorted(unknown_fields))}")
+  </tool_result>
+  <tool_result tool="toolu_01WNCg3RDyMj85FdN68L923a">
+     1→"""Schema v2 plan header operations for erk-plan issues.
+     2→
+     3→These support the new plan issue structure where:
+     4→- Issue body contains only compact metadata (for fast querying)
+     5→- First comment contains the plan content
+     6→- last_dispatched_run_id is stored in issue body
+     7→
+     8→Optional fields (added over time, backward compatible):
+     9→- source_repo: For cross-repo plans, the repo where this plan will be
+    10→  implemented (e.g., "owner/impl-repo"). When set, the plan issue lives in
+    11→  a different repo (the plans repo) than where code changes will be made.
+    12→"""
+    13→
+    14→import re
+    15→from typing import Any
+    16→
+    17→from erk_shared.gateway.github.metadata.core import (
+    18→    create_metadata_block,
+    19→    create_plan_body_block,
+    20→    find_metadata_block,
+    21→    render_metadata_block,
+    22→    render_plan_body_block,
+    23→    replace_metadata_block_in_body,
+    24→)
+    25→from erk_shared.gateway.github.metadata.schemas import (
+    26→    BRANCH_NAME,
+    27→    CREATED_AT,
+    28→    CREATED_BY,
+    29→    CREATED_FROM_SESSION,
+    30→    CREATED_FROM_WORKFLOW_RUN_URL,
+
+... [1347 lines omitted] ...
+
+   377→        ValueError: If plan-header block not found or invalid
+   382→        raise ValueError("plan-header block not found in issue body")
+   491→        ValueError: If plan-header block not found or invalid
+   496→        raise ValueError("plan-header block not found in issue body")
+   532→        ValueError: If plan-header block not found or invalid
+   537→        raise ValueError("plan-header block not found in issue body")
+   573→        ValueError: If plan-header block not found or invalid
+   578→        raise ValueError("plan-header block not found in issue body")
+   616→        ValueError: If plan-header block not found or invalid
+   621→        raise ValueError("plan-header block not found in issue body")
+   678→        ValueError: If plan-header block not found or invalid
+   683→        raise ValueError("plan-header block not found in issue body")
+   738→        ValueError: If plan-header block not found or invalid
+   743→        raise ValueError("plan-header block not found in issue body")
+   862→        ValueError: If plan-header block not found or invalid
+   867→        raise ValueError("plan-header block not found in issue body")
+   974→        ValueError: If plan-header block not found or invalid
+   979→        raise ValueError("plan-header block not found in issue body")
+  1052→        ValueError: If plan-header block not found or invalid
+  1057→        raise ValueError("plan-header block not found in issue body")
+  1104→        ValueError: If plan-header block not found or invalid
+  1109→        raise ValueError("plan-header block not found in issue body")
+  1257→        ValueError: If plan-header block not found or invalid
+  1262→        raise ValueError("plan-header block not found in issue body")
+  1302→        ValueError: If plan-header block not found or invalid
+  1307→        raise ValueError("plan-header block not found in issue body")
+  1356→        ValueError: If plan-header block not found or invalid
+  1360→        raise ValueError("plan-header block not found in issue body")
+  </tool_result>
+  <assistant>Let me continue reading the rest of the files:</assistant>
+  <usage input_tokens="1680" cache_creation_input_tokens="31885" cache_read_input_tokens="26661" cache_creation="{'ephemeral_5m_input_tokens': 31885, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01KkVbRDexGBsmmHVcRkstEi">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/abc.py</param>
+    <param name="offset">150</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="1680" cache_creation_input_tokens="31885" cache_read_input_tokens="26661" cache_creation="{'ephemeral_5m_input_tokens': 31885, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01B8MbYcr2wb6Vnz8UpRAtMv">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/real.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="1680" cache_creation_input_tokens="31885" cache_read_input_tokens="26661" cache_creation="{'ephemeral_5m_input_tokens': 31885, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01DnrXmMiRVtn4wSdwYvnhZ2">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/fake.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="1680" cache_creation_input_tokens="31885" cache_read_input_tokens="26661" cache_creation="{'ephemeral_5m_input_tokens': 31885, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01KkVbRDexGBsmmHVcRkstEi">
+   150→        self, repo_root: Path, workflow: str, limit: int = 50, *, user: str | None = None
+   151→    ) -&gt; list[WorkflowRun]:
+   152→        """List workflow runs for a specific workflow.
+   153→
+   154→        Args:
+   155→            repo_root: Repository root directory
+   156→            workflow: Workflow filename (e.g., "implement-plan.yml")
+   157→            limit: Maximum number of runs to return (default: 50)
+   158→            user: Optional GitHub username to filter runs by (maps to --user flag)
+   159→
+   160→        Returns:
+   161→            List of workflow runs, ordered by creation time (newest first)
+   162→        """
+   163→        ...
+   164→
+   165→    @abstractmethod
+   166→    def get_workflow_run(self, repo_root: Path, run_id: str) -&gt; WorkflowRun | None:
+   167→        """Get details for a specific workflow run by ID.
+   168→
+   169→        Args:
+   170→            repo_root: Repository root directory
+   171→            run_id: GitHub Actions run ID
+   172→
+   173→        Returns:
+   174→            WorkflowRun with status and conclusion, or None if not found
+   175→        """
+   176→        ...
+   177→
+   178→    @abstractmethod
+   179→    def get_run_logs(self, repo_root: Path, run_id: str) -&gt; str:
+
+... [175 lines omitted] ...
+
+   190→            RuntimeError: If gh CLI command fails
+   242→        2. Failed completed runs (failures are more actionable than successes)
+  </tool_result>
+  <tool_result tool="toolu_01B8MbYcr2wb6Vnz8UpRAtMv">
+     1→"""Production implementation of GitHub operations.
+     2→
+     3→Error Handling Philosophy:
+     4→    gh CLI invocations should let exceptions bubble by default. Callers are
+     5→    responsible for handling failures appropriately. Don't swallow exceptions
+     6→    and return None/False/default values - this masks real errors and makes
+     7→    debugging difficult.
+     8→
+     9→    Legitimate "not found" cases (e.g., no PR exists for a branch) are handled
+    10→    by checking the response data, not by catching exceptions.
+    11→"""
+    12→
+    13→import json
+    14→import logging
+    15→import secrets
+    16→import string
+    17→from datetime import UTC, datetime, timedelta
+    18→from pathlib import Path
+    19→from typing import Any
+    20→
+    21→from erk_shared.debug import debug_log
+    22→from erk_shared.gateway.github.abc import GitHub
+    23→from erk_shared.gateway.github.graphql_queries import (
+    24→    ADD_REVIEW_THREAD_REPLY_MUTATION,
+    25→    GET_ISSUES_WITH_PR_LINKAGES_QUERY,
+    26→    GET_PR_CHECK_RUNS_QUERY,
+    27→    GET_PR_REVIEW_THREADS_QUERY,
+    28→    GET_WORKFLOW_RUNS_BY_NODE_IDS_QUERY,
+    29→    ISSUE_PR_LINKAGE_FRAGMENT,
+    30→    RESOLVE_REVIEW_THREAD_MUTATION,
+
+... [75 lines omitted] ...
+
+    54→    MergeError,
+    90→# (error: "master already used by worktree"). Instead, we delete the remote
+  </tool_result>
+  <tool_result tool="toolu_01DnrXmMiRVtn4wSdwYvnhZ2">
+     1→"""Fake GitHub operations for testing.
+     2→
+     3→FakeGitHub is an in-memory implementation that accepts pre-configured state
+     4→in its constructor. Construct instances directly with keyword arguments.
+     5→"""
+     6→
+     7→import dataclasses
+     8→from collections.abc import Callable
+     9→from datetime import UTC
+    10→from pathlib import Path
+    11→from typing import Any
+    12→
+    13→from erk_shared.gateway.github.abc import GitHub
+    14→from erk_shared.gateway.github.issues.abc import GitHubIssues
+    15→from erk_shared.gateway.github.issues.types import IssueInfo
+    16→from erk_shared.gateway.github.types import (
+    17→    BodyContent,
+    18→    BodyFile,
+    19→    BodyText,
+    20→    GitHubRepoLocation,
+    21→    IssueFilterState,
+    22→    MergeError,
+    23→    MergeResult,
+    24→    PRCheckRun,
+    25→    PRDetails,
+    26→    PRListState,
+    27→    PRNotFound,
+    28→    PRReviewThread,
+    29→    PullRequestInfo,
+    30→    RepoInfo,
+
+... [125 lines omitted] ...
+
+    71→        resolve_thread_failures: set[str] | None = None,
+    72→        pr_diff_error: str | None = None,
+    73→        workflow_runs_error: str | None = None,
+    80→        add_label_errors: dict[str, str] | None = None,
+   110→                RuntimeError simulating GraphQL rate limit
+   111→            resolve_thread_failures: Set of thread IDs that should fail when resolved
+   112→            pr_diff_error: If set, get_pr_diff() raises RuntimeError with this message.
+   113→                Use to simulate HTTP 406 "diff too large" errors.
+   114→            workflow_runs_error: If set, get_workflow_runs_by_node_ids() raises
+   115→                RuntimeError with this message. Use to simulate API failures.
+   119→                False or raise to simulate failure.
+  </tool_result>
+  <assistant>Now let me read the dry_run and printing patterns, then the TUI/data layer files:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="8729" cache_read_input_tokens="58546" cache_creation="{'ephemeral_5m_input_tokens': 8729, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01CH1EDSiZk6SoFe7q5XYwTy">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/dry_run.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="8729" cache_read_input_tokens="58546" cache_creation="{'ephemeral_5m_input_tokens': 8729, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01JQB226uU6MzrJiewScpbNT">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/github/printing.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="8729" cache_read_input_tokens="58546" cache_creation="{'ephemeral_5m_input_tokens': 8729, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_011iDvRpUfHXCuZew6f26nzk">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/data/types.py</param>
+    <param name="limit">250</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="8729" cache_read_input_tokens="58546" cache_creation="{'ephemeral_5m_input_tokens': 8729, 'ephemeral_1h_input_tokens': 0}" output_tokens="4" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01CH1EDSiZk6SoFe7q5XYwTy">
+     1→"""No-op wrapper for GitHub operations."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk_shared.gateway.github.abc import GitHub
+     6→from erk_shared.gateway.github.issues.abc import GitHubIssues
+     7→from erk_shared.gateway.github.issues.dry_run import DryRunGitHubIssues
+     8→from erk_shared.gateway.github.issues.types import IssueInfo
+     9→from erk_shared.gateway.github.types import (
+    10→    BodyContent,
+    11→    GitHubRepoLocation,
+    12→    IssueFilterState,
+    13→    MergeResult,
+    14→    PRCheckRun,
+    15→    PRDetails,
+    16→    PRListState,
+    17→    PRNotFound,
+    18→    PRReviewThread,
+    19→    PullRequestInfo,
+    20→    WorkflowRun,
+    21→)
+    22→
+    23→
+    24→class DryRunGitHub(GitHub):
+    25→    """No-op wrapper for GitHub operations.
+    26→
+    27→    Read operations are delegated to the wrapped implementation.
+    28→    Write operations return without executing (no-op behavior).
+    29→
+    30→    This wrapper prevents destructive GitHub operations from executing in dry-run mode,
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01JQB226uU6MzrJiewScpbNT">
+     1→"""Printing wrapper for GitHub operations."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→import click
+     6→
+     7→from erk_shared.gateway.github.abc import GitHub
+     8→from erk_shared.gateway.github.issues.abc import GitHubIssues
+     9→from erk_shared.gateway.github.issues.types import IssueInfo
+    10→from erk_shared.gateway.github.types import (
+    11→    BodyContent,
+    12→    BodyFile,
+    13→    BodyText,
+    14→    GitHubRepoLocation,
+    15→    IssueFilterState,
+    16→    MergeError,
+    17→    MergeResult,
+    18→    PRCheckRun,
+    19→    PRDetails,
+    20→    PRListState,
+    21→    PRNotFound,
+    22→    PRReviewThread,
+    23→    PullRequestInfo,
+    24→    WorkflowRun,
+    25→)
+    26→from erk_shared.printing.base import PrintingBase
+    27→
+    28→_MAX_WORKFLOW_POLL_ATTEMPTS = 15
+    29→
+    30→
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_011iDvRpUfHXCuZew6f26nzk">
+     1→"""Data types for TUI components."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from dataclasses import dataclass
+     6→from datetime import datetime
+     7→
+     8→from erk_shared.gateway.github.types import IssueFilterState
+     9→
+    10→
+    11→@dataclass(frozen=True)
+    12→class PlanRowData:
+    13→    """Row data for displaying a plan in the TUI table.
+    14→
+    15→    Contains pre-formatted display strings and raw data needed for actions.
+    16→    Immutable to ensure table state consistency.
+    17→
+    18→    **Display vs Raw convention:** Many data points have both a raw field (for
+    19→    logic/predicates) and a display field (for table rendering). Raw fields are
+    20→    often nullable (None when absent), while display fields are always strings
+    21→    (dash "-" or empty when absent). Use raw fields in availability predicates
+    22→    (``ctx.row.pr_number is not None``), display fields for rendering.
+    23→
+    24→    Attributes:
+    25→
+    26→        plan_id: GitHub issue number (e.g., 123). Never None.
+    27→        plan_url: Full URL to the GitHub issue. None when unavailable.
+    28→        full_title: Complete untruncated plan title. Empty string possible.
+    29→        plan_body: Raw issue body text (markdown). Empty string possible.
+    30→
+
+... [201 lines omitted] ...
+
+    56→        run_conclusion: Run conclusion ("success", "failure", "cancelled").
+   168→    warnings: tuple[str, ...] = ()
+  </tool_result>
+  <assistant>Now let me read the plan_data_provider files and the remaining TUI/CLI files:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="8613" cache_read_input_tokens="67275" cache_creation="{'ephemeral_5m_input_tokens': 8613, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01M1tSx1LSXR3FX9SCakLhxP">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/abc.py</param>
+    <param name="limit">200</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="8613" cache_read_input_tokens="67275" cache_creation="{'ephemeral_5m_input_tokens': 8613, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01TziCPKXxH45nEwkGWUf4pH">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/real.py</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="8613" cache_read_input_tokens="67275" cache_creation="{'ephemeral_5m_input_tokens': 8613, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01WyDKjL2crduG9rBUEdABPG">
+    <param name="file_path">/home/runner/work/erk/erk/packages/erk-shared/src/erk_shared/gateway/plan_data_provider/fake.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="8613" cache_read_input_tokens="67275" cache_creation="{'ephemeral_5m_input_tokens': 8613, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01M1tSx1LSXR3FX9SCakLhxP">
+     1→"""Data provider ABC for TUI plan table."""
+     2→
+     3→from abc import ABC, abstractmethod
+     4→from pathlib import Path
+     5→
+     6→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+     7→from erk.tui.sorting.types import BranchActivity
+     8→from erk_shared.gateway.browser.abc import BrowserLauncher
+     9→from erk_shared.gateway.clipboard.abc import Clipboard
+    10→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+    11→
+    12→
+    13→class PlanDataProvider(ABC):
+    14→    """Abstract base class for plan data providers.
+    15→
+    16→    Defines the interface for fetching plan data for TUI display.
+    17→    """
+    18→
+    19→    @property
+    20→    @abstractmethod
+    21→    def repo_root(self) -&gt; Path:
+    22→        """Get the repository root path.
+    23→
+    24→        Returns:
+    25→            Path to the repository root directory
+    26→        """
+    27→        ...
+    28→
+    29→    @property
+    30→    @abstractmethod
+
+... [175 lines omitted] ...
+
+   197→        """Fetch CI failure summaries for a pull request.
+  </tool_result>
+  <tool_result tool="toolu_01TziCPKXxH45nEwkGWUf4pH">
+     1→"""Real implementation of PlanDataProvider for production use."""
+     2→
+     3→import logging
+     4→import subprocess
+     5→from datetime import datetime
+     6→from pathlib import Path
+     7→
+     8→from erk.core.context import ErkContext
+     9→from erk.core.display_utils import (
+    10→    format_relative_time,
+    11→    format_workflow_outcome,
+    12→    format_workflow_run_id,
+    13→    get_workflow_run_state,
+    14→)
+    15→from erk.core.pr_utils import select_display_pr
+    16→from erk.core.repo_discovery import NoRepoSentinel, RepoContext, ensure_erk_metadata_dir
+    17→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+    18→from erk.tui.sorting.types import BranchActivity
+    19→from erk_shared.gateway.browser.abc import BrowserLauncher
+    20→from erk_shared.gateway.clipboard.abc import Clipboard
+    21→from erk_shared.gateway.github.ci_summary_parsing import parse_ci_summaries
+    22→from erk_shared.gateway.github.emoji import format_checks_cell, get_pr_status_emoji
+    23→from erk_shared.gateway.github.metadata.core import (
+    24→    extract_objective_from_comment,
+    25→    extract_objective_header_comment_id,
+    26→    extract_objective_slug,
+    27→)
+    28→from erk_shared.gateway.github.metadata.dependency_graph import (
+    29→    _TERMINAL_STATUSES,
+    30→    build_graph,
+
+... [75 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01WyDKjL2crduG9rBUEdABPG">
+     1→"""Fake plan data provider for testing TUI components."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→from erk.tui.data.types import FetchTimings, PlanFilters, PlanRowData
+     7→from erk.tui.sorting.types import BranchActivity
+     8→from erk_shared.gateway.browser.abc import BrowserLauncher
+     9→from erk_shared.gateway.browser.fake import FakeBrowserLauncher
+    10→from erk_shared.gateway.clipboard.abc import Clipboard
+    11→from erk_shared.gateway.clipboard.fake import FakeClipboard
+    12→from erk_shared.gateway.github.types import PRCheckRun, PRReviewThread
+    13→from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+    14→
+    15→
+    16→class FakePlanDataProvider(PlanDataProvider):
+    17→    """Fake implementation of PlanDataProvider for testing.
+    18→
+    19→    Returns canned data without making any API calls.
+    20→    """
+    21→
+    22→    def __init__(
+    23→        self,
+    24→        *,
+    25→        plans: list[PlanRowData] | None = None,
+    26→        plans_by_labels: dict[tuple[str, ...], list[PlanRowData]] | None = None,
+    27→        clipboard: Clipboard | None = None,
+    28→        browser: BrowserLauncher | None = None,
+    29→        repo_root: Path | None = None,
+    30→        fetch_error: str | None = None,
+
+... [125 lines omitted] ...
+
+    41→            fetch_error: If set, fetch_plans() raises RuntimeError with this message.
+    42→                Use to simulate API failures.
+    50→        self._fetch_error = fetch_error
+    84→            RuntimeError: If fetch_error is set
+    87→        if self._fetch_error is not None:
+    88→            raise RuntimeError(self._fetch_error)
+  </tool_result>
+  <assistant>Now let me read the remaining files - the TUI check_runs_screen, navigation, and CLI script:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="6173" cache_read_input_tokens="75888" cache_creation="{'ephemeral_5m_input_tokens': 6173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01HQaELRQLZ5VLd1LKMjqUZA">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/screens/check_runs_screen.py</param>
+    <param name="limit">250</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="6173" cache_read_input_tokens="75888" cache_creation="{'ephemeral_5m_input_tokens': 6173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BB2tNhQpCEEuSRaHUwyEBk">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/tui/actions/navigation.py</param>
+    <param name="limit">150</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="6173" cache_read_input_tokens="75888" cache_creation="{'ephemeral_5m_input_tokens': 6173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01U63k8ka2FJ6Eva1ucubBp4">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/ci_generate_summaries.py</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="6173" cache_read_input_tokens="75888" cache_creation="{'ephemeral_5m_input_tokens': 6173, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HQaELRQLZ5VLd1LKMjqUZA">
+     1→"""Modal screen displaying failing CI check runs for a PR."""
+     2→
+     3→from textual import work
+     4→from textual.app import ComposeResult
+     5→from textual.binding import Binding
+     6→from textual.containers import Container, Vertical
+     7→from textual.screen import ModalScreen
+     8→from textual.widgets import Label, Markdown
+     9→
+    10→from erk.tui.formatting.ci_checks import format_check_runs
+    11→from erk_shared.gateway.github.types import PRCheckRun
+    12→from erk_shared.gateway.plan_data_provider.abc import PlanDataProvider
+    13→
+    14→
+    15→class CheckRunsScreen(ModalScreen):
+    16→    """Modal screen displaying failing CI check runs."""
+    17→
+    18→    BINDINGS = [
+    19→        Binding("escape", "dismiss", "Close"),
+    20→        Binding("q", "dismiss", "Close"),
+    21→        Binding("space", "dismiss", "Close"),
+    22→    ]
+    23→
+    24→    DEFAULT_CSS = """
+    25→    CheckRunsScreen {
+    26→        align: center middle;
+    27→    }
+    28→
+    29→    #checks-dialog {
+    30→        width: 90%;
+
+... [201 lines omitted] ...
+
+    84→    #checks-error {
+    85→        color: $error;
+   149→        error: str | None = None
+   153→        except Exception as e:
+   154→            error = str(e)
+   156→        self.app.call_from_thread(self._on_check_runs_loaded, check_runs, error)
+   158→    def _on_check_runs_loaded(self, check_runs: list[PRCheckRun], error: str | None) -&gt; None:
+   166→            error: Error message if fetch failed, or None
+   173→        if error is not None:
+   174→            container.mount(Label(f"Error: {error}", id="checks-error"))
+   191→        container.mount(Label("Loading failure summaries...", id="checks-summaries-loading"))
+   196→        """Fetch CI failure summaries in background thread."""
+   201→        except Exception:
+   202→            # Summaries are best-effort; silently ignore failures
+  </tool_result>
+  <tool_result tool="toolu_01BB2tNhQpCEEuSRaHUwyEBk">
+     1→"""Navigation action handlers for TUI application."""
+     2→
+     3→from __future__ import annotations
+     4→
+     5→from typing import TYPE_CHECKING
+     6→
+     7→from erk.tui.commands.types import CommandContext
+     8→from erk.tui.data.types import PlanRowData
+     9→from erk.tui.screens.check_runs_screen import CheckRunsScreen
+    10→from erk.tui.screens.help_screen import HelpScreen
+    11→from erk.tui.screens.launch_screen import LaunchScreen
+    12→from erk.tui.screens.plan_body_screen import PlanBodyScreen
+    13→from erk.tui.screens.plan_detail_screen import PlanDetailScreen
+    14→from erk.tui.screens.unresolved_comments_screen import UnresolvedCommentsScreen
+    15→from erk.tui.views.types import ViewMode
+    16→from erk_shared.gateway.command_executor.real import RealCommandExecutor
+    17→
+    18→if TYPE_CHECKING:
+    19→    from erk.tui.app import ErkDashApp
+    20→
+    21→
+    22→class NavigationActionsMixin:
+    23→    """Mixin providing navigation and detail-view action handlers.
+    24→
+    25→    Includes action_exit_app, action_refresh, action_help, action_launch,
+    26→    action_show_detail, action_view_plan_body, action_view_comments,
+    27→    action_view_checks, action_cursor_down, action_cursor_up,
+    28→    action_open_pr, action_open_run, action_show_implement,
+    29→    action_copy_checkout, action_close_plan, and helpers.
+    30→    """
+
+... [125 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01U63k8ka2FJ6Eva1ucubBp4">
+     1→"""Generate CI failure summaries using Haiku.
+     2→
+     3→Fetches failing jobs from a GitHub Actions run, retrieves their logs,
+     4→sends them to Claude Haiku for summarization, and outputs results
+     5→in ERK-CI-SUMMARY marker format (consumed by ci_summary_parsing.py).
+     6→
+     7→Usage:
+     8→    erk exec ci-generate-summaries --run-id 12345
+     9→
+    10→Output:
+    11→    ERK-CI-SUMMARY markers to stdout, progress messages to stderr
+    12→
+    13→Exit Codes:
+    14→    0: Success (even if individual jobs fail to summarize)
+    15→    1: Error during execution (e.g., cannot fetch failing jobs)
+    16→
+    17→Examples:
+    18→    $ erk exec ci-generate-summaries --run-id 12345
+    19→    === ERK-CI-SUMMARY:lint ===
+    20→    - Formatting issues in `src/foo.py`
+    21→    === /ERK-CI-SUMMARY:lint ===
+    22→"""
+    23→
+    24→from __future__ import annotations
+    25→
+    26→from dataclasses import dataclass
+    27→from pathlib import Path
+    28→
+    29→import click
+    30→
+
+... [166 lines omitted] ...
+
+    84→        f"Summarize this CI failure log for job '{job_name}' in 2-5 concise "
+    85→        f"bullet points. Focus on what failed and why.\n\n{log_content}"
+    98→    Individual job failures don't stop other jobs from being summarized.
+   108→            '.jobs[] | select(.conclusion == "failure") | "\\(.id)\\t\\(.name)"',
+   116→        click.echo(f"Error fetching failing jobs: {result.stderr}", err=True)
+   143→            click.echo("(Log fetch failed)")
+   166→            summary = "(Summarization failed)"
+   177→    """Generate CI failure summaries using Haiku.
+  </tool_result>
+  <assistant>Finally, let me get the CI workflow file snippet:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="8448" cache_read_input_tokens="82061" cache_creation="{'ephemeral_5m_input_tokens': 8448, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01NgeEmcGcFRc2ChnoWwwY3s">
+    <param name="file_path">/home/runner/work/erk/erk/.github/workflows/ci.yml</param>
+    <param name="offset">1</param>
+    <param name="limit">100</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="8448" cache_read_input_tokens="82061" cache_creation="{'ephemeral_5m_input_tokens': 8448, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_016uxGE8f1zRB7wmjrpD5HWR">
+    <param name="command">grep -A 30 "ci-summarize:" /home/runner/work/erk/erk/.github/workflows/ci.yml</param>
+    <param name="description">Get the ci-summarize job from workflow</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="8448" cache_read_input_tokens="82061" cache_creation="{'ephemeral_5m_input_tokens': 8448, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NgeEmcGcFRc2ChnoWwwY3s">
+     1→name: ci
+     2→
+     3→on:
+     4→  push:
+     5→    branches: [master]
+     6→  pull_request:
+     7→    types: [opened, synchronize, reopened, ready_for_review]
+     8→  workflow_dispatch:
+     9→
+    10→permissions:
+    11→  contents: write # Needed for autofix to push
+    12→  actions: write # Needed to re-trigger workflow after autofix push
+    13→  statuses: write # Needed for autofix to update commit status
+    14→
+    15→concurrency:
+    16→  group: ci-${{ github.head_ref || github.ref }}
+    17→  cancel-in-progress: true
+    18→
+    19→jobs:
+    20→  check-submission:
+    21→    if: github.event.pull_request.draft != true &amp;&amp; !contains(github.event.pull_request.labels.*.name, 'erk-plan-review')
+    22→    runs-on: ubuntu-latest
+    23→    timeout-minutes: 5
+    24→    outputs:
+    25→      skip: ${{ steps.check.outputs.skip }}
+    26→    steps:
+    27→      - uses: actions/checkout@v4
+    28→      - name: Check for submission folder
+    29→        id: check
+    30→        uses: ./.github/actions/check-impl-context
+
+... [75 lines omitted] ...
+
+    84→            echo "::error::Files need formatting or docs are out of sync"
+    93→            echo "::error::Formatting issues found (cannot auto-fix fork PRs)"
+  </tool_result>
+  <tool_result tool="toolu_016uxGE8f1zRB7wmjrpD5HWR">
+  ci-summarize:
+    needs:
+      [
+        format,
+        lint,
+        fix-formatting,
+        docs-check,
+        ty,
+        unit-tests,
+        integration-tests,
+        erk-mcp-tests,
+      ]
+    if: |
+      vars.CLAUDE_ENABLED != 'false' &amp;&amp;
+      always() &amp;&amp;
+      (github.event_name == 'pull_request') &amp;&amp;
+      (github.event.pull_request.draft != true) &amp;&amp;
+      !contains(github.event.pull_request.labels.*.name, 'erk-plan-review') &amp;&amp;
+      (needs.format.result == 'failure' ||
+       needs.lint.result == 'failure' ||
+       needs.fix-formatting.result == 'failure' ||
+       needs.docs-check.result == 'failure' ||
+       needs.ty.result == 'failure' ||
+       needs.unit-tests.result == 'failure' ||
+       needs.integration-tests.result == 'failure' ||
+       needs.erk-mcp-tests.result == 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+... [1 lines omitted] ...
+  </tool_result>
+  <assistant>Let me get more of the ci-summarize job:</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="2140" cache_read_input_tokens="90509" cache_creation="{'ephemeral_5m_input_tokens': 2140, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01E8pdwFxiz4sLkv4VVRFkcz">
+    <param name="command">grep -A 50 "ci-summarize:" /home/runner/work/erk/erk/.github/workflows/ci.yml | head -60</param>
+    <param name="description">Get full ci-summarize job</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="2140" cache_read_input_tokens="90509" cache_creation="{'ephemeral_5m_input_tokens': 2140, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01E8pdwFxiz4sLkv4VVRFkcz">
+  ci-summarize:
+    needs:
+      [
+        format,
+        lint,
+        fix-formatting,
+        docs-check,
+        ty,
+        unit-tests,
+        integration-tests,
+        erk-mcp-tests,
+      ]
+    if: |
+      vars.CLAUDE_ENABLED != 'false' &amp;&amp;
+      always() &amp;&amp;
+      (github.event_name == 'pull_request') &amp;&amp;
+      (github.event.pull_request.draft != true) &amp;&amp;
+      !contains(github.event.pull_request.labels.*.name, 'erk-plan-review') &amp;&amp;
+      (needs.format.result == 'failure' ||
+       needs.lint.result == 'failure' ||
+       needs.fix-formatting.result == 'failure' ||
+       needs.docs-check.result == 'failure' ||
+       needs.ty.result == 'failure' ||
+       needs.unit-tests.result == 'failure' ||
+       needs.integration-tests.result == 'failure' ||
+       needs.erk-mcp-tests.result == 'failure')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+... [21 lines omitted] ...
+
+      - name: Summarize failures
+  </tool_result>
+</session>
