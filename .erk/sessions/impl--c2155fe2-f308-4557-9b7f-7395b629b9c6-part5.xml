@@ -1,0 +1,905 @@
+<session>
+  <meta source="agent-a8213b5" />
+  <meta branch="plnd/optimize-pr-submit-03-05-1613" />
+  <meta model="claude-sonnet-4-5-20250929" />
+  <user>I need to add two new fields to all `SubmitState(` constructor calls in test files under `tests/unit/cli/commands/pr/submit_pipeline/`. The new fields are:
+- `graphite_is_authed=None`
+- `graphite_branch_tracked=None`
+
+These should be added right after the `existing_pr_body` field in each `SubmitState(` constructor call.
+
+Here are the test files that need updating (each has a `_make_state` function with a `SubmitState(` constructor):
+
+1. tests/unit/cli/commands/pr/submit_pipeline/test_capture_existing_pr_body.py
+2. tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py
+3. tests/unit/cli/commands/pr/submit_pipeline/test_commit_wip.py
+4. tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py
+5. tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py
+6. tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py
+7. tests/unit/cli/commands/pr/submit_pipeline/test_fetch_plan_context.py
+8. tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+9. tests/unit/cli/commands/pr/submit_pipeline/test_generate_description.py
+10. tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py
+11. tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py
+12. tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py
+
+For each file, read it first, find the `SubmitState(` constructor call, and add the two new fields after `existing_pr_body`. The pattern will look like:
+```
+        existing_pr_body="",
+        graphite_is_authed=None,
+        graphite_branch_tracked=None,
+    )
+```
+
+Some files may have `existing_pr_body` with a different value - just add the two new lines after whatever the `existing_pr_body` line is.
+
+IMPORTANT: For `test_enhance_with_graphite.py`, the `_make_state` function likely needs `graphite_is_authed=True` and `graphite_branch_tracked=True` since those tests test the enhance_with_graphite function which now checks these cached values instead of calling check_auth_status/get_all_branches directly. Read that test file carefully to understand the context.
+
+Similarly for `test_graphite_first_flow.py`, the `_make_state` should set `graphite_is_authed=True` and `graphite_branch_tracked=True` since the graphite first flow is only entered when graphite is enabled and the branch is tracked.
+
+Also check `test_core_submit_flow.py` - if `_make_state` sets `use_graphite=True`, the new fields should be `None` or `False` since the core flow is the non-graphite path.
+
+For `test_prepare_state.py`, the `_make_state` should have `graphite_is_authed=None` and `graphite_branch_tracked=None` since prepare_state is what populates these fields.
+
+Also check if there's a `test_run_pipeline.py` that tests `make_initial_state` - if it asserts on the state fields, it needs updating too.
+
+DO NOT modify any other behavior. Only add the two new fields to SubmitState constructor calls.</user>
+  <assistant>I'll help you add the two new fields to all `SubmitState` constructor calls in the test files. Let me start by reading all the test files to understand their current structure.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="20426" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20426, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01V5K8ZEv4nyNfjsYWhdp6zC">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_capture_existing_pr_body.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20426" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20426, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01YZzQpJMucBQDpdBDvHLcFL">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20426" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20426, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_013HDwWgZ7SKgoMctLKrbNbE">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_commit_wip.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20426" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20426, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01S77UnaS71RMB8XDmPVSa4q">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20426" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20426, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01GnQ3FLAiwwwphr92ucCNXs">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20426" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20426, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Pws9z5YLR5DYquNQeNjhaS">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20426" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20426, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01E7situ7bHsW58NJ2ZHS1nV">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_fetch_plan_context.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20426" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20426, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Am9pq6MWf9rdrEKWcywpNm">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20426" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20426, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_014VeFWjd1cEQjwgubMNjEn7">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_generate_description.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20426" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20426, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_018tVo8thjkKMdgLqa2YeN2L">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20426" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20426, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01BRTZ3oBrTfZDPEMxy1Q2Be">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20426" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20426, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Uk9thGrXDzobMEjFMpiLfA">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="20426" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 20426, 'ephemeral_1h_input_tokens': 0}" output_tokens="7" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01V5K8ZEv4nyNfjsYWhdp6zC">
+     1→"""Unit tests for capture_existing_pr_body pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitState,
+     7→    capture_existing_pr_body,
+     8→)
+     9→from erk.core.context import context_for_test
+    10→from erk_shared.gateway.github.fake import FakeGitHub
+    11→from erk_shared.gateway.github.types import PRDetails
+    12→
+    13→_PR_BODY_WITH_METADATA = (
+    14→    "&lt;!-- erk:metadata-block:start --&gt;\n"
+    15→    "schema_version: 2\n"
+    16→    "created_by: test\n"
+    17→    "&lt;!-- erk:metadata-block:end --&gt;\n\n---\n\n"
+    18→    "Plan content here"
+    19→)
+    20→
+    21→
+    22→def _make_state(
+    23→    *,
+    24→    cwd: Path,
+    25→    branch_name: str = "feature",
+    26→    existing_pr_body: str = "",
+    27→) -&gt; SubmitState:
+    28→    return SubmitState(
+    29→        cwd=cwd,
+    30→        repo_root=cwd,
+
+... [101 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01YZzQpJMucBQDpdBDvHLcFL">
+     1→"""Unit tests for cleanup_impl_for_submit pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitState,
+     7→    cleanup_impl_for_submit,
+     8→)
+     9→from erk.core.context import context_for_test
+    10→from erk_shared.gateway.git.fake import FakeGit
+    11→
+    12→
+    13→def _make_state(
+    14→    *,
+    15→    cwd: Path,
+    16→    repo_root: Path | None = None,
+    17→    branch_name: str = "feature",
+    18→) -&gt; SubmitState:
+    19→    return SubmitState(
+    20→        cwd=cwd,
+    21→        repo_root=repo_root if repo_root is not None else cwd,
+    22→        branch_name=branch_name,
+    23→        parent_branch="main",
+    24→        trunk_branch="main",
+    25→        use_graphite=True,
+    26→        force=False,
+    27→        debug=False,
+    28→        session_id="test-session",
+    29→        skip_description=False,
+    30→        quiet=False,
+
+... [87 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_013HDwWgZ7SKgoMctLKrbNbE">
+     1→"""Unit tests for commit_wip pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitState,
+     7→    commit_wip,
+     8→)
+     9→from erk.core.context import context_for_test
+    10→from erk_shared.gateway.git.fake import FakeGit
+    11→
+    12→
+    13→def _make_state(
+    14→    *,
+    15→    cwd: Path,
+    16→    repo_root: Path | None = None,
+    17→    branch_name: str = "feature",
+    18→    parent_branch: str = "main",
+    19→    trunk_branch: str = "main",
+    20→    use_graphite: bool = False,
+    21→    force: bool = False,
+    22→    debug: bool = False,
+    23→    session_id: str = "test-session",
+    24→    plan_id: str | None = None,
+    25→    pr_number: int | None = None,
+    26→    pr_url: str | None = None,
+    27→    was_created: bool = False,
+    28→    base_branch: str | None = None,
+    29→    graphite_url: str | None = None,
+    30→    diff_file: Path | None = None,
+
+... [62 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01S77UnaS71RMB8XDmPVSa4q">
+     1→"""Unit tests for _core_submit_flow pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitError,
+     7→    SubmitState,
+     8→    _core_submit_flow,
+     9→)
+    10→from erk.core.context import context_for_test
+    11→from erk_shared.gateway.git.abc import BranchDivergence
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.git.remote_ops.types import PushError
+    14→from erk_shared.gateway.github.fake import FakeGitHub
+    15→from erk_shared.gateway.github.types import PRDetails
+    16→
+    17→
+    18→def _make_state(
+    19→    *,
+    20→    cwd: Path,
+    21→    repo_root: Path | None = None,
+    22→    branch_name: str = "feature",
+    23→    parent_branch: str = "main",
+    24→    trunk_branch: str = "main",
+    25→    use_graphite: bool = False,
+    26→    force: bool = False,
+    27→    debug: bool = False,
+    28→    session_id: str = "test-session",
+    29→    plan_id: str | None = None,
+    30→    pr_number: int | None = None,
+
+... [301 lines omitted] ...
+
+    91→def test_github_auth_failure_returns_error(tmp_path: Path) -&gt; None:
+    92→    """SubmitError(error_type='github_auth_failed') when not authenticated."""
+    99→    assert isinstance(result, SubmitError)
+   100→    assert result.error_type == "github_auth_failed"
+   103→def test_no_commits_ahead_returns_error(tmp_path: Path) -&gt; None:
+   104→    """SubmitError(error_type='no_commits') when zero commits ahead of parent."""
+   120→    assert isinstance(result, SubmitError)
+   121→    assert result.error_type == "no_commits"
+   124→def test_branch_diverged_returns_error(tmp_path: Path) -&gt; None:
+   125→    """Diverged + not force =&gt; error."""
+   141→    assert isinstance(result, SubmitError)
+   142→    assert result.error_type == "branch_diverged"
+   199→def test_push_non_fast_forward_returns_error(tmp_path: Path) -&gt; None:
+   200→    """RuntimeError('non-fast-forward') =&gt; diverged error."""
+   210→        push_to_remote_error=PushError(message="non-fast-forward update rejected"),
+   217→    assert isinstance(result, SubmitError)
+   218→    assert result.error_type == "branch_diverged"
+   221→def test_push_generic_rejection_returns_error(tmp_path: Path) -&gt; None:
+   222→    """RuntimeError('rejected') =&gt; diverged error."""
+   232→        push_to_remote_error=PushError(message="push Rejected by remote"),
+   239→    assert isinstance(result, SubmitError)
+   240→    assert result.error_type == "branch_diverged"
+   268→def test_parent_branch_no_pr_returns_error(tmp_path: Path) -&gt; None:
+   269→    """Stacked PR with no parent PR =&gt; error."""
+   292→    assert isinstance(result, SubmitError)
+   293→    assert result.error_type == "parent_branch_no_pr"
+  </tool_result>
+  <tool_result tool="toolu_01GnQ3FLAiwwwphr92ucCNXs">
+     1→"""Unit tests for enhance_with_graphite pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitError,
+     7→    SubmitState,
+     8→    enhance_with_graphite,
+     9→)
+    10→from erk.core.context import context_for_test
+    11→from erk_shared.context.types import GlobalConfig
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.gateway.graphite.fake import FakeGraphite
+    14→from erk_shared.gateway.graphite.types import BranchMetadata
+    15→
+    16→
+    17→def _make_state(
+    18→    *,
+    19→    cwd: Path,
+    20→    repo_root: Path | None = None,
+    21→    branch_name: str = "feature",
+    22→    parent_branch: str = "main",
+    23→    trunk_branch: str = "main",
+    24→    use_graphite: bool = True,
+    25→    force: bool = False,
+    26→    debug: bool = False,
+    27→    session_id: str = "test-session",
+    28→    plan_id: str | None = None,
+    29→    pr_number: int | None = 42,
+    30→    pr_url: str | None = "https://github.com/owner/repo/pull/42",
+
+... [200 lines omitted] ...
+
+   135→def test_returns_submit_error_for_non_benign_runtime_error(tmp_path: Path) -&gt; None:
+   136→    """Non-benign RuntimeError from submit_stack =&gt; SubmitError."""
+   147→        submit_stack_raises=RuntimeError("network timeout"),
+   160→    assert isinstance(result, SubmitError)
+   161→    assert result.error_type == "graphite_enhance_failed"
+   199→    """'Nothing to submit' RuntimeError is benign — returns SubmitState, not SubmitError."""
+   210→        submit_stack_raises=RuntimeError("nothing to submit"),
+  </tool_result>
+  <tool_result tool="toolu_01Pws9z5YLR5DYquNQeNjhaS">
+     1→"""Unit tests for extract_diff pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitError,
+     7→    SubmitState,
+     8→    extract_diff,
+     9→)
+    10→from erk.core.context import context_for_test
+    11→from erk_shared.gateway.git.fake import FakeGit
+    12→
+    13→
+    14→def _make_state(
+    15→    *,
+    16→    cwd: Path,
+    17→    repo_root: Path | None = None,
+    18→    branch_name: str = "feature",
+    19→    parent_branch: str = "main",
+    20→    trunk_branch: str = "main",
+    21→    use_graphite: bool = False,
+    22→    force: bool = False,
+    23→    debug: bool = False,
+    24→    session_id: str = "test-session",
+    25→    skip_description: bool = False,
+    26→    plan_id: str | None = None,
+    27→    pr_number: int | None = None,
+    28→    pr_url: str | None = None,
+    29→    was_created: bool = False,
+    30→    base_branch: str | None = None,
+
+... [76 lines omitted] ...
+
+    63→def test_no_base_branch_returns_error(tmp_path: Path) -&gt; None:
+    64→    """SubmitError(error_type='no_base_branch') when base_branch is None."""
+    71→    assert isinstance(result, SubmitError)
+    72→    assert result.error_type == "no_base_branch"
+  </tool_result>
+  <tool_result tool="toolu_01E7situ7bHsW58NJ2ZHS1nV">
+     1→"""Unit tests for fetch_plan_context pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitState,
+     7→    fetch_plan_context,
+     8→)
+     9→from erk.core.context import context_for_test
+    10→
+    11→
+    12→def _make_state(
+    13→    *,
+    14→    cwd: Path,
+    15→    repo_root: Path | None = None,
+    16→    branch_name: str = "feature",
+    17→    parent_branch: str = "main",
+    18→    trunk_branch: str = "main",
+    19→    use_graphite: bool = False,
+    20→    force: bool = False,
+    21→    debug: bool = False,
+    22→    session_id: str = "test-session",
+    23→    skip_description: bool = False,
+    24→    plan_id: str | None = None,
+    25→    pr_number: int | None = None,
+    26→    pr_url: str | None = None,
+    27→    was_created: bool = False,
+    28→    base_branch: str | None = None,
+    29→    graphite_url: str | None = None,
+    30→    diff_file: Path | None = None,
+
+... [44 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Am9pq6MWf9rdrEKWcywpNm">
+     1→"""Unit tests for finalize_pr pipeline step."""
+     2→
+     3→import dataclasses
+     4→from datetime import UTC, datetime
+     5→from pathlib import Path
+     6→
+     7→from erk.cli.commands.pr.submit_pipeline import (
+     8→    SubmitError,
+     9→    SubmitState,
+    10→    finalize_pr,
+    11→)
+    12→from erk.core.context import context_for_test
+    13→from erk.core.plan_context_provider import PlanContext
+    14→from erk_shared.context.types import GlobalConfig
+    15→from erk_shared.gateway.git.fake import FakeGit
+    16→from erk_shared.gateway.github.fake import FakeGitHub
+    17→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    18→from erk_shared.gateway.github.issues.types import IssueInfo
+    19→from erk_shared.gateway.github.types import PRDetails
+    20→from erk_shared.gateway.time.fake import FakeTime
+    21→from erk_shared.impl_folder import get_impl_dir
+    22→from erk_shared.plan_store.planned_pr import PlannedPRBackend
+    23→from erk_shared.plan_store.planned_pr_lifecycle import build_plan_stage_body
+    24→from tests.test_utils.plan_helpers import (
+    25→    create_backend_from_issues,
+    26→    format_plan_header_body_for_test,
+    27→)
+    28→
+    29→BRANCH = "test/branch"
+    30→"""Test branch name used across tests."""
+
+... [532 lines omitted] ...
+
+   107→def test_no_pr_number_returns_error(tmp_path: Path) -&gt; None:
+   108→    """SubmitError(error_type='no_pr_number') when pr_number is None."""
+   114→    assert isinstance(result, SubmitError)
+   115→    assert result.error_type == "no_pr_number"
+  </tool_result>
+  <tool_result tool="toolu_014VeFWjd1cEQjwgubMNjEn7">
+     1→"""Unit tests for generate_description pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitState,
+     7→    generate_description,
+     8→)
+     9→from erk.core.context import context_for_test
+    10→
+    11→
+    12→def _make_state(
+    13→    *,
+    14→    cwd: Path,
+    15→    repo_root: Path | None = None,
+    16→    branch_name: str = "feature",
+    17→    parent_branch: str = "main",
+    18→    trunk_branch: str = "main",
+    19→    use_graphite: bool = False,
+    20→    force: bool = False,
+    21→    debug: bool = False,
+    22→    session_id: str = "test-session",
+    23→    skip_description: bool = False,
+    24→    plan_id: str | None = None,
+    25→    pr_number: int | None = None,
+    26→    pr_url: str | None = None,
+    27→    was_created: bool = False,
+    28→    base_branch: str | None = None,
+    29→    graphite_url: str | None = None,
+    30→    diff_file: Path | None = None,
+
+... [44 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_018tVo8thjkKMdgLqa2YeN2L">
+     1→"""Unit tests for _graphite_first_flow pipeline step."""
+     2→
+     3→from pathlib import Path
+     4→
+     5→from erk.cli.commands.pr.submit_pipeline import (
+     6→    SubmitError,
+     7→    SubmitState,
+     8→    _graphite_first_flow,
+     9→)
+    10→from erk.core.context import context_for_test
+    11→from erk_shared.context.types import GlobalConfig
+    12→from erk_shared.gateway.git.abc import BranchDivergence
+    13→from erk_shared.gateway.git.fake import FakeGit
+    14→from erk_shared.gateway.github.fake import FakeGitHub
+    15→from erk_shared.gateway.github.types import PRDetails
+    16→from erk_shared.gateway.graphite.fake import FakeGraphite
+    17→
+    18→
+    19→def _make_state(
+    20→    *,
+    21→    cwd: Path,
+    22→    repo_root: Path | None = None,
+    23→    branch_name: str = "feature",
+    24→    parent_branch: str = "main",
+    25→    trunk_branch: str = "main",
+    26→    use_graphite: bool = True,
+    27→    force: bool = False,
+    28→    debug: bool = False,
+    29→    session_id: str = "test-session",
+    30→    plan_id: str | None = None,
+
+... [338 lines omitted] ...
+
+    89→def test_submit_failure_returns_error(tmp_path: Path) -&gt; None:
+    90→    """SubmitError(error_type='graphite_submit_failed') on RuntimeError."""
+    92→        submit_stack_raises=RuntimeError("gt submit failed"),
+   109→    assert isinstance(result, SubmitError)
+   110→    assert result.error_type == "graphite_submit_failed"
+   113→def test_restack_error_returns_actionable_message(tmp_path: Path) -&gt; None:
+   114→    """SubmitError(error_type='graphite_restack_required') when restack needed."""
+   116→        submit_stack_raises=RuntimeError(
+   117→            "gt submit failed (exit code 1): "
+   118→            "ERROR: You must restack and resolve conflicts with gt restack before submitting."
+   136→    assert isinstance(result, SubmitError)
+   137→    assert result.error_type == "graphite_restack_required"
+   142→def test_pr_not_found_after_submit_returns_error(tmp_path: Path) -&gt; None:
+   143→    """SubmitError(error_type='pr_not_found') when no PR after gt submit."""
+   162→    assert isinstance(result, SubmitError)
+   163→    assert result.error_type == "pr_not_found"
+   202→    """Plan impl branch (plan_id set) auto-forces when behind remote; no error returned."""
+   308→def test_non_plan_branch_errors_on_divergence(tmp_path: Path) -&gt; None:
+   309→    """Non-plan branch (no plan_id) still errors when behind remote."""
+   331→    assert isinstance(result, SubmitError)
+   332→    assert result.error_type == "remote_diverged"
+   335→def test_branch_behind_remote_returns_error(tmp_path: Path) -&gt; None:
+   336→    """SubmitError(error_type='remote_diverged') when branch is behind remote."""
+   360→    assert isinstance(result, SubmitError)
+   361→    assert result.error_type == "remote_diverged"
+  </tool_result>
+  <tool_result tool="toolu_01BRTZ3oBrTfZDPEMxy1Q2Be">
+     1→"""Unit tests for link_pr_to_objective_nodes pipeline step."""
+     2→
+     3→from datetime import UTC, datetime
+     4→from pathlib import Path
+     5→
+     6→from erk.cli.commands.pr.submit_pipeline import (
+     7→    SubmitState,
+     8→    link_pr_to_objective_nodes,
+     9→)
+    10→from erk.core.context import context_for_test
+    11→from erk_shared.gateway.github.issues.fake import FakeGitHubIssues
+    12→from erk_shared.gateway.github.issues.types import IssueInfo
+    13→from erk_shared.impl_folder import get_impl_dir, save_plan_ref
+    14→
+    15→BRANCH = "test/branch"
+    16→"""Test branch name used across tests."""
+    17→
+    18→_FAKE_NOW = datetime(2025, 1, 15, 10, 0, 0, tzinfo=UTC)
+    19→
+    20→# A minimal objective body with a roadmap metadata block using &lt;details&gt; format
+    21→_ROADMAP_BODY = """\
+    22→# Objective
+    23→
+    24→Some description.
+    25→
+    26→&lt;!-- WARNING: Machine-generated. Manual edits may break erk tooling. --&gt;
+    27→&lt;!-- erk:metadata-block:objective-roadmap --&gt;
+    28→&lt;details&gt;
+    29→&lt;summary&gt;&lt;code&gt;objective-roadmap&lt;/code&gt;&lt;/summary&gt;
+    30→
+
+... [188 lines omitted] ...
+  </tool_result>
+  <tool_result tool="toolu_01Uk9thGrXDzobMEjFMpiLfA">
+     1→"""Unit tests for prepare_state pipeline step."""
+     2→
+     3→import json
+     4→from pathlib import Path
+     5→
+     6→from erk.cli.commands.pr.submit_pipeline import (
+     7→    SubmitError,
+     8→    SubmitState,
+     9→    prepare_state,
+    10→)
+    11→from erk.core.context import context_for_test
+    12→from erk_shared.gateway.git.fake import FakeGit
+    13→from erk_shared.impl_folder import get_impl_dir
+    14→
+    15→BRANCH = "test/branch"
+    16→"""Test branch name used across tests."""
+    17→
+    18→
+    19→def _make_state(
+    20→    *,
+    21→    cwd: Path,
+    22→    repo_root: Path | None = None,
+    23→    branch_name: str = "",
+    24→    parent_branch: str = "",
+    25→    trunk_branch: str = "",
+    26→    use_graphite: bool = False,
+    27→    force: bool = False,
+    28→    debug: bool = False,
+    29→    session_id: str = "test-session",
+    30→    plan_id: str | None = None,
+
+... [206 lines omitted] ...
+
+    87→def test_detached_head_returns_error(tmp_path: Path) -&gt; None:
+    88→    """current_branch=None =&gt; SubmitError(error_type='no_branch')."""
+    98→    assert isinstance(result, SubmitError)
+    99→    assert result.error_type == "no_branch"
+   102→def test_issue_linkage_mismatch_returns_error(tmp_path: Path) -&gt; None:
+   106→    comes from ref.json without any mismatch error.
+   135→    # No mismatch error since branch cannot provide issue number
+  </tool_result>
+  <assistant>Now let me check if there's a test_run_pipeline.py file:</assistant>
+  <usage input_tokens="7" cache_creation_input_tokens="39667" cache_read_input_tokens="20426" cache_creation="{'ephemeral_5m_input_tokens': 39667, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_013kZbCgt9LLRgsFE8fkRhjj">
+    <param name="pattern">**/test_run_pipeline.py</param>
+    <param name="path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline</param>
+  </tool_use>
+  <usage input_tokens="7" cache_creation_input_tokens="39667" cache_read_input_tokens="20426" cache_creation="{'ephemeral_5m_input_tokens': 39667, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_013kZbCgt9LLRgsFE8fkRhjj">
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_run_pipeline.py
+  </tool_result>
+  <tool_use name="Read" id="toolu_01NVFd5Ykgw9K2Xb3pP73qYT">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_run_pipeline.py</param>
+  </tool_use>
+  <usage input_tokens="6" cache_creation_input_tokens="166" cache_read_input_tokens="60093" cache_creation="{'ephemeral_5m_input_tokens': 166, 'ephemeral_1h_input_tokens': 0}" output_tokens="86" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01NVFd5Ykgw9K2Xb3pP73qYT">
+     1→"""Unit tests for run_submit_pipeline and make_initial_state."""
+     2→
+     3→from pathlib import Path
+     4→from unittest.mock import patch
+     5→
+     6→from erk.cli.commands.pr.submit_pipeline import (
+     7→    SubmitError,
+     8→    SubmitState,
+     9→    make_initial_state,
+    10→    run_submit_pipeline,
+    11→)
+    12→from erk.core.context import ErkContext, context_for_test
+    13→from erk_shared.gateway.git.fake import FakeGit
+    14→
+    15→
+    16→def test_stops_at_first_error(tmp_path: Path) -&gt; None:
+    17→    """Early error prevents later steps from running."""
+    18→    # prepare_state will fail because detached HEAD
+    19→    fake_git = FakeGit(
+    20→        repository_roots={tmp_path: tmp_path},
+    21→        current_branches={tmp_path: None},
+    22→    )
+    23→    ctx = context_for_test(git=fake_git, cwd=tmp_path)
+    24→    state = make_initial_state(
+    25→        cwd=tmp_path,
+    26→        use_graphite=False,
+    27→        force=False,
+    28→        debug=False,
+    29→        session_id="test",
+    30→        skip_description=False,
+
+... [111 lines omitted] ...
+
+    36→    assert isinstance(result, SubmitError)
+    37→    assert result.error_type == "no_branch"
+    69→    assert isinstance(result, SubmitError)
+    70→    assert result.error_type == "no_commits"
+   108→def test_catches_unhandled_exception_from_step(tmp_path: Path) -&gt; None:
+   109→    """Unhandled exception in a step becomes SubmitError, not a propagated exception."""
+   111→    def _exploding_step(_ctx: ErkContext, _state: SubmitState) -&gt; SubmitState | SubmitError:
+   113→        raise ConnectionError(msg)
+   132→    assert isinstance(result, SubmitError)
+   133→    assert result.error_type == "unhandled_exception"
+  </tool_result>
+  <assistant>Perfect! Now I have all the files. Let me create a task list and then update each file with the two new fields. Based on the user's instructions:
+
+1. Most files should add `graphite_is_authed=None` and `graphite_branch_tracked=None`
+2. `test_enhance_with_graphite.py` should set both to `True`
+3. `test_graphite_first_flow.py` should set both to `True`
+4. `test_prepare_state.py` should keep them as `None`
+5. `test_run_pipeline.py` needs updating to assert the new fields
+6. `test_core_submit_flow.py` with `use_graphite=False` should keep them as `None` or `False`
+
+Let me start updating the files:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="2021" cache_read_input_tokens="60259" cache_creation="{'ephemeral_5m_input_tokens': 2021, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01ML4RYjSPYC5qYEeLpF1Wc9">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_capture_existing_pr_body.py</param>
+    <param name="old_string">        title=None,
+        body=None,
+        existing_pr_body=existing_pr_body,
+    )</param>
+    <param name="new_string">        title=None,
+        body=None,
+        existing_pr_body=existing_pr_body,
+        graphite_is_authed=None,
+        graphite_branch_tracked=None,
+    )</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2021" cache_read_input_tokens="60259" cache_creation="{'ephemeral_5m_input_tokens': 2021, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AryLEtpQFJzcBEGzqajdsP">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py</param>
+    <param name="old_string">        title=None,
+        body=None,
+        existing_pr_body="",
+    )</param>
+    <param name="new_string">        title=None,
+        body=None,
+        existing_pr_body="",
+        graphite_is_authed=None,
+        graphite_branch_tracked=None,
+    )</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2021" cache_read_input_tokens="60259" cache_creation="{'ephemeral_5m_input_tokens': 2021, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FW5xQMcNTVMpzRX2SNELC3">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_commit_wip.py</param>
+    <param name="old_string">        title=title,
+        body=body,
+        existing_pr_body="",
+    )</param>
+    <param name="new_string">        title=title,
+        body=body,
+        existing_pr_body="",
+        graphite_is_authed=None,
+        graphite_branch_tracked=None,
+    )</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2021" cache_read_input_tokens="60259" cache_creation="{'ephemeral_5m_input_tokens': 2021, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01MVEkP7tTWLyw2WPSfaFZ3i">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py</param>
+    <param name="old_string">        title=title,
+        body=body,
+        existing_pr_body=existing_pr_body,
+    )</param>
+    <param name="new_string">        title=title,
+        body=body,
+        existing_pr_body=existing_pr_body,
+        graphite_is_authed=None,
+        graphite_branch_tracked=None,
+    )</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2021" cache_read_input_tokens="60259" cache_creation="{'ephemeral_5m_input_tokens': 2021, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01WTtfbvc6LD9ddQrgSPaBZ4">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py</param>
+    <param name="old_string">        title=title,
+        body=body,
+        existing_pr_body="",
+    )</param>
+    <param name="new_string">        title=title,
+        body=body,
+        existing_pr_body="",
+        graphite_is_authed=True,
+        graphite_branch_tracked=True,
+    )</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2021" cache_read_input_tokens="60259" cache_creation="{'ephemeral_5m_input_tokens': 2021, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Vknjhqg856bANqAiy7QWad">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py</param>
+    <param name="old_string">        title=title,
+        body=body,
+        existing_pr_body="",
+    )</param>
+    <param name="new_string">        title=title,
+        body=body,
+        existing_pr_body="",
+        graphite_is_authed=None,
+        graphite_branch_tracked=None,
+    )</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2021" cache_read_input_tokens="60259" cache_creation="{'ephemeral_5m_input_tokens': 2021, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_0117iLruoturoP8qzK4WUKAE">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_fetch_plan_context.py</param>
+    <param name="old_string">        title=title,
+        body=body,
+        existing_pr_body="",
+    )</param>
+    <param name="new_string">        title=title,
+        body=body,
+        existing_pr_body="",
+        graphite_is_authed=None,
+        graphite_branch_tracked=None,
+    )</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2021" cache_read_input_tokens="60259" cache_creation="{'ephemeral_5m_input_tokens': 2021, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01Vqzqfp1nfi9Aqh6xjr84ro">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py</param>
+    <param name="old_string">        title=title,
+        body=body,
+        existing_pr_body=existing_pr_body,
+    )</param>
+    <param name="new_string">        title=title,
+        body=body,
+        existing_pr_body=existing_pr_body,
+        graphite_is_authed=None,
+        graphite_branch_tracked=None,
+    )</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2021" cache_read_input_tokens="60259" cache_creation="{'ephemeral_5m_input_tokens': 2021, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01AkEeknjidRysmcRJ6VkZvS">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_generate_description.py</param>
+    <param name="old_string">        title=title,
+        body=body,
+        existing_pr_body="",
+    )</param>
+    <param name="new_string">        title=title,
+        body=body,
+        existing_pr_body="",
+        graphite_is_authed=None,
+        graphite_branch_tracked=None,
+    )</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2021" cache_read_input_tokens="60259" cache_creation="{'ephemeral_5m_input_tokens': 2021, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01SobuyJKiL3KByg2Yn2cBcf">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py</param>
+    <param name="old_string">        title=title,
+        body=body,
+        existing_pr_body="",
+    )</param>
+    <param name="new_string">        title=title,
+        body=body,
+        existing_pr_body="",
+        graphite_is_authed=True,
+        graphite_branch_tracked=True,
+    )</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2021" cache_read_input_tokens="60259" cache_creation="{'ephemeral_5m_input_tokens': 2021, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01FctxMwx9JBRmVGN1TWGf7w">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py</param>
+    <param name="old_string">        title="My PR Title",
+        body="My PR body",
+        existing_pr_body="",
+    )</param>
+    <param name="new_string">        title="My PR Title",
+        body="My PR body",
+        existing_pr_body="",
+        graphite_is_authed=None,
+        graphite_branch_tracked=None,
+    )</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2021" cache_read_input_tokens="60259" cache_creation="{'ephemeral_5m_input_tokens': 2021, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01VRm13favaG8tit7ivHK6S1">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py</param>
+    <param name="old_string">        title=title,
+        body=body,
+        existing_pr_body="",
+    )</param>
+    <param name="new_string">        title=title,
+        body=body,
+        existing_pr_body="",
+        graphite_is_authed=None,
+        graphite_branch_tracked=None,
+    )</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2021" cache_read_input_tokens="60259" cache_creation="{'ephemeral_5m_input_tokens': 2021, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Edit" id="toolu_01PGBRZN5arNeHxhUR8g8wij">
+    <param name="file_path">/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_run_pipeline.py</param>
+    <param name="old_string">    assert state.title is None
+    assert state.body is None
+    assert state.existing_pr_body == ""</param>
+    <param name="new_string">    assert state.title is None
+    assert state.body is None
+    assert state.existing_pr_body == ""
+    assert state.graphite_is_authed is None
+    assert state.graphite_branch_tracked is None</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="2021" cache_read_input_tokens="60259" cache_creation="{'ephemeral_5m_input_tokens': 2021, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ML4RYjSPYC5qYEeLpF1Wc9">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_capture_existing_pr_body.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01AryLEtpQFJzcBEGzqajdsP">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01FW5xQMcNTVMpzRX2SNELC3">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_commit_wip.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01MVEkP7tTWLyw2WPSfaFZ3i">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01WTtfbvc6LD9ddQrgSPaBZ4">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Vknjhqg856bANqAiy7QWad">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_0117iLruoturoP8qzK4WUKAE">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_fetch_plan_context.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01Vqzqfp1nfi9Aqh6xjr84ro">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01AkEeknjidRysmcRJ6VkZvS">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_generate_description.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01SobuyJKiL3KByg2Yn2cBcf">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01FctxMwx9JBRmVGN1TWGf7w">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01VRm13favaG8tit7ivHK6S1">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py has been updated successfully.
+  </tool_result>
+  <tool_result tool="toolu_01PGBRZN5arNeHxhUR8g8wij">
+The file /home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_run_pipeline.py has been updated successfully.
+  </tool_result>
+  <assistant>Perfect! All files have been updated successfully. Let me create a summary of the changes made:
+
+## Summary
+
+I've successfully added the two new fields `graphite_is_authed` and `graphite_branch_tracked` to all `SubmitState` constructor calls in the test files under `tests/unit/cli/commands/pr/submit_pipeline/`. Here's what was updated:
+
+### Files Updated with `graphite_is_authed=None, graphite_branch_tracked=None`:
+
+1. **/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_capture_existing_pr_body.py**
+2. **/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_cleanup_impl_for_submit.py**
+3. **/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_commit_wip.py**
+4. **/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py** (uses `use_graphite=False` in most tests, so None is appropriate)
+5. **/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_extract_diff.py**
+6. **/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_fetch_plan_context.py**
+7. **/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py**
+8. **/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_generate_description.py**
+9. **/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_link_pr_to_objective_nodes.py**
+10. **/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_prepare_state.py** (correctly set to None since prepare_state populates these fields)
+
+### Files Updated with `graphite_is_authed=True, graphite_branch_tracked=True`:
+
+11. **/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py** - Set to True because these tests verify the enhance_with_graphite function, which requires Graphite to be authenticated and the branch to be tracked
+12. **/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py** - Set to True because the graphite first flow is only entered when Graphite is enabled and the branch is tracked
+
+### Additional Assertion Updates:
+
+13. **/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_run_pipeline.py** - Added assertions to verify the new fields are properly initialized in `make_initial_state`:
+   - `assert state.graphite_is_authed is None`
+   - `assert state.graphite_branch_tracked is None`
+
+All changes were made following the exact pattern specified in the requirements, with the two new fields added right after `existing_pr_body` in each `SubmitState` constructor call.</assistant>
+  <usage input_tokens="6" cache_creation_input_tokens="3503" cache_read_input_tokens="62280" cache_creation="{'ephemeral_5m_input_tokens': 3503, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
