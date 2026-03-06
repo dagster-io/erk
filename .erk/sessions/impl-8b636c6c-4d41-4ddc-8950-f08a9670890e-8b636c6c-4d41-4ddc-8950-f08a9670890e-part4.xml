@@ -1,0 +1,353 @@
+<session>
+  <meta source="agent-aa3e7f5" />
+  <meta branch="plnd/fix-teleport-graphite-trac-03-06-1432" />
+  <meta model="claude-haiku-4-5-20251001" />
+  <user>Find all test files related to teleport_cmd.py in the erk codebase. Search for files matching *teleport* in the tests directory. Also search for any references to _reconstruct_graphite_stack in test files. Report the file paths found.</user>
+  <assistant>I'll help you find all test files related to teleport_cmd.py and any references to _reconstruct_graphite_stack. Let me search the codebase systematically.</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="18761" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18761, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01TUAk8PBJSYcTofp32VLFYr">
+    <param name="pattern">tests/**/*teleport*</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18761" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18761, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_0188f3opMsbFv9jDcJUYfwUn">
+    <param name="pattern">tests/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="18761" cache_read_input_tokens="0" cache_creation="{'ephemeral_5m_input_tokens': 18761, 'ephemeral_1h_input_tokens': 0}" output_tokens="8" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_0188f3opMsbFv9jDcJUYfwUn">
+/home/runner/work/erk/erk/tests/__init__.py
+/home/runner/work/erk/erk/tests/artifacts/__init__.py
+/home/runner/work/erk/erk/tests/cli/__init__.py
+/home/runner/work/erk/erk/tests/artifacts/test_build_config.py
+/home/runner/work/erk/erk/tests/artifacts/test_orphan_cleanup.py
+/home/runner/work/erk/erk/tests/artifacts/test_artifact_health.py
+/home/runner/work/erk/erk/tests/artifacts/test_staleness.py
+/home/runner/work/erk/erk/tests/artifacts/test_orphans.py
+/home/runner/work/erk/erk/tests/artifacts/test_state.py
+/home/runner/work/erk/erk/tests/artifacts/test_cli.py
+/home/runner/work/erk/erk/tests/artifacts/test_missing.py
+/home/runner/work/erk/erk/tests/artifacts/test_detection.py
+/home/runner/work/erk/erk/tests/artifacts/test_discovery.py
+/home/runner/work/erk/erk/tests/artifacts/test_sync.py
+/home/runner/work/erk/erk/tests/cli/commands/__init__.py
+/home/runner/work/erk/erk/tests/cli/commands/split/__init__.py
+/home/runner/work/erk/erk/tests/cli/commands/split/test_plan.py
+/home/runner/work/erk/erk/tests/commands/__init__.py
+/home/runner/work/erk/erk/tests/commands/admin/__init__.py
+/home/runner/work/erk/erk/tests/commands/admin/test_test_workflow.py
+/home/runner/work/erk/erk/tests/commands/admin/test_plan_implement_workflow.py
+/home/runner/work/erk/erk/tests/commands/admin/test_github_pr_setting.py
+/home/runner/work/erk/erk/tests/commands/branch/__init__.py
+/home/runner/work/erk/erk/tests/commands/cc/__init__.py
+/home/runner/work/erk/erk/tests/commands/branch/test_delete_cmd.py
+/home/runner/work/erk/erk/tests/commands/branch/test_checkout_cmd.py
+/home/runner/work/erk/erk/tests/commands/cc/test_session_list.py
+/home/runner/work/erk/erk/tests/commands/cc/test_session_show.py
+/home/runner/work/erk/erk/tests/commands/cc/test_session_show_agent_types.py
+/home/runner/work/erk/erk/tests/commands/dash/__init__.py
+
+... [71 lines omitted] ...
+
+/home/runner/work/erk/erk/tests/commands/land/test_branch_errors.py
+  </tool_result>
+  <tool_result tool="toolu_01TUAk8PBJSYcTofp32VLFYr">
+/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py
+  </tool_result>
+  <assistant>Great! I found the teleport test file. Now let me search for references to `_reconstruct_graphite_stack` in all test files:</assistant>
+  <usage input_tokens="2693" cache_creation_input_tokens="227" cache_read_input_tokens="18761" cache_creation="{'ephemeral_5m_input_tokens': 227, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01L8jwquLP7bwNXveK4HsuhL">
+    <param name="pattern">_reconstruct_graphite_stack</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="2693" cache_creation_input_tokens="227" cache_read_input_tokens="18761" cache_creation="{'ephemeral_5m_input_tokens': 227, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01Sxobw9hjSt5S2CJVDuE1KU">
+    <param name="file_path">/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py</param>
+  </tool_use>
+  <usage input_tokens="2693" cache_creation_input_tokens="227" cache_read_input_tokens="18761" cache_creation="{'ephemeral_5m_input_tokens': 227, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Sxobw9hjSt5S2CJVDuE1KU">
+     1→"""Tests for erk pr teleport command."""
+     2→
+     3→from click.testing import CliRunner
+     4→
+     5→from erk.cli.commands.pr import pr_group
+     6→from erk_shared.gateway.git.abc import WorktreeInfo
+     7→from erk_shared.gateway.git.fake import FakeGit
+     8→from erk_shared.gateway.github.fake import FakeGitHub
+     9→from erk_shared.gateway.github.types import PRDetails
+    10→from erk_shared.gateway.graphite.fake import FakeGraphite
+    11→from erk_shared.gateway.graphite.types import BranchMetadata
+    12→from tests.test_utils.context_builders import build_workspace_test_context
+    13→from tests.test_utils.env_helpers import erk_isolated_fs_env
+    14→
+    15→
+    16→def _make_pr_details(
+    17→    number: int,
+    18→    head_ref_name: str,
+    19→    *,
+    20→    is_cross_repository: bool = False,
+    21→    state: str = "OPEN",
+    22→    base_ref_name: str = "main",
+    23→) -&gt; PRDetails:
+    24→    return PRDetails(
+    25→        number=number,
+    26→        url=f"https://github.com/owner/repo/pull/{number}",
+    27→        title=f"PR #{number}",
+    28→        body="",
+    29→        state=state,
+    30→        is_draft=False,
+
+... [272 lines omitted] ...
+
+    42→    """Teleport errors when PR doesn't exist."""
+    57→def test_teleport_cross_repo_errors() -&gt; None:
+  </tool_result>
+  <tool_result tool="toolu_01L8jwquLP7bwNXveK4HsuhL">
+No files found
+  </tool_result>
+  <assistant>Now let me search for references to `_reconstruct_graphite_stack` in the broader codebase to understand its usage:</assistant>
+  <usage input_tokens="4773" cache_creation_input_tokens="7818" cache_read_input_tokens="18988" cache_creation="{'ephemeral_5m_input_tokens': 7818, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01UU9gxeuZWdsyeo6cUUSF71">
+    <param name="pattern">_reconstruct_graphite_stack</param>
+    <param name="path">/home/runner/work/erk/erk</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="4773" cache_creation_input_tokens="7818" cache_read_input_tokens="18988" cache_creation="{'ephemeral_5m_input_tokens': 7818, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01UU9gxeuZWdsyeo6cUUSF71">
+Found 1 file
+src/erk/cli/commands/pr/teleport_cmd.py
+  </tool_result>
+  <assistant>Now let me check the source file to understand what `_reconstruct_graphite_stack` is and how it relates to the tests:</assistant>
+  <usage input_tokens="5" cache_creation_input_tokens="5081" cache_read_input_tokens="26806" cache_creation="{'ephemeral_5m_input_tokens': 5081, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Read" id="toolu_01ReuXkxwHjxRTTc6Ej8KFQF">
+    <param name="file_path">/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py</param>
+  </tool_use>
+  <usage input_tokens="5" cache_creation_input_tokens="5081" cache_read_input_tokens="26806" cache_creation="{'ephemeral_5m_input_tokens': 5081, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01ReuXkxwHjxRTTc6Ej8KFQF">
+     1→"""Teleport a PR's remote state to the local branch.
+     2→
+     3→Remote-first counterpart to 'checkout'. While checkout preserves local state
+     4→(reusing existing worktrees, keeping unpushed commits), teleport force-resets
+     5→the local branch to match the remote exactly. Use teleport when a remote agent
+     6→has pushed commits and you want your local copy to match.
+     7→
+     8→Operates on the current worktree by default, with --new-slot to create a fresh
+     9→worktree slot.
+    10→"""
+    11→
+    12→from pathlib import Path
+    13→
+    14→import click
+    15→
+    16→from erk.cli.activation import (
+    17→    activation_config_activate_only,
+    18→    ensure_worktree_activate_script,
+    19→    print_activation_instructions,
+    20→)
+    21→from erk.cli.commands.checkout_helpers import ensure_branch_has_worktree
+    22→from erk.cli.commands.pr.checkout_cmd import _fetch_and_update_branch
+    23→from erk.cli.ensure import Ensure
+    24→from erk.core.context import ErkContext
+    25→from erk.core.repo_discovery import NoRepoSentinel, RepoContext
+    26→from erk_shared.gateway.github.types import PRNotFound
+    27→from erk_shared.output.output import user_output
+    28→
+    29→
+    30→@click.command("teleport")
+
+... [246 lines omitted] ...
+
+    57→        ctx.console.error("Not in a git repository")
+    65→        ctx.console.error(
+    72→        ctx.console.error("Teleport is not supported for cross-repository (fork) PRs.")
+   246→    except RuntimeError:
+   261→        click.style("Warning: ", fg="yellow")
+  </tool_result>
+  <assistant>Perfect! Now let me search for any other test files that might be related to PR operations or teleport functionality:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="4044" cache_read_input_tokens="31887" cache_creation="{'ephemeral_5m_input_tokens': 4044, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Glob" id="toolu_01HfUupCpnAoo6nE3WysNVfd">
+    <param name="pattern">tests/commands/pr/**/*.py</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="4044" cache_read_input_tokens="31887" cache_creation="{'ephemeral_5m_input_tokens': 4044, 'ephemeral_1h_input_tokens': 0}" output_tokens="83" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01HfUupCpnAoo6nE3WysNVfd">
+/home/runner/work/erk/erk/tests/commands/pr/__init__.py
+/home/runner/work/erk/erk/tests/commands/pr/test_check_plan.py
+/home/runner/work/erk/erk/tests/commands/pr/test_address.py
+/home/runner/work/erk/erk/tests/commands/pr/test_checkout.py
+/home/runner/work/erk/erk/tests/commands/pr/test_checkout_graphite_linking.py
+/home/runner/work/erk/erk/tests/commands/pr/test_checkout_plan.py
+/home/runner/work/erk/erk/tests/commands/pr/test_address_remote_cmd.py
+/home/runner/work/erk/erk/tests/commands/pr/test_check.py
+/home/runner/work/erk/erk/tests/commands/pr/test_log.py
+/home/runner/work/erk/erk/tests/commands/pr/test_create.py
+/home/runner/work/erk/erk/tests/commands/pr/test_close.py
+/home/runner/work/erk/erk/tests/commands/pr/test_diverge_fix.py
+/home/runner/work/erk/erk/tests/commands/pr/test_dispatch.py
+/home/runner/work/erk/erk/tests/commands/pr/test_duplicate_check.py
+/home/runner/work/erk/erk/tests/commands/pr/test_parse_pr_reference.py
+/home/runner/work/erk/erk/tests/commands/pr/test_list.py
+/home/runner/work/erk/erk/tests/commands/pr/test_rewrite.py
+/home/runner/work/erk/erk/tests/commands/pr/test_prepare.py
+/home/runner/work/erk/erk/tests/commands/pr/test_replan.py
+/home/runner/work/erk/erk/tests/commands/pr/test_rebase_remote.py
+/home/runner/work/erk/erk/tests/commands/pr/test_rebase.py
+/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py
+/home/runner/work/erk/erk/tests/commands/pr/test_submit_graphite_disabled.py
+/home/runner/work/erk/erk/tests/commands/pr/test_view.py
+/home/runner/work/erk/erk/tests/commands/pr/test_submit.py
+  </tool_result>
+  <assistant>Let me also verify if there are any references to the teleport function in other test files:</assistant>
+  <usage input_tokens="3" cache_creation_input_tokens="890" cache_read_input_tokens="35931" cache_creation="{'ephemeral_5m_input_tokens': 890, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_01Xxc2MLk6ZMP2CirqUmN8L7">
+    <param name="pattern">teleport</param>
+    <param name="path">/home/runner/work/erk/erk/tests/commands/pr</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="890" cache_read_input_tokens="35931" cache_creation="{'ephemeral_5m_input_tokens': 890, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Grep" id="toolu_014Bfm2XQcAcFxCYsxzxQE9W">
+    <param name="pattern">retrack_branch|track_branch|graphite.*stack</param>
+    <param name="path">/home/runner/work/erk/erk/tests</param>
+    <param name="output_mode">files_with_matches</param>
+  </tool_use>
+  <usage input_tokens="3" cache_creation_input_tokens="890" cache_read_input_tokens="35931" cache_creation="{'ephemeral_5m_input_tokens': 890, 'ephemeral_1h_input_tokens': 0}" output_tokens="3" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01Xxc2MLk6ZMP2CirqUmN8L7">
+Found 1 file
+tests/commands/pr/test_teleport.py
+  </tool_result>
+  <tool_result tool="toolu_014Bfm2XQcAcFxCYsxzxQE9W">
+Found 33 files
+tests/unit/status/test_graphite_stack_collector.py
+tests/unit/gateways/gt/fake_ops.py
+tests/unit/gateways/gt/test_quick_submit.py
+tests/unit/fakes/test_fake_graphite.py
+tests/unit/fakes/AGENTS.md
+tests/unit/cli/test_graphite_command.py
+tests/unit/cli/commands/pr/submit_pipeline/test_enhance_with_graphite.py
+tests/unit/cli/commands/pr/submit_pipeline/test_finalize_pr.py
+tests/unit/cli/commands/pr/submit_pipeline/test_graphite_first_flow.py
+tests/unit/cli/commands/exec/scripts/test_plan_save.py
+tests/unit/branch_manager/test_graphite_branch_manager.py
+tests/unit/cli/commands/branch/test_create_cmd.py
+tests/unit/AGENTS.md
+tests/test_utils/builders.py
+tests/test_utils/env_helpers.py
+tests/test_utils/graphite_helpers.py
+tests/integration/test_real_graphite_branch_ops.py
+tests/core/operations/AGENTS.md
+tests/core/operations/test_graphite.py
+tests/conftest.py
+tests/commands/workspace/test_split.py
+tests/commands/workspace/test_consolidate.py
+tests/commands/workspace/test_create_graphite_disabled.py
+tests/commands/workspace/AGENTS.md
+tests/commands/test_status_with_fakes.py
+tests/commands/pr/test_submit.py
+tests/commands/pr/test_rewrite.py
+tests/commands/pr/test_checkout_graphite_linking.py
+tests/commands/navigation/test_checkout.py
+
+... [4 lines omitted] ...
+  </tool_result>
+  <assistant>Excellent! Let me now check if any of those branch manager or Graphite-related tests might reference teleport or the `_reconstruct_graphite_stack` function:</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="947" cache_read_input_tokens="36821" cache_creation="{'ephemeral_5m_input_tokens': 947, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01K3Z8ApMRm4FX9pXGokpjdY">
+    <param name="command">grep -r "reconstruct" /home/runner/work/erk/erk/tests --include="*.py" | head -20</param>
+    <param name="description">Search for reconstruct references in test files</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="947" cache_read_input_tokens="36821" cache_creation="{'ephemeral_5m_input_tokens': 947, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_use name="Bash" id="toolu_01V47Ya3FKdAdpfxazk59nm4">
+    <param name="command">grep -r "teleport" /home/runner/work/erk/erk --include="*.py" | grep -v ".pyc" | grep -v "__pycache__"</param>
+    <param name="description">Search for all teleport references in codebase</param>
+  </tool_use>
+  <usage input_tokens="4" cache_creation_input_tokens="947" cache_read_input_tokens="36821" cache_creation="{'ephemeral_5m_input_tokens': 947, 'ephemeral_1h_input_tokens': 0}" output_tokens="9" service_tier="standard" inference_geo="not_available" />
+  <tool_result tool="toolu_01K3Z8ApMRm4FX9pXGokpjdY">
+
+  </tool_result>
+  <tool_result tool="toolu_01V47Ya3FKdAdpfxazk59nm4">
+/home/runner/work/erk/erk/tests/unit/test_pr_footer.py:        assert "erk pr teleport 42" in footer
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py:    # Footer should have been added (body didn't contain "erk pr teleport")
+/home/runner/work/erk/erk/tests/unit/cli/commands/pr/submit_pipeline/test_core_submit_flow.py:    assert "erk pr teleport" in updated_body
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_set_pr_description.py:        assert "erk pr teleport" in updated_body
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:# Planned-PR plan branch teleport tests
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_setup_impl_from_pr.py:    """Planned-PR plan with branch_name checks out the plan branch and teleports from remote."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py:        # Verify footer with teleport command is generated
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_update_pr_description.py:        assert "erk pr teleport" in updated_body
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py:    assert "erk pr teleport 123" in body
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_ci_update_pr_body.py:    assert "erk pr teleport 123" in body
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_body_footer.py:def test_get_pr_body_footer_outputs_teleport_command() -&gt; None:
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_body_footer.py:    """Test that footer includes teleport command."""
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_body_footer.py:    assert "erk pr teleport 1895" in result.output
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_body_footer.py:    assert "erk pr teleport 42" in result.output
+/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/test_get_pr_body_footer.py:    assert "erk pr teleport 1895" in result.output
+/home/runner/work/erk/erk/tests/unit/services/test_plan_list_service.py:        assert "erk pr teleport" not in plan_body
+/home/runner/work/erk/erk/tests/unit/plan_store/test_planned_pr_backend.py:    assert "erk pr teleport" in pr.body
+/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py:"""Tests for erk pr teleport command."""
+/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py:def test_teleport_pr_not_found() -&gt; None:
+/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py:        result = runner.invoke(pr_group, ["teleport", "999"], obj=ctx)
+/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py:def test_teleport_cross_repo_errors() -&gt; None:
+/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py:        result = runner.invoke(pr_group, ["teleport", "123"], obj=ctx)
+/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py:def test_teleport_wrong_branch_switches_and_teleports() -&gt; None:
+/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py:        result = runner.invoke(pr_group, ["teleport", "123", "--force"], obj=ctx)
+/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py:def test_teleport_wrong_branch_exists_in_other_worktree() -&gt; None:
+/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py:        result = runner.invoke(pr_group, ["teleport", "123"], obj=ctx)
+/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py:def test_teleport_in_place_with_force() -&gt; None:
+/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py:        result = runner.invoke(pr_group, ["teleport", "123", "--force"], obj=ctx)
+/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py:def test_teleport_already_in_sync_exits_cleanly() -&gt; None:
+/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py:        result = runner.invoke(pr_group, ["teleport", "123"], obj=ctx)
+
+... [111 lines omitted] ...
+
+/home/runner/work/erk/erk/src/erk/cli/commands/exec/scripts/setup_impl_from_pr.py:                    f"Failed to teleport branch '{branch_name}' from remote: {pull_result.message}"
+  </tool_result>
+  <assistant>Perfect! Now let me create a comprehensive summary of my findings.
+
+## Summary
+
+I've completed a thorough search of the erk codebase for test files related to `teleport_cmd.py` and references to `_reconstruct_graphite_stack`. Here are my findings:
+
+### Primary Test File
+
+**Main test file for teleport command:**
+- `/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py`
+
+This file contains 9 test functions covering the teleport functionality:
+
+1. `test_teleport_pr_not_found()` - Tests error handling when PR doesn't exist
+2. `test_teleport_cross_repo_errors()` - Tests rejection of cross-repository (fork) PRs
+3. `test_teleport_wrong_branch_switches_and_teleports()` - Tests automatic branch switching
+4. `test_teleport_wrong_branch_exists_in_other_worktree()` - Tests branch already checked out elsewhere
+5. `test_teleport_in_place_with_force()` - Tests force-reset of current branch to match remote
+6. `test_teleport_already_in_sync_exits_cleanly()` - Tests branch already in sync behavior
+7. `test_teleport_stacked_pr_fetches_base_with_graphite()` - Tests base branch fetch for stacked PRs with Graphite
+8. `test_teleport_trunk_parent_skips_base_fetch()` - Tests skipping base fetch when base equals trunk
+9. `test_teleport_already_tracked_retracks()` - Tests retracking already-tracked branches
+
+### References to `_reconstruct_graphite_stack`
+
+The search found that `_reconstruct_graphite_stack` is:
+- **Defined in:** `/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py` (lines 198-240)
+- **NOT directly tested** in any dedicated unit tests
+- **Indirectly tested** through integration tests in `test_teleport.py` (tests #7-9 specifically test the Graphite stack reconstruction behavior)
+
+### Related Test Files
+
+Additional test files with teleport references (TUI and utility tests):
+- `/home/runner/work/erk/erk/tests/tui/commands/test_execute_command.py` - Tests TUI copy_teleport commands
+- `/home/runner/work/erk/erk/tests/tui/commands/test_registry.py` - Tests teleport command availability in TUI registry
+- `/home/runner/work/erk/erk/tests/unit/cli/commands/exec/scripts/` - Tests for PR body footer generation with teleport command
+
+### Key Test Coverage
+
+The test file `test_teleport.py` comprehensively covers:
+- Basic teleport errors and validations
+- Branch switching and worktree handling
+- Graphite stack reconstruction for stacked PRs (lines 160-296)
+  - Fetching base branches
+  - Creating tracking branches
+  - Retracking already-tracked branches
+  - Proper handling of trunk-based PRs
+
+All absolute file paths are:
+- `/home/runner/work/erk/erk/tests/commands/pr/test_teleport.py`
+- `/home/runner/work/erk/erk/src/erk/cli/commands/pr/teleport_cmd.py`</assistant>
+  <usage input_tokens="4" cache_creation_input_tokens="7117" cache_read_input_tokens="37768" cache_creation="{'ephemeral_5m_input_tokens': 7117, 'ephemeral_1h_input_tokens': 0}" output_tokens="1" service_tier="standard" inference_geo="not_available" />
+</session>
