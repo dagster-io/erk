@@ -34,16 +34,4 @@ def codex_portable_skills() -> frozenset[str]:
 @cache
 def claude_only_skills() -> frozenset[str]:
     """Skills that reference Claude-specific features (hooks, session logs, commands)."""
-    return frozenset(
-        {
-            "cmux",
-            "session-inspector",
-            "ci-iteration",
-            "command-creator",
-            "cli-skill-creator",
-            "module-to-subpackage",
-            "rename-swarm",
-            "erk-skill-onboarding",
-            "skill-creator",
-        }
-    )
+    return frozenset()
