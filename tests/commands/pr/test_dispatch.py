@@ -550,8 +550,8 @@ def test_dispatch_skips_create_branch_when_branch_is_checked_out() -> None:
 
         # Verify: update_local_ref was called to sync the checked-out branch
         updated_refs = git.branch.updated_refs
-        assert any(
-            branch == plan_branch for _, branch, _ in updated_refs
-        ), f"Expected update_local_ref for {plan_branch}, got: {updated_refs}"
+        assert any(branch == plan_branch for _, branch, _ in updated_refs), (
+            f"Expected update_local_ref for {plan_branch}, got: {updated_refs}"
+        )
 
         assert "Traceback" not in result.output
