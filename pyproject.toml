@@ -73,7 +73,6 @@ packages = ["src/erk"]
 ".claude/skills/objective" = "erk/data/claude/skills/objective"
 ".claude/skills/gh" = "erk/data/claude/skills/gh"
 ".claude/skills/gt" = "erk/data/claude/skills/gt"
-".claude/skills/learned-docs" = "erk/data/claude/skills/learned-docs"
 ".claude/skills/dignified-code-simplifier" = "erk/data/claude/skills/dignified-code-simplifier"
 ".claude/skills/pr-operations" = "erk/data/claude/skills/pr-operations"
 ".claude/skills/pr-feedback-classifier" = "erk/data/claude/skills/pr-feedback-classifier"

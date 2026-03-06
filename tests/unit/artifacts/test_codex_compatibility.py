@@ -170,12 +170,14 @@ def test_portable_skills_match_bundled() -> None:
 
 
 def test_codex_portable_and_claude_only_cover_all_skills() -> None:
-    """Verify union of codex_portable_skills() and claude_only_skills() equals all skills.
+    """Verify union of codex_portable_skills() and claude_only_skills() equals all bundled skills.
 
-    No skills should be orphaned (missing from both registries).
+    Portability classification only applies to bundled skills (those distributed
+    in the wheel). Unbundled skills are excluded from this check.
+    No bundled skills should be orphaned (missing from both registries).
     No skills should be duplicated (in both registries).
     """
-    all_skills = _get_all_skill_names()
+    all_bundled = set(bundled_skills().keys())
 
     # Check for duplicates
     duplicates = codex_portable_skills() & claude_only_skills()
@@ -184,33 +186,33 @@ def test_codex_portable_and_claude_only_cover_all_skills() -> None:
             f"Skills in both codex_portable_skills() and claude_only_skills(): {sorted(duplicates)}"
         )
 
-    # Check for orphans
+    # Check for orphans (bundled skills not in either registry)
     registered_skills = codex_portable_skills() | claude_only_skills()
-    orphaned_skills = all_skills - registered_skills
+    orphaned_skills = all_bundled - registered_skills
 
     if orphaned_skills:
         pytest.fail(
-            f"Skills not in codex_portable_skills() or claude_only_skills(): "
+            f"Bundled skills not in codex_portable_skills() or claude_only_skills(): "
             f"{sorted(orphaned_skills)}\n"
             f"Add these to src/erk/core/capabilities/codex_portable.py\n"
             f"  codex_portable: works with any AI coding agent\n"
             f"  claude_only: references Claude-specific features"
         )
 
-    # Check for nonexistent skills in registries
-    nonexistent_portable = codex_portable_skills() - all_skills
-    nonexistent_claude = claude_only_skills() - all_skills
+    # Check for entries in registries that aren't bundled skills
+    non_bundled_portable = codex_portable_skills() - all_bundled
+    non_bundled_claude = claude_only_skills() - all_bundled
 
-    if nonexistent_portable or nonexistent_claude:
+    if non_bundled_portable or non_bundled_claude:
         failures = []
-        if nonexistent_portable:
+        if non_bundled_portable:
             failures.append(
-                f"codex_portable_skills() contains nonexistent skills: "
-                f"{sorted(nonexistent_portable)}"
+                f"codex_portable_skills() contains non-bundled skills: "
+                f"{sorted(non_bundled_portable)}"
             )
-        if nonexistent_claude:
+        if non_bundled_claude:
             failures.append(
-                f"claude_only_skills() contains nonexistent skills: {sorted(nonexistent_claude)}"
+                f"claude_only_skills() contains non-bundled skills: {sorted(non_bundled_claude)}"
             )
         pytest.fail("\n".join(failures))
 
