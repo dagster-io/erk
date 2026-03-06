@@ -58,17 +58,17 @@ The automatic `github.token` is intentionally limited to repository operations f
 
 ## Operation Reference
 
-| Operation                            | Token to Use       | Why                                        |
-| ------------------------------------ | ------------------ | ------------------------------------------ |
-| Create/comment on issues             | `github.token`     | Repository-scoped operation                |
-| Create/update PRs                    | `github.token`     | Repository-scoped operation                |
-| Push commits                         | `github.token`     | Repository-scoped operation                |
-| Create gists                         | `ERK_QUEUE_GH_PAT` | Gists are user-owned resources             |
-| Upload session to gist               | `ERK_QUEUE_GH_PAT` | Gists are user-owned resources             |
-| Get current user (`gh api user`)     | `ERK_QUEUE_GH_PAT` | User identity is user-scoped               |
-| Checkout (normal workflows)          | `github.token`     | Standard checkout for most operations      |
-| Checkout (auto-fix CI)               | `ERK_QUEUE_GH_PAT` | Enables push that re-triggers CI checks    |
-| Trigger CI workflows                 | `ERK_QUEUE_GH_PAT` | PAT needed for `gh workflow run` dispatch  |
+| Operation                        | Token to Use       | Why                                       |
+| -------------------------------- | ------------------ | ----------------------------------------- |
+| Create/comment on issues         | `github.token`     | Repository-scoped operation               |
+| Create/update PRs                | `github.token`     | Repository-scoped operation               |
+| Push commits                     | `github.token`     | Repository-scoped operation               |
+| Create gists                     | `ERK_QUEUE_GH_PAT` | Gists are user-owned resources            |
+| Upload session to gist           | `ERK_QUEUE_GH_PAT` | Gists are user-owned resources            |
+| Get current user (`gh api user`) | `ERK_QUEUE_GH_PAT` | User identity is user-scoped              |
+| Checkout (normal workflows)      | `github.token`     | Standard checkout for most operations     |
+| Checkout (auto-fix CI)           | `ERK_QUEUE_GH_PAT` | Enables push that re-triggers CI checks   |
+| Trigger CI workflows             | `ERK_QUEUE_GH_PAT` | PAT needed for `gh workflow run` dispatch |
 
 ## Auto-Commit Re-Triggering Pattern
 
