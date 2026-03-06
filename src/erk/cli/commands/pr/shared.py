@@ -6,6 +6,8 @@ This module contains common functionality used by multiple PR commands
 
 from __future__ import annotations
 
+import queue
+import threading
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -29,6 +31,7 @@ from erk_shared.gateway.github.metadata.types import BlockKeys, MetadataBlock
 from erk_shared.gateway.github.pr_footer import build_pr_body_footer
 from erk_shared.gateway.gt.events import CompletionEvent, ProgressEvent
 from erk_shared.gateway.pr.diff_extraction import execute_diff_extraction
+from erk_shared.gateway.time.abc import Time
 from erk_shared.plan_store.conversion import header_str
 from erk_shared.plan_store.planned_pr_lifecycle import build_original_plan_section
 from erk_shared.plan_store.types import PlanNotFound
@@ -336,6 +339,9 @@ def require_claude_available(ctx: ErkContext) -> None:
         )
 
 
+_PROGRESS_TIMEOUT_SECONDS = 5.0
+
+
 def run_commit_message_generation(
     *,
     generator: CommitMessageGenerator,
@@ -346,8 +352,13 @@ def run_commit_message_generation(
     commit_messages: list[str] | None,
     plan_context: PlanContext | None,
     debug: bool,
+    time: Time,
 ) -> CommitMessageResult:
     """Run commit message generation and return result.
+
+    Runs the generator in a background thread and polls for events via a queue.
+    If no event arrives within the timeout, emits a "Still waiting..." message
+    so the user knows the system is alive during slow API calls.
 
     Args:
         generator: CommitMessageGenerator instance
@@ -362,20 +373,42 @@ def run_commit_message_generation(
     Returns:
         CommitMessageResult with the generated title/body or error info
     """
-    result: CommitMessageResult | None = None
+    event_queue: queue.Queue[ProgressEvent | CompletionEvent[CommitMessageResult] | None] = (
+        queue.Queue()
+    )
 
-    for event in generator.generate(
-        CommitMessageRequest(
-            diff_file=diff_file,
-            repo_root=repo_root,
-            current_branch=current_branch,
-            parent_branch=parent_branch,
-            commit_messages=commit_messages,
-            plan_context=plan_context,
-        )
-    ):
+    def _produce() -> None:
+        for event in generator.generate(
+            CommitMessageRequest(
+                diff_file=diff_file,
+                repo_root=repo_root,
+                current_branch=current_branch,
+                parent_branch=parent_branch,
+                commit_messages=commit_messages,
+                plan_context=plan_context,
+            )
+        ):
+            event_queue.put(event)
+        event_queue.put(None)
+
+    thread = threading.Thread(target=_produce, daemon=True)
+    start = time.monotonic()
+    thread.start()
+
+    result: CommitMessageResult | None = None
+    while True:
+        try:
+            event = event_queue.get(timeout=_PROGRESS_TIMEOUT_SECONDS)
+        except queue.Empty:
+            elapsed = int(time.monotonic() - start)
+            render_progress(ProgressEvent(f"Still waiting... ({elapsed}s)"))
+            continue
+
+        if event is None:
+            break
         if isinstance(event, ProgressEvent):
             render_progress(event)
+            start = time.monotonic()
         elif isinstance(event, CompletionEvent):
             result = event.result
 
