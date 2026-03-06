@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.8] - 2026-03-06 09:51 PT
+
+### Changed
+
+- Store CI failure summaries as persistent PR comments with fast-path fetch, reducing TUI summary load from 4 API calls to 1
+- Speed up PR description generation by replacing Claude CLI subprocess with direct Anthropic API calls
+- Separate CI validation from shipped code reviews into dedicated `code-reviews.yml` workflow
+- Upgrade astral-sh/setup-uv from v5 to v7 in CI workflows
+
+### Fixed
+
+- Fix `is_rebase_in_progress` detection failing in non-root worktrees, which prevented Claude from launching with `/erk:rebase`
+- Fix plan save allowing duplicate plans in same session while now correctly allowing multiple distinct plans per session
+- Fix Dignified Python code review false positives for assert in tests and library import aliases
+
 ## [0.9.7] - 2026-03-05 20:08 PT
 
 ### Added
