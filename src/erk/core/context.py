@@ -651,9 +651,7 @@ def create_context(*, dry_run: bool, script: bool = False, debug: bool = False) 
     from erk.core.fast_llm import AnthropicLlmCaller
     from erk.core.prompt_executor import ClaudePromptExecutor
 
-    llm_caller = AnthropicLlmCaller(
-        prompt_executor=ClaudePromptExecutor(console=None)
-    )
+    llm_caller = AnthropicLlmCaller(prompt_executor=ClaudePromptExecutor(console=None))
 
     # 11. Create claude installation and prompt executor
     from erk_shared.gateway.agent_docs.dry_run import DryRunAgentDocs
