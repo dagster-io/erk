@@ -100,7 +100,7 @@ def reconcile(ctx: ErkContext, *, force: bool, dry_run: bool, skip_learn: bool) 
         click.echo(click.style("Pulling trunk...", fg="yellow"))
         try:
             ctx.git.remote.pull_branch(repo.root, "origin", trunk, ff_only=True)
-        except Exception:
+        except RuntimeError:
             user_output(click.style("Warning: ", fg="yellow") + "Failed to pull trunk")
 
     # Display summary
