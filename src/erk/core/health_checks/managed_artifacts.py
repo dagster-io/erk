@@ -137,7 +137,7 @@ class _ArtifactInfo:
 
     name: str
     status: ArtifactStatusType
-    allowed_by_config: bool = False
+    allowed_by_config: bool
 
 
 def _build_managed_artifacts_result(
