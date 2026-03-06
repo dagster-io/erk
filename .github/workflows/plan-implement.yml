@@ -1,5 +1,5 @@
 name: plan-implement
-run-name: "${{ inputs.branch_name }} (#${{ inputs.pr_number }}):${{ inputs.distinct_id }}"
+run-name: "${{ inputs.dispatch_type == 'incremental' && '[incremental] ' || '' }}${{ inputs.branch_name }} (#${{ inputs.pr_number }}):${{ inputs.distinct_id }}"
 
 on:
   workflow_dispatch:
@@ -42,6 +42,11 @@ on:
         required: false
         type: string
         default: "github"
+      dispatch_type:
+        description: "Dispatch type (implement or incremental)"
+        required: false
+        type: string
+        default: "implement"
   workflow_call:
     inputs:
       plan_id:
@@ -83,6 +88,11 @@ on:
         required: false
         type: string
         default: "github"
+      dispatch_type:
+        description: "Dispatch type (implement or incremental)"
+        required: false
+        type: string
+        default: "implement"
 
 concurrency:
   group: implement-plan-${{ inputs.plan_id }}

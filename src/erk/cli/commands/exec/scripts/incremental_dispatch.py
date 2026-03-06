@@ -170,6 +170,7 @@ def incremental_dispatch(
         "pr_number": str(pr_number),
         "base_branch": trunk,
         "plan_backend": "planned_pr",
+        "dispatch_type": "incremental",
         **workflow_config,
     }
 
