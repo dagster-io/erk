@@ -23,7 +23,7 @@ from erk_shared.context.types import (
 
 if TYPE_CHECKING:
     from erk.artifacts.paths import ErkPackageInfo
-    from erk.core.health_checks.runner import HealthCheckRunner
+    from erk_shared.core.health_check_runner import HealthCheckRunner
     from erk_shared.core.objective_list_service import ObjectiveListService
 
 from erk_shared.core.llm_caller import LlmCaller

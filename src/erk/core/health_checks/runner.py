@@ -1,25 +1,18 @@
-"""Health check runner abstraction for dependency injection.
+"""Health check runner - real implementation.
 
-Provides an ABC for running health checks, enabling tests to inject
-fake results without monkeypatching.
+The HealthCheckRunner ABC is defined in erk_shared.core.health_check_runner
+to avoid circular imports. This module provides the real implementation.
 """
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING
 
-from erk.core.health_checks.models import CheckResult
+from erk_shared.core.health_check_runner import HealthCheckRunner
 
 if TYPE_CHECKING:
+    from erk.core.health_checks.models import CheckResult
     from erk_shared.context.context import ErkContext
-
-
-class HealthCheckRunner(ABC):
-    """Abstract interface for running health checks."""
-
-    @abstractmethod
-    def run_all(self, ctx: ErkContext, *, check_hooks: bool) -> list[CheckResult]: ...
 
 
 class RealHealthCheckRunner(HealthCheckRunner):
