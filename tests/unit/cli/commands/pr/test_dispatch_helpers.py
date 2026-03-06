@@ -90,8 +90,8 @@ def test_diverged_exits(tmp_path: Path) -> None:
         ensure_trunk_synced(ctx, repo)
 
 
-def test_trunk_checked_out_with_clean_worktree_succeeds(tmp_path: Path) -> None:
-    """When trunk is checked out in a clean worktree, fast-forward succeeds."""
+def test_trunk_checked_out_with_clean_worktree_uses_pull(tmp_path: Path) -> None:
+    """When trunk is checked out in a clean worktree, uses pull_branch (not update_local_ref)."""
     git = FakeGit(
         current_branches={tmp_path: "master"},
         trunk_branches={tmp_path: "master"},
@@ -104,8 +104,10 @@ def test_trunk_checked_out_with_clean_worktree_succeeds(tmp_path: Path) -> None:
 
     ensure_trunk_synced(ctx, repo)
 
-    assert len(git.updated_refs) == 1
-    assert git.updated_refs[0][2] == REMOTE_SHA
+    # Should use pull_branch to update index + working tree, not update_local_ref
+    assert len(git.updated_refs) == 0
+    assert len(git.pulled_branches) == 1
+    assert git.pulled_branches[0] == ("origin", "master", True)
 
 
 def test_trunk_checked_out_with_dirty_worktree_exits(tmp_path: Path) -> None:
@@ -126,6 +128,36 @@ def test_trunk_checked_out_with_dirty_worktree_exits(tmp_path: Path) -> None:
 
     # Should NOT have updated the ref
     assert len(git.updated_refs) == 0
+
+
+def test_trunk_in_root_worktree_uses_pull_not_update_ref(tmp_path: Path) -> None:
+    """When trunk is checked out in root worktree and cwd is a slot worktree, uses pull."""
+    root_path = tmp_path / "root"
+    slot_path = tmp_path / "slot"
+    root_path.mkdir()
+    slot_path.mkdir()
+
+    git = FakeGit(
+        current_branches={root_path: "master", slot_path: "feature/work"},
+        trunk_branches={root_path: "master"},
+        branch_heads={"master": LOCAL_SHA, "origin/master": REMOTE_SHA},
+        merge_bases={("master", "origin/master"): LOCAL_SHA},
+        worktrees={
+            root_path: [
+                WorktreeInfo(path=root_path, branch="master", is_root=True),
+                WorktreeInfo(path=slot_path, branch="feature/work", is_root=False),
+            ]
+        },
+    )
+    ctx = context_for_test(git=git, cwd=slot_path, repo_root=root_path)
+    repo = _repo_context(root_path)
+
+    ensure_trunk_synced(ctx, repo)
+
+    # Must use pull (not update_local_ref) since trunk is checked out in root worktree
+    assert len(git.updated_refs) == 0
+    assert len(git.pulled_branches) == 1
+    assert git.pulled_branches[0] == ("origin", "master", True)
 
 
 def test_does_not_require_trunk_checkout(tmp_path: Path) -> None:
