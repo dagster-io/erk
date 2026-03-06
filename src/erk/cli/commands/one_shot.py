@@ -9,6 +9,7 @@ Usage:
     erk one-shot "add type hints to utils.py" --model opus
     erk one-shot "fix the typo in README.md" --dry-run
     erk one-shot "rename issue_number to plan_number in impl_init.py" --plan-only
+    erk one-shot "fix config bug" --repo owner/repo
 """
 
 from pathlib import Path
@@ -21,7 +22,7 @@ from erk.cli.commands.one_shot_dispatch import (
     dispatch_one_shot,
 )
 from erk.cli.commands.ref_resolution import resolve_dispatch_ref
-from erk.cli.ensure import Ensure
+from erk.cli.ensure import Ensure, UserFacingCliError
 from erk.core.context import ErkContext
 from erk_shared.output.output import user_output
 
@@ -72,6 +73,13 @@ from erk_shared.output.output import user_output
     default=False,
     help="Dispatch workflow from the current branch",
 )
+@click.option(
+    "--repo",
+    "target_repo",
+    type=str,
+    default=None,
+    help="Target repo (owner/repo) for remote dispatch without local git clone",
+)
 @click.pass_obj
 def one_shot(
     ctx: ErkContext,
@@ -84,6 +92,7 @@ def one_shot(
     slug: str | None,
     dispatch_ref: str | None,
     ref_current: bool,
+    target_repo: str | None,
 ) -> None:
     """Submit a task for fully autonomous remote execution.
 
@@ -91,6 +100,9 @@ def one_shot(
     where Claude autonomously explores, plans, implements, and submits.
 
     Provide prompt as an argument or via --file (not both).
+
+    Use --repo owner/repo to dispatch to a remote repository without
+    needing a local git clone.
 
     Examples:
 
@@ -100,6 +112,7 @@ def one_shot(
       erk one-shot "add type hints to utils.py" --model opus
       erk one-shot "fix the typo in README.md" --dry-run
       erk one-shot "rename issue_number to plan_number" --plan-only
+      erk one-shot "fix config bug" --repo dagster-io/erk
     """
     # Resolve prompt from argument or file
     if file_path is not None and prompt is not None:
@@ -131,5 +144,64 @@ def one_shot(
         slug=slug,
     )
 
-    ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
-    dispatch_one_shot(ctx, params=params, dry_run=dry_run, ref=ref)
+    if target_repo is not None:
+        _dispatch_remote(
+            ctx,
+            target_repo=target_repo,
+            params=params,
+            dry_run=dry_run,
+            dispatch_ref=dispatch_ref,
+            ref_current=ref_current,
+        )
+    else:
+        ref = resolve_dispatch_ref(ctx, dispatch_ref=dispatch_ref, ref_current=ref_current)
+        dispatch_one_shot(ctx, params=params, dry_run=dry_run, ref=ref)
+
+
+def _dispatch_remote(
+    ctx: ErkContext,
+    *,
+    target_repo: str,
+    params: OneShotDispatchParams,
+    dry_run: bool,
+    dispatch_ref: str | None,
+    ref_current: bool,
+) -> None:
+    """Handle the --repo remote dispatch path.
+
+    Validates inputs, constructs RemoteGitHub, and calls dispatch_one_shot_remote.
+    """
+    from erk.cli.commands.one_shot_remote_dispatch import dispatch_one_shot_remote
+    from erk_shared.gateway.remote_github.real import RealRemoteGitHub
+
+    # Validate --repo format
+    if "/" not in target_repo or target_repo.count("/") != 1:
+        raise UserFacingCliError(
+            f"Invalid --repo format: '{target_repo}'\n"
+            "Expected format: owner/repo (e.g., dagster-io/erk)"
+        )
+
+    # --repo + --ref-current is invalid (no local branch to reference)
+    if ref_current:
+        raise click.UsageError("--repo and --ref-current are mutually exclusive (no local branch)")
+
+    # Validate http_client is available
+    if ctx.http_client is None:
+        raise UserFacingCliError(
+            "GitHub authentication required for --repo.\nRun 'gh auth login' to authenticate."
+        )
+
+    owner, repo = target_repo.split("/")
+
+    remote = RealRemoteGitHub(http_client=ctx.http_client, time=ctx.time)
+
+    dispatch_one_shot_remote(
+        remote=remote,
+        owner=owner,
+        repo=repo,
+        params=params,
+        dry_run=dry_run,
+        ref=dispatch_ref,
+        time_gateway=ctx.time,
+        llm_caller=ctx.llm_caller,
+    )

@@ -4,6 +4,7 @@ These tests verify that RealHttpClient correctly constructs HTTP requests
 and handles responses without making actual network calls.
 """
 
+import json
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -21,6 +22,16 @@ def _mock_response(*, status_code: int = 200, json_data: object = None) -> Magic
     response.status_code = status_code
     response.json.return_value = json_data or {}
     response.text = "error text"
+    return response
+
+
+def _mock_no_content_response() -> MagicMock:
+    """Mock a 204 No Content response with empty body."""
+    response = MagicMock()
+    response.status_code = 204
+    response.content = b""
+    response.text = ""
+    response.json.side_effect = json.JSONDecodeError("Expecting value", "", 0)
     return response
 
 
@@ -136,3 +147,39 @@ def test_supports_direct_api() -> None:
     """RealHttpClient reports it supports direct API calls."""
     client = _make_client()
     assert client.supports_direct_api is True
+
+
+# --- 204 No Content handling ---
+
+
+def test_post_handles_204_no_content() -> None:
+    """POST returns empty dict when response has no body (e.g. workflow dispatch)."""
+    with patch("httpx.request") as mock_request:
+        mock_request.return_value = _mock_no_content_response()
+        client = _make_client()
+
+        result = client.post("repos/o/r/actions/workflows/wf.yml/dispatches", data={"ref": "main"})
+
+        assert result == {}
+
+
+def test_put_handles_204_no_content() -> None:
+    """PUT returns empty dict when response has no body."""
+    with patch("httpx.request") as mock_request:
+        mock_request.return_value = _mock_no_content_response()
+        client = _make_client()
+
+        result = client.put("repos/o/r/some/endpoint", data={"key": "val"})
+
+        assert result == {}
+
+
+def test_patch_handles_204_no_content() -> None:
+    """PATCH returns empty dict when response has no body."""
+    with patch("httpx.request") as mock_request:
+        mock_request.return_value = _mock_no_content_response()
+        client = _make_client()
+
+        result = client.patch("repos/o/r/some/endpoint", data={"key": "val"})
+
+        assert result == {}
